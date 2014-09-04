@@ -15,7 +15,7 @@ Download 'master' or latest tagged release, extract and open home page of any sa
 
 ## License
 
-All code in this repository is covered by the BSD-3 license. 
+All code in this repository is covered by the [BSD-3 license](http://opensource.org/licenses/BSD-3-Clause). 
 
 
 
