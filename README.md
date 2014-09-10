@@ -13,6 +13,11 @@ If your goal is to improve or extend the code and contribute back to this projec
 
 Download 'master' or latest tagged release, extract and open home page of any sample from the samples folder (hasplayer.js/samples/) in your web browser.
 
+## Demo
+
+A demonstration application, based on dash.js project home application, and using hasplayer.js is located here:
+http://tv-has.orange-labs.fr/hasplayer/
+
 ## License
 
 All code in this repository is covered by the [BSD-3 license](http://opensource.org/licenses/BSD-3-Clause). 
