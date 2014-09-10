@@ -41,13 +41,14 @@ MediaPlayer = function (aContext) {
  * 6) Transform fragments.
  * 7) Push fragmemt bytes into SourceBuffer.
  */
-    var VERSION = "1.1.0",
+    var VERSION = "1.2.0",
+        VERSION_HAS = "1.1.0",
         context = aContext,
         system,
         element,
         source,
-        // ORANGE: licenser backUrl
-        sourceBackUrl,
+        // ORANGE: source stream parameters (ex: DRM custom data)
+        sourceParams,
         streamController,
         videoModel,
         initialized = false,
@@ -55,23 +56,12 @@ MediaPlayer = function (aContext) {
         autoPlay = true,
         scheduleWhilePaused = false,
         bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED,
-        activeStream = null,
-       
 
         isReady = function () {
             return (!!element && !!source);
         },
 
-        initLogger = function () {
-            this.logger.addAppender();
-        },
-
         play = function () {
-
-            var self = this;
-            
-           // initLogger.call(this);
-            this.debug.log("[MediaPlayer]", "play", source);
             if (!initialized) {
                 throw "MediaPlayer not initialized!";
             }
@@ -86,14 +76,15 @@ MediaPlayer = function (aContext) {
             }
 
             playing = true;
-            //this.debug.log("[MediaPlayer] Playback initiated!");
+            //this.debug.log("Playback initiated!");
             streamController = system.getObject("streamController");
             streamController.setVideoModel(videoModel);
             streamController.setAutoPlay(autoPlay);
-            // ORANGE: add licenser backUrl parameter
-            streamController.load(source, sourceBackUrl);
+            // ORANGE: add source stream parameters
+            streamController.load(source, sourceParams);
             system.mapValue("scheduleWhilePaused", scheduleWhilePaused);
             system.mapOutlet("scheduleWhilePaused", "stream");
+            system.mapOutlet("scheduleWhilePaused", "bufferController");
             system.mapValue("bufferMax", bufferMax);
             system.injectInto(this.bufferExt, "bufferMax");
         },
@@ -102,14 +93,105 @@ MediaPlayer = function (aContext) {
             if (isReady()) {
                 play.call(this);
             }
+        },
+
+        getDVRInfoMetric = function() {
+            var metric = this.metricsModel.getReadOnlyMetricsFor('video') || this.metricsModel.getReadOnlyMetricsFor('audio');
+            return this.metricsExt.getCurrentDVRInfo(metric);
+        },
+
+        getDVRWindowSize = function() {
+            return getDVRInfoMetric.call(this).mpd.timeShiftBufferDepth;
+        },
+
+        getDVRSeekOffset = function (value) {
+            var metric = getDVRInfoMetric.call(this),
+                val = metric.range.start + parseInt(value);
+
+            if (val > metric.range.end)
+            {
+                val = metric.range.end;
+            }
+
+            return val;
+        },
+
+        seek = function(value) {
+
+            videoModel.getElement().currentTime = this.getDVRSeekOffset(value);
+        },
+
+        time = function () {
+            var metric = getDVRInfoMetric.call(this);
+            return (metric === null) ? 0 : Math.round(this.duration() - (metric.range.end - metric.time));
+        },
+
+        duration  = function() {
+            var metric = getDVRInfoMetric.call(this),
+                range;
+
+            if (metric === null){
+                return 0;
+            }
+
+            range = metric.range.end - metric.range.start;
+
+            return Math.round(range < metric.mpd.timeShiftBufferDepth ? range : metric.mpd.timeShiftBufferDepth);
+        },
+
+        timeAsUTC = function () {
+            var metric = getDVRInfoMetric.call(this),
+                availabilityStartTime,
+                currentUTCTime;
+
+            if (metric === null){
+                return 0;
+            }
+
+            availabilityStartTime = metric.mpd.availabilityStartTime.getTime() / 1000;
+            currentUTCTime = this.time() + (availabilityStartTime + metric.range.start);
+
+            return Math.round(currentUTCTime);
+        },
+
+        durationAsUTC = function () {
+            var metric = getDVRInfoMetric.call(this),
+                availabilityStartTime,
+                currentUTCDuration;
+
+            if (metric === null){
+                return 0;
+            }
+
+            availabilityStartTime = metric.mpd.availabilityStartTime.getTime() / 1000;
+            currentUTCDuration = (availabilityStartTime + metric.range.start) + this.duration();
+
+            return Math.round(currentUTCDuration);
+        },
+
+        formatUTC = function (time, locales, hour12) {
+            var dt = new Date(time*1000);
+            var d = dt.toLocaleDateString(locales);
+            var t = dt.toLocaleTimeString(locales, {hour12:hour12});
+            return t +' '+d;
+        },
+
+        convertToTimeCode = function (value) {
+            value = Math.max(value, 0);
+
+            var h = Math.floor(value/3600);
+            var m = Math.floor((value%3600)/60);
+            var s = Math.floor((value%3600)%60);
+            return (h === 0 ? "":(h<10 ? "0"+h.toString()+":" : h.toString()+":"))+(m<10 ? "0"+m.toString() : m.toString())+":"+(s<10 ? "0"+s.toString() : s.toString());
         };
+
+
 
     // Set up DI.
     system = new dijon.System();
     system.mapValue("system", system);
     system.mapOutlet("system");
     system.injectInto(context);
-
 
     return {
         debug: undefined,
@@ -119,6 +201,11 @@ MediaPlayer = function (aContext) {
         metricsModel: undefined,
         metricsExt: undefined,
         bufferExt: undefined,
+        errHandler: undefined,
+        tokenAuthentication:undefined,
+        uriQueryFragModel:undefined,
+        // ORANGE: add config manager
+        config: undefined,
 
         addEventListener: function (type, listener, useCapture) {
             this.eventBus.addEventListener(type, listener, useCapture);
@@ -130,6 +217,11 @@ MediaPlayer = function (aContext) {
 
         getVersion: function () {
             return VERSION;
+        },
+
+        // ORANGE: get the HAS version
+        getVersionHAS: function () {
+            return VERSION_HAS;
         },
 
         startup: function () {
@@ -163,6 +255,9 @@ MediaPlayer = function (aContext) {
             return scheduleWhilePaused;
         },
 
+        setTokenAuthentication:function(name, type) {
+            this.tokenAuthentication.setTokenAuthentication({name:name, type:type});
+        },
         setBufferMax: function(value) {
             bufferMax = value;
         },
@@ -196,9 +291,9 @@ MediaPlayer = function (aContext) {
             this.abrController.setAutoSwitchBitrate(value);
         },
 
-        // ORANGE: add function to set manually representation boundaries for a media
-        setQualityBoundariesFor: function (type, min, max) {
-            this.metricsModel.addRepresentationBoundaries(type, new Date(), min, max);
+        // ORANGE: add function to set some player configuration parameters
+        setConfig: function (params) {
+            this.config.setParams(params);
         },
 
         // ORANGE: add function to switch audioTracks for a media
@@ -237,14 +332,16 @@ MediaPlayer = function (aContext) {
             }
         },
         
-        // ORANGE: modify attachSource function to add licenser backUrl parameter
-        attachSource: function (url, backUrl) {
+        // ORANGE: add source stream parameters (ex: DRM custom data)
+        attachSource: function (url, params) {
             if (!initialized) {
                 throw "MediaPlayer not initialized!";
             }
-            source = url;
-            // ORANGE: modify attachSource function to add licenser backUrl parameter
-            sourceBackUrl = backUrl;
+
+            source = this.uriQueryFragModel.parseURI(url);
+            // ORANGE: store source stream params
+            sourceParams = params;
+
             this.setQualityFor('video', 0);
             this.setQualityFor('audio', 0);
 
@@ -267,7 +364,17 @@ MediaPlayer = function (aContext) {
         },
 
         play: play,
-        isReady: isReady
+        isReady: isReady,
+        seek : seek,
+        time : time,
+        duration : duration,
+        timeAsUTC : timeAsUTC,
+        durationAsUTC : durationAsUTC,
+        getDVRWindowSize : getDVRWindowSize,
+        getDVRSeekOffset : getDVRSeekOffset,
+        formatUTC : formatUTC,
+        convertToTimeCode : convertToTimeCode
+
     };
 };
 

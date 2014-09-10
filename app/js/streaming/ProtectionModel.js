@@ -23,6 +23,8 @@ MediaPlayer.models.ProtectionModel = function () {
         system : undefined,
         videoModel : undefined,
         protectionExt : undefined,
+        // ORANGE: licenser custom data and back url add a reference on manifestModel
+        manifestModel: undefined,
 
         setup : function () {
             //this.system.mapHandler("setCurrentTime", undefined, handleSetCurrentTimeNotification.bind(this));
@@ -35,9 +37,11 @@ MediaPlayer.models.ProtectionModel = function () {
         },
 
         addKeySession: function (kid, mediaCodec, initData) {
-            var session = null;
+            var session = null,
+                manifest = this.manifestModel.getValue();
 
-            session = this.protectionExt.createSession(keySystems[kid].keys, mediaCodec, initData);
+            // ORANGE: add licenser custom data
+            session = this.protectionExt.createSession(keySystems[kid].keys, mediaCodec, initData, manifest.customData);
 
             this.protectionExt.listenToKeyAdded(session, keyAddedListener);
             this.protectionExt.listenToKeyError(session, keyErrorListener);
@@ -94,7 +98,9 @@ MediaPlayer.models.ProtectionModel = function () {
         },
 
         updateFromMessage: function (kid, msg, laURL) {
-            return keySystems[kid].keySystem.getUpdate(msg, laURL);
+            var manifest = this.manifestModel.getValue();
+            // ORANGE: add licenser custom data
+            return keySystems[kid].keySystem.getUpdate(msg, laURL, manifest.customData);
         },
 /*
         addKey: function (type, key, data, id) {

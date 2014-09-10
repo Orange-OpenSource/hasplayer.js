@@ -574,9 +574,7 @@
                 for ( var key in handlers ) {
                     var configs = handlers[ key ];
                     var instance;
-                    if ( typeof key === 'object') {
-                        instance = key;
-                    } else if ( key !== 'global' ) {
+                    if ( key !== 'global' ) {
                         instance = this.getObject( key );
                     }
                     var toBeDeleted = [];

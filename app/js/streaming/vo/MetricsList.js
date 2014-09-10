@@ -18,15 +18,11 @@ MediaPlayer.models.MetricsList = function () {
         TcpList: [],
         HttpList: [],
         RepSwitchList: [],
-        // ORANGE: add representation boundaries in metrcis
-        RepBoundariesList: [],
-        // ORANGE: add download switch in metrics
-        DwnldSwitchList: [],
-        // ORANGE : add calculate bandwidth value
-        BandwidthValue: null,
         BufferLevel: [],
         PlayList: [],
-        DroppedFrames: []
+        DroppedFrames: [],
+        DVRInfo: [],
+        ManifestUpdate: []
     };
 };
 

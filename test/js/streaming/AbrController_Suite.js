@@ -126,8 +126,10 @@ describe("AbrController Suite", function () {
                 data.startWithSAP= 1;
             });
 
-/* 
+
+ 
        it("getPlaybackQuality", function(){
+				debugger;
                 var promise = null,
                   success,
                   successResult,
@@ -135,27 +137,32 @@ describe("AbrController Suite", function () {
  
                   flag=false; 
                   success = function(result) {
+				   debugger;
                    successResult = result;
                    flag = true;
                   },
                   failure = function(error) {
+				  debugger;
                    flag = false;
                   };
 
                  runs(function(){
+				debugger;
                   promise =  abrController.getPlaybackQuality("video",data);
                   promise.then(success, failure);
-                 });
+	                 });
                  
-                  waitsFor(function(){
-                  return flag;
-                 },"data null",100);
+                  // waitsFor(function(){
+				  // if (flag) return true;	  
+                  
+                 // },"data null",100);
                  
-                 runs(function(){
-                     expect(successResult.quality).toEqual(0);
-                  });
+                 // runs(function(){
+					// debugger;
+                     // //expect(successResult.quality).toEqual(0);
+                  // });
         });
-*/
+        
          it("getPlaybackQuality with type as null", function(){
                     var promise = null,
                       success,

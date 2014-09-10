@@ -681,7 +681,7 @@ function reject(exception) {
     errors.push(exception);
     // note that the error has not been handled
     // HACK MGA : change call order because in disaplyErrors, we use errors...
-    displayErrors();
+    //displayErrors();
     return rejection;
 }
 

@@ -17,10 +17,16 @@ MediaPlayer.dependencies.ManifestLoader = function () {
     var RETRY_ATTEMPTS = 3,
         RETRY_INTERVAL = 500,
         deferred = null,
+
+
         parseBaseUrl = function (url) {
             var base = null;
 
-            if (url.indexOf("/") !== -1) {
+            if (url.indexOf("/") !== -1)
+            {
+                if (url.indexOf("?") !== -1) {
+                    url = url.substring(0, url.indexOf("?"));
+                }
                 base = url.substring(0, url.lastIndexOf("/") + 1);
             }
 
@@ -33,13 +39,12 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                 requestTime = new Date(),
                 mpdLoadedTime = null,
                 needFailureReport = true,
+                onload = null,
+                report = null,
                 self = this;
 
-            this.debug.log("Start loading manifest: " + url);
 
-            request.open("GET", url, true);
-
-            request.onload = function () {
+            onload = function () {
                 if (request.status < 200 || request.status > 299)
                 {
                   return;
@@ -47,6 +52,7 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                 needFailureReport = false;
                 mpdLoadedTime = new Date();
 
+                self.tokenAuthentication.checkRequestHeaderForToken(request);
                 self.metricsModel.addHttpRequest("stream",
                                                  null,
                                                  "MPD",
@@ -63,6 +69,7 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                     function (manifest) {
                         manifest.mpdUrl = url;
                         manifest.mpdLoadedTime = mpdLoadedTime;
+                        self.metricsModel.addManifestUpdate("stream", manifest.type, requestTime, mpdLoadedTime, manifest.availabilityStartTime);
                         deferred.resolve(manifest);
                     },
                     function () {
@@ -71,7 +78,7 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                 );
             };
 
-            request.onloadend = request.onerror = function () {
+            report = function () {
                 if (!needFailureReport)
                 {
                   return;
@@ -102,7 +109,16 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                 }
             };
 
+            try {
+                //this.debug.log("Start loading manifest: " + url);
+                request.onload = onload;
+                request.onloadend = report;
+                request.onerror = report;
+                request.open("GET", url, true);
             request.send();
+            } catch(e) {
+                request.onerror();
+            }
         };
 
     return {
@@ -110,6 +126,7 @@ MediaPlayer.dependencies.ManifestLoader = function () {
         parser: undefined,
         errHandler: undefined,
         metricsModel: undefined,
+        tokenAuthentication:undefined,
         load: function(url) {
             deferred = Q.defer();
             doLoad.call(this, url, RETRY_ATTEMPTS);

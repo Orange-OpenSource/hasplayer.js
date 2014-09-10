@@ -18,8 +18,10 @@ MediaPlayer.dependencies.TextController = function () {
          READY = "READY",
          initialized = false,
          periodInfo = null,
+         mediaSource,
          data,
          buffer,
+         availableRepresentations,
          state = READY,
          setState = function (value) {
              this.debug.log("TextController setState to:" + value);
@@ -32,12 +34,11 @@ MediaPlayer.dependencies.TextController = function () {
              }
 
              var self = this;
-             setState.call(self, LOADING);
             // TODO Multiple tracks can be handled here by passing in quality level.
-             self.indexHandler.getInitRequest(0, data).then(
+            self.indexHandler.getInitRequest(availableRepresentations[0]).then(
                  function (request) {
-                     self.debug.log("Loading text track initialization: " + request.url);
-                     self.debug.log(request);
+                 //self.debug.log("Loading text track initialization: " + request.url);
+                 //self.debug.log(request);
                      self.fragmentLoader.load(request).then(onBytesLoaded.bind(self, request), onBytesError.bind(self, request));
                      setState.call(self, LOADING);
                  }
@@ -47,15 +48,35 @@ MediaPlayer.dependencies.TextController = function () {
              startPlayback.call(this);
          },
 
+         updateRepresentations = function (data, periodInfo) {
+             var self = this,
+                 deferred = Q.defer(),
+                 manifest = self.manifestModel.getValue();
+             self.manifestExt.getDataIndex(data, manifest, periodInfo.index).then(
+                 function(idx) {
+                     self.manifestExt.getAdaptationsForPeriod(manifest, periodInfo).then(
+                         function(adaptations) {
+                             self.manifestExt.getRepresentationsForAdaptation(manifest, adaptations[idx]).then(
+                                 function(representations) {
+                                     deferred.resolve(representations);
+                                 }
+                             );
+                         }
+                     );
+                 }
+             );
+
+             return deferred.promise;
+         },
+
          onBytesLoaded = function (request, response) {
              var self = this;
-             self.debug.log(" Text track Bytes finished loading: " + request.url);
-
-             //MBR : Modif orange pour ajouter la request afin de récupérer startTime et timescale
-             self.fragmentController.process(response.data,request).then(
+             //self.debug.log(" Text track Bytes finished loading: " + request.url);
+            // ORANGE: add request parameter to retrieve startTime and timescale in fragmentController
+             self.fragmentController.process(response.data, request).then(
                  function (data) {
                      if (data !== null) {
-                         self.debug.log("Push text track bytes: " + data.byteLength);
+                         //self.debug.log("Push text track bytes: " + data.byteLength);
                          self.sourceBufferExt.append(buffer, data, self.videoModel);
                      }
                  }
@@ -63,7 +84,6 @@ MediaPlayer.dependencies.TextController = function () {
          },
 
          onBytesError = function (/*request*/) {
-            console.error("Error on Byte");
          };
 
     return {
@@ -72,16 +92,22 @@ MediaPlayer.dependencies.TextController = function () {
         fragmentController: undefined,
         indexHandler: undefined,
         sourceBufferExt: undefined,
+        manifestModel: undefined,
+        manifestExt: undefined,
         debug: undefined,
-        initialize: function (periodInfo, data, buffer, videoModel) {
+        initialize: function (periodInfo, data, buffer, videoModel, source) {
             var self = this;
 
             self.setVideoModel(videoModel);
-            self.setPeriodInfo(periodInfo);
-            self.setData(data);
             self.setBuffer(buffer);
+            self.setMediaSource(source);
 
+            self.updateData(data, periodInfo).then(
+                function() {
             initialized = true;
+                    startPlayback.call(self);
+                }
+            );
         },
 
         setPeriodInfo: function(value) {
@@ -116,10 +142,33 @@ MediaPlayer.dependencies.TextController = function () {
             buffer = value;
         },
 
-        reset: function (errored, source) {
+        setMediaSource: function(value) {
+            mediaSource = value;
+        },
+
+        updateData: function (dataValue, periodInfoValue) {
+            var self = this,
+                deferred = Q.defer();
+
+            data = dataValue;
+            periodInfo = periodInfoValue;
+
+            updateRepresentations.call(self, data, periodInfo).then(
+                function(representations) {
+                    availableRepresentations = representations;
+                    setState.call(self, READY);
+                    startPlayback.call(self);
+                    deferred.resolve();
+                }
+            );
+
+            return deferred.promise;
+        },
+
+        reset: function (errored) {
             if (!errored) {
-                this.sourceBufferExt.abort(source, buffer);
-                this.sourceBufferExt.removeSourceBuffer(source, buffer);
+                this.sourceBufferExt.abort(mediaSource, buffer);
+                this.sourceBufferExt.removeSourceBuffer(mediaSource, buffer);
             }
         },
 

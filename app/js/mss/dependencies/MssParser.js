@@ -1,3 +1,16 @@
+/*
+ * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
+ * 
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 Mss.dependencies.MssParser = function () {
     "use strict";
 
@@ -5,6 +18,19 @@ Mss.dependencies.MssParser = function () {
 
     var numericRegex = /^[-+]?[0-9]+[.]?[0-9]*([eE][-+]?[0-9]+)?$/;
     var hexadecimalRegex = /^0[xX][A-Fa-f0-9]+$/;
+    var samplingFrequencyIndex = {96000:0x0,
+                                  88200:0x1,
+                                  64000:0x2,
+                                  48000:0x3,
+                                  44100:0x4,
+                                  32000:0x5,
+                                  24000:0x6,
+                                  22050:0x7,
+                                  16000:0x8,
+                                  12000:0x9,
+                                  11025:0xA,
+                                   8000:0xB,
+                                   7350:0xC};
 
     var matchers = [
         {
@@ -63,6 +89,10 @@ Mss.dependencies.MssParser = function () {
             },
             {
                 name: 'audioSamplingRate',
+                merge: false
+            },
+            {
+                name: 'audioChannels',
                 merge: false
             },
             {
@@ -195,7 +225,7 @@ Mss.dependencies.MssParser = function () {
 
     // compare quality to order the representation by quality
     var compareQuality = function(repA,repB){
-            return parseInt(repA.Bitrate) - parseInt(repB.Bitrate);
+            return parseInt(repA.Bitrate, 10) - parseInt(repB.Bitrate, 10);
     };
 
     var getBaseUrlValuesMap = function () {
@@ -208,7 +238,6 @@ Mss.dependencies.MssParser = function () {
             representation,
             segmentTemplate,
             segmentTimeline,
-            audioChannelConfiguration,
             segment,
             common;
 
@@ -252,7 +281,7 @@ Mss.dependencies.MssParser = function () {
                 BaseURL: node.BaseURL,
                 Period: node,
                 Period_asArray: [node],
-                minBufferTime : 10
+                minBufferTime : MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME
             };
             if(node.Protection !== undefined){
                 returnNode.ContentProtection = node.Protection.ProtectionHeader;
@@ -332,12 +361,6 @@ Mss.dependencies.MssParser = function () {
                 SegmentTemplate_asArray : [node]
             };
 
-
-            if (node.Type === "audio") {
-                adaptTransformed.AudioChannelConfiguration = adaptTransformed;
-                adaptTransformed.Channels = node.QualityLevel && node.QualityLevel.Channels; //used by AudioChannelConfiguration
-            }
-
             // Add 'Id'  field on representations
             for (var i = 0; i < adaptTransformed.Representation_asArray.length; i++) {
                 var rep = adaptTransformed.Representation_asArray[i];
@@ -378,12 +401,66 @@ Mss.dependencies.MssParser = function () {
                 mimeType = "mp4a";
                 avcoti = "40";
                 // Extract objectType from the CodecPrivateData field
-                var objectType = (parseInt(node.CodecPrivateData.toString().substr(0, 2), 16) & 0xF8) >> 3;
+                var codecPrivateDatafield = node.CodecPrivateData.toString();
+                var objectType = 0;
+                var arr16;
+                var codecPrivateDataHex;
+
+                //chrome problem, in implicit AAC HE definition, so when AACH is detected in FourCC
+                //set objectType to 5 => strange, it should be 2
+                if (node.FourCC === "AACH") {
+                    objectType = 0x05;
+                }
+
+                //if codecPrivateDatafield is empty, build it :
+                if (codecPrivateDatafield === "" || codecPrivateDatafield === undefined || codecPrivateDatafield === "0x") {
+                    objectType = 0x02; //AAC Main Low Complexity => object Type = 2
+                    var indexFreq = samplingFrequencyIndex[node.SamplingRate];
+                    if (node.FourCC === "AACH") {
+                        // 4 bytes :     XXXXX         XXXX          XXXX             XXXX                  XXXXX      XXX   XXXXXXX
+                        //           ' ObjectType' 'Freq Index' 'Channels value'   'Extens Sampl Freq'  'ObjectType'  'GAS' 'alignment = 0'
+                        objectType = 0x05; // High Efficiency AAC Profile = object Type = 5 SBR
+                        codecPrivateDatafield = new Uint8Array(4);
+                        var extensionSamplingFrequencyIndex = samplingFrequencyIndex[node.SamplingRate*2];// in HE AAC Extension Sampling frequence
+                        // equals to SamplingRate*2
+                        //Freq Index is present for 3 bits in the first byte, last bit is in the second
+                        codecPrivateDatafield[0] = (objectType << 3) | (indexFreq >> 1);
+                        codecPrivateDatafield[1] = (indexFreq << 7) | (node.Channels << 3) | (extensionSamplingFrequencyIndex >> 1);
+                        codecPrivateDatafield[2] = (extensionSamplingFrequencyIndex << 7) | (0x02 << 2);// origin object type equals to 2 => AAC Main Low Complexity
+                        codecPrivateDatafield[3] = 0x0; //alignment bits
+
+                        arr16 = new Uint16Array(2);
+                        arr16[0] = (codecPrivateDatafield[0] << 8) + codecPrivateDatafield[1];
+                        arr16[1] = (codecPrivateDatafield[2] << 8) + codecPrivateDatafield[3];
+                        //convert decimal to hex value
+                        codecPrivateDataHex = arr16[0].toString(16);
+                        codecPrivateDataHex = arr16[0].toString(16)+arr16[1].toString(16);
+
+                    }else{
+                        // 2 bytes :     XXXXX         XXXX          XXXX              XXX
+                        //           ' ObjectType' 'Freq Index' 'Channels value'   'GAS = 000'
+                        codecPrivateDatafield = new Uint8Array(2);
+                        //Freq Index is present for 3 bits in the first byte, last bit is in the second
+                        codecPrivateDatafield[0] = (objectType << 3) | (indexFreq >> 1);
+                        codecPrivateDatafield[1] = (indexFreq << 7) | (node.Channels << 3);
+                        // put the 2 bytes in an 16 bits array
+                        arr16 = new Uint16Array(1);
+                        arr16[0] = (codecPrivateDatafield[0] << 8) + codecPrivateDatafield[1];
+                        //convert decimal to hex value
+                        codecPrivateDataHex = arr16[0].toString(16);
+                    }
+
+                    codecPrivateDatafield = ""+codecPrivateDataHex;
+                    node.CodecPrivateData = codecPrivateDatafield.toUpperCase();
+                }
+                else if (objectType === 0)
+                    objectType = (parseInt(codecPrivateDatafield.substr(0, 2), 16) & 0xF8) >> 3;
+                
                 avcoti += "." + objectType;
             }
 
             var codecs = mimeType + "." + avcoti;
-
+            
             return {
                 id: node.Id,
                 bandwidth: node.Bitrate,
@@ -391,29 +468,12 @@ Mss.dependencies.MssParser = function () {
                 height: node.MaxHeight,
                 codecs: codecs,
                 audioSamplingRate: node.SamplingRate,
+                audioChannels:node.Channels,
                 codecPrivateData: "" + node.CodecPrivateData,
                 BaseURL: node.BaseURL
             };
         };
         adaptationSet.children.push(representation);
-
-
-        //AudioChannelConfiguration for audio tracks
-        audioChannelConfiguration = {};
-        audioChannelConfiguration.name = "AudioChannelConfiguration";
-        audioChannelConfiguration.isRoot = false;
-        audioChannelConfiguration.isArray = false;
-        audioChannelConfiguration.parent = adaptationSet;
-        audioChannelConfiguration.children = [];
-        audioChannelConfiguration.properties = common;
-        audioChannelConfiguration.transformFunc = function(node) {
-            return {
-                schemeIdUri : 'urn:mpeg:dash:23003:3:audio_channel_configuration:2011',
-                value : node.Channels
-            };
-        };
-        adaptationSet.children.push(audioChannelConfiguration);
-
 
         segmentTemplate = {};
         segmentTemplate.name = "SegmentTemplate";
@@ -518,7 +578,6 @@ Mss.dependencies.MssParser = function () {
         var period = manifest.Period_asArray[0],
             adaptations = period.AdaptationSet_asArray,
             i,
-            j,
             len;
 
         // In case of live streams, set availabilityStartTime property according to DVRWindowLength
@@ -531,7 +590,7 @@ Mss.dependencies.MssParser = function () {
         period.start = 0;
 
         // Propagate content protection information into each adaptation 
-        for (i = 0, len = adaptations.length; i < len; i += 1) 
+        for (i = 0, len = adaptations.length; i < len; i += 1)
         {
             // In case of VOD streams, check if start time is greater than 0.
             // Therefore, set period start time to the higher adaptation start time
@@ -561,9 +620,10 @@ Mss.dependencies.MssParser = function () {
         var manifest = null;
         var converter = new X2JS(matchers, '', true);
         var iron = new Custom.utils.ObjectIron(getDashMap());
- 
+
         // Process 'CodecPrivateData' attributes values so that they can be identified/processed as hexadecimal strings
         data = data.replace(/CodecPrivateData="/g, "CodecPrivateData=\"0x");
+        data = data.replace(/CodecPrivateData='/g, "CodecPrivateData=\'0x");
 
         this.debug.log("[MssParser]", "Converting from XML.");
         manifest = converter.xml_str2json(data);

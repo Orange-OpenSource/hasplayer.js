@@ -21,7 +21,7 @@ Dash.dependencies.DashParser = function () {
         SECONDS_IN_MIN = 60,
         MINUTES_IN_HOUR = 60,
         MILLISECONDS_IN_SECONDS = 1000,
-        durationRegex = /^P(([\d.]*)Y)?(([\d.]*)M)?(([\d.]*)D)?T(([\d.]*)H)?(([\d.]*)M)?(([\d.]*)S)?/,
+        durationRegex = /^P(([\d.]*)Y)?(([\d.]*)M)?(([\d.]*)D)?T?(([\d.]*)H)?(([\d.]*)M)?(([\d.]*)S)?/,
         datetimeRegex = /^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2})(?::([0-9]*)(\.[0-9]*)?)?(?:([+-])([0-9]{2})([0-9]{2}))?/,
         numericRegex = /^[-+]?[0-9]+[.]?[0-9]*([eE][-+]?[0-9]+)?$/,
         matchers = [
@@ -311,49 +311,47 @@ Dash.dependencies.DashParser = function () {
         },
 
         internalParse = function (data, baseUrl) {
-            this.debug.log("[DashParser]", "Doing parse.");
+            //this.debug.log("Doing parse.");
 
             var manifest,
                 converter = new X2JS(matchers, '', true),
-                iron = new ObjectIron(getDashMap());
+                iron = new ObjectIron(getDashMap()),
+                start = new Date(),
+                json = null,
+                ironed = null;
 
-            this.debug.log("[DashParser]", "Converting from XML.");
+            try {
+                //this.debug.log("Converting from XML.");
             manifest = converter.xml_str2json(data);
-            
-
-            // BBE: gestion erreur de parsing manifest
-            if (manifest == null)
-            {
-                this.debug.log("[DashParser]", "Failed to parse manifest!!");
-                return Q.when(null);
-            }
+                json = new Date();
 
             if (!manifest.hasOwnProperty("BaseURL")) {
-                this.debug.log("[DashParser]", "Setting baseURL: " + baseUrl);
+                    //this.debug.log("Setting baseURL: " + baseUrl);
                 manifest.BaseURL = baseUrl;
             } else {
                 // Setting manifest's BaseURL to the first BaseURL
                 manifest.BaseURL = manifest.BaseURL_asArray[0];
 
-                if (manifest.BaseURL.indexOf("http") !== 0) {
+                    if (manifest.BaseURL.toString().indexOf("http") !== 0) {
                     manifest.BaseURL = baseUrl + manifest.BaseURL;
                 }
             }
 
-            this.debug.log("[DashParser]", "Flatten manifest properties.");
+                //this.debug.log("Flatten manifest properties.");
             iron.run(manifest);
+                ironed = new Date();
 
-            this.debug.log("[DashParser]", "Parsing complete.")
-            this.debug.log("[DashParser]", "Parsing complete.");
-
-
-
-
+                this.debug.log("Parsing complete: ( xml2json: " + (json.getTime() - start.getTime()) + "ms, objectiron: " + (ironed.getTime() - json.getTime()) + "ms, total: " + ((ironed.getTime() - start.getTime()) / 1000) + "s)");
+            } catch (err) {
+                this.errHandler.manifestError("parsing the manifest failed", "parse", data);
+                return Q.reject(err);
+            }
             return Q.when(manifest);
         };
 
     return {
         debug: undefined,
+        errHandler: undefined,
         parse: internalParse
     };
 };

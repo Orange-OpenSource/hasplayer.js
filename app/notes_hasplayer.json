@@ -1,0 +1,24 @@
+{
+    "notes": [
+        {
+            "title": "Release Notes v1.1.0",
+            "items": [
+                "Based on dash.js v1.2.0 (see dash.js release notes)",
+                "Simplified BufferController with sequential segments downloading",
+                "Optimized and simplified live edge searching",
+                "Added quality filtering functionnality",
+                "Sample application (samples/DemoPlayer) with dynamic bandwidth chart",
+            ]
+        },
+        {
+            "title": "Release Notes v1.0.0",
+            "items": [
+                "Based on dash.js v1.1.0 (see dash.js release notes)",
+                "Smooth Streaming support (live and VOD)",
+                "Automatic protocol detection (DASH vs MSS)",
+                "PlayReady support with CustomData and license URL",
+                "Multi-languages audio support"
+            ]
+        }
+    ]
+}

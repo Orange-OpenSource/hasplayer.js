@@ -14,6 +14,7 @@
 MediaPlayer.vo.metrics.HTTPRequest = function () {
     "use strict";
 
+    this.stream = null;         // type of stream ("audio" | "video" etc..)
     this.tcpid = null;          // Identifier of the TCP connection on which the HTTP request was sent.
     this.type = null;           // This is an optional parameter and should not be included in HTTP request/response transactions for progressive download.
                                     // The type of the request:
@@ -34,6 +35,9 @@ MediaPlayer.vo.metrics.HTTPRequest = function () {
     this.interval = null;       // The duration of the throughput trace intervals (ms), for successful requests only.
     this.mediaduration = null;  // The duration of the media requests, if available, in milliseconds.
     this.trace = [];            // Throughput traces, for successful requests only.
+    // ORANGE: add request media start time and quality
+    this.startTime = null;      // the media start time of the segment
+    this.quality = null;        // the quality index of the segment
 };
 
 MediaPlayer.vo.metrics.HTTPRequest.prototype = {

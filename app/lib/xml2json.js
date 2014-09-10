@@ -330,7 +330,7 @@ function X2JS(matchers, attrPrefix, ignoreRoot) {
 	this.parseXmlString = function(xmlDocStr) {
 		var xmlDoc;
 		if (window.DOMParser) {
-                        // BBE: gestion erreur de parsing XML
+			// ORANGE: XML parsing management
 			try
 			{
 				var parser=new window.DOMParser();

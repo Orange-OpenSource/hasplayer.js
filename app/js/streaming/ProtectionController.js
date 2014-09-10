@@ -76,11 +76,10 @@ MediaPlayer.dependencies.ProtectionController = function () {
         updateFromMessage = function (kid, session, msg, laURL) {
             var self = this,
                 result;
-
             result = self.protectionModel.updateFromMessage(kid, msg, laURL);
             result.then(
                 function (data) {
-                    session.update(data);
+                        session.update(data);
             });
             return result;
         };

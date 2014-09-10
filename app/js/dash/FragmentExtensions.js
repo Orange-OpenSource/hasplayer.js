@@ -47,7 +47,7 @@ Dash.dependencies.FragmentExtensions = function () {
 
             version = d.getUint8(pos);
 
-            this.debug.log("[FragmentExtension]", "position: " + pos);
+            this.debug.log("position: " + pos);
 
             if (version === 0) {
                 pos += 4;
