@@ -293,7 +293,9 @@ MediaPlayer = function (aContext) {
 
         // ORANGE: add function to set some player configuration parameters
         setConfig: function (params) {
-            this.config.setParams(params);
+            if (config) {
+                this.config.setParams(params);                
+            }
         },
 
         // ORANGE: add function to switch audioTracks for a media
