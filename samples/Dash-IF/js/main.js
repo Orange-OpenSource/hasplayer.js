@@ -141,7 +141,6 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     firstAccess = true;
 
 
-    $scope.chromecast = {};
 
     ////////////////////////////////////////
     //
@@ -732,9 +731,6 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     };
 
     $scope.doLoad = function () {
-        if($scope.chromecast.playing){
-            $scope.stopInChromecast();
-        }
 
         firstAccess = true;
         

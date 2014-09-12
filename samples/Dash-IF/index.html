@@ -31,7 +31,6 @@
     <script src="lib/angular.treeview/angular.treeview.js"></script>
     <script src="js/metrics.js"></script>
     <script src="js/main.js"></script>
-    <script src="js/controllers/chromecastController.js"></script>
     <!-- endbuild -->
 
     <!-- source -->
@@ -229,13 +228,6 @@
                 <span class="input-group-btn">
                     <button class="btn btn-primary" ng-disabled="!selectedItem.url" type="button" ng-click="loadInPlayer(selectedItem.url)">Load in Player</button>
                 </span>
-                <span class="input-group-btn" ng-controller="ChromecastController">
-                     <img height="34" title="load on chromecast" class="btn btn-primary" ng-disabled="!selectedItem.url" ng-show="chromecast.apiOk" ng-hide="chromecast.playing" ng-click="loadInChromecast()" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADMAAAAlCAYAAADvLtGsAAAEBUlEQVRYCe1YaUhUURT+xmXcddQobKUiLIoWNLWkENNGywwz2jOUECmCdqNCo8QlkzaIyEzNJIj606JOaoWRleG+RH9SW360SZnLjLj0zoUxEe68p+PwJunCY95w373n+852zz2Ktt89Axgnw2Kc8GA0/pMxV2taiQHzWugJCwvzMGB/fz8q695xIYuSsbW1hZWVleyEiEhvby+XCE2IknF0dISekMGdTDxJRLRarUEpomSIiL29PbNOTv5dWFpaGtzQFJM7t0SIWoXkigYDuZjezeQgwkAKMavHYUhZopahxVL81ZAQY+d6enokxayoZQjIwMCAJDMbC5q3nuKFMIgNyWTIOnINkj1mZOQiMVK5kiwz0k3l+n5ckRHNZleu5aLsWSkqXr+US+GS5Sr+hftMZLgaSqUSlKLv3ddwyXHdrODRA3z40MpdaI4TXDdLPHGUlS4qlSv8lvkjNCwcvn7LzZHDICauZezs7ECPTqfFk9LHOLAvDhvCQ1D8uGhwsbm9cMlMnDgJzs7OcHFxgZOTExwcHPDj+zckHD+CPbHR+Pzpo7lxgcEE0NrSjIb6WjwVLNPS/J4FoE6nY6W4nVBJp6ZfwOIlXiYnJTUBGCQzFGVNdSXycq6DCNK9oru7G319fTiZmISg1SFDPx3zd6lkuG6WknQKmsJH6OzsZODIAqnnLiIicjPowkauZ21tjeQzCSCi5jC4lvH3WcTuEE5C3KxZG45dMbEsbgh0abEGOVlX0dHRwcgqlTbIzMmHh8dkk3Ay2jKkdXq0gjvdvXMb0Ts24U3FKwZ2VbAaUdGxLNtRYqCMl3w6wSRERrIp183oTCF30vcA2tp+4Hj8QRQVPmT7B6tDEaxew/oDRKipsR4lgsXkHFwyaRmXcO3GLaxbv4ERIsAWCgUyziajrraaYd60dSfc3ScwQnQm3czOlJOL4dSsR/ZGKDIvX0hnMdLV1QU3gUBmdj6LIYqfG5lXBFfTob29Hclp5+Ht48uWHjuyHyXCIasQlDCaQW5OSlSpVMzlScaoarPD+/fibVMjw7DUdxm2R8UwC1Cnhg7PvNwsNhcQGARXVzcmjDo5pSV/XS0waPVgXOlddiS/RETf5pKiEG5tVv7iOWprqnAo/gRCQsOgFp6mhnrhKlDOzpcSTSFidsexatbbxw/FmgL2PjRNe3n7sBRuY2MjqSEx3HrUSaWuDFXMUq7tXDK0ATUSzqenYObM2fCcOw8bN29DVWUFCByl5devyrFiZQBmzZ7DcJDg9l8/8fXrF1A5RPFUUFw2HKPJ/nMTAJmYHhp6l5o2fQYmT5k6qK3G+jo2P2/+AqY50iT5OZU+cgzuoSkHGGNlci1j7MZyrP9PRg6tS5H5B2SPbRRue6W0AAAAAElFTkSuQmCC"/>
-
-
-                    <img height="34" class="btn btn-primary" ng-disabled="!selectedItem.url" ng-show="chromecast.playing" ng-click="stopInChromecast()" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAVlJREFUeNrs1r9LAmEcx/G7tKBJkigi818IosWloaEkDRGnxkIbgijUQSIionIpox+D0CqNES1Bg4ZOzroJUktrQkMQ6vk+eKbIJX3uDJ6DF9/HR47n4/e5R9UNw9DsvIY0my8VQAWwPYDzt8kPbVHa2RzT8vrgd6Bb2l6ubl11/vXGXtquTsG/eAiXsGBLB3joQpR3HIipFVSs3IIHVPFKmBS1iDlcWRXgBM+YQho1BDlKO9RNtKUGYKF9LDP04gYTuKcbCeZvGSdkPwMN3DGcYcFt6io+ccb8OvUSTzK3oIU1lFnwXGxHGN+4FltjBmvKOoaTiCCDOEbpxBZhDhmf4pjXG9ThfgTQf/4rZqFdShZuswvwIIAC3uDCNHx4lPFzfIESGoiKuT1u/BJHdAR+Eagt65twHkkWPaIjdfPTUsepL4hhlvdyVEfft0D9GqoAKoDVV0eAAQB721jVxWxp7wAAAABJRU5ErkJggg=="/>
-
-                </span>
             </div>
         </div>
 
@@ -252,13 +244,7 @@
         <div class="row">
             <div class="dash-video-player col-md-9">
                 <!-- <video controls="true"></video> -->
-                <video controls="true" class="video-player video-js vjs-default-skin" width="848" height="424" ng-show="!chromecast.playing"></video>
-                <div class="chromeCastPanel" class="video-player video-js vjs-default-skin" style="width:848px; height:424px" ng-show="chromecast.playing">
-                    <button ng-show="chromecast.infoDisplay" ng-click="chromecast.toggleInformation()">Masquer les infos</button>
-                    <button ng-show="!chromecast.infoDisplay" ng-click="chromecast.toggleInformation()">Afficher les infos</button>
-                    <button ng-show="!chromecast.cbDisplay" ng-click="chromecast.toggleControlbar()">Afficher la control bar</button>
-                    <button ng-show="chromecast.cbDisplay" ng-click="chromecast.toggleControlbar()">Masquer la control bar</button>
-                </div>
+                <video controls="true" class="video-player video-js vjs-default-skin" width="848" height="424"></video>
                 <div class="panel">
                     <div class="panel-heading panel-top">
                         <span class="panel-title">Charts</span>

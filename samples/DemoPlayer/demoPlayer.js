@@ -1,7 +1,4 @@
-// variable to now if we are on chromecast
-var isCrKey = (cast && cast.receiver && navigator.userAgent.lastIndexOf("CrKey") != -1);
-
-var DEBUG = isCrKey ? false:true;
+var DEBUG = true;
 // customizable settings
 // hideMetricsAtStart : if true all metrics are hidden at start and ctrl+i show them one by one; else all metrics are shown at start and ctrl+i hide them one by one
 var hideMetricsAtStart = false;
@@ -427,11 +424,6 @@ function onLoaded () {
     player.attachView(video);
     player.setAutoPlay(true);
     //player.addEventListener("metricAdded", update, false);
-
-    // Initialize receiver only if cast.receiver is available
-    if (isCrKey) {
-        var ccastReceiver = new HasCastReceiver(player);
-    }
 
     // get url
     var query = window.location.search;
