@@ -169,7 +169,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
     $scope.optionsBandwidthGrid = null;
 
-    $scope.streamTypes = ["HLS", "MSS", "DASH"];
+    $scope.streamTypes = ["MSS", "DASH"];
     $scope.streamType = "MSS";
 
     $('#sliderBitrate').labeledslider({
