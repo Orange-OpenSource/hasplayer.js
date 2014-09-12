@@ -11,17 +11,18 @@ If your goal is to improve or extend the code and contribute back to this projec
 
 ## Quick Start
 
-Download 'development' branch, extract and open home page of any sample from the samples folder (hasplayer.js/samples/) in your web browser.
+Download desired branch, extract and open home page of any sample from the samples folder (hasplayer.js/samples/) in your web browser.
 A build version can be obtained by running `grunt build`. The build files are generated under 'hasplayer.js/build' folder. 
 
 ## Demo
 
-A demonstration application, based on dash.js project home application, and using hasplayer.js is located here:
+A demonstration application, based on dash.js project's home application, and using hasplayer.js is located here:
 http://tv-has.orange-labs.fr/hasplayer/
 
 ## License
 
-All code in this repository is covered by the [BSD-3 license](http://opensource.org/licenses/BSD-3-Clause). 
+All code in this repository is covered by the [BSD-3 license](http://opensource.org/licenses/BSD-3-Clause).
+See LICENSE file for copyright details.
 
 
 
