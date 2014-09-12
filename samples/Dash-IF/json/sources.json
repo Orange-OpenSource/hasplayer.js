@@ -28,25 +28,25 @@
             "type": "DASH",
             "name": "Caption Test",
             "url": "http://dash.edgesuite.net/akamai/test/caption_test/ElephantsDream/elephants_dream_480p_heaac5_1.mpd",
-            "browsers": ""
+            "browsers": "cdsbi"
         },
         {
             "type": "DASH",
             "name": "4K",
             "url": "http://dash.edgesuite.net/akamai/test/tears1/tearsofsteel_4096x1714_14Mbps.mpd",
-            "browsers": "cd"
+            "browsers": "cdsbi"
         },
         {
             "type": "DASH",
             "name": "Fraunhofer - HEACC 2.0 - Dream",
             "url": "http://dash.edgesuite.net/digitalprimates/fraunhofer/480p_video/heaac_2_0_with_video/ElephantsDream/elephants_dream_480p_heaac2_0.mpd",
-            "browsers": "cdb"
+            "browsers": "cdsbi"
         },
         {
             "type": "DASH",
             "name": "Fraunhofer - HEACC 2.0 - Sintel",
             "url": "http://dash.edgesuite.net/digitalprimates/fraunhofer/480p_video/heaac_2_0_with_video/Sintel/sintel_480p_heaac2_0.mpd",
-            "browsers": "cdb"
+            "browsers": "cdsbi"
         },
         {
             "name": "Fraunhofer - HEACC 5.1 - 6 CH ID",
