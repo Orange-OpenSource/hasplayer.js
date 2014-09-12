@@ -11,7 +11,8 @@ If your goal is to improve or extend the code and contribute back to this projec
 
 ## Quick Start
 
-Download 'master' or latest tagged release, extract and open home page of any sample from the samples folder (hasplayer.js/samples/) in your web browser.
+Download 'development' branch, extract and open home page of any sample from the samples folder (hasplayer.js/samples/) in your web browser.
+A build version can be obtained by running `grunt build`. The build files are generated under 'hasplayer.js/build' folder. 
 
 ## Demo
 
