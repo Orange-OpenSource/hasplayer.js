@@ -11,16 +11,17 @@ If your goal is to improve or extend the code and contribute back to this projec
 
 ## Quick Start
 
-Download 'master' or latest tagged release, extract and open main folder dash.js/index.html in your web browser to view the main test file.
+Download desired branch, extract and open main folder dash.js/index.html in your web browser to view the main test file.
 
 ## Demo
 
-A demonstration application, based on dash.js project home application, and using hasplayer.js is located here:
+A demonstration application, based on dash.js project's home application, and using hasplayer.js is located here:
 http://tv-has.orange-labs.fr/hasplayer/
 
 ## License
 
 All code in this repository is covered by the [BSD-3 license](http://opensource.org/licenses/BSD-3-Clause). 
+See LICENSE file for copyright details.
 
 
 
