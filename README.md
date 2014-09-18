@@ -16,7 +16,7 @@ Download desired branch, extract and open main folder dash.js/index.html in your
 ## Demo
 
 A demonstration application, based on dash.js project's home application, and using hasplayer.js is located here:
-http://tv-has.orange-labs.fr/hasplayer/
+http://orange-opensource.github.io/hasplayer.js
 
 ## License
 
