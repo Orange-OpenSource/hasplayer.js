@@ -17,7 +17,7 @@ A build version can be obtained by running `grunt build`. The build files are ge
 ## Demo
 
 A demonstration application, based on dash.js project's home application, and using hasplayer.js is located here:
-http://tv-has.orange-labs.fr/hasplayer/
+http://orange-opensource.github.io/hasplayer.js
 
 ## License
 
