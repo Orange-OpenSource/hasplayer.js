@@ -293,7 +293,7 @@ MediaPlayer = function (aContext) {
 
         // ORANGE: add function to set some player configuration parameters
         setConfig: function (params) {
-            if (config) {
+            if (this.config) {
                 this.config.setParams(params);                
             }
         },
