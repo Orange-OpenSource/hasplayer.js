@@ -1,5 +1,5 @@
 module.exports = {
-	all: {
+	infos: {
 		options: {
 			patterns: [
 			{
@@ -61,6 +61,45 @@ module.exports = {
 		files: [
 		{expand: true, flatten: true, src: ['<%= path %>/player.html'], dest: '<%= path %>'},
 		{expand: true, flatten: true, src: ['<%= path %>/dashif.html'], dest: '<%= path %>'}
+		]
+	},
+	copyright: {
+		options: {
+			patterns: [
+			{
+				match: 'COPYRIGHTTOREPLACE',
+				replacement: '<%= grunt.file.read("./LICENSE") %>\n\n'
+			}
+			]
+		},
+		files: [
+		{expand: true, flatten: true, src: ['<%= path %>/hasplayer.js'], dest: '<%= path %>'}
+		]
+	},
+	noCopyright: {
+		options: {
+			patterns: [
+			{
+				match: 'COPYRIGHTTOREPLACE',
+				replacement: ''
+			}
+			]
+		},
+		files: [
+		{expand: true, flatten: true, src: ['<%= path %>/dashif.js', '<%= path %>/player.js'], dest: '<%= path %>'}
+		]
+	},
+	chromecastId:{
+		options:{
+			patterns: [
+				{
+					match: /7E99FD26/g,
+					replacement: '9ECD1B68'
+				}
+			]
+		},
+		files:[
+		{expand: true, flattend:true, src:['<%= path %>/dashif.js']}
 		]
 	}
 };

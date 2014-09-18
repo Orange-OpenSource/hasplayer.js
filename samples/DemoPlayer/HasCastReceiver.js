@@ -79,9 +79,7 @@ var cast = window.cast || {};
 
 		setTimeout(this.toggleControlBar.bind(this),10000);
 
-		$("#infosToToggle").hide();
-		$("#chartToToggle").hide();
-		$("#sliderToToggle").hide();
+		this.toggleInformation();
 	};
 
 	HasCastReceiver.prototype.sendMessage = function(senderId,evt,message) {

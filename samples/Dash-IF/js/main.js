@@ -141,6 +141,8 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     firstAccess = true;
 
 
+    $scope.chromecast = {};
+    $scope.chromecast.apiOk = false;
 
     ////////////////////////////////////////
     //
@@ -168,7 +170,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
     $scope.optionsBandwidthGrid = null;
 
-    $scope.streamTypes = ["MSS", "DASH"];
+    $scope.streamTypes = ["HLS", "MSS", "DASH"];
     $scope.streamType = "MSS";
 
     $('#sliderBitrate').labeledslider({
@@ -731,6 +733,9 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     };
 
     $scope.doLoad = function () {
+        if($scope.chromecast.playing){
+            $scope.stopInChromecast();
+        }
 
         firstAccess = true;
         
@@ -788,3 +793,6 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         }
     }
 }]);
+
+
+
