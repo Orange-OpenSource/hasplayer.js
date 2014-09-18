@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html ng-app="DashPlayer" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>HAS JavaScript Player</title>
+    <meta name="description" content="" />
+    <link rel="icon" type="image/png" href="app/img/orange.ico" />
+    <meta name="viewport" content="width=device-width, height=device-height, user-scalable=no">
+
+    <link rel="stylesheet" href="app/lib/bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="app/lib/bootstrap/css/bootstrap-glyphicons.css">
+    <link rel="stylesheet" href="app/lib/angular.treeview/css/angular.treeview.css">
+    <link rel="stylesheet" href="app/lib/jquery.ui/jquery-ui-1.10.3.custom.min.css">
+    <link rel="stylesheet" href="app/lib/jquery.ui.labeledSlider/jquery.ui.labeledslider.css">
+    <link rel="stylesheet" href="app/css/main.css">
+
+    <!-- http://jquery.com/ -->
+    <script src="app/lib/jquery/jquery-1.10.2.min.js"></script>
+    <script src="app/lib/jquery.ui/jquery-ui-1.10.3.custom.min.js"></script>
+
+    <!-- http://angularjs.org/ -->
+    <script src="app/lib/angular/angular.min.js"></script>
+    <script src="app/lib/angular/angular-resource.min.js"></script>
+
+    <!-- http://getbootstrap.com/ -->
+    <script src="app/lib/bootstrap/js/bootstrap.min.js"></script>
+
+    <!-- presentation libs -->
+    <script src="app/lib/flot/jquery.flot.js"></script>
+
+    <!-- https://github.com/eu81273/angular.treeview -->
+    <script src="app/lib/angular.treeview/angular.treeview.min.js"></script>
+    <!-- http://bseth99.github.io/jquery-ui-extensions/index.html -->
+    <script src="app/lib/jquery.ui.labeledslider/jquery.ui.labeledslider.js"></script>
+
+    <!-- http://log4javascript.org/ -->
+    <script src="app/lib/log4javascript-1.4.6/log4javascript.js"></script>
+
+    <!-- https://github.com/kriskowal/q -->
+    <script src="dash.all.js"></script>
+    <script src="app/metrics.js"></script>
+    <script src="app/main.js"></script
+
+</head>
+<body ng-controller="DashController">
+    <div class="modal fade" id="streamModal">
+        <div class="modal-dialog">
+            <div class="list-group modal-list">
+                <a
+                   ng-repeat="item in availableStreams"
+                   href="#"
+                   class="list-group-item"
+                   ng-click="setStream(item)"
+                   data-dismiss="modal"
+                   ng-show="isStreamAvailable(item.browsers)">
+                    {{item.name}}
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row title-header">
+            <a href="http://dashif.org/" target="_blank"><img class="image" src="app/img/if.png"/></a>
+            <img class="image" src="app/img/orange.gif"/>
+            <span id="big-title">HAS Javascript Player</span>
+            <span>1.0.0</span>
+            <span style="font-size:16px">(based on dash.js {{version}})</span>
+        </div>
+
+        <div class="row">
+            <div class="input-group">
+                <div id="desktop-streams" class="input-group-btn">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                        Stream <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li
+                            ng-repeat="item in availableStreams"
+                            ng-click="setStream(item)"
+                            ng-show="isStreamAvailable(item.browsers)">
+                            <a>{{item.name}}</a>
+                        </li>
+                    </ul>
+                </div>
+                <div id="mobile-streams" class="input-group-btn">
+                    <button type="button" class="btn btn-primary" data-toggle="modal" href="#streamModal">
+                        Stream <span class="caret"></span>
+                    </button>
+                </div>
+                <input type="text" class="form-control" placeholder="manifest" ng-model="selectedItem.url">
+                <span class="input-group-btn">
+                    <button class="btn btn-primary" type="button" ng-click="doLoad()">Load</button>
+                </span>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="dash-video-player col-md-9">
+                <video controls="true"></video>
+            </div>
+            <div class="col-md-3">
+                <!--div class="panel">
+                    <div class="panel-heading panel-top">
+                        <span class="panel-title">ABR</span>
+                        <div class="btn-group">
+                            <button
+                                type="button"
+                                class="btn btn-default"
+                                ng-class="{active:abrEnabled == false}"
+                                ng-click="setAbrEnabled(false)">
+                                <span>Off</span>
+                            </button>
+                            <button
+                                type="button"
+                                class="btn btn-default active"
+                                ng-class="{active:abrEnabled == true}"
+                                ng-click="setAbrEnabled(true)">
+                                <span>On</span>
+                            </button>
+                        </div>
+                    </div>
+                </div-->
+                <div class="panel">
+                    <div class="panel-heading panel-top">
+                        <span class="panel-title">Video</span>
+                        <!--div class="btn-group">
+                            <button
+                                type="button"
+                                class="btn btn-default"
+                                ng-click="abrDown('video')">
+                                <span class="glyphicon glyphicon-minus"></span>
+                            </button>
+                            <button
+                                type="button"
+                                class="btn btn-default"
+                                ng-click="abrUp('video')">
+                                <span class="glyphicon glyphicon-plus"></span>
+                            </button>
+                        </div-->
+                        <div class="btn-group"><div id="sliderBitrate"></div></div>
+                    </div>
+                    <div class="panel-body panel-stats">
+                        <p class="text-warning">{{videoBitrate}} kbps</p>
+                        <p class="text-warning">{{videoWidth}}x{{videoHeight}}</p>
+                        <p class="text-warning">{{videoCodecs}}</p>
+                        <p class="text-primary">Rep Index: <span class="text-success">{{videoIndex}}</span><span class="text-warning">{{videoPendingIndex}}</span>/<span class="text-success">{{videoMaxIndex}}</span></p>
+                        <p class="text-primary">Buffer Length: <span class="text-success">{{videoBufferLength}}</span></p>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-heading panel-top">
+                        <span class="panel-title">Audio</span>
+                         <div>
+                             <select id="audioTracksSelect"
+                                    ng-model="audioData"
+                                    ng-options="track.lang +' - ' + track.id for track in audioTracks"
+                                    required="true"
+                                    ng-change="selectAudioTrack(audioData)">
+                            </select>
+                         </div>
+                        <!--div class="btn-group">
+                            <button
+                                type="button"
+                                class="btn btn-default"
+                                ng-click="abrDown('audio')">
+                                <span class="glyphicon glyphicon-minus"></span>
+                            </button>
+                            <button
+                                type="button"
+                                class="btn btn-default"
+                                ng-click="abrUp('audio')">
+                                <span class="glyphicon glyphicon-plus"></span>
+                            </button>
+                        </div-->
+                    </div>
+                    <div class="panel-body panel-stats">
+                        <p class="text-warning">{{audioBitrate}} kbps</p>
+                        <p class="text-warning">{{audioCodecs}}</p>
+                        <p class="text-primary">Rep Index: <span class="text-success">{{audioIndex}}</span><span class="text-warning">{{audioPendingIndex}}</span>/<span class="text-success">{{audioMaxIndex}}</span></p>
+                        <p class="text-primary">Buffer Length: <span class="text-success">{{audioBufferLength}}</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="panel">
+                <div class="panel-heading panel-top">
+                    <span class="panel-title">Charts</span>
+                    <div class="btn-group">
+                        <button
+                            type="button"
+                            class="btn btn-default"
+                            ng-class="{active:showCharts == false}"
+                            ng-click="setCharts(false)">
+                            Hide
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-default"
+                            ng-class="{active: (switchCharts == false && showCharts == true)}"
+                            ng-click="setSwitchCharts(false)">
+                            Buffer Chart
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-default"
+                            ng-class="{active: (switchCharts == true && showCharts == true)}"
+                            ng-click="setSwitchCharts(true)">
+                            Bandwidth Chart
+                        </button>
+                    </div>
+                </div>
+                <div ng-switch on="showCharts">
+                    <div class="panel-body panel-stats" ng-switch-when="true">
+                        <div ng-switch on="switchCharts">
+                            <div ng-switch-when="false">
+                        <chart ng-model="bufferData"></chart>
+                    </div>
+                            <div ng-switch-when="true">
+                                <chart2 id="chartBandwidth" class="overlayChart" ng-model="bandwidthData"></chart2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="panel">
+                <div class="panel-heading panel-top">
+                    <span class="panel-title">Debug</span>
+                    <div class="btn-group">
+                        <button
+                            type="button"
+                            class="btn btn-default"
+                            ng-class="{active:showDebug == false}"
+                            ng-click="setDebug(false)">
+                            Hide
+                        </button>
+                        <button
+                            type="button"
+                            class="btn btn-default"
+                            ng-class="{active:showDebug == true}"
+                            ng-click="setDebug(true)">
+                            Show
+                        </button>
+                    </div>
+                </div>
+                <div ng-switch on="showDebug">
+                    <div class="panel-body panel-stats" ng-switch-when="true">
+                        <ul class="nav nav-tabs">
+                            <li class="dropdown">
+                                <a href="#" id="metricsDropdown" class="dropdown-toggle" data-toggle="dropdown">Metrics <b class="caret"></b></a>
+                                <ul class="dropdown-menu" role="menu" aria-labelledby="metricsDropdown">
+                                    <li><a href="#video-metrics" tabindex="-1" data-toggle="tab">Video</a></li>
+                                    <li><a href="#audio-metrics" tabindex="-1" data-toggle="tab">Audio</a></li>
+                                </ul>
+                            </li>
+                            <li><a href="#notes" data-toggle="tab">Release Notes</a></li>
+                        </ul>
+                        <div id="debugTabContent" class="tab-content">
+                            <div class="tab-pane" id="video-metrics">
+                                <button
+                                    type="button"
+                                    class="btn btn-default"
+                                    ng-click="getVideoTreeMetrics()">
+                                    Video - Update
+                                </button>
+                                <div
+                                    class="tree"
+                                    data-angular-treeview="true"
+                                    data-tree-model="videoMetrics"
+                                    data-node-label="text"
+                                    data-node-children="items">
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="audio-metrics">
+                                <button
+                                    type="button"
+                                    class="btn btn-default"
+                                    ng-click="getAudioTreeMetrics()">
+                                    Audio - Update
+                                </button>
+                                <div
+                                    class="tree"
+                                    data-angular-treeview="true"
+                                    data-tree-model="audioMetrics"
+                                    data-node-label="text"
+                                    data-node-children="items">
+                                </div>
+                            </div>
+                            <div class="tab-pane" id="notes">
+                                <div ng-repeat="note in releaseNotes" class="note-box">
+                                    <span><b>{{note.title}}</b></span><br/>
+                                    <span ng-repeat="text in note.items">
+                                        {{text}}<br/>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+ 
+</body>
+</html>
