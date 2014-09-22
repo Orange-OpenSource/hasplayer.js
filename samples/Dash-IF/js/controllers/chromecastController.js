@@ -94,7 +94,7 @@ angular.module("DashPlayer").controller("ChromecastController", ["$scope", "$win
                         currentSession = null;
                     break;
                     case "receiver_unavailable":
-                        console.info("receiver unavailable tell use to retry");
+                        console.info("receiver unavailable tell user to retry");
                         currentSession = null;
                     break;
                 }
@@ -136,6 +136,16 @@ angular.module("DashPlayer").controller("ChromecastController", ["$scope", "$win
 
                 case "toggleInformation":
                     $scope.chromecast.infoDisplay = msg.data;
+                break;
+
+                case "toggleMute":
+                    $scope.chromecast.muted = msg.data;
+                break;
+
+                case "HaveMultiAudio":
+                    console.info("MultiAudio", msg.data);
+                    $scope.chromecast.audioTracks = msg.data;
+                    $scope.chromecast.audioData = msg.data[0];
                 break;
             }
 
@@ -183,7 +193,6 @@ angular.module("DashPlayer").controller("ChromecastController", ["$scope", "$win
                     var isLive = $scope.player.metricsExt.manifestExt.getIsDynamic($scope.player.metricsExt.manifestModel.getValue());
                     $scope.player.getVideoModel().pause();
                     $scope.$apply();
-                    debugger;
                     if(!isLive){
                         var timeToSeek = $scope.player.getVideoModel().getCurrentTime();
                         params.url+="#s="+timeToSeek;
@@ -221,6 +230,16 @@ angular.module("DashPlayer").controller("ChromecastController", ["$scope", "$win
         $scope.chromecast.toggleControlbar = function(){
             sendMessage({"command":"toggleControlBar"});
         };
+
+        $scope.chromecast.toggleMute = function(){
+            sendMessage({"command":"toggleMute"});
+        };
+
+        $scope.chromecast.selectAudioTrack = function(audioTrack){
+            sendMessage({command:"changeTrack",
+                        data:audioTrack});
+        };
+        
     }
 
     $scope.chromecast.apiOk = false;
@@ -228,5 +247,7 @@ angular.module("DashPlayer").controller("ChromecastController", ["$scope", "$win
     $scope.chromecast.playing = false;
     $scope.chromecast.cbDisplay = true;
     $scope.chromecast.infoDisplay = false;
+    $scope.chromecast.muted = false;
+
 
 }]);
