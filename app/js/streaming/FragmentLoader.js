@@ -104,6 +104,8 @@ MediaPlayer.dependencies.FragmentLoader = function () {
                     httpRequestMetrics.tresponse = request.firstByteDate;
                     httpRequestMetrics.tfinish = request.requestEndDate;
                     httpRequestMetrics.responsecode = req.status;
+                    // ORANGE: add segment bytes length
+                    httpRequestMetrics.bytesLength = bytes ? bytes.byteLength : 0;
 
                     self.metricsModel.appendHttpTrace(httpRequestMetrics,
                                                       currentTime,

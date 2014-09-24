@@ -142,6 +142,10 @@
             text-shadow: 1px 1px #333232;
         }
 
+        .downloadingInfos {
+            color: #2980B9;
+        }
+
         /* ******************************************************** */
         /* ************  CONTROL BAR AND BUTTONS ****************** */
         /* ******************************************************** */
@@ -312,7 +316,14 @@
 <div id="videoContainer" class="videoContainer">
 
     <div id="chartToToggle" class="chartContainer container"> 
-        <div id="playingInfos" class="infos"></div>
+        <div id="playingInfos" class="infos">
+            <span class='playingTitle'>Playing</span><br>
+            <text id="playingBandwidth"></text>
+            <text id="playingResolution"></text>
+            <text id="playingCodecs"></text>
+            <text id="bufferLevel"></text>
+            <text id="bitrate" class="downloadingInfos"></text>
+        </div>
         <div id="chartBandwidth" class="overlayChart" ng-model="bandwidthData"></div>
         <div id="sliderBitrate"></div>
     </div>

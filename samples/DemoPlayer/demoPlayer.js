@@ -20,6 +20,7 @@ var plotCount = (chartXaxisWindow * 1000) / updateIntervalLength;
 var downloadRepInfos = {quality:-1, bandwidth:0, width:0, height:0, codecs: ""},
 playRepInfos = {quality:-1, bandwidth:0, width:0, height:0, codecs: ""},
 bufferLevel,
+bitrate,
 qualitySwitches = [],
 chartBandwidth = null,
 dlSeries = [],
@@ -161,9 +162,24 @@ function update() {
     bufferLevel = metricsExt.getCurrentBufferLevel(metricsVideo);
     bufferLevel = bufferLevel ? bufferLevel.level.toPrecision(3) : 0;
 
+    // Get current video downloading bitrate
+    //metricsExt.getCurrentHttpRequest(metricsVideo);
+
     repSwitch = metricsExt.getCurrentRepresentationSwitch(metricsVideo);
     httpRequests = metricsExt.getHttpRequests(metricsVideo);
-    httpRequest = (httpRequests.length > 0) ? httpRequests[httpRequests.length - 1] : null;
+    i = httpRequests.length - 1;
+    if (i >= 0) {
+        httpRequest = httpRequests[i];
+        while ((httpRequest.tfinish === null) && (i > 0)) {
+            i -= 1;
+            httpRequest = httpRequests[i];
+        }
+    }
+
+    if (httpRequest.tfinish !== null) {
+        bitrate = (httpRequest.bytesLength * 8000) / (httpRequest.tfinish - httpRequest.trequest);
+        //console.log(bitrate + "(" +httpRequests.length + ")");
+    }
 
     // Check for download quality change
     if (repSwitch && httpRequest && (httpRequest.quality != downloadRepInfos.quality)) {
@@ -272,7 +288,13 @@ function update() {
     }
 
     $("#downloadingInfos").html("<span class='downloadingTitle'>Downloading</span><br>" + Math.round(downloadRepInfos.bandwidth/1000) + " kbps<br>"+ downloadRepInfos.width +"x"+downloadRepInfos.height + "<br>"+ downloadRepInfos.codecs + "<br>"+ bufferLevel + "s");
-    $("#playingInfos").html("<span class='playingTitle'>Playing</span><br>"+ Math.round(playRepInfos.bandwidth/1000) + " kbps<br>"+ playRepInfos.width +"x"+playRepInfos.height + "<br>"+ playRepInfos.codecs + "<br>"+ bufferLevel + "s");
+    //$("#playingInfos").html("<span class='playingTitle'>Playing</span><br>"+ Math.round(playRepInfos.bandwidth/1000) + " kbps<br>"+ playRepInfos.width +"x"+playRepInfos.height + "<br>"+ playRepInfos.codecs + "<br>"+ bufferLevel + "s<br>");
+
+    $("#playingBandwidth").html(Math.round(playRepInfos.bandwidth/1000).toLocaleString() + " kb/s");
+    $("#playingResolution").html(playRepInfos.width + "x" +playRepInfos.height);
+    $("#playingCodecs").html(playRepInfos.codecs);
+    $("#bufferLevel").html(bufferLevel + " s</br>");
+    $("#bitrate").html(Math.round(bitrate/1000).toLocaleString() + " kb/s");
 
     updateTimeout = setTimeout(update, updateIntervalLength);
 }
