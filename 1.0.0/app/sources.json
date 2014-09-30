@@ -6,98 +6,18 @@
             "browsers": "cdsbi"
         },
         {
-            "name": "Smooth + PlayReady DRM",
-            "url": "http://2is7server1.rd.francetelecom.com/VOD/selection-SD-DRM/selection-SD-DRM.ism/Manifest",
-            "browsers": "cdsbi"
-        },
-        {
-            "name": "Smooth + PlayReady DRM 2",
-            "url": "http://playready.directtaps.net/smoothstreaming/SSWSS720H264PR/SuperSpeedway_720.ism/Manifest",
-            "browsers": "cdsbi"
-        },
-        {
-            "name": "MSS/VOD - Big Buck Bunny",
-            "url": "http://2is7server1.rd.francetelecom.com/VOD/BBB-SD/big_buck_bunny_1080p_stereo.ism/Manifest",
-            "browsers": "cdsbi"
-        },
-        {
             "name": "MSS/VOD - SuperSpeedway",
             "url": "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest",
             "browsers": "cdsbi"
         },
         {
+            "name": "MSS/VOD/PR - SuperSpeedway",
+            "url": "http://playready.directtaps.net/smoothstreaming/SSWSS720H264PR/SuperSpeedway_720.ism/Manifest",
+            "browsers": "cdsbi"
+        },
+        {
             "name": "MSS/VOD - Elephants Dream (multi-audio/text)",
             "url": "http://streams.smooth.vertigo.com/elephantsdream/Elephants_Dream_1024-h264-st-aac.ism/manifest",
-            "browsers": "cdsbi"
-        },
-        {
-            "name": "MSS/VOD - Big Buck Bunny (gzipped - AAC-HE)",
-            "url": "http://2is7server1.rd.francetelecom.com/VOD/gzip/bbb.ism/Manifest",
-            "browsers": "cdsbi"
-        },
-        {
-            "name": "MSS/VOD - Volver",
-            "url": "http://2is7server1.rd.francetelecom.com/VOD/Volver/PIVOT VOLVER_PS_smooth.ism/Manifest",
-            "browsers": "cdsbi"
-        },
-        {
-            "name": "MSS/VOD - Arte",
-            "url": "http://161.105.176.12/VOD/Arte/C4-51_S1.ism/manifest",
-            "browsers": "cdsbi"
-        },
-        {
-            "name": "MSS/VOD - VIF Steph Richard",
-            "url": "http://161.105.176.12/VIF/srichard2.ism/Manifest",
-            "browsers": "cdsbi"
-        },
-        {
-            "name": "MSS/VOD - Anevia - Red Bull",
-            "url": "http://demo.anevia.com:3128/vod/disk1/content1/ss-ss/Manifest",
-            "browsers": "cdsbi"
-        },
-        {
-            "name": "MSS/VOD - Anevia - Sintel",
-            "url": "http://demo.anevia.com:3128/vod/disk1/content2/ss-ss/Manifest",
-            "browsers": "cdsbi"
-        },
-        {
-            "name": "MSS/LIVE - TF1 Halo/IIS 7.13",
-            "url": "http://161.105.176.13/Halo/ch1.isml/manifest",
-            "browsers": "cdsbi"
-        },
-        {
-            "name": "MSS/LIVE - France 2",
-            "url": "http://2is7server1.rd.francetelecom.com/C4/C4-46_S2.isml/Manifest",
-            "browsers": "cdsbi"
-        },
-        {
-            "name": "MSS/LIVE - France 24",
-            "url": "http://2is7server1.rd.francetelecom.com/C4/C4-46_S1.isml/Manifest",
-            "browsers": "cdsbi"
-        },
-        {
-            "name": "MSS/LIVE - Atre multi-audio",
-            "url": "http://2is7server1.rd.francetelecom.com/C4/C4-49_S1.isml/Manifest",
-            "browsers": "cdsbi"
-        },
-        {
-            "name": "MSS/VOD - SynchroAV",
-            "url": "http://2is7server2.rd.francetelecom.com/VOD/Synchro/C4-52_S1.ism/Manifest",
-            "browsers": "cdsbi"
-        },
-        {
-            "name": "MSS/LIVE - SynchroAV",
-            "url": "http://2is7server2.rd.francetelecom.com/C4/C4-52_S1.isml/Manifest",
-            "browsers": "cdsbi"
-        },
-        {
-            "name": "DASH/VOD - PrinceOfPersia (2 audios)",
-            "url": "http://10.194.60.110/VIDEO/DASH/VOD/PrinceOfPersia/manifest.mpd",
-            "browsers": "cdsbi"
-        },
-        {
-            "name": "DASH/LIVE - TF1",
-            "url": "http://apache1.rd.francetelecom.com/DASH/ch1/manifest.mpd",
             "browsers": "cdsbi"
         },
         {
