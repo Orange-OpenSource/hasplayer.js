@@ -507,21 +507,27 @@ Mss.dependencies.MssParser = function () {
         segmentTimeline.properties = common;
         //here node is StreamIndex
         segmentTimeline.transformFunc = function(node) {
+            var i = 0;
 
             if (node.c_asArray.length>1) {
                 var groupedSegments = [];
                 var segments = node.c_asArray;
 
+                // First pass on segments to update timestamp ('t') and duration ('d') fields
                 segments[0].t = segments[0].t || 0;
+                for (i = 1; i < segments.length; i++) {
+                    segments[i-1].d = segments[i-1].d || (segments[i].t - segments[i-1].t);
+                    segments[i].t = segments[i].t || (segments[i-1].t + segments[i-1].d);
+                }
 
+                // Second pass to set SegmentTimeline template
                 groupedSegments.push({
                     d : segments[0].d,
                     r: 0,
                     t: segments[0].t
                 });
 
-                for (var i=1; i<segments.length; i++) {
-                    segments[i].t = segments[i].t || (segments[i-1].t + segments[i-1].d);
+                for (i = 1; i < segments.length; i++) {
                     if (segments[i].d === segments[i-1].d) {
                         // incrementation of the 'r' attributes
                         ++groupedSegments[groupedSegments.length -1].r;
