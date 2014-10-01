@@ -78,7 +78,9 @@ MediaPlayer.dependencies.Stream = function () {
             this.system.notify("setCurrentTime");
             this.videoModel.setCurrentTime(time);
 
-            startBuffering(time);
+            updateBuffer.call(this).then(function () {
+                startBuffering(time);
+            });
         },
 
         // Encrypted Media Extensions
@@ -633,13 +635,19 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         updateBuffer = function() {
+            var promises = [];
+
             if (videoController) {
                 videoController.updateBufferState();
+                promises.push(videoController.updateBufferState());
             }
 
             if (audioController) {
                audioController.updateBufferState();
+               promises.push(audioController.updateBufferState());
             }
+
+            return Q.all(promises);
         },
 
         startBuffering = function(time) {
