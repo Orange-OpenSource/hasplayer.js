@@ -827,18 +827,14 @@ Dash.dependencies.DashHandler = function () {
             var updateRequired = false,
                 segments = representation.segments,
                 upperIdx,
-                lowerIdx,
-                upperTime;
-
+                lowerIdx;
 
             if (!segments) {
                 updateRequired = true;
             } else {
                 lowerIdx = segments[0].availabilityIdx;
                 upperIdx = segments[segments.length -1].availabilityIdx;
-                // ORANGE: check also regarding requested time (@see getForTime()) 
-                upperTime = segments[segments.length -1].presentationStartTime;
-                updateRequired = (index < lowerIdx) || (index > upperIdx) || (requestedTime > upperTime);
+                updateRequired = (index < lowerIdx) || (index > upperIdx);
             }
 
             return updateRequired;

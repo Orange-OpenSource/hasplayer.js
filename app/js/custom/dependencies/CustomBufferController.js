@@ -137,6 +137,9 @@ Custom.dependencies.CustomBufferController = function () {
             // Stop
             doStop.call(this);
 
+            // Reset segment list to avoid DashHandler dysfunctionning
+            currentRepresentation.segments = null;
+
             // Reset ABR controller
             this.debug.log("[BufferController]["+type+"] ### Reset quality: " + initialQuality);
             this.abrController.setAutoSwitchBitrate(false);
