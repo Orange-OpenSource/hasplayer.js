@@ -118,6 +118,11 @@
 
             this.getMetricsFor(streamType).HttpList.push(vo);
 
+            // ORANGE: to avoid memory leak
+            if(this.getMetricsFor(streamType).HttpList.length > 50) {
+                this.getMetricsFor(streamType).HttpList.shift(); 
+            }
+
             this.metricAdded(streamType, "HttpRequest", vo);
             return vo;
         },
