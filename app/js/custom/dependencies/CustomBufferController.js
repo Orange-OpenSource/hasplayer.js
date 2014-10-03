@@ -132,10 +132,16 @@ Custom.dependencies.CustomBufferController = function () {
         doSeek = function (time) {
             var currentTime = new Date();
 
+            // Avoid identical successive seeks
+            if ((seeking === true) && (seekTarget === time)) {
+                // We are already seeking at the given time
+                return;
+            }
+
             this.debug.log("[BufferController]["+type+"] ### SEEK: " + time);
 
             // Stop
-            doStop.call(this);
+            //doStop.call(this);
 
             // Reset segment list to avoid DashHandler dysfunctionning
             currentRepresentation.segments = null;
