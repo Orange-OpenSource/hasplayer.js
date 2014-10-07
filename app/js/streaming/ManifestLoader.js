@@ -49,6 +49,12 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                 {
                   return;
                 }
+                
+                //ORANGE : in latest Chrome version, get the redirect url and use it to get chunks
+                if (request.responseURL) {
+                  baseUrl = parseBaseUrl(request.responseURL);
+                }
+
                 needFailureReport = false;
                 mpdLoadedTime = new Date();
 
