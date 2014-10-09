@@ -334,9 +334,13 @@ mp4lib.boxes.ContainerBox.prototype.read = function (data,pos,end) {
 
         this.boxes.push(box);
 
-        if (box.size === 0){
-            throw new mp4lib.ParseException('Zero size of box '+box.boxtype+
+        if (box.size <= 0 || box.size === null) {
+            throw new mp4lib.ParseException('Problem on size of box '+box.boxtype+
                                             ', parsing stopped to avoid infinite loop');
+        }
+
+        if (!box.boxtype) {
+            throw new mp4lib.ParseException('Problem on unknown box, parsing stopped to avoid infinite loop');
         }
     }
 
@@ -437,9 +441,13 @@ mp4lib.boxes.ContainerFullBox.prototype.read = function (data,pos,end,isEntryCou
 
         this.boxes.push(box);
         
-        if (box.size === 0){
-            throw new mp4lib.ParseException('Zero size of box '+box.boxtype+
+        if (box.size <= 0 || box.size === null) {
+            throw new mp4lib.ParseException('Problem on size of box '+box.boxtype+
                                             ', parsing stopped to avoid infinite loop');
+        }
+
+        if (!box.boxtype) {
+            throw new mp4lib.ParseException('Problem on unknown box, parsing stopped to avoid infinite loop');
         }
     }
 
@@ -1820,9 +1828,13 @@ mp4lib.boxes.VisualSampleEntryContainerBox.prototype.read = function (data,pos,e
 
         this.boxes.push(box);
 
-        if (box.size === 0){
-            throw new mp4lib.ParseException('Zero size of box '+box.boxtype+
+        if (box.size <= 0 || box.size === null) {
+            throw new mp4lib.ParseException('Problem on size of box '+box.boxtype+
                                             ', parsing stopped to avoid infinite loop');
+        }
+
+        if (!box.boxtype) {
+            throw new mp4lib.ParseException('Problem on unknown box, parsing stopped to avoid infinite loop');
         }
     }
     return this.localPos;
@@ -2058,9 +2070,13 @@ mp4lib.boxes.AudioSampleEntryContainerBox.prototype.read = function (data,pos,en
 
         this.boxes.push(box);
 
-        if (box.size === 0){
-            throw new mp4lib.ParseException('Zero size of box '+box.boxtype+
+        if (box.size <= 0 || box.size === null) {
+            throw new mp4lib.ParseException('Problem on size of box '+box.boxtype+
                                             ', parsing stopped to avoid infinite loop');
+        }
+
+        if (!box.boxtype) {
+            throw new mp4lib.ParseException('Problem on unknown box, parsing stopped to avoid infinite loop');
         }
     }
     return this.localPos;
