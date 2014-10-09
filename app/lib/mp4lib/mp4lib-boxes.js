@@ -77,9 +77,13 @@ mp4lib.boxes.File.prototype.read = function(data) {
 
         this.boxes.push(box);
         
-        if (box.size===0) {
-            throw new mp4lib.ParseException('Zero size of box '+box.boxtype+
+        if (box.size <= 0 || box.size === null) {
+            throw new mp4lib.ParseException('Problem on size of box '+box.boxtype+
                                             ', parsing stopped to avoid infinite loop');
+        }
+
+        if (!box.boxtype) {
+            throw new mp4lib.ParseException('Problem on unknown box, parsing stopped to avoid infinite loop');
         }
     }
 };
@@ -458,8 +462,8 @@ mp4lib.boxes.ContainerFullBox.prototype.write = function (data,pos,isEntryCount)
 
 // ----------- Unknown Box -----------------------------
 
-mp4lib.boxes.UnknownBox =  function(boxType,size) {
-    mp4lib.boxes.Box.call(this,boxType,size);
+mp4lib.boxes.UnknownBox =  function(size) {
+    mp4lib.boxes.Box.call(this,null,size);
 };
 
 mp4lib.boxes.UnknownBox.prototype = Object.create(mp4lib.boxes.Box.prototype);

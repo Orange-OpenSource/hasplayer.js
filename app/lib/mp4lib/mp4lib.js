@@ -137,7 +137,12 @@ var mp4lib = (function() {
     */
     mp4lib.deserialize = function(uint8array) {
         var f = new mp4lib.boxes.File();
-        f.read(uint8array);
+        try{
+            f.read(uint8array);
+        }catch(e){
+            mp4lib.warningHandler(e.message);
+            return null;
+        }
         return f;
     };
 

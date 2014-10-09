@@ -121,6 +121,10 @@ Mss.dependencies.MssFragmentController = function () {
             // Create new fragment
             var fragment = mp4lib.deserialize(data);
 
+            if (!fragment) {
+                return null;
+            }
+
             // Get references en boxes
             var moof = fragment.getBoxByType("moof");
             var mdat = fragment.getBoxByType("mdat");
@@ -266,6 +270,10 @@ Mss.dependencies.MssFragmentController = function () {
             // (Note: here representations is of type Dash.vo.Representation)
             var adaptation = manifest.Period_asArray[representations[0].adaptation.period.index].AdaptationSet_asArray[representations[0].adaptation.index];
             result = convertFragment(result, request, adaptation);
+
+            if (!result) {
+                return Q.when(null);
+            }
         }
 
         // PATCH timescale value in mvhd and mdhd boxes in case of live streams within chrome
