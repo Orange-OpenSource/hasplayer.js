@@ -643,7 +643,7 @@ Mss.dependencies.MssParser = function () {
 
         // set the baseUrl
         if (!manifest.hasOwnProperty("BaseURL")) {
-            this.debug.log("[DashParser]", "Setting baseURL: " + baseUrl);
+            this.debug.log("[MssParser]", "Setting baseURL: " + baseUrl);
             manifest.BaseURL = baseUrl;
         } else {
             // Setting manifest's BaseURL to the first BaseURL
