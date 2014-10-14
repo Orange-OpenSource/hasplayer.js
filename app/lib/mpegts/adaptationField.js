@@ -13,44 +13,44 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- Custom.dependencies.CustomParser = function () {
-    "use strict";
+mpegts.ts.AdaptationField = function(){
+	/** adaptation field fields */
+    this.m_cAFLength = null;
+    this.m_bDiscontinuityInd = null;
+    this.m_bRAI = null;
+    this.m_bESPriority = null;
 
-    var customParse = function(data, baseUrl) {
-
-        var parser = null;
-
-        // we parse the response of the request to know the manifest type        
-        if (data.indexOf("SmoothStreamingMedia")>-1) {
-            this.system.notify('setContext','MSS');
-            //do some business to transform it into a Dash Manifest
-            parser = this.mssParser;
-        } else if (data.indexOf("#EXTM3U")>-1) {
-            this.system.notify('setContext','HLS');
-            parser = this.hlsParser;
-        } else if(data.indexOf("MPD")>-1) {
-            this.system.notify('setContext','MPD');
-            parser = this.dashParser;
-        } else {
-            console.error("manifest cannot be parse, type is unknown !");
-            return Q.when(null);
-        }
-
-        return parser.parse(data,baseUrl);
-    };
-
-    return {
-        debug: undefined,
-        system: undefined,
-        dashParser: undefined,
-        mssParser: undefined,
-        hlsParser: undefined,
-        metricsModel: undefined,
-
-        parse: customParse
-    };
+    /** Optional fields flags */
+    this.m_bPCRFlag = null;
+    this.m_bOPCRFlag = null;
+    this.m_bSplicingPointFlag = null;
+    this.m_bPrivateDataFlag = null;
+    this.m_bAdaptationFieldExtFlag = null;
 };
 
-Custom.dependencies.CustomParser.prototype =  {
-    constructor: Custom.dependencies.CustomParser
+mpegts.ts.AdaptationField.prototype.getLength = function() {
+	return (this.m_cAFLength + 1);
+};
+
+mpegts.ts.AdaptationField.prototype.parse = function(data) {
+	this.m_cAFLength = data[0];
+
+	if (this.m_cAFLength === 0)
+	{
+		// = exactly 1 stuffing byte
+        return;
+	}
+
+	var index = 1;
+
+	this.m_bDiscontinuityInd		= mpegts.binary.getBitFromByte(data[index], 0);
+	this.m_bRAI						= mpegts.binary.getBitFromByte(data[index], 1);
+	this.m_bESPriority				= mpegts.binary.getBitFromByte(data[index], 2);
+	this.m_bPCRFlag					= mpegts.binary.getBitFromByte(data[index], 3);
+	this.m_bOPCRFlag				= mpegts.binary.getBitFromByte(data[index], 4);
+	this.m_bSplicingPointFlag		= mpegts.binary.getBitFromByte(data[index], 5);
+	this.m_bPrivateDataFlag			= mpegts.binary.getBitFromByte(data[index], 6);
+	this.m_bAdaptationFieldExtFlag	= mpegts.binary.getBitFromByte(data[index], 7);
+
+	//other flags are not useful for the conversion HLS => MP4
 };
