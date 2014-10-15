@@ -186,6 +186,28 @@
                 <span id="big-title">HAS Javascript Player</span>
                 <span>{{versionHAS}}</span>
                 <span style="font-size:16px">(based on dash.js {{version}})</span>
+                <button class="btn btn-link pull-right" data-toggle="modal" data-target=".about">
+                    <i class="fa fa-info-circle"></i>
+                </button>
+
+                <div class="modal fade about" tabindex="-1" role="dialog" aria-labelledby="about" aria-hidden="true">
+                    <div class="modal-dialog modal-sm">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title" id="myModalLabel">Informations</h4>
+                            </div>
+                            <div class="modal-body">
+                                <strong>HAS Player Version</strong><br>{{ versionFull }}
+                                <br>
+                                <strong>Date</strong><br>{{ buildDate }}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 

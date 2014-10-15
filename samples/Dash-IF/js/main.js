@@ -575,6 +575,8 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     
     $scope.version = player.getVersion();
     $scope.versionHAS = player.getVersionHAS();
+    $scope.versionFull = player.getVersionFull();
+    $scope.buildDate = player.getBuildDate();
 
     player.startup();
     player.addEventListener("error", onError.bind(this));
