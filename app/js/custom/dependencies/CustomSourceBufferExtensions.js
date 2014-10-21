@@ -98,6 +98,33 @@
         return length;
     };
 
+    rslt.createSourceBuffer = function (mediaSource, codec) {
+        var deferred = Q.defer(),
+            self = this;
+    
+        try {
+            deferred.resolve(mediaSource.addSourceBuffer(codec));
+        } catch(ex) {
+            if (!self.manifestExt.getIsTextTrack(codec)) {
+                deferred.reject(ex.description);
+            } else {
+                if ((codec==='text/vtt') || (codec==='text/ttml')) {
+                    deferred.resolve(self.system.getObject("textSourceBuffer"));
+                }
+                else {
+                    if (codec==='application/ttml+xml+mp4') {
+                        deferred.resolve(self.system.getObject("textTTMLXMLMP4SourceBuffer"));
+                    }
+                    else {
+                        deferred.reject();
+                    }
+                }
+            }
+
+        }
+        return deferred.promise;
+    };
+
     return rslt;
 };
 

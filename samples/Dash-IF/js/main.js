@@ -138,8 +138,8 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     previousPlayedQuality = 0,
     previousDownloadedQuality= 0,
     maxGraphPoints = 50,
-    firstAccess = true;
-
+    initAudioTracks = true,
+    initTextTracks = true;
 
     $scope.chromecast = {};
     $scope.chromecast.apiOk = false;
@@ -208,6 +208,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     $scope.videoMetrics = null;
     $scope.audioMetrics = null;
     $scope.audioTracks  = [];
+    $scope.textTracks  = [];
 
     $scope.getVideoTreeMetrics = function () {
         var metrics = player.getMetricsFor("video");
@@ -234,6 +235,9 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         player.setAudioTrack(track);
     };
 
+    $scope.selectTextTrack = function(track){
+        player.setSubtitleTrack(track);
+    };
 
     function getCribbedMetricsFor(type) {
         var metrics = player.getMetricsFor(type),
@@ -464,10 +468,10 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         metrics = getCribbedMetricsFor("audio");
         if (metrics) {
 
-            if(firstAccess){
+            if (initAudioTracks) {
                 $scope.audioTracks = player.getAudioTracks();
                 $scope.audioData = $scope.audioTracks[0];
-                firstAccess = false;
+                initAudioTracks = false;
             }
 
             $scope.audioBitrate = metrics.bandwidthValue;
@@ -495,6 +499,14 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
             if (audioSeries.length > maxGraphPoints) {
                 audioSeries.splice(0, 1);
             }
+        }
+    }
+
+    if (e.data.stream == "text") {
+        if (initTextTracks) {
+            $scope.textTracks = player.getSubtitleTracks();
+            $scope.textData = $scope.textTracks[0];
+            initTextTracks = false;
         }
     }
 
@@ -734,12 +746,9 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         $scope.selectedItem = item;
     };
 
-    $scope.doLoad = function () {
-        if($scope.chromecast.playing){
-            $scope.stopInChromecast();
-        }
 
-        firstAccess = true;
+    function initPlayer() {
+        initAudioTracks = initTextTracks = true;
         
         function DRMParams() {
             this.backUrl = null;
@@ -751,6 +760,14 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         params.backUrl = $scope.selectedItem.backUrl;
         params.customData = $scope.selectedItem.customData;
         player.attachSource($scope.selectedItem.url, params);
+    }
+
+    $scope.doLoad = function () {
+        if ($scope.chromecast.playing){
+            $scope.stopInChromecast();
+        }
+
+        initPlayer();
     };
 
     $scope.loadInPlayer = function(url) {

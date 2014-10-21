@@ -331,6 +331,16 @@ MediaPlayer = function (aContext) {
             return streamController.getAudioTracks();
         },
 
+        // ORANGE: add function to switch subtitleTracks for a media
+        setSubtitleTrack: function(subtitleTrack){
+            streamController.setSubtitleTrack(subtitleTrack);
+        },
+
+        // ORANGE: get the subtitle track list
+        getSubtitleTracks: function(){
+            return streamController.getSubtitleTracks();
+        },
+
         attachView: function (view) {
             if (!initialized) {
                 throw "MediaPlayer not initialized!";

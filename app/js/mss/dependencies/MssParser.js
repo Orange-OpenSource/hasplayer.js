@@ -59,7 +59,7 @@ Mss.dependencies.MssParser = function () {
     var mimeTypeMap = {
         "video" : "video/mp4",
         "audio" : "audio/mp4",
-        "text"  : "text/mp4"
+        "text"  : "application/ttml+xml+mp4"
     };
 
     var getCommonValuesMap = function () {

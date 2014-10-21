@@ -161,8 +161,9 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(result);
     },
 
+    // ORANGE: added application/ttml+xml+mp4 for Smoothstreaming subtitles (ttml+xml encapsulated in mp4 binary form)
     getIsTextTrack: function(type) {
-        return (type === "text/vtt" || type === "application/ttml+xml");
+        return (type === "text/vtt" || type === "application/ttml+xml" || type === "application/ttml+xml+mp4");
     },
 
     getIsMain: function (/*adaptation*/) {
@@ -263,11 +264,12 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return deferred.promise;
     },
 
-    getTextData: function (manifest, periodIndex) {
+    getTextDatas: function (manifest, periodIndex) {
         "use strict";
         //return Q.when(null);
         //------------------------------------
-        var adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray,
+        var self = this,
+            adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray,
             i,
             len,
             deferred = Q.defer(),
@@ -278,15 +280,12 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         }
         Q.all(funcs).then(
             function (results) {
-                var found = false;
-                for (i = 0, len = results.length; i < len && !found; i += 1) {
+                var datas = [];
+                for (i = 0, len = results.length; i < len; i += 1) {
                     if (results[i] === true) {
-                        found = true;
-                        deferred.resolve(adaptations[i]);
-                    }
+                        datas.push(adaptations[i]);
                 }
-                if (!found) {
-                    deferred.resolve(null);
+                    deferred.resolve(datas);
                 }
             }
         );
@@ -332,6 +331,44 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             self = this;
 
         this.getAudioDatas(manifest, periodIndex).then(
+            function (datas) {
+                if (!datas || datas.length === 0) {
+                    deferred.resolve(null);
+                }
+
+                for (i = 0, len = datas.length; i < len; i += 1) {
+                    funcs.push(self.getIsMain(datas[i]));
+                }
+
+                Q.all(funcs).then(
+                    function (results) {
+                        var found = false;
+                        for (i = 0, len = results.length; i < len; i += 1) {
+                            if (results[i] === true) {
+                                found = true;
+                                deferred.resolve(self.processAdaptation(datas[i]));
+                            }
+                        }
+                        if (!found) {
+                            deferred.resolve(datas[0]);
+                        }
+                    }
+                );
+            }
+        );
+
+        return deferred.promise;
+    },
+
+    getPrimaryTextData: function (manifest, periodIndex) {
+        "use strict";
+        var i,
+            len,
+            deferred = Q.defer(),
+            funcs = [],
+            self = this;
+
+        this.getTextDatas(manifest, periodIndex).then(
             function (datas) {
                 if (!datas || datas.length === 0) {
                     deferred.resolve(null);

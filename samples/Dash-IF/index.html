@@ -97,6 +97,7 @@
 <script src="../../app/js/streaming/captioning/TTMLParser.js"></script>
 <script src="../../app/js/streaming/captioning/TextTrackExtensions.js"></script>
 <script src="../../app/js/streaming/captioning/TextSourceBuffer.js"></script>
+<script src="../../app/js/streaming/captioning/TextTTMLXMLMP4SourceBuffer.js"></script>
 <script src="../../app/js/streaming/captioning/TextController.js"></script>
 
 <script src="../../app/js/streaming/vo/MetricsList.js"></script>
@@ -433,6 +434,14 @@
                         <p class="text-success" title="[low] < [average] < [high]">{{audioDownload}}</p>
                         <p class="text-primary">Ratio: <span class="text-success">last {{audioRatioCount}} segments</span></p>
                         <p class="text-success" title="[low] < [average] < [high]">{{audioRatio}}</p>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-heading panel-top">
+                        <span class="panel-title">Text</span>
+                        <div ng-show="textData">
+                            <select id="textTracksSelect" ng-model="textData" ng-options="track.lang +' - ' + track.id for track in textTracks" required="true" ng-change="selectTextTrack(textData)"></select>
+                        </div>
                     </div>
                 </div>
             </div>
