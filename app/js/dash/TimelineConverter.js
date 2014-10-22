@@ -51,7 +51,8 @@ Dash.dependencies.TimelineConverter = function () {
         calcPresentationStartTime = function (period) {
             var presentationStartTime,
                 isDynamic = period.mpd.manifest.type === "dynamic",
-                startTimeOffset = parseInt(this.uriQueryFragModel.getURIFragmentData.s);
+                //ORANGE: fix bug on not updating URIFragmentDataVO 
+                startTimeOffset = parseInt(this.uriQueryFragModel.getURIFragmentData().s);
 
             if (isDynamic) {
 

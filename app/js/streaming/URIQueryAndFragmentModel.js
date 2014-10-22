@@ -18,8 +18,8 @@ MediaPlayer.models.URIQueryAndFragmentModel = function () {
         URIQueryData = [],
 
         reset = function () {
-            URIFragmentDataVO = new MediaPlayer.vo.URIFragmentData()
-            URIQueryData = []
+            URIFragmentDataVO = new MediaPlayer.vo.URIFragmentData();
+            URIQueryData = [];
         },
 
         parseURI = function (uri) {
@@ -70,7 +70,10 @@ MediaPlayer.models.URIQueryAndFragmentModel = function () {
     return {
         parseURI:parseURI,
         reset:reset,
-        getURIFragmentData:URIFragmentDataVO,
+        //ORANGE: fix bug on not updating URIFragmentDataVO 
+        getURIFragmentData: function() {
+            return URIFragmentDataVO;
+        },
         getURIQueryData:URIQueryData
     };
 };
