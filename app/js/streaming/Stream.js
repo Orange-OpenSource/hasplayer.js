@@ -78,7 +78,9 @@ MediaPlayer.dependencies.Stream = function () {
             this.system.notify("setCurrentTime");
             this.videoModel.setCurrentTime(time);
 
+            updateBuffer.call(this).then(function () {
                 startBuffering(time);
+            });
         },
 
         // Encrypted Media Extensions
@@ -649,17 +651,24 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         updateBuffer = function() {
+            var promises = [];
+
             if (videoController) {
                 videoController.updateBufferState();
+                promises.push(videoController.updateBufferState());
             }
 
             if (audioController) {
                audioController.updateBufferState();
+               promises.push(audioController.updateBufferState());
             }
 
             if (textController) {
                textController.updateBufferState();
+               promises.push(textController.updateBufferState());
             }
+
+            return Q.all(promises);
         },
 
         startBuffering = function(time) {
@@ -931,7 +940,6 @@ MediaPlayer.dependencies.Stream = function () {
             this.system.mapHandler("segmentLoadingFailed", undefined, segmentLoadingFailed.bind(this));
             // ORANGE: add event handler "liveEdgeFound"
             this.system.mapHandler("liveEdgeFound", undefined, onLiveEdgeFound.bind(this));
-
 
             load = Q.defer();
 
