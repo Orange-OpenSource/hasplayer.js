@@ -16,10 +16,15 @@ MediaPlayer.utils.TTMLParser = function () {
 
     /*
     * This TTML parser follows "TTML Simple Delivery Profile for Closed Captions (US)" spec - http://www.w3.org/TR/ttml10-sdp-us/
+    *
+    * ORANGE: Some strict limitations of US profile removed to allow for non-US TTML2 implmentations used in Europe:
+    *         - no requirement for US profile
+    *         - offset-style format allowed for <timeExpression>
     * */
 
     var SECONDS_IN_HOUR = 60 * 60,
         SECONDS_IN_MIN = 60,
+
         // R0028 - A document must not contain a <timeExpression> value that does not conform to the subset of clock-time that
         // matches either of the following patterns: hh:mm:ss.mss or hh:mm:ss:ff, where hh denotes hours (00-23),
         // mm denotes minutes (00-59), ss denotes seconds (00-59), mss denotes milliseconds (000-999), and ff denotes frames (00-frameRate - 1).
@@ -28,18 +33,23 @@ MediaPlayer.utils.TTMLParser = function () {
         // - Exactly 3 decimal places must be used for the milliseconds component (include leading zeros).
         // R0031 -For time expressions that use the hh:mm:ss:ff format, the following constraints apply:
         // - Exactly 2 digits must be used in each of the hours, minutes, second, and frame components (include leading zeros).
-        timingRegex = /^(0[0-9]|1[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])((\.[0-9][0-9][0-9])|(:[0-9][0-9]))$/,
+
+        // Orange: the restrictions above are for US profile only.
+        //         in general, TTML allows other syntax representations, see https://dvcs.w3.org/hg/ttml/raw-file/tip/ttml2/spec/ttml2.html#timing-value-timeExpression
+        //         we have added support for offset-time, a pretty popular one.
+        
+        timingRegexClockTime = /^(0[0-9]|1[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])((\.[0-9][0-9][0-9])|(:[0-9][0-9]))$/,
+        timingRegexOffsetTime = /^\d+(\.\d+|)(h|m|s|ms|f)$/,
         ttml,
 
         parseTimings = function(timingStr) {
-            var test = timingRegex.test(timingStr),
-                timeParts,
-                parsedTime,
-                frameRate;
 
-            if (!test) {
-                return NaN;
-            }
+            var timeParts,
+                parsedTime,
+                frameRate,
+                metric;
+
+            if (timingRegexClockTime.test(timingStr)) {
 
             timeParts = timingStr.split(":");
 
@@ -59,8 +69,46 @@ MediaPlayer.utils.TTMLParser = function () {
                     return NaN;
                 }
             }
+                return parsedTime;
+            }
+
+            if (timingRegexOffsetTime.test(timingStr)) {
+                
+                if (timingStr.substr(timingStr.length-2)=='ms') {
+                    parsedTime = parseFloat(timingStr.substr(0,timingStr.length-3));
+                    metric = timingStr.substr(timingStr.length-2);
+                } else {
+                    parsedTime = parseFloat(timingStr.substr(0,timingStr.length-2));
+                    metric = timingStr.substr(timingStr.length-1);
+                }
+
+                switch (metric) {
+                    case 'h':
+                        parsedTime = parsedTime*60*60;
+                        break;
+                    case 'm':
+                        parsedTime = parsedTime*60;
+                        break;
+                    case 's':                        
+                        break;
+                    case 'ms':
+                        parsedTime = parsedTime*0.01;
+                        break;
+                    case 'f':
+                        frameRate = ttml.tt.frameRate;
+
+                        if (frameRate && !isNaN(frameRate)) {
+                            parsedTime = parsedTime / frameRate;
+                        } else {
+                            return NaN;
+                        }
+                        break;
+                }
 
             return parsedTime;
+            }
+
+            return NaN;
         },
 
         passStructuralConstraints = function () {
@@ -70,7 +118,8 @@ MediaPlayer.utils.TTMLParser = function () {
                 hasLayout = hasHead ? ttml.tt.head.hasOwnProperty("layout") : false,
                 hasStyling = hasHead ? ttml.tt.head.hasOwnProperty("styling") : false,
                 hasBody = hasTt ? ttml.tt.hasOwnProperty("body") : false,
-                hasProfile = hasHead ? ttml.tt.head.hasOwnProperty("profile") : false;
+                hasProfile = hasHead ? ttml.tt.head.hasOwnProperty("profile") : false
+
 
             // R001 - A document must contain a tt element.
             // R002 - A document must contain both a head and body element.
@@ -80,9 +129,7 @@ MediaPlayer.utils.TTMLParser = function () {
             }
 
             // R0008 - A document must contain a ttp:profile element where the use attribute of that element is specified as http://www.w3.org/ns/ttml/profile/sdp-us.
-            if (passed) {
-                passed = hasProfile && (ttml.tt.head.profile.use === "http://www.w3.org/ns/ttml/profile/sdp-us");
-            }
+            // ORANGE: The R0008 requirement is removed in the parser implementation to make it work with non-US profiles
 
             return passed;
         },

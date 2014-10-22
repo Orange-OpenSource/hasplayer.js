@@ -81,7 +81,9 @@ MediaPlayer.dependencies.Stream = function () {
             this.system.notify("setCurrentTime");
             this.videoModel.setCurrentTime(time);
 
-            startBuffering(time);
+            updateBuffer.call(this).then(function () {
+                startBuffering(time);
+            });
         },
 
         // Encrypted Media Extensions
@@ -421,48 +423,57 @@ MediaPlayer.dependencies.Stream = function () {
                                 checkIfInitialized.call(self, videoReady, audioReady,textTrackReady,  initialize);
                             }
 
-                            return self.manifestExt.getTextData(manifest, periodInfo.index);
+                            return self.manifestExt.getTextDatas(manifest, periodInfo.index);
                         }
                     ).then(
-                        function (textData) {
+
+                        // ORANGE: added Support for fragmented subtitles
+                        //         which are downloaded and handled just like Audio/Video - by a regular bufferController, fragmentController etc
+                        //         (fragmented subtitles are used by MSS and live streams)
+
+                        function (textDatas) {
                             var mimeType;
-                            if (textData !== null ) {
-                                self.manifestExt.getDataIndex(textData, manifest, periodInfo.index).then(
-                                    function (index) {
-                                        textTrackIndex = index;
-                                        //self.debug.log("Save text track: " + textTrackIndex);
+                            if (textDatas !== null && textDatas.length > 0) {
+                                self.debug.log("Have subtitles streams: " + textDatas.length);
+                                self.manifestExt.getPrimaryTextData(manifest, periodInfo.index).then(
+                                    function (primarySubtitleData) {
+                                        self.manifestExt.getDataIndex(primarySubtitleData, manifest, periodInfo.index).then(
+                                            function (index) {
+                                                textTrackIndex = index;
+                                                self.debug.log("Save text track: " + textTrackIndex);
+                                            });
+
+                                            self.manifestExt.getMimeType(primarySubtitleData).then(
+                                                function (type) {
+                                                    mimeType = type;
+                                                    return self.sourceBufferExt.createSourceBuffer(mediaSource, mimeType);
+                                            }).then(
+                                                function (buffer) {
+                                                    if (buffer === null) {
+                                                        self.debug.log("Source buffer was not created for text track");
+                                                    } else {
+                                                        textController = self.system.getObject("bufferController");
+                                                        textController.initialize("text", periodInfo, primarySubtitleData, buffer, self.videoModel, self.requestScheduler, self.fragmentController, mediaSource);
+                                                            
+                                                        if (buffer.hasOwnProperty('initialize')) {
+                                                                    buffer.initialize(mimeType, textController,primarySubtitleData);
+                                                        }
+                                                        //self.debug.log("Text is ready!");
+                                                        textTrackReady = true;
+                                                        checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
+                                                    }
+                                                },
+                                                function (error) {
+                                                    self.debug.log("Error creating text source buffer:");
+                                                    self.debug.log(error);
+                                                    self.errHandler.mediaSourceError("Error creating text source buffer.");
+                                                    textTrackReady = true;
+                                                    checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
+                                                }
+                                        );
                                     }
                                 );
-                                self.manifestExt.getMimeType(textData).then(
-                                    function (type)
-                                    {
-                                        mimeType = type;
-                                        return self.sourceBufferExt.createSourceBuffer(mediaSource, mimeType);
-                                    }
-                                ).then(
-                                    function (buffer) {
-                                        if (buffer === null) {
-                                            self.debug.log("Source buffer was not created for text track");
-                                        } else {
-                                            textController = self.system.getObject("textController");
-                                            textController.initialize(periodInfo, textData, buffer, self.videoModel, mediaSource);
-                                            if (buffer.hasOwnProperty('initialize')) {
-                                                buffer.initialize(mimeType, textController);
-                                            }
-                                            //self.debug.log("Text is ready!");
-                                            textTrackReady = true;
-                                            checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
-                                        }
-                                    },
-                                    function (error) {
-                                        self.debug.log("Error creating text source buffer:");
-                                        self.debug.log(error);
-                                        self.errHandler.mediaSourceError("Error creating text source buffer.");
-                                        textTrackReady = true;
-                                        checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
-                                    }
-                                );
-                            }else {
+                            } else {
                                 self.debug.log("No text tracks.");
                                 textTrackReady = true;
                                 checkIfInitialized.call(self, videoReady, audioReady,textTrackReady,  initialize);
@@ -653,16 +664,32 @@ MediaPlayer.dependencies.Stream = function () {
             if (audioController) {
                 audioController.updateStalledState();
             }
+            if (textController) {
+                textController.updateStalledState();
+            }
+
+
         },
 
         updateBuffer = function() {
+            var promises = [];
+
             if (videoController) {
                 videoController.updateBufferState();
+                promises.push(videoController.updateBufferState());
             }
 
             if (audioController) {
                audioController.updateBufferState();
+               promises.push(audioController.updateBufferState());
             }
+
+            if (textController) {
+               textController.updateBufferState();
+               promises.push(textController.updateBufferState());
+            }
+
+            return Q.all(promises);
         },
 
         startBuffering = function(time) {
@@ -689,6 +716,9 @@ MediaPlayer.dependencies.Stream = function () {
             }
             if (audioController) {
                 audioController.stop();
+            }
+            if (textController) {
+                textController.stop();
             }
         },
 
@@ -793,6 +823,9 @@ MediaPlayer.dependencies.Stream = function () {
             if (audioController) {
                 audioController.seek(liveEdgeTime);
             }
+            if (textController) {
+                textController.seek(liveEdgeTime);
+            }
         },
 
         updateData = function (updatedPeriodInfo) {
@@ -861,11 +894,12 @@ MediaPlayer.dependencies.Stream = function () {
             if (textController) {
                 textData = textController.getData();
 
-                if (!!textData && textData.hasOwnProperty("id")) {
-                    deferredTextData = self.manifestExt.getDataForId(textData.id, manifest, periodInfo.index);
-                } else {
+                // ORANGE: refer only the text track index to get new text data (switch text use case)
+                //if (!!textData && textData.hasOwnProperty("id")) {
+                //    deferredTextData = self.manifestExt.getDataForId(textData.id, manifest, periodInfo.index);
+                //} else {
                     deferredTextData = self.manifestExt.getDataForIndex(textTrackIndex, manifest, periodInfo.index);
-                }
+                //}
 
                 deferredTextData.then(
                     function (data) {
@@ -1010,6 +1044,46 @@ MediaPlayer.dependencies.Stream = function () {
             }
 
             return deferredAudioUpdate.promise;
+        },
+
+        // ORANGE: add the capability to set subtitle track
+        setSubtitleTrack:function(subtitleTrack){
+            var deferredSubtitleUpdate = Q.defer(),
+                currentTime = this.videoModel.getCurrentTime(),
+                manifest = this.manifestModel.getValue(),
+                url,
+                self = this;
+
+            if (textController) {
+                // Get data index corresponding to new audio track
+                self.manifestExt.getDataIndex(subtitleTrack, manifest, periodInfo.index).then(
+                    function(index) {
+                        textTrackIndex = index;
+
+                        // Update manifest
+                        url = manifest.mpdUrl;
+
+                        if (manifest.hasOwnProperty("Location")) {
+                            url = manifest.Location;
+                        }
+
+                        self.debug.log("### Refresh manifest @ " + url);
+
+                        self.manifestLoader.load(url).then(
+                            function (manifestResult) {
+                                self.manifestModel.setValue(manifestResult);
+                                self.debug.log("### Manifest has been refreshed.");
+                                deferredSubtitleUpdate.resolve();
+                            }
+                        );
+                    }
+                );
+            }
+            else {
+                deferredSubtitleUpdate.reject();
+            }
+
+            return deferredSubtitleUpdate.promise;
         },
 
         initProtection: function() {

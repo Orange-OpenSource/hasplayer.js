@@ -97,6 +97,7 @@
 <script src="../../app/js/streaming/captioning/TTMLParser.js"></script>
 <script src="../../app/js/streaming/captioning/TextTrackExtensions.js"></script>
 <script src="../../app/js/streaming/captioning/TextSourceBuffer.js"></script>
+<script src="../../app/js/streaming/captioning/TextTTMLXMLMP4SourceBuffer.js"></script>
 <script src="../../app/js/streaming/captioning/TextController.js"></script>
 
 <script src="../../app/js/streaming/vo/MetricsList.js"></script>
@@ -190,6 +191,28 @@
                 <span id="big-title">HAS Javascript Player</span>
                 <span>{{versionHAS}}</span>
                 <span style="font-size:16px">(based on dash.js {{version}})</span>
+                <button class="btn btn-link pull-right" data-toggle="modal" data-target=".about">
+                    <i class="fa fa-info-circle"></i>
+                </button>
+
+                <div class="modal fade about" tabindex="-1" role="dialog" aria-labelledby="about" aria-hidden="true">
+                    <div class="modal-dialog modal-sm">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title" id="myModalLabel">Informations</h4>
+                            </div>
+                            <div class="modal-body">
+                                <strong>HAS Player Version</strong><br>{{ versionFull }}
+                                <br>
+                                <strong>Date</strong><br>{{ buildDate }}
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 
@@ -261,7 +284,6 @@
 
                     <div class="panel-heading panel-top">
                         <span class="panel-title"><b>Chromecast Options</b></span>
-                    </div>
                     <div class="panel-body">
                         <div class="col-md-5">
                             <div>
@@ -299,6 +321,7 @@
                         </div>
                     </div>
                 </div>
+            </div>
                 <div class="panel">
                     <div class="panel-heading panel-top">
                         <span class="panel-title">Charts</span>
@@ -415,6 +438,14 @@
                         <p class="text-success" title="[low] < [average] < [high]">{{audioDownload}}</p>
                         <p class="text-primary">Ratio: <span class="text-success">last {{audioRatioCount}} segments</span></p>
                         <p class="text-success" title="[low] < [average] < [high]">{{audioRatio}}</p>
+                    </div>
+                </div>
+                <div class="panel">
+                    <div class="panel-heading panel-top">
+                        <span class="panel-title">Text</span>
+                        <div ng-show="textData">
+                            <select id="textTracksSelect" ng-model="textData" ng-options="track.lang +' - ' + track.id for track in textTracks" required="true" ng-change="selectTextTrack(textData)"></select>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -43,6 +43,8 @@ MediaPlayer = function (aContext) {
  */
     var VERSION = "1.2.0",
         VERSION_HAS = "1.1.0_dev",
+        GIT_TAG = "@@REVISIONTOREPLACE",
+        BUILD_DATE = "@@TIMESTAMPTOREPLACE",
         context = aContext,
         system,
         element,
@@ -224,6 +226,27 @@ MediaPlayer = function (aContext) {
             return VERSION_HAS;
         },
 
+        // ORANGE: get the full version (with git tag, only at build)
+        getVersionFull: function () {
+            var revision = "@@REVISION",
+                tag = "TOREPLACE";
+            if(GIT_TAG !== (revision+tag)) {
+                return VERSION_HAS + '_' + GIT_TAG;
+            } else {
+                return VERSION_HAS;
+            }
+        },
+
+        getBuildDate: function() {
+            var build = "@@TIMESTAMP",
+                date = "TOREPLACE";
+            if(BUILD_DATE !== (build+date)) {
+                return BUILD_DATE;
+            } else {
+                return 'Not a builded version';
+            }
+        },
+
         startup: function () {
             if (!initialized) {
                 system.injectInto(this);
@@ -306,6 +329,16 @@ MediaPlayer = function (aContext) {
         // ORANGE: get the audio track list
         getAudioTracks: function(){
             return streamController.getAudioTracks();
+        },
+
+        // ORANGE: add function to switch subtitleTracks for a media
+        setSubtitleTrack: function(subtitleTrack){
+            streamController.setSubtitleTrack(subtitleTrack);
+        },
+
+        // ORANGE: get the subtitle track list
+        getSubtitleTracks: function(){
+            return streamController.getSubtitleTracks();
         },
 
         attachView: function (view) {

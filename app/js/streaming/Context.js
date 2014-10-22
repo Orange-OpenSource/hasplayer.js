@@ -34,6 +34,7 @@ MediaPlayer.di.Context = function () {
             this.system.mapClass('protectionModel', MediaPlayer.models.ProtectionModel);
 
             this.system.mapSingleton('textSourceBuffer', MediaPlayer.dependencies.TextSourceBuffer);
+            this.system.mapSingleton('textTTMLXMLMP4SourceBuffer', MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer);            
             this.system.mapSingleton('mediaSourceExt', MediaPlayer.dependencies.MediaSourceExtensions);
             this.system.mapSingleton('sourceBufferExt', MediaPlayer.dependencies.SourceBufferExtensions);
             this.system.mapSingleton('bufferExt', MediaPlayer.dependencies.BufferExtensions);

@@ -3,11 +3,12 @@
 module.exports = function(grunt) {
 
 	var log = grunt.option('log') || false;
+	var logOption = ['self.debug.log','this.debug.log','rslt.debug.log'];
+	var dropConsole = true;
 
 	if(log) {
 		logOption = [];
-	} else {
-		logOption = ['self.debug.log','this.debug.log','rslt.debug.log'];
+		dropConsole = false;
 	}
 
 	return {
@@ -18,7 +19,7 @@ module.exports = function(grunt) {
 					global_defs: {
 						DEBUG: true
 					},
-					drop_console : true,
+					drop_console : dropConsole,
 					drop_debugger: true,
 					warnings: true
 				},

@@ -33,6 +33,7 @@
         playListener,
         // ORANGE: audio language management
         audioTracks,
+        subtitleTracks,
 
         play = function () {
             activeStream.play();
@@ -354,12 +355,25 @@
             }
         },
 
+        updateSubtitleTracks = function(){
+            if(activeStream){
+                var self = this;
+                self.manifestExt.getTextDatas(self.manifestModel.getValue(),activeStream.getPeriodIndex()).then(function(textDatas){
+                    subtitleTracks = textDatas;
+                    // fire event to notify that subtitletracks have changed
+                    self.system.notify("subtitleTracksUpdated");
+                });
+            }
+        },
+
         manifestHasUpdated = function() {
             var self = this;
             composeStreams.call(self).then(
                 function() {
                     // ORANGE: Update Audio Tracks List
                     updateAudioTracks.call(self);
+                    // ORANGE: Update Subtitle Tracks List
+                    updateSubtitleTracks.call(self);
                     self.system.notify("streamsComposed");
                 },
                 function(errMsg) {
@@ -430,6 +444,17 @@
         setAudioTrack:function(audioTrack){
             if(activeStream){
                 activeStream.setAudioTrack(audioTrack);
+            }
+        },
+
+        // ORANGE: subtitleTrack Management
+        getSubtitleTracks: function(){
+            return subtitleTracks;
+        },
+
+        setSubtitleTrack:function(subtitleTrack){
+            if(activeStream){
+                activeStream.setSubtitleTrack(subtitleTrack);
             }
         },
         

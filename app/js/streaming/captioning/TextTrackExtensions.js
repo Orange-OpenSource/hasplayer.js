@@ -37,17 +37,34 @@ MediaPlayer.utils.TextTrackExtensions = function () {
 
             return Q.when(track);
         },
+
+        // Orange: addCues added so it is possible to add cues during playback,
+        //         not only during track initialization
+
+        addCues: function(track, captionData) {
+            for(var item in captionData) {
+                var currentItem = captionData[item];
+                track.addCue(new Cue(currentItem.start, currentItem.end, currentItem.data));
+            }
+        },
+
         deleteCues: function(video) {
             //when multiple tracks are supported - iterate through and delete all cues from all tracks.
-            var track = video.textTracks[0],
-                cues = track.cues,
-                lastIdx = cues.length - 1;
+            if (video) {
+                var track = video.textTracks[0];
+                if (track) {
+                    var cues = track.cues;
+                    if (cues) {
+                        var lastIdx = cues.length - 1;
 
             for (var i = lastIdx; i >= 0 ; i -= 1) {
                 track.removeCue(cues[i]);
             }
+                    }
+                }
+            }
 
-            track.mode = "disabled";
+            //track.mode = "disabled";
         }
 
     };
