@@ -43,21 +43,6 @@
         return vo;
     };
 
-    rslt.addHttpRequest = function (streamType, tcpid, type, url, actualurl, range, trequest, tresponse, tfinish, responsecode, interval, mediaduration, startTime, quality) {
-        // Returned metric used by FragmentLoader
-        //if (DEBUG) {
-            return this.parent.addHttpRequest(streamType, tcpid, type, url, actualurl, range, trequest, tresponse, tfinish, responsecode, interval, mediaduration, startTime, quality);
-        //}
-        //return null;
-    };
-
-    rslt.appendHttpTrace = function (httpRequest, s, d, b) {
-        if (DEBUG) {
-            return this.parent.appendHttpTrace(httpRequest, s, d, b);
-        }
-        return null;
-    };
-
     rslt.addBufferLevel = function (streamType, t, level) {
         var vo = new MediaPlayer.vo.metrics.BufferLevel();
 
@@ -75,18 +60,57 @@
         return vo;
     };
 
-    rslt.addPlayList = function (streamType, start, mstart, starttype) {
-        if (DEBUG) {
-            return this.parent.addPlayList(streamType, start, mstart, starttype);
-        }
-        return null;
+    rslt.addError = function (streamType, code, message) {
+        var vo = new Custom.vo.metrics.Error();
+
+        vo.code = code;
+        vo.message = message;
+    
+        this.parent.metricAdded(streamType, "Error", vo);
+        return vo;
     };
 
-    rslt.appendPlayListTrace = function (playList, representationid, subreplevel, start, mstart, duration, playbackspeed, stopreason) {
-        if (DEBUG) {
-            return this.parent.appendPlayListTrace(playList, representationid, subreplevel, start, mstart, duration, playbackspeed, stopreason);
+    rslt.addState = function (streamType, currentState, position, reason) {
+        var vo = new Custom.vo.metrics.State();
+
+        vo.current = currentState;
+        vo.position = position;
+        vo.reason = reason;
+        
+        this.parent.metricAdded(streamType, "State", vo);
+        return vo;
+    };
+
+    rslt.addSession = function (streamType,url,loop, endTime, playerType) {
+        var vo = new Custom.vo.metrics.Session();
+
+        vo.uri = url;
+        if (loop) {
+            vo.loopMode = 1;
+        }else {
+            vo.loopMode = 0;
         }
-        return null;
+        vo.endTime = endTime;
+        vo.playerType = playerType;
+
+        this.parent.metricAdded(streamType, "Session", vo);
+        return vo;
+    };
+
+    rslt.addCondition = function (streamType,isFullScreen,videoWidth, videoHeight, droppedFrames,fps) {
+        var vo = new Custom.vo.metrics.Condition();
+
+        vo.isFullScreen = isFullScreen;
+        vo.windowSize = videoWidth+"x"+videoHeight;
+        vo.fps = fps;
+        vo.droppedFrames = droppedFrames;
+
+        this.parent.metricAdded(streamType, "Condition", vo);
+        return vo;
+    };
+
+    rslt.addMetaData = function () {
+        this.parent.metricAdded(null, "ManifestReady", null);
     };
 
     rslt.clearAllCurrentMetrics = function () {

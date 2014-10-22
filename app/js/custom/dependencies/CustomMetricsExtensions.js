@@ -84,6 +84,50 @@
 
     var rslt = Custom.utils.copyMethods(Dash.dependencies.DashMetricsExtensions);
 
+    rslt.getDuration = function() {
+        var self = this,
+            manifest = self.manifestModel.getValue();
+
+        var duration = manifest.Period.duration;
+
+        if (duration !== Infinity) {
+            return duration;
+        }
+        
+        return -1;
+    };
+
+    rslt.getFormatForType = function(type) {
+        var self = this,
+            manifest = self.manifestModel.getValue();
+
+        for(var i = 0;i<manifest.Period.AdaptationSet.length;i++)
+        {
+            var adaptation = manifest.Period.AdaptationSet[i];
+            if (adaptation.type === type) {
+                return adaptation.mimeType;
+            }
+        }
+
+        return null;
+    };
+
+    rslt.getCodecForType = function(type) {
+        var self = this,
+            manifest = self.manifestModel.getValue();
+
+        for(var i = 0;i<manifest.Period.AdaptationSet.length;i++)
+        {
+            var adaptation = manifest.Period.AdaptationSet[i];
+            if (adaptation.type === type || adaptation.contentType === type) {
+                //return codecs of the first Representation
+                return adaptation.Representation[0].codecs;
+            }
+        }
+
+        return null;
+    };
+
     rslt.getVideoWidthForRepresentation = function (representationId) {
         var self = this,
             manifest = self.manifestModel.getValue(),
@@ -159,7 +203,7 @@
             bitrateArray = [];
 
         if ((manifest === null) || (manifest === undefined)) {
-            return null
+            return null;
         }
 
         periodArray = manifest.Period_asArray;
