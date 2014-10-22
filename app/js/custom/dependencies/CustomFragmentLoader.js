@@ -17,13 +17,260 @@
     "use strict";
     var rslt = Custom.utils.copyMethods(MediaPlayer.dependencies.FragmentLoader);
 
+    var RETRY_ATTEMPTS = 3,
+    RETRY_INTERVAL = 500,
+    BYTESLENGTH = false,
+    retryCount = 0,
+    xhrs = [];
+
+    rslt.doLoad = function (request, bytesRange) {
+        var d = Q.defer();
+        var req = new XMLHttpRequest(),
+        httpRequestMetrics = null,
+        firstProgress = true,
+        needFailureReport = true,
+        lastTraceTime = null,
+        self = this;
+
+        xhrs.push(req);
+        request.requestStartDate = new Date();
+
+        httpRequestMetrics = self.metricsModel.addHttpRequest(request.streamType,
+          null,
+          request.type,
+          request.url,
+          null,
+          request.range,
+          request.requestStartDate,
+          null,
+          null,
+          null,
+          null,
+          request.duration,
+
+          request.startTime,
+          request.quality);
+
+        self.metricsModel.appendHttpTrace(httpRequestMetrics,
+          request.requestStartDate,
+          request.requestStartDate.getTime() - request.requestStartDate.getTime(),
+          [0]);
+        lastTraceTime = request.requestStartDate;
+
+        req.open("GET", self.tokenAuthentication.addTokenAsQueryArg(request.url), true);
+        req.responseType = "arraybuffer";
+        req = self.tokenAuthentication.setTokenInRequestHeader(req);
+
+        if (bytesRange) {
+            req.setRequestHeader("Range", bytesRange);
+        }
+
+        req.onprogress = function (event) {
+            var currentTime = new Date();
+            if (firstProgress) {
+                firstProgress = false;
+                if (!event.lengthComputable || (event.lengthComputable && event.total != event.loaded)) {
+                    request.firstByteDate = currentTime;
+                    httpRequestMetrics.tresponse = currentTime;
+                }
+            }
+            self.metricsModel.appendHttpTrace(httpRequestMetrics,
+              currentTime,
+              currentTime.getTime() - lastTraceTime.getTime(),
+              [req.response ? req.response.byteLength : 0]);
+            lastTraceTime = currentTime;
+        };
+
+        req.onload = function () {
+            if (req.status < 200 || req.status > 299)
+            {
+              return;
+          }
+          needFailureReport = false;
+
+          var currentTime = new Date(),
+          bytes = req.response,
+          latency,
+          download;
+
+          if (!request.firstByteDate) {
+            request.firstByteDate = request.requestStartDate;
+        }
+        request.requestEndDate = currentTime;
+
+        latency = (request.firstByteDate.getTime() - request.requestStartDate.getTime());
+        download = (request.requestEndDate.getTime() - request.firstByteDate.getTime());
+
+        self.debug.log("[FragmentLoader]["+request.streamType+"] Loaded: " + request.url +" (" + req.status + ", " + latency + "ms, " + download + "ms)");
+
+        httpRequestMetrics.tresponse = request.firstByteDate;
+        httpRequestMetrics.tfinish = request.requestEndDate;
+        httpRequestMetrics.responsecode = req.status;
+
+        httpRequestMetrics.bytesLength = bytes ? bytes.byteLength : 0;
+
+        self.metricsModel.appendHttpTrace(httpRequestMetrics,
+          currentTime,
+          currentTime.getTime() - lastTraceTime.getTime(),
+          [bytes ? bytes.byteLength : 0]);
+        lastTraceTime = currentTime;
+
+        d.resolve({
+            data: bytes,
+            request: request
+        });
+    };
+
+    req.onloadend = req.onerror = function () {
+        if (xhrs.indexOf(req) === -1) {
+            return;
+        } else {
+            xhrs.splice(xhrs.indexOf(req), 1);
+        }
+
+        if (!needFailureReport)
+        {
+          return;
+      }
+      needFailureReport = false;
+
+      var currentTime = new Date(),
+      bytes = req.response,
+      latency,
+      download;
+
+      if (!request.firstByteDate) {
+        request.firstByteDate = request.requestStartDate;
+    }
+    request.requestEndDate = currentTime;
+
+    latency = (request.firstByteDate.getTime() - request.requestStartDate.getTime());
+    download = (request.requestEndDate.getTime() - request.firstByteDate.getTime());
+
+    httpRequestMetrics.tresponse = request.firstByteDate;
+    httpRequestMetrics.tfinish = request.requestEndDate;
+    httpRequestMetrics.responsecode = req.status;
+
+    self.metricsModel.appendHttpTrace(httpRequestMetrics,
+      currentTime,
+      currentTime.getTime() - lastTraceTime.getTime(),
+      [bytes ? bytes.byteLength : 0]);
+    lastTraceTime = currentTime;
+
+    d.reject(req);
+};
+
+self.debug.log("[FragmentLoader]["+request.streamType+"] Load: " + request.url);
+
+req.send();
+return d.promise;
+};
+
+rslt.getBytesLength = function(request) {
+    var d = Q.defer();
+    var http = new XMLHttpRequest();
+
+    http.open('HEAD', request.url);
+
+    http.onreadystatechange = function () {
+        if (http.status < 200 || http.status > 299) {
+            d.reject();
+        } else {
+            if(http.getResponseHeader('Content-Length')) {
+                d.resolve(http.getResponseHeader('Content-Length'));
+            } else {
+                d.reject();
+            }
+        }
+    };
+    http.send();
+    return d.promise;
+};
+
+rslt.planRequests = function (req) {
+
+    if (!req) {
+        return Q.when(null);
+    }
+
+    var that = this;
+    var d = Q.defer();
+
+    if(BYTESLENGTH) {
+        this.getBytesLength(req).then(function(bytesLength) {
+
+            BYTESLENGTH = true;
+
+            that.loadRequests(bytesLength, req).then(function(datas) {
+                var buffer1 = datas[0].data,
+                buffer2 = datas[1].data,
+                tmp = new Uint8Array(buffer1.byteLength + buffer2.byteLength);
+
+                tmp.set(new Uint8Array(buffer1), 0);
+                tmp.set(new Uint8Array(buffer2), buffer1.byteLength);
+
+                d.resolve({
+                    data: tmp.buffer,
+                    request: req
+                });
+            });
+
+        }, function() {
+            BYTESLENGTH = false;
+            d.resolve(that.doLoad(req, RETRY_ATTEMPTS));
+        });
+    } else {
+        that.doLoad(req).then(function (result){
+          d.resolve(result);
+        },function (reqerror){
+          that.retry(reqerror,d,that);
+    });
+  }
+    return d.promise;
+};
+
+rslt.retry = function (request, d, that) {
+  setTimeout(function(){
+    that.doLoad(request).then(function (result){
+      retryCount = 0;
+      d.resolve(result);
+    }, function (error) {
+      retryCount++;
+      if (retryCount < RETRY_ATTEMPTS) {
+        that.retry(error,d,that);
+      }
+      else {
+        retryCount = 0;
+        d.reject(error);
+      }
+    });
+  },RETRY_INTERVAL);
+};
+
+rslt.loadRequests = function(bytesLength, req) {
+
+    var halfBytes = Math.floor(bytesLength/2),
+    bytesFirstHalf = 'bytes=0-' + (halfBytes-1),
+    bytesSecondHalf = 'bytes=' + halfBytes + '-' + bytesLength;
+
+    return Q.all([
+        this.doLoad(req, RETRY_ATTEMPTS, bytesFirstHalf),
+        this.doLoad(req, RETRY_ATTEMPTS, bytesSecondHalf)
+        ]);
+};
+
     rslt.load = function(req){
+
          var deferred = Q.defer();
-        // we already have the data so no need to do request
+
         if(req.type == "Initialization Segment" && req.data){
             deferred.resolve(req,{data:req.data});
         }else{
-            deferred.promise = this.parent.load.call(this,req);
+        this.planRequests(req).then(function(result) {
+          deferred.resolve(result);
+        },function (error) {
+          deferred.reject(error);
+        });
         }
 
         return deferred.promise;
