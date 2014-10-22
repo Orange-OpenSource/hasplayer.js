@@ -318,17 +318,17 @@
     <div id="chartToToggle" class="chartContainer container"> 
         <div id="playingInfos" class="infos">
             <span class='playingTitle'>Playing</span><br>
-            <text id="playingBandwidth"></text>
-            <text id="playingResolution"></text>
-            <text id="playingCodecs"></text>
-            <text id="bufferLevel"></text>
-            <text id="bitrate" class="downloadingInfos"></text>
+            <span id="playingBandwidth"></span><br>
+            <span id="playingResolution"></span><br>
+            <span id="playingCodecs"></span><br>
+            <span id="bufferLevel"></span><br>
+            <span id="bitrate" class="downloadingInfos"></span>
         </div>
         <div id="chartBandwidth" class="overlayChart" ng-model="bandwidthData"></div>
         <div id="sliderBitrate"></div>
     </div>
 
-    <video id="videoPlayer" loop></video>
+    <video id="videoPlayer"></video>
     <div id="controlBar" class="controlBar">
 
         <i class="fa fa-pause button button-playpause left"></i>

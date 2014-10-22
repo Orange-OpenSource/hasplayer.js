@@ -176,7 +176,7 @@ function update() {
         }
     }
 
-    if (httpRequest.tfinish !== null) {
+    if (httpRequest && httpRequest.tfinish) {
         bitrate = (httpRequest.bytesLength * 8000) / (httpRequest.tfinish - httpRequest.trequest);
         //console.log(bitrate + "(" +httpRequests.length + ")");
     }
@@ -287,7 +287,7 @@ function update() {
         }
     }
 
-    $("#downloadingInfos").html("<span class='downloadingTitle'>Downloading</span><br>" + Math.round(downloadRepInfos.bandwidth/1000) + " kbps<br>"+ downloadRepInfos.width +"x"+downloadRepInfos.height + "<br>"+ downloadRepInfos.codecs + "<br>"+ bufferLevel + "s");
+    //$("#downloadingInfos").html("<span class='downloadingTitle'>Downloading</span><br>" + Math.round(downloadRepInfos.bandwidth/1000) + " kbps<br>"+ downloadRepInfos.width +"x"+downloadRepInfos.height + "<br>"+ downloadRepInfos.codecs + "<br>"+ bufferLevel + "s");
     //$("#playingInfos").html("<span class='playingTitle'>Playing</span><br>"+ Math.round(playRepInfos.bandwidth/1000) + " kbps<br>"+ playRepInfos.width +"x"+playRepInfos.height + "<br>"+ playRepInfos.codecs + "<br>"+ bufferLevel + "s<br>");
 
     $("#playingBandwidth").html(Math.round(playRepInfos.bandwidth/1000).toLocaleString() + " kb/s");

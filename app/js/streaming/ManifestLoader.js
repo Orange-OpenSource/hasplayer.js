@@ -52,6 +52,7 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                 
                 //ORANGE : in latest Chrome version, get the redirect url and use it to get chunks
                 if (request.responseURL) {
+                  self.debug.log("[ManifestLoader] Redirect URL: " + request.responseURL);
                   baseUrl = parseBaseUrl(request.responseURL);
                 }
 

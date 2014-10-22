@@ -27,7 +27,7 @@ var mp4lib = (function() {
         // A handler function may be hooked up to display warnings.
         // A warning is typically non-critical issue, like unknown box in data buffer.
         warningHandler:function(message){
-            console.log(message);
+            //console.log(message);
         }
     };
 
