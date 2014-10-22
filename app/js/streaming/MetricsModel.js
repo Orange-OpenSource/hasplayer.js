@@ -187,6 +187,8 @@
 
             vo.time = quality.creationTime;
             vo.droppedFrames = quality.droppedVideoFrames;
+            // ORANGE : add decoded video frames
+            vo.decodedFrameCount = quality.totalVideoFrames;
 
             if (list.length > 0 && list[list.length - 1] == vo) {
                 return list[list.length - 1];
