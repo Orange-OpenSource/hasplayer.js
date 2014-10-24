@@ -1,17 +1,18 @@
 /*
- * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
  * 
- * Copyright (c) 2013, Digital Primates
+ * Copyright (c) 2014, Orange
  * All rights reserved.
  * 
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
  * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 Mss.dependencies.MssFragmentController = function () {
     "use strict";
 
@@ -107,35 +108,38 @@ Mss.dependencies.MssFragmentController = function () {
                     segment = segments[0];
                 }
             }
-
-            return segmentsUpdated;
         },
 
         convertFragment = function (data, request, adaptation) {
 
-            var segmentsUpdated = false;
+            var i = 0;
 
             // Get track id corresponding to adaptation set
             var manifest = rslt.manifestModel.getValue();
             var trackId = getIndex(adaptation, manifest) + 1; // +1 since track_id shall start from '1'
 
             // Create new fragment
-            var fragment = new mp4lib.deserialize(data);
+            var fragment = mp4lib.deserialize(data);
+
+            if (!fragment) {
+                return null;
+            }
 
             // Get references en boxes
-            var moof = mp4lib.getBoxByType(fragment, "moof");
-            var mdat = mp4lib.getBoxByType(fragment, "mdat");
-            var traf = mp4lib.getBoxByType(moof, "traf");
-            var trun = mp4lib.getBoxByType(traf, "trun");
-            var tfhd = mp4lib.getBoxByType(traf, "tfhd");
+            var moof = fragment.getBoxByType("moof");
+            var mdat = fragment.getBoxByType("mdat");
+            var traf = moof.getBoxByType("traf");
+            var trun = traf.getBoxByType("trun");
+            var tfhd = traf.getBoxByType("tfhd");
+            var saio;
             
             //if protected content
-            var sepiff = mp4lib.getBoxByType(traf,"sepiff");
+            var sepiff = traf.getBoxByType("sepiff");
             if(sepiff !== null) {
-
                 sepiff.boxtype = "senc";
+                sepiff.extended_type = undefined;
                 // Create Sample Auxiliary Information Offsets Box box (saio) 
-                var saio = new mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox();
+                saio = new mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox();
                 saio.version = 0;
                 saio.flags = 0;
                 saio.entry_count = 1;
@@ -151,21 +155,27 @@ Mss.dependencies.MssFragmentController = function () {
 
                 var sizedifferent = false;
                 // get for each sample_info the size
-                for (var i = 0; i < sepiff.sample_count; i++) {
-                    saiz.sample_info_size[i] = 8+(sepiff.entry[i].NumberOfEntries*6)+2;
-                    //8 (Init vector size) + NumberOfEntries*(clear (2) +crypted (4))+ 2 (numberofEntries size (2))
-                    if(i>1) {
-                        if (saiz.sample_info_size[i] != saiz.sample_info_size[i-1]) {
-                            sizedifferent = true;
+                if (sepiff.flags & 2) {
+                    for (i = 0; i < sepiff.sample_count; i++) {
+                        saiz.sample_info_size[i] = 8+(sepiff.entry[i].NumberOfEntries*6)+2;
+                        //8 (Init vector size) + NumberOfEntries*(clear (2) +crypted (4))+ 2 (numberofEntries size (2))
+                        if(i>0) {
+                            if (saiz.sample_info_size[i] != saiz.sample_info_size[i-1]) {
+                                sizedifferent = true;
+                            }
                         }
                     }
+
+                    //all the samples have the same size
+                    //set default size and remove the table.
+                    if (sizedifferent === false) {
+                        saiz.default_sample_info_size = saiz.sample_info_size[0];
+                        saiz.sample_info_size = [];
+                    }
                 }
-                
-                //all the samples have the same size
-                //det default size and remove the table.
-                if (sizedifferent === false) {
-                    saiz.default_sample_info_size = saiz.sample_info_size[0];
-                    saiz.sample_info_size = [];
+                else{
+                    //if flags === 0 (ex: audio data), default sample size = Init Vector size (8)
+                    saiz.default_sample_info_size = 8;
                 }
 
                 //add saio and saiz box
@@ -178,22 +188,25 @@ Mss.dependencies.MssFragmentController = function () {
 
             // Process tfxd boxes
             // This box provide absolute timestamp but we take the segment start time for tfdt
-            mp4lib.removeBoxByType(traf, "tfxd");
+            traf.removeBoxByType("tfxd");
 
             // Create and add tfdt box
-            var tfdt = mp4lib.getBoxByType(traf, "tfdt");
+            var tfdt = traf.getBoxByType("tfdt");
             if (tfdt === null) {
                 tfdt = new mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox();
                 tfdt.version = 1;
+                tfdt.flags = 0;
                 tfdt.baseMediaDecodeTime = Math.floor(request.startTime * request.timescale);
                 traf.boxes.push(tfdt);
             }
 
             // Process tfrf box
-            var tfrf = mp4lib.getBoxByType(traf, "tfrf");
-            if (tfrf !== null) {
-                segmentsUpdated = processTfrf(tfrf, adaptation);
-                mp4lib.removeBoxByType(traf, "tfrf");
+            var tfrf = traf.getBoxesByType("tfrf");
+            if (tfrf.length !== 0) {
+                for (i = 0; i < tfrf.length; i++) {
+                    processTfrf(tfrf[i], adaptation);
+                    traf.removeBoxByType("tfrf");
+                }
             }
 
             // Before determining new size of the converted fragment we update some box flags related to data offset
@@ -204,26 +217,24 @@ Mss.dependencies.MssFragmentController = function () {
 
             if(sepiff !== null) {
                 //+8 => box size + type
-                var moofpositionInFragment = mp4lib.getBoxPositionByType(fragment,"moof")+8;
-                var trafpositionInMoof = mp4lib.getBoxPositionByType(moof,"traf")+8;
-                var sencpositionInTraf = mp4lib.getBoxPositionByType(traf,"senc")+8;
+                var moofpositionInFragment = fragment.getBoxPositionByType("moof")+8;
+                var trafpositionInMoof = moof.getBoxPositionByType("traf")+8;
+                var sencpositionInTraf = traf.getBoxPositionByType("senc")+8;
                 // set offset from begin fragment to the first IV in senc box
                 saio.offset[0] = moofpositionInFragment+trafpositionInMoof+sencpositionInTraf+8;//flags (3) + version (1) + sampleCount (4)
             }
 
             // Determine new size of the converted fragment
             // and allocate new data buffer
-            var lp = new mp4lib.fieldProcessors.LengthCounterBoxFieldsProcessor(fragment);
-            fragment._processFields(lp);
-            var new_data = new Uint8Array(lp.res);
+            var fragment_size = fragment.getLength();
 
             // updata trun.data_offset field = offset of first data byte (inside mdat box)
-            trun.data_offset = lp.res - mdat.size + 8; // 8 = 'size' + 'type' mdat fields length
+            trun.data_offset = fragment_size - mdat.size + 8; // 8 = 'size' + 'type' mdat fields length
 
             // PATCH tfdt and trun samples timestamp values in case of live streams within chrome
-            if ((navigator.userAgent.indexOf("Chrome") >= 0) && (manifest.type === "dynamic")) {
+            if ((navigator.userAgent.indexOf("Chrome") >= 0) && (manifest.type === "dynamic")){
                 tfdt.baseMediaDecodeTime /= 1000;
-                for  (var i = 0; i < trun.samples_table.length; i++) {
+                for  (i = 0; i < trun.samples_table.length; i++) {
                     if (trun.samples_table[i].sample_composition_time_offset > 0) {
                         trun.samples_table[i].sample_composition_time_offset /= 1000;
                     }
@@ -233,14 +244,11 @@ Mss.dependencies.MssFragmentController = function () {
                 }
             }
 
-            // Serialize converted fragment into output data buffer
-            var sp = new mp4lib.fieldProcessors.SerializationBoxFieldsProcessor(fragment, new_data, 0);
-            fragment._processFields(sp);
+            var new_data = mp4lib.serialize(fragment);
 
-            return {
-                bytes: new_data,
-                segmentsUpdated: segmentsUpdated
-            };
+            //console.saveBinArray(new_data, adaptation.type+"_evolution.mp4");
+
+            return new_data;
         };
     
     var rslt = Custom.utils.copyMethods(MediaPlayer.dependencies.FragmentController);
@@ -257,18 +265,14 @@ Mss.dependencies.MssFragmentController = function () {
             result = new Uint8Array(bytes);
         }
 
-        if (request && (request.type === "Media Segment") && representations && (representations.length > 0)) {
+        if (request && (request.type === "Media Segment") && representations && (representations.length > 0)){
             // Get adaptation containing provided representations
             // (Note: here representations is of type Dash.vo.Representation)
             var adaptation = manifest.Period_asArray[representations[0].adaptation.period.index].AdaptationSet_asArray[representations[0].adaptation.index];
-            var res = convertFragment(result, request, adaptation);
-            result = res.bytes;
-            if (res.segmentsUpdated === true) {
-                // If some segments have been added or removed, then
-                // we reset the list of segments for each representation
-                for (var i = 0; i < representations.length; i++) {
-                    representations[i].segments = null;
-                }
+            result = convertFragment(result, request, adaptation);
+
+            if (!result) {
+                return Q.when(null);
             }
         }
 
@@ -276,17 +280,22 @@ Mss.dependencies.MssFragmentController = function () {
         // Note: request = 'undefined' in case of initialization segments
         if ((request === undefined) && (navigator.userAgent.indexOf("Chrome") >= 0) && (manifest.type === "dynamic")) {
             var init_segment = mp4lib.deserialize(result);
-            var moov = mp4lib.getBoxByType(init_segment, "moov");
-            var mvhd = mp4lib.getBoxByType(moov, "mvhd");
-            var trak = mp4lib.getBoxByType(moov, "trak");
-            var mdia = mp4lib.getBoxByType(trak, "mdia");
-            var mdhd = mp4lib.getBoxByType(mdia, "mdhd");
+            // FIXME unused variables ?
+            var moov = init_segment.getBoxByType("moov");
+            var mvhd = moov.getBoxByType("mvhd");
+            var trak = moov.getBoxByType("trak");
+            var mdia = trak.getBoxByType("mdia");
+            var mdhd = mdia.getBoxByType("mdhd");
 
             mvhd.timescale /= 1000;
             mdhd.timescale /= 1000;
 
             result = mp4lib.serialize(init_segment);
         }
+
+        //if (request !== undefined) {
+        //    console.saveBinArray(result, request.streamType + "_" + request.index + "_" + request.quality + ".mp4");
+        //}
 
         return Q.when(result);
     };

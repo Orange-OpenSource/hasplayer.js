@@ -13,7 +13,13 @@
  */
 MediaPlayer.utils.TextTrackExtensions = function () {
     "use strict";
+    var Cue;
+
     return {
+        setup: function() {
+            Cue = window.VTTCue || window.TextTrackCue;
+        },
+
         addTextTrack: function(video, captionData,  label, scrlang, isDefaultTrack) {
 
             //TODO: Ability to define the KIND in the MPD - ie subtitle vs caption....
@@ -26,21 +32,39 @@ MediaPlayer.utils.TextTrackExtensions = function () {
 
             for(var item in captionData) {
                 var currentItem = captionData[item];
-                track.addCue(new TextTrackCue(currentItem.start, currentItem.end, currentItem.data));
+                track.addCue(new Cue(currentItem.start, currentItem.end, currentItem.data));
             }
 
             return Q.when(track);
         },
+
+        // Orange: addCues added so it is possible to add cues during playback,
+        //         not only during track initialization
+
+        addCues: function(track, captionData) {
+            for(var item in captionData) {
+                var currentItem = captionData[item];
+                track.addCue(new Cue(currentItem.start, currentItem.end, currentItem.data));
+            }
+        },
+
         deleteCues: function(video) {
             //when multiple tracks are supported - iterate through and delete all cues from all tracks.
-            var track = video.textTracks[0];
-            var cues = track.cues;
+            if (video) {
+                var track = video.textTracks[0];
+                if (track) {
+                    var cues = track.cues;
+                    if (cues) {
+                        var lastIdx = cues.length - 1;
 
-            for (var i=cues.length;i>=0;i--) {
+            for (var i = lastIdx; i >= 0 ; i -= 1) {
                 track.removeCue(cues[i]);
             }
+                    }
+                }
+            }
 
-            track.mode = "disabled";
+            //track.mode = "disabled";
         }
 
     };

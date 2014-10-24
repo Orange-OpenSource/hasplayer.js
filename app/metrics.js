@@ -32,93 +32,6 @@ MetricsTreeConverter = function () {
             return treeMetrics;
         },
 
-
-        manifesfToTreeMetrics = function (manifest) {
-            var treeManifest = [];
-            var period,
-                baseUrl,
-                duration,
-                adaptationSet,
-                p,
-                adapation,
-                repres,
-                r;
-            try {
-                var periods = manifest.Period_asArray;
-                //for each Period
-                for (var i in periods) {
-                    p = periods[i];
-                    period = {};
-                    period.text = "Period";
-                    period.items = [];
-                    period.collapsed = true;
-                    // base Url attribute
-                    baseUrl = {};
-                    baseUrl.text = "BaseUrl : "+p.BaseURL;
-                    period.items.push(baseUrl);
-                    // duration attribute
-                    duration = {
-                        text : "duration : "+p.duration
-                    };
-                    period.items.push(duration);
-                    
-                    //for each adaptationSet
-                    adaptationSet = {};
-                    adaptationSet.text = "AdapationSet";
-                    adaptationSet.collapsed = true;
-                    adaptationSet.items= [];
-                    for (var j in p.AdaptationSet_asArray) {
-                        var as = p.AdaptationSet_asArray[j];
-                        adapation = {
-                            text:"AdaptationSet : "+as.type
-                        };
-                        adapation.items = [];
-                        adapation.collapsed = true;
-
-                        //representations
-                        for (var k=0; k<as.Representation_asArray.length; k++) {
-                            repres = as.Representation_asArray[k];
-                            r = {text: "Representation id:"+repres.id};
-                            r.items = [
-                                {text: "bandwidth: "+repres.bandwidth},
-                                {text: "codecs: "+repres.codecs}
-                            ];
-                            r.collapsed = true;
-
-                            if (r.AudioChannelConfiguration) {
-                                r.items.push({
-                                    text: "AudioChannelConfiguration",
-                                    items: [{text: "value: "+r.AudioChannelConfiguration.value}],
-                                    collapsed: true
-                                });
-                            }
-
-                            adapation.items.push(r);
-                        }
-
-                        //SegmentTemplate
-                        adapation.items.push({
-                            text: "SegmentTemplate",
-                            items: [
-                                {text: "media: "+as.SegmentTemplate.media},
-                                {text: "timescale: "+as.SegmentTemplate.timescale}
-                            ],
-                            collapsed: true
-                        });
-                        
-                        adaptationSet.items.push(adapation);
-                    }
-                    period.items.push(adaptationSet);
-                    treeManifest.push(period);
-                }
-            } catch (e) {
-                console.error("Error in periodsToTreeMetrics : ",e);
-            }
-            
-            
-            return treeManifest;
-        },
-
         playListTraceMetricsToTreeMetrics = function (playListTrace) {
             var treeMetrics = [],
                 treeMetric,
@@ -246,42 +159,6 @@ MetricsTreeConverter = function () {
                 treeMetric.items.push(mtMetric);
                 treeMetric.items.push(toMetric);
                 treeMetric.items.push(ltoMetric);
-
-                treeMetrics.push(treeMetric);
-            }
-
-            return treeMetrics;
-        },
-
-        representationBoundariesToTreeMetrics = function (representationBoundaries) {
-            var treeMetrics = [],
-                treeMetric,
-                repBoundariesMetric,
-                tMetric,
-                minMetric,
-                maxMetric,
-                i;
-
-            for (i = 0; i < representationBoundaries.length; i += 1) {
-                repBoundariesMetric = representationBoundaries[i];
-
-                treeMetric = {};
-                treeMetric.text = "Representation Boundaries: " + (i + 1);
-                treeMetric.items = [];
-                treeMetric.collapsed = true;
-
-                tMetric = {};
-                tMetric.text = "t: " + repBoundariesMetric.t;
-
-                minMetric = {};
-                minMetric.text = "min: " + repBoundariesMetric.min;
-
-                maxMetric = {};
-                maxMetric.text = "max: " + repBoundariesMetric.max;
-
-                treeMetric.items.push(tMetric);
-                treeMetric.items.push(minMetric);
-                treeMetric.items.push(maxMetric);
 
                 treeMetrics.push(treeMetric);
             }
@@ -477,15 +354,13 @@ MetricsTreeConverter = function () {
             return treeMetrics;
         },
 
-        toTreeViewDataSource = function (metrics,metricsExt) {
+        toTreeViewDataSource = function (metrics) {
             var bufferTreeMetrics = bufferLevelMetricToTreeMetric(metrics.BufferLevel),
                 playListMetrics = playListMetricToTreeMetric(metrics.PlayList),
                 representationSwitchMetrics = representationSwitchToTreeMetrics(metrics.RepSwitchList),
-                representationBoundariesMetrics = representationBoundariesToTreeMetrics(metrics.RepBoundariesList),
                 droppedFramesMetrics = droppedFramesToTreeMetrics(metrics.DroppedFrames),
                 httpRequestMetrics = httpRequestToTreeMetric(metrics.HttpList),
                 tcpConnectionMetrics = tcpConnectionToTreeMetric(metrics.TcpList),
-                manifestTreeMetrics = manifesfToTreeMetrics(metricsExt.manifestModel.getValue()),
                 dataSource;
 
             dataSource = [
@@ -497,11 +372,6 @@ MetricsTreeConverter = function () {
                 {
                     text: "Representation Switch",
                     items: representationSwitchMetrics,
-                    collapsed: true
-                },
-                {
-                    text: "Representation Boundaries",
-                    items: representationBoundariesMetrics,
                     collapsed: true
                 },
                 {
@@ -522,11 +392,6 @@ MetricsTreeConverter = function () {
                 {
                     text: "TCP Connection",
                     items: tcpConnectionMetrics,
-                    collapsed: true
-                },
-                {
-                    text: "Manifest",
-                    items : manifestTreeMetrics,
                     collapsed: true
                 }
             ];

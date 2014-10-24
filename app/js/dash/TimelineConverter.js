@@ -14,7 +14,9 @@
 Dash.dependencies.TimelineConverter = function () {
     "use strict";
 
-    var calcAvailabilityTimeFromPresentationTime = function (presentationTime, mpd, isDynamic, calculateEnd) {
+    var clientServerTimeShift = 0,
+
+        calcAvailabilityTimeFromPresentationTime = function (presentationTime, mpd, isDynamic, calculateEnd) {
             var availabilityTime = NaN;
 
             if (calculateEnd) {
@@ -48,37 +50,49 @@ Dash.dependencies.TimelineConverter = function () {
 
         calcPresentationStartTime = function (period) {
             var presentationStartTime,
-                isDynamic;
-
-            isDynamic = period.mpd.manifest.type === "dynamic";
+                isDynamic = period.mpd.manifest.type === "dynamic",
+                //ORANGE: fix bug on not updating URIFragmentDataVO 
+                startTimeOffset = parseInt(this.uriQueryFragModel.getURIFragmentData().s);
 
             if (isDynamic) {
-                presentationStartTime = period.liveEdge;
+
+                if (!isNaN(startTimeOffset) && startTimeOffset > 1262304000) {
+
+                    presentationStartTime = startTimeOffset - (period.mpd.availabilityStartTime.getTime()/1000);
+
+                    if (presentationStartTime > period.liveEdge ||
+                        presentationStartTime < (period.liveEdge - period.mpd.timeShiftBufferDepth)) {
+
+                        presentationStartTime = null;
+                    }
+                }
+                presentationStartTime = presentationStartTime || period.liveEdge;
+
+            } else {
+                if (!isNaN(startTimeOffset) && startTimeOffset < period.duration && startTimeOffset >= 0) {
+                    presentationStartTime = startTimeOffset;
             } else {
                 presentationStartTime = period.start;
+            }
             }
 
             return presentationStartTime;
         },
 
-        calcPresentationTimeFromWallTime = function (wallTime, period, isDynamic) {
-            var periodAvailabilityStartTime = calcAvailabilityStartTimeFromPresentationTime.call(this, period.start, period.mpd, isDynamic);
-
-            return ((wallTime.getTime() - periodAvailabilityStartTime.getTime()) / 1000);
+        calcPresentationTimeFromWallTime = function (wallTime, period) {
+            return ((wallTime.getTime() - period.mpd.availabilityStartTime.getTime()) / 1000);
         },
 
         calcPresentationTimeFromMediaTime = function (mediaTime, representation) {
-            var periodStart = representation.adaptation.period.start,
-                presentationOffset = representation.presentationTimeOffset;
+            var presentationOffset = representation.presentationTimeOffset;
 
-            return (periodStart - presentationOffset) + mediaTime;
+            return mediaTime - presentationOffset;
         },
 
         calcMediaTimeFromPresentationTime = function (presentationTime, representation) {
-            var periodStart = representation.adaptation.period.start,
-                presentationOffset = representation.presentationTimeOffset;
+            var presentationOffset = representation.presentationTimeOffset;
 
-            return (periodStart + presentationOffset + presentationTime);
+            return (presentationOffset + presentationTime);
         },
 
         calcWallTimeForSegment = function (segment, isDynamic) {
@@ -95,45 +109,82 @@ Dash.dependencies.TimelineConverter = function () {
             return wallTime;
         },
 
-        calcSegmentAvailabilityRange = function(representation, isDynamic) {
-            var range = null,
-                checkTime,
-                duration,
-                now,
-                start,
-                end;
+        calcActualPresentationTime = function(representation, currentTime, isDynamic) {
+            var self = this,
+                periodStart = representation.adaptation.period.start,
+                availabilityWindow = self.calcSegmentAvailabilityRange(representation, isDynamic),
+                actualTime;
 
-            if (isDynamic) {
-                checkTime = representation.adaptation.period.mpd.checkTime;
-                duration = representation.segmentDuration;
-                now = calcPresentationTimeFromWallTime(new Date(), representation.adaptation.period, isDynamic) - representation.adaptation.period.mpd.suggestedPresentationDelay;
-                //the Media Segment list is further restricted by the CheckTime together with the MPD attribute
-                // MPD@timeShiftBufferDepth such that only Media Segments for which the sum of the start time of the
-                // Media Segment and the Period start time falls in the interval [NOW- MPD@timeShiftBufferDepth - @duration, min(CheckTime, NOW)] are included.
-                start = Math.max((now - representation.adaptation.period.mpd.timeShiftBufferDepth - duration), 0);
-                end = isNaN(checkTime) ? now : Math.min(checkTime, now);
-                range = {start: start, end: end};
+            // ORANGE: confusion to resolve between availabilityWindow.start and periodStart.
+            // (in MSS case, periodStart is set to availabilityWindow.start)
+            //if ((currentTime >= (availabilityWindow.start + periodStart)) && (currentTime <= (availabilityWindow.end + periodStart))) {
+            if ((currentTime >= (availabilityWindow.start)) && (currentTime <= (availabilityWindow.end))) {
+                return currentTime;
             }
+
+            actualTime = Math.max(availabilityWindow.end - representation.adaptation.period.mpd.manifest.minBufferTime * 2, availabilityWindow.start);
+
+            return actualTime;
+        },
+
+        calcSegmentAvailabilityRange = function(representation, isDynamic) {
+            var duration = representation.segmentDuration,
+                start = 0,
+                end = representation.adaptation.period.duration,
+                range = {start: start, end: end},
+                checkTime,
+                now;
+
+            if (!isDynamic) return range;
+
+            if ((!representation.adaptation.period.mpd.isClientServerTimeSyncCompleted || isNaN(duration)) && representation.segmentAvailabilityRange) {
+                return representation.segmentAvailabilityRange;
+            }
+
+            checkTime = representation.adaptation.period.mpd.checkTime;
+            now = calcPresentationTimeFromWallTime(new Date((new Date().getTime()) + clientServerTimeShift), representation.adaptation.period);
+            //the Media Segment list is further restricted by the CheckTime together with the MPD attribute
+            // MPD@timeShiftBufferDepth such that only Media Segments for which the sum of the start time of the
+            // Media Segment and the Period start time falls in the interval [NOW- MPD@timeShiftBufferDepth - @duration, min(CheckTime, NOW)] are included.
+            start = Math.max((now - representation.adaptation.period.mpd.timeShiftBufferDepth), 0);
+            checkTime += (clientServerTimeShift / 1000);
+            end = isNaN(checkTime) ? now : Math.min(checkTime, now);
+            range = {start: start, end: end};
 
             return range;
         },
 
-        calcMSETimeOffset = function (representation) {
-            var periodStart = representation.adaptation.period.start,
-                presentationOffset = representation.presentationTimeOffset;
+        liveEdgeFound = function(expectedLiveEdge, actualLiveEdge, period) {
+            if (period.mpd.isClientServerTimeSyncCompleted) return;
 
-            return (periodStart - presentationOffset);
+            // the difference between expected and actual live edge time is supposed to be a difference between client
+            // and server time as well
+            period.mpd.clientServerTimeShift = actualLiveEdge - expectedLiveEdge;
+            period.mpd.isClientServerTimeSyncCompleted = true;
+            clientServerTimeShift = period.mpd.clientServerTimeShift * 1000;
+        },
+
+        calcMSETimeOffset = function (representation) {
+            var presentationOffset = representation.presentationTimeOffset;
+
+            return (-presentationOffset);
         };
 
     return {
         system: undefined,
         debug: undefined,
+        uriQueryFragModel:undefined,
+
+        setup: function() {
+            //this.system.mapHandler("liveEdgeFound", undefined, liveEdgeFound.bind(this));
+        },
 
         calcAvailabilityStartTimeFromPresentationTime: calcAvailabilityStartTimeFromPresentationTime,
         calcAvailabilityEndTimeFromPresentationTime: calcAvailabilityEndTimeFromPresentationTime,
         calcPresentationTimeFromWallTime: calcPresentationTimeFromWallTime,
         calcPresentationTimeFromMediaTime: calcPresentationTimeFromMediaTime,
         calcPresentationStartTime: calcPresentationStartTime,
+        calcActualPresentationTime: calcActualPresentationTime,
         calcMediaTimeFromPresentationTime: calcMediaTimeFromPresentationTime,
         calcSegmentAvailabilityRange: calcSegmentAvailabilityRange,
         calcWallTimeForSegment: calcWallTimeForSegment,

@@ -65,12 +65,52 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
         } else if (hasMs) {
             return element.msSetMediaKeys(mediaKeys);
         } else {
-            //this.debug.log("no setmediakeys function in element");
+            this.debug.log("no setmediakeys function in element");
         }
     },
 
-    createSession: function (mediaKeys, mediaCodec, initData) {
-        return mediaKeys.createSession(mediaCodec, initData);
+    createSession: function (mediaKeys, mediaCodec, initData, customData) {
+        // ORANGE: licenser custom data
+        if (customData) {
+            var customDataValue = customData;
+
+            var custombytes = [];
+            //modify customData to be wide char
+            for (var i = 0; i < customDataValue.length; ++i)
+            {
+                var customCharCode = customDataValue.charCodeAt(i);
+                custombytes.push(customCharCode);
+                custombytes.push(0);
+            }
+            var customString ="";
+            //get custom Data string value
+            for (var j = 0; j < custombytes.length; ++j)
+            {
+                customString += String.fromCharCode(custombytes[j]);
+            }
+
+            //encode in base64
+            customDataValue = window.btoa(customString);
+            
+            var cdmData = '<PlayReadyCDMData type="LicenseAcquisition"><LicenseAcquisition version="1.0" Proactive="false"><CustomData encoding="base64encoded">'+customDataValue+'</CustomData></LicenseAcquisition></PlayReadyCDMData>';
+
+            var bytes = [];
+            //modify cdmData to be wide char : encoded on 2 bytes
+            for (i = 0; i < cdmData.length; ++i)
+            {
+                var charCode = cdmData.charCodeAt(i);
+                bytes.push(charCode);
+                bytes.push(0);
+            }
+
+            //cast array as an Uint8Array
+            bytes = new Uint8Array(bytes);
+            
+            return mediaKeys.createSession(mediaCodec, initData, bytes);
+        }
+        else {
+            return mediaKeys.createSession(mediaCodec, initData);
+        }
     },
 
     getKeySystems: function () {
@@ -80,7 +120,7 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
                     headers = [],
                     parser = new DOMParser(),
                     xmlDoc = parser.parseFromString(msg, "application/xml");
-
+            
                 if (xmlDoc.getElementsByTagName("Challenge")[0]) {
                     var Challenge = xmlDoc.getElementsByTagName("Challenge")[0].childNodes[0].nodeValue;
                     if (Challenge) {
@@ -123,14 +163,12 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
                 };
 
                 xhr.open('POST', laURL);
-                
                 xhr.responseType = 'arraybuffer';
                 if (headers) {
                     headers.forEach(function(hdr) {
                         xhr.setRequestHeader(hdr.name, hdr.value);
                     });
                 }
-
                 xhr.send(decodedChallenge);
 
                 return deferred.promise;

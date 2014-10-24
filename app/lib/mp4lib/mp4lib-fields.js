@@ -1,12 +1,18 @@
-if (typeof require !== 'undefined') {
-    // node.js module import    
-    var mp4lib = require('./mp4lib.js');
-
-    // standard node.js Long package is API-comaptible with Google Closure math Long,
-    // see https://npmjs.org/package/long    
-    var goog = { math: { Long : require("long") }};
-}
-
+/*
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+ * 
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+ * 
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 mp4lib.fields.readBytes = function(buf, pos, nbBytes) {
     var value = 0;
@@ -25,6 +31,13 @@ mp4lib.fields.writeBytes = function(buf, pos, nbBytes, value) {
     }
 };
 
+mp4lib.fields.readString = function( buf, pos, count ) {
+    var res = "";
+    for (var i=pos;i<pos+count;i++) {
+        res += String.fromCharCode(buf[i]);
+    }
+    return res;
+};
 
 //------------------------------- NumberField -------------------------------
 
@@ -41,7 +54,7 @@ mp4lib.fields.NumberField.prototype.write = function(buf,pos,val) {
     mp4lib.fields.writeBytes(buf, pos, this.bits/8, val);
 };
 
-mp4lib.fields.NumberField.prototype.getLength = function(val) {
+mp4lib.fields.NumberField.prototype.getLength = function() {
     return this.bits/8;
 };
 
@@ -64,7 +77,7 @@ mp4lib.fields.LongNumberField.prototype.write = function(buf, pos, val) {
     mp4lib.fields.writeBytes(buf, pos + 4, 4, low);
 };
 
-mp4lib.fields.LongNumberField.prototype.getLength = function(val) {
+mp4lib.fields.LongNumberField.prototype.getLength = function() {
     return 8;
 };
 
@@ -88,7 +101,7 @@ mp4lib.fields.FixedLenStringField.prototype.write = function(buf,pos,val) {
     }
 };
 
-mp4lib.fields.FixedLenStringField.prototype.getLength = function(val) {
+mp4lib.fields.FixedLenStringField.prototype.getLength = function() {
     return this.size;
 };
 
@@ -105,15 +118,12 @@ mp4lib.fields.BoxTypeField.prototype.read = function(buf,pos) {
 };
 
 mp4lib.fields.BoxTypeField.prototype.write = function(buf,pos,val) {
-    if (mp4lib.findUUIDByBoxtype(val))
-        val = 'uuid';
-    
     for (var i=0;i<4;i++) {
         buf[pos+i] = val.charCodeAt(i);
     }
 };
 
-mp4lib.fields.BoxTypeField.prototype.getLength = function(val) {
+mp4lib.fields.BoxTypeField.prototype.getLength = function() {
     return 4;
 };
 
@@ -159,45 +169,6 @@ mp4lib.fields.StringField.prototype.getLength = function(val) {
     return val.length;
 };
 
-//------------------------------- BoxFillingDataField -------------------------------
-
-mp4lib.fields.BoxFillingDataField= function() {
-};
-
-mp4lib.fields.BoxFillingDataField.prototype.read = function(buf,pos,end) {
-    var res = buf.subarray(pos,end);
-    return res;
-};
-
-mp4lib.fields.BoxFillingDataField.prototype.write = function(buf,pos,val) {
-    buf.set(val,pos);
-};
-
-mp4lib.fields.BoxFillingDataField.prototype.getLength = function(val) {
-    return val.length;
-};
-
-
-//------------------------------- DataField -------------------------------
-
-mp4lib.fields.DataField = function(len) {
-    this.len = len;
-};
-
-mp4lib.fields.DataField.prototype.read = function(buf,pos,end) {
-    var res = buf.subarray(pos,pos+this.len);
-    return res;
-};
-
-mp4lib.fields.DataField.prototype.write = function(buf,pos,val) {
-    buf.set(val,pos);
-};
-
-mp4lib.fields.DataField.prototype.getLength = function(val) {
-    return this.len;
-};
-
-
 //------------------------------- ArrayField -------------------------------
 
 mp4lib.fields.ArrayField = function(innerField,size) {
@@ -205,7 +176,7 @@ mp4lib.fields.ArrayField = function(innerField,size) {
     this.size = size;
 };
 
-mp4lib.fields.ArrayField.prototype.read = function(buf,pos,end) {
+mp4lib.fields.ArrayField.prototype.read = function(buf,pos) {
     var innerFieldLength=-1;
     var res = [];
     for (var i=0;i<this.size;i++) {
@@ -222,209 +193,9 @@ mp4lib.fields.ArrayField.prototype.read = function(buf,pos,end) {
     return res;
 };
 
-mp4lib.fields.ArrayField.prototype.write = function(buf,pos,val) {
-    var innerFieldLength=0;
-    if (this.size>0) {
-        innerFieldLength=this.innerField.getLength(val[0]);
-    }
-
-    for (var i=0;i<this.size;i++) {
-        this.innerField.write(buf,pos,val[i]);
-        pos+=innerFieldLength;
-    }
-};
-
-mp4lib.fields.ArrayField.prototype.getLength = function(val) {
-    var innerFieldLength=0;
-    if (this.size>0) {
-        innerFieldLength=this.innerField.getLength(val[0]);
-    }
-    return this.size*innerFieldLength;
-};
-
-//------------------------------- VariableElementSizeArrayField -------------------------------
-
-mp4lib.fields.VariableElementSizeArrayField = function(innerField,size) {
-    this.innerField = innerField;
-    this.size = size;
-};
-
-mp4lib.fields.VariableElementSizeArrayField.prototype.read = function(buf,pos,end) {
-    var res = [];
-    for(var i=0;i<this.size;i++) {
-        res.push(this.innerField.read(buf,pos));
-        pos+=this.innerField.getLength(res[i]);
-    }
-    return res;
-};
-
-mp4lib.fields.VariableElementSizeArrayField.prototype.write = function(buf,pos,val) {
-    for(var i=0;i<this.size;i++) {
-        this.innerField.write(buf,pos,val[i]);
-        pos+=this.innerField.getLength(val[i]);
-    }
-};
-
-mp4lib.fields.VariableElementSizeArrayField.prototype.getLength = function(val) {
-    var res = 0;
-    for(var i=0;i<this.size;i++) {
-        res+=this.innerField.getLength(val[i]);
-    }
-    return res;
-};
-
-
-//------------------------------- BoxFillingArrayField -------------------------------
-
-mp4lib.fields.BoxFillingArrayField = function(innerField) {
-    this.innerField = innerField;
-    this.innerFieldLength=innerField.getLength();
-};
-
-mp4lib.fields.BoxFillingArrayField.prototype.read = function(buf,pos,end) {
-    var res = [];
-    var size = (end-pos)/this.innerFieldLength;
-
-    for(var i=0;i<size;i++) {
-        res.push(this.innerField.read(buf,pos));
-        pos+=this.innerFieldLength;
-    }
-    return res;
-};
-
-mp4lib.fields.BoxFillingArrayField.prototype.write = function(buf,pos,val) {
-    for(var i=0;i<val.length;i++) {
-        this.innerField.write(buf,pos,val[i]);
-        pos+=this.innerFieldLength;
-    }
-};
-
-mp4lib.fields.BoxFillingArrayField.prototype.getLength = function(val) {
-    return val.length*this.innerFieldLength;
-};
-
-
-//------------------------------- StructureField -------------------------------
-
-mp4lib.fields.StructureField = function( box, _processStructureFields ) {
-    this.box = box;
-    this._processStructureFields = _processStructureFields;
-};
-
-mp4lib.fields.StructureField.prototype.read = function(buf,pos,end) {
-    var struct = {};
-    var p = new mp4lib.fieldProcessors.DeserializationBoxFieldsProcessor(struct,buf,pos,end);
-    this._processStructureFields.call(struct,this.box,p);
-    return struct;
-};
-
-
-mp4lib.fields.StructureField.prototype.write = function(buf,pos,val) {
-    var p = new  mp4lib.fieldProcessors.SerializationBoxFieldsProcessor(val,buf,pos);
-    this._processStructureFields.call(val,this.box,p);
-};
-
-mp4lib.fields.StructureField.prototype.getLength = function(val) {
-    var p = new mp4lib.fieldProcessors.LengthCounterBoxFieldsProcessor(val);
-    this._processStructureFields.call(val,this.box,p);
-    if (isNaN(p.res) && (val===undefined)) {
-        throw new mp4lib.DataIntegrityException('The structure contained in '+this.box.boxtype+
-              ' box has undefined size.'+
-              ' Possible cause: you have put a variable sized structure into ArrayField '+
-              '(but ArrayField assumes all elements have the same size). If this is the case,'+
-              ' use VariableElementsSizeArrayField instead.');
-    }
-    return p.res;
-};
-
-//------------------------------- BoxesListField -------------------------------
-
-mp4lib.fields.BoxesListField = function BoxesListField() {
-};
-
-mp4lib.fields.readString = function( buf, pos, count ) {
-    var res = "";
-    for (var i=pos;i<pos+count;i++) {
-        res = res+String.fromCharCode(buf[i]);
-    }
-    return res;
-};
-
-mp4lib.fields.BoxesListField.prototype.read = function(buf,pos,end) {
-    var res = [];
-    while (pos<end) {
-        // Read box size        
-        var size = mp4lib.fields.FIELD_UINT32.read(buf, pos);
-
-        // Read boxtype
-        var boxtype = mp4lib.fields.readString(buf, pos+4, 4);
-
-        // Extented type?
-        if (boxtype == "uuid") {
-            var uuidFieldPos = (size == 1)?16:8;
-            var uuid = new mp4lib.fields.ArrayField(mp4lib.fields.FIELD_INT8, 16).read(buf, pos + uuidFieldPos, pos + uuidFieldPos + 16);
-            
-            boxtype = mp4lib.findBoxtypeByUUID(JSON.stringify(uuid));
-            
-            if (boxtype === undefined) {
-                boxtype = "uuid";
-                mp4lib.warningHandler('Unknown UUID:'+JSON.stringify(uuid));
-            }
-        }
-
-        var box = mp4lib.createBox( boxtype );
-      
-        var p = new mp4lib.fieldProcessors.DeserializationBoxFieldsProcessor(box,buf,pos,end);
-        box._processFields(p);
-
-        // in debug mode, sourcebuffer is copied to each box,
-        // so any invalid deserializations may be found by comparing
-        // source buffer with serialized box
-        if (mp4lib.debug)
-            box.__sourceBuffer = buf.subarray(pos,pos+box.size);
-
-        box.boxtype = boxtype;
-
-        res.push(box);
-        pos+=box.size;
-
-        if (box.size===0) {
-            throw new mp4lib.ParseException('Zero size of box '+box.boxtype+
-                                            ', parsing stopped to avoid infinite loop');
-        }
-    }
-    return res;
-};
-
-mp4lib.fields.BoxesListField.prototype.write = function(buf,pos,val) {
-   for (var i=0;i<val.length;i++) {
-       var box = val[i];
-       var sp = new mp4lib.fieldProcessors.SerializationBoxFieldsProcessor(box, buf, pos);
-       box._processFields(sp);
-       pos = pos+box.size;
-   }
-};
-
-mp4lib.fields.BoxesListField.prototype.getLength = function(val) {
-    var i;
-    var res = 0;
-    for (i=0;i<val.length;i++)
-    {
-        var box = val[i];
-        var p = new mp4lib.fieldProcessors.LengthCounterBoxFieldsProcessor(box);
-        box._processFields(p);
-        box.size = p.res;
-        res = res+p.res;
-    }
-    return res;
-};
-
-
-
 // pre-defined shortcuts for common fields 
 // ( it is recommended to use these shortcuts to avoid constructors 
 //   being called for every field processing action )
-
 mp4lib.fields.FIELD_INT8 = new mp4lib.fields.NumberField(8,true);
 mp4lib.fields.FIELD_INT16 = new mp4lib.fields.NumberField(16,true);
 mp4lib.fields.FIELD_INT32 = new mp4lib.fields.NumberField(32,true);
@@ -438,6 +209,4 @@ mp4lib.fields.FIELD_BIT16 = new mp4lib.fields.NumberField(16,false);
 mp4lib.fields.FIELD_BIT24 = new mp4lib.fields.NumberField(24,false);
 mp4lib.fields.FIELD_BIT32 = new mp4lib.fields.NumberField(32,false);
 mp4lib.fields.FIELD_ID = new mp4lib.fields.BoxTypeField(4);
-mp4lib.fields.FIELD_CONTAINER_CHILDREN = new mp4lib.fields.BoxesListField();
 mp4lib.fields.FIELD_STRING = new mp4lib.fields.StringField();
-mp4lib.fields.FIELD_BOX_FILLING_DATA = new mp4lib.fields.BoxFillingDataField();

@@ -663,8 +663,7 @@ for (var MPDstring in strMpd) {
 
 			/**
 			 * The method returns suggestedPresentationDelay(Live offset) fo the manifest
-			 */
-/*
+			 commented this methods as getLiveOffset method is removed in DashManifestExtensions.js
 			it("getLiveOffset", function () {
 				var data = '';
 				manExtn.getLiveOffset(manifestObj).then(function (Data) {
@@ -695,8 +694,7 @@ for (var MPDstring in strMpd) {
 					}
 				});
 
-			});
-*/
+			}); */
 
 			/**
 			 * Check if the mpd file has timeShiftBufferDepth for Live stream data
@@ -927,7 +925,9 @@ for (var MPDstring in strMpd) {
 				res=manExtn.getContentProtectionData(data);
                 expect(res).not.toBeNull();
 			});            
-/*			
+			
+			
+			/** Commented these as getLiveStart, getLiveEdge,getSegmentInfoFor is removed in DashManifestExetension.js
             it("getLiveStart", function () {
                 res = '';
                 manExtn.getLiveStart(manifestObj,periodIndex).then(function (Data) {
@@ -943,7 +943,7 @@ for (var MPDstring in strMpd) {
 				runs(function () {
 						expect(res).toBe("");
 				});
-			});
+			}); 
 			
 			
             it("getLiveEdge", function () {
@@ -961,7 +961,7 @@ for (var MPDstring in strMpd) {
 				runs(function () {
 						expect(res).toBe("");
 				});
-			});
+			}); 
  
             it("getSegmentInfoFor with SegmentBase", function () {
                 var representation={ "SegmentBase" :2 },
@@ -982,8 +982,8 @@ for (var MPDstring in strMpd) {
                 res = '';
                 res =manExtn.getSegmentInfoFor(representation);
                 expect(res).toBe(null);
-			}); 
-*/			
+			}); */
+			
 			it("Is Text Track - text/vtt", function () {
 				debugger;
                 var type="text/vtt",

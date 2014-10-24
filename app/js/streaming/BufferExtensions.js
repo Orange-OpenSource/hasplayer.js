@@ -31,25 +31,17 @@ MediaPlayer.dependencies.BufferExtensions = function () {
 
         isPlayingAtTopQuality = function() {
             var self = this,
-                deferred = Q.defer(),
+                audioQuality,
+                videoQuality,
                 isAtTop;
 
-            Q.when(audioData ? self.abrController.getPlaybackQuality("audio", audioData) : topAudioQualityIndex).then(
-                function(audioQuality) {
-                    Q.when(videoData ? self.abrController.getPlaybackQuality("video", videoData) : topVideoQualityIndex).then(
-                        function(videoQuality) {
-                            isAtTop = (audioQuality.quality === topAudioQualityIndex) &&
-                                (videoQuality.quality === topVideoQualityIndex);
-                            isAtTop = isAtTop ||
-                                ((audioQuality.confidence === MediaPlayer.rules.SwitchRequest.prototype.STRONG) &&
-                                    (videoQuality.confidence === MediaPlayer.rules.SwitchRequest.prototype.STRONG));
-                            deferred.resolve(isAtTop);
-                        }
-                    );
-                }
-            );
+            audioQuality = audioData ? self.abrController.getQualityFor("audio") : topAudioQualityIndex;
+            videoQuality = videoData ? self.abrController.getQualityFor("video") : topVideoQualityIndex;
 
-            return deferred.promise;
+            isAtTop = (audioQuality === topAudioQualityIndex) &&
+                (videoQuality === topVideoQualityIndex);
+
+            return isAtTop;
         };
 
     return {
@@ -119,7 +111,7 @@ MediaPlayer.dependencies.BufferExtensions = function () {
                 ametrics = self.metricsModel.getReadOnlyMetricsFor("audio"),
                 isLongFormContent = (duration >= MediaPlayer.dependencies.BufferExtensions.LONG_FORM_CONTENT_DURATION_THRESHOLD),
                 deferred = Q.defer(),
-                deferredIsAtTop = null,
+                isAtTop = false,
                 requiredBufferLength;
 
             if (self.bufferMax === MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_MIN) {
@@ -133,12 +125,9 @@ MediaPlayer.dependencies.BufferExtensions = function () {
 
                 if (!isDynamic) {
                     if (!waitingForBuffer) {
-                        deferredIsAtTop = isPlayingAtTopQuality.call(self);
+                        isAtTop = isPlayingAtTopQuality.call(self);
                     }
                 }
-
-                Q.when(deferredIsAtTop).then(
-                    function(isAtTop) {
 
                         if (isAtTop) {
                             currentBufferTarget = isLongFormContent ?
@@ -150,8 +139,6 @@ MediaPlayer.dependencies.BufferExtensions = function () {
                             getCurrentHttpRequestLatency.call(self, ametrics));
 
                         deferred.resolve(requiredBufferLength);
-                    }
-                );
             } else {
                 deferred.reject("invalid bufferMax value: " + self.bufferMax);
             }
@@ -170,12 +157,8 @@ MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED = "required";
 MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_MIN = "min";
 MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_INFINITY = "infinity";
 MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_STARTUP = 1;
-MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME = 8;
-// ORANGE : create a static variable to determine video starting time 
-MediaPlayer.dependencies.BufferExtensions.START_TIME = 2;
+MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME = 16;
 MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_TOP_QUALITY = 30;
 MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_TOP_QUALITY_LONG_FORM = 300;
 MediaPlayer.dependencies.BufferExtensions.LONG_FORM_CONTENT_DURATION_THRESHOLD = 600;
 MediaPlayer.dependencies.BufferExtensions.prototype.constructor = MediaPlayer.dependencies.BufferExtensions;
-
-

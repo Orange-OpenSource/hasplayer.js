@@ -113,6 +113,11 @@ MediaPlayer.models.VideoModel = function () {
             element.addEventListener(type, callback, false);
         },
 
+        // ORANGE : register listener on video element parent
+        listenOnParent: function (type, callback) {
+            element.parentElement.addEventListener(type, callback, false);
+        },
+
         unlisten: function (type, callback) {
             element.removeEventListener(type, callback, false);
         },

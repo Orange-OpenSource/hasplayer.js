@@ -14,34 +14,7 @@
 MediaPlayer.utils.Debug = function () {
     "use strict";
 
-    var logToBrowserConsole = true,
-        _log = function(){
-            if (logToBrowserConsole){
-                var _logger = ('undefined' !== typeof(log4javascript)) ? log4javascript.getLogger() : null;
-                if(_logger){
-                    if(!_logger.initialized){
-                        var appender = new log4javascript.PopUpAppender();
-                        var layout = new log4javascript.PatternLayout("%d{HH:mm:ss.SSS} %-5p - %m%n");
-                        appender.setLayout(layout);
-                        _logger.addAppender(appender);
-                        _logger.setLevel(log4javascript.Level.ALL);
-                        _logger.initialized = true;
-                    }
-                    
-                    _logger.info.apply(_logger,arguments);
-                    
-                }else{
-                    console.log.apply(console,arguments);
-                }
-            }
-            this.eventBus.dispatchEvent({
-                type: "log",
-                message: arguments[0]
-            });
-        };
-
-
-
+    var logToBrowserConsole = true;
 
     return {
         eventBus: undefined,
@@ -51,6 +24,15 @@ MediaPlayer.utils.Debug = function () {
         getLogToBrowserConsole: function() {
             return logToBrowserConsole;
         },
-        log: _log
+        log: function (message) {
+            if (logToBrowserConsole){
+                console.log(message);
+            }
+
+            this.eventBus.dispatchEvent({
+                type: "log",
+                message: message
+            });
+        }
     };
 };
