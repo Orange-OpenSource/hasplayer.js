@@ -121,6 +121,12 @@
             }
         },
 
+        onReloadManifest = function() {
+            this.debug.log("[StreamController] ### reloadManifest ####");
+            this.reset.call(this);
+            this.load.call(this,this.currentURL,this.currentParams);
+        },
+
         /*
          * Called when current playback positon is changed.
          * Used to determine the time current stream is finished and we should switch to the next stream.
@@ -405,6 +411,8 @@
         // ORANGE: set updateTime date
         startTime : undefined,
         startPlayingTime : undefined,
+        currentURL: undefined,
+        currentParams: undefined,
 
         setup: function() {
             this.system.mapHandler("manifestUpdated", undefined, manifestHasUpdated.bind(this));
@@ -413,6 +421,9 @@
             seekingListener = onSeeking.bind(this);
             pauseListener = onPause.bind(this);
             playListener = onPlay.bind(this);
+
+            //ORANGE
+            this.system.mapHandler("reloadManifest", undefined, onReloadManifest.bind(this));
         },
 
         getManifestExt: function () {
@@ -461,6 +472,9 @@
         // ORANGE: add source stream parameters
         load: function (url, params) {
             var self = this;
+
+            self.currentURL = url;
+            self.currentParams = params;
 
             self.debug.log("[StreamController]", "load url: " + url);
 

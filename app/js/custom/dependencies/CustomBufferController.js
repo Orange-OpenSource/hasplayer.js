@@ -64,6 +64,9 @@ Custom.dependencies.CustomBufferController = function () {
 
         //ORANGE
         htmlVideoState = -1,
+        lastBufferLevel = -1,
+        //ORANGE : used to test Live chunk download failure
+        //testTimeLostChunk = 0,
 
         sendRequest = function() {
             if (fragmentModel !== null) {
@@ -240,6 +243,10 @@ Custom.dependencies.CustomBufferController = function () {
                 eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(self.getData(),currentRepresentation);
 
             self.debug.log("[BufferController]["+type+"] ### Media loaded ", request.url);
+
+            if (self.nbJumpChunkMissing !== 0) {
+                self.nbJumpChunkMissing = 0;
+            }
 
             if (!fragmentDuration && !isNaN(request.duration)) {
                 fragmentDuration = request.duration;
@@ -592,20 +599,10 @@ Custom.dependencies.CustomBufferController = function () {
             return deferred.promise;
         },
 
-        onBytesError = function () {
-            // remove the failed request from the list
-            /*
-            for (var i = fragmentRequests.length - 1; i >= 0 ; --i) {
-                if (fragmentRequests[i].startTime === request.startTime) {
-                    if (fragmentRequests[i].url === request.url) {
-                        fragmentRequests.splice(i, 1);
-                    }
-                    break;
-                }
-            }
-            */
-
-            this.system.notify("segmentLoadingFailed");
+        onBytesError = function (e) {
+            this.debug.log(type + ": Failed to load a request at startTime = "+e.startTime);
+            this.stallTime = e.startTime;
+            this.nbJumpChunkMissing += 1;
         },
 
         signalStreamComplete = function (request) {
@@ -661,7 +658,17 @@ Custom.dependencies.CustomBufferController = function () {
             seeking = false;
 
             self.debug.log("[BufferController]["+type+"] loadNextFragment for time: " + segmentTime);
+            //ORANGE : used to test Live chunk download failure
+            /*if ((testTimeLostChunk-2)<=segmentTime &&
+                (testTimeLostChunk+2)>=segmentTime)
+            {
+                var e = {};
+                e.startTime = segmentTime;
+                onBytesError.call(self,e);
+            }
+            else{*/
             self.indexHandler.getSegmentRequestForTime(currentRepresentation, segmentTime).then(onFragmentRequest.bind(self));
+            //}
         },
 
         onFragmentRequest = function (request) {
@@ -780,11 +787,13 @@ Custom.dependencies.CustomBufferController = function () {
             var timeToEnd = getTimeToEnd.call(self);
 
             if ((bufferLevel < minBufferTime) &&
-                ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted))) {
+                ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted)) &&
+                lastBufferLevel !== bufferLevel) {
                 // Buffer needs to be filled
                 bufferFragment.call(self);
+                lastBufferLevel = bufferLevel;
             } else {
-                // Determine the timout delay before checking again the buffer
+                // Determine the timeout delay before checking again the buffer
                 var delay = bufferLevel - minBufferTime;
                 bufferTimeout = setTimeout(function () {
                     checkIfSufficientBuffer.call(self);
@@ -931,6 +940,9 @@ Custom.dependencies.CustomBufferController = function () {
         eventController : undefined,
         BUFFERING : 0,
         PLAYING : 1,
+        stallTime : null,
+        nbJumpChunkMissing : 0,
+        MAX_JUMP_CHUNK_MISSING : 3,
 
         initialize: function (type, newPeriodInfo, newData, buffer, videoModel, scheduler, fragmentController, source, eventController) {
             var self = this,
@@ -979,6 +991,8 @@ Custom.dependencies.CustomBufferController = function () {
                                                 function(time) {
                                                     //self.seek(time);
                                                     self.system.notify("liveEdgeFound", time);
+                                                    //ORANGE : used to test Live chunk download failure
+                                                    //testTimeLostChunk = time+20;
                                                 }
                                             );
                                         }
@@ -1140,11 +1154,30 @@ Custom.dependencies.CustomBufferController = function () {
             this.metricsModel.clearCurrentMetricsForType(type);
         },
 
+        updateManifest: function (){
+            this.system.notify("reloadManifest");
+        },
+
         updateBufferState: function() {
 if (bufferLevel <= 0 && htmlVideoState !== this.BUFFERING) {
                 htmlVideoState = this.BUFFERING;
                 this.debug.log("[BufferController]["+this.getType()+"] ******************** BUFFERING at "+this.videoModel.getCurrentTime());
                 this.metricsModel.addState(this.getType(), "buffering", this.videoModel.getCurrentTime());
+                if (this.stallTime != null && this.nbJumpChunkMissing<=this.MAX_JUMP_CHUNK_MISSING) {
+                    if (isDynamic) {
+                        this.stallTime = null;
+                        setTimeout(this.updateManifest.bind(this),currentRepresentation.segments[currentRepresentation.segments.length-1].duration*1000);                            
+                    }
+                    else {
+                        //the stall state comes from a chunk download failure
+                        //seek to the next fragment
+                        doStop.call(this);
+                        var seekValue = this.stallTime+currentRepresentation.segments[currentRepresentation.segments.length-1].duration;
+                        doSeek.call(this, seekValue);
+                        this.videoModel.setCurrentTime(seekValue);
+                        this.stallTime = null;
+                    }
+                }
             }
             else  if(bufferLevel > 0 && htmlVideoState !== this.PLAYING){
                 htmlVideoState = this.PLAYING;
