@@ -440,6 +440,28 @@ function initControlBar () {
     });
 }
 
+//init player by attaching source stream
+function initPlayer() {
+    var query = window.location.search,
+        params = window.location.hash;
+
+    if (query) {
+        query = query.substring(query.indexOf("?file=")+6);
+        if (query) {
+
+            if(params) {
+                query += params;
+            }
+
+            console.log(query);
+
+            player.attachSource(query);
+            update();
+        }
+    }
+}
+
+
 
 function onLoaded () {
     player = new MediaPlayer(new Custom.di.CustomContext());
@@ -455,16 +477,7 @@ function onLoaded () {
         var ccastReceiver = new HasCastReceiver(player);
     }
 
-    // get url
-    var query = window.location.search;
-    if (query) {
-        query = query.substring(query.indexOf("?file=")+6);
-        if (query) {
-            player.attachSource(query);
-            //updateInterval = setInterval(update, updateIntervalLength);
-            update();
-        }
-    }
+    initPlayer();
 
 	// catch ctrl+i key stoke    
     $(document).keydown(function(e) {
