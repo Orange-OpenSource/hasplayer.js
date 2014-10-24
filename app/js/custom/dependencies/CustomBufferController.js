@@ -282,8 +282,7 @@ Custom.dependencies.CustomBufferController = function () {
                                                             if ((lastRequest.index - 1) === request.index && !isBufferingCompleted) {
                                                                 isBufferingCompleted = true;
                                                             if (stalled) {
-                                                                stalled = false;
-                                                                self.videoModel.stallStream(type, stalled);
+                                                                setStalled.call(self, false);
                                                             }
                                                                 self.system.notify("bufferingCompleted");
                                                             }
@@ -700,8 +699,7 @@ Custom.dependencies.CustomBufferController = function () {
                 self.debug.log("[BufferController]["+type+"] loadNextFragment failed");
                 bufferTimeout = setTimeout(function () {
                     checkIfSufficientBuffer.call(self);
-                    },
-                    Math.max(2000));
+                    }, 2000);
             }
         },
 
@@ -779,8 +777,7 @@ Custom.dependencies.CustomBufferController = function () {
             if (stalled) {
                 if (bufferLevel > minBufferTimeAtStartup) {
                     self.debug.log("[BufferController]["+type+"] stalled = false");
-                    stalled = false;
-                    self.videoModel.stallStream(type, stalled);
+                    setStalled.call(self, false);
                 }
             }
 
