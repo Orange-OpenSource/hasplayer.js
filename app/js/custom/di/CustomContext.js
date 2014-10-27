@@ -28,6 +28,8 @@
             // Then, our parser will choose which parser call between Dash, Mss and Hls. To do that, it need references
             this.system.mapClass('dashParser', Dash.dependencies.DashParser);
             this.system.mapClass('mssParser', Mss.dependencies.MssParser);
+            this.system.mapClass('hlsParser', Hls.dependencies.HlsParser);
+            this.system.mapClass('hlsDemux', Hls.dependencies.HlsDemux);
 
             // creation of a context manager to plug some specific parts of the code
             this.system.mapSingleton('contextManager', Custom.modules.ContextManager);

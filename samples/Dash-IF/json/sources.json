@@ -1,6 +1,18 @@
 {
     "items": [
         {
+            "type":"HLS",
+            "name":"LIVE Envivio - Arte",
+            "url":"http://iphone.envivio.tv/iphone/downLoads/ch1/index.m3u8",
+            "browsers":"cdsbi"
+        },
+        {
+            "type":"HLS",
+            "name":"LIVE Envivio - BBC",
+            "url":"http://iphone.envivio.tv/iphone/downLoads/ch6/index.m3u8",
+            "browsers":"cdsbi"
+        },
+        {
             "type": "MSS",
             "name": "VOD - SuperSpeedway",
             "url": "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest",

@@ -13,44 +13,11 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- Custom.dependencies.CustomParser = function () {
+/*jshint -W020 */
+Hls = (function () {
     "use strict";
 
-    var customParse = function(data, baseUrl) {
-
-        var parser = null;
-
-        // we parse the response of the request to know the manifest type        
-        if (data.indexOf("SmoothStreamingMedia")>-1) {
-            this.system.notify('setContext','MSS');
-            //do some business to transform it into a Dash Manifest
-            parser = this.mssParser;
-        } else if (data.indexOf("#EXTM3U")>-1) {
-            this.system.notify('setContext','HLS');
-            parser = this.hlsParser;
-        } else if(data.indexOf("MPD")>-1) {
-            this.system.notify('setContext','MPD');
-            parser = this.dashParser;
-        } else {
-            console.error("manifest cannot be parse, type is unknown !");
-            return Q.when(null);
-        }
-
-        return parser.parse(data,baseUrl);
-    };
-
     return {
-        debug: undefined,
-        system: undefined,
-        dashParser: undefined,
-        mssParser: undefined,
-        hlsParser: undefined,
-        metricsModel: undefined,
-
-        parse: customParse
+        dependencies: {}
     };
-};
-
-Custom.dependencies.CustomParser.prototype =  {
-    constructor: Custom.dependencies.CustomParser
-};
+}());

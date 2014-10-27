@@ -13,44 +13,43 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- Custom.dependencies.CustomParser = function () {
-    "use strict";
+Hls.dependencies.HlsHandler = function() {
+    var getInit = function (representation) {
+            var period = null;
+            var self = this;
+            var presentationStartTime = null;
+            var deferred = Q.defer();
 
-    var customParse = function(data, baseUrl) {
+            //Mss.dependencies.MssHandler.prototype.getInitRequest.call(this,quality,data).then(onGetInitRequestSuccess);
+            // get the period and startTime
+            period = representation.adaptation.period;
+            presentationStartTime = period.start;
 
-        var parser = null;
+            var manifest = rslt.manifestModel.getValue();
+            var isDynamic = rslt.manifestExt.getIsDynamic(manifest);
 
-        // we parse the response of the request to know the manifest type        
-        if (data.indexOf("SmoothStreamingMedia")>-1) {
-            this.system.notify('setContext','MSS');
-            //do some business to transform it into a Dash Manifest
-            parser = this.mssParser;
-        } else if (data.indexOf("#EXTM3U")>-1) {
-            this.system.notify('setContext','HLS');
-            parser = this.hlsParser;
-        } else if(data.indexOf("MPD")>-1) {
-            this.system.notify('setContext','MPD');
-            parser = this.dashParser;
-        } else {
-            console.error("manifest cannot be parse, type is unknown !");
-            return Q.when(null);
-        }
+            var request = new MediaPlayer.vo.SegmentRequest();
 
-        return parser.parse(data,baseUrl);
+            request.streamType = rslt.getType();
+            request.type = "Initialization Segment";
+            request.url = null;
+            request.data = 1; //used to activate Loaded event in BufferControler
+            request.range =  representation.range;
+            request.availabilityStartTime = self.timelineConverter.calcAvailabilityStartTimeFromPresentationTime(presentationStartTime, representation.adaptation.period.mpd, isDynamic);
+            request.availabilityEndTime = self.timelineConverter.calcAvailabilityEndTimeFromPresentationTime(presentationStartTime + period.duration, period.mpd, isDynamic);
+
+            request.quality = representation.index;
+            deferred.resolve(request);
+            return deferred.promise;
     };
+	
+	var rslt = Custom.utils.copyMethods(Dash.dependencies.DashHandler);
+	
+	rslt.getInitRequest = getInit;
 
-    return {
-        debug: undefined,
-        system: undefined,
-        dashParser: undefined,
-        mssParser: undefined,
-        hlsParser: undefined,
-        metricsModel: undefined,
-
-        parse: customParse
-    };
+	return rslt;
 };
 
-Custom.dependencies.CustomParser.prototype =  {
-    constructor: Custom.dependencies.CustomParser
+Hls.dependencies.HlsHandler.prototype =  {
+	constructor : Hls.dependencies.HlsHandler
 };
