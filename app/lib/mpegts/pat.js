@@ -28,14 +28,14 @@ mpegts.si.PAT.prototype.parse = function (data) {
 
 	if (!this.m_bValid)
 	{
-		console.log("PSI Parsing Problem during PAT parsing!");
+		//console.log("PSI Parsing Problem during PAT parsing!");
 		return;
 	}
 	this.m_bValid = false;
 
 	if(this.m_table_id != this.TABLE_ID)
 	{
-		console.log("PAT Table ID != 0");
+		//console.log("PAT Table ID != 0");
 		return;
 	}
 

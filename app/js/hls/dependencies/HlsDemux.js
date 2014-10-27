@@ -93,7 +93,7 @@ Hls.dependencies.HlsDemux = function () {
                     }
                 }
                 else {
-                    console.log("Stream Type "+elementStream.m_stream_type+" unknown!");
+                    this.debug.log("[HlsDemux] Stream Type "+elementStream.m_stream_type+" unknown!");
                 }
                 track.timescale = mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY;
                 track.pid = elementStream.m_elementary_PID;

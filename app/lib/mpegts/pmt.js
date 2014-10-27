@@ -29,7 +29,7 @@ mpegts.si.PMT.prototype.parse = function (data) {
 
 	if (!this.m_bValid)
 	{
-		console.log("PSI Parsing Problem during PMT parsing!");
+		//console.log("PSI Parsing Problem during PMT parsing!");
 		return;
 	}
 	this.m_bValid = false;
@@ -37,7 +37,7 @@ mpegts.si.PMT.prototype.parse = function (data) {
 	// Check table_id field value
 	if(this.m_table_id != this.TABLE_ID)
 	{
-		console.log("PMT Table ID != 2");
+		//console.log("PMT Table ID != 2");
 		return;
 	}
 

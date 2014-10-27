@@ -52,7 +52,7 @@ mpegts.pes.PesPacket.prototype.parse = function(data) {
 	var nStartCode = mpegts.binary.getValueFrom3Bytes(data.subarray(index, index+3));
 	if (nStartCode !== this.START_CODE_PREFIX)
 	{
-		console.log("PES Packet start code not define!");
+		//console.log("PES Packet start code not define!");
 		return;
 	}
 

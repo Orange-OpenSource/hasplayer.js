@@ -227,7 +227,7 @@ mpegts.h264.parseSPS = function (data) {
 
         if (sps.seq_scaling_matrix_present_flag === 1) {
             // NOT IMPLEMENTED
-            console.log("H.264 SPS parsing: (seq_scaling_matrix_present_flag = 1) not implemented");
+            //console.log("H.264 SPS parsing: (seq_scaling_matrix_present_flag = 1) not implemented");
         }
     }
 
@@ -243,7 +243,7 @@ mpegts.h264.parseSPS = function (data) {
     }
     else if (sps.pic_order_cnt_type === 1) {
         // NOT IMPLEMENTED
-        console.log("H.264 SPS parsing: (log2_max_pic_order_cnt_lsb_minus4 = 1) not implemented");
+        //console.log("H.264 SPS parsing: (log2_max_pic_order_cnt_lsb_minus4 = 1) not implemented");
     }
 
     // num_ref_frames - ue(v)

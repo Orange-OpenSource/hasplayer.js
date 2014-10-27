@@ -199,7 +199,6 @@ Hls.dependencies.HlsParser = function () {
 			media,
 			i;
 
-		console.log(data);
 		data = _splitLines(data);
 
 		// Check playlist header
@@ -243,7 +242,7 @@ Hls.dependencies.HlsParser = function () {
 					isArray: true,
 					//parent: segmentList,
 					// children: [],
-					media: segmentList.BaseURL + media.uri,
+					media: (media.uri.indexOf("http://") !== -1) ? media.uri : (segmentList.BaseURL + media.uri),
 					sequenceNumber: segmentList.startNumber + index,
 					time: (segments.length === 0) ? 0 : segments[segments.length - 1].time + segments[segments.length - 1].duration,
 					duration: media.duration
@@ -297,6 +296,7 @@ Hls.dependencies.HlsParser = function () {
 			representation = adaptationSet.Representation_asArray[0],
 			startNumber = -1,
 			i,
+			valid,
 			initialization,
 			request = new MediaPlayer.vo.SegmentRequest(),
 			_manifest = this.manifestModel.getValue(),
@@ -334,20 +334,35 @@ Hls.dependencies.HlsParser = function () {
 		// Set minBufferTime            
 		manifest.minBufferTime = representation.SegmentList.duration * 2;//MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME
 
-		// Set initialization segment info
-		// And get highest start sequence number among all representations
+		// Filter invalid representations
 		for (i = 0; i < adaptationSet.Representation_asArray.length; i++) {
 			representation = adaptationSet.Representation_asArray[i];
 			
-			// Set initialization segment info
-			initialization = {
-				name: "Initialization",
-				sourceURL: representation.SegmentList.SegmentURL_asArray[0].media
-			};
-			representation.SegmentList.Initialization = initialization;
+			valid = true;
 
-			if (representation.SegmentList.startNumber > startNumber) {
-				startNumber = representation.SegmentList.startNumber;
+			// Check if segment list is valid
+			valid = valid & (representation.SegmentList.SegmentURL_asArray.length > 0);
+
+			// Check if representation (bandwidth) is not already defined 
+			if (i > 0) {
+				valid = valid & (adaptationSet.Representation_asArray[i-1].bandwidth !== adaptationSet.Representation_asArray[i].bandwidth);
+			}
+
+			if (valid) {
+				// Set initialization segment info
+				initialization = {
+					name: "Initialization",
+					sourceURL: representation.SegmentList.SegmentURL_asArray[0].media
+				};
+				representation.SegmentList.Initialization = initialization;
+
+				// And get highest start sequence number among all representations
+				if (representation.SegmentList.startNumber > startNumber) {
+					startNumber = representation.SegmentList.startNumber;
+				}
+			} else {
+				adaptationSet.Representation_asArray.splice(i, 1);
+				i--;
 			}
 		}
 
@@ -505,7 +520,7 @@ Hls.dependencies.HlsParser = function () {
 					width: parseInt(stream.resolution.split('x')[0], 10),
 					height: parseInt(stream.resolution.split('x')[1], 10),
 					BaseURL: adaptationSet.BaseURL,
-					url: (stream.uri.indexOf('http') > -1) ? stream.uri : adaptationSet.BaseURL + stream.uri
+					url: (stream.uri.indexOf("http://") > -1) ? stream.uri : (adaptationSet.BaseURL + stream.uri)
 				};
 				representations.push(representation);
 				representationId++;
@@ -547,7 +562,7 @@ Hls.dependencies.HlsParser = function () {
 					height: "",
 					codecs: "",
 					BaseURL: mediaAdaptationSet.BaseURL,
-					url: medias[j].uri.indexOf('http')>-1 ? medias[j].uri : mediaAdaptationSet.BaseURL + medias[j].uri
+					url: medias[j].uri.indexOf("http://") !== 1 ? medias[j].uri : (mediaAdaptationSet.BaseURL + medias[j].uri)
 				};
 
 				requestsToDo.push({"url": mediaRepresentation.url, "parent": mediaRepresentation});
@@ -576,7 +591,6 @@ Hls.dependencies.HlsParser = function () {
 
 	var internalParse = function(data, baseUrl) {
 		this.debug.log("[HlsParser]", "Doing parse.");
-		console.log(data);
 		return processManifest.call(this, _splitLines(data),baseUrl);
 	};
 

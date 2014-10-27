@@ -35,7 +35,7 @@ mpegts.ts.TsPacket.prototype.parse = function(data) {
     var byteId = 0;
     this.m_cSync = data[byteId];
     if (this.m_cSync !== this.SYNC_WORD) {
-        console.log("TS Packet Malformed!");
+        //console.log("TS Packet Malformed!");
         return;
     }
 
@@ -62,7 +62,7 @@ mpegts.ts.TsPacket.prototype.parse = function(data) {
         var cAFLength = data[byteId];
         if ((cAFLength + byteId) >= this.TS_PACKET_SIZE)
         {
-            console.log("TS Packet Size Problem!");
+            //console.log("TS Packet Size Problem!");
             return;
         }
         this.m_pAdaptationField = new mpegts.ts.AdaptationField();
@@ -73,7 +73,7 @@ mpegts.ts.TsPacket.prototype.parse = function(data) {
     // Check packet validity
     if (this.m_cAdaptationFieldCtrl === 0x00)
     {
-        console.log("TS Packet is invalid!");
+        //console.log("TS Packet is invalid!");
         return;
     }
 
