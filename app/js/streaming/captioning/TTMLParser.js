@@ -44,8 +44,6 @@ MediaPlayer.utils.TTMLParser = function () {
 
         parseTimings = function(timingStr) {
 
-            console.log(timingStr);
-
             var timeParts,
                 parsedTime,
                 frameRate,
@@ -71,7 +69,7 @@ MediaPlayer.utils.TTMLParser = function () {
 
                     if (frameRate && !isNaN(frameRate)) {
                         parsedTime += parseFloat(timeParts[3]) / frameRate;
-                    } 
+                    }
                 }
                 return parsedTime;
             }
@@ -93,7 +91,7 @@ MediaPlayer.utils.TTMLParser = function () {
                     case 'm':
                         parsedTime = parsedTime*60;
                         break;
-                    case 's':                        
+                    case 's':
                         break;
                     case 'ms':
                         parsedTime = parsedTime*0.01;
@@ -121,10 +119,7 @@ MediaPlayer.utils.TTMLParser = function () {
                 hasHead = hasTt ? ttml.tt.hasOwnProperty("head") : false,
                 hasLayout = hasHead ? ttml.tt.head.hasOwnProperty("layout") : false,
                 hasStyling = hasHead ? ttml.tt.head.hasOwnProperty("styling") : false,
-                hasBody = hasTt ? ttml.tt.hasOwnProperty("body") : false,
-                hasProfile = hasHead ? ttml.tt.head.hasOwnProperty("profile") : false
-
-
+                hasBody = hasTt ? ttml.tt.hasOwnProperty("body") : false;
 
             // R001 - A document must contain a tt element.
             // R002 - A document must contain both a head and body element.
@@ -168,7 +163,7 @@ MediaPlayer.utils.TTMLParser = function () {
                 nscue,
                 i;
 
-            try {                                
+            try {
                 ttml = converter.xml_str2json(data);
 
                 if (!passStructuralConstraints()) {
@@ -178,17 +173,11 @@ MediaPlayer.utils.TTMLParser = function () {
 
                 nsttp = getNamespacePrefix(ttml.tt, "http://www.w3.org/ns/ttml#parameter");
 
-                console.log('nsttp:');
-                console.log(nsttp);
-
                 if (ttml.tt.hasOwnProperty(nsttp + "frameRate")) {
                     ttml.tt.frameRate = parseInt(ttml.tt[nsttp + "frameRate"], 10);
                 }
 
                 cues = ttml.tt.body.div_asArray[0].p_asArray;
-
-                console.log('internalHasCues');
-                console.log(cues);
 
                 if (!cues || cues.length === 0) {
                     errorMsg = "TTML document does not contain any cues";
@@ -199,14 +188,9 @@ MediaPlayer.utils.TTMLParser = function () {
                     cue = cues[i];
 
                     nscue = getNamespacePrefix(cue,"http://www.w3.org/2006/10/ttaf1");
-                    console.log('ncsue');
-                    console.log(nscue);
 
                     startTime = parseTimings(cue[nscue+'begin']);
                     endTime = parseTimings(cue[nscue+'end']);
-
-                    console.log(startTime);
-                    console.log(endTime);
 
                     if (isNaN(startTime) || isNaN(endTime)) {
                         errorMsg = "TTML document has incorrect timing value";
@@ -220,12 +204,9 @@ MediaPlayer.utils.TTMLParser = function () {
                     });
                 }
 
-                console.log(captionArray);
-
                 return Q.when(captionArray);
 
             } catch (err) {
-                console.log(errorMsg);
                 errorMsg = err.message;
                 return Q.reject(errorMsg);
             }
