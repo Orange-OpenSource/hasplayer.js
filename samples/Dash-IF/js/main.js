@@ -130,6 +130,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     var player,
     video,
     context,
+    config = null,
     videoSeries = [],
     dlSeries = [],
     playSeries = [],
@@ -577,6 +578,19 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
     ////////////////////////////////////////
     //
+    // Configuration file
+    //
+    ////////////////////////////////////////
+    var req = new XMLHttpRequest();
+    req.open("GET", "hasplayer_config.json", false);
+    req.setRequestHeader("Content-type", "application/json");
+    req.send();
+    if (req.status === 200) {
+        config = JSON.parse(req.responseText);
+    }
+
+    ////////////////////////////////////////
+    //
     // Player Setup
     //
     ////////////////////////////////////////
@@ -595,6 +609,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     player.addEventListener("metricChanged", metricChanged.bind(this));
     player.attachView(video);
     player.setAutoPlay(true);
+    player.setConfig(config);
     $scope.player = player;
     $scope.videojsIsOn = false;
     
@@ -759,6 +774,11 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         var params = new DRMParams();
         params.backUrl = $scope.selectedItem.backUrl;
         params.customData = $scope.selectedItem.customData;
+
+        // ORANGE: reset ABR controller
+        player.setQualityFor("video", 0);
+        player.setQualityFor("audio", 0);
+
         player.attachSource($scope.selectedItem.url, params);
     }
 

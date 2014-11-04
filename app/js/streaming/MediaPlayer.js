@@ -382,11 +382,6 @@ MediaPlayer = function (aContext) {
             // ORANGE: store source stream params
             sourceParams = params;
 
-            this.setQualityFor('video', 0);
-            this.setQualityFor('audio', 0);
-
-            // TODO : update
-
             if (playing && streamController) {
                 streamController.reset();
                 streamController = null;
