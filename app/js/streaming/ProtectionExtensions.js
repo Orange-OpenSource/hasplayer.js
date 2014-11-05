@@ -283,7 +283,7 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
     listenToNeedKey: function(videoModel, listener) {
         videoModel.listen("webkitneedkey", listener);
         videoModel.listen("msneedkey", listener);
-        videoModel.listen("needKey", listener);
+        videoModel.listen("needkey", listener);
     },
 
     listenToKeyError: function(source, listener) {
