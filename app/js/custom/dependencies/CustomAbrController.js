@@ -96,7 +96,7 @@ Custom.dependencies.CustomAbrController = function () {
             qualityMin = -1,
             qualityMax = -1,
             quality,
-            switchIncremental = self.config.getParamFor(type, "ABR.switchIncremental", "boolean", false);
+            switchUpIncrementally = self.config.getParamFor(type, "ABR.switchUpIncrementally", "boolean", false);
 
         // Call parent's getPlaybackQuality function
         self.parent.getPlaybackQuality.call(self, type, data).then(
@@ -104,7 +104,7 @@ Custom.dependencies.CustomAbrController = function () {
                 quality = result.quality;
 
                 // Check incremental switch
-                if (switchIncremental && (quality > previousQuality)) {
+                if (switchUpIncrementally && (quality > previousQuality)) {
                     self.debug.log("[AbrController]["+type+"] Incremental switch => quality: " + quality);
                     quality = previousQuality + 1;
                 }
