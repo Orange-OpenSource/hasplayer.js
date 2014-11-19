@@ -210,7 +210,7 @@ Dash.dependencies.DashHandler = function () {
                     if (seg) {
                     fTime = seg.presentationStartTime - period.start;
                     sDuration = representation.adaptation.period.duration;
-                    this.debug.log(representation.segmentInfoType + ": " + fTime + " / " + sDuration);
+                    //this.debug.log(representation.segmentInfoType + ": " + fTime + " / " + sDuration);
                     isFinished = (fTime >= sDuration);
                     }
                 } else {

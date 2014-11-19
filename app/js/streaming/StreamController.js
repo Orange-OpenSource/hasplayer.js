@@ -141,7 +141,7 @@
                 playBackQuality = self.videoExt.getPlaybackQuality(videoElement),
                 elapsedTime = (new Date().getTime()- self.startPlayingTime)/1000;
 
-            self.debug.log("[StreamController]", "FPS = " + playBackQuality.totalVideoFrames/elapsedTime);
+            //self.debug.log("[StreamController]", "FPS = " + playBackQuality.totalVideoFrames/elapsedTime);
 
             //ORANGE : replace addDroppedFrames metric by addConditionMetric
             //self.metricsModel.addDroppedFrames("video", playBackQuality);
@@ -476,7 +476,7 @@
             self.currentURL = url;
             self.currentParams = params;
 
-            self.debug.log("[StreamController]", "load url: " + url);
+            self.debug.log("[StreamController] load url: " + url);
 
             self.manifestLoader.load(url).then(
                 function(manifest) {
@@ -492,7 +492,7 @@
                     self.manifestModel.setValue(manifest);
                     //ORANGE : add Metadata metric
                     self.metricsModel.addMetaData();
-                    self.debug.log("Manifest has loaded.");
+                    self.debug.log("[StreamController] Manifest has loaded.");
                     //self.debug.log(self.manifestModel.getValue());
                     self.manifestUpdater.start();
                 },

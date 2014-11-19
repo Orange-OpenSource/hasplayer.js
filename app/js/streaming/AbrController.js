@@ -190,7 +190,7 @@ MediaPlayer.dependencies.AbrController = function () {
                     }
                 );
             } else {
-                self.debug.log("Unchanged quality of " + quality);
+                //self.debug.log("Unchanged quality of " + quality);
                 deferred.resolve({quality: quality, confidence: confidence});
             }
 

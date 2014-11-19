@@ -289,7 +289,7 @@ Custom.dependencies.CustomBufferController = function () {
                                                         }
                                                     );
                                                 }
-
+                                              
                                                 if (started === true) {
                                                     checkIfSufficientBuffer.call(self);
                                                 }
@@ -599,6 +599,18 @@ Custom.dependencies.CustomBufferController = function () {
         },
 
         onBytesError = function (e) {
+
+            //if it's the first download error, try to load the same segment for a different quality...
+            if(this.nbJumpChunkMissing === 0)
+            {
+                currentRepresentation = getRepresentationForQuality.call(this, e.quality-1);
+                if (currentRepresentation === undefined || currentRepresentation === null) {
+                    currentRepresentation = getRepresentationForQuality.call(this, e.quality+1);
+                }
+
+                loadNextFragment.call(this);
+            }
+
             this.debug.log(type + ": Failed to load a request at startTime = "+e.startTime);
             this.stallTime = e.startTime;
             this.nbJumpChunkMissing += 1;
@@ -666,7 +678,7 @@ Custom.dependencies.CustomBufferController = function () {
                 onBytesError.call(self,e);
             }
             else{*/
-            self.indexHandler.getSegmentRequestForTime(currentRepresentation, segmentTime).then(onFragmentRequest.bind(self));
+                self.indexHandler.getSegmentRequestForTime(currentRepresentation, segmentTime).then(onFragmentRequest.bind(self));
             //}
         },
 
@@ -1159,10 +1171,10 @@ Custom.dependencies.CustomBufferController = function () {
         },
 
         updateBufferState: function() {
-if (bufferLevel <= 0 && htmlVideoState !== this.BUFFERING) {
+            if (bufferLevel <= 0 && htmlVideoState !== this.BUFFERING) {
                 htmlVideoState = this.BUFFERING;
-                this.debug.log("[BufferController]["+this.getType()+"] ******************** BUFFERING at "+this.videoModel.getCurrentTime());
-                this.metricsModel.addState(this.getType(), "buffering", this.videoModel.getCurrentTime());
+                this.debug.log("[BufferController]["+type+"] BUFFERING - " + this.videoModel.getCurrentTime());
+                this.metricsModel.addState(type, "buffering", this.videoModel.getCurrentTime());
                 if (this.stallTime != null && this.nbJumpChunkMissing<=this.MAX_JUMP_CHUNK_MISSING) {
                     if (isDynamic) {
                         this.stallTime = null;
@@ -1181,8 +1193,8 @@ if (bufferLevel <= 0 && htmlVideoState !== this.BUFFERING) {
             }
             else  if(bufferLevel > 0 && htmlVideoState !== this.PLAYING){
                 htmlVideoState = this.PLAYING;
-                this.debug.log("[BufferController]["+this.getType()+"] ******************** PLAYING at "+this.videoModel.getCurrentTime());
-                this.metricsModel.addState(this.getType(), "playing", this.videoModel.getCurrentTime());
+                this.debug.log("[BufferController]["+type+"] PLAYING - " + this.videoModel.getCurrentTime());
+                this.metricsModel.addState(type, "playing", this.videoModel.getCurrentTime());
             }
 
             // if the buffer controller is stopped and the buffer is full we should try to clear the buffer

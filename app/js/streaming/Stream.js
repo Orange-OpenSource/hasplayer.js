@@ -54,29 +54,29 @@ MediaPlayer.dependencies.Stream = function () {
         eventController = null,
 
         play = function () {
-            this.debug.log("Attempting play...");
+            this.debug.log("[Stream] Attempting play...");
 
             if (!initialized) {
                 return;
             }
 
-            this.debug.log("Do play.");
+            this.debug.log("[Stream] Do play.");
             this.videoModel.play();
         },
 
         pause = function () {
-            this.debug.log("Do pause.");
+            this.debug.log("[Stream] Do pause.");
             this.videoModel.pause();
         },
 
         seek = function (time) {
-            this.debug.log("Attempting seek...");
+            this.debug.log("[Stream] Attempting seek...");
 
             if (!initialized) {
                 return;
             }
 
-            this.debug.log("Do seek: " + time);
+            this.debug.log("[Stream] Do seek: " + time);
 
             this.system.notify("setCurrentTime");
             this.videoModel.setCurrentTime(time);
@@ -95,8 +95,8 @@ MediaPlayer.dependencies.Stream = function () {
             type = (event.type !== "msneedkey") ? event.type : videoCodec;
             initData.push({type: type, initData: event.initData});
 
-            this.debug.log("DRM: Key required for - " + type);
-            //this.debug.log("DRM: Generating key request...");
+            this.debug.log("[DRM] Key required for - " + type);
+            //this.debug.log("[DRM] Generating key request...");
             //this.protectionModel.generateKeyRequest(DEFAULT_KEY_TYPE, event.initData);
             if (!!contentProtection && !!videoCodec && !kid) {
                 try
@@ -123,7 +123,7 @@ MediaPlayer.dependencies.Stream = function () {
                 msg = null,
                 laURL = null;
 
-            this.debug.log("DRM: Got a key message...");
+            this.debug.log("[DRM] Got a key message...");
 
             session = event.target;
             bytes = new Uint16Array(event.message.buffer);
@@ -144,7 +144,7 @@ MediaPlayer.dependencies.Stream = function () {
             });
 
             //if (event.keySystem !== DEFAULT_KEY_TYPE) {
-            //    this.debug.log("DRM: Key type not supported!");
+            //    this.debug.log("[DRM] Key type not supported!");
             //}
             // else {
                 // todo : request license?
@@ -153,7 +153,7 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         onMediaSourceKeyAdded = function () {
-            this.debug.log("DRM: Key added.");
+            this.debug.log("[DRM] Key added.");
         },
 
         onMediaSourceKeyError = function () {
@@ -193,8 +193,8 @@ MediaPlayer.dependencies.Stream = function () {
                 self = this,
 
                 onMediaSourceOpen = function (e) {
-                    self.debug.log("MediaSource is open!");
-                    self.debug.log(e);
+                    //self.debug.log("MediaSource is open!");
+                    //self.debug.log(e);
 
                     mediaSourceArg.removeEventListener("sourceopen", onMediaSourceOpen);
                     mediaSourceArg.removeEventListener("webkitsourceopen", onMediaSourceOpen);
@@ -293,7 +293,7 @@ MediaPlayer.dependencies.Stream = function () {
 
                                 self.manifestExt.getCodec(videoData).then(
                                     function (codec) {
-                                        self.debug.log("Video codec: " + codec);
+                                        self.debug.log("[Stream] Video codec: " + codec);
                                         videoCodec = codec;
 
                                         return self.manifestExt.getContentProtectionData(videoData).then(
@@ -313,7 +313,7 @@ MediaPlayer.dependencies.Stream = function () {
                                                 if (!self.capabilities.supportsCodec(self.videoModel.getElement(), codec)) {
                                                     var msg = "Video Codec (" + codec + ") is not supported.";
                                                     self.errHandler.manifestError(msg, "codec", manifest);
-                                                    self.debug.log(msg);
+                                                    self.debug.log("[Stream] ", msg);
                                                     return Q.when(null);
                                                 }
 
@@ -344,7 +344,7 @@ MediaPlayer.dependencies.Stream = function () {
                                     }
                                 );
                             } else {
-                                self.debug.log("No video data.");
+                                self.debug.log("[Stream] No video data.");
                                 videoReady = true;
                                 checkIfInitialized.call(self, videoReady, audioReady, textTrackReady,  initialize);
                             }
@@ -366,7 +366,7 @@ MediaPlayer.dependencies.Stream = function () {
 
                                         self.manifestExt.getCodec(primaryAudioData).then(
                                             function (codec) {
-                                                self.debug.log("Audio codec: " + codec);
+                                                self.debug.log("[Stream] Audio codec: " + codec);
                                                 audioCodec = codec;
 
                                                 return self.manifestExt.getContentProtectionData(primaryAudioData).then(
@@ -386,7 +386,7 @@ MediaPlayer.dependencies.Stream = function () {
                                                         if (!self.capabilities.supportsCodec(self.videoModel.getElement(), codec)) {
                                                             var msg = "Audio Codec (" + codec + ") is not supported.";
                                                             self.errHandler.manifestError(msg, "codec", manifest);
-                                                            self.debug.log(msg);
+                                                            self.debug.log("[Stream] ", msg);
                                                             return Q.when(null);
                                                         }
 
@@ -397,7 +397,7 @@ MediaPlayer.dependencies.Stream = function () {
                                         ).then(
                                             function (buffer) {
                                                 if (buffer === null) {
-                                                    self.debug.log("No buffer was created, skipping audio stream.");
+                                                    self.debug.log("[Stream] No buffer was created, skipping audio stream.");
                                                 } else {
                                                     // TODO : How to tell index handler live/duration?
                                                     // TODO : Pass to controller and then pass to each method on handler?
@@ -418,7 +418,7 @@ MediaPlayer.dependencies.Stream = function () {
                                     }
                                 );
                             } else {
-                                self.debug.log("No audio streams.");
+                                self.debug.log("[Stream] No audio streams.");
                                 audioReady = true;
                                 checkIfInitialized.call(self, videoReady, audioReady,textTrackReady,  initialize);
                             }
@@ -474,7 +474,7 @@ MediaPlayer.dependencies.Stream = function () {
                                     }
                                 );
                             } else {
-                                self.debug.log("No text tracks.");
+                                self.debug.log("[Stream] No text tracks.");
                                 textTrackReady = true;
                                 checkIfInitialized.call(self, videoReady, audioReady,textTrackReady,  initialize);
                             }
@@ -499,12 +499,12 @@ MediaPlayer.dependencies.Stream = function () {
 
             self.manifestExt.getDuration(self.manifestModel.getValue(), periodInfo).then(
                 function (duration) {
-                    //self.debug.log("Setting duration: " + duration);
+                    self.debug.log("[Stream] Setting duration: " + duration);
                     return self.mediaSourceExt.setDuration(mediaSource, duration);
                 }
             ).then(
                 function (value) {
-                    self.debug.log("Duration successfully set to: " + value);
+                    //self.debug.log("Duration successfully set to: " + value);
                     initialized = true;
                     initialize.resolve(true);
                 }
@@ -516,10 +516,10 @@ MediaPlayer.dependencies.Stream = function () {
         onLoad = function () {
             var self = this;
 
-            this.debug.log("Got loadmetadata event.");
+            this.debug.log("[Stream] Got loadmetadata event.");
 
             var initialSeekTime = this.timelineConverter.calcPresentationStartTime(periodInfo);
-            this.debug.log("Starting playback at offset: " + initialSeekTime);
+            this.debug.log("[Stream] Starting playback at offset: " + initialSeekTime);
 
             // ORANGE: performs a programmatical seek only if initial seek time is different
             // from current time (live use case)
@@ -535,7 +535,7 @@ MediaPlayer.dependencies.Stream = function () {
                 // once the first fragment has been appended
                 waitForStartTime.call(this, initialSeekTime, 2).then(
                     function (time) {
-                        self.debug.log("Starting playback at offset: " + time);
+                        self.debug.log("[Stream] Starting playback at offset: " + time);
                         self.system.notify("setCurrentTime");
                         //ORANGE : increase time + 1s for chromecast which round the time
                         //self.videoModel.setCurrentTime(time+1);
@@ -774,7 +774,7 @@ MediaPlayer.dependencies.Stream = function () {
                 }
             ).then(
                 function () {
-                    self.debug.log("element loaded!");
+                    self.debug.log("[Stream] element loaded!");
                     // only first period stream must be played automatically during playback initialization
                     if (periodInfo.index === 0) {
                         eventController.start();

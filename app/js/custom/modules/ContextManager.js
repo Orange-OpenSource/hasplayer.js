@@ -21,7 +21,7 @@
         debug: undefined,
 
         setContext: function(ctx) {
-            this.debug.log("Custom.modules.ContextManager::setContext",ctx);
+            //this.debug.log("Custom.modules.ContextManager::setContext",ctx);
             this.system.autoMapOutlets = true;
 
             if (ctx === "MSS") {

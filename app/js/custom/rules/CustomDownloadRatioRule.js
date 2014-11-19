@@ -120,7 +120,7 @@ Custom.rules.CustomDownloadRatioRule = function () {
                                 function (currentRepresentation) {
                                     self.manifestExt.getBandwidth(currentRepresentation).then(
                                         function (currentBandwidth) {
-                                            self.debug.log("[DownloadRatioRule]["+data.type+"] ####################### Total Ratio < 1 need to decrease bandwith current = "+currentBandwidth+"!!!!");
+                                            //self.debug.log("[DownloadRatioRule]["+data.type+"] ####################### Total Ratio < 1 need to decrease bandwith current = "+currentBandwidth+"!!!!");
                                             i = 0;
                                             funcs = [];
                                             while (i <= current) {
@@ -163,7 +163,7 @@ Custom.rules.CustomDownloadRatioRule = function () {
                                         function (currentRepresentation) {
                                             self.manifestExt.getBandwidth(currentRepresentation).then(
                                                 function (currentBandwidth) {
-                                                    self.debug.log("[DownloadRatioRule]["+data.type+"] ####################### Total Ratio > 1 and current = "+currentBandwidth+" <max need to increase bandwith!!!!");
+                                                    //self.debug.log("[DownloadRatioRule]["+data.type+"] ####################### Total Ratio > 1 and current = "+currentBandwidth+" <max need to increase bandwith!!!!");
                                                     i = 0;
                                                     funcs = [];
                                                     while (i <= max) {
