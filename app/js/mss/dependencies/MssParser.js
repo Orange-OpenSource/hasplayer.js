@@ -262,7 +262,7 @@ Mss.dependencies.MssParser = function () {
         }];
 
         mpd = {};
-        mpd.name = "mpd";
+        mpd.name = "SmoothStreamingMedia";
         mpd.isRoot = true;
         mpd.isArray = true;
         mpd.parent = null;
