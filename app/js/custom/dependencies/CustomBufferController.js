@@ -68,6 +68,8 @@ Custom.dependencies.CustomBufferController = function () {
         //ORANGE : used to test Live chunk download failure
         //testTimeLostChunk = 0,
 
+        currentSequenceNumber = -1,
+
         sendRequest = function() {
             if (fragmentModel !== null) {
                 this.fragmentController.onBufferControllerStateChange();
@@ -668,7 +670,14 @@ Custom.dependencies.CustomBufferController = function () {
             // Reset seeking state
             seeking = false;
 
-            self.debug.log("[BufferController]["+type+"] loadNextFragment for time: " + segmentTime);
+            if (currentSequenceNumber !== -1) {
+                self.debug.log("[BufferController]["+type+"] loadNextFragment for sequence number: " + currentSequenceNumber);
+                self.indexHandler.getNextSegmentRequestFromSN(currentRepresentation, currentSequenceNumber).then(onFragmentRequest.bind(self));
+            } else {
+                self.debug.log("[BufferController]["+type+"] loadNextFragment for time: " + segmentTime);
+                self.indexHandler.getSegmentRequestForTime(currentRepresentation, segmentTime).then(onFragmentRequest.bind(self));                
+            }
+
             //ORANGE : used to test Live chunk download failure
             /*if ((testTimeLostChunk-2)<=segmentTime &&
                 (testTimeLostChunk+2)>=segmentTime)
@@ -677,13 +686,14 @@ Custom.dependencies.CustomBufferController = function () {
                 e.startTime = segmentTime;
                 onBytesError.call(self,e);
             }
-            else{*/
+            else{
                 self.indexHandler.getSegmentRequestForTime(currentRepresentation, segmentTime).then(onFragmentRequest.bind(self));
-            //}
+            }*/
         },
 
         onFragmentRequest = function (request) {
-            var self = this;
+            var self = this,
+                manifest = self.manifestModel.getValue();
             
             if (request !== null) {
                 // If we have already loaded the given fragment ask for the next one. Otherwise prepare it to get loaded
@@ -698,6 +708,11 @@ Custom.dependencies.CustomBufferController = function () {
                     // Store current segment time for next segment request
                     currentSegmentTime = request.startTime;
 
+                    // Store current segment sequence number for next segment request (HLS use case)
+                    if (request.sequenceNumber) {
+                        currentSequenceNumber = request.sequenceNumber;
+                    }
+
                     // Download the segment
                     self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, signalStreamComplete).then(
                         function() {
@@ -709,9 +724,21 @@ Custom.dependencies.CustomBufferController = function () {
                 //impossible to find a request for the loadNextFragment call
                 //the end of the createdSegment list has been reached, recall checkIfSufficientBuffer to update the list and get the next segment
                 self.debug.log("[BufferController]["+type+"] loadNextFragment failed");
-                bufferTimeout = setTimeout(function () {
-                    checkIfSufficientBuffer.call(self);
-                    }, 2000);
+
+                // HLS use case => download playlist for new representation
+                if ((manifest.name === "M3U") && isDynamic) {
+                    updatePlayListForRepresentation.call(self, currentQuality).then(
+                        function () {
+                            currentRepresentation = getRepresentationForQuality.call(self, currentQuality);
+                            checkIfSufficientBuffer.call(self);
+                        }
+                    );
+                }
+                else {
+                    bufferTimeout = setTimeout(function () {
+                        checkIfSufficientBuffer.call(self);
+                        }, 2000);
+                }
             }
         },
 
@@ -816,7 +843,10 @@ Custom.dependencies.CustomBufferController = function () {
             var self = this,
                 now = new Date(),
                 currentVideoTime = self.videoModel.getCurrentTime(),
-                quality;
+                manifest = self.manifestModel.getValue(),
+                quality,
+                representation,
+                playlistUpdated = null;
 
             self.debug.log("[BufferController]["+type+"] Buffer...");
 
@@ -838,41 +868,83 @@ Custom.dependencies.CustomBufferController = function () {
                             // Get corresponding representation
                             currentRepresentation = getRepresentationForQuality.call(self, quality);
 
-                            // If quality changed, then load initialization segment
+                            // Quality changed?
                             if (quality !== currentQuality) {
                                 self.debug.log("[BufferController]["+type+"] Quality changed: " + quality);
                                 currentQuality = quality;
+
+                                // Load initialization segment
                                 loadInit = true;
 
-                                // If quality changed, reset segment list
+                                // Reset segment list
                                 currentRepresentation.segments = null;
 
                                 clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.REPRESENTATION_SWITCH_STOP_REASON);
                                 self.metricsModel.addRepresentationSwitch(type, now, currentVideoTime, currentRepresentation.id);
 
+                                // HLS use case => download playlist for new representation
+                                if ((manifest.name === "M3U") && isDynamic) {
+                                    playlistUpdated = Q.defer();
+                                    updatePlayListForRepresentation.call(self, currentQuality).then(
+                                        function () {
+                                            currentRepresentation = getRepresentationForQuality.call(self, quality);
+                                            playlistUpdated.resolve();
+                                        }
+                                    );
+                                }
                             }
 
-                            if (loadInit === true) {
-                                // Load initialization segment request
-                                loadInitialization.call(self).then(
-                                    function (request) {
-                                        if (request !== null) {
-                                            self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, signalStreamComplete).then(
-                                                function() {
-                                                    sendRequest.call(self);
-                                            });
-                                        }
-                                });
-                            } else {
-                                // Load next fragment
-                                // Notes: 1 - Next fragment is download in // with initialization segment
-                                //        2 - Buffer level is checked once next fragment data has been pushed into buffer (@see checkIfSufficientBuffer())
-                                loadNextFragment.call(self);
-                            }
+                            Q.when(playlistUpdated ? playlistUpdated.promise : true).then(
+                                function () {
+                                    if (loadInit === true) {
+                                        // Load initialization segment request
+                                        loadInitialization.call(self).then(
+                                            function (request) {
+                                                if (request !== null) {
+                                                    self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, signalStreamComplete).then(
+                                                        function() {
+                                                            sendRequest.call(self);
+                                                        }
+                                                    );
+                                                }
+                                            }
+                                        );
+                                    } else {
+                                        // Load next fragment
+                                        // Notes: 1 - Next fragment is download in // with initialization segment
+                                        //        2 - Buffer level is checked once next fragment data has been pushed into buffer (@see checkIfSufficientBuffer())
+                                        loadNextFragment.call(self);
+                                    }
+                                }
+                            );
                         }
                     );
                 }
             );
+        },
+
+        updatePlayListForRepresentation = function (repIndex) {
+            var self = this,
+                deferred = Q.defer(),
+                manifest = self.manifestModel.getValue(),
+                representation;
+
+            self.manifestExt.getDataIndex(data, manifest, periodInfo.index).then(
+                function (idx) {
+                    representation = manifest.Period_asArray[periodInfo.index].AdaptationSet_asArray[idx].Representation_asArray[repIndex];
+                    self.parser.hlsParser.updatePlaylist(representation).then(
+                        function () {
+                            updateRepresentations.call(self, data, periodInfo).then(
+                                function (representations) {
+                                    availableRepresentations = representations;
+                                    deferred.resolve();
+                                }
+                            );
+                        }
+                    );
+                }
+            );
+            return deferred.promise;
         },
 
         updateRepresentations = function (data, periodInfo) {
@@ -940,6 +1012,7 @@ Custom.dependencies.CustomBufferController = function () {
         bufferExt: undefined,
         sourceBufferExt: undefined,
         abrController: undefined,
+        parser: undefined,
         fragmentExt: undefined,
         indexHandler: undefined,
         debug: undefined,

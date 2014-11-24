@@ -973,29 +973,26 @@ MediaPlayer.dependencies.Mp4Processor = function () {
             
             length += 8; // 8 = 'size' + 'type' mdat fields length
             
-            //mdat array size = tracks.length
+            // mdat array size = tracks.length
             mdatTracksTab = [tracks.length];
 
             for (i = 0; i < tracks.length; i++) {
-
-                // update trun.data_offset for the track
+                // Update trun.data_offset for the track
                 trafs[i].getBoxByType("trun").data_offset = length;
-
                 // Update length of output fragment file
                 length += tracks[i].data.length;
-                //add current data in mdatTracksTab array
+                // Add current data in mdatTracksTab array
                 mdatTracksTab[i] = tracks[i].data;
-                //update length of global mdat
+                // Apdate length of global mdat
                 mdatLength += mdatTracksTab[i].length;
             }
 
             trackglobal.data = new Uint8Array(mdatLength);
 
-            //concatenate all the tracks data in an array
-            for (i = 0; i < mdatTracksTab.length; i+=2) {
-                trackglobal.data.set(mdatTracksTab[i],offset);
-                trackglobal.data.set(mdatTracksTab[i+1], mdatTracksTab[i].length);
-                offset += mdatTracksTab[i].length + mdatTracksTab[i+1].length;
+            // Concatenate all the tracks data in an array
+            for (i = 0; i < mdatTracksTab.length; i++) {
+                trackglobal.data.set(mdatTracksTab[i], offset);
+                offset += mdatTracksTab[i].length;
             }
 
             // Create mdat

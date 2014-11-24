@@ -36,12 +36,13 @@
 
 
 Custom.utils.doRequestWithPromise = function (url, callback, argumentsToForward) {
-	var deferred = Q.defer();
-	var xhr = Custom.utils.getXMLHttpRequest();
+	var deferred = Q.defer(),
+		xhr = Custom.utils.getXMLHttpRequest(),
+		self = this;
 	
 	xhr.onreadystatechange = function() {
 		if (xhr.readyState === 4 && (xhr.status === 200 || xhr.status === 0)) {
-			callback(deferred,xhr.response,argumentsToForward);
+			callback.call(self, deferred,xhr.response,argumentsToForward);
 		}
 	};
 	xhr.open("GET", url, true);

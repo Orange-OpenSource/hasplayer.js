@@ -619,6 +619,11 @@ Dash.dependencies.DashHandler = function () {
                         seg.index = s.index;
                         seg.indexRange = s.indexRange;
 
+                        // ORANGE: add sequence number (HLS use case)
+                        if (s.sequenceNumber) {
+                            seg.sequenceNumber = s.sequenceNumber;
+                        }
+
                         //self.debug.log("[DashHandler]["+type+"] createSegment: time = " + seg.mediaStartTime + ", availabilityIdx = " + seg.availabilityIdx + ", url = " + seg.media);
 
                         segments.push(seg);
@@ -823,6 +828,28 @@ Dash.dependencies.DashHandler = function () {
             return null;
         },
 
+        // ORANGE: HLS use case, get next segment from sequence number
+        getNextSegmentBySequenceNumber = function(sn, representation) {
+            if (!representation || !representation.segments) return null;
+
+            var ln = representation.segments.length,
+                seg,
+                i;
+
+            for (i = 0; i < ln; i += 1) {
+                seg = representation.segments[i];
+
+                if (seg.sequenceNumber && (seg.sequenceNumber === sn)) {
+                    if (i < (ln - 1)) {
+                        return representation.segments[i+1];
+                    }
+                    return null;
+                }
+            }
+
+            return null;
+        },
+
         isSegmentListUpdateRequired = function(representation) {
             var updateRequired = false,
                 segments = representation.segments,
@@ -875,6 +902,10 @@ Dash.dependencies.DashHandler = function () {
             request.wallStartTime = segment.wallStartTime;
             request.quality = representation.index;
             request.index = segment.availabilityIdx;
+            // ORANGE: add sequence number (HLS use case)
+            if (segment.sequenceNumber) {
+                request.sequenceNumber = segment.sequenceNumber;
+            }
 
             return Q.when(request);
         },
@@ -1001,6 +1032,62 @@ Dash.dependencies.DashHandler = function () {
             return deferred.promise;
         },
 
+        // ORANGE: HLS use case, get next request from sequence number
+        getNextFromSN = function (representation, sn) {
+            var deferred,
+                request,
+                segment,
+                self = this;
+
+            if (!representation) {
+                return Q.reject("no represenation");
+            }
+
+            //self.debug.log("Getting the next request.");
+
+            if (index === -1) {
+                throw "You must call getSegmentRequestForTime first.";
+            }
+
+            deferred = Q.defer();
+
+            self.debug.log("[DashHandler]["+type+"] Getting the next request => sn = " + sn);
+
+            getSegments.call(self, representation).then(
+                function (segments) {
+                    isMediaFinished.call(self, representation).then(
+                        function (finished) {
+                            //self.debug.log("Stream finished? " + finished);
+                            if (finished) {
+                                request = new MediaPlayer.vo.SegmentRequest();
+                                request.action = request.ACTION_COMPLETE;
+                                request.index = index;
+                                self.debug.log("Signal complete.");
+                                //self.debug.log(request);
+                                deferred.resolve(request);
+                            } else {
+                                segment = getNextSegmentBySequenceNumber(sn, representation);
+                                if (segment === null) {
+                                    deferred.resolve(null);
+                                } else {
+                                    index = segment.availabilityIdx;
+                                    getRequestForSegment.call(self, segment).then(
+                                        function (request) {
+                                            //self.debug.log("Got a request.");
+                                            //self.debug.log(request);
+                                            deferred.resolve(request);
+                                        }
+                                    );
+                                }
+                            }
+                        }
+                    );
+                }
+            );
+
+            return deferred.promise;
+        },
+
         getSegmentCountForDuration = function (representation, requiredDuration, bufferedDuration) {
             var self = this,
                 remainingDuration = Math.max(requiredDuration - bufferedDuration, 0),
@@ -1089,6 +1176,8 @@ Dash.dependencies.DashHandler = function () {
         getInitRequest: getInit,
         getSegmentRequestForTime: getForTime,
         getNextSegmentRequest: getNext,
+        // ORANGE: HLS use case, get next request from sequence number
+        getNextSegmentRequestFromSN: getNextFromSN,
         getCurrentTime: getCurrentTime,
         getSegmentCountForDuration: getSegmentCountForDuration,
         updateSegmentList: updateSegmentList

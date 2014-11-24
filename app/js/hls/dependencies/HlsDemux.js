@@ -95,12 +95,12 @@ Hls.dependencies.HlsDemux = function () {
                 else {
                     this.debug.log("[HlsDemux] Stream Type "+elementStream.m_stream_type+" unknown!");
                 }
-                track.timescale = mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY;
-                track.pid = elementStream.m_elementary_PID;
-                track.trackId = trackIdCounter;
-                pidToTrackId[elementStream.m_elementary_PID] = trackIdCounter;
-                tracks.push(track);
-                trackIdCounter ++;
+                    track.timescale = mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY;
+                    track.pid = elementStream.m_elementary_PID;
+                    track.trackId = trackIdCounter;
+                    pidToTrackId[elementStream.m_elementary_PID] = trackIdCounter;
+                    tracks.push(track);
+                    trackIdCounter ++;
             }
 
             return pmt;
@@ -129,8 +129,7 @@ Hls.dependencies.HlsDemux = function () {
                 return;
             }
 
-            //get track from tracks list
-            //trackId start from 1, id in tab start from 0
+            // Get track from tracks array (trackId start from 1)
             track = tracks[trackId-1];
 
             // PUSI => start storing new AU
@@ -303,8 +302,8 @@ Hls.dependencies.HlsDemux = function () {
                 track.codecPrivateData = codecPrivateDataHex.toUpperCase();*/
             }
 
-            this.debug.log("[HlsDemux] track codecPrivateData = " + track.codecPrivateData);
-            this.debug.log("[HlsDemux] track codecs = " + track.codecs);
+            this.debug.log("[HlsDemux]["+track.trackId+"] track codecPrivateData = " + track.codecPrivateData);
+            this.debug.log("[HlsDemux]["+track.trackId+"] track codecs = " + track.codecs);
 
             return track;
         },
@@ -369,7 +368,7 @@ Hls.dependencies.HlsDemux = function () {
             this.debug.log("[HlsDemux] Demux: baseDts = " + baseDts + ", dtsOffset = " + dtsOffset);
             for (i = 0; i < tracks.length; i++) {
                 postProcess.call(this, tracks[i]);
-                this.debug.log("[HlsDemux] Demux: 1st PTS = " + tracks[i].samples[0].dts + " (" + (tracks[i].samples[0].dts / 90000) + ")");
+                this.debug.log("[HlsDemux]["+tracks[i].trackId+"] Demux: 1st PTS = " + tracks[i].samples[0].dts + " (" + (tracks[i].samples[0].dts / 90000) + ")");
             }
 
             return tracks;
