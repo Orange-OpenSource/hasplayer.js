@@ -109,7 +109,7 @@ MediaPlayer.utils.Config = function () {
         doGetParamFor = function (key, name, type, def) {
             var typeParams = params[key];
 
-            if ((typeParams !== undefined) && (typeParams[name])) {
+            if ((typeParams !== undefined) && (typeParams[name] !== undefined)) {
                 return getParam(typeParams, name, type, def);
             }
 
