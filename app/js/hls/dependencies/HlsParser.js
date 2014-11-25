@@ -300,11 +300,11 @@ Hls.dependencies.HlsParser = function () {
 
 	};
 
-	var postProcess = function(manifest) {
+	var postProcess = function(manifest, quality) {
 		var deferred = Q.defer(),
 			period = manifest.Period_asArray[0],
 			adaptationSet = period.AdaptationSet_asArray[0],
-			representation = adaptationSet.Representation_asArray[0],
+			representation = adaptationSet.Representation_asArray[quality],
 			startNumber = -1,
 			i,
 			valid,
@@ -405,7 +405,7 @@ Hls.dependencies.HlsParser = function () {
 		}*/
 
 		// Download initialization data (PSI, IDR...) of 1st representation to obtain codec information
-		representation = adaptationSet.Representation_asArray[0];
+		representation = adaptationSet.Representation_asArray[quality];
         request.type = "Initialization Segment";
         request.url = representation.SegmentList.Initialization.sourceURL;
         //request.range = "0-18799";
@@ -431,8 +431,13 @@ Hls.dependencies.HlsParser = function () {
 			deferred.resolve();
         };
 
-		//representation.codecs = "";
-		//representation.codecs = "mp4a.40.5";//,avc1.42c00d";
+        // PATCH to remove audio track
+       	/*var tracksCodecs = representation.codecs.split(',');
+       	for (i = 0; i < tracksCodecs.length; i++) {
+       		if (tracksCodecs[i].indexOf("avc") !== -1) {
+       			representation.codecs = tracksCodecs[i];
+       		}
+       	}*/
         if (representation.codecs === "") {
 			self.debug.log("[HlsParser]", "Load initialization segment: " + request.url);
 			self.fragmentLoader.load(request).then(onLoaded.bind(self, representation), onError.bind(self));
@@ -593,7 +598,7 @@ Hls.dependencies.HlsParser = function () {
 				representation = adaptationSet.Representation_asArray[result.quality];
 				doUpdatePlaylist.call(self, representation).then(
 					function () {
-						postProcess.call(self, mpd).then(function() {
+						postProcess.call(self, mpd, result.quality).then(function() {
 							deferred.resolve(mpd);
 						});
 					}

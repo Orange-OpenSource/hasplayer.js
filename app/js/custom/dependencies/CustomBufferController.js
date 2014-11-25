@@ -730,7 +730,9 @@ Custom.dependencies.CustomBufferController = function () {
                     updatePlayListForRepresentation.call(self, currentQuality).then(
                         function () {
                             currentRepresentation = getRepresentationForQuality.call(self, currentQuality);
-                            checkIfSufficientBuffer.call(self);
+                            bufferTimeout = setTimeout(function () {
+                                checkIfSufficientBuffer.call(self);
+                                }, 2000);
                         }
                     );
                 }
