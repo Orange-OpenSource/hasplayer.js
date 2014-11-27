@@ -251,6 +251,9 @@ MediaPlayer = function (aContext) {
             if (!initialized) {
                 system.injectInto(this);
                 initialized = true;
+
+                this.debug.log("[MediaPlayer] Version: " + this.getVersionFull() + " - " + this.getBuildDate());
+                this.debug.log("[MediaPlayer] user-agent: " + navigator.userAgent);
             }
         },
 
