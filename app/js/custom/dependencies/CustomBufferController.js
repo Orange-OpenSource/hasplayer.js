@@ -817,16 +817,15 @@ Custom.dependencies.CustomBufferController = function () {
             // videoModel in stalled mode
             if (stalled) {
                 if (bufferLevel > minBufferTimeAtStartup) {
-                    self.debug.log("[BufferController]["+type+"] stalled = false");
                     setStalled.call(self, false);
                 }
             }
 
             var timeToEnd = getTimeToEnd.call(self);
+            self.debug.log("[BufferController]["+type+"] time to end = " + timeToEnd);
 
             if ((bufferLevel < minBufferTime) &&
-                ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted)) &&
-                lastBufferLevel !== bufferLevel) {
+                ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted))) {
                 // Buffer needs to be filled
                 bufferFragment.call(self);
                 lastBufferLevel = bufferLevel;

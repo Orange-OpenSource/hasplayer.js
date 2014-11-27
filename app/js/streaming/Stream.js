@@ -51,6 +51,9 @@ MediaPlayer.dependencies.Stream = function () {
         keyAddedListener,
         keyErrorListener,
 
+        canplayListener,
+        playingListener,
+
         eventController = null,
 
         play = function () {
@@ -548,6 +551,16 @@ MediaPlayer.dependencies.Stream = function () {
             }
         },
 
+        onCanPlay = function () {
+            var self = this;
+            this.debug.log("[Stream] Got canplay event.");
+        },
+
+        onPlaying = function () {
+            var self = this;
+            this.debug.log("[Stream] Got playing event.");
+        },
+
         // ORANGE: see onLoad()
         waitForStartTime = function (time, tolerance) {
             var self = this,
@@ -571,7 +584,7 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         onPlay = function () {
-            //this.debug.log("Got play event.");
+            this.debug.log("[Stream] Got play event.");
             updateCurrentTime.call(this);
         },
 
@@ -787,7 +800,7 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         currentTimeChanged = function () {
-            this.debug.log("Current time has changed, block programmatic seek.");
+            this.debug.log("[Stream] Current time has changed, block programmatic seek.");
 
             this.videoModel.unlisten("seeking", seekingListener);
             this.videoModel.listen("seeked", seekedListener);
@@ -815,7 +828,7 @@ MediaPlayer.dependencies.Stream = function () {
         onLiveEdgeFound = function(liveEdgeTime) {
 
             //var liveEdgeTime = this.timelineConverter.calcPresentationStartTime(periodInfo);
-            this.debug.log("[O][Stream] ### LiveEdge = " + liveEdgeTime);
+            this.debug.log("[Stream] ### LiveEdge = " + liveEdgeTime);
 
             if (videoController) {
                 videoController.seek(liveEdgeTime);
@@ -979,6 +992,9 @@ MediaPlayer.dependencies.Stream = function () {
             fullScreenListener = onFullScreenChange.bind(this);
             // ORANGE : add Ended Event listener
             endedListener = onEnded.bind(this);
+
+            canplayListener = onCanPlay.bind(this);
+            playingListener = onPlaying.bind(this);
         },
 
         load: function(manifest, periodInfoValue) {
@@ -1003,6 +1019,9 @@ MediaPlayer.dependencies.Stream = function () {
             this.videoModel.listenOnParent("webkitfullscreenchange", fullScreenListener);
             // ORANGE : add Ended Event listener
             this.videoModel.listen("ended", endedListener);
+
+            this.videoModel.listen("canplay", canplayListener);
+            this.videoModel.listen("playing", playingListener);
 
             this.requestScheduler.videoModel = value;
         },
