@@ -443,25 +443,26 @@ function initControlBar () {
 //init player by attaching source stream
 function initPlayer() {
     var query = window.location.search,
-        params = window.location.hash;
+        anchor = window.location.hash,
+        params,
+        i,
+        name,
+        value;
 
     if (query) {
-        query = query.substring(query.indexOf("?file=")+6);
-        if (query) {
 
-            if(params) {
-                query += params;
+        params = query.substring(1).split('&');
+        for (i = 0; i < params.length; i++) {
+            name = params[i].split('=')[0];
+            value = params[i].split('=')[1];
+
+            if ((name === 'file') || (name === 'url')) {
+                player.attachSource(value);
+                update();
             }
-
-            console.log(query);
-
-            player.attachSource(query);
-            update();
         }
     }
 }
-
-
 
 function onLoaded () {
     player = new MediaPlayer(new Custom.di.CustomContext());
