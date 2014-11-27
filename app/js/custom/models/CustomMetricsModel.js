@@ -60,11 +60,12 @@
         return vo;
     };
 
-    rslt.addError = function (streamType, code, message) {
+    rslt.addError = function (streamType, code, message, position) {
         var vo = new Custom.vo.metrics.Error();
 
         vo.code = code;
         vo.message = message;
+        vo.position = position;
     
         this.parent.metricAdded(streamType, "Error", vo);
         return vo;
