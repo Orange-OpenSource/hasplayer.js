@@ -111,6 +111,8 @@ MediaPlayer.dependencies.Stream = function () {
                     pause.call(self);
                     self.debug.log(error);
                     self.errHandler.mediaKeySystemSelectionError(error);
+                    // ORANGE
+                    self.reset();
                 }
             }
 
@@ -144,6 +146,8 @@ MediaPlayer.dependencies.Stream = function () {
                     pause.call(self);
                     self.debug.log(error);
                     self.errHandler.mediaKeyMessageError(error);
+                    // ORANGE
+                    self.reset();
             });
 
             //if (event.keySystem !== DEFAULT_KEY_TYPE) {
