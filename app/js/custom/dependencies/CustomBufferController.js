@@ -359,7 +359,7 @@ Custom.dependencies.CustomBufferController = function () {
                                 },
                                 function(result) {
                                     // ORANGE : add metric
-                                    self.metricsModel.addError(type,result.err.code,result.err.message);
+                                    self.metricsModel.addError(type,result.err.code,result.err.message,self.videoModel.getCurrentTime());
 
                                     self.debug.log("[BufferController]["+type+"] Buffer failed");
                                     // if the append has failed because the buffer is full we should store the data
@@ -616,6 +616,7 @@ Custom.dependencies.CustomBufferController = function () {
             this.debug.log(type + ": Failed to load a request at startTime = "+e.startTime);
             this.stallTime = e.startTime;
             this.nbJumpChunkMissing += 1;
+            this.errHandler.downloadError("chunk", e.url, e);
         },
 
         signalStreamComplete = function (request) {
