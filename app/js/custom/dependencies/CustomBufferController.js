@@ -616,6 +616,7 @@ Custom.dependencies.CustomBufferController = function () {
             this.debug.log(type + ": Failed to load a request at startTime = "+e.startTime);
             this.stallTime = e.startTime;
             this.nbJumpChunkMissing += 1;
+            this.errHandler.downloadError("chunk", e.url, e);
         },
 
         signalStreamComplete = function (request) {
@@ -846,7 +847,6 @@ Custom.dependencies.CustomBufferController = function () {
                 currentVideoTime = self.videoModel.getCurrentTime(),
                 manifest = self.manifestModel.getValue(),
                 quality,
-                representation,
                 playlistUpdated = null;
 
             self.debug.log("[BufferController]["+type+"] Buffer...");

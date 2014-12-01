@@ -1207,4 +1207,3 @@ MediaPlayer.dependencies.Stream = function () {
 MediaPlayer.dependencies.Stream.prototype = {
     constructor: MediaPlayer.dependencies.Stream
 };
-
