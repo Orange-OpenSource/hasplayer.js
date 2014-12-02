@@ -755,12 +755,13 @@ MediaPlayer.dependencies.Stream = function () {
                 actualTime = this.timelineConverter.calcActualPresentationTime(representation, currentTime, this.manifestExt.getIsDynamic(manifest)),
                 timeChanged = (!isNaN(actualTime) && actualTime !== currentTime);
 
-            if (timeChanged) {
+            // ORANGE: unuseful?? and generate some bug since we cannot get availability window of current representation (@see TimelineConverter)
+            /*if (timeChanged) {
                 this.videoModel.setCurrentTime(actualTime);
                 startBuffering(actualTime);
-            } else {
+            } else {*/
                 startBuffering();
-            }
+            //}
         },
 
         doLoad = function (manifestResult) {
