@@ -217,9 +217,11 @@ Dash.dependencies.DashMetricsExtensions = function () {
             httpListLength = httpList.length;
             httpListLastIndex = httpListLength - 1;
 
-            while (httpListLastIndex > 0) {
+            // ORANGE: if only 1 item, then was ignored
+            //while (httpListLastIndex > 0) {
+            while (httpListLastIndex >= 0) {
                 if (httpList[httpListLastIndex].responsecode) {
-            currentHttpList = httpList[httpListLastIndex];
+                    currentHttpList = httpList[httpListLastIndex];
                     break;
                 }
                 httpListLastIndex -= 1;
