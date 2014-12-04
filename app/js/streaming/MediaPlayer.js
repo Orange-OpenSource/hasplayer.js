@@ -375,13 +375,17 @@ MediaPlayer = function (aContext) {
             if (!initialized) {
                 throw "MediaPlayer not initialized!";
             }
-
             // ORANGE : add metric
             var loop = this.getVideoModel().getElement().loop;
             this.metricsModel.addSession(null, url, loop, null,"HasPlayer.js_"+this.getVersionHAS());
 
             this.uriQueryFragModel.reset();
-            source = this.uriQueryFragModel.parseURI(url);
+            if (url) {
+                source = this.uriQueryFragModel.parseURI(url);
+            }else {
+                source = null;
+            }
+
             // ORANGE: store source stream params
             sourceParams = params;
 
