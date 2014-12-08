@@ -448,6 +448,20 @@ Hls.dependencies.HlsParser = function () {
         return deferred.promise;
 	};
 
+	var parseBaseUrl = function (url) {
+		var base = null;
+
+		if (url.indexOf("/") !== -1)
+		{
+			if (url.indexOf("?") !== -1) {
+				url = url.substring(0, url.indexOf("?"));
+			}
+			base = url.substring(0, url.lastIndexOf("/") + 1);
+		}
+
+		return base;
+	};
+
 	var processManifest = function(data, baseUrl) {
 		var deferred = Q.defer(),
 			mpd,
@@ -537,9 +551,9 @@ Hls.dependencies.HlsParser = function () {
 					bandwidth: stream.bandwidth,
 					width: parseInt(stream.resolution.split('x')[0], 10),
 					height: parseInt(stream.resolution.split('x')[1], 10),
-					BaseURL: adaptationSet.BaseURL,
-					url: (stream.uri.indexOf("http://") > -1) ? stream.uri : (adaptationSet.BaseURL + stream.uri)
+					url: (stream.uri.indexOf("http://") > -1) ? stream.uri : (adaptationSet.BaseURL + stream.uri),
 				};
+				representation.BaseURL = parseBaseUrl(representation.url);
 				representations.push(representation);
 				representationId++;
 				//requestsToDo.push({"url": representation.url, "parent": representation});
