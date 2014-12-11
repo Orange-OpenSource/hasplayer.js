@@ -15,6 +15,7 @@ var cast = window.cast || {};
 		this.castReceiverManager.onSenderDisconnected = this.onSenderDisconnected.bind(this);
 		this.castReceiverManager.start();
 
+		this.videoNode.addEventListener("timeupdate",this.timeUpdated.bind(this));
 		//connect events on metrics for testing metric change
 		this.player.addEventListener("metricChanged", this.metricChanged.bind(this));
 	}
@@ -32,6 +33,11 @@ var cast = window.cast || {};
 		if(this.castReceiverManager.getSenders().length === 0){
 			window.close();
 		}
+	};
+
+	HasCastReceiver.prototype.timeUpdated = function(){
+		console.info("timeUpdated");
+		this.sendMessage(this.currentSender,"timeUpdated",this.videoNode.currentTime);
 	};
 
 	HasCastReceiver.prototype.onMessage = function(event) {
