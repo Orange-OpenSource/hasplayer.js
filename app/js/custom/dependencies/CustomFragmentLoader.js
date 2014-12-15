@@ -223,7 +223,7 @@ rslt.planRequests = function (req) {
         that.doLoad(req).then(function (result){
           d.resolve(result);
         },function (reqerror){
-          that.retry(reqerror,d,that);
+          that.retry(req,d,that);
     });
   }
     return d.promise;
@@ -237,7 +237,7 @@ rslt.retry = function (request, d, that) {
     }, function (error) {
       retryCount++;
       if (retryCount < RETRY_ATTEMPTS) {
-        that.retry(error,d,that);
+        that.retry(request,d,that);
       }
       else {
         retryCount = 0;
@@ -259,24 +259,24 @@ rslt.loadRequests = function(bytesLength, req) {
         ]);
 };
 
-    rslt.load = function(req){
+rslt.load = function(req){
 
-         var deferred = Q.defer();
+    var deferred = Q.defer();
 
-        if(req.type == "Initialization Segment" && req.data){
-            deferred.resolve(req,{data:req.data});
-        }else{
+    if(req.type == "Initialization Segment" && req.data){
+        deferred.resolve(req,{data:req.data});
+    } else{
         this.planRequests(req).then(function(result) {
           deferred.resolve(result);
         },function (error) {
           deferred.reject(error);
         });
-        }
+    }
 
-        return deferred.promise;
-    };
+    return deferred.promise;
+};
 
-    return rslt;
+return rslt;
 };
 
 Custom.dependencies.CustomFragmentLoader.prototype = {
