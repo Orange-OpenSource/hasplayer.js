@@ -83,10 +83,10 @@ Custom.utils.CustomDebug = function () {
         if (this.getLogToBrowserConsole() && DEBUG) {
             var _logger = this.getLogger();
             if (_logger) {
-                _logger.info.apply(_logger, arguments);
+                _logger.debug.apply(_logger, arguments);
                 
             } else {
-                console.log.apply(console, arguments);
+                console.debug.apply(console, arguments);
             }
         }
         this.eventBus.dispatchEvent({

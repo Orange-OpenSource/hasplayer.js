@@ -476,7 +476,7 @@
             self.currentURL = url;
             self.currentParams = params;
 
-            self.debug.log("[StreamController] load url: " + url);
+            self.debug.info("[StreamController] load url: " + url);
 
             self.manifestLoader.load(url).then(
                 function(manifest) {
@@ -492,7 +492,7 @@
                     self.manifestModel.setValue(manifest);
                     //ORANGE : add Metadata metric
                     self.metricsModel.addMetaData();
-                    self.debug.log("[StreamController] Manifest has loaded.");
+                    self.debug.info("[StreamController] Manifest has loaded.");
                     //self.debug.log(self.manifestModel.getValue());
                     self.manifestUpdater.start();
                 },
@@ -503,6 +503,8 @@
         },
 
         reset: function () {
+
+            this.debug.info("[StreamController] Reset");
 
             if (!!activeStream) {
                 detachVideoEvents.call(this, activeStream.getVideoModel());

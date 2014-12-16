@@ -57,18 +57,18 @@ MediaPlayer.dependencies.Stream = function () {
         eventController = null,
 
         play = function () {
-            this.debug.log("[Stream] Attempting play...");
+            this.debug.info("[Stream] Attempting play...");
 
             if (!initialized) {
                 return;
             }
 
-            this.debug.log("[Stream] Do play.");
+            this.debug.info("[Stream] Do play.");
             this.videoModel.play();
         },
 
         pause = function () {
-            this.debug.log("[Stream] Do pause.");
+            this.debug.info("[Stream] Do pause.");
             this.videoModel.pause();
         },
 
@@ -79,7 +79,7 @@ MediaPlayer.dependencies.Stream = function () {
                 return;
             }
 
-            this.debug.log("[Stream] Do seek: " + time);
+            this.debug.info("[Stream] Do seek: " + time);
 
             this.system.notify("setCurrentTime");
             this.videoModel.setCurrentTime(time);
@@ -302,7 +302,7 @@ MediaPlayer.dependencies.Stream = function () {
 
                                 self.manifestExt.getCodec(videoData).then(
                                     function (codec) {
-                                        self.debug.log("[Stream] Video codec: " + codec);
+                                        self.debug.info("[Stream] Video codec: " + codec);
                                         videoCodec = codec;
 
                                         return self.manifestExt.getContentProtectionData(videoData).then(
@@ -322,7 +322,7 @@ MediaPlayer.dependencies.Stream = function () {
                                                 if (!self.capabilities.supportsCodec(self.videoModel.getElement(), codec)) {
                                                     var msg = "Video Codec (" + codec + ") is not supported.";
                                                     self.errHandler.manifestError(msg, "codec", manifest);
-                                                    self.debug.log("[Stream] ", msg);
+                                                    self.debug.error("[Stream] ", msg);
                                                     return Q.when(null);
                                                 }
 
@@ -375,7 +375,7 @@ MediaPlayer.dependencies.Stream = function () {
 
                                         self.manifestExt.getCodec(primaryAudioData).then(
                                             function (codec) {
-                                                self.debug.log("[Stream] Audio codec: " + codec);
+                                                self.debug.info("[Stream] Audio codec: " + codec);
                                                 audioCodec = codec;
 
                                                 return self.manifestExt.getContentProtectionData(primaryAudioData).then(
@@ -395,7 +395,7 @@ MediaPlayer.dependencies.Stream = function () {
                                                         if (!self.capabilities.supportsCodec(self.videoModel.getElement(), codec)) {
                                                             var msg = "Audio Codec (" + codec + ") is not supported.";
                                                             self.errHandler.manifestError(msg, "codec", manifest);
-                                                            self.debug.log("[Stream] ", msg);
+                                                            self.debug.error("[Stream] ", msg);
                                                             return Q.when(null);
                                                         }
 
@@ -528,7 +528,7 @@ MediaPlayer.dependencies.Stream = function () {
             this.debug.log("[Stream] Got loadmetadata event.");
 
             var initialSeekTime = this.timelineConverter.calcPresentationStartTime(periodInfo);
-            this.debug.log("[Stream] Starting playback at offset: " + initialSeekTime);
+            this.debug.info("[Stream] Starting playback at offset: " + initialSeekTime);
 
             // ORANGE: performs a programmatical seek only if initial seek time is different
             // from current time (live use case)
@@ -544,7 +544,7 @@ MediaPlayer.dependencies.Stream = function () {
                 // once the first fragment has been appended
                 waitForStartTime.call(this, initialSeekTime, 2).then(
                     function (time) {
-                        self.debug.log("[Stream] Starting playback at offset: " + time);
+                        self.debug.info("[Stream] Starting playback at offset: " + time);
                         self.system.notify("setCurrentTime");
                         //ORANGE : increase time + 1s for chromecast which round the time
                         //self.videoModel.setCurrentTime(time+1);
@@ -835,7 +835,7 @@ MediaPlayer.dependencies.Stream = function () {
         onLiveEdgeFound = function(liveEdgeTime) {
 
             //var liveEdgeTime = this.timelineConverter.calcPresentationStartTime(periodInfo);
-            this.debug.log("[Stream] ### LiveEdge = " + liveEdgeTime);
+            this.debug.info("[Stream] ### LiveEdge = " + liveEdgeTime);
 
             if (videoController) {
                 videoController.seek(liveEdgeTime);
@@ -1147,6 +1147,9 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         reset: function () {
+
+            this.debug.info("[Stream] Reset");
+
             pause.call(this);
 
             this.videoModel.unlisten("play", playListener);

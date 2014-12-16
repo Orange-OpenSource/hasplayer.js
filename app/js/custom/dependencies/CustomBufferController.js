@@ -129,7 +129,7 @@ Custom.dependencies.CustomBufferController = function () {
                 playListMetrics = this.metricsModel.addPlayList(type, currentTime, 0, MediaPlayer.vo.metrics.PlayList.INITIAL_PLAY_START_REASON);
             }
 
-            this.debug.log("[BufferController]["+type+"] ### START");
+            this.debug.info("[BufferController]["+type+"] ### START");
 
             started = true;
             waitingForBuffer = true;
@@ -146,7 +146,7 @@ Custom.dependencies.CustomBufferController = function () {
                 return;
             }
 
-            this.debug.log("[BufferController]["+type+"] ### SEEK: " + time);
+            this.debug.info("[BufferController]["+type+"] ### SEEK: " + time);
 
             // Stop
             //doStop.call(this);
@@ -169,7 +169,7 @@ Custom.dependencies.CustomBufferController = function () {
         doStop = function () {
             //if (state === WAITING) return;
 
-            this.debug.log("[BufferController]["+type+"] ### STOP");
+            this.debug.info("[BufferController]["+type+"] ### STOP");
 
             started = false;
             waitingForBuffer = false;
@@ -189,7 +189,7 @@ Custom.dependencies.CustomBufferController = function () {
         },
 
         onBytesLoadingStart = function(request) {
-            this.debug.log("[BufferController]["+type+"] ### Load request ", (request.url !== null)?request.url:request.quality);
+            this.debug.info("[BufferController]["+type+"] ### Load request ", (request.url !== null)?request.url:request.quality);
         },
 
         onBytesLoaded = function (request, response) {
@@ -215,7 +215,7 @@ Custom.dependencies.CustomBufferController = function () {
 
                         // if this is the initialization data for current quality we need to push it to the buffer
                         if (quality === currentQuality) {
-                            self.debug.log("[BufferController]["+type+"] ### Buffer initialization segment ", (request.url !== null)?request.url:request.quality);
+                            self.debug.info("[BufferController]["+type+"] ### Buffer initialization segment ", (request.url !== null)?request.url:request.quality);
                             appendToBuffer.call(self, data, request.quality).then(
                                 function() {
                                     self.debug.log("[BufferController]["+type+"] ### Initialization segment buffered");
@@ -270,7 +270,7 @@ Custom.dependencies.CustomBufferController = function () {
                         //deferredInitAppend.promise.then(
                         //Q.when(deferredInitAppend.promise).then(
                             //function() {
-                                self.debug.log("[BufferController]["+type+"] ### Buffer segment from url ", request.url);
+                                self.debug.info("[BufferController]["+type+"] ### Buffer segment from url ", request.url);
                                 deleteInbandEvents.call(self,data).then(
                                     function(data) {
                                         appendToBuffer.call(self, data, request.quality, request.index).then(
@@ -400,7 +400,7 @@ Custom.dependencies.CustomBufferController = function () {
             }
 
             for (i = 0, len = ranges.length; i < len; i += 1) {
-                this.debug.log("[BufferController]["+type+"] ### Buffered " + type + " range [" + i + "]: " + ranges.start(i) + " - " + ranges.end(i) + " (" + this.getVideoModel().getCurrentTime() + ")");
+                this.debug.info("[BufferController]["+type+"] ### Buffered " + type + " range [" + i + "]: " + ranges.start(i) + " - " + ranges.end(i) + " (" + this.getVideoModel().getCurrentTime() + ")");
             }
         },
 
@@ -585,7 +585,7 @@ Custom.dependencies.CustomBufferController = function () {
                 return deferred.promise;
             }
 
-            self.debug.log("[BufferController][" + type + "] ### Remove from " + removeStart + " to " + removeEnd +  " (" + self.getVideoModel().getCurrentTime() + ")");
+            self.debug.info("[BufferController][" + type + "] ### Remove from " + removeStart + " to " + removeEnd +  " (" + self.getVideoModel().getCurrentTime() + ")");
 
             // Wait for buffer update completed, since some data can have been started to pe pushed before calling this method
             self.sourceBufferExt.waitForUpdateEnd(buffer).then(self.sourceBufferExt.remove(buffer, removeStart, removeEnd, periodInfo.duration, mediaSource)).then(
@@ -634,7 +634,7 @@ Custom.dependencies.CustomBufferController = function () {
 
             // Check if initialization segment for current quality has not already been stored
             if (initializationData[currentQuality]) {
-                self.debug.log("[BufferController]["+type+"] ### Buffer initialization segment, quality = ", currentQuality);
+                self.debug.info("[BufferController]["+type+"] ### Buffer initialization segment, quality = ", currentQuality);
                 appendToBuffer.call(this, initializationData[currentQuality], currentQuality).then(
                     function() {
                         self.debug.log("[BufferController]["+type+"] ### Initialization segment buffered");
