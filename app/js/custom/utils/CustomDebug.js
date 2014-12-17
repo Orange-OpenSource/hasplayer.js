@@ -34,7 +34,7 @@ Custom.utils.CustomDebug = function () {
     };
 
     rslt._log = function (level, args) {
-        if (this.getLogToBrowserConsole() && DEBUG) {
+        if (this.getLogToBrowserConsole()) {
             var _logger = this.getLogger();
             if ((_logger === undefined) || (_logger === null)) {
                 _logger = console;
@@ -55,6 +55,7 @@ Custom.utils.CustomDebug = function () {
                     break;
             }
         }
+
         this.eventBus.dispatchEvent({
             type: "log",
             message: arguments[0]
@@ -80,7 +81,7 @@ Custom.utils.CustomDebug = function () {
 
     // Keep this function for compatibility
     rslt.log = function () {
-        if (this.getLogToBrowserConsole() && DEBUG) {
+        if (this.getLogToBrowserConsole()) {
             var _logger = this.getLogger();
             if (_logger) {
                 _logger.debug.apply(_logger, arguments);

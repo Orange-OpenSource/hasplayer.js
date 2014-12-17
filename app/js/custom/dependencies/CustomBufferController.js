@@ -77,20 +77,17 @@ Custom.dependencies.CustomBufferController = function () {
         },
 
         clearPlayListTraceMetrics = function (endTime, stopreason) {
-            // ORANGE unnecessary metrics, when builded, DEBUG is false, the code is never called
-            if (DEBUG) {
-                var duration = 0,
-                    startTime = null;
+            var duration = 0,
+                startTime = null;
 
-                if (playListTraceMetricsClosed === false) {
-                    startTime = playListTraceMetrics.start;
-                    duration = endTime.getTime() - startTime.getTime();
+            if (playListTraceMetricsClosed === false) {
+                startTime = playListTraceMetrics.start;
+                duration = endTime.getTime() - startTime.getTime();
 
-                    playListTraceMetrics.duration = duration;
-                    playListTraceMetrics.stopreason = stopreason;
+                playListTraceMetrics.duration = duration;
+                playListTraceMetrics.stopreason = stopreason;
 
-                    playListTraceMetricsClosed = true;
-                }
+                playListTraceMetricsClosed = true;
             }
         },
 
@@ -389,18 +386,14 @@ Custom.dependencies.CustomBufferController = function () {
                 i,
                 len;
 
-            if (!DEBUG) {
-                return;
-            }
-
-            ranges = this.sourceBufferExt.getAllRanges(buffer);
-
-            if ((ranges === null) || (ranges.length === 0)) {
-                return;
-            }
-
-            for (i = 0, len = ranges.length; i < len; i += 1) {
-                this.debug.info("[BufferController]["+type+"] ### Buffered " + type + " range [" + i + "]: " + ranges.start(i) + " - " + ranges.end(i) + " (" + this.getVideoModel().getCurrentTime() + ")");
+            if (this.debug.getLogToBrowserConsole()) {
+                ranges = this.sourceBufferExt.getAllRanges(buffer);
+                if ((ranges === null) || (ranges.length === 0)) {
+                    return;
+                }
+                for (i = 0, len = ranges.length; i < len; i += 1) {
+                    this.debug.info("[BufferController]["+type+"] ### Buffered " + type + " range [" + i + "]: " + ranges.start(i) + " - " + ranges.end(i) + " (" + this.getVideoModel().getCurrentTime() + ")");
+                }
             }
         },
 

@@ -119,7 +119,7 @@
             this.getMetricsFor(streamType).HttpList.push(vo);
 
             // ORANGE: to avoid memory leak
-            if(this.getMetricsFor(streamType).HttpList.length > 50) {
+            if(this.getMetricsFor(streamType).HttpList.length > 10) {
                 this.getMetricsFor(streamType).HttpList.shift();
             }
 
@@ -161,6 +161,11 @@
             vo.level = level;
 
             this.getMetricsFor(streamType).BufferLevel.push(vo);
+
+            // ORANGE: to avoid memory leak
+            if(this.getMetricsFor(streamType).BufferLevel.length > 10) {
+                this.getMetricsFor(streamType).BufferLevel.shift();
+            }
 
             this.metricAdded(streamType, "BufferLevel", vo);
             return vo;
@@ -271,6 +276,11 @@
 
             this.getMetricsFor(streamType).PlayList.push(vo);
 
+            // ORANGE: to avoid memory leak
+            if(this.getMetricsFor(streamType).PlayList.length > 10) {
+                this.getMetricsFor(streamType).PlayList.shift();
+            }
+
             this.metricAdded(streamType, "PlayList", vo);
             return vo;
         },
@@ -287,6 +297,11 @@
             vo.stopreason = stopreason;
 
             playList.trace.push(vo);
+
+            // ORANGE: to avoid memory leak
+            if(playList.trace.length > 10) {
+                playList.trace.shift();
+            }
 
             this.metricUpdated(playList.stream, "PlayListTrace", playList);
             return vo;

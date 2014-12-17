@@ -43,23 +43,6 @@
         return vo;
     };
 
-    rslt.addBufferLevel = function (streamType, t, level) {
-        var vo = new MediaPlayer.vo.metrics.BufferLevel();
-
-        vo.t = t;
-        vo.level = level;
-
-        // ORANGE unnecessary metrics, when builded, DEBUG is false, saving the whole list is useless
-        if (DEBUG) {
-            this.parent.getMetricsFor(streamType).BufferLevel.push(vo);
-        } else {
-            this.parent.getMetricsFor(streamType).BufferLevel = [vo];
-        }
-
-        this.parent.metricAdded(streamType, "BufferLevel", vo);
-        return vo;
-    };
-
     rslt.addError = function (streamType, code, message, position) {
         var vo = new Custom.vo.metrics.Error();
 

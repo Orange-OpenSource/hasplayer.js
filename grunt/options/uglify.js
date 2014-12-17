@@ -2,13 +2,17 @@
 
 module.exports = function(grunt) {
 
-	var log = grunt.option('log') || false;
-	var logOption = ['self.debug.log','this.debug.log','rslt.debug.log'];
-	var dropConsole = true;
-
-	if(log) {
+	var log = grunt.option('log') || false,
+		dropConsole = !log,
+		logLevels = ["error", "warn", "info", "debug", "log"],
 		logOption = [];
-		dropConsole = false;
+
+	if (!log) {
+		for (var i = 0; i < logLevels.length; i++) {
+			logOption.push("self.debug." + logLevels[i]);
+			logOption.push("this.debug." + logLevels[i]);
+			logOption.push("rslt.debug." + logLevels[i]);
+		}
 	}
 
 	return {
@@ -16,9 +20,6 @@ module.exports = function(grunt) {
 			options: {
 				compress:{
 					pure_funcs: logOption,
-					global_defs: {
-						DEBUG: true
-					},
 					drop_console : dropConsole,
 					drop_debugger: true,
 					warnings: true

@@ -1,6 +1,5 @@
 'use strict';
 // don't disable metrics...
-var DEBUG = true;
 var angular = angular;
 
 angular.module('DashSourcesService', ['ngResource']).
