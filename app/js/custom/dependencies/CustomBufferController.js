@@ -273,22 +273,7 @@ Custom.dependencies.CustomBufferController = function () {
                                         appendToBuffer.call(self, data, request.quality, request.index).then(
                                             function() {
                                                 self.debug.log("[BufferController]["+type+"] ### Media segment buffered");
-                                                
-                                                // ORANGE unnecessary deferred in dynamic mode which produce a memoryleak, deferred is never resolve...
-                                                if (!isDynamic) {
-                                                    deferredStreamComplete.promise.then(
-                                                        function(lastRequest) {
-                                                            if ((lastRequest.index - 1) === request.index && !isBufferingCompleted) {
-                                                                isBufferingCompleted = true;
-                                                            if (stalled) {
-                                                                setStalled.call(self, false);
-                                                            }
-                                                                self.system.notify("bufferingCompleted");
-                                                            }
-                                                        }
-                                                    );
-                                                }
-                                              
+                                                                                              
                                                 if (started === true) {
                                                     checkIfSufficientBuffer.call(self);
                                                 }
@@ -613,10 +598,20 @@ Custom.dependencies.CustomBufferController = function () {
         },
 
         signalStreamComplete = function (request) {
-            this.debug.log(type + " Stream is complete.");
+            var self = this;
+
+            self.debug.log("[BufferController]["+type+"] Stream is complete.");
+
+            /*if (stalled) {
+                setStalled.call(self, false);
+            }*/
+
+            isBufferingCompleted = true;
             clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.END_OF_CONTENT_STOP_REASON);
-            doStop.call(this);
-            deferredStreamComplete.resolve(request);
+            doStop.call(self);
+
+            self.system.notify("bufferingCompleted");
+            //deferredStreamComplete.resolve(request);
         },
 
         loadInitialization = function () {
@@ -689,15 +684,16 @@ Custom.dependencies.CustomBufferController = function () {
             var self = this,
                 manifest = self.manifestModel.getValue();
             
+            if (request.action === request.ACTION_COMPLETE) {
+                signalStreamComplete.call(self);
+                return;
+            }
+
             if (request !== null) {
                 // If we have already loaded the given fragment ask for the next one. Otherwise prepare it to get loaded
                 if (self.fragmentController.isFragmentLoadedOrPending(self, request)) {
                     self.debug.log("[BufferController]["+type+"] new fragment request => already loaded or pending");
-                    if (request.action !== "complete") {
-                        self.indexHandler.getNextSegmentRequest(currentRepresentation).then(onFragmentRequest.bind(self));
-                    } else {
-                        doStop.call(self);
-                    }
+                    self.indexHandler.getNextSegmentRequest(currentRepresentation).then(onFragmentRequest.bind(self));
                 } else {
                     // Store current segment time for next segment request
                     currentSegmentTime = request.startTime;
@@ -708,7 +704,7 @@ Custom.dependencies.CustomBufferController = function () {
                     }
 
                     // Download the segment
-                    self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, signalStreamComplete).then(
+                    self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null/*signalStreamComplete*/).then(
                         function() {
                             sendRequest.call(self);
                     });
@@ -895,7 +891,7 @@ Custom.dependencies.CustomBufferController = function () {
                                         loadInitialization.call(self).then(
                                             function (request) {
                                                 if (request !== null) {
-                                                    self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, signalStreamComplete).then(
+                                                    self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null/*signalStreamComplete*/).then(
                                                         function() {
                                                             sendRequest.call(self);
                                                         }

@@ -814,6 +814,8 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         bufferingCompleted = function() {
+            var self = this;
+
             // if there is at least one buffer controller that has not completed buffering yet do nothing
             if ((videoController && !videoController.isBufferingCompleted()) || (audioController && !audioController.isBufferingCompleted())) {
                 return;
@@ -821,6 +823,7 @@ MediaPlayer.dependencies.Stream = function () {
 
             // buffering has been complted, now we can signal end of stream
             if (mediaSource) {
+                this.debug.info("[Stream] Signal end of stream");
                 this.mediaSourceExt.signalEndOfStream(mediaSource);
             }
         },

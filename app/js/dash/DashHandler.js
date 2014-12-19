@@ -952,7 +952,7 @@ Dash.dependencies.DashHandler = function () {
                         request = new MediaPlayer.vo.SegmentRequest();
                         request.action = request.ACTION_COMPLETE;
                         request.index = index;
-                        self.debug.log("Signal complete.");
+                        self.debug.log("[DashHandler]["+type+"] Signal complete.");
                         self.debug.log(request);
                         deferred.resolve(request);
                     } else {
@@ -1004,7 +1004,7 @@ Dash.dependencies.DashHandler = function () {
                         request = new MediaPlayer.vo.SegmentRequest();
                         request.action = request.ACTION_COMPLETE;
                         request.index = index;
-                        self.debug.log("Signal complete.");
+                        self.debug.log("[DashHandler]["+type+"] Signal complete.");
                         //self.debug.log(request);
                         deferred.resolve(request);
                     } else {
@@ -1062,7 +1062,7 @@ Dash.dependencies.DashHandler = function () {
                                 request = new MediaPlayer.vo.SegmentRequest();
                                 request.action = request.ACTION_COMPLETE;
                                 request.index = index;
-                                self.debug.log("Signal complete.");
+                                self.debug.log("[DashHandler]["+type+"] Signal complete.");
                                 //self.debug.log(request);
                                 deferred.resolve(request);
                             } else {
