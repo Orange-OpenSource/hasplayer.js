@@ -87,6 +87,11 @@ MediaPlayer.models.VideoModel = function () {
             return element.paused;
         },
 
+        //ORANGE : add isSeeking function
+        isSeeking: function() {
+            return element.seeking;
+        },
+
         getPlaybackRate:  function () {
             return element.playbackRate;
         },
