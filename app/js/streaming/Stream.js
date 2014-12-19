@@ -760,7 +760,7 @@ MediaPlayer.dependencies.Stream = function () {
                 this.videoModel.setCurrentTime(actualTime);
                 startBuffering(actualTime);
             } else {*/
-                startBuffering();
+               // startBuffering();
             //}
         },
 
