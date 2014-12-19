@@ -768,6 +768,23 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
             this.backUrl = null;
             this.customData = null;
         }
+    
+        $('#sliderBitrate').labeledslider({
+            max: 0,
+            step: 1,
+            values: [0],
+            tickLabels: [],
+            orientation: 'vertical',
+            range: true,
+            stop: function(evt, ui) {
+                player.setConfig( {
+                    "video": {
+                        "ABR.minQuality": ui.values[0],
+                        "ABR.maxQuality": ui.values[1]
+                    }
+                });
+            }
+        });
 
         // ORANGE: add licenser backUrl parameter and customData
         var params = new DRMParams();
