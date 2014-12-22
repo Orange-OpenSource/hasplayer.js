@@ -173,22 +173,6 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     $scope.streamTypes = ["HLS", "MSS", "DASH"];
     $scope.streamType = "MSS";
 
-    $('#sliderBitrate').labeledslider({
-        max: 0,
-        step: 1,
-        values: [0],
-        tickLabels: [],
-        orientation: 'vertical',
-        range: true,
-        stop: function(evt, ui) {
-            player.setConfig( {
-                "video": {
-                    "ABR.minQuality": ui.values[0],
-                    "ABR.maxQuality": ui.values[1]
-                }
-            });
-        }
-    });
     $('#sliderAudio').labeledslider({
         max:0,
         step:1,
@@ -760,7 +744,24 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         $scope.selectedItem = item;
     };
 
-
+    function resetBitratesSlider () {
+        $('#sliderBitrate').labeledslider({
+                    max: 0,
+                    step: 1,
+                    values: [0],
+                    tickLabels: [],
+                    orientation: 'vertical',
+                    range: true,
+                    stop: function(evt, ui) {
+                        player.setConfig( {
+                            "video": {
+                                "ABR.minQuality": ui.values[0],
+                                "ABR.maxQuality": ui.values[1]
+                        }
+                });
+            }
+        });        
+    }
     function initPlayer() {
         initAudioTracks = initTextTracks = true;
         
@@ -768,24 +769,9 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
             this.backUrl = null;
             this.customData = null;
         }
-    
-        $('#sliderBitrate').labeledslider({
-            max: 0,
-            step: 1,
-            values: [0],
-            tickLabels: [],
-            orientation: 'vertical',
-            range: true,
-            stop: function(evt, ui) {
-                player.setConfig( {
-                    "video": {
-                        "ABR.minQuality": ui.values[0],
-                        "ABR.maxQuality": ui.values[1]
-                    }
-                });
-            }
-        });
-
+        
+        resetBitratesSlider();
+        
         // ORANGE: add licenser backUrl parameter and customData
         var params = new DRMParams();
         params.backUrl = $scope.selectedItem.backUrl;
