@@ -129,6 +129,10 @@ Custom.dependencies.CustomBufferController = function () {
                 playListMetrics = this.metricsModel.addPlayList(type, currentTime, 0, MediaPlayer.vo.metrics.PlayList.INITIAL_PLAY_START_REASON);
             }
 
+            if (isBufferingCompleted) {
+                isBufferingCompleted = false;
+            }
+
             started = true;
             
             self.debug.log("[BufferController]["+type+"] ### START");
@@ -640,6 +644,10 @@ Custom.dependencies.CustomBufferController = function () {
 
             isBufferingCompleted = true;
             clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.END_OF_CONTENT_STOP_REASON);
+
+            deferredFragmentBuffered.resolve();
+            deferredFragmentBuffered = null;
+
             doStop.call(self);
 
             self.system.notify("bufferingCompleted");
