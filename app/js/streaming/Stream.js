@@ -307,9 +307,10 @@ MediaPlayer.dependencies.Stream = function () {
 
                                         return self.manifestExt.getContentProtectionData(videoData).then(
                                             function (contentProtectionData) {
-                                                //self.debug.log("Video contentProtection");
+                                                self.debug.log("[Stream] video contentProtection");
 
                                                 if (!!contentProtectionData && !self.capabilities.supportsMediaKeys()) {
+                                                    self.debug.error("[Stream] mediakeys not supported!");
                                                     self.errHandler.capabilityError("mediakeys");
                                                     return Q.when(null);
                                                 }
@@ -322,8 +323,8 @@ MediaPlayer.dependencies.Stream = function () {
                                                 if (!self.capabilities.supportsCodec(self.videoModel.getElement(), codec)) {
                                                     var msg = "Video Codec (" + codec + ") is not supported.";
                                                     self.errHandler.manifestError(msg, "codec", manifest);
-                                                    self.debug.error("[Stream] ", msg);
                                                     return Q.when(null);
+                                                    self.debug.error("[Stream] ", msg);
                                                 }
 
                                                 return self.sourceBufferExt.createSourceBuffer(mediaSource, codec);
@@ -380,9 +381,10 @@ MediaPlayer.dependencies.Stream = function () {
 
                                                 return self.manifestExt.getContentProtectionData(primaryAudioData).then(
                                                     function (contentProtectionData) {
-                                                        //self.debug.log("Audio contentProtection");
+                                                        self.debug.log("[Stream] Audio contentProtection");
 
                                                         if (!!contentProtectionData && !self.capabilities.supportsMediaKeys()) {
+                                                            self.debug.error("[Stream] mediakeys not supported!");
                                                             self.errHandler.capabilityError("mediakeys");
                                                             return Q.when(null);
                                                         }
@@ -760,7 +762,7 @@ MediaPlayer.dependencies.Stream = function () {
                 this.videoModel.setCurrentTime(actualTime);
                 startBuffering(actualTime);
             } else {*/
-               // startBuffering();
+                startBuffering();
             //}
         },
 
