@@ -296,10 +296,8 @@ Custom.dependencies.CustomBufferController = function () {
                                             function() {
                                                 self.debug.log("[BufferController]["+type+"] ### Media segment buffered");
 
-                                                if (isRunning.call(self)) {
                                                     checkIfSufficientBuffer.call(self);
                                                 }
-                                            }
                                         );
                                     }
                                 );
