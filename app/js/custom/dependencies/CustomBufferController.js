@@ -296,8 +296,8 @@ Custom.dependencies.CustomBufferController = function () {
                                             function() {
                                                 self.debug.log("[BufferController]["+type+"] ### Media segment buffered");
 
-                                                    checkIfSufficientBuffer.call(self);
-                                                }
+                                                checkIfSufficientBuffer.call(self);
+                                            }
                                         );
                                     }
                                 );
@@ -532,9 +532,15 @@ Custom.dependencies.CustomBufferController = function () {
                 return true;
             }else{
                 this.debug.info("[BufferController]["+type+"] ### isRunning return false resolve deferredFragmentBuffered promise");
+                bufferedIsDone();
+                return false;
+            }
+        },
+
+        bufferedIsDone = function () {
+            if (deferredFragmentBuffered) {
                 deferredFragmentBuffered.resolve();
                 deferredFragmentBuffered = null;
-                return false;
             }
         },
 
@@ -643,8 +649,7 @@ Custom.dependencies.CustomBufferController = function () {
             isBufferingCompleted = true;
             clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.END_OF_CONTENT_STOP_REASON);
 
-            deferredFragmentBuffered.resolve();
-            deferredFragmentBuffered = null;
+            bufferedIsDone();
 
             doStop.call(self);
 
@@ -849,6 +854,7 @@ Custom.dependencies.CustomBufferController = function () {
                     ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted))) {
                     // Buffer needs to be filled
                     self.debug.log("[BufferController]["+type+"] Buffer needs to bo filled, call bufferFragment");
+                    bufferedIsDone();
                     bufferFragment.call(self);
                     lastBufferLevel = bufferLevel;
                 } else {
