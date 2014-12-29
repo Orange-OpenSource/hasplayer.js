@@ -72,6 +72,12 @@ Custom.dependencies.CustomBufferController = function () {
         currentSequenceNumber = -1,
 
         sendRequest = function() {
+
+            // Check if running state
+            if (!isRunning.call(this)) {
+                return;
+            }
+
             if (fragmentModel !== null) {
                 this.fragmentController.onBufferControllerStateChange();
             }
@@ -119,7 +125,6 @@ Custom.dependencies.CustomBufferController = function () {
                 self = this;
 
             if (started === true) {
-                self.debug.log("[BufferController]["+type+"] ### START command, but already started, do nothing!");
                 return;
             }
 
@@ -154,10 +159,10 @@ Custom.dependencies.CustomBufferController = function () {
 
             this.debug.info("[BufferController]["+type+"] ### SEEK: " + time);
 
-            // sometimes Stop command is not called before seek one
+            // Do stop since <video>'s stop command may not be called before seek one
             if (started === true) {
                 doStop.call(self);
-            }            
+            }
 
             // Reset segment list to avoid DashHandler dysfunctionning
             currentRepresentation.segments = null;
@@ -172,11 +177,13 @@ Custom.dependencies.CustomBufferController = function () {
             seeking = true;
             seekTarget = time;
 
-            Q.when(deferredFragmentBuffered ? deferredFragmentBuffered.promise : true).then(function ()
-            {
-                self.debug.log("[BufferController]["+type+"] ### SEEK: deferredFragmentBuffered = "+deferredFragmentBuffered+" Call start!");
-                doStart.call(self);
-            });
+            // Wait for current buffering process to be completeed before restarting
+            Q.when(deferredFragmentBuffered ? deferredFragmentBuffered.promise : true).then(
+                function () {
+                    //self.debug.log("[BufferController]["+type+"] ### SEEK: deferredFragmentBuffered = "+deferredFragmentBuffered+" Call start!");
+                    doStart.call(self);
+                }
+            );
         },
 
         doStop = function () {
@@ -185,7 +192,9 @@ Custom.dependencies.CustomBufferController = function () {
                 return;
             }
             this.debug.log("[BufferController]["+type+"] ### STOP");
-            
+
+            // Stop buffering process            
+            clearTimeout(bufferTimeout);
             started = false;
             waitingForBuffer = false;
 
@@ -194,12 +203,6 @@ Custom.dependencies.CustomBufferController = function () {
             this.debug.log("[BufferController]["+type+"] ### STOP");
             
             this.fragmentController.abortRequestsForModel(fragmentModel);
-            
-            if (deferredFragmentBuffered === null)
-            {
-                this.debug.log("[BufferController]["+type+"] ### STOP - clearTimeout");
-                clearTimeout(bufferTimeout);
-            }
         },
 
 
@@ -238,20 +241,15 @@ Custom.dependencies.CustomBufferController = function () {
                             appendToBuffer.call(self, data, request.quality).then(
                                 function() {
                                     self.debug.log("[BufferController]["+type+"] ### Initialization segment buffered");
-                                    //deferredInitAppend.resolve();
-
-                                    if (isRunning.call(self)) {
-                                        loadNextFragment.call(self);
-                                    }
+                                    // Load next media segment
+                                    loadNextFragment.call(self);
                                 }
                             );
                         }
                     } else {
                         self.debug.log("No " + type + " bytes to push.");
                         // ORANGE : For HLS Stream, init segment are pushed with media (@see HlsFragmentController)
-                        if (isRunning.call(self)) {
-                            loadNextFragment.call(self);
-                        }
+                        loadNextFragment.call(self);
                     }
                 }
             );
@@ -285,24 +283,20 @@ Custom.dependencies.CustomBufferController = function () {
                             );
                         }
 
-                        // ORANGE unnecessary utilisation of Q.when (we have already a promise...)
-                        //deferredInitAppend.promise.then(
-                        //Q.when(deferredInitAppend.promise).then(
-                            //function() {
-                                self.debug.info("[BufferController]["+type+"] ### Buffer segment from url ", request.url);
-                                deleteInbandEvents.call(self,data).then(
-                                    function(data) {
-                                        appendToBuffer.call(self, data, request.quality, request.index).then(
-                                            function() {
-                                                self.debug.log("[BufferController]["+type+"] ### Media segment buffered");
-
-                                                checkIfSufficientBuffer.call(self);
-                                            }
-                                        );
+                        self.debug.info("[BufferController]["+type+"] ### Buffer segment from url ", request.url);
+                        deleteInbandEvents.call(self,data).then(
+                            function(data) {
+                                appendToBuffer.call(self, data, request.quality, request.index).then(
+                                    function() {
+                                        self.debug.log("[BufferController]["+type+"] ### Media segment buffered");
+                                        // Signal end of buffering process 
+                                        signalSegmentBuffered();
+                                        // Check buffer level
+                                        checkIfSufficientBuffer.call(self);
                                     }
                                 );
-                            //}
-                        //);
+                            }
+                        );
                     } else {
                         self.debug.log("No " + type + " bytes to push.");
                     }
@@ -333,7 +327,7 @@ Custom.dependencies.CustomBufferController = function () {
                             self.debug.log("[BufferController]["+type+"] Buffering segment");
                             self.sourceBufferExt.append(buffer, data, self.videoModel).then(
                                     function (/*appended*/) {
-                                        self.debug.log("[BufferController]["+type+"] Data has been appended for quality = "+quality+" index = "+index);
+                                        //self.debug.log("[BufferController]["+type+"] Data has been appended for quality = "+quality+" index = "+index);
 
                                         /*if (isAppendingRejectedData) {
                                             deferredRejectedDataAppend = null;
@@ -528,16 +522,18 @@ Custom.dependencies.CustomBufferController = function () {
 
         isRunning = function () {
             if (started) {
-                this.debug.info("[BufferController]["+type+"] ### isRunning return true");
                 return true;
-            }else{
-                this.debug.info("[BufferController]["+type+"] ### isRunning return false resolve deferredFragmentBuffered promise");
-                bufferedIsDone();
-                return false;
             }
+
+            // If buffering process is running, then we interrupt it
+            if (deferredFragmentBuffered !== null) {
+                this.debug.info("[BufferController]["+type+"] ### isRunning return false resolve deferredFragmentBuffered promise");
+                signalSegmentBuffered();
+            }
+            return false;
         },
 
-        bufferedIsDone = function () {
+        signalSegmentBuffered = function () {
             if (deferredFragmentBuffered) {
                 deferredFragmentBuffered.resolve();
                 deferredFragmentBuffered = null;
@@ -649,7 +645,7 @@ Custom.dependencies.CustomBufferController = function () {
             isBufferingCompleted = true;
             clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.END_OF_CONTENT_STOP_REASON);
 
-            bufferedIsDone();
+            signalSegmentBuffered();
 
             doStop.call(self);
 
@@ -661,20 +657,14 @@ Custom.dependencies.CustomBufferController = function () {
             var deferred = Q.defer(),
                 self = this;
             
-            //deferredInitAppend = Q.defer();
-
             // Check if initialization segment for current quality has not already been stored
             if (initializationData[currentQuality]) {
                 self.debug.info("[BufferController]["+type+"] ### Buffer initialization segment, quality = ", currentQuality);
                 appendToBuffer.call(this, initializationData[currentQuality], currentQuality).then(
                     function() {
                         self.debug.log("[BufferController]["+type+"] ### Initialization segment buffered");
-
-                        if (isRunning.call(self)) {
-                            loadNextFragment.call(self);
-                        }
-
-                        //deferredInitAppend.resolve();
+                        // Load next media segment
+                        loadNextFragment.call(self);
                     }
                 );
                 deferred.resolve(null);
@@ -692,6 +682,11 @@ Custom.dependencies.CustomBufferController = function () {
 
         loadNextFragment = function () {
             var self = this;
+
+            // Check if running state
+            if (!isRunning.call(self)) {
+                return;
+            }
 
             // Get next segment time and check if already in buffer
             var time = seeking ? seekTarget : currentSegmentTime;
@@ -727,6 +722,7 @@ Custom.dependencies.CustomBufferController = function () {
             var self = this,
                 manifest = self.manifestModel.getValue();
             
+            // Check if current request signals end of stream
             if (request.action === request.ACTION_COMPLETE) {
                 signalStreamComplete.call(self);
                 return;
@@ -833,36 +829,37 @@ Custom.dependencies.CustomBufferController = function () {
 
         checkIfSufficientBuffer = function () {
             var self = this;
-                       
-            if (isRunning.call(self)) {
-                self.debug.log("[BufferController]["+type+"] checkIfSufficientBuffer");
-                
-                updateBufferLevel.call(self);
-                self.debug.log("[BufferController]["+type+"] Buffer level = " + bufferLevel);
 
-                // videoModel in stalled mode
-                if (stalled) {
-                    if (bufferLevel > minBufferTimeAtStartup) {
-                        setStalled.call(self, false);
-                    }
+            // Check if running state
+            if (!isRunning.call(self)) {
+                return;
+            }
+
+            self.debug.log("[BufferController]["+type+"] Check buffer...");
+            
+            updateBufferLevel.call(self);
+            self.debug.log("[BufferController]["+type+"] Buffer level = " + bufferLevel);
+
+            // videoModel in stalled mode
+            if (stalled) {
+                if (bufferLevel > minBufferTimeAtStartup) {
+                    setStalled.call(self, false);
                 }
+            }
 
-                var timeToEnd = getTimeToEnd.call(self);
-                self.debug.log("[BufferController]["+type+"] time to end = " + timeToEnd);
+            var timeToEnd = getTimeToEnd.call(self);
+            self.debug.log("[BufferController]["+type+"] time to end = " + timeToEnd);
 
-                if ((bufferLevel < minBufferTime) &&
-                    ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted))) {
-                    // Buffer needs to be filled
-                    self.debug.log("[BufferController]["+type+"] Buffer needs to bo filled, call bufferFragment");
-                    bufferedIsDone();
-                    bufferFragment.call(self);
-                    lastBufferLevel = bufferLevel;
-                } else {
-                    // Determine the timeout delay before checking again the buffer
-                    var delay = bufferLevel - minBufferTime;
-                    self.debug.log("[BufferController]["+type+"] Buffer doesn't need to bo filled, call checkIfSufficientBuffer in "+delay+" seconds");
-                    updateCheckBufferTimeout.call(self,delay);
-                }
+            if ((bufferLevel < minBufferTime) &&
+                ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted))) {
+                // Buffer needs to be filled
+                bufferFragment.call(self);
+                lastBufferLevel = bufferLevel;
+            } else {
+                // Determine the timeout delay before checking again the buffer
+                var delay = bufferLevel - minBufferTime;
+                self.debug.log("[BufferController]["+type+"] Check buffer in " + delay + " seconds");
+                updateCheckBufferTimeout.call(self,delay);
             }
         },
 
@@ -870,32 +867,18 @@ Custom.dependencies.CustomBufferController = function () {
             var self = this;
 
             clearTimeout(bufferTimeout);
-
-            if (deferredFragmentBuffered) {
-                deferredFragmentBuffered = null;
-                self.debug.log("[BufferController]["+type+"] ### updateCheckBufferTimeout deferredFragmentBuffered set to null");
-            }
-
             bufferTimeout = setTimeout(function () {
-                    checkIfSufficientBuffer.call(self);
-                    },
-                    Math.max((delay * 1000), 2000));
+                checkIfSufficientBuffer.call(self);
+            }, Math.max((delay * 1000), 2000));
         },
 
         bufferFragment = function() {
-
             var self = this,
                 now = new Date(),
                 currentVideoTime = self.videoModel.getCurrentTime(),
                 manifest = self.manifestModel.getValue(),
                 quality,
                 playlistUpdated = null;
-
-            if (deferredFragmentBuffered != null) {
-                self.debug.log("[BufferController]["+type+"] bufferFragment...IMPOSSIBLE TO CREATE deferredFragmentBuffered not null");
-            }
-
-            self.debug.log("[BufferController]["+type+"] bufferFragment...create new deferredFragmentBuffered");
 
             deferredFragmentBuffered = Q.defer();
 
