@@ -695,7 +695,11 @@ Custom.dependencies.CustomBufferController = function () {
             var segmentTime = range ? range.end : time;
 
             // Reset seeking state
-            seeking = false;
+            if (seeking === true) {
+                // Re-activate ABR in case it would have been disabled at seek
+                self.abrController.setAutoSwitchBitrate(true);
+                seeking = false;
+            }
 
             if (currentSequenceNumber !== -1) {
                 self.debug.log("[BufferController]["+type+"] loadNextFragment for sequence number: " + currentSequenceNumber);
@@ -891,9 +895,6 @@ Custom.dependencies.CustomBufferController = function () {
                     // Get current quality
                     self.abrController.getPlaybackQuality(type, data).then(
                         function (result) {
-
-                            // Re-activate ABR in case it would have been disabled at seek
-                            self.abrController.setAutoSwitchBitrate(true);
 
                             quality = result.quality;
 

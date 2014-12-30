@@ -103,32 +103,37 @@ Custom.dependencies.CustomAbrController = function () {
             function (result) {
                 quality = result.quality;
 
-                // Check incremental switch
-                if (switchUpIncrementally && (quality > previousQuality)) {
-                    self.debug.log("[AbrController]["+type+"] Incremental switch => quality: " + quality);
-                    quality = previousQuality + 1;
+                if (self.getAutoSwitchBitrate()) {
+                    // Check incremental switch
+                    if (switchUpIncrementally && (quality > previousQuality)) {
+                        self.debug.log("[AbrController]["+type+"] Incremental switch => quality: " + quality);
+                        quality = previousQuality + 1;
+                    }
+
+                    // Check representation boundaries
+                    rslt.getQualityBoundaries.call(self, type, data).then(
+                        function (qualityBoundaries) {
+                            qualityMin = qualityBoundaries.min;
+                            qualityMax = qualityBoundaries.max;
+
+                            if ((qualityMin !== -1) && (quality < qualityMin)) {
+                                quality = qualityMin;
+                                self.debug.log("[AbrController]["+type+"] New quality < min => " + quality);
+                            }
+
+                            if ((qualityMax !== -1) && (quality > qualityMax)) {
+                                quality = qualityMax;
+                                self.debug.log("[AbrController]["+type+"] New quality > max => " + quality);
+                            }
+
+                            self.parent.setPlaybackQuality.call(self, type, quality);
+                            deferred.resolve({quality: quality, confidence: result.confidence});
+                        }
+                    );
+                } else {
+                    deferred.resolve({quality: quality, confidence: result.confidence});
                 }
 
-                // Check representation boundaries
-                rslt.getQualityBoundaries.call(self, type, data).then(
-                    function (qualityBoundaries) {
-                        qualityMin = qualityBoundaries.min;
-                        qualityMax = qualityBoundaries.max;
-
-                        if ((qualityMin !== -1) && (quality < qualityMin)) {
-                            quality = qualityMin;
-                            self.debug.log("[AbrController]["+type+"] New quality < min => " + quality);
-                        }
-
-                        if ((qualityMax !== -1) && (quality > qualityMax)) {
-                            quality = qualityMax;
-                            self.debug.log("[AbrController]["+type+"] New quality > max => " + quality);
-                        }
-
-                        self.parent.setPlaybackQuality.call(self, type, quality);
-                        deferred.resolve({quality: quality, confidence: result.confidence});
-                    }
-                );
             }
         );
 
