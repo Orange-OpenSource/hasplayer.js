@@ -474,7 +474,7 @@ function onLoaded () {
     // Initialize receiver only if cast.receiver is available
     if (isCrKey) {
         var ccastReceiver = new HasCastReceiver(player);
-        player.setLogBrowserToConsole(false);
+        player.getDebug().setLogToBrowserConsole(false);
     }
 
     initPlayer();

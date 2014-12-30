@@ -34,23 +34,23 @@ Custom.utils.CustomDebug = function () {
     };
 
     rslt._log = function (level, args) {
-        if (this.getLogToBrowserConsole()) {
+        if (this.getLogToBrowserConsole() && (level <= rslt.getLevel())) {
             var _logger = this.getLogger();
             if ((_logger === undefined) || (_logger === null)) {
                 _logger = console;
             }
 
             switch (level) {
-                case "error":
+                case this.ERROR:
                     _logger.error.apply(_logger, args);
                     break;
-                case "warn":
+                case this.WARN:
                     _logger.warn.apply(_logger, args);
                     break;
-                case "info":
+                case this.INFO:
                     _logger.info.apply(_logger, args);
                     break;
-                case "debug":
+                case this.DEBUG:
                     _logger.debug.apply(_logger, args);
                     break;
             }
@@ -63,37 +63,20 @@ Custom.utils.CustomDebug = function () {
     };
 
     rslt.error = function () {
-        this._log("error", arguments);
+        this._log(this.ERROR, arguments);
     };
 
     rslt.warn = function () {
-        this._log("warn", arguments);
+        this._log(this.WARN, arguments);
     };
 
     rslt.info = function () {
-        this._log("info", arguments);
+        this._log(this.INFO, arguments);
     };
-
-    rslt.trace = function () {
-        this._log("debug", arguments);
-    };
-
 
     // Keep this function for compatibility
     rslt.log = function () {
-        if (this.getLogToBrowserConsole()) {
-            var _logger = this.getLogger();
-            if (_logger) {
-                _logger.debug.apply(_logger, arguments);
-                
-            } else {
-                console.debug.apply(console, arguments);
-            }
-        }
-        this.eventBus.dispatchEvent({
-            type: "log",
-            message: arguments[0]
-        });
+        this._log(this.DEBUG, arguments);
     };
 
     return rslt;

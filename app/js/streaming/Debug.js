@@ -14,16 +14,35 @@
 MediaPlayer.utils.Debug = function () {
     "use strict";
 
-    var logToBrowserConsole = true;
+    var logToBrowserConsole = true,
+        // ORANGE: add level
+        level = 4;
 
     return {
         eventBus: undefined,
+
+        // ORANGE: add level
+        NONE:   0,
+        ERROR:  1,
+        WARN:   2,
+        INFO:   3,
+        DEBUG:  4,
+        ALL:    4,
+
+        setLevel: function(value) {
+            level  = value;
+        },
+        getLevel: function() {
+            return level;
+        },
+
         setLogToBrowserConsole: function(value) {
             logToBrowserConsole = value;
         },
         getLogToBrowserConsole: function() {
             return logToBrowserConsole;
         },
+
         log: function (message) {
             if (logToBrowserConsole){
                 console.log(message);
