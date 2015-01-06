@@ -290,7 +290,7 @@ Custom.dependencies.CustomBufferController = function () {
                                     function() {
                                         self.debug.log("[BufferController]["+type+"] ### Media segment buffered");
                                         // Signal end of buffering process 
-                                        signalSegmentBuffered();
+                                        signalSegmentBuffered.call(self);
                                         // Check buffer level
                                         checkIfSufficientBuffer.call(self);
                                     }
@@ -521,20 +521,24 @@ Custom.dependencies.CustomBufferController = function () {
         },*/
 
         isRunning = function () {
+            var self = this;
+
             if (started) {
                 return true;
             }
 
             // If buffering process is running, then we interrupt it
             if (deferredFragmentBuffered !== null) {
-                this.debug.info("[BufferController]["+type+"] ### isRunning return false resolve deferredFragmentBuffered promise");
-                signalSegmentBuffered();
+                signalSegmentBuffered.call(self);
             }
             return false;
         },
 
         signalSegmentBuffered = function () {
+            var self = this;
+
             if (deferredFragmentBuffered) {
+                self.debug.info("[BufferController]["+type+"] ### signalSegmentBuffered (resolve deferredFragmentBuffered)");
                 deferredFragmentBuffered.resolve();
                 deferredFragmentBuffered = null;
             }
@@ -645,7 +649,7 @@ Custom.dependencies.CustomBufferController = function () {
             isBufferingCompleted = true;
             clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.END_OF_CONTENT_STOP_REASON);
 
-            signalSegmentBuffered();
+            signalSegmentBuffered.call(self);
 
             doStop.call(self);
 
@@ -727,7 +731,7 @@ Custom.dependencies.CustomBufferController = function () {
                 manifest = self.manifestModel.getValue();
             
             // Check if current request signals end of stream
-            if (request.action === request.ACTION_COMPLETE) {
+            if ((request !== null) && (request.action === request.ACTION_COMPLETE)) {
                 signalStreamComplete.call(self);
                 return;
             }

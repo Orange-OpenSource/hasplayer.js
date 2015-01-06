@@ -671,7 +671,7 @@ MediaPlayer.dependencies.Stream = function () {
 
         onProgress = function () {
             //this.debug.log("Got timeupdate event.");
-            updateBuffer.call(this);
+            //updateBuffer.call(this);
         },
 
         onTimeupdate = function () {
@@ -693,24 +693,18 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         updateBuffer = function() {
-            var promises = [];
 
             if (videoController) {
                 videoController.updateBufferState();
-                promises.push(videoController.updateBufferState());
             }
 
             if (audioController) {
                audioController.updateBufferState();
-               promises.push(audioController.updateBufferState());
             }
 
             if (textController) {
                textController.updateBufferState();
-               promises.push(textController.updateBufferState());
             }
-
-            return Q.all(promises);
         },
 
         startBuffering = function(time) {
@@ -762,7 +756,7 @@ MediaPlayer.dependencies.Stream = function () {
                 this.videoModel.setCurrentTime(actualTime);
                 startBuffering(actualTime);
             } else {*/
-                startBuffering();
+               // startBuffering();
             //}
         },
 
