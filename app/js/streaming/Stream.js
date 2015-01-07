@@ -554,8 +554,8 @@ MediaPlayer.dependencies.Stream = function () {
                         self.debug.info("[Stream] Starting playback at offset: " + time);
                         self.system.notify("setCurrentTime");
                         //ORANGE : increase time + 1s for chromecast which round the time
-                        //self.videoModel.setCurrentTime(time+1);
-                        self.videoModel.setCurrentTime(time);
+                        self.videoModel.setCurrentTime(time+1);
+                        //self.videoModel.setCurrentTime(time);
                         load.resolve(null);
                     }
                 );
@@ -726,6 +726,12 @@ MediaPlayer.dependencies.Stream = function () {
                 audioController.start();
                 } else {
                     audioController.seek(time);
+                }
+            }
+
+            if (textController) {
+                if (time !== undefined) {
+                    textController.seek(time);
                 }
             }
         },
