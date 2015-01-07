@@ -95,7 +95,9 @@ MediaPlayer.dependencies.Stream = function () {
             var self = this,
                 type;
 
-            type = (event.type !== "msneedkey") ? event.type : videoCodec;
+            // ORANGE: set videoCodec as type
+            //type = (event.type !== "msneedkey") ? event.type : videoCodec;
+            type = videoCodec;
             initData.push({type: type, initData: event.initData});
 
             this.debug.log("[DRM] Key required for - " + type);

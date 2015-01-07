@@ -164,9 +164,6 @@ Custom.dependencies.CustomBufferController = function () {
                 doStop.call(self);
             }
 
-            // Reset segment list to avoid DashHandler dysfunctionning
-            currentRepresentation.segments = null;
-
             // Reset ABR controller
             this.debug.log("[BufferController]["+type+"] ### Reset quality: " + initialQuality);
             this.abrController.setAutoSwitchBitrate(false);
@@ -177,9 +174,11 @@ Custom.dependencies.CustomBufferController = function () {
             seeking = true;
             seekTarget = time;
 
-            // Wait for current buffering process to be completeed before restarting
+            // Wait for current buffering process to be completed before restarting
             Q.when(deferredFragmentBuffered ? deferredFragmentBuffered.promise : true).then(
                 function () {
+                    // Reset segment list to avoid DashHandler dysfunctionning
+                    currentRepresentation.segments = null;
                     //self.debug.log("[BufferController]["+type+"] ### SEEK: deferredFragmentBuffered = "+deferredFragmentBuffered+" Call start!");
                     doStart.call(self);
                 }
