@@ -738,6 +738,12 @@ MediaPlayer.dependencies.Stream = function () {
                     audioController.seek(time);
                 }
             }
+
+            if (textController) {
+                if (time !== undefined) {
+                    textController.seek(time);
+                }
+            }
         },
 
         stopBuffering = function() {
