@@ -25,6 +25,7 @@ MediaPlayer.models.ProtectionModel = function () {
         protectionExt : undefined,
         // ORANGE: licenser custom data and back url add a reference on manifestModel
         manifestModel: undefined,
+        debug: undefined,
 
         setup : function () {
             //this.system.mapHandler("setCurrentTime", undefined, handleSetCurrentTimeNotification.bind(this));
@@ -100,7 +101,7 @@ MediaPlayer.models.ProtectionModel = function () {
         updateFromMessage: function (kid, msg, laURL) {
             var manifest = this.manifestModel.getValue();
             // ORANGE: add licenser custom data
-            return keySystems[kid].keySystem.getUpdate(msg, laURL, manifest.customData);
+            return keySystems[kid].keySystem.getUpdate(msg, laURL, /*manifest.customData,*/ this.debug);
         },
 /*
         addKey: function (type, key, data, id) {

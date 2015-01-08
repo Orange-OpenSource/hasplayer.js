@@ -36,7 +36,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
 
                         self.protectionModel.addKeySystem(kid, contentProtection[cp], keySystems[ks]);
 
-                        self.debug.log("[DRM]: Selected Key System: " + keySystems[ks].keysTypeString + " For KID: " + kid);
+                        self.debug.log("[DRM] Selected Key System: " + keySystems[ks].keysTypeString + " For KID: " + kid);
 
                         return kid;
                     }
@@ -58,18 +58,18 @@ MediaPlayer.dependencies.ProtectionController = function () {
 
             if (!initData && !!eventInitData) {
                 initData = eventInitData;
-                self.debug.log("[DRM]: Using initdata from needskey event. length: " + initData.length);
+                self.debug.log("[DRM] Using initdata from needskey event. length: " + initData.length);
             }
             else if (!!initData){
-                self.debug.log("[DRM]: Using initdata from prheader in mpd. length: " + initData.length);
+                self.debug.log("[DRM] Using initdata from prheader in mpd. length: " + initData.length);
             }
 
             if (!!initData) {
                 session = self.protectionModel.addKeySession(kid, codec, initData);
-                self.debug.log("[DRM]: Added Key Session [" + session.sessionId + "] for KID: " + kid + " type: " + codec + " initData length: " + initData.length);
+                self.debug.log("[DRM] Added Key Session [" + session.sessionId + "] for KID: " + kid + " type: " + codec + " initData length: " + initData.length);
             }
             else {
-                self.debug.log("[DRM]: initdata is null.");
+                self.debug.log("[DRM] initdata is null.");
             }
         },
 

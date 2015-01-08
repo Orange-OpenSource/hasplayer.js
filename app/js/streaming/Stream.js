@@ -95,6 +95,8 @@ MediaPlayer.dependencies.Stream = function () {
             var self = this,
                 type;
 
+            self.debug.log("[DRM] ### onMediaSourceNeedsKey (" + event.type + ")");
+
             // ORANGE: set videoCodec as type
             //type = (event.type !== "msneedkey") ? event.type : videoCodec;
             type = videoCodec;
@@ -106,6 +108,7 @@ MediaPlayer.dependencies.Stream = function () {
             if (!!contentProtection && !!videoCodec && !kid) {
                 try
                 {
+                    self.debug.log("[DRM] Select Key System");
                     kid = self.protectionController.selectKeySystem(videoCodec, contentProtection);
                 }
                 catch (error)
@@ -120,6 +123,7 @@ MediaPlayer.dependencies.Stream = function () {
             }
 
             if (!!kid) {
+                self.debug.log("[DRM] Ensure Key Session for KID " + kid);
                 self.protectionController.ensureKeySession(kid, type, event.initData);
             }
         },
@@ -131,7 +135,7 @@ MediaPlayer.dependencies.Stream = function () {
                 msg = null,
                 laURL = null;
 
-            this.debug.log("[DRM] Got a key message...");
+            self.debug.log("[DRM] ### onMediaSourceKeyMessage (" + event.type + ")");
 
             session = event.target;
 
@@ -139,12 +143,16 @@ MediaPlayer.dependencies.Stream = function () {
             bytes = event.message[1] === 0 ? new Uint16Array(event.message.buffer) : new Uint8Array(event.message.buffer);
 
             msg = String.fromCharCode.apply(null, bytes);
+            self.debug.log("[DRM] Key message: " + msg);
+
             laURL = event.destinationURL;
+            self.debug.log("[DRM] laURL: " + laURL);
             
             // ORANGE: if backUrl is defined, override laURL
             var manifest = self.manifestModel.getValue();
             if(manifest.backUrl) {
                 laURL = manifest.backUrl;
+                self.debug.log("[DRM] backURL: " + laURL);
             }
 
             self.protectionController.updateFromMessage(kid, session, msg, laURL).fail(
@@ -167,12 +175,14 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         onMediaSourceKeyAdded = function () {
-            this.debug.log("[DRM] Key added.");
+            this.debug.log("[DRM] ### onMediaSourceKeyAdded.");
         },
 
         onMediaSourceKeyError = function () {
             var session = event.target,
                 msg;
+
+            this.debug.log("[DRM] ### onMediaSourceKeyError.");
             msg = 'DRM: MediaKeyError - sessionId: ' + session.sessionId + ' errorCode: ' + session.error.code + ' systemErrorCode: ' + session.error.systemCode + ' [';
             switch (session.error.code) {
                 case 1:
@@ -726,12 +736,6 @@ MediaPlayer.dependencies.Stream = function () {
                 audioController.start();
                 } else {
                     audioController.seek(time);
-                }
-            }
-
-            if (textController) {
-                if (time !== undefined) {
-                    textController.seek(time);
                 }
             }
         },

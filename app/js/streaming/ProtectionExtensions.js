@@ -114,42 +114,57 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
     },
 
     getKeySystems: function () {
-        var playreadyGetUpdate = function (msg, laURL) {
+        var playreadyGetUpdate = function (msg, laURL, debug) {
                 var deferred = Q.defer(),
                     decodedChallenge = null,
                     headers = [],
                     parser = new DOMParser(),
                     xmlDoc = parser.parseFromString(msg, "application/xml");
-            
-                if (xmlDoc.getElementsByTagName("Challenge")[0]) {
-                    var Challenge = xmlDoc.getElementsByTagName("Challenge")[0].childNodes[0].nodeValue;
-                    if (Challenge) {
-                        decodedChallenge = BASE64.decode(Challenge);
+
+                debug.log("[DRM][PR] Get update");
+                debug.log("[DRM][PR] msg: " + msg);
+
+                // ORANGE: consider key message as the PlayReadyKeyMessage object or as the challenge itself
+                if (xmlDoc.getElementsByTagName("PlayReadyKeyMessage")[0]) {
+                    if (xmlDoc.getElementsByTagName("Challenge")[0]) {
+                        var Challenge = xmlDoc.getElementsByTagName("Challenge")[0].childNodes[0].nodeValue;
+                        if (Challenge) {
+                            decodedChallenge = BASE64.decode(Challenge);
+                            debug.log("[DRM][PR] decodedChallenge = ", decodedChallenge);
+                        }
                     }
-                }
-                else {
-                    deferred.reject('DRM: playready update, can not find Challenge in keyMessage');
-                    return deferred.promise;
-                }
+                    else {
+                        debug.error("[DRM][PR] playready update, can not find Challenge in keyMessage");
+                        deferred.reject('DRM: playready update, can not find Challenge in keyMessage');
+                        return deferred.promise;
+                    }
 
-                var headerNameList = xmlDoc.getElementsByTagName("name");
-                var headerValueList = xmlDoc.getElementsByTagName("value");
+                    var headerNameList = xmlDoc.getElementsByTagName("name");
+                    var headerValueList = xmlDoc.getElementsByTagName("value");
 
-                if (headerNameList.length != headerValueList.length) {
-                    deferred.reject('DRM: playready update, invalid header name/value pair in keyMessage');
-                    return deferred.promise;
-                }
+                    if (headerNameList.length != headerValueList.length) {
+                        deferred.reject('DRM: playready update, invalid header name/value pair in keyMessage');
+                        return deferred.promise;
+                    }
 
-                for (var i = 0; i < headerNameList.length; i++) {
-                    headers[i] = {
-                        name: headerNameList[i].childNodes[0].nodeValue,
-                        value: headerValueList[i].childNodes[0].nodeValue
-                    };
+                    for (var i = 0; i < headerNameList.length; i++) {
+                        headers[i] = {
+                            name: headerNameList[i].childNodes[0].nodeValue,
+                            value: headerValueList[i].childNodes[0].nodeValue
+                        };
+                        debug.log("[DRM][PR] header["+i+"]: name = " + headers[i].name + ", value = " + headers[i].value);
+                    }
+                } else {
+                    decodedChallenge = msg;
+                    headers[0] = {name: 'Content-Type', value: 'text/xml; charset=utf-8'};
+                    headers[1] = {name: 'SOAPAction', value: '\"http://schemas.microsoft.com/DRM/2007/03/protocols/AcquireLicense\"'};
                 }
 
                 var xhr = new XMLHttpRequest();
                 xhr.onload = function () {
+                    debug.log("[DRM][PR] Get reponse, status = " + xhr.status);
                     if (xhr.status == 200) {
+                        debug.log("[DRM][PR] Get reponse: " + String.fromCharCode.apply(null, new Uint8Array(xhr.response)));
                         deferred.resolve(new Uint8Array(xhr.response));
                     } else {
                         deferred.reject('DRM: playready update, XHR status is "' + xhr.statusText + '" (' + xhr.status + '), expected to be 200. readyState is ' + xhr.readyState);
