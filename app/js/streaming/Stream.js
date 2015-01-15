@@ -42,12 +42,10 @@ MediaPlayer.dependencies.Stream = function () {
         seekingListener,
         seekedListener,
         timeupdateListener,
+        durationchangeListener,
         progressListener,
         ratechangeListener,
         periodInfo = null,
-        //ORANGE : detect when a paused command occurs whitout a seek one
-        isPaused = false,
-        isSeeked = false,
 
         needKeyListener,
         keyMessageListener,
@@ -557,18 +555,13 @@ MediaPlayer.dependencies.Stream = function () {
                 //this.system.notify("setCurrentTime");
                 //this.videoModel.setCurrentTime(initialSeekTime);
 
-                // ORANGE: PATCH for chrome for which there is an issue for starting live streams,
-                // due to a difference (rounding?) between manifest segments times and real samples times
-                // returned by the buffer.
-                // => we start the <video> element at the real start time got from the video buffer
+                // ORANGE: we start the <video> element at the real start time got from the video buffer
                 // once the first fragment has been appended
                 waitForStartTime.call(this, initialSeekTime, 2).then(
                     function (time) {
                         self.debug.info("[Stream] Starting playback at offset: " + time);
                         self.system.notify("setCurrentTime");
-                        //ORANGE : increase time + 1s for chromecast which round the time
-                        self.videoModel.setCurrentTime(time+1);
-                        //self.videoModel.setCurrentTime(time);
+                        self.videoModel.setCurrentTime(time);
                         load.resolve(null);
                     }
                 );
@@ -592,17 +585,39 @@ MediaPlayer.dependencies.Stream = function () {
             var self = this,
                 defer = Q.defer(),
                 intervalId,
-                buffer = videoController.getBuffer(),
+                videoBuffer = videoController.getBuffer(),
+                audioBuffer = audioController.getBuffer(),
                 CHECK_INTERVAL = 50,
-                range,
+                videoRange,
+                audioRange,
+                startTime,
                 checkStartTime = function() {
-                    range = self.sourceBufferExt.getBufferRange(buffer, time, tolerance);
-                    if (range === null) {
+                    self.debug.info("[Stream] Check start time");
+                    // Check if video buffer is not empty
+                    videoRange = self.sourceBufferExt.getBufferRange(videoBuffer, time, tolerance);
+                    if (videoRange === null) {
                         return;
                     }
-                    // updating is completed, now we can stop checking and resolve the promise
+                    // PATCH (+0.5) for chrome for which there is an issue for starting live streams,
+                    // due to a difference (rounding?) between manifest segments times and real samples times
+                    // returned by the buffer.
+                    startTime = videoRange.start + 0.5;
+
+                    // Check if audio buffer is not empty
+                    audioRange = self.sourceBufferExt.getBufferRange(audioBuffer, time, tolerance);
+                    if (audioRange === null) {
+                        return;
+                    }
+                    self.debug.info("[Stream] Check start time: A["+audioRange.start+"-"+audioRange.end+"], V["+videoRange.start+"-"+videoRange.end+"]");
+                    // Check if audio and video can be synchronized (if some audio sample is available at returned start time)
+                    if (audioRange.end < startTime) {
+                        return;
+                    }
+                    self.debug.info("[Stream] Check start time: OK");
+                    // Updating is completed, now we can stop checking and resolve the promise
                     clearInterval(intervalId);
-                    defer.resolve(range.start);
+
+                    defer.resolve(startTime);
                 };
 
             intervalId = setInterval(checkStartTime, CHECK_INTERVAL);
@@ -611,16 +626,7 @@ MediaPlayer.dependencies.Stream = function () {
 
         onPlay = function () {
             this.debug.log("[Stream] Got play event.");
-            
-            //if a pause command was detected just before this onPlay event, startBuffering again
-            //if it was a pause, follow by a seek (in reality just a seek command), don't startBuffering, it's done in onSeeking event
-            // we can't, each time, startBuffering in onPlay event (for seek and pause commands) because onPlay event is not fired on IE after a seek command. :-(
-            if ( isPaused && !isSeeked){
-                startBuffering();
-            }
-
-            isPaused = false;
-            isSeeked = false;
+            updateCurrentTime.call(this);
         },
 
         // ORANGE : fullscreen event
@@ -642,8 +648,7 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         onPause = function () {
-            //this.debug.log("[Stream] ################################# Got pause event.");
-            isPaused = true;
+            //this.debug.log("Got pause event.");
             suspend.call(this);
         },
 
@@ -684,9 +689,9 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         onSeeking = function () {
-            //this.debug.log("[Stream] ############################################# Got seeking event.");
+            //this.debug.log("Got seeking event.");
             var time = this.videoModel.getCurrentTime();
-            isSeeked = true;
+
             startBuffering(time);
         },
 
@@ -704,6 +709,9 @@ MediaPlayer.dependencies.Stream = function () {
 
         onTimeupdate = function () {
             updateBuffer.call(this);
+        },
+
+        onDurationchange = function () {
         },
 
         onRatechange = function() {
@@ -741,7 +749,7 @@ MediaPlayer.dependencies.Stream = function () {
                 videoController.start();
                 } else {
                     videoController.seek(time);
-                }
+            }
             }
 
             if (audioController) {
@@ -1027,6 +1035,7 @@ MediaPlayer.dependencies.Stream = function () {
             progressListener = onProgress.bind(this);
             ratechangeListener = onRatechange.bind(this);
             timeupdateListener = onTimeupdate.bind(this);
+            durationchangeListener = onDurationchange.bind(this);
             loadedListener = onLoad.bind(this);
             // ORANGE : add FullScreen Event listener
             fullScreenListener = onFullScreenChange.bind(this);
@@ -1049,6 +1058,7 @@ MediaPlayer.dependencies.Stream = function () {
             this.videoModel.listen("error", errorListener);
             this.videoModel.listen("seeking", seekingListener);
             this.videoModel.listen("timeupdate", timeupdateListener);
+            this.videoModel.listen("durationchange", durationchangeListener);
             this.videoModel.listen("progress", progressListener);
             this.videoModel.listen("ratechange", ratechangeListener);
             this.videoModel.listen("loadedmetadata", loadedListener);
