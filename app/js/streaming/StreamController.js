@@ -168,7 +168,7 @@
                 seekingStream = getStreamForTime(seekingTime);
 
             // ORANGE : add metric
-            this.metricsModel.addState(null, "seeking", activeStream.getVideoModel().getCurrentTime());
+            this.metricsModel.addState("video", "seeking", activeStream.getVideoModel().getCurrentTime());
 
             if (seekingStream && seekingStream !== activeStream) {
                 switchStream.call(this, activeStream, seekingStream, seekingTime);
@@ -178,7 +178,7 @@
         onPause = function() {
             this.manifestUpdater.stop();
             // ORANGE : add metric
-            this.metricsModel.addState(null, "paused", activeStream.getVideoModel().getCurrentTime());
+            this.metricsModel.addState("video", "paused", activeStream.getVideoModel().getCurrentTime());
         },
 
         onPlay = function() {
