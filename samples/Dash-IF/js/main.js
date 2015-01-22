@@ -592,8 +592,8 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     player.addEventListener("metricChanged", metricChanged.bind(this));
     player.attachView(video);
     player.setAutoPlay(true);
-    player.setConfig(config);
     player.getDebug().setLevel(4);
+    player.setConfig(config);
     $scope.player = player;
     $scope.videojsIsOn = false;
     
