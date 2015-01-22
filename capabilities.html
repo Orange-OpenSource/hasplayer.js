@@ -30,6 +30,7 @@
 		var capablities = {
 
 			mediaKeys:null,
+			encryptedEventSent:false,
 
 		    supportsMediaSource: function () {
 		        "use strict";
@@ -69,26 +70,29 @@
 					var onEncrypted = function(event)
 	                {
 	                	EMEVersion.innerHTML = "28-08-2014  : needkey event has been replaced by encrypted event";
+	                	this.encryptedEventSent = true;
 	                };
 
 					var onNeedKey = function(event)
 	                {
-	                	if (event.type === undefined) {
-	                		EMEVersion.innerHTML = "10-05-2013 : event.type is undefined";
-	                	}
-	                	else
-	                	{	
-	                		if (this.mediaKeys.create)
-	                		{
-	                			EMEVersion.innerHTML = "28-08-2014  : create function is defined on mediaKeys object";
-	                		}
-	                		else if (this.mediaKeys.loadSession === undefined) {
-								EMEVersion.innerHTML = "22-10-2013 : loadSession on mediaKeys object is undefined";
-			    			}
-							else {
-	                			EMEVersion.innerHTML = "18-02-2014 : needkey event has been fired, not encrypted event, and loadSession is defined";
-	                		}
-	                	}
+	                	if (!this.encryptedEventSent){
+		                	if (event.type === undefined) {
+		                		EMEVersion.innerHTML = "10-05-2013 : event.type is undefined";
+		                	}
+		                	else
+		                	{	
+		                		if (this.mediaKeys.create)
+		                		{
+		                			EMEVersion.innerHTML = "28-08-2014  : create function is defined on mediaKeys object";
+		                		}
+		                		else if (this.mediaKeys.loadSession === undefined) {
+									EMEVersion.innerHTML = "22-10-2013 : loadSession on mediaKeys object is undefined";
+				    			}
+								else {
+		                			EMEVersion.innerHTML = "18-02-2014 : needkey event has been fired, not encrypted event, and loadSession is defined";
+		                		}
+		                	}
+		                }
 	                };
 
 	                var onError = function(event) {
