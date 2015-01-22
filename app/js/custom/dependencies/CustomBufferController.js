@@ -101,7 +101,7 @@ Custom.dependencies.CustomBufferController = function () {
         setStalled = function (value) {
             var self = this;
 
-            self.debug.log("[BufferController]["+type+"] stalled = ", value);
+            self.debug.info("[BufferController]["+type+"] stalled = ", value);
             stalled = value;
             self.videoModel.stallStream(type, stalled);
         },
@@ -111,7 +111,7 @@ Custom.dependencies.CustomBufferController = function () {
                 return;
             }
 
-            this.debug.log("[BufferController]["+type+"] startPlayback");
+            this.debug.info("[BufferController]["+type+"] startPlayback");
 
             // Set video to stalled state
             setStalled.call(this, true);
@@ -140,7 +140,7 @@ Custom.dependencies.CustomBufferController = function () {
 
             started = true;
             
-            self.debug.log("[BufferController]["+type+"] ### START");
+            self.debug.info("[BufferController]["+type+"] ### START");
 
             waitingForBuffer = true;
         
@@ -190,10 +190,7 @@ Custom.dependencies.CustomBufferController = function () {
             if (!started) {
                 return;
             }
-            this.debug.log("[BufferController]["+type+"] ### STOP");
-
-            //Reset htmlVideoState in order to update it after a pause or seek command in UpdateBufferState function
-            htmlVideoState = -1;
+            this.debug.info("[BufferController]["+type+"] ### STOP");
 
             // Stop buffering process            
             clearTimeout(bufferTimeout);
@@ -202,7 +199,6 @@ Custom.dependencies.CustomBufferController = function () {
 
             // Stop buffering process and cancel loaded request
             clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.USER_REQUEST_STOP_REASON);
-            this.debug.log("[BufferController]["+type+"] ### STOP");
             
             this.fragmentController.abortRequestsForModel(fragmentModel);
         },
