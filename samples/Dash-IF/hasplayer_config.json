@@ -2,6 +2,9 @@
     "//": "General parameters, applied to all media",
     "//": "A value of '-1' is considered as an undefined value, thus default value from source code is used",
 
+    "// Debug.level": "The level for output debug messages (0=none, 1=error, 2=warn, 3=info, 4=debug)",
+    "Debug.level": -1,
+
     "// BufferController.minBufferTimeForPlaying": "The minimum media buffer size (in seconds) to fill before starting playing when buffering",
     "BufferController.minBufferTimeForPlaying": -1,
 
