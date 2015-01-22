@@ -192,6 +192,9 @@ Custom.dependencies.CustomBufferController = function () {
             }
             this.debug.info("[BufferController]["+type+"] ### STOP");
 
+            //Reset htmlVideoState in order to update it after a pause or seek command in UpdateBufferState function
+            htmlVideoState = -1;
+
             // Stop buffering process            
             clearTimeout(bufferTimeout);
             started = false;
