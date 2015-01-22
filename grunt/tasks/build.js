@@ -30,6 +30,7 @@ module.exports = function(grunt) {
     'replace:copyright',      //Add the copyright
     'replace:noCopyright',    //Remove tag from files where no copyright is needed
     'replace:chromecastId',   //Change to Online APP_ID for chromecast
+    'replace:log4javascript', //Change log4javascript appender (pop-up by console)
     'clean:end'               //Clean temp files
     ]);
 

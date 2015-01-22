@@ -2,7 +2,7 @@
 
 module.exports = function(grunt) {
 
-	var log = grunt.option('log') || false,
+	var log = grunt.option('log') || grunt.option('log4j') ||false,
 		dropConsole = !log,
 		logLevels = ["error", "warn", "info", "debug", "log"],
 		logOption = [];

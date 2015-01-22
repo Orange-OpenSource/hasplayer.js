@@ -99,7 +99,20 @@ module.exports = {
 			]
 		},
 		files:[
-		{expand: true, flattend:true, src:['<%= path %>/dashif.js']}
+		{expand: true, src:['<%= path %>/dashif.js']}
+		]
+	},
+	log4javascript: {
+		options:{
+			patterns: [
+				{
+					match: /initialized\)\{var ([\S]*)=new log4javascript.PopUpAppender/,
+					replacement: 'initialized){var $1=new log4javascript.BrowserConsoleAppender'
+				}
+			]
+		},
+		files:[
+		{expand: true, src: ['<%= path %>/hasplayer.js']}
 		]
 	}
 };
