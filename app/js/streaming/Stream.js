@@ -46,6 +46,9 @@ MediaPlayer.dependencies.Stream = function () {
         progressListener,
         ratechangeListener,
         periodInfo = null,
+        //ORANGE : detect when a paused command occurs whitout a seek one
+        isPaused = false,
+        isSeeked = false,
 
         needKeyListener,
         keyMessageListener,
@@ -628,7 +631,16 @@ MediaPlayer.dependencies.Stream = function () {
 
         onPlay = function () {
             this.debug.log("[Stream] Got play event.");
-            updateCurrentTime.call(this);
+            
+            //if a pause command was detected just before this onPlay event, startBuffering again
+            //if it was a pause, follow by a seek (in reality just a seek command), don't startBuffering, it's done in onSeeking event
+            // we can't, each time, startBuffering in onPlay event (for seek and pause commands) because onPlay event is not fired on IE after a seek command. :-(
+            if ( isPaused && !isSeeked){
+                startBuffering();
+            }
+
+            isPaused = false;
+            isSeeked = false;
         },
 
         // ORANGE : fullscreen event
@@ -650,7 +662,8 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         onPause = function () {
-            //this.debug.log("Got pause event.");
+            //this.debug.log("[Stream] ################################# Got pause event.");
+            isPaused = true;
             suspend.call(this);
         },
 
@@ -691,9 +704,9 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         onSeeking = function () {
-            //this.debug.log("Got seeking event.");
+            //this.debug.log("[Stream] ############################################# Got seeking event.");
             var time = this.videoModel.getCurrentTime();
-
+            isSeeked = true;
             startBuffering(time);
         },
 
@@ -763,7 +776,9 @@ MediaPlayer.dependencies.Stream = function () {
             }
 
             if (textController) {
-                if (time !== undefined) {
+                if (time === undefined) {
+                    textController.start();
+                } else {
                     textController.seek(time);
                 }
             }
