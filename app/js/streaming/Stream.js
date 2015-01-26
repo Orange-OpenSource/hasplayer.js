@@ -590,8 +590,7 @@ MediaPlayer.dependencies.Stream = function () {
         waitForStartTime = function (time, tolerance) {
             var self = this,
                 defer = Q.defer(),
-                videoBuffer = videoController.getBuffer(),
-                audioBuffer = audioController.getBuffer(),
+                audioBuffer = audioController ? audioController.getBuffer() : null,
                 CHECK_INTERVAL = 100,
                 videoRange,
                 audioRange,
@@ -599,7 +598,7 @@ MediaPlayer.dependencies.Stream = function () {
                 checkStartTime = function() {
                     self.debug.info("[Stream] Check start time");
                     // Check if video buffer is not empty
-                    videoRange = self.sourceBufferExt.getBufferRange(videoBuffer, time, tolerance);
+                    videoRange = self.sourceBufferExt.getBufferRange(videoController.getBuffer(), time, tolerance);
                     if (videoRange === null) {
                         return;
                     }
@@ -608,16 +607,19 @@ MediaPlayer.dependencies.Stream = function () {
                     // returned by the buffer.
                     startTime = videoRange.start + 0.5;
 
-                    // Check if audio buffer is not empty
-                    audioRange = self.sourceBufferExt.getBufferRange(audioBuffer, time, tolerance);
-                    if (audioRange === null) {
-                        return;
+                    if (audioController) {
+                        // Check if audio buffer is not empty
+                        audioRange = self.sourceBufferExt.getBufferRange(audioController.getBuffer(), time, tolerance);
+                        if (audioRange === null) {
+                            return;
+                        }
+                        self.debug.info("[Stream] Check start time: A["+audioRange.start+"-"+audioRange.end+"], V["+videoRange.start+"-"+videoRange.end+"]");
+                        // Check if audio and video can be synchronized (if some audio sample is available at returned start time)
+                        if (audioRange.end < startTime) {
+                            return;
+                        }
                     }
-                    self.debug.info("[Stream] Check start time: A["+audioRange.start+"-"+audioRange.end+"], V["+videoRange.start+"-"+videoRange.end+"]");
-                    // Check if audio and video can be synchronized (if some audio sample is available at returned start time)
-                    if (audioRange.end < startTime) {
-                        return;
-                    }
+
                     self.debug.info("[Stream] Check start time: OK");
                     // Updating is completed, now we can stop checking and resolve the promise
                     clearInterval(checkStartTimeIntervalId);
@@ -764,7 +766,7 @@ MediaPlayer.dependencies.Stream = function () {
                 videoController.start();
                 } else {
                     videoController.seek(time);
-            }
+                }
             }
 
             if (audioController) {
