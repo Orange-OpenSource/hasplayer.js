@@ -21,9 +21,17 @@ MediaPlayer.utils.TextTrackExtensions = function () {
         },
 
         addTextTrack: function(video, captionData,  label, scrlang, isDefaultTrack) {
+            var track = null;
 
+            //no function removeTextTrack is defined
+            //add one, only if it's necessary
+            //deleteCues will be very efficient in this case
+            if (video.textTracks.length === 0) {
             //TODO: Ability to define the KIND in the MPD - ie subtitle vs caption....
-            var track = video.addTextTrack("captions", label, scrlang);
+                track = video.addTextTrack("captions", label, scrlang);
+            }else {
+                track = video.textTracks[0];
+            }
             // track.default is an object property identifier that is a reserved word
             // The following jshint directive is used to suppressed the warning "Expected an identifier and instead saw 'default' (a reserved word)"
             /*jshint -W024 */
@@ -57,15 +65,13 @@ MediaPlayer.utils.TextTrackExtensions = function () {
                     if (cues) {
                         var lastIdx = cues.length - 1;
 
-            for (var i = lastIdx; i >= 0 ; i -= 1) {
-                track.removeCue(cues[i]);
-            }
+                        for (var i = lastIdx; i >= 0 ; i -= 1) {
+                            track.removeCue(cues[i]);
+                        }
                     }
                 }
             }
-
             //track.mode = "disabled";
         }
-
     };
 };
