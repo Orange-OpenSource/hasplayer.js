@@ -173,7 +173,7 @@ MediaPlayer.dependencies.AbrController = function () {
                                                     confidence = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
                                                 }
 
-                                                self.debug.log("[AbrController]["+type+"] set quality: " + quality);
+                                                self.debug.log("[AbrController]["+type+"] Set quality: " + quality);
                                                 setInternalQuality(type, quality);
                                                 //self.debug.log("New quality of " + quality);
 
@@ -200,7 +200,7 @@ MediaPlayer.dependencies.AbrController = function () {
         setPlaybackQuality: function (type, newPlaybackQuality) {
             var quality = getInternalQuality(type);
 
-            this.debug.log("[AbrController]["+type+"] set playback quality: " + newPlaybackQuality);
+            this.debug.log("[AbrController]["+type+"] Set playback quality: " + newPlaybackQuality);
 
             if (newPlaybackQuality !== quality) {
                 setInternalQuality(type, newPlaybackQuality);

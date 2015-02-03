@@ -16,17 +16,11 @@
 Custom.rules.CustomDownloadRatioRule = function () {
     "use strict";
 
-    /*
-     * This rule is intended to be sure that we can download fragments in a
-     * timely manner.  The general idea is that it should take longer to download
-     * a fragment than it will take to play the fragment.
-     *
-     * This rule is not sufficient by itself.  We may be able to download a fragment
-     * fine, but if the buffer is not sufficiently long playback hiccups will happen.
-     * Be sure to use this rule in conjuction with the InsufficientBufferRule.
-     */
+    var _mediaDuration = 0,
+        _downloadTime = 0,
+        _totalTime = 0,
 
-    var checkRatio = function (newIdx, currentBandwidth, data) {
+        checkRatio = function (newIdx, currentBandwidth, data) {
             var self = this,
                 deferred = Q.defer();
 
@@ -53,18 +47,16 @@ Custom.rules.CustomDownloadRatioRule = function () {
         checkIndex: function (current, metrics, data) {
             var self = this,
                 lastRequest = self.metricsExt.getCurrentHttpRequest(metrics),
-                bufferLevel = self.metricsExt.getCurrentBufferLevel(metrics),
                 downloadTime,
                 totalTime,
                 ratio,
                 latencyInBandwidth = self.config.getParamFor(data.type, "ABR.latencyInBandwidth", "boolean", true),
-                switchUpRatioSafetyFactor = self.config.getParamFor(data.type, "ABR.switchUpRatioSafetyFactor", "number", 1.2),
-                minBufferTime,
-                switchDownBufferRatio,
-                switchDownBufferTime,
+                switchUpRatioSafetyFactor = self.config.getParamFor(data.type, "ABR.switchUpRatioSafetyFactor", "number", 1.5),
                 deferred,
                 funcs,
-                i;
+                i,
+                q = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE,
+                p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
 
             //self.debug.log("Checking download ratio rule...");
 
@@ -97,113 +89,96 @@ Custom.rules.CustomDownloadRatioRule = function () {
                 return Q.when(new MediaPlayer.rules.SwitchRequest());
             }
 
+            // Consider average bandwidth over at least 4 sec. of media (= 2 segments in MSS)
+            _mediaDuration += lastRequest.mediaduration;
+            _downloadTime += downloadTime;
+            _totalTime += downloadTime;
+
+            if (_mediaDuration < 4) {
+                return Q.when(new MediaPlayer.rules.SwitchRequest());
+            }
+
             deferred = Q.defer();
 
-            ratio = latencyInBandwidth ? (lastRequest.mediaduration / totalTime) : (lastRequest.mediaduration / downloadTime);
-            
-            self.debug.log("[DownloadRatioRule]["+data.type+"] DL: " + downloadTime + "s, Total: " + totalTime + "s => ratio: " + ratio);
+            //ratio = latencyInBandwidth ? (lastRequest.mediaduration / totalTime) : (lastRequest.mediaduration / downloadTime);
+            //self.debug.log("[DownloadRatioRule]["+data.type+"] DL: " + downloadTime + "s, Total: " + totalTime + "s => ratio: " + ratio);
+
+            ratio = latencyInBandwidth ? (_mediaDuration / _totalTime) : (_mediaDuration / _downloadTime);
+            self.debug.log("[DownloadRatioRule]["+data.type+"] DL: " + _downloadTime + "s, Total: " + _totalTime + "s => ratio: " + ratio);
+            _mediaDuration = _downloadTime = _totalTime = 0;
 
             if (isNaN(ratio)) {
                 return Q.when(new MediaPlayer.rules.SwitchRequest());
             }
 
-            self.manifestExt.getMpd(self.manifestModel.getValue()).then(
-                function(mpd) {
+            if (ratio <= 1.0) {
+                self.manifestExt.getRepresentationFor(current, data).then(
+                    function (currentRepresentation) {
+                        self.manifestExt.getBandwidth(currentRepresentation).then(
+                            function (currentBandwidth) {
+                                i = 0;
+                                funcs = [];
+                                while (i <= current) {
+                                    funcs.push(checkRatio.call(self, i, currentBandwidth, data));
+                                    i += 1;
+                                }
 
-                    minBufferTime = self.config.getParamFor(data.type, "BufferController.minBufferTime", "number", mpd.manifest.minBufferTime);
-                    switchDownBufferRatio = self.config.getParamFor(data.type, "ABR.switchDownBufferRatio", "number", 0.5);
-                    switchDownBufferTime = self.config.getParamFor(data.type, "ABR.switchDownBufferTime", "number", switchDownBufferRatio * minBufferTime);
-
-                    if ((ratio < 1.0) && (bufferLevel.level <= switchDownBufferTime)) {
-                        if (current > 0) {
-                            self.manifestExt.getRepresentationFor(current, data).then(
-                                function (currentRepresentation) {
-                                    self.manifestExt.getBandwidth(currentRepresentation).then(
-                                        function (currentBandwidth) {
-                                            //self.debug.log("[DownloadRatioRule]["+data.type+"] ####################### Total Ratio < 1 need to decrease bandwith current = "+currentBandwidth+"!!!!");
-                                            i = 0;
-                                            funcs = [];
-                                            while (i <= current) {
-                                                funcs.push(checkRatio.call(self, i, currentBandwidth, data));
-                                                i += 1;
+                                Q.all(funcs).then(
+                                    function (results) {
+                                        for (i = current-1; i >= 0; i -= 1) {
+                                            if (ratio > (results[i])) {
+                                                break;
                                             }
-
-                                            Q.all(funcs).then(
-                                                function (results) {
-                                                    for (i = current-1; i >= 0; i -= 1) {
-                                                        if (ratio > (results[i])) {
-                                                            break;
-                                                        }
-                                                    }
-
-                                                    if (i !== current) {
-                                                        self.debug.log("[DownloadRatioRule]["+data.type+"] SwitchRequest(" + i + ")");
-                                                        deferred.resolve(new MediaPlayer.rules.SwitchRequest(i));
-                                                    } else {
-                                                        self.debug.log("[DownloadRatioRule]["+data.type+"] SwitchRequest(0)");
-                                                        deferred.resolve(new MediaPlayer.rules.SwitchRequest(0));
-                                                    }
-
-                                            });
                                         }
-                                    );
-                                }
-                            );
-                        } else {
-                            // We are at the lowest bitrate and cannot switch down, use current
-                            self.debug.log("[DownloadRatioRule]["+data.type+"] SwitchRequest() to the current bandwith because we are already at the lowest bitrate");
-                            deferred.resolve(new MediaPlayer.rules.SwitchRequest());
-                        }
-                    } else if (ratio >= 1.0) {
-                        self.manifestExt.getRepresentationCount(data).then(
-                            function (max) {
-                                max -= 1; // 0 based
-                                if (current < max) {
-                                    self.manifestExt.getRepresentationFor(current, data).then(
-                                        function (currentRepresentation) {
-                                            self.manifestExt.getBandwidth(currentRepresentation).then(
-                                                function (currentBandwidth) {
-                                                    //self.debug.log("[DownloadRatioRule]["+data.type+"] ####################### Total Ratio > 1 and current = "+currentBandwidth+" <max need to increase bandwith!!!!");
-                                                    i = 0;
-                                                    funcs = [];
-                                                    while (i <= max) {
-                                                        funcs.push(checkRatio.call(self, i, currentBandwidth, data));
-                                                        i += 1;
-                                                    }
 
-                                                    Q.all(funcs).then(
-                                                        function (results) {
-                                                            for (i = results.length; i > current; i -= 1) {
-                                                                if (ratio > (results[i] * switchUpRatioSafetyFactor)) {
-                                                                    break;
-                                                                }
-                                                            }
+                                        q = i;
+                                        p = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
 
-                                                            if (i !== current) {
-                                                                self.debug.log("[DownloadRatioRule]["+data.type+"] SwitchRequest(" + i + ")");
-                                                                deferred.resolve(new MediaPlayer.rules.SwitchRequest(i));
-                                                            } else {
-                                                                self.debug.log("[DownloadRatioRule]["+data.type+"] SwitchRequest() to the current bandwidth");
-                                                                deferred.resolve(new MediaPlayer.rules.SwitchRequest());
-                                                            }
-                                                        }
-                                                    );
-                                                }
-                                            );
-                                        }
-                                    );
-                                } else {
-                                    // We are at the highest bitrate and cannot switch up, use current
-                                    self.debug.log("[DownloadRatioRule]["+data.type+"] SwitchRequest() to the current bandwith because we are already at the highest bitrate");
-                                    deferred.resolve(new MediaPlayer.rules.SwitchRequest());
-                                }
+                                        self.debug.log("[DownloadRatioRule]["+data.type+"] SwitchRequest(" + q + ", " + p + ")");
+                                        deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
+                                    }
+                                );
                             }
                         );
-                    } else /*if ((ratio < 1.0) && (bufferLevel.level > switchDownBufferTime))*/ {
-                        deferred.resolve(new MediaPlayer.rules.SwitchRequest());
                     }
-                }
-            );
+                );
+            } else if (ratio >= 1.0) {
+                self.manifestExt.getRepresentationCount(data).then(
+                    function (max) {
+                        max -= 1; // 0 based
+                        self.manifestExt.getRepresentationFor(current, data).then(
+                            function (currentRepresentation) {
+                                self.manifestExt.getBandwidth(currentRepresentation).then(
+                                    function (currentBandwidth) {
+                                        i = 0;
+                                        funcs = [];
+                                        while (i <= max) {
+                                            funcs.push(checkRatio.call(self, i, currentBandwidth, data));
+                                            i += 1;
+                                        }
+
+                                        Q.all(funcs).then(
+                                            function (results) {
+                                                for (i = results.length; i > current; i -= 1) {
+                                                    if (ratio > (results[i] * switchUpRatioSafetyFactor)) {
+                                                        break;
+                                                    }
+                                                }
+
+                                                q = i;
+                                                p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
+
+                                                self.debug.log("[DownloadRatioRule]["+data.type+"] SwitchRequest(" + q + ", " + p + ")");
+                                                deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
+                                            }
+                                        );
+                                    }
+                                );
+                            }
+                        );
+                    }
+                );
+            }
 
             return deferred.promise;
         }
