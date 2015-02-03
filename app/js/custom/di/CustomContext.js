@@ -47,6 +47,7 @@
 
             // overload ABR rules
             this.system.mapClass('downloadRatioRule', Custom.rules.CustomDownloadRatioRule);
+            this.system.mapClass('insufficientBufferRule', Custom.rules.CustomInsufficientBufferRule);
 
             // plug message handler. When the message is notify, the contextManager is called
             this.system.mapHandler('setContext', 'contextManager', 'setContext');
