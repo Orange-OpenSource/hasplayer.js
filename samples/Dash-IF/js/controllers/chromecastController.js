@@ -15,9 +15,11 @@ angular.module("DashPlayer").controller("ChromecastController", ["$scope", "$win
             $scope.$watch("chromecast.connected",function(newVal, oldVal){
                 if(newVal===true){
                     resolve();
-                }else{
-                    reject();
                 }
+                //reject not managed by JQuery at the page loading... :-(
+                /*else {
+                    reject();
+                }*/
             });
         });
 
