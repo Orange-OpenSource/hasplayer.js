@@ -27,16 +27,28 @@
     "ABR.switchUpIncrementally": false,
 
     "// ABR.switchUpRatioSafetyFactor" : "The bandwidth ratio factor to overpass before switching up quality",
-    "ABR.switchUpRatioSafetyFactor": 1.2,
+    "ABR.switchUpRatioSafetyFactor": 1.5,
 
     "// ABR.latencyInBandwidth" : "If true, latency is counted when determining downloading bitrate",
     "ABR.latencyInBandwidth": true,
+
+    "// ABR.switchLowerBufferRatio" : "The buffer size (ratio of BufferController.minBufferTime) lower limit before switching to lower quality",
+    "ABR.switchLowerBufferRatio": 0.25,
+
+    "// ABR.switchLowerBufferTime" : "The buffer size (in seconds) lower limit before switching to lower quality, if defined it overrides ABR.switchLowerBufferRatio",
+    "ABR.switchLowerBufferTime": -1,
 
     "// ABR.switchDownBufferRatio" : "The buffer size (ratio of BufferController.minBufferTime) lower limit before switching down",
     "ABR.switchDownBufferRatio": 0.5,
 
     "// ABR.switchDownBufferTime" : "The buffer size (in seconds) lower limit before switching down, if defined it overrides ABR.switchDownBufferRatio",
     "ABR.switchDownBufferTime": -1,
+
+    "// ABR.switchUpBufferRatio" : "The buffer size (ratio of BufferController.minBufferTime) lower limit before switching up",
+    "ABR.switchUpBufferRatio": 0.75,
+
+    "// ABR.switchUpBufferTime" : "The buffer size (in seconds) lower limit before switching up, if defined it overrides ABR.switchUpBufferRatio",
+    "ABR.switchUpBufferTime": -1,
 
     "// video" : "Video media parameters that override general parameters",
     "video": {
