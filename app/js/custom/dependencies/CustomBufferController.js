@@ -69,6 +69,9 @@ Custom.dependencies.CustomBufferController = function () {
         //ORANGE : used to test Live chunk download failure
         //testTimeLostChunk = 0,
 
+        // ORANGE: async. vs async. MSE's SourceBuffer appending/removing algorithm
+        appendSync = false,
+
         currentSequenceNumber = -1,
 
         sendRequest = function() {
@@ -325,9 +328,10 @@ Custom.dependencies.CustomBufferController = function () {
                     Q.when(deferredBuffersFlatten ? deferredBuffersFlatten.promise : true).then(
                         function() {
                             if (!hasData()) return;
-                            self.debug.log("[BufferController]["+type+"] Buffering segment");
-                            self.sourceBufferExt.append(buffer, data, self.videoModel).then(
+                            self.debug.info("[BufferController]["+type+"] Buffering segment");
+                            self.sourceBufferExt.append(buffer, data, appendSync).then(
                                     function (/*appended*/) {
+                                        self.debug.info("[BufferController]["+type+"] Segment buffered");
                                         //self.debug.log("[BufferController]["+type+"] Data has been appended for quality = "+quality+" index = "+index);
 
                                         /*if (isAppendingRejectedData) {
@@ -607,7 +611,7 @@ Custom.dependencies.CustomBufferController = function () {
             self.debug.info("[BufferController][" + type + "] ### Remove from " + removeStart + " to " + removeEnd +  " (" + self.getVideoModel().getCurrentTime() + ")");
 
             // Wait for buffer update completed, since some data can have been started to pe pushed before calling this method
-            self.sourceBufferExt.waitForUpdateEnd(buffer).then(self.sourceBufferExt.remove(buffer, removeStart, removeEnd, periodInfo.duration, mediaSource)).then(
+            self.sourceBufferExt.waitForUpdateEnd(buffer).then(self.sourceBufferExt.remove(buffer, removeStart, removeEnd, periodInfo.duration, mediaSource, appendSync)).then(
                 function() {
                     // after the data has been removed from the buffer we should remove the requests from the list of
                     // the executed requests for which playback time is inside the time interval that has been removed from the buffer
@@ -833,6 +837,7 @@ Custom.dependencies.CustomBufferController = function () {
                 currentTime = getWorkingTime.call(self);
 
             bufferLevel = self.sourceBufferExt.getBufferLength(buffer, currentTime);
+            self.debug.log("[BufferController]["+type+"] Buffer level = " + bufferLevel);
             self.metricsModel.addBufferLevel(type, new Date(), bufferLevel);
         },
 
@@ -847,7 +852,6 @@ Custom.dependencies.CustomBufferController = function () {
             self.debug.log("[BufferController]["+type+"] Check buffer...");
             
             updateBufferLevel.call(self);
-            self.debug.log("[BufferController]["+type+"] Buffer level = " + bufferLevel);
 
             // videoModel in stalled mode
             if (stalled) {
