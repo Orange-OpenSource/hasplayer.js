@@ -14,6 +14,7 @@
 MediaPlayer.dependencies.ManifestLoader = function () {
     "use strict";
 
+
     var RETRY_ATTEMPTS = 3,
         RETRY_INTERVAL = 500,
         deferred = null,
@@ -22,8 +23,7 @@ MediaPlayer.dependencies.ManifestLoader = function () {
         parseBaseUrl = function (url) {
             var base = null;
 
-            if (url.indexOf("/") !== -1)
-            {
+            if (url.indexOf("/") !== -1) {
                 if (url.indexOf("?") !== -1) {
                     url = url.substring(0, url.indexOf("?"));
                 }
@@ -45,12 +45,13 @@ MediaPlayer.dependencies.ManifestLoader = function () {
 
 
             onload = function () {
-                if (request.status < 200 || request.status > 299)
-                {
+                if (request.status < 200 || request.status > 299) {
                   return;
                 }
+
+                self.debug.log("[ManifestLoader] Manifest downloaded");
                 
-                //ORANGE : in latest Chrome version, get the redirect url and use it to get chunks
+                //ORANGE : Get the redirection URL and use it as base URL
                 if (request.responseURL) {
                   self.debug.log("[ManifestLoader] Redirect URL: " + request.responseURL);
                   baseUrl = parseBaseUrl(request.responseURL);
@@ -122,7 +123,7 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                 request.onloadend = report;
                 request.onerror = report;
                 request.open("GET", url, true);
-            request.send();
+                request.send();
             } catch(e) {
                 request.onerror();
             }
