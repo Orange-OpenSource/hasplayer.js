@@ -421,6 +421,16 @@
                             <button type="button" class="btn btn-default active" ng-class="{active:abrEnabled == true}" ng-click="setAbrEnabled(true)">
                                 <span>On</span>
                             </button>
+                            <button type="button" class="btn btn-default" ng-class="{active:abrEnabled == false}" ng-click="setAbrEnabled(false)"><span>Off</span></button>
+                            <button type="button" class="btn btn-default active" ng-class="{active:abrEnabled == true}" ng-click="setAbrEnabled(true)"><span>On</span></button>
+                        </div>
+                    </div>
+                    <div class="panel-heading panel-top">
+                        <span class="panel-title">Playback Rate: </span>
+                        <span class="text-warning">{{playbackRate}}</span>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-default" ng-click="playbackRateDown()"><span class="glyphicon glyphicon-minus"></span></button>
+                            <button type="button" class="btn btn-default" ng-click="playbackRateUp()"><span class="glyphicon glyphicon-plus"></span></button>
                         </div>
                     </div>
                 </div>

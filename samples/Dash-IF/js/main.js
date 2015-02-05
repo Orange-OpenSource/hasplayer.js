@@ -645,7 +645,31 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         player.setQualityFor(type, newQuality);
     };
 
+    $scope.playbackRateUp = function () {
 
+        if (video.playbackRate === 64.0) {
+            return;
+        }
+
+        video.playbackRate = video.playbackRate * 2;
+        $scope.playbackRate = "x" + video.playbackRate;
+        player.setAutoSwitchQuality(false);
+        player.setQualityFor('video', 0);
+    };
+
+    $scope.playbackRateDown = function () {
+
+        if (video.playbackRate === 1.0) {
+            return;
+        }
+
+        video.playbackRate = video.playbackRate / 2;
+        $scope.playbackRate = "x" + video.playbackRate;
+
+        if (video.playbackRate === 1.0) {
+            player.setAutoSwitchQuality(true);
+        }
+    };
 
     ////////////////////////////////////////
     //
@@ -789,6 +813,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         player.setQualityFor("video", 0);
         player.setQualityFor("audio", 0);
 
+        $scope.playbackRate = "x1";
         player.attachSource($scope.selectedItem.url, params);
     }
 
