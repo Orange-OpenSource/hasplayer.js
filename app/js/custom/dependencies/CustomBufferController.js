@@ -274,7 +274,7 @@ Custom.dependencies.CustomBufferController = function () {
             if (!fragmentDuration && !isNaN(request.duration)) {
                 fragmentDuration = request.duration;
             }
-        
+
             // ORANGE: add request and representations in function parameters, used by MssFragmentController
             self.fragmentController.process(response.data, request, availableRepresentations).then(
                 function (data) {
@@ -302,7 +302,11 @@ Custom.dependencies.CustomBufferController = function () {
                             }
                         );
                     } else {
-                        self.debug.log("No " + type + " bytes to push.");
+                        self.debug.log("[BufferController]["+type+"] Error with segment data, no bytes to push");
+                        // Signal end of buffering process 
+                        signalSegmentBuffered.call(self);
+                        // Check buffer level
+                        checkIfSufficientBuffer.call(self);
                     }
                 }
             );

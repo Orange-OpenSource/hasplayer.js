@@ -263,6 +263,8 @@ Mss.dependencies.MssFragmentController = function () {
 
         if (bytes !== null && bytes !== undefined && bytes.byteLength > 0) {
             result = new Uint8Array(bytes);
+        } else {
+            return Q.when(null);
         }
 
         if (request && (request.type === "Media Segment") && representations && (representations.length > 0)){
