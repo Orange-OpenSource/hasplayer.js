@@ -37,7 +37,7 @@ Add hasplayer.js to the end of the body.
   <script src="yourPathToHasplayer/hasplayer.js"></script>
 </body>
 ```
-Now comes the good stuff. We need to create a 'custom' context (inherited from dash context and adding Smooth Streaming ahd HLS stuff). Then from that context we create a media player, initialize it, attach it to our "videoPlayer" and then tell it where to get the video from. We will do this in an anonymous self executing function, that way it will run as soon as the page loads. So, here is how we do it:
+Now comes the good stuff. We need to create a 'custom' context (inherited from dash context and adding Smooth Streaming and HLS stuff). Then from that context we create a media player, initialize it, attach it to our "videoPlayer" and then tell it where to get the video from. We will do this in an anonymous self executing function, that way it will run as soon as the page loads. So, here is how we do it:
 ``` js
 (function(){
     var url = "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest";
