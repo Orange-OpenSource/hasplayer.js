@@ -25,4 +25,52 @@ All code in this repository is covered by the [BSD-3 license](http://opensource.
 See LICENSE file for copyright details.
 
 
+## Getting Started
+Create a video element somewhere in your html. For our purposes, make sure to set the controls property to true.
+```
+<video id="videoPlayer" controls="true"></video>
+```
+Add hasplayer.js to the end of the body.
+```
+<body>
+  ...
+  <script src="yourPathToHasplayer/hasplayer.js"></script>
+</body>
+```
+Now comes the good stuff. We need to create a 'custom' context (inherited from dash context and adding Smooth Streaming ahd HLS stuff). Then from that context we create a media player, initialize it, attach it to our "videoPlayer" and then tell it where to get the video from. We will do this in an anonymous self executing function, that way it will run as soon as the page loads. So, here is how we do it:
+``` js
+(function(){
+    var url = "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest";
+    var context = new Custom.di.CustomContext();
+    var player = new MediaPlayer(context);
+    player.startup();
+    player.attachView(document.querySelector("#videoPlayer"));
+    player.attachSource(url);
+})();
+```
 
+When it is all done, it should look similar to this:
+```
+<!doctype html>
+<html>
+    <head>
+        <title>Hasplayer.js Rocks</title>
+    </head>
+    <body>
+        <div>
+            <video id="videoPlayer" controls="true"></video>
+        </div>
+        <script src="yourPathToHasplayer/hasplayer.js"></script>
+        <script>
+            (function(){
+                var url = "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest";
+                var context = new Custom.di.CustomContext();
+                var player = new MediaPlayer(context);
+                player.startup();
+                player.attachView(document.querySelector("#videoPlayer"));
+                player.attachSource(url);
+            })();
+        </script>
+    </body>
+</html>
+```
