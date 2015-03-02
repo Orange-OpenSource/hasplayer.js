@@ -45,6 +45,11 @@ MediaPlayer.dependencies.Stream = function () {
         durationchangeListener,
         progressListener,
         ratechangeListener,
+        canplayListener,
+        playingListener,
+        loadstartListener,
+        waitingListener,
+
         periodInfo = null,
         //ORANGE : detect when a paused command occurs whitout a seek one
         isPaused = false,
@@ -54,9 +59,6 @@ MediaPlayer.dependencies.Stream = function () {
         keyMessageListener,
         keyAddedListener,
         keyErrorListener,
-
-        canplayListener,
-        playingListener,
 
         // ORANGE: interval id for checking buffers start time
         checkStartTimeIntervalId,
@@ -346,7 +348,7 @@ MediaPlayer.dependencies.Stream = function () {
                                                     var msg = "Video Codec (" + codec + ") is not supported.";
                                                     self.errHandler.manifestError(msg, "codec", manifest);
                                                     return Q.when(null);
-                                                    self.debug.error("[Stream] ", msg);
+                                                    //self.debug.error("[Stream] ", msg);
                                                 }
 
                                                 return self.sourceBufferExt.createSourceBuffer(mediaSource, codec);
@@ -549,7 +551,8 @@ MediaPlayer.dependencies.Stream = function () {
         onLoad = function () {
             var self = this;
 
-            this.debug.log("[Stream] Got loadmetadata event.");
+            this.debug.log("<video> loadedmetadata event");
+            this.debug.log("[Stream] Got loadedmetadata event.");
 
             var initialSeekTime = this.timelineConverter.calcPresentationStartTime(periodInfo);
             this.debug.info("[Stream] Starting playback at offset: " + initialSeekTime);
@@ -566,6 +569,12 @@ MediaPlayer.dependencies.Stream = function () {
                 waitForStartTime.call(this, initialSeekTime, 2).then(
                     function (time) {
                         self.debug.info("[Stream] Starting playback at offset: " + time);
+
+                        self.eventBus.dispatchEvent({
+                            type: "liveStartTimeFound",
+                            data: time
+                        });
+
                         self.system.notify("setCurrentTime");
                         self.videoModel.setCurrentTime(time);
                         load.resolve(null);
@@ -577,20 +586,27 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         onCanPlay = function () {
-            var self = this;
+            this.debug.log("<video> canplay event");        
             this.debug.log("[Stream] Got canplay event.");
         },
 
         onPlaying = function () {
-            var self = this;
+            this.debug.log("<video> playing event");
             this.debug.log("[Stream] Got playing event.");
+        },
+
+        onLoadStart = function () {
+            this.debug.log("<video> loadstart event");            
+        },
+
+        onWaiting = function () {
+            this.debug.log("<video> waiting event");            
         },
 
         // ORANGE: see onLoad()
         waitForStartTime = function (time, tolerance) {
             var self = this,
                 defer = Q.defer(),
-                audioBuffer = audioController ? audioController.getBuffer() : null,
                 CHECK_INTERVAL = 100,
                 videoRange,
                 audioRange,
@@ -632,6 +648,7 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         onPlay = function () {
+            this.debug.log("<video> play event");            
             this.debug.log("[Stream] Got play event.");
             
             //if a pause command was detected just before this onPlay event, startBuffering again
@@ -649,8 +666,7 @@ MediaPlayer.dependencies.Stream = function () {
         onFullScreenChange = function() {
             var videoElement = this.videoModel.getElement(), isFullScreen = 0;
 
-            if(document.webkitIsFullScreen || document.msFullscreenElement
-                || document.mozFullScreen) {
+            if(document.webkitIsFullScreen || document.msFullscreenElement || document.mozFullScreen) {
                 // browser is fullscreen
                 isFullScreen = 1;
             }
@@ -659,17 +675,20 @@ MediaPlayer.dependencies.Stream = function () {
         
         // ORANGE : ended event
         onEnded = function() {
+            this.debug.log("<video> ended event");            
             //add stopped state metric with reason = 1 : end of stream
             this.metricsModel.addState("video", "stopped", this.videoModel.getCurrentTime(), 1);
         },
 
         onPause = function () {
+            this.debug.log("<video> pause event");
             //this.debug.log("[Stream] ################################# Got pause event.");
             isPaused = true;
             suspend.call(this);
         },
 
         onError = function (event) {
+            this.debug.log("<video> error event");
             var error = event.srcElement.error,
                 code = error.code,
                 msg = "";
@@ -706,6 +725,7 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         onSeeking = function () {
+            this.debug.log("<video> seeking event");
             //this.debug.log("[Stream] ############################################# Got seeking event.");
             var time = this.videoModel.getCurrentTime();
             isSeeked = true;
@@ -713,25 +733,28 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         onSeeked = function () {
+            this.debug.log("<video> seeked event");
             //this.debug.log("Seek complete.");
 
             this.videoModel.listen("seeking", seekingListener);
             this.videoModel.unlisten("seeked", seekedListener);
         },
 
-        onProgress = function () {
-            //this.debug.log("Got timeupdate event.");
-            //updateBuffer.call(this);
+        onProgress = function () {            
+            this.debug.log("<video> progress event");
         },
 
         onTimeupdate = function () {
+            this.debug.log("<video> timeupdate event");            
             updateBuffer.call(this);
         },
 
         onDurationchange = function () {
+            this.debug.log("<video> durationchange event");            
         },
 
         onRatechange = function() {
+            this.debug.log("<video> ratechange event");            
             if (videoController) {
                 videoController.updateStalledState();
             }
@@ -1038,6 +1061,7 @@ MediaPlayer.dependencies.Stream = function () {
         scheduleWhilePaused: undefined,
         // ORANGE : add metricsModel
         metricsModel: undefined,
+        eventBus: undefined,
 
         setup: function () {
             this.system.mapHandler("setCurrentTime", undefined, currentTimeChanged.bind(this));
@@ -1058,13 +1082,16 @@ MediaPlayer.dependencies.Stream = function () {
             timeupdateListener = onTimeupdate.bind(this);
             durationchangeListener = onDurationchange.bind(this);
             loadedListener = onLoad.bind(this);
+            canplayListener = onCanPlay.bind(this);
+            playingListener = onPlaying.bind(this);
+            loadstartListener = onLoadStart.bind(this);
+            waitingListener = onWaiting.bind(this);
+
             // ORANGE : add FullScreen Event listener
             fullScreenListener = onFullScreenChange.bind(this);
             // ORANGE : add Ended Event listener
             endedListener = onEnded.bind(this);
 
-            canplayListener = onCanPlay.bind(this);
-            playingListener = onPlaying.bind(this);
         },
 
         load: function(manifest, periodInfoValue) {
@@ -1083,16 +1110,17 @@ MediaPlayer.dependencies.Stream = function () {
             this.videoModel.listen("progress", progressListener);
             this.videoModel.listen("ratechange", ratechangeListener);
             this.videoModel.listen("loadedmetadata", loadedListener);
+            this.videoModel.listen("ended", endedListener);
+            this.videoModel.listen("canplay", canplayListener);
+            this.videoModel.listen("playing", playingListener);
+            this.videoModel.listen("loadstart", loadstartListener);
+            this.videoModel.listen("waiting", waitingListener);
+
             // ORANGE : add FullScreen Event listener
             this.videoModel.listen("webkitfullscreenchange", fullScreenListener);
             this.videoModel.listen("fullscreenchange", fullScreenListener);
             this.videoModel.listenOnParent("fullscreenchange", fullScreenListener);
             this.videoModel.listenOnParent("webkitfullscreenchange", fullScreenListener);
-            // ORANGE : add Ended Event listener
-            this.videoModel.listen("ended", endedListener);
-
-            this.videoModel.listen("canplay", canplayListener);
-            this.videoModel.listen("playing", playingListener);
 
             this.requestScheduler.videoModel = value;
         },
@@ -1221,8 +1249,20 @@ MediaPlayer.dependencies.Stream = function () {
             this.videoModel.unlisten("error", errorListener);
             this.videoModel.unlisten("seeking", seekingListener);
             this.videoModel.unlisten("timeupdate", timeupdateListener);
+            this.videoModel.unlisten("durationchange", durationchangeListener);
             this.videoModel.unlisten("progress", progressListener);
+            this.videoModel.unlisten("ratechange", ratechangeListener);
             this.videoModel.unlisten("loadedmetadata", loadedListener);
+            this.videoModel.unlisten("ended", endedListener);
+            this.videoModel.unlisten("canplay", canplayListener);
+            this.videoModel.unlisten("playing", playingListener);
+            this.videoModel.unlisten("loadstart", loadstartListener);
+            this.videoModel.unlisten("waitng", waitingListener);
+
+            this.videoModel.unlisten("webkitfullscreenchange", fullScreenListener);
+            this.videoModel.unlisten("fullscreenchange", fullScreenListener);
+            this.videoModel.unlistenOnParent("fullscreenchange", fullScreenListener);
+            this.videoModel.unlistenOnParent("webkitfullscreenchange", fullScreenListener);
 
             tearDownMediaSource.call(this);
             if (!!this.protectionController) {
