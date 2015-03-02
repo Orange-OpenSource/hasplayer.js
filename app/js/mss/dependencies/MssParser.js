@@ -112,14 +112,14 @@ Mss.dependencies.MssParser = function () {
             // Set quality level id
             streamIndex.QualityLevel_asArray[i].Id = adaptationSet.id + "_" + streamIndex.QualityLevel_asArray[i].Index;
 
-            // Map Representation to QualityLevel
-            representation = mapRepresentation(streamIndex.QualityLevel_asArray[i]);
+                // Map Representation to QualityLevel
+                representation = mapRepresentation(streamIndex.QualityLevel_asArray[i]);
 
-            // Copy SegmentTemplate into Representation
-            representation.SegmentTemplate = segmentTemplate;
+                // Copy SegmentTemplate into Representation
+                representation.SegmentTemplate = segmentTemplate;
 
-            representations.push(representation);
-        }
+                representations.push(representation);
+            }
 
         adaptationSet.Representation = (representations.length > 1) ? representations : representations[0];
         adaptationSet.Representation_asArray = representations;
@@ -178,7 +178,7 @@ Mss.dependencies.MssParser = function () {
 
         //chrome problem, in implicit AAC HE definition, so when AACH is detected in FourCC
         //set objectType to 5 => strange, it should be 2
-        if (qualityLevel.fourCC === "AACH") {
+        if (qualityLevel.FourCC === "AACH") {
             objectType = 0x05;
         }
 
@@ -186,7 +186,7 @@ Mss.dependencies.MssParser = function () {
         if (codecPrivateData === "" || codecPrivateData === undefined || codecPrivateData === "0x") {
             objectType = 0x02; //AAC Main Low Complexity => object Type = 2
             var indexFreq = samplingFrequencyIndex[qualityLevel.SamplingRate];
-            if (qualityLevel.fourCC === "AACH") {
+            if (qualityLevel.FourCC === "AACH") {
                 // 4 bytes :     XXXXX         XXXX          XXXX             XXXX                  XXXXX      XXX   XXXXXXX
                 //           ' ObjectType' 'Freq Index' 'Channels value'   'Extens Sampl Freq'  'ObjectType'  'GAS' 'alignment = 0'
                 objectType = 0x05; // High Efficiency AAC Profile = object Type = 5 SBR
