@@ -183,7 +183,7 @@ Mss.dependencies.MssParser = function () {
         }
 
         //if codecPrivateData is empty, build it :
-        if (codecPrivateData === "" || codecPrivateData === undefined || codecPrivateData === "0x") {
+        if (codecPrivateData === undefined || codecPrivateData === "") {
             objectType = 0x02; //AAC Main Low Complexity => object Type = 2
             var indexFreq = samplingFrequencyIndex[qualityLevel.SamplingRate];
             if (qualityLevel.FourCC === "AACH") {
@@ -220,8 +220,9 @@ Mss.dependencies.MssParser = function () {
                 codecPrivateDataHex = arr16[0].toString(16);
             }
 
-            codecPrivateData = ""+codecPrivateDataHex;
+            codecPrivateData = "" + codecPrivateDataHex;
             codecPrivateData = codecPrivateData.toUpperCase();
+            qualityLevel.CodecPrivateData = codecPrivateData;
         }
         else if (objectType === 0)
             objectType = (parseInt(codecPrivateData.substr(0, 2), 16) & 0xF8) >> 3;
@@ -381,10 +382,6 @@ Mss.dependencies.MssParser = function () {
             start = new Date(),
             json = null,
             mss2dash = null;
-
-        // Process 'CodecPrivateData' attributes values so that they can be identified/processed as hexadecimal strings
-        data = data.replace(/CodecPrivateData="/g, "CodecPrivateData=\"0x");
-        data = data.replace(/CodecPrivateData='/g, "CodecPrivateData=\'0x");
 
         // Convert xml to json
         //this.debug.log("[MssParser]", "Converting from XML.");
