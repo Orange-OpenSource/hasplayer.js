@@ -197,7 +197,9 @@ Mss.dependencies.MssFragmentController = function () {
                 tfdt.version = 1;
                 tfdt.flags = 0;
                 tfdt.baseMediaDecodeTime = Math.floor(request.startTime * request.timescale);
-                traf.boxes.push(tfdt);
+                // Insert tfdt box just after the tfhd box (and before the trun box)
+                var pos = traf.getBoxPositionByType("tfhd");
+                traf.boxes.splice(pos + 1, 0, tfdt);
             }
 
             // Process tfrf box
