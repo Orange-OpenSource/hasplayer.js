@@ -95,12 +95,15 @@ Hls.dependencies.HlsDemux = function () {
                 else {
                     this.debug.log("[HlsDemux] Stream Type "+elementStream.m_stream_type+" unknown!");
                 }
-                    track.timescale = mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY;
-                    track.pid = elementStream.m_elementary_PID;
-                    track.trackId = trackIdCounter;
-                    pidToTrackId[elementStream.m_elementary_PID] = trackIdCounter;
-                    tracks.push(track);
-                    trackIdCounter ++;
+
+                //if (track.type === "video") {
+                track.timescale = mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY;
+                track.pid = elementStream.m_elementary_PID;
+                track.trackId = trackIdCounter;
+                pidToTrackId[elementStream.m_elementary_PID] = trackIdCounter;
+                tracks.push(track);
+                trackIdCounter ++;
+                //}
             }
 
             return pmt;
