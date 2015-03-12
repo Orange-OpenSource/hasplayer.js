@@ -86,6 +86,10 @@ a:hover {
     line-height: 16px;
 }
 
+.full-width {
+    width: 100%;
+}
+
 chart {
     display: block;
     width: 100%;

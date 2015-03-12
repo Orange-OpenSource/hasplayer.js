@@ -187,7 +187,13 @@
                 <a ng-repeat="item in availableStreams" href="#" class="list-group-item" ng-click="setStream(item)" data-dismiss="modal" ng-show="isStreamAvailable(item.browsers)">{{item.name}}</a>
             </div>
         </div>
-
+    </div>
+    <div class="modal fade" id="streamModal">
+        <div class="modal-dialog">
+            <div class="list-group modal-list">
+                <a ng-repeat="item in availableStreams" href="#" class="list-group-item" ng-click="setStream(item)" data-dismiss="modal" ng-show="isStreamAvailable(item.browsers)">{{item.name}}</a>
+            </div>
+        </div>
     </div>
 
     <div class="modal fade" id="streamTypeModal">
@@ -422,7 +428,7 @@
                                 <span>On</span>
                             </button>
                             <button type="button" class="btn btn-default" ng-class="{active:abrEnabled == false}" ng-click="setAbrEnabled(false)"><span>Off</span></button>
-                            <button type="button" class="btn btn-default active" ng-class="{active:abrEnabled == true}" ng-click="setAbrEnabled(true)"><span>On</span></button>
+                            <button type="button" class="btn btn-default" ng-class="{active:abrEnabled == true}" ng-click="setAbrEnabled(true)"><span>On</span></button>
                         </div>
                     </div>
                     <div class="panel-heading panel-top">
