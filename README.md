@@ -2,21 +2,43 @@
 
 hasplayer.js is a javascript implementation of a video player based on the W3C premium extensions, i.e. [MSE](https://dvcs.w3.org/hg/html-media/raw-file/tip/media-source/media-source.html) and [EME](https://dvcs.w3.org/hg/html-media/raw-file/tip/encrypted-media/encrypted-media.html).
 
-hasplayer.js is an extension of the [dash.js](https://github.com/Dash-Industry-Forum/dash.js) project with the aim of supporting additional http adaptive streaming protocols such as Microsoft Smooth Streaming protocol.
+hasplayer.js is an extension of the [dash.js](https://github.com/Dash-Industry-Forum/dash.js) project with the aim of supporting additional http adaptive streaming protocols such as Microsoft Smooth Streaming protocol and Apple Http Live Streaming.
 
 If your intent is to use the player code without contributing back to this project, then use the MASTER branch which holds the approved and stable public releases.
 
 If your goal is to improve or extend the code and contribute back to this project, then you should make your changes in, and submit a pull request against, the DEVELOPMENT branch. 
 
-
 ## Quick Start
 
-Download desired branch, extract and open home page of any sample from the samples folder (hasplayer.js/samples/) in your web browser.
-A build version can be obtained by running `grunt build`. The build files are generated under 'hasplayer.js/build' folder. 
+### Reference Player
+
+1. Download 'master', 'development' or latest tagged release.
+2. Extract hasplayer.js and move the entire folder to localhost (or run any http server instance at the root of the hasplayer.js folder).
+3. Open any sample from the samples folder in your MSE capable web browser.
+
+### Install Dependencies
+
+1. [install nodejs](http://nodejs.org/)
+2. [install grunt](http://gruntjs.com/getting-started)
+    * npm install -g grunt-cli
+
+### Build / Run
+
+1. Change directories to the build folder
+    * cd build/
+2. Install all Node Modules defined in package.json 
+    * npm install
+3. Run build task
+    * grunt build
+4. You can also target someo other individual tasks:
+    * grunt uglify
+    * grunt jsdoc
+    * grunt jshint
 
 ## Demo
 
-A demonstration application, based on dash.js project's home application, and using hasplayer.js is located here:
+A builded version of the hasplayer.js and samples is available ah this address:
+
 http://orange-opensource.github.io/hasplayer.js
 
 ## License
