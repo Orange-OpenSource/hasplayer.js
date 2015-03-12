@@ -222,7 +222,7 @@ rslt.planRequests = function (req) {
     } else {
         that.doLoad(req).then(function (result){
           d.resolve(result);
-        },function (reqerror){
+        },function (/*reqerror*/){
           that.retry(req,d,that);
     });
   }

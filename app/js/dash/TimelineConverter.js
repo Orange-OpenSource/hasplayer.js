@@ -52,7 +52,7 @@ Dash.dependencies.TimelineConverter = function () {
             var presentationStartTime,
                 isDynamic = period.mpd.manifest.type === "dynamic",
                 //ORANGE: fix bug on not updating URIFragmentDataVO 
-                startTimeOffset = parseInt(this.uriQueryFragModel.getURIFragmentData().s);
+                startTimeOffset = parseInt(this.uriQueryFragModel.getURIFragmentData().s, 10);
 
             if (isDynamic) {
 
@@ -111,7 +111,7 @@ Dash.dependencies.TimelineConverter = function () {
 
         calcActualPresentationTime = function(representation, currentTime, isDynamic) {
             var self = this,
-                periodStart = representation.adaptation.period.start,
+                //periodStart = representation.adaptation.period.start,
                 availabilityWindow = self.calcSegmentAvailabilityRange(representation, isDynamic),
                 actualTime;
 
@@ -154,7 +154,7 @@ Dash.dependencies.TimelineConverter = function () {
             return range;
         },
 
-        liveEdgeFound = function(expectedLiveEdge, actualLiveEdge, period) {
+        /*liveEdgeFound = function(expectedLiveEdge, actualLiveEdge, period) {
             if (period.mpd.isClientServerTimeSyncCompleted) return;
 
             // the difference between expected and actual live edge time is supposed to be a difference between client
@@ -162,7 +162,7 @@ Dash.dependencies.TimelineConverter = function () {
             period.mpd.clientServerTimeShift = actualLiveEdge - expectedLiveEdge;
             period.mpd.isClientServerTimeSyncCompleted = true;
             clientServerTimeShift = period.mpd.clientServerTimeShift * 1000;
-        },
+        },*/
 
         calcMSETimeOffset = function (representation) {
             var presentationOffset = representation.presentationTimeOffset;

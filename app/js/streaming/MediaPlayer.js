@@ -108,7 +108,7 @@ MediaPlayer = function (aContext) {
 
         getDVRSeekOffset = function (value) {
             var metric = getDVRInfoMetric.call(this),
-                val = metric.range.start + parseInt(value);
+                val = metric.range.start + parseInt(value, 10);
 
             if (val > metric.range.end)
             {

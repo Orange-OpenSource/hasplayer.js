@@ -162,8 +162,6 @@ Mss.dependencies.MssHandler = function() {
 					track.samplingRate = getAudioSamplingRate(realAdaptation, realRepresentation);
 
 					representation.initData =  rslt.mp4Processor.generateInitSegment([track]);
-
-					//console.saveBinArray(representation.initData, "init_evolution_"+track.type+"_"+track.bandwidth+".mp4");
 				}
 				return representation.initData;
 			}else{

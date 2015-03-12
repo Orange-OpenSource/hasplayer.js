@@ -16,9 +16,7 @@
 MediaPlayer.utils.Config = function () {
     "use strict";
 
-    var DEFAULT_CONFIG_FILE = "hasplayer_config.json",
-
-        paramsType = ["video", "audio"],
+    var paramsType = ["video", "audio"],
 
         // Default configuration, provides list of possible parameters
         params = {
@@ -41,19 +39,6 @@ MediaPlayer.utils.Config = function () {
             // Audio parameters
             "audio": {
             },
-        },
-
-        downloadConfigFile = function (url) {
-            var req = new XMLHttpRequest();
-            req.open("GET", url, true);
-            req.setRequestHeader("Content-type", "application/json");
-            req.onreadystatechange = function() {
-                if ((req.readyState == 4) && (req.status == 200)) {
-                    var config = JSON.parse(req.responseText);
-                    doSetParams(config);
-                }
-            };
-            req.send();
         },
 
         doSetParams = function (newParams) {
@@ -120,8 +105,6 @@ MediaPlayer.utils.Config = function () {
         debug: undefined,
 
         setup: function () {
-            // Download default configuration file
-          //  downloadConfigFile(DEFAULT_CONFIG_FILE);
         },
 
         setParams: function (newParams) {

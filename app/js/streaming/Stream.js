@@ -225,9 +225,8 @@ MediaPlayer.dependencies.Stream = function () {
             var deferred = Q.defer(),
                 self = this,
 
-                onMediaSourceOpen = function (e) {
+                onMediaSourceOpen = function (/*e*/) {
                     //self.debug.log("MediaSource is open!");
-                    //self.debug.log(e);
 
                     mediaSourceArg.removeEventListener("sourceopen", onMediaSourceOpen);
                     mediaSourceArg.removeEventListener("webkitsourceopen", onMediaSourceOpen);
@@ -538,7 +537,7 @@ MediaPlayer.dependencies.Stream = function () {
                     return self.mediaSourceExt.setDuration(mediaSource, duration);
                 }
             ).then(
-                function (value) {
+                function (/*value*/) {
                     //self.debug.log("Duration successfully set to: " + value);
                     initialized = true;
                     initialize.resolve(true);
@@ -586,7 +585,7 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         onCanPlay = function () {
-            this.debug.log("<video> canplay event");        
+            this.debug.log("<video> canplay event");
             this.debug.log("[Stream] Got canplay event.");
         },
 
@@ -596,11 +595,11 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         onLoadStart = function () {
-            this.debug.log("<video> loadstart event");            
+            this.debug.log("<video> loadstart event");
         },
 
         onWaiting = function () {
-            this.debug.log("<video> waiting event");            
+            this.debug.log("<video> waiting event");
         },
 
         // ORANGE: see onLoad()
@@ -648,7 +647,7 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         onPlay = function () {
-            this.debug.log("<video> play event");            
+            this.debug.log("<video> play event");
             this.debug.log("[Stream] Got play event.");
             
             //if a pause command was detected just before this onPlay event, startBuffering again
@@ -675,7 +674,7 @@ MediaPlayer.dependencies.Stream = function () {
         
         // ORANGE : ended event
         onEnded = function() {
-            this.debug.log("<video> ended event");            
+            this.debug.log("<video> ended event");
             //add stopped state metric with reason = 1 : end of stream
             this.metricsModel.addState("video", "stopped", this.videoModel.getCurrentTime(), 1);
         },
@@ -740,21 +739,21 @@ MediaPlayer.dependencies.Stream = function () {
             this.videoModel.unlisten("seeked", seekedListener);
         },
 
-        onProgress = function () {            
+        onProgress = function () {
             this.debug.log("<video> progress event");
         },
 
         onTimeupdate = function () {
-            this.debug.log("<video> timeupdate event");            
+            this.debug.log("<video> timeupdate event");
             updateBuffer.call(this);
         },
 
         onDurationchange = function () {
-            this.debug.log("<video> durationchange event");            
+            this.debug.log("<video> durationchange event");
         },
 
         onRatechange = function() {
-            this.debug.log("<video> ratechange event");            
+            this.debug.log("<video> ratechange event");
             if (videoController) {
                 videoController.updateStalledState();
             }
@@ -764,8 +763,6 @@ MediaPlayer.dependencies.Stream = function () {
             if (textController) {
                 textController.updateStalledState();
             }
-
-
         },
 
         updateBuffer = function() {
@@ -829,7 +826,7 @@ MediaPlayer.dependencies.Stream = function () {
             clearInterval(checkStartTimeIntervalId);
         },
 
-        updateCurrentTime = function() {
+        /*updateCurrentTime = function() {
             if (this.videoModel.isPaused()) return;
 
             var currentTime = this.videoModel.getCurrentTime(),
@@ -838,13 +835,13 @@ MediaPlayer.dependencies.Stream = function () {
                 timeChanged = (!isNaN(actualTime) && actualTime !== currentTime);
 
             // ORANGE: unuseful?? and generate some bug since we cannot get availability window of current representation (@see TimelineConverter)
-            /*if (timeChanged) {
-                this.videoModel.setCurrentTime(actualTime);
-                startBuffering(actualTime);
-            } else {*/
-               // startBuffering();
-            //}
-        },
+            // if (timeChanged) {
+            //     this.videoModel.setCurrentTime(actualTime);
+            //     startBuffering(actualTime);
+            // } else {
+            //    startBuffering();
+            // }
+        },*/
 
         doLoad = function (manifestResult) {
 
@@ -896,7 +893,6 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         bufferingCompleted = function() {
-            var self = this;
 
             // if there is at least one buffer controller that has not completed buffering yet do nothing
             if ((videoController && !videoController.isBufferingCompleted()) || (audioController && !audioController.isBufferingCompleted())) {
@@ -1167,7 +1163,6 @@ MediaPlayer.dependencies.Stream = function () {
         // ORANGE: add the capability to set subtitle track
         setSubtitleTrack:function(subtitleTrack){
             var deferredSubtitleUpdate = Q.defer(),
-                currentTime = this.videoModel.getCurrentTime(),
                 manifest = this.manifestModel.getValue(),
                 url,
                 self = this;

@@ -74,7 +74,6 @@ Hls.dependencies.HlsFragmentController = function () {
                 catArray.set(result, InitSegmentData.length);
                 result = catArray;
             }
-            //console.saveBinArray(result, "moof_" + rslt.sequenceNumber + ".mp4");
 
             rslt.sequenceNumber++;
         }

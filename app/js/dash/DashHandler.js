@@ -1054,7 +1054,7 @@ Dash.dependencies.DashHandler = function () {
             self.debug.log("[DashHandler]["+type+"] Getting the next request => sn = " + sn);
 
             getSegments.call(self, representation).then(
-                function (segments) {
+                function (/*segments*/) {
                     isMediaFinished.call(self, representation).then(
                         function (finished) {
                             //self.debug.log("Stream finished? " + finished);

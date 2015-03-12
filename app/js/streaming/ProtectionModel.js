@@ -99,7 +99,7 @@ MediaPlayer.models.ProtectionModel = function () {
         },
 
         updateFromMessage: function (kid, msg, laURL) {
-            var manifest = this.manifestModel.getValue();
+            //var manifest = this.manifestModel.getValue();
             // ORANGE: add licenser custom data
             return keySystems[kid].keySystem.getUpdate(msg, laURL, /*manifest.customData,*/ this.debug);
         },

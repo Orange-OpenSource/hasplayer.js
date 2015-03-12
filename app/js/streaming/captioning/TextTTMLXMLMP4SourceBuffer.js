@@ -19,7 +19,6 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function () {
 
     var video,
         mimeType,
-        timescale,
         currentLang,
         currentId,
 
@@ -45,7 +44,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function () {
                     start: start,
                     end: end
                 });
-                this.length=this.length+1;            
+                this.length=this.length+1;
 
                 // TimeRanges must be normalized
 
