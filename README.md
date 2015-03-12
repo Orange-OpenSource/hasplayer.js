@@ -30,10 +30,8 @@ If your goal is to improve or extend the code and contribute back to this projec
     * npm install
 3. Run build task
     * grunt build
-4. You can also target someo other individual tasks:
-    * grunt uglify
-    * grunt jsdoc
-    * grunt jshint
+4. You can also check for other available targter by running:
+    * grunt help
 
 ## Demo
 
