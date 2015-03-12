@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 12.3.2015_15:39:3 / git revision : 5191c24 */
+/* Last build : 12.3.2015_16:26:12 / git revision : 50a0592 */
 (function(definition) {
     Q = definition();
 })(function() {
@@ -5930,7 +5930,7 @@ mpegts.h264.NALUTYPE_AU_DELIMITER = 9;
 
 MediaPlayer = function(aContext) {
     "use strict";
-    var VERSION = "1.2.0", VERSION_HAS = "1.2.0_dev", GIT_TAG = "5191c24TOREPLACE", BUILD_DATE = "12.3.2015_15:39:3TOREPLACE", context = aContext, system, element, source, sourceParams, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, isReady = function() {
+    var VERSION = "1.2.0", VERSION_HAS = "1.2.0_dev", GIT_TAG = "50a0592", BUILD_DATE = "12.3.2015_16:26:12", context = aContext, system, element, source, sourceParams, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, isReady = function() {
         return !!element && !!source;
     }, play = function() {
         if (!initialized) {
@@ -6039,16 +6039,14 @@ MediaPlayer = function(aContext) {
             return VERSION_HAS;
         },
         getVersionFull: function() {
-            var revision = "5191c24", tag = "TOREPLACE";
-            if (GIT_TAG !== revision + tag) {
+            if (GIT_TAG.indexOf("@@") === -1) {
                 return VERSION_HAS + "_" + GIT_TAG;
             } else {
                 return VERSION_HAS;
             }
         },
         getBuildDate: function() {
-            var build = "12.3.2015_15:39:3", date = "TOREPLACE";
-            if (BUILD_DATE !== build + date) {
+            if (BUILD_DATE.indexOf("@@") === -1) {
                 return BUILD_DATE;
             } else {
                 return "Not a builded version";
