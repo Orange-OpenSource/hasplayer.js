@@ -248,8 +248,6 @@ Mss.dependencies.MssFragmentController = function () {
 
             var new_data = mp4lib.serialize(fragment);
 
-            //console.saveBinArray(new_data, adaptation.type+"_evolution.mp4");
-
             return new_data;
         };
     
@@ -296,10 +294,6 @@ Mss.dependencies.MssFragmentController = function () {
 
             result = mp4lib.serialize(init_segment);
         }
-
-        //if (request !== undefined) {
-        //    console.saveBinArray(result, request.streamType + "_" + request.index + "_" + request.quality + ".mp4");
-        //}
 
         return Q.when(result);
     };

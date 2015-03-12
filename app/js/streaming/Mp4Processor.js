@@ -712,7 +712,7 @@ MediaPlayer.dependencies.Mp4Processor = function () {
 
         createMovieExtendsBox = function (tracks) {
             var mvex,
-                mehd,
+                //mehd,
                 trex,
                 track = tracks[tracks.length - 1],
                 i;
