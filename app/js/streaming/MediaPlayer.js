@@ -43,8 +43,8 @@ MediaPlayer = function (aContext) {
  */
     var VERSION = "1.2.0",
         VERSION_HAS = "1.2.0_dev",
-        GIT_TAG = "@@REVISIONTOREPLACE",
-        BUILD_DATE = "@@TIMESTAMPTOREPLACE",
+        GIT_TAG = "@@REVISION",
+        BUILD_DATE = "@@TIMESTAMP",
         context = aContext,
         system,
         element,
@@ -228,9 +228,7 @@ MediaPlayer = function (aContext) {
 
         // ORANGE: get the full version (with git tag, only at build)
         getVersionFull: function () {
-            var revision = "@@REVISION",
-                tag = "TOREPLACE";
-            if(GIT_TAG !== (revision+tag)) {
+            if (GIT_TAG.indexOf("@@") === -1) {
                 return VERSION_HAS + '_' + GIT_TAG;
             } else {
                 return VERSION_HAS;
@@ -238,9 +236,7 @@ MediaPlayer = function (aContext) {
         },
 
         getBuildDate: function() {
-            var build = "@@TIMESTAMP",
-                date = "TOREPLACE";
-            if(BUILD_DATE !== (build+date)) {
+            if (BUILD_DATE.indexOf("@@") === -1) {
                 return BUILD_DATE;
             } else {
                 return 'Not a builded version';
