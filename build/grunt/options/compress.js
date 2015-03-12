@@ -1,9 +1,10 @@
 module.exports = {
-	main: {
-		options: {
-			mode: 'zip',
-			archive: '<%= path %>/hasplayer.js.zip'
-		},
+
+    main: {
+        options: {
+            mode: 'zip',
+            archive: '<%= path %>/hasplayer.js.zip'
+        },
         files: [
             {
                 expand: true,
@@ -12,5 +13,6 @@ module.exports = {
                 dest: '/',
             }
         ]
-	}
+    }
+    
 };
