@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 12.3.2015_16:26:12 / git revision : 50a0592 */
+/* Last build : 17.3.2015_21:44:17 / git revision : a09bd78 */
 (function(definition) {
     Q = definition();
 })(function() {
@@ -5930,7 +5930,7 @@ mpegts.h264.NALUTYPE_AU_DELIMITER = 9;
 
 MediaPlayer = function(aContext) {
     "use strict";
-    var VERSION = "1.2.0", VERSION_HAS = "1.2.0_dev", GIT_TAG = "50a0592", BUILD_DATE = "12.3.2015_16:26:12", context = aContext, system, element, source, sourceParams, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, isReady = function() {
+    var VERSION = "1.2.0", VERSION_HAS = "1.2.0_dev", GIT_TAG = "a09bd78", BUILD_DATE = "17.3.2015_21:44:17", context = aContext, system, element, source, sourceParams, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, isReady = function() {
         return !!element && !!source;
     }, play = function() {
         if (!initialized) {
@@ -8986,7 +8986,6 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.listen("canplay", canplayListener);
             this.videoModel.listen("playing", playingListener);
             this.videoModel.listen("loadstart", loadstartListener);
-            this.videoModel.listen("waiting", waitingListener);
             this.videoModel.listen("webkitfullscreenchange", fullScreenListener);
             this.videoModel.listen("fullscreenchange", fullScreenListener);
             this.videoModel.listenOnParent("fullscreenchange", fullScreenListener);
@@ -9078,7 +9077,6 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.unlisten("canplay", canplayListener);
             this.videoModel.unlisten("playing", playingListener);
             this.videoModel.unlisten("loadstart", loadstartListener);
-            this.videoModel.unlisten("waitng", waitingListener);
             this.videoModel.unlisten("webkitfullscreenchange", fullScreenListener);
             this.videoModel.unlisten("fullscreenchange", fullScreenListener);
             this.videoModel.unlistenOnParent("fullscreenchange", fullScreenListener);
@@ -16105,7 +16103,6 @@ Custom.dependencies.CustomBufferController = function() {
             doStop.call(self);
         }
         this.debug.log("[BufferController][" + type + "] ### Reset quality: " + initialQuality);
-        this.abrController.setAutoSwitchBitrate(false);
         this.abrController.setPlaybackQuality(type, initialQuality);
         playListMetrics = this.metricsModel.addPlayList(type, currentTime, seekTarget, MediaPlayer.vo.metrics.PlayList.SEEK_START_REASON);
         seeking = true;
@@ -16401,7 +16398,6 @@ Custom.dependencies.CustomBufferController = function() {
         var range = self.sourceBufferExt.getBufferRange(buffer, time);
         var segmentTime = range ? range.end : time;
         if (seeking === true) {
-            self.abrController.setAutoSwitchBitrate(true);
             seeking = false;
         }
         if (currentSequenceNumber !== -1) {
