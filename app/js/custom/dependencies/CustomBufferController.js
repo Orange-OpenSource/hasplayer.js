@@ -167,9 +167,8 @@ Custom.dependencies.CustomBufferController = function () {
                 doStop.call(self);
             }
 
-            // Reset ABR controller
+            // Reset ABR controller's quality to speed up seeking time
             this.debug.log("[BufferController]["+type+"] ### Reset quality: " + initialQuality);
-            this.abrController.setAutoSwitchBitrate(false);
             this.abrController.setPlaybackQuality(type, initialQuality);
 
             // Restart
@@ -711,8 +710,6 @@ Custom.dependencies.CustomBufferController = function () {
 
             // Reset seeking state
             if (seeking === true) {
-                // Re-activate ABR in case it would have been disabled at seek
-                self.abrController.setAutoSwitchBitrate(true);
                 seeking = false;
             }
 

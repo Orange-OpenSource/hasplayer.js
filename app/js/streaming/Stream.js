@@ -1110,7 +1110,7 @@ MediaPlayer.dependencies.Stream = function () {
             this.videoModel.listen("canplay", canplayListener);
             this.videoModel.listen("playing", playingListener);
             this.videoModel.listen("loadstart", loadstartListener);
-            this.videoModel.listen("waiting", waitingListener);
+            //this.videoModel.listen("waiting", waitingListener);
 
             // ORANGE : add FullScreen Event listener
             this.videoModel.listen("webkitfullscreenchange", fullScreenListener);
@@ -1252,7 +1252,7 @@ MediaPlayer.dependencies.Stream = function () {
             this.videoModel.unlisten("canplay", canplayListener);
             this.videoModel.unlisten("playing", playingListener);
             this.videoModel.unlisten("loadstart", loadstartListener);
-            this.videoModel.unlisten("waitng", waitingListener);
+            //this.videoModel.unlisten("waiting", waitingListener);
 
             this.videoModel.unlisten("webkitfullscreenchange", fullScreenListener);
             this.videoModel.unlisten("fullscreenchange", fullScreenListener);
