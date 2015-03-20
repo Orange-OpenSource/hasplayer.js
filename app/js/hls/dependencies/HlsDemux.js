@@ -162,10 +162,6 @@ Hls.dependencies.HlsDemux = function () {
                 // Store payload of PES packet as a subsample
                 sampleData = pesPacket.getPayload();
 
-                if (track.streamType.search('ADTS') !== -1) {
-                    sampleData = sampleData.subarray(7); // 7 = ADTS header size
-                }
-
                 sample.subSamples.push(sampleData);
                 track.samples.push(sample);
             }
@@ -223,6 +219,63 @@ Hls.dependencies.HlsDemux = function () {
             if (track.streamType.search('H.264') !== -1) {
                 mpegts.h264.bytestreamToMp4(track.data);
             }
+
+            // In case of AAC-ADTS stream, demultiplex ADTS frames into AAC frames
+            if (track.streamType.search('ADTS') !== -1) {
+                demuxADTS(track);
+            }
+
+        },
+
+        demuxADTS = function (track) {
+            var aacFrames,
+                aacSamples = [],
+                length,
+                offset,
+                data,
+                sample,
+                cts,
+                duration,
+                i;
+
+            // Parse AAC-ADTS access units and get AAC frames description
+            aacFrames = mpegts.aac.parseADTS(track.data);
+
+            // And determine total length of AAC frames
+            length = 0;
+            for (i = 0; i < aacFrames.length; i++) {
+                length += aacFrames[i].length;
+            }
+
+            // Allocate new data section that will contains all AAC frames
+            data = new Uint8Array(length);
+
+            // Store first sample info
+            cts = track.samples[0].cts;
+
+            // Determine sample duration
+            duration = track.timescale * 1024.0 / track.samplingRate;
+
+            // Copy AAC frames data and create AAC samples
+            offset = 0;
+            for (i = 0; i < aacFrames.length; i++) {
+                // Create sample
+                sample = new MediaPlayer.vo.Mp4Track.Sample();
+                sample.cts = sample.dts = cts;
+                sample.size = aacFrames[i].length;
+                sample.duration = duration;
+                aacSamples.push(sample);
+
+                // Copy AAC frame data
+                data.set(track.data.subarray(aacFrames[i].offset, aacFrames[i].offset + aacFrames[i].length), offset);
+                offset += aacFrames[i].length;
+            }
+
+            // Replace track data
+            track.data = data;
+
+            // Replace track's AAC-ADTS samples by demultiplexed AAC samples
+            track.samples = aacSamples;
         },
 
         arrayToHexString = function(array) {
@@ -290,12 +343,13 @@ Hls.dependencies.HlsDemux = function () {
             if (track.streamType.search('AAC') !== -1) {
                 var codecPrivateData = mpegts.aac.getAudioSpecificConfig(pesPacket.getPayload());
                 var objectType = (codecPrivateData[0] & 0xF8) >> 3;
-                track.channels = (codecPrivateData[1] & 0x78) >> 3;
-                track.bandwidth = mpegts.aac.SAMPLING_FREQUENCY[(codecPrivateData[0] & 0x07) << 1 | (codecPrivateData[1] & 0x80) >> 7];
-                //samplingRate not useful to decode audio data on chrome and IE
-                //track.samplingRate = 24000;              
                 track.codecPrivateData = arrayToHexString(codecPrivateData);
                 track.codecs = "mp4a.40." + objectType;
+
+                var samplingFrequencyIndex = (codecPrivateData[0] & 0x07) << 1 | (codecPrivateData[1] & 0x80) >> 7;
+                track.samplingRate = mpegts.aac.SAMPLING_FREQUENCY[samplingFrequencyIndex];
+                track.channels = (codecPrivateData[1] & 0x78) >> 3;
+                track.bandwidth = 0;
                 /* code for HE AAC v2 to be tested
                 var arr16 = new Uint16Array(2);
                 arr16[0] = (codecPrivateData[0] << 8) + codecPrivateData[1];
