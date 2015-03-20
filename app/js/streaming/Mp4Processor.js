@@ -532,10 +532,10 @@ MediaPlayer.dependencies.Mp4Processor = function () {
             decoderConfigDescriptor[4] = 0xFF;      // bit(24), buffersizeDB=undefined
             decoderConfigDescriptor[5] = 0xFF;      // ''
             decoderConfigDescriptor[6] = 0xFF;      // ''
-            decoderConfigDescriptor[7] = 0xFF;      // bit(32), maxBitrate=undefined
-            decoderConfigDescriptor[8] = 0xFF;      // ''
-            decoderConfigDescriptor[9] = 0xFF;      // ''
-            decoderConfigDescriptor[10] = 0xFF;     // ''
+            decoderConfigDescriptor[7] = (track.bandwidth & 0xFF000000) >> 24;  // bit(32), maxBitrate=undefined
+            decoderConfigDescriptor[8] = (track.bandwidth & 0x00FF0000) >> 16;  // ''
+            decoderConfigDescriptor[9] = (track.bandwidth & 0x0000FF00) >> 8;   // ''
+            decoderConfigDescriptor[10] = (track.bandwidth & 0x000000FF);       // ''
             decoderConfigDescriptor[11] = (track.bandwidth & 0xFF000000) >> 24; // bit(32), avgbitrate
             decoderConfigDescriptor[12] |= (track.bandwidth & 0x00FF0000) >> 16;// '' 
             decoderConfigDescriptor[13] |= (track.bandwidth & 0x0000FF00) >> 8; // ''
@@ -545,13 +545,13 @@ MediaPlayer.dependencies.Mp4Processor = function () {
             // ES_Descriptor
             // defined in ISO/IEC 14496-1 (Systems), extends a BaseDescriptor
             esdLength = 3 + decoderConfigDescriptor.length;
-            esDescriptor = new Uint8Array(2 + esdLength); // 2 = tag + size bytes
-            esDescriptor[0] = 0x03;                 // bit(8), tag=0x03 (ES_DescrTag)
-            esDescriptor[1] = esdLength;            // bit(8), size
+            esDescriptor = new Uint8Array(2 + esdLength);       // 2 = tag + size bytes
+            esDescriptor[0] = 0x03;                             // bit(8), tag=0x03 (ES_DescrTag)
+            esDescriptor[1] = esdLength;                        // bit(8), size
             esDescriptor[2] = (track.trackId & 0xFF00) >> 8;    // bit(16), ES_ID=track_id
             esDescriptor[3] = (track.trackId & 0x00FF);         // ''
-            esDescriptor[4] = 0;                    // bit(8), flags and streamPriority
-            esDescriptor.set(decoderConfigDescriptor, 5); // decoderConfigDescriptor bytes
+            esDescriptor[4] = 0;                                // bit(8), flags and streamPriority
+            esDescriptor.set(decoderConfigDescriptor, 5);       // decoderConfigDescriptor bytes
 
             return esDescriptor;
         },
