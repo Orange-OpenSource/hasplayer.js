@@ -51,40 +51,41 @@ Custom.dependencies.CustomAbrController = function () {
         self.debug.log("[AbrController]["+type+"] Quality   boundaries: [" + qualityMin + "," + qualityMax + "]");
         self.debug.log("[AbrController]["+type+"] Bandwidth boundaries: [" + bandwidthMin + "," + bandwidthMax + "]");
 
-        // Get bandwidth boundaries and override quality boundaries
-        if ((bandwidthMin !== -1) || (bandwidthMax !== -1)) {
             // Get min quality corresponding to min bandwidth
             self.manifestExt.getRepresentationCount(data).then(
                 function (count) {
-                    for (i = 0; i < count; i += 1) {
-                        funcs.push(rslt.getRepresentationBandwidth.call(self, data, i));
-                    }
-                    Q.all(funcs).then(
-                        function (bandwidths) {
-                            if (bandwidthMin !== -1) {
-                                for (i = 0; i < count; i += 1) {
-                                    if (bandwidths[i] >= bandwidthMin) {
-                                        qualityMin = (qualityMin === -1) ? i : Math.max(i, qualityMin);
-                                        break;
-                                    }
-                                }
-                            }
-                            if (bandwidthMax !== -1) {
-                                for (i = (count - 1); i >= 0; i -= 1) {
-                                    if (bandwidths[i] <= bandwidthMax) {
-                                        qualityMax = (qualityMax === -1) ? i : Math.min(i, qualityMax);
-                                        break;
-                                    }
-                                }
-                            }
-                            deferred.resolve({min: qualityMin, max: qualityMax});
+                    // Get bandwidth boundaries and override quality boundaries
+                    if ((bandwidthMin !== -1) || (bandwidthMax !== -1)) {
+                        for (i = 0; i < count; i += 1) {
+                            funcs.push(rslt.getRepresentationBandwidth.call(self, data, i));
                         }
-                    );
+                        Q.all(funcs).then(
+                            function (bandwidths) {
+                                if (bandwidthMin !== -1) {
+                                    for (i = 0; i < count; i += 1) {
+                                        if (bandwidths[i] >= bandwidthMin) {
+                                            qualityMin = (qualityMin === -1) ? i : Math.max(i, qualityMin);
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (bandwidthMax !== -1) {
+                                    for (i = (count - 1); i >= 0; i -= 1) {
+                                        if (bandwidths[i] <= bandwidthMax) {
+                                            qualityMax = (qualityMax === -1) ? i : Math.min(i, qualityMax);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        );
+                    }
+                    
+                    qualityMin = (qualityMin >= count) ? (count - 1) : qualityMin;
+                    qualityMax = (qualityMax >= count) ? (count - 1) : qualityMax;
+                    deferred.resolve({min: qualityMin, max: qualityMax});
                 }
             );
-        } else {
-            deferred.resolve({min: qualityMin, max: qualityMax});
-        }
 
         return deferred.promise;
     };
