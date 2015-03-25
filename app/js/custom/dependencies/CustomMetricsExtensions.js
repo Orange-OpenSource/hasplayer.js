@@ -214,6 +214,8 @@
             for (adaptationSetArrayIndex = 0; adaptationSetArrayIndex < adaptationSetArray.length; adaptationSetArrayIndex = adaptationSetArrayIndex + 1) {
                 adaptationSet = adaptationSetArray[adaptationSetArrayIndex];
                 if (adaptationIsType.call(self, adaptationSet, type)) {
+                    //order adaptation in bitrate ascending value
+                    adaptationSet = self.manifestExt.processAdaptation(adaptationSet);
                     representationArray = adaptationSet.Representation_asArray;
                     for (representationArrayIndex = 0; representationArrayIndex < representationArray.length; representationArrayIndex = representationArrayIndex + 1) {
                         representation = representationArray[representationArrayIndex];
