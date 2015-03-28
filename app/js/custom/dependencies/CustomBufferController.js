@@ -629,22 +629,68 @@ Custom.dependencies.CustomBufferController = function () {
         },
 
         onBytesError = function (e) {
-
-            //if it's the first download error, try to load the same segment for a the lowest quality...
-            if(this.ChunkMissingState === false)
-            {
-                if (e.quality !== 0) {
-                    currentRepresentation = getRepresentationForQuality.call(this, 0);
-                    if (currentRepresentation !== undefined || currentRepresentation !== null) {
-                        loadNextFragment.call(this);
-                    }
-                }
-            }
+            var self = this,
+                params = {},
+                newQuality;
 
             this.debug.log(type + ": Failed to load a request at startTime = "+e.startTime);
             this.stallTime = e.startTime;
             this.ChunkMissingState = true;
             this.errHandler.downloadError("chunk", e.url, e);
+
+            // try to decrease quality level as current quality is obviously not available
+            newQuality = e.quality - 1;
+
+            if (newQuality < 0) {
+                newQuality = 0;
+            }
+
+            this.abrController.setPlaybackQuality(type, newQuality);
+
+            // Get corresponding representation
+            currentRepresentation = getRepresentationForQuality.call(self, newQuality);
+
+            this.debug.log("[BufferController]["+type+"] Quality changed: " + newQuality);
+            currentQuality = newQuality;
+
+            // Reset segment list
+            currentRepresentation.segments = null;
+
+            clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.REPRESENTATION_SWITCH_STOP_REASON);
+            self.metricsModel.addRepresentationSwitch(type, new Date(), self.videoModel.getCurrentTime(), currentRepresentation.id);
+
+            // Load initialization segment request
+            loadInitialization.call(self).then(
+                function (request) {
+                    if (request !== null) {
+                        self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null/*signalStreamComplete*/).then(
+                            function() {
+                                sendRequest.call(self);
+                            }
+                        );
+                    }
+                }
+            );
+
+            // Finally restrict ABR controller to not switch to unavailable quality level(s)
+            params[type] = {
+                "ABR.maxQuality": newQuality
+            };
+            this.debug.log("[BufferController]["+type+"] restrict ABR maxQuality to: " + newQuality);
+            this.config.setParams(params);
+
+            // Reset ABR restrictions after a while -> maybe higher quality level is then available again
+            params[type] = {
+                "ABR.maxQuality": -1
+            };
+            if (this.resetABRRestrictionsTimer) {
+                clearTimeout(this.resetABRRestrictionsTimer);
+                this.resetABRRestrictionsTimer = undefined;
+            }
+            this.resetABRRestrictionsTimer = setTimeout(function(){
+                self.debug.log("[BufferController]["+type+"] reset ABR maxQuality");
+                self.config.setParams(params);
+            }, 10000);
         },
 
         signalStreamComplete = function (/*request*/) {
