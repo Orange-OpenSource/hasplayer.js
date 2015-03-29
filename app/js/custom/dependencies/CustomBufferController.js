@@ -640,39 +640,12 @@ Custom.dependencies.CustomBufferController = function () {
 
             // try to decrease quality level as current quality is obviously not available
             newQuality = e.quality - 1;
-
             if (newQuality < 0) {
                 newQuality = 0;
             }
-
             this.abrController.setPlaybackQuality(type, newQuality);
 
-            // Get corresponding representation
-            currentRepresentation = getRepresentationForQuality.call(self, newQuality);
-
-            this.debug.log("[BufferController]["+type+"] Quality changed: " + newQuality);
-            currentQuality = newQuality;
-
-            // Reset segment list
-            currentRepresentation.segments = null;
-
-            clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.REPRESENTATION_SWITCH_STOP_REASON);
-            self.metricsModel.addRepresentationSwitch(type, new Date(), self.videoModel.getCurrentTime(), currentRepresentation.id);
-
-            // Load initialization segment request
-            loadInitialization.call(self).then(
-                function (request) {
-                    if (request !== null) {
-                        self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null/*signalStreamComplete*/).then(
-                            function() {
-                                sendRequest.call(self);
-                            }
-                        );
-                    }
-                }
-            );
-
-            // Finally restrict ABR controller to not switch to unavailable quality level(s)
+            // Additionally restrict ABR controller to not switch to unavailable quality level(s)
             params[type] = {
                 "ABR.maxQuality": newQuality
             };
@@ -691,6 +664,12 @@ Custom.dependencies.CustomBufferController = function () {
                 self.debug.log("[BufferController]["+type+"] reset ABR maxQuality");
                 self.config.setParams(params);
             }, 10000);
+
+            // finally check buffer again with new decreased quality level to fetch fragement of new quality level
+            // Signal end of buffering process
+            signalSegmentBuffered.call(self);
+            // Check buffer level
+            checkIfSufficientBuffer.call(self);
         },
 
         signalStreamComplete = function (/*request*/) {
