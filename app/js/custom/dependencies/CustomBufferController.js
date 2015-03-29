@@ -660,10 +660,13 @@ Custom.dependencies.CustomBufferController = function () {
                 clearTimeout(this.resetABRRestrictionsTimer);
                 this.resetABRRestrictionsTimer = undefined;
             }
+            if (!this.resetABRRestrictionsInterval) {
+                this.resetABRRestrictionsInterval = this.config.getParam("ABR.resetABRRestrictionsInterval", "number", 15000);
+            }
             this.resetABRRestrictionsTimer = setTimeout(function(){
                 self.debug.log("[BufferController]["+type+"] reset ABR maxQuality");
                 self.config.setParams(params);
-            }, 10000);
+            }, self.resetABRRestrictionsInterval);
 
             // finally check buffer again with new decreased quality level to fetch fragement of new quality level
             // Signal end of buffering process
