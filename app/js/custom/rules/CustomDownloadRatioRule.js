@@ -104,7 +104,7 @@ Custom.rules.CustomDownloadRatioRule = function () {
             //self.debug.log("[DownloadRatioRule]["+data.type+"] DL: " + downloadTime + "s, Total: " + totalTime + "s => ratio: " + ratio);
 
             ratio = latencyInBandwidth ? (_mediaDuration / _totalTime) : (_mediaDuration / _downloadTime);
-            self.debug.log("[DownloadRatioRule]["+data.type+"] DL: " + _downloadTime + "s, Total: " + _totalTime + "s => ratio: " + ratio);
+            self.debug.log("[DownloadRatioRule]["+data.type+"] DL: " + _downloadTime + "s, Total: " + _totalTime + "s with mediaduration: "+_mediaDuration+"s => ratio: " + ratio);
             _mediaDuration = _downloadTime = _totalTime = 0;
 
             if (isNaN(ratio)) {
@@ -130,7 +130,7 @@ Custom.rules.CustomDownloadRatioRule = function () {
                                                 break;
                                             }
                                         }
-
+                                        i === -1?i = 0: null;
                                         q = i;
                                         p = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
 
@@ -159,7 +159,7 @@ Custom.rules.CustomDownloadRatioRule = function () {
 
                                         Q.all(funcs).then(
                                             function (results) {
-                                                for (i = results.length; i > current; i -= 1) {
+                                                for (i = results.length-1; i > current; i -= 1) {
                                                     if (ratio > (results[i] * switchUpRatioSafetyFactor)) {
                                                         break;
                                                     }
