@@ -18,6 +18,9 @@ Custom.utils.CustomDebug = function () {
 
     var rslt = Custom.utils.copyMethods(MediaPlayer.utils.Debug);
 
+    var showLogTimestamp = true,
+        startTime = new Date().getTime();
+
     rslt.getLogger = function () {
         var _logger = ('undefined' !== typeof(log4javascript)) ? log4javascript.getLogger() : null;
         if (_logger) {
@@ -33,25 +36,61 @@ Custom.utils.CustomDebug = function () {
         return _logger;
     };
 
+    rslt.toHHMMSSmmm = function (time) {
+        var str,
+            h,
+            m,
+            s,
+            ms = time;
+
+        h = Math.floor(ms / 3600000);
+        ms -= (h * 3600000);
+        m = Math.floor(ms / 60000);
+        ms -= (m * 60000);
+        s = Math.floor(ms / 1000);
+        ms -= (s * 1000);
+
+        if (h < 10) {h = "0"+h;}
+        if (m < 10) {m = "0"+m;}
+        if (s < 10) {s = "0"+s;}
+        if (ms < 10) {ms = "0"+ms;}
+        if (ms < 100) {ms = "0"+ms;}
+
+        str = h+':'+m+':'+s+':'+ms;
+        return str;
+    };
+
     rslt._log = function (level, args) {
         if (this.getLogToBrowserConsole() && (level <= rslt.getLevel())) {
-            var _logger = this.getLogger();
+            var _logger = this.getLogger(),
+                message = "",
+                logTime = null;
+
             if ((_logger === undefined) || (_logger === null)) {
                 _logger = console;
             }
 
+            if (showLogTimestamp) {
+                logTime = new Date().getTime();
+                message += "[" + this.toHHMMSSmmm(logTime - startTime) + "] ";
+            }
+
+            Array.apply(null, args).forEach(function(item) {
+                message += item + " ";
+            });
+
             switch (level) {
                 case this.ERROR:
-                    _logger.error.apply(_logger, args);
+                    _logger.error(message);
                     break;
                 case this.WARN:
-                    _logger.warn.apply(_logger, args);
+                    _logger.warn(message);
                     break;
                 case this.INFO:
-                    _logger.info.apply(_logger, args);
+                    _logger.info(message);
                     break;
                 case this.DEBUG:
-                    _logger.debug.apply(_logger, args);
+                    _logger.debug(message);
                     break;
             }
         }
