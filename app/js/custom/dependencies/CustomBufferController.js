@@ -364,6 +364,8 @@ Custom.dependencies.CustomBufferController = function () {
                                             debugBufferRange.call(self);
                                             deferred.resolve();
                                         }
+
+                                        self.system.notify("bufferUpdated");
                                     },
                                     function(result) {
                                         // ORANGE : add metric
@@ -1076,6 +1078,11 @@ Custom.dependencies.CustomBufferController = function () {
                 manifest = self.manifestModel.getValue();
 
             self.debug.log("[BufferController]["+type+"] Initialize");
+
+            // PATCH for Espial browser which implements SourceBuffer appending/removing synchronoulsy
+            if (navigator.userAgent.indexOf("Espial") !== -1) {
+                appendSync = true;
+            }
 
             isDynamic = self.manifestExt.getIsDynamic(manifest);
             self.setMediaSource(source);
