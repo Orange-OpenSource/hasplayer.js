@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 17.3.2015_21:44:17 / git revision : a09bd78 */
+/* Last build : 1.4.2015_21:45:10 / git revision : edffcd8 */
 (function(definition) {
     Q = definition();
 })(function() {
@@ -1374,12 +1374,11 @@ function ObjectIron(map) {
                 throw new Error(1120);
             }
             key = key || "global";
-            handler = handler || eventName;
             if (this._handlers.hasOwnProperty(eventName) && this._handlers[eventName].hasOwnProperty(key)) {
                 var handlers = this._handlers[eventName][key];
                 for (var i in handlers) {
                     var config = handlers[i];
-                    if (config.handler === handler) {
+                    if (!handler || config.handler === handler) {
                         handlers.splice(i, 1);
                         break;
                     }
@@ -5675,6 +5674,8 @@ mpegts.si.ESDescription.prototype.parse = function(data) {
     this.m_ES_info_length = mpegts.binary.getValueFrom2Bytes(data.subarray(3, 5), 4);
 };
 
+mpegts.aac.SAMPLING_FREQUENCY = [ 96e3, 88200, 64e3, 48e3, 44100, 32e3, 24e3, 22050, 16e3, 12e3, 11025, 8e3, 7350 ];
+
 mpegts.aac.getAudioSpecificConfig = function(data) {
     var profile = mpegts.binary.getValueFromByte(data[2], 0, 2);
     var sampling_frequency_index = mpegts.binary.getValueFromByte(data[2], 2, 4);
@@ -5687,51 +5688,30 @@ mpegts.aac.getAudioSpecificConfig = function(data) {
     return audioSpecificConfig;
 };
 
-mpegts.aac.demuxADTS = function(data) {
-    var i = 0, samples = [];
+mpegts.aac.parseADTS = function(data) {
+    var aacFrames = [], adtsHeader = {}, aacFrame, adtsFrameIndex, i = 0;
     while (i < data.length) {
-        var i_frame = 0, blockLength;
-        var syncword = mpegts.binary.getValueFrom2Bytes(data[i + i_frame], 0, 12);
-        i_frame++;
-        var ID = mpegts.binary.getValueFromByte(data[i + i_frame], 4, 1);
-        var layer = mpegts.binary.getValueFromByte(data[i + i_frame], 5, 2);
-        var protection_absent = mpegts.binary.getBitFromByte(data[i + i_frame], 7);
-        i_frame++;
-        var profile = mpegts.binary.getValueFromByte(data[i + i_frame], 0, 2);
-        var sampling_frequency_index = mpegts.binary.getValueFromByte(data[i + i_frame], 2, 4);
-        var channel_configuration = mpegts.binary.getValueFrom2Bytes(data[i + i_frame], 7, 3);
-        i_frame++;
-        var aac_frame_length = mpegts.binary.getValueFrom3Bytes(data[i + i_frame], 6, 13);
-        i_frame += 3;
-        var num_raw_data_blocks = mpegts.binary.getValueFromByte(data[i + i_frame], 6);
-        i_frame++;
-        if (num_raw_data_blocks === 0) {
-            if (protection_absent === 0) {
+        adtsFrameIndex = i;
+        adtsHeader.syncword = (data[i] << 4) + ((data[i + 1] & 240) >> 4);
+        adtsHeader.protection_absent = data[i + 1] & 1;
+        adtsHeader.sampling_frequency_index = (data[i + 2] & 60) >> 2;
+        adtsHeader.channel_configuration = ((data[i + 2] & 1) << 1) + ((data[i + 3] & 192) >> 6);
+        adtsHeader.aac_frame_length = ((data[i + 3] & 3) << 11) + (data[i + 4] << 3) + ((data[i + 5] & 224) >> 5);
+        adtsHeader.number_of_raw_data_blocks_in_frame = (data[i + 6] & 3) >> 2;
+        i += 7;
+        if (adtsHeader.number_of_raw_data_blocks_in_frame === 0) {
+            if (adtsHeader.protection_absent === 0) {
                 i += 2;
             }
-            blockLength = aac_frame_length - i_frame;
-            samples.push(new Uint8Array(data, i + i_frame, blockLength));
-            i_frame += blockLength;
-        } else {
-            var raw_data_block_position = new Array(num_raw_data_blocks);
-            var j;
-            if (protection_absent === 0) {
-                for (j = 1; j <= num_raw_data_blocks; j++) {
-                    raw_data_block_position[j] = mpegts.binary.getValueFrom2Bytes(data[i + i_frame]);
-                    i_frame += 2;
-                }
-                i_frame += 2;
-            }
-            for (j = 1; j <= num_raw_data_blocks; j++) {
-                blockLength = j === num_raw_data_blocks ? raw_data_block_position[j + 1] - raw_data_block_position[j] : aac_frame_length - raw_data_block_position[j];
-                i_frame += blockLength;
-            }
-        }
-        i += aac_frame_length;
+            aacFrame = {};
+            aacFrame.offset = i;
+            aacFrame.length = adtsHeader.aac_frame_length - (i - adtsFrameIndex);
+            aacFrames.push(aacFrame);
+            i += aacFrame.length;
+        } else {}
     }
+    return aacFrames;
 };
-
-mpegts.aac.SAMPLING_FREQUENCY = [ 96e3, 88200, 64e3, 48e3, 44100, 32e3, 24e3, 22050, 16e3, 12e3, 11025, 8e3, 7350 ];
 
 mpegts.h264.getSequenceHeader = function(data) {
     var pos = -1, length = -1, i = 0, naluType, sequenceHeader = null, width = 0, height = 0;
@@ -5930,7 +5910,7 @@ mpegts.h264.NALUTYPE_AU_DELIMITER = 9;
 
 MediaPlayer = function(aContext) {
     "use strict";
-    var VERSION = "1.2.0", VERSION_HAS = "1.2.0_dev", GIT_TAG = "a09bd78", BUILD_DATE = "17.3.2015_21:44:17", context = aContext, system, element, source, sourceParams, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, isReady = function() {
+    var VERSION = "1.2.0", VERSION_HAS = "1.2.0_dev", GIT_TAG = "edffcd8", BUILD_DATE = "1.4.2015_21:45:10", context = aContext, system, element, source, sourceParams, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, isReady = function() {
         return !!element && !!source;
     }, play = function() {
         if (!initialized) {
@@ -8345,7 +8325,7 @@ MediaPlayer.dependencies.SchedulerModel.prototype = {
 
 MediaPlayer.dependencies.Stream = function() {
     "use strict";
-    var manifest, mediaSource, videoCodec = null, audioCodec = null, contentProtection = null, videoController = null, videoTrackIndex = -1, audioController = null, audioTrackIndex = -1, textController = null, textTrackIndex = -1, autoPlay = true, initialized = false, load, errored = false, kid = null, initData = [], fullScreenListener, endedListener, loadedListener, playListener, pauseListener, errorListener, seekingListener, seekedListener, timeupdateListener, durationchangeListener, progressListener, ratechangeListener, canplayListener, playingListener, loadstartListener, waitingListener, periodInfo = null, isPaused = false, isSeeked = false, needKeyListener, keyMessageListener, keyAddedListener, keyErrorListener, checkStartTimeIntervalId, eventController = null, play = function() {
+    var manifest, mediaSource, videoCodec = null, audioCodec = null, contentProtection = null, videoController = null, videoTrackIndex = -1, audioController = null, audioTrackIndex = -1, textController = null, textTrackIndex = -1, autoPlay = true, initialized = false, load, errored = false, kid = null, initData = [], fullScreenListener, endedListener, loadedListener, playListener, pauseListener, errorListener, seekingListener, seekedListener, timeupdateListener, durationchangeListener, progressListener, ratechangeListener, canplayListener, playingListener, loadstartListener, waitingListener, periodInfo = null, isPaused = false, isSeeked = false, needKeyListener, keyMessageListener, keyAddedListener, keyErrorListener, initialSeekTime, checkStartTimeIntervalId, eventController = null, play = function() {
         this.debug.info("[Stream] Attempting play...");
         if (!initialized) {
             return;
@@ -8644,60 +8624,27 @@ MediaPlayer.dependencies.Stream = function() {
         return initialize.promise;
     }, onLoad = function() {
         var self = this;
-        this.debug.log("<video> loadedmetadata event");
+        this.debug.info("<video> loadedmetadata event");
         this.debug.log("[Stream] Got loadedmetadata event.");
-        var initialSeekTime = this.timelineConverter.calcPresentationStartTime(periodInfo);
+        initialSeekTime = this.timelineConverter.calcPresentationStartTime(periodInfo);
         this.debug.info("[Stream] Starting playback at offset: " + initialSeekTime);
         if (initialSeekTime != this.videoModel.getCurrentTime()) {
-            waitForStartTime.call(this, initialSeekTime, 2).then(function(time) {
-                self.debug.info("[Stream] Starting playback at offset: " + time);
-                self.eventBus.dispatchEvent({
-                    type: "liveStartTimeFound",
-                    data: time
-                });
-                self.system.notify("setCurrentTime");
-                self.videoModel.setCurrentTime(time);
-                load.resolve(null);
-            });
+            this.system.mapHandler("bufferUpdated", undefined, onBufferUpdated.bind(self));
         } else {
             load.resolve(null);
         }
     }, onCanPlay = function() {
-        this.debug.log("<video> canplay event");
+        this.debug.info("<video> canplay event");
         this.debug.log("[Stream] Got canplay event.");
     }, onPlaying = function() {
-        this.debug.log("<video> playing event");
+        this.debug.info("<video> playing event");
         this.debug.log("[Stream] Got playing event.");
     }, onLoadStart = function() {
-        this.debug.log("<video> loadstart event");
+        this.debug.info("<video> loadstart event");
     }, onWaiting = function() {
-        this.debug.log("<video> waiting event");
-    }, waitForStartTime = function(time, tolerance) {
-        var self = this, defer = Q.defer(), CHECK_INTERVAL = 100, videoRange, audioRange, startTime, checkStartTime = function() {
-            self.debug.info("[Stream] Check start time");
-            videoRange = self.sourceBufferExt.getBufferRange(videoController.getBuffer(), time, tolerance);
-            if (videoRange === null) {
-                return;
-            }
-            startTime = videoRange.start + .5;
-            if (audioController) {
-                audioRange = self.sourceBufferExt.getBufferRange(audioController.getBuffer(), time, tolerance);
-                if (audioRange === null) {
-                    return;
-                }
-                self.debug.info("[Stream] Check start time: A[" + audioRange.start + "-" + audioRange.end + "], V[" + videoRange.start + "-" + videoRange.end + "]");
-                if (audioRange.end < startTime) {
-                    return;
-                }
-            }
-            self.debug.info("[Stream] Check start time: OK");
-            clearInterval(checkStartTimeIntervalId);
-            defer.resolve(startTime);
-        };
-        checkStartTimeIntervalId = setInterval(checkStartTime, CHECK_INTERVAL);
-        return defer.promise;
+        this.debug.info("<video> waiting event");
     }, onPlay = function() {
-        this.debug.log("<video> play event");
+        this.debug.info("<video> play event");
         this.debug.log("[Stream] Got play event.");
         if (isPaused && !isSeeked) {
             startBuffering();
@@ -8711,14 +8658,14 @@ MediaPlayer.dependencies.Stream = function() {
         }
         this.metricsModel.addCondition(null, isFullScreen, videoElement.videoWidth, videoElement.videoHeight);
     }, onEnded = function() {
-        this.debug.log("<video> ended event");
+        this.debug.info("<video> ended event");
         this.metricsModel.addState("video", "stopped", this.videoModel.getCurrentTime(), 1);
     }, onPause = function() {
-        this.debug.log("<video> pause event");
+        this.debug.info("<video> pause event");
         isPaused = true;
         suspend.call(this);
     }, onError = function(event) {
-        this.debug.log("<video> error event");
+        this.debug.info("<video> error event");
         var error = event.srcElement.error, code = error.code, msg = "";
         if (code === -1) {
             return;
@@ -8750,23 +8697,23 @@ MediaPlayer.dependencies.Stream = function() {
         this.errHandler.mediaSourceError(msg);
         this.reset();
     }, onSeeking = function() {
-        this.debug.log("<video> seeking event");
         var time = this.videoModel.getCurrentTime();
+        this.debug.info("<video> seeking event: " + time);
         isSeeked = true;
         startBuffering(time);
     }, onSeeked = function() {
-        this.debug.log("<video> seeked event");
+        this.debug.info("<video> seeked event");
         this.videoModel.listen("seeking", seekingListener);
         this.videoModel.unlisten("seeked", seekedListener);
     }, onProgress = function() {
-        this.debug.log("<video> progress event");
+        this.debug.info("<video> progress event");
     }, onTimeupdate = function() {
-        this.debug.log("<video> timeupdate event");
+        this.debug.info("<video> timeupdate event: " + this.videoModel.getCurrentTime());
         updateBuffer.call(this);
     }, onDurationchange = function() {
-        this.debug.log("<video> durationchange event");
+        this.debug.info("<video> durationchange event: " + this.videoModel.getElement().duration);
     }, onRatechange = function() {
-        this.debug.log("<video> ratechange event");
+        this.debug.info("<video> ratechange event: " + this.videoModel.getElement().playbackRate);
         if (videoController) {
             videoController.updateStalledState();
         }
@@ -8826,14 +8773,19 @@ MediaPlayer.dependencies.Stream = function() {
     }, doLoad = function(manifestResult) {
         var self = this;
         manifest = manifestResult;
+        self.debug.log("[Stream] Create MediaSource");
         return self.mediaSourceExt.createMediaSource().then(function(mediaSourceResult) {
+            self.debug.log("[Stream] Setup MediaSource");
             return setUpMediaSource.call(self, mediaSourceResult);
         }).then(function(mediaSourceResult) {
             mediaSource = mediaSourceResult;
+            self.debug.log("[Stream] Initialize MediaSource");
             return initializeMediaSource.call(self);
         }).then(function() {
+            self.debug.log("[Stream] Initialize playback");
             return initializePlayback.call(self);
         }).then(function() {
+            self.debug.log("[Stream] Playback initialized");
             return load.promise;
         }).then(function() {
             self.debug.log("[Stream] element loaded!");
@@ -8869,6 +8821,29 @@ MediaPlayer.dependencies.Stream = function() {
         if (textController) {
             textController.seek(liveEdgeTime);
         }
+    }, onBufferUpdated = function() {
+        var self = this, videoRange, audioRange, startTime;
+        self.debug.info("[Stream] Check start time");
+        videoRange = self.sourceBufferExt.getBufferRange(videoController.getBuffer(), initialSeekTime, 2);
+        if (videoRange === null) {
+            return;
+        }
+        startTime = videoRange.start + .5;
+        if (audioController) {
+            audioRange = self.sourceBufferExt.getBufferRange(audioController.getBuffer(), initialSeekTime, 2);
+            if (audioRange === null) {
+                return;
+            }
+            self.debug.info("[Stream] Check start time: A[" + audioRange.start + "-" + audioRange.end + "], V[" + videoRange.start + "-" + videoRange.end + "]");
+            if (audioRange.end < startTime) {
+                return;
+            }
+        }
+        self.debug.info("[Stream] Check start time: OK");
+        self.system.unmapHandler("bufferUpdated");
+        self.system.notify("setCurrentTime");
+        self.videoModel.setCurrentTime(startTime);
+        load.resolve(null);
     }, updateData = function(updatedPeriodInfo) {
         var self = this, videoData, audioData, textData, deferredVideoData, deferredAudioData, deferredTextData, deferred = Q.defer(), deferredVideoUpdate = Q.defer(), deferredAudioUpdate = Q.defer(), deferredTextUpdate = Q.defer(), deferredEventUpdate = Q.defer();
         manifest = self.manifestModel.getValue();
@@ -11127,10 +11102,10 @@ MediaPlayer.dependencies.Mp4Processor = function() {
         decoderConfigDescriptor[4] = 255;
         decoderConfigDescriptor[5] = 255;
         decoderConfigDescriptor[6] = 255;
-        decoderConfigDescriptor[7] = 255;
-        decoderConfigDescriptor[8] = 255;
-        decoderConfigDescriptor[9] = 255;
-        decoderConfigDescriptor[10] = 255;
+        decoderConfigDescriptor[7] = (track.bandwidth & 4278190080) >> 24;
+        decoderConfigDescriptor[8] = (track.bandwidth & 16711680) >> 16;
+        decoderConfigDescriptor[9] = (track.bandwidth & 65280) >> 8;
+        decoderConfigDescriptor[10] = track.bandwidth & 255;
         decoderConfigDescriptor[11] = (track.bandwidth & 4278190080) >> 24;
         decoderConfigDescriptor[12] |= (track.bandwidth & 16711680) >> 16;
         decoderConfigDescriptor[13] |= (track.bandwidth & 65280) >> 8;
@@ -15218,9 +15193,6 @@ Hls.dependencies.HlsDemux = function() {
             sample.dts += dtsOffset;
             sample.cts += dtsOffset;
             sampleData = pesPacket.getPayload();
-            if (track.streamType.search("ADTS") !== -1) {
-                sampleData = sampleData.subarray(7);
-            }
             sample.subSamples.push(sampleData);
             track.samples.push(sample);
         } else {
@@ -15255,6 +15227,31 @@ Hls.dependencies.HlsDemux = function() {
         if (track.streamType.search("H.264") !== -1) {
             mpegts.h264.bytestreamToMp4(track.data);
         }
+        if (track.streamType.search("ADTS") !== -1) {
+            demuxADTS(track);
+        }
+    }, demuxADTS = function(track) {
+        var aacFrames, aacSamples = [], length, offset, data, sample, cts, duration, i;
+        aacFrames = mpegts.aac.parseADTS(track.data);
+        length = 0;
+        for (i = 0; i < aacFrames.length; i++) {
+            length += aacFrames[i].length;
+        }
+        data = new Uint8Array(length);
+        cts = track.samples[0].cts;
+        duration = track.timescale * 1024 / track.samplingRate;
+        offset = 0;
+        for (i = 0; i < aacFrames.length; i++) {
+            sample = new MediaPlayer.vo.Mp4Track.Sample();
+            sample.cts = sample.dts = cts;
+            sample.size = aacFrames[i].length;
+            sample.duration = duration;
+            aacSamples.push(sample);
+            data.set(track.data.subarray(aacFrames[i].offset, aacFrames[i].offset + aacFrames[i].length), offset);
+            offset += aacFrames[i].length;
+        }
+        track.data = data;
+        track.samples = aacSamples;
     }, arrayToHexString = function(array) {
         var str = "";
         for (var i = 0; i < array.length; i++) {
@@ -15297,10 +15294,12 @@ Hls.dependencies.HlsDemux = function() {
         if (track.streamType.search("AAC") !== -1) {
             var codecPrivateData = mpegts.aac.getAudioSpecificConfig(pesPacket.getPayload());
             var objectType = (codecPrivateData[0] & 248) >> 3;
-            track.channels = (codecPrivateData[1] & 120) >> 3;
-            track.bandwidth = mpegts.aac.SAMPLING_FREQUENCY[(codecPrivateData[0] & 7) << 1 | (codecPrivateData[1] & 128) >> 7];
             track.codecPrivateData = arrayToHexString(codecPrivateData);
             track.codecs = "mp4a.40." + objectType;
+            var samplingFrequencyIndex = (codecPrivateData[0] & 7) << 1 | (codecPrivateData[1] & 128) >> 7;
+            track.samplingRate = mpegts.aac.SAMPLING_FREQUENCY[samplingFrequencyIndex];
+            track.channels = (codecPrivateData[1] & 120) >> 3;
+            track.bandwidth = 0;
         }
         this.debug.log("[HlsDemux][" + track.trackId + "] track codecPrivateData = " + track.codecPrivateData);
         this.debug.log("[HlsDemux][" + track.trackId + "] track codecs = " + track.codecs);
@@ -15968,8 +15967,8 @@ Custom.dependencies.CustomAbrController = function() {
         var self = this, deferred = Q.defer(), qualityMin = self.config.getParamFor(type, "ABR.minQuality", "number", -1), qualityMax = self.config.getParamFor(type, "ABR.maxQuality", "number", -1), bandwidthMin = self.config.getParamFor(type, "ABR.minBandwidth", "number", -1), bandwidthMax = self.config.getParamFor(type, "ABR.maxBandwidth", "number", -1), i, funcs = [];
         self.debug.log("[AbrController][" + type + "] Quality   boundaries: [" + qualityMin + "," + qualityMax + "]");
         self.debug.log("[AbrController][" + type + "] Bandwidth boundaries: [" + bandwidthMin + "," + bandwidthMax + "]");
-        if (bandwidthMin !== -1 || bandwidthMax !== -1) {
-            self.manifestExt.getRepresentationCount(data).then(function(count) {
+        self.manifestExt.getRepresentationCount(data).then(function(count) {
+            if (bandwidthMin !== -1 || bandwidthMax !== -1) {
                 for (i = 0; i < count; i += 1) {
                     funcs.push(rslt.getRepresentationBandwidth.call(self, data, i));
                 }
@@ -15990,18 +15989,15 @@ Custom.dependencies.CustomAbrController = function() {
                             }
                         }
                     }
-                    deferred.resolve({
-                        min: qualityMin,
-                        max: qualityMax
-                    });
                 });
-            });
-        } else {
+            }
+            qualityMin = qualityMin >= count ? count - 1 : qualityMin;
+            qualityMax = qualityMax >= count ? count - 1 : qualityMax;
             deferred.resolve({
                 min: qualityMin,
                 max: qualityMax
             });
-        }
+        });
         return deferred.promise;
     };
     rslt.getPlaybackQuality = function(type, data) {
@@ -16206,6 +16202,7 @@ Custom.dependencies.CustomBufferController = function() {
                         debugBufferRange.call(self);
                         deferred.resolve();
                     }
+                    self.system.notify("bufferUpdated");
                 }, function(result) {
                     self.metricsModel.addError(type, result.err.code, result.err.message, self.videoModel.getCurrentTime());
                     self.debug.log("[BufferController][" + type + "] Buffer failed with quality = " + quality + " index = " + index);
@@ -16591,6 +16588,9 @@ Custom.dependencies.CustomBufferController = function() {
         initialize: function(type, newPeriodInfo, newData, buffer, videoModel, scheduler, fragmentController, source, eventController) {
             var self = this, manifest = self.manifestModel.getValue();
             self.debug.log("[BufferController][" + type + "] Initialize");
+            if (navigator.userAgent.indexOf("Espial") !== -1) {
+                appendSync = true;
+            }
             isDynamic = self.manifestExt.getIsDynamic(manifest);
             self.setMediaSource(source);
             self.setVideoModel(videoModel);
@@ -17213,6 +17213,7 @@ Custom.utils.copyMethods = function(clazz) {
 Custom.utils.CustomDebug = function() {
     "use strict";
     var rslt = Custom.utils.copyMethods(MediaPlayer.utils.Debug);
+    var showLogTimestamp = true, startTime = new Date().getTime();
     rslt.getLogger = function() {
         var _logger = "undefined" !== typeof log4javascript ? log4javascript.getLogger() : null;
         if (_logger) {
@@ -17227,27 +17228,60 @@ Custom.utils.CustomDebug = function() {
         }
         return _logger;
     };
+    rslt.toHHMMSSmmm = function(time) {
+        var str, h, m, s, ms = time;
+        h = Math.floor(ms / 36e5);
+        ms -= h * 36e5;
+        m = Math.floor(ms / 6e4);
+        ms -= m * 6e4;
+        s = Math.floor(ms / 1e3);
+        ms -= s * 1e3;
+        if (h < 10) {
+            h = "0" + h;
+        }
+        if (m < 10) {
+            m = "0" + m;
+        }
+        if (s < 10) {
+            s = "0" + s;
+        }
+        if (ms < 10) {
+            ms = "0" + ms;
+        }
+        if (ms < 100) {
+            ms = "0" + ms;
+        }
+        str = h + ":" + m + ":" + s + ":" + ms;
+        return str;
+    };
     rslt._log = function(level, args) {
         if (this.getLogToBrowserConsole() && level <= rslt.getLevel()) {
-            var _logger = this.getLogger();
+            var _logger = this.getLogger(), message = "", logTime = null;
             if (_logger === undefined || _logger === null) {
                 _logger = console;
             }
+            if (showLogTimestamp) {
+                logTime = new Date().getTime();
+                message += "[" + this.toHHMMSSmmm(logTime - startTime) + "] ";
+            }
+            Array.apply(null, args).forEach(function(item) {
+                message += item + " ";
+            });
             switch (level) {
               case this.ERROR:
-                _logger.error.apply(_logger, args);
+                _logger.error(message);
                 break;
 
               case this.WARN:
-                _logger.warn.apply(_logger, args);
+                _logger.warn(message);
                 break;
 
               case this.INFO:
-                _logger.info.apply(_logger, args);
+                _logger.info(message);
                 break;
 
               case this.DEBUG:
-                _logger.debug.apply(_logger, args);
+                _logger.debug(message);
                 break;
             }
         }
