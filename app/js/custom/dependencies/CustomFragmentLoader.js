@@ -77,14 +77,9 @@
               currentTime,
               currentTime.getTime() - lastTraceTime.getTime(),
               [req.response ? req.response.byteLength : 0]);
-
-            if ((lastTraceTime.getTime() - request.requestStartDate.getTime())/1000 > (httpRequestMetrics.mediaduration*2)) {
-                self.debug.log("[FragmentLoader]["+request.streamType+"] Load onprogress: it's too long!!!!!!");
-            }
-                                
             lastTraceTime = currentTime;
-          
-            //self.debug.log("[FragmentLoader]["+request.streamType+"] Load onprogress: " + request.url);
+
+            self.debug.log("[FragmentLoader]["+request.streamType+"] Load onprogress: " + request.url);
         };
 
         req.onload = function () {
