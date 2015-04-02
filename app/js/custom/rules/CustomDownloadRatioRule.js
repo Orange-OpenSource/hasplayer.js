@@ -72,7 +72,7 @@ Custom.rules.CustomDownloadRatioRule = function () {
 
             totalBytesLength = lastRequest.bytesLength;
 
-            //if we have at least 3 request, take an average of calculated bandwidth
+            //if we have at least 3 requests, take an average of calculated bandwidth
             if (requests.length >= 3) {
                 for (i = requests.length-2; i >= (requests.length-3); i--) {
                     totalBytesLength += requests[i].bytesLength;
