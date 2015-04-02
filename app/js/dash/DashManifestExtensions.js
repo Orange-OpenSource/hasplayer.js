@@ -844,7 +844,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                     eventStream.schemeIdUri = inbandStreams[i].schemeIdUri;
                 } else {
                     throw "Invalid EventStream. SchemeIdUri has to be set";
-    }
+                }
                 if(inbandStreams[i].hasOwnProperty("timescale")) {
                     eventStream.timescale = inbandStreams[i].timescale;
                 }
@@ -884,6 +884,23 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         }
         return eventStreams;
 
+    },
+
+    getRepresentationBandwidth : function (adaptation, index) {
+        var self = this,
+            deferred = Q.defer();
+
+        self.getRepresentationFor(index, adaptation).then(
+            function(rep) {
+                self.getBandwidth(rep).then(
+                    function (bandwidth) {
+                        deferred.resolve(bandwidth);
+                    }
+                );
+            }
+        );
+
+        return deferred.promise;
     }
 
 };

@@ -19,24 +19,7 @@ Custom.dependencies.CustomAbrController = function () {
 
     rslt.manifestExt = undefined;
     rslt.debug = undefined;
-    rslt.config = undefined;
-
-    rslt.getRepresentationBandwidth = function (data, index) {
-        var self = this,
-            deferred = Q.defer();
-
-        self.manifestExt.getRepresentationFor(index, data).then(
-            function(rep) {
-                self.manifestExt.getBandwidth(rep).then(
-                    function (bandwidth) {
-                        deferred.resolve(bandwidth);
-                    }
-                );
-            }
-        );
-
-        return deferred.promise;
-    };
+    rslt.config = undefined; 
 
     rslt.getQualityBoundaries = function (type, data) {
         var self = this,
@@ -57,7 +40,7 @@ Custom.dependencies.CustomAbrController = function () {
                     // Get bandwidth boundaries and override quality boundaries
                     if ((bandwidthMin !== -1) || (bandwidthMax !== -1)) {
                         for (i = 0; i < count; i += 1) {
-                            funcs.push(rslt.getRepresentationBandwidth.call(self, data, i));
+                            funcs.push(rslt.manifestExt.getRepresentationBandwidth( data, i));
                         }
                         Q.all(funcs).then(
                             function (bandwidths) {
