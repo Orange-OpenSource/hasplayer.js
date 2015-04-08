@@ -930,7 +930,7 @@ Custom.dependencies.CustomBufferController = function () {
                                 self.metricsModel.addRepresentationSwitch(type, now, currentVideoTime, currentRepresentation.id);
 
                                 // HLS use case => download playlist for new representation
-                                if ((manifest.name === "M3U") && isDynamic) {
+                                if ((manifest.name === "M3U") && (isDynamic || availableRepresentations[currentQuality].initialization === null)) {
                                     playlistUpdated = Q.defer();
                                     updatePlayListForRepresentation.call(self, currentQuality).then(
                                         function () {
