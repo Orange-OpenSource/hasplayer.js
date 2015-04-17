@@ -161,6 +161,7 @@ MediaPlayer.utils.TTMLParser = function () {
                 endTime,
                 nsttp,
                 nscue,
+                cssStyle,
                 i;
 
             try {
@@ -196,12 +197,45 @@ MediaPlayer.utils.TTMLParser = function () {
                         errorMsg = "TTML document has incorrect timing value";
                         return Q.reject(errorMsg);
                     }
+                    
+                    if (ttml.tt.head.styling) {
+                         for (i = 0; i < ttml.tt.head.styling.style_asArray.length; i++) {
+                            var style = ttml.tt.head.styling.style_asArray[i];
+                            if (style['xml:id'] === cue.style) {
+                                cssStyle = { backgroundColor: style['tts:backgroundColor'],
+                                                 color: style['tts:color'],
+                                                 fontSize: style['tts:fontSize'],
+                                                 fontFamily: style['tts:fontFamily']};
+                                break;
+                            }
+                        }
+                    }
 
-                    captionArray.push({
-                        start: startTime,
-                        end: endTime,
-                        data: cue.__text
-                    });
+                    if (ttml.tt.head.layout) {
+                        for (i = 0; i < ttml.tt.head.layout.region_asArray.length; i++) {
+                            var region = ttml.tt.head.layout.region_asArray[i];
+                            if (region['xml:id'] === cue.region) {
+                                //line and position element have no effect on IE
+                                //For Chrome line = 11 is a workaround to reorder subtitles
+                                var origin_X = region['tts:origin'].split(' ')[0];
+                                captionArray.push({
+                                    start: startTime,
+                                    end: endTime,
+                                    data: cue.__text,
+                                    position: parseInt(origin_X.substr(0, origin_X.length-1)),
+                                    line:18,
+                                    style: cssStyle
+                                });
+                                break;
+                            }
+                        }
+                    }else {
+                        captionArray.push({
+                            start: startTime,
+                            end: endTime,
+                            data: cue.__text
+                        });
+                    }
                 }
 
                 return Q.when(captionArray);
@@ -214,5 +248,6 @@ MediaPlayer.utils.TTMLParser = function () {
 
     return {
         parse: internalParse
+
     };
 };

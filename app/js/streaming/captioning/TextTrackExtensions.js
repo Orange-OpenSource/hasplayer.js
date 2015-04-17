@@ -16,8 +16,17 @@ MediaPlayer.utils.TextTrackExtensions = function () {
     var Cue;
 
     return {
+        eventBus: undefined,
+
         setup: function() {
             Cue = window.VTTCue || window.TextTrackCue;
+        },
+
+        subtitlesStyleChanged : function (style) {
+            this.eventBus.dispatchEvent({
+                type: "subtitlesStyleChanged",
+                data: style
+            });
         },
 
         addTextTrack: function(video, captionData,  label, scrlang, isDefaultTrack) {
@@ -28,8 +37,9 @@ MediaPlayer.utils.TextTrackExtensions = function () {
             //deleteCues will be very efficient in this case
             if (video.textTracks.length === 0) {
             //TODO: Ability to define the KIND in the MPD - ie subtitle vs caption....
-                track = video.addTextTrack("captions", label, scrlang);
+                track = video.addTextTrack("subtitles", label, scrlang);
             }else {
+                //this.deleteCues(video);
                 track = video.textTracks[0];
             }
             // track.default is an object property identifier that is a reserved word
@@ -46,13 +56,40 @@ MediaPlayer.utils.TextTrackExtensions = function () {
             return Q.when(track);
         },
 
+        onCueEnter: function(e){
+            this.subtitlesStyleChanged(e.currentTarget.style);
+        },
+
         // Orange: addCues added so it is possible to add cues during playback,
         //         not only during track initialization
 
         addCues: function(track, captionData) {
+            var firstLine = null;
             for(var item in captionData) {
                 var currentItem = captionData[item];
-                track.addCue(new Cue(currentItem.start, currentItem.end, currentItem.data));
+                var newCue = new Cue(currentItem.start, currentItem.end, currentItem.data);
+
+                newCue.onenter = this.onCueEnter.bind(this);
+
+                if (!firstLine && currentItem.line) {
+                    firstLine = currentItem.line;
+                    newCue.line = firstLine;
+                }
+                else if (firstLine && currentItem.line) {
+                    firstLine ++;
+                    newCue.line = firstLine;
+                }
+
+                if (currentItem.position) {
+                    newCue.position = currentItem.position;
+                    newCue.align = 'start';
+                }
+
+                if (currentItem.style) {
+                    newCue.style = currentItem.style;
+                }
+
+                track.addCue(newCue);
             }
         },
 
@@ -69,9 +106,11 @@ MediaPlayer.utils.TextTrackExtensions = function () {
                             track.removeCue(cues[i]);
                         }
                     }
+                    //noway to delete track, just disable it
+                    //useful when player switchs between a stream with subtitles and an other one without.
+                    track.mode = "disabled";
                 }
             }
-            //track.mode = "disabled";
         }
     };
 };

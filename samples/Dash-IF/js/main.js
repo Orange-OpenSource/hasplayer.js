@@ -347,6 +347,10 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         }
     }
 
+    function onSubtitlesStyleChanged(style) {
+        document.getElementById("cueStyle").innerHTML = '::cue{ background-color:'+style.data.backgroundColor+';color:'+style.data.color+';font-size: '+style.data.fontSize+';font-family: '+style.data.fontFamily+'}';
+    }
+
     function metricChanged(e) {
         var metrics,
         point;
@@ -597,6 +601,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     player.startup();
     player.addEventListener("error", onError.bind(this));
     player.addEventListener("metricChanged", metricChanged.bind(this));
+    player.addEventListener("subtitlesStyleChanged",onSubtitlesStyleChanged.bind(this));
     player.attachView(video);
     player.setAutoPlay(true);
     player.getDebug().setLevel(4);
@@ -805,6 +810,10 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         }
         
         resetBitratesSlider();
+        
+        //ORANGE : reset subtitles data.
+        $scope.textTracks = null;
+        $scope.textData = null;
         
         // ORANGE: add licenser backUrl parameter and customData
         var params = new DRMParams();
