@@ -64,25 +64,19 @@ MediaPlayer.utils.TextTrackExtensions = function () {
         //         not only during track initialization
 
         addCues: function(track, captionData) {
-            var firstLine = null;
+
             for(var item in captionData) {
                 var currentItem = captionData[item];
                 var newCue = new Cue(currentItem.start, currentItem.end, currentItem.data);
 
                 newCue.onenter = this.onCueEnter.bind(this);
 
-                if (!firstLine && currentItem.line) {
-                    firstLine = currentItem.line;
-                    newCue.line = firstLine;
-                }
-                else if (firstLine && currentItem.line) {
-                    firstLine ++;
-                    newCue.line = firstLine;
-                }
+                newCue.snapToLines = false;
 
-                if (currentItem.position) {
-                    newCue.position = currentItem.position;
-                    newCue.align = 'start';
+                if (item > 0 && currentItem.start <= captionData[item-1].end) {
+                    newCue.line = captionData[item-1].line + parseFloat(currentItem.style.fontSize.substr(0, currentItem.style.fontSize.length-1))+3;
+                }else {
+                    newCue.line = currentItem.line;
                 }
 
                 if (currentItem.style) {
@@ -93,7 +87,7 @@ MediaPlayer.utils.TextTrackExtensions = function () {
             }
         },
 
-        deleteCues: function(video) {
+        deleteCues: function(video, disabled) {
             //when multiple tracks are supported - iterate through and delete all cues from all tracks.
             if (video) {
                 var track = video.textTracks[0];
@@ -108,7 +102,9 @@ MediaPlayer.utils.TextTrackExtensions = function () {
                     }
                     //noway to delete track, just disable it
                     //useful when player switchs between a stream with subtitles and an other one without.
-                    track.mode = "disabled";
+                    if (disabled) {
+                        track.mode = "disabled";
+                    }
                 }
             }
         }

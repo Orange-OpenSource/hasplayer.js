@@ -51,6 +51,15 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function () {
                 this.ranges.sort(function(a,b){return a.start-b.start;});
             },
 
+            removeRange: function(start, end) {
+                for (var i = this.ranges.length - 1; i >= 0; i--) {
+                    if(this.ranges[i].start >= start && this.ranges[i].end <= end)
+                        this.ranges.splice(i,1);
+                }
+
+                this.length = this.ranges.length;
+            },
+
             reset: function () {
                 this.length = 0;
                 this.ranges = [];
@@ -91,7 +100,9 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function () {
             if (start < 0 || start >= end) {
                 throw "INVALID_ACCESS_ERR";
             }
-            this.abort();
+            
+            this.getTextTrackExtensions().deleteCues(video, false);
+            this.buffered.removeRange(start, end);
         },
 
         append: function (bytes) {
@@ -183,7 +194,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function () {
         },
 
         abort:function() {
-            this.getTextTrackExtensions().deleteCues(video);
+            this.getTextTrackExtensions().deleteCues(video, true);
         },
 
         getTextTrackExtensions:function() {
