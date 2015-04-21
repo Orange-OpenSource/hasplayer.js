@@ -842,7 +842,7 @@ Custom.dependencies.CustomBufferController = function () {
                 currentTime = getWorkingTime.call(self);
 
             bufferLevel = self.sourceBufferExt.getBufferLength(buffer, currentTime);
-            self.debug.log("[BufferController]["+type+"] Buffer level = " + bufferLevel);
+            self.debug.log("[BufferController]["+type+"] Buffer level = " + bufferLevel + " (time:" + currentTime + ")");
             self.metricsModel.addBufferLevel(type, new Date(), bufferLevel);
         },
 
@@ -1081,6 +1081,7 @@ Custom.dependencies.CustomBufferController = function () {
 
             // PATCH for Espial browser which implements SourceBuffer appending/removing synchronoulsy
             if (navigator.userAgent.indexOf("Espial") !== -1) {
+                self.debug.log("[BufferController]["+type+"] Espial browser = sync append");
                 appendSync = true;
             }
 
