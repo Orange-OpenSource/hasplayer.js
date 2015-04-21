@@ -116,7 +116,7 @@ Custom.dependencies.CustomBufferController = function () {
 
             this.debug.info("[BufferController]["+type+"] startPlayback");
 
-            // Set media type to stalled state
+            // Set video to stalled state
             setStalled.call(this, true);
 
             // Start buffering process
@@ -166,6 +166,10 @@ Custom.dependencies.CustomBufferController = function () {
             if (started === true) {
                 doStop.call(self);
             }
+
+            // Reset ABR controller's quality to speed up seeking time
+            this.debug.log("[BufferController]["+type+"] ### Reset quality: " + initialQuality);
+            this.abrController.setPlaybackQuality(type, initialQuality);
 
             // Restart
             playListMetrics = this.metricsModel.addPlayList(type, currentTime, seekTarget, MediaPlayer.vo.metrics.PlayList.SEEK_START_REASON);
@@ -324,7 +328,6 @@ Custom.dependencies.CustomBufferController = function () {
             }
             
             if (!hasData()) return;
-
             hasEnoughSpaceToAppend.call(self).then(
                 function() {
                     Q.when(deferredBuffersFlatten ? deferredBuffersFlatten.promise : true).then(
@@ -621,8 +624,6 @@ Custom.dependencies.CustomBufferController = function () {
                     // the executed requests for which playback time is inside the time interval that has been removed from the buffer
                     self.fragmentController.removeExecutedRequestsBeforeTime(fragmentModel, removeEnd);
                     deferred.resolve(removeEnd - removeStart);
-                }, function () {
-                    self.errHandler.mediaSourceError("impossible to remove data from SourceBuffer");
                 }
             );
 
@@ -688,8 +689,6 @@ Custom.dependencies.CustomBufferController = function () {
                 this.indexHandler.getInitRequest(availableRepresentations[currentQuality]).then(
                     function (request) {
                         deferred.resolve(request);
-                    }, function(e){
-                        deferred.reject(e);
                     }
                 );
             }
@@ -801,9 +800,8 @@ Custom.dependencies.CustomBufferController = function () {
         getWorkingTime = function () {
             var time = -1;
 
-            time = this.videoModel.getCurrentTime();
-
-            this.debug.log("Working time is video time: " + time);
+                time = this.videoModel.getCurrentTime();
+                //this.debug.log("Working time is video time: " + time);
 
             return time;
         },
@@ -956,9 +954,6 @@ Custom.dependencies.CustomBufferController = function () {
                                                         }
                                                     );
                                                 }
-                                            }, function(e) {
-                                                self.debug.error("[BufferController]["+type+"] Problem during init segment generation \"" + e.message+"\"");
-                                                self.errHandler.manifestError(e,"codec",self.manifestModel.getValue());
                                             }
                                         );
                                     } else {
