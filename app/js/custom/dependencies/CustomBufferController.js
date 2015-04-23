@@ -1031,7 +1031,10 @@ Custom.dependencies.CustomBufferController = function () {
                 deferredInitAppend.resolve();
             }
             deferredInitAppend = Q.defer();*/
-            initializationData = [];
+
+            // PATCH: for DASH with manifest refresh, do not delete initialization segments
+            // ??: problem in case of audio switch with different init data
+            //initializationData = [];
 
             // Update representations
             updateRepresentations.call(self, data, periodInfo).then(
