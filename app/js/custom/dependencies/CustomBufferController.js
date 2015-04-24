@@ -167,10 +167,6 @@ Custom.dependencies.CustomBufferController = function () {
                 doStop.call(self);
             }
 
-            // Reset ABR controller's quality to speed up seeking time
-            this.debug.log("[BufferController]["+type+"] ### Reset quality: " + initialQuality);
-            this.abrController.setPlaybackQuality(type, initialQuality);
-
             // Restart
             playListMetrics = this.metricsModel.addPlayList(type, currentTime, seekTarget, MediaPlayer.vo.metrics.PlayList.SEEK_START_REASON);
             seeking = true;
@@ -328,6 +324,7 @@ Custom.dependencies.CustomBufferController = function () {
             }
             
             if (!hasData()) return;
+
             hasEnoughSpaceToAppend.call(self).then(
                 function() {
                     Q.when(deferredBuffersFlatten ? deferredBuffersFlatten.promise : true).then(
@@ -1031,10 +1028,7 @@ Custom.dependencies.CustomBufferController = function () {
                 deferredInitAppend.resolve();
             }
             deferredInitAppend = Q.defer();*/
-
-            // PATCH: for DASH with manifest refresh, do not delete initialization segments
-            // ??: problem in case of audio switch with different init data
-            //initializationData = [];
+            initializationData = [];
 
             // Update representations
             updateRepresentations.call(self, data, periodInfo).then(
