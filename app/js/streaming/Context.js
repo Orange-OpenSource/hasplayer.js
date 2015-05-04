@@ -14,6 +14,23 @@
 MediaPlayer.di.Context = function () {
     "use strict";
 
+    var mapProtectionModel = function() {
+        var videoElement = document.createElement("video");
+
+        // Detect EME APIs.  Look for newest API versions first
+        if (MediaPlayer.models.ProtectionModel_21Jan2015.detect(videoElement)) {
+            this.system.mapClass('protectionModel', MediaPlayer.models.ProtectionModel_21Jan2015);
+        } else if (MediaPlayer.models.ProtectionModel_3Feb2014.detect(videoElement)) {
+            this.system.mapClass('protectionModel', MediaPlayer.models.ProtectionModel_3Feb2014);
+        } else if (MediaPlayer.models.ProtectionModel_01b.detect(videoElement)) {
+            this.system.mapClass('protectionModel', MediaPlayer.models.ProtectionModel_01b);
+        } else {
+            var debug = this.system.getObject("debug");
+            debug.log("No supported version of EME detected on this user agent!");
+            debug.log("Attempts to play encrypted content will fail!");
+        }
+    };
+
     return {
         system : undefined,
         setup : function () {
@@ -31,7 +48,11 @@ MediaPlayer.di.Context = function () {
             this.system.mapSingleton('manifestModel', MediaPlayer.models.ManifestModel);
             this.system.mapSingleton('metricsModel', MediaPlayer.models.MetricsModel);
             this.system.mapSingleton('uriQueryFragModel', MediaPlayer.models.URIQueryAndFragmentModel);
-            this.system.mapClass('protectionModel', MediaPlayer.models.ProtectionModel);
+            //this.system.mapClass('protectionModel', MediaPlayer.models.ProtectionModel);
+
+            this.system.mapSingleton('ksPlayReady', MediaPlayer.dependencies.protection.KeySystem_PlayReady);
+            this.system.mapSingleton('ksWidevine', MediaPlayer.dependencies.protection.KeySystem_Widevine);
+            this.system.mapSingleton('ksClearKey', MediaPlayer.dependencies.protection.KeySystem_ClearKey);
 
             this.system.mapSingleton('textSourceBuffer', MediaPlayer.dependencies.TextSourceBuffer);
             this.system.mapSingleton('textTTMLXMLMP4SourceBuffer', MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer);            
@@ -44,6 +65,7 @@ MediaPlayer.di.Context = function () {
             this.system.mapSingleton('videoExt', MediaPlayer.dependencies.VideoModelExtensions);
             this.system.mapClass('protectionController', MediaPlayer.dependencies.ProtectionController);
 
+            mapProtectionModel.call(this); // Determines EME API support and version
 
             this.system.mapClass('metrics', MediaPlayer.models.MetricsList);
             this.system.mapClass('downloadRatioRule', MediaPlayer.rules.DownloadRatioRule);
@@ -64,6 +86,8 @@ MediaPlayer.di.Context = function () {
             this.system.mapClass('requestScheduler', MediaPlayer.dependencies.RequestScheduler);
             this.system.mapSingleton('schedulerExt', MediaPlayer.dependencies.SchedulerExtensions);
             this.system.mapClass('schedulerModel', MediaPlayer.dependencies.SchedulerModel);
+
+            this.system.mapSingleton('notifier', MediaPlayer.dependencies.Notifier);
         }
     };
 };

@@ -291,7 +291,7 @@ Mss.dependencies.MssParser = function () {
         return segmentTimeline;
     };
 
-    var mapContentProtection = function (protectionHeader) {
+    var createPRContentProtection = function (protectionHeader) {
 
         var contentProtection = {},
             pro,
@@ -315,10 +315,24 @@ Mss.dependencies.MssParser = function () {
         return contentProtection;
     };
 
+//schemeIdUri="urn:mpeg:dash:mp4protection:2011" value="cenc" cenc:default_KID="4d9996e2-4404-5202-8747-367bec1a7737"    
+
+    var createCENCContentProtection = function (protectionHeader) {
+
+        var contentProtection = {};
+        
+        contentProtection.schemeIdUri = "urn:mpeg:dash:mp4protection:2011",
+        contentProtection.value = "cenc";
+        contentProtection.default_KID = "4d9996e2-4404-5202-8747-367bec1a7737";
+        
+        return contentProtection;
+    };
+
     var processManifest = function (manifest, manifestLoadedTime) {
         var mpd = {},
             period,
             adaptations,
+            contentProtections = [],
             i;
 
         // Set mpd node properties
@@ -342,10 +356,18 @@ Mss.dependencies.MssParser = function () {
         period = mpd.Period;
         period.start = 0;
 
-        // Map ContentProtection node to ProtectionHeader node
+        // ContentProtection node
         if (manifest.Protection !== undefined) {
-            mpd.ContentProtection = mapContentProtection(manifest.Protection.ProtectionHeader);
-            mpd.ContentProtection_asArray = [mpd.ContentProtection];
+            // Create ContentProtection for PR
+            contentProtections.push(createPRContentProtection(manifest.Protection.ProtectionHeader));
+
+            // for chrome, create ContentProtection for Widevine as a CENC protection
+            /*if (navigator.userAgent.indexOf("Chrome") >= 0) {
+                contentProtections.push(createCENCContentProtection(manifest.Protection.ProtectionHeader));
+            }*/
+
+            mpd.ContentProtection = (contentProtections.length > 1) ? contentProtections : contentProtections[0];
+            mpd.ContentProtection_asArray = contentProtections;
         }
 
         adaptations = period.AdaptationSet_asArray;
