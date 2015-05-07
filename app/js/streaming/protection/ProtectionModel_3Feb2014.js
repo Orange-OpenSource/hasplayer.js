@@ -51,6 +51,7 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
                     switch (event.type) {
 
                         case api.needkey:
+                            self.debug.log("[DRM][3Feb2014] needkey event");
                             self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY,
                                 new MediaPlayer.vo.protection.NeedKey(event.initData, "cenc"));
                             break;
@@ -64,8 +65,11 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
         // readyState, so we need this logic to ensure we don't set the keys
         // too early
         setMediaKeys = function() {
+            var self = this;
+
             // IE11 does not allow setting of media keys until
             var doSetKeys = function() {
+                self.debug.log("[DRM][3Feb2014] SetMediaKeys");
                 videoElement[api.setMediaKeys](mediaKeys);
                 this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_VIDEO_ELEMENT_SELECTED);
             };
@@ -127,6 +131,7 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
         subscribe: undefined,
         unsubscribe: undefined,
         protectionExt: undefined,
+        debug: undefined,
         keySystem: null,
 
         setup: function() {
@@ -161,6 +166,8 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
                 var supportedAudio = null;
                 var supportedVideo = null;
 
+                this.debug.log("[DRM][3Feb2014] Request access for key system " + systemString);
+
                 // Try key system configs in order, first one with supported audio/video
                 // is used
                 for (var configIdx = 0; configIdx < configs.length; configIdx++) {
@@ -172,6 +179,7 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
                         supportedAudio = []; // Indicates that we have a requested audio config
                         for (var audioIdx = 0; audioIdx < audios.length; audioIdx++) {
                             if (window[api.MediaKeys].isTypeSupported(systemString, audios[audioIdx].contentType)) {
+                                //this.debug.log("[DRM][3Feb2014] audio codec supported: " + audios[audioIdx].contentType);
                                 supportedAudio.push(audios[audioIdx]);
                             }
                         }
@@ -182,6 +190,7 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
                         supportedVideo = []; // Indicates that we have a requested video config
                         for (var videoIdx = 0; videoIdx < videos.length; videoIdx++) {
                             if (window[api.MediaKeys].isTypeSupported(systemString, videos[videoIdx].contentType)) {
+                                //this.debug.log("[DRM][3Feb2014] video codec supported: " + videos[audioIdx].contentType);
                                 supportedVideo.push(videos[videoIdx]);
                             }
                         }
@@ -200,6 +209,7 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
                     var ksConfig = new MediaPlayer.vo.protection.KeySystemConfiguration(supportedAudio, supportedVideo);
                     var ks = this.protectionExt.getKeySystemBySystemString(systemString);
                     var ksAccess = new MediaPlayer.vo.protection.KeySystemAccess(ks, ksConfig);
+                    this.debug.log("[DRM][3Feb2014] configuration supported = audio:" + JSON.stringify(supportedAudio) + ", video:" + JSON.stringify(supportedVideo));
                     this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE,
                             ksAccess);
                     break;
@@ -207,11 +217,12 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
             }
             if (!found) {
                 this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE,
-                        null, "Key system access denied! -- No valid audio/video content configurations detected!");
+                        null, "[DRM][3Feb2014] Key system access denied! -- No valid audio/video content configurations detected!");
             }
         },
 
         selectKeySystem: function(ksAccess) {
+            this.debug.log("[DRM][3Feb2014] Select key system " + ksAccess.keySystem.systemString);
             try {
                 mediaKeys = ksAccess.mediaKeys = new window[api.MediaKeys](ksAccess.keySystem.systemString);
                 this.keySystem = ksAccess.keySystem;
@@ -251,6 +262,8 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
                 }
             }
 
+            this.debug.log("[DRM][3Feb2014] Create key session");
+
             // Use the first video capability for the contentType.
             // TODO:  Not sure if there is a way to concatenate all capability data into a RFC6386-compatible format
             var contentType = keySystemAccess.ksConfiguration.videoCapabilities[0].contentType;
@@ -273,6 +286,8 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
 
             var session = sessionToken.session;
 
+            this.debug.log("[DRM][3Feb2014] Update key session");
+
             if (!this.protectionExt.isClearKey(this.keySystem)) {
                 // Send our request to the key session
                 session.update(message);
@@ -289,6 +304,8 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
          * @param sessionToken the session token
          */
         closeKeySession: function(sessionToken) {
+
+            this.debug.log("[DRM][3Feb2014] Close key session, token = " + sessionToken);
 
             var session = sessionToken.session;
 

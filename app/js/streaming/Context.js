@@ -15,17 +15,20 @@ MediaPlayer.di.Context = function () {
     "use strict";
 
     var mapProtectionModel = function() {
-        var videoElement = document.createElement("video");
+        var videoElement = document.createElement("video"),
+            debug = this.system.getObject("debug");
 
         // Detect EME APIs.  Look for newest API versions first
         if (MediaPlayer.models.ProtectionModel_21Jan2015.detect(videoElement)) {
             this.system.mapClass('protectionModel', MediaPlayer.models.ProtectionModel_21Jan2015);
+            debug.log("Load ProtectionModel 21Jan2015");
         } else if (MediaPlayer.models.ProtectionModel_3Feb2014.detect(videoElement)) {
             this.system.mapClass('protectionModel', MediaPlayer.models.ProtectionModel_3Feb2014);
+            debug.log("Load ProtectionModel 3Feb2014");
         } else if (MediaPlayer.models.ProtectionModel_01b.detect(videoElement)) {
             this.system.mapClass('protectionModel', MediaPlayer.models.ProtectionModel_01b);
+            debug.log("Load ProtectionModel 01b");
         } else {
-            var debug = this.system.getObject("debug");
             debug.log("No supported version of EME detected on this user agent!");
             debug.log("Attempts to play encrypted content will fail!");
         }

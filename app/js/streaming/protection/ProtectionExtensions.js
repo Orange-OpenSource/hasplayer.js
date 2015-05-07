@@ -32,7 +32,7 @@ MediaPlayer.dependencies.ProtectionExtensions = function () {
     "use strict";
 
     this.system = undefined;
-    this.log = undefined;
+    this.debug = undefined;
     this.keySystems = [];
 
     this.clearkeyKeySystem = undefined;
@@ -161,6 +161,8 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
     getSupportedKeySystemsFromContentProtection: function(cps) {
         var cp, ks, ksIdx, cpIdx, supportedKS = [];
 
+        this.debug.log("[DRM] Get supported key systems from content protection");
+
         if (cps) {
             for(ksIdx = 0; ksIdx < this.keySystems.length; ++ksIdx) {
                 ks = this.keySystems[ksIdx];
@@ -168,6 +170,8 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
                     cp = cps[cpIdx];
                     if (cp.schemeIdUri.toLowerCase() === ks.schemeIdURI) {
 
+                        this.debug.log("[DRM] Supported key systems: " + ks.schemeIdURI);
+                        
                         // Look for DRM-specific ContentProtection
                         var initData = ks.getInitData(cp);
                         if (!!initData) {
@@ -198,8 +202,11 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
         var ksIdx, supportedKS = [],
                 pssh = MediaPlayer.dependencies.protection.CommonEncryption.parsePSSHList(initData);
 
+        this.debug.log("[DRM] Get supported key systems from init data");
+
         for (ksIdx = 0; ksIdx < this.keySystems.length; ++ksIdx) {
             if (this.keySystems[ksIdx].uuid in pssh) {
+                this.debug.log("[DRM] Add supported key system: " + this.keySystems[ksIdx].systemString);
                 supportedKS.push({
                     ks: this.keySystems[ksIdx],
                     initData: pssh[this.keySystems[ksIdx].uuid]
@@ -220,6 +227,10 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
      */
     //autoSelectKeySystem: function(supportedKS, protectionController, videoInfo, audioInfo) {
     autoSelectKeySystem: function(supportedKS, protectionController, videoCodec, audioCodec) {
+
+        this.debug.log("[DRM] Auto select key system: ");
+        this.debug.log("[DRM] ---- video codec = " + videoCodec);
+        this.debug.log("[DRM] ---- audio codec = " + audioCodec);
 
         // Does the initData contain a key system supported by the player?
         if (supportedKS.length === 0) {
@@ -259,10 +270,10 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
                 protCtrl.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE, this);
                 if (!event.error) {
                     var keySystemAccess = event.data;
-                    self.log("KeySystem Access Granted (" + keySystemAccess.keySystem.systemString + ")!");
+                    self.debug.log("[DRM] KeySystem Access Granted (" + keySystemAccess.keySystem.systemString + ")!");
                     protCtrl.selectKeySystem(keySystemAccess);
                 } else {
-                    self.log(event.error);
+                    self.debug.log(event.error);
                 }
             };
 

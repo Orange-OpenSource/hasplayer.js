@@ -93,6 +93,16 @@ MediaPlayer.dependencies.protection.CommonEncryption = {
         return null;
     },
 
+    readBytes: function(buf, pos, nbBytes) {
+        var value = 0;
+        for (var i = 0; i < nbBytes; i++) {
+            value = value << 8;
+            value = value + buf[pos];
+            pos++;
+        }
+        return value;
+    },
+
     /**
      * Parses list of PSSH boxes into keysystem-specific PSSH data
      *
@@ -107,8 +117,15 @@ MediaPlayer.dependencies.protection.CommonEncryption = {
         if (data === null)
             return [];
 
-        var dv = new DataView(data),
-                done = false;
+        var buffer = data;
+
+        if (!data.buffer) {
+            buffer = new Uint8Array(data);
+        }
+
+        //var dv = new DataView(data),
+        //        done = false;
+        var done = false;
         var pssh = {};
 
         // TODO: Need to check every data read for end of buffer
@@ -118,23 +135,23 @@ MediaPlayer.dependencies.protection.CommonEncryption = {
             var size, nextBox, version,
                     systemID, psshDataSize, boxStart = byteCursor;
 
-            if (byteCursor >= dv.buffer.byteLength)
+            if (byteCursor >= buffer.byteLength)
                 break;
 
             /* Box size */
-            size = dv.getUint32(byteCursor);
+            size = this.readBytes(buffer, byteCursor, 4);
             nextBox = byteCursor + size;
             byteCursor += 4;
 
             /* Verify PSSH */
-            if (dv.getUint32(byteCursor) !== 0x70737368) {
+            if (this.readBytes(buffer, byteCursor, 4) !== 0x70737368) {
                 byteCursor = nextBox;
                 continue;
             }
             byteCursor += 4;
 
             /* Version must be 0 or 1 */
-            version = dv.getUint8(byteCursor);
+            version = this.readBytes(buffer, byteCursor, 1);
             if (version !== 0 && version !== 1) {
                 byteCursor = nextBox;
                 continue;
@@ -147,31 +164,31 @@ MediaPlayer.dependencies.protection.CommonEncryption = {
             systemID = "";
             var i, val;
             for (i = 0; i < 4; i++) {
-                val = dv.getUint8(byteCursor+i).toString(16);
+                val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
                 systemID += (val.length === 1) ? "0" + val : val;
             }
             byteCursor+=4;
             systemID += "-";
             for (i = 0; i < 2; i++) {
-                val = dv.getUint8(byteCursor+i).toString(16);
+                val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
                 systemID += (val.length === 1) ? "0" + val : val;
             }
             byteCursor+=2;
             systemID += "-";
             for (i = 0; i < 2; i++) {
-                val = dv.getUint8(byteCursor+i).toString(16);
+                val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
                 systemID += (val.length === 1) ? "0" + val : val;
             }
             byteCursor+=2;
             systemID += "-";
             for (i = 0; i < 2; i++) {
-                val = dv.getUint8(byteCursor+i).toString(16);
+                val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
                 systemID += (val.length === 1) ? "0" + val : val;
             }
             byteCursor+=2;
             systemID += "-";
             for (i = 0; i < 6; i++) {
-                val = dv.getUint8(byteCursor+i).toString(16);
+                val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
                 systemID += (val.length === 1) ? "0" + val : val;
             }
             byteCursor+=6;
@@ -179,11 +196,12 @@ MediaPlayer.dependencies.protection.CommonEncryption = {
             systemID = systemID.toLowerCase();
 
             /* PSSH Data Size */
-            psshDataSize = dv.getUint32(byteCursor);
+            psshDataSize = this.readBytes(buffer, byteCursor, 4);
             byteCursor += 4;
 
             /* PSSH Data */
-            pssh[systemID] = dv.buffer.slice(boxStart, nextBox);
+            //pssh[systemID] = buffer.slice(boxStart, nextBox);
+            pssh[systemID] = buffer.subarray(boxStart, nextBox).buffer;
             byteCursor = nextBox;
         }
 
