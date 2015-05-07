@@ -1222,9 +1222,9 @@ MediaPlayer.dependencies.Stream = function () {
             this.protectionController.subscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
             this.protectionController.setMediaElement(this.videoModel.getElement());
             this.protectionController.init(this.manifestModel.getValue());
-            if (protectionData) {
+            /*if (protectionData) {
                 this.protectionController.setProtectionData(protectionData);
-            }
+            }*/
 
         },
 
@@ -1273,7 +1273,8 @@ MediaPlayer.dependencies.Stream = function () {
 
             tearDownMediaSource.call(this);
             if (!!this.protectionController) {
-                this.protectionController.teardownKeySystem(kid);
+                //this.protectionController.teardownKeySystem(kid);
+                this.protectionController.teardown();
             }
             this.protectionController = undefined;
             this.protectionModel = undefined;
