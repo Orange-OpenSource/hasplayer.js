@@ -264,6 +264,7 @@ MediaPlayer = function (aContext) {
          * @memberof MediaPlayer#
          * debug object reference
          */
+        notifier: undefined,
         debug: undefined,
         eventBus: undefined,
         capabilities: undefined,
