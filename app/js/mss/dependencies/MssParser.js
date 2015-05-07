@@ -296,6 +296,7 @@ Mss.dependencies.MssParser = function () {
         var contentProtection = {},
             pro,
             systemID = protectionHeader.SystemID,
+            prHeader,
             wrmHeader,
             xmlReader,
             KID;
@@ -317,17 +318,17 @@ Mss.dependencies.MssParser = function () {
 
         // Get KID from protection header and convert it in CENC format
 
-        // Get <WRMHeader> (base64 decoded) as byte array
-        wrmHeader = BASE64.decodeArray(pro.__text);
+        // Get PlayReady header as byte array (base64 decoded)
+        prHeader = BASE64.decodeArray(pro.__text);
+
+        // Get Right Management header (WRMHEADER) from PlayReady header
+        wrmHeader = getWRMHeaderFromPRHeader(prHeader);
 
         // Convert from multi-byte to unicode
         wrmHeader = new Uint16Array(wrmHeader.buffer);
 
         // Convert to string
         wrmHeader = String.fromCharCode.apply(null, wrmHeader);
-
-        // Remove characters preceding <WRMHEADER> root node
-        wrmHeader = wrmHeader.substr(wrmHeader.indexOf("<WRMHEADER"));
 
         // Parse <WRMHeader> to get KID field value
         xmlReader = (new DOMParser).parseFromString(wrmHeader, "application/xml");
@@ -342,6 +343,47 @@ Mss.dependencies.MssParser = function () {
         contentProtection["cenc:default_KID"] = KID;
 
         return contentProtection;
+    };
+
+    var getWRMHeaderFromPRHeader = function (prHeader) {
+        var length,
+            recordCount,
+            recordType,
+            recordLength,
+            recordValue,
+            i = 0;
+
+        // Parse PlayReady header
+
+        // Length - 32 bits (LE format)
+        length = (prHeader[i+3] << 24) + (prHeader[i+2] << 16) + (prHeader[i+1] << 8) + prHeader[i];
+        i += 4;
+
+        // Record count - 16 bits (LE format)
+        recordCount = (prHeader[i+1] << 8) + prHeader[i];
+        i += 2;
+
+        // Parse records
+        while (i < prHeader.length) {
+            // Record type - 16 bits (LE format)
+            recordType = (prHeader[i+1] << 8) + prHeader[i];
+            i += 2;
+
+            // Check if Rights Management header (record type = 0x01)
+            if (recordType === 0x01) {
+
+                // Record length - 16 bits (LE format)
+                recordLength = (prHeader[i+1] << 8) + prHeader[i];
+                i += 2;
+
+                // Record value => contains <WRMHEADER>
+                recordValue = new Uint8Array(recordLength);
+                recordValue.set(prHeader.subarray(i, i + recordLength));
+                return recordValue;
+            }
+        }
+
+        return null;
     };
 
     var convertUuidEndianness = function (uuid) {
