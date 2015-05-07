@@ -334,26 +334,16 @@ function X2JS(matchers, attrPrefix, ignoreRoot) {
 			try
 			{
 				var parser=new window.DOMParser();
-				// var parsererrorNS = parser.parseFromString('INVALID', 'text/xml').childNodes[0].namespaceURI;
 				xmlDoc = parser.parseFromString( xmlDocStr, "text/xml" );
-			    // if(xmlDoc.getElementsByTagNameNS(parsererrorNS, 'parsererror').length > 0) {
-			    //     throw new Error('Error parsing XML');
-			    // }		
+				if(xmlDoc.getElementsByTagName('parsererror').length > 0) {
+					  throw new Error('Error parsing XML');
+				}
+				//var parsererrorNS = parser.parseFromString('INVALID', 'text/xml').childNodes[0].namespaceURI;
+			    //if(xmlDoc.getElementsByTagNameNS(parsererrorNS, 'parsererror').length > 0) {
+			    //    throw new Error('Error parsing XML');
+			    //}		
 			}
 			catch (e)
-			{
-				return null;
-			}
-		}
-		else {
-			// IE :(
-			if(xmlDocStr.indexOf("<?")==0) {
-				xmlDocStr = xmlDocStr.substr( xmlDocStr.indexOf("?>") + 2 );
-			}
-			xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
-			xmlDoc.async="false";
-			xmlDoc.loadXML(xmlDocStr);
-			if (xmlDoc.parseError.errorCode != 0)
 			{
 				return null;
 			}
@@ -367,7 +357,7 @@ function X2JS(matchers, attrPrefix, ignoreRoot) {
 	
 	this.xml_str2json = function (xmlDocStr) {
 		var xmlDoc = this.parseXmlString(xmlDocStr);	
-		return this.xml2json(xmlDoc);
+		return xmlDoc === null ? xmlDoc : this.xml2json(xmlDoc);
 	}
 
 	this.json2xml_str = function (jsonObj) {

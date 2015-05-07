@@ -390,7 +390,8 @@ Mss.dependencies.MssParser = function () {
 
         if (manifest === null) {
             this.debug.error("[MssParser]", "Failed to parse manifest!!");
-            return Q.when(null);
+            this.errHandler.manifestError("parsing the manifest failed", "parse", data);
+            return Q.reject(null);
         }
 
         // Set the manifest base Url
@@ -418,6 +419,7 @@ Mss.dependencies.MssParser = function () {
 
     return {
         debug: undefined,
+        errHandler: undefined,
                 
         parse: internalParse
     };
