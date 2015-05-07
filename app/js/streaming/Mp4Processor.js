@@ -447,7 +447,7 @@ MediaPlayer.dependencies.Mp4Processor = function () {
             return schi;
         },
 
-        createTrackEncryptionBox = function () {
+        createTrackEncryptionBox = function (track) {
             var tenc = new mp4lib.boxes.TrackEncryptionBox();
 
             tenc.flags = 0; //default value
@@ -455,7 +455,10 @@ MediaPlayer.dependencies.Mp4Processor = function () {
             
             tenc.default_IsEncrypted = 0x1; //default value
             tenc.default_IV_size = 8; //default value, NA => à préciser
-            tenc.default_KID = [0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0];
+            tenc.default_KID = (track.contentProtection && track.contentProtection["cenc:default_KID"]) ?
+                track.contentProtection["cenc:default_KID"] :
+                [0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0];
+            //tenc.default_KID[0] = 0x00;
 
             return tenc;
         },

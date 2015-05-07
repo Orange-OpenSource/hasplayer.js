@@ -295,7 +295,10 @@ Mss.dependencies.MssParser = function () {
 
         var contentProtection = {},
             pro,
-            systemID = protectionHeader.SystemID;
+            systemID = protectionHeader.SystemID,
+            wrmHeader,
+            xmlReader,
+            KID;
 
         pro = {
             __text : protectionHeader.__text,
@@ -311,11 +314,48 @@ Mss.dependencies.MssParser = function () {
         contentProtection.value = 2;
         contentProtection.pro = pro;
         contentProtection.pro_asArray = pro;
+
+        // Get KID from protection header and convert it in CENC format
+
+        // Get <WRMHeader> (base64 decoded) as byte array
+        wrmHeader = BASE64.decodeArray(pro.__text);
+
+        // Convert from multi-byte to unicode
+        wrmHeader = new Uint16Array(wrmHeader.buffer);
+
+        // Convert to string
+        wrmHeader = String.fromCharCode.apply(null, wrmHeader);
+
+        // Remove characters preceding <WRMHEADER> root node
+        wrmHeader = wrmHeader.substr(wrmHeader.indexOf("<WRMHEADER"));
+
+        // Parse <WRMHeader> to get KID field value
+        xmlReader = (new DOMParser).parseFromString(wrmHeader, "application/xml");
+        KID = xmlReader.querySelector("KID").textContent;
+
+        // Get KID (base64 decoded) as byte array
+        KID = BASE64.decodeArray(KID);
+
+        // Convert UUID from little-endian to big-endian
+        convertUuidEndianness(KID);
         
+        contentProtection["cenc:default_KID"] = KID;
+
         return contentProtection;
     };
 
-//schemeIdUri="urn:mpeg:dash:mp4protection:2011" value="cenc" cenc:default_KID="4d9996e2-4404-5202-8747-367bec1a7737"    
+    var convertUuidEndianness = function (uuid) {
+        swapBytes(uuid, 0, 3);
+        swapBytes(uuid, 1, 2);
+        swapBytes(uuid, 4, 5);
+        swapBytes(uuid, 6, 7);
+    };
+
+    var swapBytes = function (bytes, pos1, pos2) {
+        var temp = bytes[pos1];
+        bytes[pos1] = bytes[pos2];
+        bytes[pos2] = temp;
+    };
 
     var createCENCContentProtection = function (protectionHeader) {
 
