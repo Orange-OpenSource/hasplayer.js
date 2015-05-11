@@ -34,6 +34,7 @@
         // ORANGE: audio language management
         audioTracks,
         subtitleTracks,
+        protectionData,
 
         play = function () {
             activeStream.play();
@@ -124,7 +125,7 @@
         onReloadManifest = function() {
             this.debug.log("[StreamController] ### reloadManifest ####");
             this.reset.call(this);
-            this.load.call(this,this.currentURL,this.currentParams);
+            this.load.call(this, this.currentURL);
         },
 
         /*
@@ -319,7 +320,7 @@
                                 if (!stream) {
                                     stream = self.system.getObject("stream");
                                     stream.setVideoModel(pIdx === 0 ? self.videoModel : createVideoModel.call(self));
-                                    stream.initProtection();
+                                    stream.initProtection(self.protectionData);
                                     stream.setAutoPlay(autoPlay);
                                     stream.load(manifest, period);
                                     streams.push(stream);
@@ -412,7 +413,6 @@
         startTime : undefined,
         startPlayingTime : undefined,
         currentURL: undefined,
-        currentParams: undefined,
 
         setup: function() {
             this.system.mapHandler("manifestUpdated", undefined, manifestHasUpdated.bind(this));
@@ -470,25 +470,18 @@
         },
         
         // ORANGE: add source stream parameters
-        load: function (url, params) {
+        load: function (url, protData) {
             var self = this;
 
             self.currentURL = url;
-            self.currentParams = params;
+            if (protData) {
+                self.protectionData = protData;
+            }
 
             self.debug.info("[StreamController] load url: " + url);
 
             self.manifestLoader.load(url).then(
                 function(manifest) {
-                    // ORANGE: get licenser backUrl and customData parameters
-                    if (params) {
-                        if (params.backUrl) {
-                            manifest.backUrl = params.backUrl;
-                        }
-                        if (params.customData) {
-                            manifest.customData = params.customData;
-                        }
-                    }
                     self.manifestModel.setValue(manifest);
                     //ORANGE : add Metadata metric
                     self.metricsModel.addMetaData();
@@ -525,6 +518,7 @@
             this.metricsModel.clearAllCurrentMetrics();
             isPeriodSwitchingInProgress = false;
             activeStream = null;
+            protectionData = null;
         },
 
         play: play,

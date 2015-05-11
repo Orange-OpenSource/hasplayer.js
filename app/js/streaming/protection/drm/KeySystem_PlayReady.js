@@ -34,6 +34,7 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
 
     var keySystemStr = "com.microsoft.playready",
         keySystemUUID = "9a04f079-9840-4286-ab92-e65be0885f95",
+        PRCDMData = '<PlayReadyCDMData type="LicenseAcquisition"><LicenseAcquisition version="1.0" Proactive="true"><CustomData encoding="base64encoded">%CUSTOMDATA%</CustomData></LicenseAcquisition></PlayReadyCDMData>',
         protData,
 
         requestLicense = function(message, laURL, requestData) {
@@ -181,6 +182,42 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
         /* TODO: Implement me */
         isInitDataEqual = function(/*initData1, initData2*/) {
             return false;
+        },
+
+        doGetCDMData = function () {
+            var customData,
+                cdmData,
+                cdmDataBytes,
+                i;
+
+            if (protData.customData) {
+
+                // Convert custom data into multibyte string
+                customData = [];
+                for (i = 0; i < protData.customData.length; ++i) {
+                    customData.push(protData.customData.charCodeAt(i));
+                    customData.push(0);
+                }
+                customData = String.fromCharCode.apply(null, customData);
+
+                // Encode in Base 64 the custom data string
+                customData = BASE64.encode(customData);
+
+                // Initialize CDM data with Base 64 encoded custom data
+                // (see https://msdn.microsoft.com/en-us/library/dn457361.aspx)
+                cdmData = PRCDMData.replace('%CUSTOMDATA%', customData);
+
+                // Convert CDM data into multibyte characters
+                cdmDataBytes = [];
+                for (i = 0; i < cdmData.length; ++i) {
+                    cdmDataBytes.push(cdmData.charCodeAt(i));
+                    cdmDataBytes.push(0);
+                }
+
+                return new Uint8Array(cdmDataBytes).buffer;
+            }
+
+            return null;
         };
 
     return {
@@ -206,7 +243,9 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
 
         getInitData: parseInitDataFromContentProtection,
 
-        initDataEquals: isInitDataEqual
+        initDataEquals: isInitDataEqual,
+
+        getCDMData: doGetCDMData
     };
 };
 

@@ -94,7 +94,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
 
             if (this.keySystem) {
                 // We have a key system
-                this.createKeySession(abInitData);
+                this.createKeySession(abInitData, this.keySystem.cdmData);
             }
             else if (this.keySystem === undefined) {
                 // First time through, so we need to select a key system
@@ -245,7 +245,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
                                         for (var ksIdx = 0; ksIdx < supportedKS.length; ksIdx++) {
                                             if (self.keySystem === supportedKS[ksIdx].ks) {
                                                 self.debug.log("[DRM] Create key session for key system " + self.keySystem.systemString);
-                                                self.createKeySession(supportedKS[ksIdx].initData);
+                                                self.createKeySession(supportedKS[ksIdx].initData, supportedKS[ksIdx].cdmData);
                                                 break;
                                             }
                                         }
@@ -301,12 +301,12 @@ MediaPlayer.dependencies.ProtectionController = function () {
             this.protectionModel.selectKeySystem(keySystemAccess);
         },
 
-        createKeySession: function(initData) {
+        createKeySession: function(initData, cdmData) {
             this.debug.log("[DRM] Create key session, initData = " + initData);
             var initDataForKS = MediaPlayer.dependencies.protection.CommonEncryption.getPSSHForKeySystem(this.keySystem, initData);
             if (initDataForKS) {
                 try {
-                    this.protectionModel.createKeySession(initDataForKS, this.sessionType);
+                    this.protectionModel.createKeySession(initDataForKS, this.sessionType, cdmData);
                 } catch (error) {
                     this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, "Error creating key session! " + error.message);
                 }

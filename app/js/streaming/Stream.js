@@ -942,7 +942,7 @@ MediaPlayer.dependencies.Stream = function () {
                 deferredTextUpdate = Q.defer(),
                 deferredEventUpdate = Q.defer();
 
-                manifest = self.manifestModel.getValue();
+            manifest = self.manifestModel.getValue();
             periodInfo = updatedPeriodInfo;
             self.debug.log("Manifest updated... set new data on buffers.");
 
@@ -1202,7 +1202,7 @@ MediaPlayer.dependencies.Stream = function () {
             return deferredSubtitleUpdate.promise;
         },
 
-        initProtection: function() {
+        initProtection: function(protectionData) {
             /*needKeyListener = onMediaSourceNeedsKey.bind(this);
             keyMessageListener = onMediaSourceKeyMessage.bind(this);
             keyAddedListener = onMediaSourceKeyAdded.bind(this);
@@ -1222,9 +1222,9 @@ MediaPlayer.dependencies.Stream = function () {
             this.protectionController.subscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
             this.protectionController.setMediaElement(this.videoModel.getElement());
             this.protectionController.init(this.manifestModel.getValue());
-            /*if (protectionData) {
+            if (protectionData) {
                 this.protectionController.setProtectionData(protectionData);
-            }*/
+            }
 
         },
 

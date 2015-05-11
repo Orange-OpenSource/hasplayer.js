@@ -84,8 +84,11 @@ MediaPlayer.models.ProtectionModel = {
      * @param {string} sessionType the desired session type.  One of "temporary",
      * "persistent-license", "persistent-release-message".  CDM implementations
      * are not required to support anything except "temporary"
+     * @param {ArrayBuffer} CDM data  specific to a particular content protection
+     * system.
+     * key system.
      *
-     createKeySession: function(initData, sessionType) { },
+     createKeySession: function(initData, sessionType, cdmData) { },
      */
 
     /**

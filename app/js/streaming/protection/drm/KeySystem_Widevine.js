@@ -113,7 +113,10 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
 
         doLicenseRequest: requestLicense,
 
-        getInitData: MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection
+        getInitData: MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection,
+
+        getCDMData: function () {return null;}
+
     };
 };
 

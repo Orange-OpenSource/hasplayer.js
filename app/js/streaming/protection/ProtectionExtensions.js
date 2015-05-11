@@ -177,7 +177,8 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
                         if (!!initData) {
                             supportedKS.push({
                                 ks: this.keySystems[ksIdx],
-                                initData: initData
+                                initData: initData,
+                                cdmData: ks.getCDMData()
                             });
                         }
                     }
