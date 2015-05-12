@@ -1260,12 +1260,14 @@ MediaPlayer.dependencies.Stream = function () {
             this.fragmentController = undefined;
             this.requestScheduler = undefined;
 
+            this.system.unmapHandler("bufferUpdated");
+
             // streamcontroller expects this to be valid
             //this.videoModel = null;
 
             load = Q.defer();
         },
-
+        
         getDuration: function () {
             return periodInfo.duration;
         },

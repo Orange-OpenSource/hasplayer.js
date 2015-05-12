@@ -506,6 +506,8 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
     function onError(e) {
         console.error(e);
+        //stop
+        player.reset();
     }
 
     ////////////////////////////////////////

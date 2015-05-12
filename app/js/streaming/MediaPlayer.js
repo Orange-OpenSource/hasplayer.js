@@ -78,10 +78,13 @@ MediaPlayer = function (aContext) {
             }
 
             playing = true;
+            
             //this.debug.log("Playback initiated!");
-            streamController = system.getObject("streamController");
-            streamController.setVideoModel(videoModel);
-            streamController.setAutoPlay(autoPlay);
+            if (!streamController) {
+                streamController = system.getObject("streamController");
+                streamController.setVideoModel(videoModel);
+                streamController.setAutoPlay(autoPlay);
+            }
             // ORANGE: add source stream parameters
             streamController.load(source, sourceParams);
             system.mapValue("scheduleWhilePaused", scheduleWhilePaused);
@@ -359,7 +362,6 @@ MediaPlayer = function (aContext) {
 
             if (playing && streamController) {
                 streamController.reset();
-                streamController = null;
                 playing = false;
             }
 
@@ -389,7 +391,6 @@ MediaPlayer = function (aContext) {
 
             if (playing && streamController) {
                 streamController.reset();
-                streamController = null;
                 playing = false;
             }
 
@@ -400,7 +401,6 @@ MediaPlayer = function (aContext) {
 
         reset: function() {
             this.attachSource(null);
-            this.attachView(null);
         },
 
         play: play,

@@ -116,7 +116,7 @@ Custom.dependencies.CustomBufferController = function () {
 
             this.debug.info("[BufferController]["+type+"] startPlayback");
 
-            // Set video to stalled state
+            // Set media type to stalled state
             setStalled.call(this, true);
 
             // Start buffering process
@@ -621,6 +621,8 @@ Custom.dependencies.CustomBufferController = function () {
                     // the executed requests for which playback time is inside the time interval that has been removed from the buffer
                     self.fragmentController.removeExecutedRequestsBeforeTime(fragmentModel, removeEnd);
                     deferred.resolve(removeEnd - removeStart);
+                }, function () {
+                    self.errHandler.mediaSourceError("impossible to remove data from SourceBuffer");
                 }
             );
 
@@ -796,8 +798,12 @@ Custom.dependencies.CustomBufferController = function () {
 
         getWorkingTime = function () {
             var time = -1;
-
+            
+            if (!this.videoModel.isStalled()) {
                 time = this.videoModel.getCurrentTime();
+            }else {
+                time = seekTarget;
+            }
                 //this.debug.log("Working time is video time: " + time);
 
             return time;
