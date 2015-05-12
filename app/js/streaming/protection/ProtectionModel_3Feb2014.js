@@ -71,12 +71,13 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
             var doSetKeys = function() {
                 self.debug.log("[DRM][3Feb2014] SetMediaKeys");
                 videoElement[api.setMediaKeys](mediaKeys);
-                this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_VIDEO_ELEMENT_SELECTED);
+                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_VIDEO_ELEMENT_SELECTED);
+                videoElement.removeEventListener("loadedmetadata", doSetKeys);
             };
             if (videoElement.readyState >= 1) {
                 doSetKeys.call(this);
             } else {
-                videoElement.addEventListener("loadedmetadata", doSetKeys.bind(this));
+                videoElement.addEventListener("loadedmetadata", doSetKeys);
             }
 
         },
@@ -305,7 +306,7 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
          */
         closeKeySession: function(sessionToken) {
 
-            this.debug.log("[DRM][3Feb2014] Close key session, token = " + sessionToken);
+            this.debug.log("[DRM][3Feb2014] Close key session, token = " + sessionToken.session.sessionId);
 
             var session = sessionToken.session;
 
