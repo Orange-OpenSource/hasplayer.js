@@ -688,6 +688,8 @@ Custom.dependencies.CustomBufferController = function () {
                 this.indexHandler.getInitRequest(availableRepresentations[currentQuality]).then(
                     function (request) {
                         deferred.resolve(request);
+                    }, function(e){
+                        deferred.reject(e);
                     }
                 );
             }
@@ -957,6 +959,9 @@ Custom.dependencies.CustomBufferController = function () {
                                                         }
                                                     );
                                                 }
+                                            }, function(e) {
+                                                self.debug.error("[BufferController]["+type+"] Problem during init segment generation \"" + e.message+"\"");
+                                                self.errHandler.manifestError(e,"codec",self.manifestModel.getValue());
                                             }
                                         );
                                     } else {

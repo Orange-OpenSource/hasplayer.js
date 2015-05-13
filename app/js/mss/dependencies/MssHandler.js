@@ -191,7 +191,12 @@ Mss.dependencies.MssHandler = function() {
             request.streamType = rslt.getType();
             request.type = "Initialization Segment";
             request.url = null;
-            request.data = getInitData(representation);
+            try{
+            	request.data = getInitData(representation);
+			}catch(e){
+				deferred.reject(e);
+				return deferred.promise;
+			}
             request.range =  representation.range;
             request.availabilityStartTime = self.timelineConverter.calcAvailabilityStartTimeFromPresentationTime(presentationStartTime, representation.adaptation.period.mpd, isDynamic);
             request.availabilityEndTime = self.timelineConverter.calcAvailabilityEndTimeFromPresentationTime(presentationStartTime + period.duration, period.mpd, isDynamic);
