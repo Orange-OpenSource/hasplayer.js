@@ -800,13 +800,10 @@ Custom.dependencies.CustomBufferController = function () {
 
         getWorkingTime = function () {
             var time = -1;
-            
-            if (!this.videoModel.isStalled()) {
-                time = this.videoModel.getCurrentTime();
-            }else {
-                time = seekTarget;
-            }
-                //this.debug.log("Working time is video time: " + time);
+
+            time = this.videoModel.getCurrentTime();
+
+            this.debug.log("Working time is video time: " + time);
 
             return time;
         },
