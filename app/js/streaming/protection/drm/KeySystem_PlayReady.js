@@ -190,7 +190,7 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
                 cdmDataBytes,
                 i;
 
-            if (protData.customData) {
+            if (protData && protData.customData) {
 
                 // Convert custom data into multibyte string
                 customData = [];

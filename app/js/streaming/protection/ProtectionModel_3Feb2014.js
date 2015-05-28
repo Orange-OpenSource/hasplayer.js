@@ -268,7 +268,7 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
             // Use the first video capability for the contentType.
             // TODO:  Not sure if there is a way to concatenate all capability data into a RFC6386-compatible format
             var contentType = keySystemAccess.ksConfiguration.videoCapabilities[0].contentType;
-            var session = mediaKeys.createSession(contentType, new Uint8Array(initData), new Uint8Array(cdmData));
+            var session = mediaKeys.createSession(contentType, new Uint8Array(initData), cdmData ? new Uint8Array(cdmData) : null);
             var sessionToken = createSessionToken.call(this, session, initData);
 
             // Add all event listeners
