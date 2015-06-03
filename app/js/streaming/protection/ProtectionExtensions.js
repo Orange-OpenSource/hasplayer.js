@@ -238,12 +238,12 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
             throw new Error("DRM system for this content not supported by the player!");
         }
 
-        var audioCapabilities = videoCapabilities = null;
+        var audioCapabilities = [], videoCapabilities = [];
         if (videoCodec) {
-            videoCapabilities = [new MediaPlayer.vo.protection.MediaCapability(videoCodec)];
+            videoCapabilities.push(new MediaPlayer.vo.protection.MediaCapability(videoCodec));
         }
         if (audioCodec) {
-            audioCapabilities = [new MediaPlayer.vo.protection.MediaCapability(audioCodec)];
+            audioCapabilities.push(new MediaPlayer.vo.protection.MediaCapability(audioCodec));
         }
         var ksConfig = new MediaPlayer.vo.protection.KeySystemConfiguration(audioCapabilities, videoCapabilities);
         var requestedKeySystems = [];
