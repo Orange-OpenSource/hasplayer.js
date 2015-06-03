@@ -238,21 +238,14 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
             throw new Error("DRM system for this content not supported by the player!");
         }
 
-        var audioCapabilities = [], videoCapabilities = [];
-        /*if (videoInfo) {
-            videoCapabilities.push(new MediaPlayer.vo.protection.MediaCapability(videoInfo.codec));
-        }
-        if (audioInfo) {
-            audioCapabilities.push(new MediaPlayer.vo.protection.MediaCapability(audioInfo.codec));
-        }*/
+        var audioCapabilities = videoCapabilities = null;
         if (videoCodec) {
-            videoCapabilities.push(new MediaPlayer.vo.protection.MediaCapability(videoCodec));
+            videoCapabilities = [new MediaPlayer.vo.protection.MediaCapability(videoCodec)];
         }
         if (audioCodec) {
-            audioCapabilities.push(new MediaPlayer.vo.protection.MediaCapability(audioCodec));
+            audioCapabilities = [new MediaPlayer.vo.protection.MediaCapability(audioCodec)];
         }
-        var ksConfig = new MediaPlayer.vo.protection.KeySystemConfiguration(
-                audioCapabilities, videoCapabilities);
+        var ksConfig = new MediaPlayer.vo.protection.KeySystemConfiguration(audioCapabilities, videoCapabilities);
         var requestedKeySystems = [];
         for (var i = 0; i < supportedKS.length; i++) {
             requestedKeySystems.push({ ks: supportedKS[i].ks, configs: [ksConfig] });
