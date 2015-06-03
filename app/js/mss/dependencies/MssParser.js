@@ -291,35 +291,14 @@ Mss.dependencies.MssParser = function () {
         return segmentTimeline;
     };
 
-    var createPRContentProtection = function (protectionHeader) {
-
-        var contentProtection = {},
-            pro,
-            systemID = protectionHeader.SystemID,
-            prHeader,
+    var getKIDFromProtectionHeader = function (protectionHeader) {
+        var prHeader,
             wrmHeader,
             xmlReader,
             KID;
 
-        pro = {
-            __text : protectionHeader.__text,
-            __prefix : "mspr"
-        };
-
-        //remove {}
-        if (systemID[0] === "{") {
-            systemID = systemID.substring(1, systemID.length-1);
-        }
-        
-        contentProtection.schemeIdUri = "urn:uuid:" + systemID;
-        contentProtection.value = 2;
-        contentProtection.pro = pro;
-        contentProtection.pro_asArray = pro;
-
-        // Get KID from protection header and convert it in CENC format
-
         // Get PlayReady header as byte array (base64 decoded)
-        prHeader = BASE64.decodeArray(pro.__text);
+        prHeader = BASE64.decodeArray(protectionHeader.__text);
 
         // Get Right Management header (WRMHEADER) from PlayReady header
         wrmHeader = getWRMHeaderFromPRHeader(prHeader);
@@ -339,10 +318,8 @@ Mss.dependencies.MssParser = function () {
 
         // Convert UUID from little-endian to big-endian
         convertUuidEndianness(KID);
-        
-        contentProtection["cenc:default_KID"] = KID;
 
-        return contentProtection;
+        return KID;
     };
 
     var getWRMHeaderFromPRHeader = function (prHeader) {
@@ -399,14 +376,45 @@ Mss.dependencies.MssParser = function () {
         bytes[pos2] = temp;
     };
 
-    var createCENCContentProtection = function (protectionHeader) {
+
+    var createPRContentProtection = function (protectionHeader) {
+
+        var contentProtection = {},
+            keySystem = this.system.getObject("ksPlayReady"),
+            pro,
+            systemID = protectionHeader.SystemID;
+
+        pro = {
+            __text : protectionHeader.__text,
+            __prefix : "mspr"
+        };
+
+        contentProtection.schemeIdUri = keySystem.schemeIdURI;
+        contentProtection.value = 2;//keySystem.systemString;
+        contentProtection.pro = pro;
+        contentProtection.pro_asArray = pro;
+
+        return contentProtection;
+    };
+
+    /*var createCENCContentProtection = function (protectionHeader) {
 
         var contentProtection = {};
         
-        contentProtection.schemeIdUri = "urn:mpeg:dash:mp4protection:2011",
+        contentProtection.schemeIdUri = "urn:mpeg:dash:mp4protection:2011";
         contentProtection.value = "cenc";
-        contentProtection.default_KID = "4d9996e2-4404-5202-8747-367bec1a7737";
         
+        return contentProtection;
+    };*/
+
+    var createWidevineContentProtection = function (protectionHeader) {
+
+        var contentProtection = {},
+            keySystem = this.system.getObject("ksWidevine");
+
+        contentProtection.schemeIdUri = keySystem.schemeIdURI;
+        contentProtection.value = keySystem.systemString;
+
         return contentProtection;
     };
 
@@ -414,7 +422,9 @@ Mss.dependencies.MssParser = function () {
         var mpd = {},
             period,
             adaptations,
+            contentProtection,
             contentProtections = [],
+            KID,
             i;
 
         // Set mpd node properties
@@ -440,13 +450,22 @@ Mss.dependencies.MssParser = function () {
 
         // ContentProtection node
         if (manifest.Protection !== undefined) {
-            // Create ContentProtection for PR
-            contentProtections.push(createPRContentProtection(manifest.Protection.ProtectionHeader));
 
-            // for chrome, create ContentProtection for Widevine as a CENC protection
-            /*if (navigator.userAgent.indexOf("Chrome") >= 0) {
-                contentProtections.push(createCENCContentProtection(manifest.Protection.ProtectionHeader));
-            }*/
+            // Get KID (in CENC format) from protection header 
+            KID = getKIDFromProtectionHeader(manifest.Protection.ProtectionHeader);
+
+            // Create ContentProtection for PR
+            contentProtection = createPRContentProtection.call(this, manifest.Protection.ProtectionHeader);
+            contentProtection["cenc:default_KID"] = KID;
+            contentProtections.push(contentProtection);
+
+            // For chrome, create ContentProtection for Widevine as a CENC protection
+            if (navigator.userAgent.indexOf("Chrome") >= 0) {
+                //contentProtections.push(createCENCContentProtection(manifest.Protection.ProtectionHeader));
+                contentProtection = createWidevineContentProtection.call(this, manifest.Protection.ProtectionHeader);
+                contentProtection["cenc:default_KID"] = KID;
+                contentProtections.push(contentProtection);
+            }
 
             mpd.ContentProtection = (contentProtections.length > 1) ? contentProtections : contentProtections[0];
             mpd.ContentProtection_asArray = contentProtections;
@@ -524,6 +543,7 @@ Mss.dependencies.MssParser = function () {
     return {
         debug: undefined,
         errHandler: undefined,
+        system: undefined,
                 
         parse: internalParse
     };
