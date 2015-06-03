@@ -45,6 +45,8 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
                 url,
                 self = this;
 
+            //console.saveBinArray(new Uint8Array(message), "hasplayer.js_widevine_license_request.bin");
+
             url = (protData && protData.laURL && protData.laURL !== "") ? protData.laURL : laURL;
             if (!url) {
                 self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE,
@@ -53,6 +55,7 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
                 xhr.open('POST', url, true);
                 xhr.responseType = 'arraybuffer';
                 xhr.onload = function() {
+                    //console.saveBinArray(new Uint8Array(this.response), "hasplayer.js_widevine_license_response.bin");
                     if (this.status == 200) {
                         var event = new MediaPlayer.vo.protection.LicenseRequestComplete(new Uint8Array(this.response), requestData);
                         self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE,
@@ -90,6 +93,17 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
 
                 xhr.send(message);
             }
+        },
+
+        doGetInitData = function () {
+
+            // Check if protection data contains the pssh
+            if (protData.pssh) {
+                return BASE64.decodeArray(protData.pssh).buffer;
+            }
+
+            // Else get initData from content protection
+            return MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection();
         };
 
     return {
@@ -113,7 +127,7 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
 
         doLicenseRequest: requestLicense,
 
-        getInitData: MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection,
+        getInitData: doGetInitData,
 
         getCDMData: function () {return null;}
 
