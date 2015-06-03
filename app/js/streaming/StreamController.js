@@ -497,7 +497,7 @@
                     self.manifestUpdater.start();
                 },
                 function () {
-                    self.reset();
+                    self.debug.error("[StreamController] Manifest loading error.");
                 }
             );
         },

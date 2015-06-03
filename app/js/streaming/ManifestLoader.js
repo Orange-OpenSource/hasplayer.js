@@ -81,6 +81,8 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                         deferred.resolve(manifest);
                     },
                     function () {
+                        self.debug.error("[ManifestLoader] Manifest parsing error.");
+                        self.errHandler.manifestError("parsing the manifest failed", "parse",null);
                         deferred.reject(request);
                     }
                 );
