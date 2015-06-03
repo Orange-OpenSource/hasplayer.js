@@ -560,6 +560,12 @@ Hls.dependencies.HlsParser = function () {
             }
         }
 
+        if (streams.length === 0) {
+            self.debug.error("[HlsParser] no stream in HLS manifest");
+            deferred.reject();
+            return deferred.promise;
+        }
+
         adaptationsSets.push(adaptationSet);
 
         // alternative renditions of the same content (alternative audio tarcks or subtitles) #EXT-X-MEDIA

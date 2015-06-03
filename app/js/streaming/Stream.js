@@ -125,7 +125,7 @@ MediaPlayer.dependencies.Stream = function () {
                 catch (error)
                 {
                     pause.call(self);
-                    self.debug.log(error);
+                    self.debug.error(error);
                     self.errHandler.mediaKeySystemSelectionError(error);
                     // ORANGE
                     self.metricsModel.addState(self.type, "stopped", self.videoModel.getCurrentTime(), 2);
@@ -1267,7 +1267,7 @@ MediaPlayer.dependencies.Stream = function () {
 
             load = Q.defer();
         },
-        
+
         getDuration: function () {
             return periodInfo.duration;
         },
