@@ -255,7 +255,7 @@ Mss.dependencies.MssParser = function () {
             i = 0;
 
 
-        if (chunks.length > 1) {
+        if (chunks && chunks.length > 1) {
 
             // First pass on segments to update timestamp ('t') and duration ('d') fields
             chunks[0].t = chunks[0].t || 0;

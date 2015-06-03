@@ -662,9 +662,11 @@ MediaPlayer.prototype = {
 };
 
 MediaPlayer.dependencies = {};
+MediaPlayer.dependencies.protection = {};
 MediaPlayer.utils = {};
 MediaPlayer.models = {};
 MediaPlayer.vo = {};
 MediaPlayer.vo.metrics = {};
+MediaPlayer.vo.protection = {};
 MediaPlayer.rules = {};
 MediaPlayer.di = {};

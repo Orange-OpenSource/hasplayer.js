@@ -52,7 +52,7 @@
             // plug message handler. When the message is notify, the contextManager is called
             this.system.mapHandler('setContext', 'contextManager', 'setContext');
 
-            this.system.mapSingleton('notifier', MediaPlayer.dependencies.Notifier);
+            //this.system.mapSingleton('notifier', MediaPlayer.dependencies.Notifier);
         }
     };
 };
