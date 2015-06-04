@@ -50,7 +50,7 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
             url = (protData && protData.laURL && protData.laURL !== "") ? protData.laURL : laURL;
             if (!url) {
                 self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE,
-                    null, new Error('DRM: No valid Widevine Proxy Server URL specified!'));
+                    null, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_URL_LICENSER_UNKNOWN,'DRM: No valid Widevine Proxy Server URL specified!', null));
             } else {
                 xhr.open('POST', url, true);
                 xhr.responseType = 'arraybuffer';
@@ -62,18 +62,18 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
                             event);
                     } else {
                         self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE,
-                            null, new Error('DRM: widevine update, XHR status is "' + xhr.statusText + '" (' + xhr.status +
-                                        '), expected to be 200. readyState is ' + xhr.readyState) +
-                                        ".  Response is " + ((this.response) ? String.fromCharCode.apply(null, new Uint8Array(this.response)) : "NONE"));
+                            null, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ERROR,'DRM: widevine update, XHR status is "' + xhr.statusText + '" (' + xhr.status +
+                                        '), expected to be 200. readyState is ' + xhr.readyState +
+                                        ".  Response is " + ((this.response) ? String.fromCharCode.apply(null, new Uint8Array(this.response)) : "NONE"),null);
                     }
                 };
                 xhr.onabort = function () {
                     self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE,
-                        null, new Error('DRM: widevine update, XHR aborted. status is "' + xhr.statusText + '" (' + xhr.status + '), readyState is ' + xhr.readyState));
+                        null, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ABORTED,'DRM: widevine update, XHR aborted. status is "' + xhr.statusText + '" (' + xhr.status + '), readyState is ' + xhr.readyState, null));
                 };
                 xhr.onerror = function () {
                     self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE,
-                        null, new Error('DRM: widevine update, XHR error. status is "' + xhr.statusText + '" (' + xhr.status + '), readyState is ' + xhr.readyState));
+                        null, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ERROR,'DRM: widevine update, XHR error. status is "' + xhr.statusText + '" (' + xhr.status + '), readyState is ' + xhr.readyState, null));
                 };
 
                 headerOverrides = (protData) ? protData.httpRequestHeaders: null;

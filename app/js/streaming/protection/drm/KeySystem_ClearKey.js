@@ -66,7 +66,7 @@ MediaPlayer.dependencies.protection.KeySystem_ClearKey = function() {
 
                         if (!xhr.response.hasOwnProperty("keys")) {
                             self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE,
-                                    null, new Error('DRM: ClearKey Remote update, Illegal response JSON'));
+                                    null, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ERROR,'DRM: ClearKey Remote update, Illegal response JSON', null));
                         }
                         for (i = 0; i < xhr.response.keys.length; i++) {
                             var keypair = xhr.response.keys[i],
@@ -79,16 +79,16 @@ MediaPlayer.dependencies.protection.KeySystem_ClearKey = function() {
                                 event);
                     } else {
                         self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE,
-                                null, new Error('DRM: ClearKey Remote update, XHR aborted. status is "' + xhr.statusText + '" (' + xhr.status + '), readyState is ' + xhr.readyState));
+                                null, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ERROR,'DRM: ClearKey Remote update, XHR aborted. status is "' + xhr.statusText + '" (' + xhr.status + '), readyState is ' + xhr.readyState, null));
                     }
                 };
                 xhr.onabort = function () {
                     self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE,
-                            null, new Error('DRM: ClearKey update, XHR aborted. status is "' + xhr.statusText + '" (' + xhr.status + '), readyState is ' + xhr.readyState));
+                            null, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ABORTED,'DRM: ClearKey update, XHR aborted. status is "' + xhr.statusText + '" (' + xhr.status + '), readyState is ' + xhr.readyState,null));
                 };
                 xhr.onerror = function () {
                     self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE,
-                            null, new Error('DRM: ClearKey update, XHR error. status is "' + xhr.statusText + '" (' + xhr.status + '), readyState is ' + xhr.readyState));
+                            null, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ERROR,'DRM: ClearKey update, XHR error. status is "' + xhr.statusText + '" (' + xhr.status + '), readyState is ' + xhr.readyState,null));
                 };
 
                 xhr.open('GET', laURL);
@@ -103,7 +103,7 @@ MediaPlayer.dependencies.protection.KeySystem_ClearKey = function() {
                         key = (protData.clearkeys.hasOwnProperty(keyID)) ? protData.clearkeys[keyID] : null;
                     if (!key) {
                         this.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE,
-                                null, new Error("DRM: ClearKey keyID (" + keyID + ") is not known!"));
+                                null, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_KEY_UNKNOWN, "DRM: ClearKey keyID (" + keyID + ") is not known!", null));
                     }
                     // KeyIDs from CDM are not base64 padded.  Keys may or may not be padded
                     keyPairs.push(new MediaPlayer.vo.protection.KeyPair(keyID, key));
@@ -114,7 +114,7 @@ MediaPlayer.dependencies.protection.KeySystem_ClearKey = function() {
                         event);
             } else {
                 self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE,
-                        null, new Error('DRM: ClearKey has no way (URL or protection data) to retrieve keys'));
+                        null, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_URL_LICENSER_UNKNOWN,'DRM: ClearKey has no way (URL or protection data) to retrieve keys', null));
             }
         };
 
