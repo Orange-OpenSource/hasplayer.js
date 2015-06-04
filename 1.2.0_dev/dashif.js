@@ -1,4 +1,4 @@
-/* Last build : 1.4.2015_21:45:10 / git revision : edffcd8 */
+/* Last build : 4.6.2015_9:33:20 / git revision : c48ce7b */
 (function() {
     var b = void 0, f = !0, j = null, l = !1;
     function m() {
@@ -28339,6 +28339,9 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
             return null;
         }
     }
+    function onSubtitlesStyleChanged(style) {
+        document.getElementById("cueStyle").innerHTML = "::cue{ background-color:" + style.data.backgroundColor + ";color:" + style.data.color + ";font-size: " + style.data.fontSize + ";font-family: " + style.data.fontFamily + "}";
+    }
     function metricChanged(e) {
         var metrics, point;
         if (e.data.stream == "video") {
@@ -28482,6 +28485,7 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     }
     function onError(e) {
         console.error(e);
+        player.reset();
     }
     $scope.invalidateChartDisplay = false;
     $scope.invalidateDisplay = function(value) {
@@ -28540,6 +28544,7 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     player.startup();
     player.addEventListener("error", onError.bind(this));
     player.addEventListener("metricChanged", metricChanged.bind(this));
+    player.addEventListener("subtitlesStyleChanged", onSubtitlesStyleChanged.bind(this));
     player.attachView(video);
     player.setAutoPlay(true);
     player.getDebug().setLevel(4);
@@ -28707,6 +28712,8 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
             this.customData = null;
         }
         resetBitratesSlider();
+        $scope.textTracks = null;
+        $scope.textData = null;
         var params = new DRMParams();
         params.backUrl = $scope.selectedItem.backUrl;
         params.customData = $scope.selectedItem.customData;
