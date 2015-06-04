@@ -1278,8 +1278,8 @@ MediaPlayer.dependencies.Stream = function () {
             this.videoModel.unlistenOnParent("webkitfullscreenchange", fullScreenListener);
 
             tearDownMediaSource.call(this);
-            if (!!this.protectionController) {
-                //this.protectionController.teardownKeySystem(kid);
+            if (this.protectionController) {
+                this.protectionController.unsubscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
                 this.protectionController.teardown();
             }
             this.protectionController = undefined;
