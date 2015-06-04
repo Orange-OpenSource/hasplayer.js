@@ -343,7 +343,7 @@ Dash.dependencies.DashParser = function () {
 
                 this.debug.log("Parsing complete: ( xml2json: " + (json.getTime() - start.getTime()) + "ms, objectiron: " + (ironed.getTime() - json.getTime()) + "ms, total: " + ((ironed.getTime() - start.getTime()) / 1000) + "s)");
             } catch (err) {
-                this.errHandler.manifestError("parsing the manifest failed", "parse", data);
+                this.errHandler.manifestError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE, "parsing the manifest failed", data);
                 return Q.reject(err);
             }
             return Q.when(manifest);

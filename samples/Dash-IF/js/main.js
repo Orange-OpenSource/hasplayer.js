@@ -509,7 +509,29 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     ////////////////////////////////////////
 
     function onError(e) {
-        console.error(e);
+        console.error("an error of type "+e.error+" has occured with error code = "+e.event.code);
+
+        switch (e.error) {
+            case "download" : 
+                 console.error(" url :\""+e.event.url+"\" and request response :\""+ e.event.request.responseXML+"\"");
+                 break;
+                 //url: url, request: request
+            case "manifestError" :
+                 console.error("Manifest URL was "+e.event.manifest.mpdUrl+" with message :\""+e.event.message+"\"");
+                 break;
+            case "cc" : 
+                 console.error("message :\""+e.event.message+"\" for content = "+e.event.cc);
+                 break;
+            case "key_session" :
+                 console.error("message :\""+e.event.message+"\" and systemCode = "+ e.event.systemCode);
+                 break;
+            case "mediasource" : 
+            case "key_message" :
+            case "key_system_selection" :
+                 console.error("message :\""+e.event.message+"\"");
+                 break;
+        };
+
         //stop
         player.reset();
     }

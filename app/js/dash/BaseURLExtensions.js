@@ -278,7 +278,7 @@ Dash.dependencies.BaseURLExtensions = function () {
                 }
                 needFailureReport = false;
 
-                self.errHandler.downloadError("initialization", info.url, request);
+                self.errHandler.downloadError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_INIT, info.url, request);
                 deferred.reject(request);
             };
 
@@ -371,7 +371,7 @@ Dash.dependencies.BaseURLExtensions = function () {
                     }
                     needFailureReport = false;
 
-                    self.errHandler.downloadError("SIDX", info.url, request);
+                    self.errHandler.downloadError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX, info.url, request);
                     deferred.reject(request);
                 };
 
@@ -505,7 +505,7 @@ Dash.dependencies.BaseURLExtensions = function () {
                 }
                 needFailureReport = false;
 
-                self.errHandler.downloadError("SIDX", info.url, request);
+                self.errHandler.downloadError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX, info.url, request);
                 deferred.reject(request);
             };
 

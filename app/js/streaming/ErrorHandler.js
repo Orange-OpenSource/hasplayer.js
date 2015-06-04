@@ -18,70 +18,77 @@ MediaPlayer.dependencies.ErrorHandler = function () {
     return {
         eventBus: undefined,
 
-        // "mediasource"|"mediakeys"
-        capabilityError: function (err) {
+        // {code : CAPABILITY_ERR_MEDIASOURCE | CAPABILITY_ERR_MEDIAKEYS }
+        capabilityError: function (code) {
             this.eventBus.dispatchEvent({
                 type: "error",
                 error: "capability",
-                event: err
+                event: {code : code}
             });
         },
-
-        // {id: "manifest"|"SIDX"|"content"|"initialization", url: "", request: {XMLHttpRequest instance}}
-        downloadError: function (id, url, request) {
+      
+        // {id: DOWNLOAD_ERR_MANIFEST | DOWNLOAD_ERR_SIDX | DOWNLOAD_ERR_CONTENT | DOWNLOAD_ERR_INIT, url: "", request: {XMLHttpRequest instance}}
+        downloadError: function (code, url, request) {
             this.eventBus.dispatchEvent({
                 type: "error",
                 error: "download",
-                event: {id: id, url: url, request: request}
+                event: {code: code, url: url, request: request}
             });
         },
 
-        // {message: "", id: "codec"|"parse"|"nostreams", manifest: {parsed manifest}}
-        manifestError: function (message, id, manifest) {
+        // {code: MANIFEST_ERR_CODEC | MANIFEST_ERR_PARSE | MANIFEST_ERR_NOSTREAM, message: "", manifest: {parsed manifest}}
+        manifestError: function (code, message, manifest) {
             this.eventBus.dispatchEvent({
                 type: "error",
                 error: "manifestError",
-                event: {message: message, id: id, manifest: manifest}
+                event: {code: code, message: message, manifest: manifest}
             });
         },
 
-        closedCaptionsError: function (message, id, ccContent) {
+        // {code : CC_ERR_PARSE}
+        closedCaptionsError: function (code, message, ccContent) {
             this.eventBus.dispatchEvent({
                 type: "error",
                 error: "cc",
-                event: {message: message, id: id, cc: ccContent}
+                event: {code: code, message: message, cc: ccContent}
             });
         },
 
-        mediaSourceError: function (err) {
+        // {code : MEDIA_ERR_ABORTED | MEDIA_ERR_NETWORK | MEDIA_ERR_DECODE | MEDIA_ERR_SRC_NOT_SUPPORTED | MEDIA_ERR_ENCRYPTED 
+        // | MEDIA_ERR_REMOVE_SOURCEBUFFER | MEDIA_ERR_CREATE_SOURCEBUFFER, message: ""}
+        mediaSourceError: function (code, message) {
             this.eventBus.dispatchEvent({
                 type: "error",
                 error: "mediasource",
-                event: err
+                event: {code : code, message : message}
             });
         },
 
-        mediaKeySessionError: function (err) {
+        // {code : MEDIA_KEYERR_UNKNOWN | MEDIA_KEYERR_CLIENT | MEDIA_KEYERR_SERVICE | MEDIA_KEYERR_OUTPUT |MEDIA_KEYERR_HARDWARECHANGE
+        // |MEDIA_KEYERR_DOMAIN, message: "", systemCode:  }
+        mediaKeySessionError: function (code, message, systemCode) {
             this.eventBus.dispatchEvent({
                 type: "error",
                 error: "key_session",
-                event: err
+                event: {code : code, message : message, systemCode : systemCode}
             });
         },
 
-        mediaKeyMessageError: function (err) {
+        // {code : MEDIA_KEYMESSERR_INVALID_HEADER | MEDIA_KEYMESSERR_NOCHALLENGE | MEDIA_KEYMESSERR_XHR_ABORTED | MEDIA_KEYMESSERR_XHR_ERROR, message:""}
+        mediaKeyMessageError: function (code, message) {
             this.eventBus.dispatchEvent({
                 type: "error",
                 error: "key_message",
-                event: err
+                event: {code : code, message : message}
             });
         },
 
-        mediaKeySystemSelectionError: function (err) {
+        // {code : MEDIA_KEYSYSERR_UNSUPPORTED, message:""}
+        mediaKeySystemSelectionError: function (code, message) {
             this.eventBus.dispatchEvent({
                 type: "error",
                 error: "key_system_selection",
-                event: err
+                event: {code : code, message : message}
             });
         }
     };
@@ -90,3 +97,40 @@ MediaPlayer.dependencies.ErrorHandler = function () {
 MediaPlayer.dependencies.ErrorHandler.prototype = {
     constructor: MediaPlayer.dependencies.ErrorHandler
 };
+
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ABORTED = "MEDIA_ERR_ABORTED";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_NETWORK = "MEDIA_ERR_NETWORK";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_DECODE = "MEDIA_ERR_DECODE";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_SRC_NOT_SUPPORTED = "MEDIA_ERR_SRC_NOT_SUPPORTED";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED = "MEDIA_ERR_ENCRYPTED";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_REMOVE_SOURCEBUFFER = "MEDIA_ERR_REMOVE_SOURCEBUFFER";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER = "MEDIA_ERR_CREATE_SOURCEBUFFER";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC = "MANIFEST_ERR_CODEC";
+MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE = "MANIFEST_ERR_PARSE";
+MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM = "MANIFEST_ERR_NOSTREAM";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIASOURCE = "CAPABILITY_ERR_MEDIASOURCE";
+MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS = "CAPABILITY_ERR_MEDIAKEYS";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST = "DOWNLOAD_ERR_MANIFEST";
+MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX = "DOWNLOAD_ERR_SIDX";
+MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT = "DOWNLOAD_ERR_CONTENT";
+MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_INIT = "DOWNLOAD_ERR_INIT";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.CC_ERR_PARSE = "CC_ERR_PARSE";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN = "MEDIA_KEYERR_UNKNOWN";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_CLIENT = "MEDIA_KEYERR_CLIENT";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_SERVICE = "MEDIA_KEYERR_SERVICE";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT = "MEDIA_KEYERR_OUTPUT";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_HARDWARECHANGE = "MEDIA_KEYERR_HARDWARECHANGE";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_DOMAIN = "MEDIA_KEYERR_DOMAIN";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_UNSUPPORTED = "MEDIA_KEYSYSERR_UNSUPPORTED";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_INVALID_HEADER = "MEDIA_KEYMESSERR_INVALID_HEADER";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NOCHALLENGE = "MEDIA_KEYMESSERR_NOCHALLENGE";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ABORTED = "MEDIA_KEYMESSERR_XHR_ABORTED";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ERROR = "MEDIA_KEYMESSERR_XHR_ERROR";

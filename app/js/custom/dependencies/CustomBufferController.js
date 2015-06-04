@@ -622,7 +622,7 @@ Custom.dependencies.CustomBufferController = function () {
                     self.fragmentController.removeExecutedRequestsBeforeTime(fragmentModel, removeEnd);
                     deferred.resolve(removeEnd - removeStart);
                 }, function () {
-                    self.errHandler.mediaSourceError("impossible to remove data from SourceBuffer");
+                    self.errHandler.mediaSourceError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_REMOVE_SOURCEBUFFER, "impossible to remove data from SourceBuffer");
                 }
             );
 
@@ -645,7 +645,7 @@ Custom.dependencies.CustomBufferController = function () {
             this.debug.log(type + ": Failed to load a request at startTime = "+e.startTime);
             this.stallTime = e.startTime;
             this.ChunkMissingState = true;
-            this.errHandler.downloadError("chunk", e.url, e);
+            this.errHandler.downloadError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, e.url, e);
         },
 
         signalStreamComplete = function (/*request*/) {
@@ -958,7 +958,7 @@ Custom.dependencies.CustomBufferController = function () {
                                                 }
                                             }, function(e) {
                                                 self.debug.error("[BufferController]["+type+"] Problem during init segment generation \"" + e.message+"\"");
-                                                self.errHandler.manifestError(e,"codec",self.manifestModel.getValue());
+                                                self.errHandler.manifestError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC, e.name+' : '+e.message,self.manifestModel.getValue());
                                             }
                                         );
                                     } else {

@@ -133,7 +133,7 @@ MediaPlayer.dependencies.Stream = function () {
                 {
                     pause.call(self);
                     self.debug.error(error);
-                    self.errHandler.mediaKeySystemSelectionError(error);
+                    self.errHandler.mediaKeySystemSelectionError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_UNSUPPORTED, error);
                     // ORANGE
                     self.metricsModel.addState(self.type, "stopped", self.videoModel.getCurrentTime(), 2);
                     self.reset();
@@ -176,8 +176,8 @@ MediaPlayer.dependencies.Stream = function () {
             self.protectionController.updateFromMessage(kid, session, msg, laURL).fail(
                 function (error) {
                     pause.call(self);
-                    self.debug.log(error);
-                    self.errHandler.mediaKeyMessageError(error);
+                    self.debug.log(error.msg);
+                    self.errHandler.mediaKeyMessageError(error.code, error.msg);
                     // ORANGE
                     self.metricsModel.addState(self.type, "stopped", self.videoModel.getCurrentTime(), 2);
                     self.reset();
@@ -198,34 +198,41 @@ MediaPlayer.dependencies.Stream = function () {
 
         onMediaSourceKeyError = function () {
             var session = event.target,
+                code,
                 msg;
 
             this.debug.log("[DRM] ### onMediaSourceKeyError.");
-            msg = 'DRM: MediaKeyError - sessionId: ' + session.sessionId + ' errorCode: ' + session.error.code + ' systemErrorCode: ' + session.error.systemCode + ' [';
+            msg = 'DRM: MediaKeyError - sessionId: ' + session.sessionId + ' [';
             switch (session.error.code) {
                 case 1:
-                    msg += "MEDIA_KEYERR_UNKNOWN - An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
+                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
+                    msg += "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
                     break;
                 case 2:
-                    msg += "MEDIA_KEYERR_CLIENT - The Key System could not be installed or updated.";
+                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_CLIENT;
+                    msg += "The Key System could not be installed or updated.";
                     break;
                 case 3:
-                    msg += "MEDIA_KEYERR_SERVICE - The message passed into update indicated an error from the license service.";
+                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_SERVICE;
+                    msg += "The message passed into update indicated an error from the license service.";
                     break;
                 case 4:
-                    msg += "MEDIA_KEYERR_OUTPUT - There is no available output device with the required characteristics for the content protection system.";
+                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT;
+                    msg += "There is no available output device with the required characteristics for the content protection system.";
                     break;
                 case 5:
-                    msg += "MEDIA_KEYERR_HARDWARECHANGE - A hardware configuration change caused a content protection error.";
+                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_HARDWARECHANGE;
+                    msg += "A hardware configuration change caused a content protection error.";
                     break;
                 case 6:
-                    msg += "MEDIA_KEYERR_DOMAIN - An error occurred in a multi-device domain licensing configuration. The most common error is a failure to join the domain.";
+                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_DOMAIN;
+                    msg += "An error occurred in a multi-device domain licensing configuration. The most common error is a failure to join the domain.";
                     break;
             }
             msg += "]";
-            //pause.call(this);
+            
             this.debug.log(msg);
-            this.errHandler.mediaKeySessionError(msg);
+            this.errHandler.mediaKeySessionError(code, msg, session.error.systemCode);
         },
 
         // Media Source
@@ -296,7 +303,7 @@ MediaPlayer.dependencies.Stream = function () {
             if (videoReady && audioReady && textTrackReady) {
                 if (videoController === null && audioController === null && textController === null) {
                     var msg = "No streams to play.";
-                    this.errHandler.manifestError(msg, "nostreams", manifest);
+                    this.errHandler.manifestError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM, msg, manifest);
                     this.debug.log(msg);
                     deferred.reject();
                 } else {
@@ -343,7 +350,7 @@ MediaPlayer.dependencies.Stream = function () {
 
                                                 if (!!contentProtectionData && !self.capabilities.supportsMediaKeys()) {
                                                     self.debug.error("[Stream] mediakeys not supported!");
-                                                    self.errHandler.capabilityError("mediakeys");
+                                                    self.errHandler.capabilityError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS);
                                                     return Q.when(null);
                                                 }
 
@@ -354,7 +361,7 @@ MediaPlayer.dependencies.Stream = function () {
 
                                                 if (!self.capabilities.supportsCodec(self.videoModel.getElement(), codec)) {
                                                     var msg = "Video Codec (" + codec + ") is not supported.";
-                                                    self.errHandler.manifestError(msg, "codec", manifest);
+                                                    self.errHandler.manifestError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC, msg, manifest);
                                                     return Q.when(null);
                                                     //self.debug.error("[Stream] ", msg);
                                                 }
@@ -380,7 +387,7 @@ MediaPlayer.dependencies.Stream = function () {
                                         checkIfInitialized.call(self, videoReady, audioReady, textTrackReady,  initialize);
                                     },
                                     function (/*error*/) {
-                                        self.errHandler.mediaSourceError("Error creating video source buffer.");
+                                        self.errHandler.mediaSourceError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Error creating video source buffer.");
                                         videoReady = true;
                                         checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
                                     }
@@ -417,7 +424,7 @@ MediaPlayer.dependencies.Stream = function () {
 
                                                         if (!!contentProtectionData && !self.capabilities.supportsMediaKeys()) {
                                                             self.debug.error("[Stream] mediakeys not supported!");
-                                                            self.errHandler.capabilityError("mediakeys");
+                                                            self.errHandler.capabilityError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS);
                                                             return Q.when(null);
                                                         }
 
@@ -428,7 +435,7 @@ MediaPlayer.dependencies.Stream = function () {
 
                                                         if (!self.capabilities.supportsCodec(self.videoModel.getElement(), codec)) {
                                                             var msg = "Audio Codec (" + codec + ") is not supported.";
-                                                            self.errHandler.manifestError(msg, "codec", manifest);
+                                                            self.errHandler.manifestError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC, msg, manifest);
                                                             self.debug.error("[Stream] ", msg);
                                                             return Q.when(null);
                                                         }
@@ -453,7 +460,7 @@ MediaPlayer.dependencies.Stream = function () {
                                                 checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
                                             },
                                             function () {
-                                                self.errHandler.mediaSourceError("Error creating audio source buffer.");
+                                                self.errHandler.mediaSourceError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Error creating audio source buffer.");
                                                 audioReady = true;
                                                 checkIfInitialized.call(self, videoReady, audioReady,textTrackReady,  initialize);
                                             }
@@ -509,7 +516,7 @@ MediaPlayer.dependencies.Stream = function () {
                                                 function (error) {
                                                     self.debug.log("Error creating text source buffer:");
                                                     self.debug.log(error);
-                                                    self.errHandler.mediaSourceError("Error creating text source buffer.");
+                                                    self.errHandler.mediaSourceError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Error creating text source buffer.");
                                                     textTrackReady = true;
                                                     checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
                                                 }
@@ -639,37 +646,36 @@ MediaPlayer.dependencies.Stream = function () {
         onError = function (event) {
             this.debug.info("<video> error event");
             var error = event.srcElement.error,
-                code = error.code,
-                msg = "";
+                code;
 
-            if (code === -1) {
+            if (error.code === -1) {
                 // not an error!
                 return;
             }
 
-            switch (code) {
+            switch (error.code) {
                 case 1:
-                    msg = "MEDIA_ERR_ABORTED";
+                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ABORTED;
                     break;
                 case 2:
-                    msg = "MEDIA_ERR_NETWORK";
+                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_NETWORK;
                     break;
                 case 3:
-                    msg = "MEDIA_ERR_DECODE";
+                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_DECODE;
                     break;
                 case 4:
-                    msg = "MEDIA_ERR_SRC_NOT_SUPPORTED";
+                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_SRC_NOT_SUPPORTED;
                     break;
                 case 5:
-                    msg = "MEDIA_ERR_ENCRYPTED";
+                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED;
                     break;
             }
 
             errored = true;
 
-            this.debug.log("Video Element Error: " + msg);
+            this.debug.log("Video Element Error: " + code);
             this.debug.log(error);
-            this.errHandler.mediaSourceError(msg);
+            this.errHandler.mediaSourceError(code);
             this.reset();
         },
 

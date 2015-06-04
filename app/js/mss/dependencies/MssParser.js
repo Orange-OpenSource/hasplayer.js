@@ -513,7 +513,7 @@ Mss.dependencies.MssParser = function () {
 
         if (manifest === null) {
             this.debug.error("[MssParser]", "Failed to parse manifest!!");
-            this.errHandler.manifestError("parsing the manifest failed", "parse", data);
+            this.errHandler.manifestError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE, "parsing the manifest failed", data);
             return Q.reject(null);
         }
 

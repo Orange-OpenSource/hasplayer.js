@@ -166,7 +166,7 @@ MediaPlayer.dependencies.FragmentLoader = function () {
                         }, RETRY_INTERVAL);
                     } else {
                         self.debug.log("[FragmentLoader]["+request.streamType+"] Failed loading: " + request.type + ":" + request.startTime + " no retry attempts left");
-                        self.errHandler.downloadError("content", request.url, req);
+                        self.errHandler.downloadError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, request.url, req);
                         request.deferred.reject(req);
                     }
                 };

@@ -82,7 +82,7 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                     },
                     function () {
                         self.debug.error("[ManifestLoader] Manifest parsing error.");
-                        self.errHandler.manifestError("parsing the manifest failed", "parse",null);
+                        self.errHandler.manifestError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE, "parsing the manifest failed", null);
                         deferred.reject(request);
                     }
                 );
@@ -114,7 +114,7 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                     }, RETRY_INTERVAL);
                 } else {
                     self.debug.log("Failed loading manifest: " + url + " no retry attempts left");
-                    self.errHandler.downloadError("manifest", url, request);
+                    self.errHandler.downloadError(self.errHandler.DOWNLOAD_ERR_MANIFEST, url, request);
                     deferred.reject(request);
                 }
             };
