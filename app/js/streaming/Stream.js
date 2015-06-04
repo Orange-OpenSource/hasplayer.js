@@ -55,11 +55,6 @@ MediaPlayer.dependencies.Stream = function () {
         isPaused = false,
         isSeeked = false,
 
-        needKeyListener,
-        keyMessageListener,
-        keyAddedListener,
-        keyErrorListener,
-
         initialSeekTime,
 
         // ORANGE: interval id for checking buffers start time
@@ -69,7 +64,7 @@ MediaPlayer.dependencies.Stream = function () {
 
         // Encrypted Media Extensions
         onProtectionError = function(event) {
-            this.errHandler.mediaKeySessionError(event.data);
+            this.errHandler.mediaKeySessionError(event.data.code, event.data.message,null);
             this.debug.error("[Stream] protection error: " + event.data);
             this.reset();
         },
@@ -106,137 +101,8 @@ MediaPlayer.dependencies.Stream = function () {
                 startBuffering(time);
             });
         },
-
-        // Encrypted Media Extensions
-
-        onMediaSourceNeedsKey = function (event) {
-            var self = this,
-                type;
-
-            self.debug.log("[DRM] ### onMediaSourceNeedsKey (" + event.type + ")");
-
-            // ORANGE: set videoCodec as type
-            //type = (event.type !== "msneedkey") ? event.type : videoCodec;
-            type = videoCodec;
-            initData.push({type: type, initData: event.initData});
-
-            this.debug.log("[DRM] Key required for - " + type);
-            //this.debug.log("[DRM] Generating key request...");
-            //this.protectionModel.generateKeyRequest(DEFAULT_KEY_TYPE, event.initData);
-            if (!!contentProtection && !!videoCodec && !kid) {
-                try
-                {
-                    self.debug.log("[DRM] Select Key System");
-                    kid = self.protectionController.selectKeySystem(videoCodec, contentProtection);
-                }
-                catch (error)
-                {
-                    pause.call(self);
-                    self.debug.error(error);
-                    self.errHandler.mediaKeySystemSelectionError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_UNSUPPORTED, error);
-                    // ORANGE
-                    self.metricsModel.addState(self.type, "stopped", self.videoModel.getCurrentTime(), 2);
-                    self.reset();
-                }
-            }
-
-            if (!!kid) {
-                self.debug.log("[DRM] Ensure Key Session for KID " + kid);
-                self.protectionController.ensureKeySession(kid, type, event.initData);
-            }
-        },
-
-        onMediaSourceKeyMessage = function (event) {
-            var self = this,
-                session = null,
-                bytes = null,
-                msg = null,
-                laURL = null;
-
-            self.debug.log("[DRM] ### onMediaSourceKeyMessage (" + event.type + ")");
-
-            session = event.target;
-
-            // ORANGE: Uint16Array if conversion from multi-byte to unicode is required
-            bytes = event.message[1] === 0 ? new Uint16Array(event.message.buffer) : new Uint8Array(event.message.buffer);
-
-            msg = String.fromCharCode.apply(null, bytes);
-            self.debug.log("[DRM] Key message: " + msg);
-
-            laURL = event.destinationURL;
-            self.debug.log("[DRM] laURL: " + laURL);
-            
-            // ORANGE: if backUrl is defined, override laURL
-            var manifest = self.manifestModel.getValue();
-            if(manifest.backUrl) {
-                laURL = manifest.backUrl;
-                self.debug.log("[DRM] backURL: " + laURL);
-            }
-
-            self.protectionController.updateFromMessage(kid, session, msg, laURL).fail(
-                function (error) {
-                    pause.call(self);
-                    self.debug.log(error.msg);
-                    self.errHandler.mediaKeyMessageError(error.code, error.msg);
-                    // ORANGE
-                    self.metricsModel.addState(self.type, "stopped", self.videoModel.getCurrentTime(), 2);
-                    self.reset();
-            });
-
-            //if (event.keySystem !== DEFAULT_KEY_TYPE) {
-            //    this.debug.log("[DRM] Key type not supported!");
-            //}
-            // else {
-                // todo : request license?
-                //requestLicense(e.message, e.sessionId, this);
-            // }
-        },
-
-        onMediaSourceKeyAdded = function () {
-            this.debug.log("[DRM] ### onMediaSourceKeyAdded.");
-        },
-
-        onMediaSourceKeyError = function () {
-            var session = event.target,
-                code,
-                msg;
-
-            this.debug.log("[DRM] ### onMediaSourceKeyError.");
-            msg = 'DRM: MediaKeyError - sessionId: ' + session.sessionId + ' [';
-            switch (session.error.code) {
-                case 1:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
-                    msg += "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
-                    break;
-                case 2:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_CLIENT;
-                    msg += "The Key System could not be installed or updated.";
-                    break;
-                case 3:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_SERVICE;
-                    msg += "The message passed into update indicated an error from the license service.";
-                    break;
-                case 4:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT;
-                    msg += "There is no available output device with the required characteristics for the content protection system.";
-                    break;
-                case 5:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_HARDWARECHANGE;
-                    msg += "A hardware configuration change caused a content protection error.";
-                    break;
-                case 6:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_DOMAIN;
-                    msg += "An error occurred in a multi-device domain licensing configuration. The most common error is a failure to join the domain.";
-                    break;
-            }
-            msg += "]";
-            
-            this.debug.log(msg);
-            this.errHandler.mediaKeySessionError(code, msg, session.error.systemCode);
-        },
-
+ 
         // Media Source
-
         setUpMediaSource = function (mediaSourceArg) {
             var deferred = Q.defer(),
                 self = this,
@@ -1050,7 +916,6 @@ MediaPlayer.dependencies.Stream = function () {
         fragmentController: undefined,
         abrController: undefined,
         fragmentExt: undefined,
-        protectionModel: undefined,
         protectionController: undefined,
         protectionExt: undefined,
         capabilities: undefined,
@@ -1209,21 +1074,6 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         initProtection: function(protectionData) {
-            /*needKeyListener = onMediaSourceNeedsKey.bind(this);
-            keyMessageListener = onMediaSourceKeyMessage.bind(this);
-            keyAddedListener = onMediaSourceKeyAdded.bind(this);
-            keyErrorListener = onMediaSourceKeyError.bind(this);
-
-            this.protectionModel = this.system.getObject("protectionModel");
-            this.protectionModel.init(this.getVideoModel());
-            this.protectionController = this.system.getObject("protectionController");
-            this.protectionController.init(this.videoModel, this.protectionModel);
-
-            this.protectionModel.listenToNeedKey(needKeyListener);
-            this.protectionModel.listenToKeyMessage(keyMessageListener);
-            this.protectionModel.listenToKeyError(keyErrorListener);
-            this.protectionModel.listenToKeyAdded(keyAddedListener);*/
-
             this.protectionController = this.system.getObject("protectionController");
             this.protectionController.subscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
             this.protectionController.setMediaElement(this.videoModel.getElement());
@@ -1231,7 +1081,6 @@ MediaPlayer.dependencies.Stream = function () {
             if (protectionData) {
                 this.protectionController.setProtectionData(protectionData);
             }
-
         },
 
         getVideoModel: function() {
@@ -1283,7 +1132,6 @@ MediaPlayer.dependencies.Stream = function () {
                 this.protectionController.teardown();
             }
             this.protectionController = undefined;
-            this.protectionModel = undefined;
             this.fragmentController = undefined;
             this.requestScheduler = undefined;
 
