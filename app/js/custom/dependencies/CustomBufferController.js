@@ -630,22 +630,50 @@ Custom.dependencies.CustomBufferController = function () {
         },
 
         onBytesError = function (e) {
-
-            //if it's the first download error, try to load the same segment for a the lowest quality...
-            if(this.ChunkMissingState === false)
-            {
-                if (e.quality !== 0) {
-                    currentRepresentation = getRepresentationForQuality.call(this, 0);
-                    if (currentRepresentation !== undefined || currentRepresentation !== null) {
-                        loadNextFragment.call(this);
-                    }
-                }
-            }
+            var self = this,
+                params = {},
+                newQuality;
 
             this.debug.log(type + ": Failed to load a request at startTime = "+e.startTime);
             this.stallTime = e.startTime;
             this.ChunkMissingState = true;
             this.errHandler.downloadError("chunk", e.url, e);
+
+            // try to decrease quality level as current quality is obviously not available
+            newQuality = e.quality - 1;
+            if (newQuality < 0) {
+                newQuality = 0;
+            }
+            this.abrController.setPlaybackQuality(type, newQuality);
+
+            // Additionally restrict ABR controller to not switch to unavailable quality level(s)
+            params[type] = {
+                "ABR.maxQuality": newQuality
+            };
+            this.debug.log("[BufferController]["+type+"] restrict ABR maxQuality to: " + newQuality);
+            this.config.setParams(params);
+
+            // Reset ABR restrictions after a while -> maybe higher quality level is then available again
+            params[type] = {
+                "ABR.maxQuality": -1
+            };
+            if (this.resetABRRestrictionsTimer) {
+                clearTimeout(this.resetABRRestrictionsTimer);
+                this.resetABRRestrictionsTimer = undefined;
+            }
+            if (!this.resetABRRestrictionsInterval) {
+                this.resetABRRestrictionsInterval = this.config.getParam("ABR.resetABRRestrictionsInterval", "number", 15000);
+            }
+            this.resetABRRestrictionsTimer = setTimeout(function(){
+                self.debug.log("[BufferController]["+type+"] reset ABR maxQuality");
+                self.config.setParams(params);
+            }, self.resetABRRestrictionsInterval);
+
+            // finally check buffer again with new decreased quality level to fetch fragement of new quality level
+            // Signal end of buffering process
+            signalSegmentBuffered.call(self);
+            // Check buffer level
+            checkIfSufficientBuffer.call(self);
         },
 
         signalStreamComplete = function (/*request*/) {
