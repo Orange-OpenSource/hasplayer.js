@@ -1117,7 +1117,6 @@ MediaPlayer.dependencies.BufferController = function () {
         indexHandler: undefined,
         debug: undefined,
         system: undefined,
-        errHandler: undefined,
         scheduleWhilePaused: undefined,
         eventController : undefined,
         timelineConverter:undefined,

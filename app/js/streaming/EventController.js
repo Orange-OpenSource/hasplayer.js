@@ -152,7 +152,6 @@ MediaPlayer.dependencies.EventController = function(){
         manifestLoader:undefined,
         debug: undefined,
         system: undefined,
-        errHandler: undefined,
         videoModel:undefined,
         addInlineEvents : addInlineEvents,
         addInbandEvents : addInbandEvents,

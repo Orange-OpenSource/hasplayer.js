@@ -1155,7 +1155,6 @@ Dash.dependencies.DashHandler = function () {
         metricsExt: undefined,
         manifestModel: undefined,
         manifestExt:undefined,
-        errHandler: undefined,
         timelineConverter: undefined,
 
         getType: function () {
