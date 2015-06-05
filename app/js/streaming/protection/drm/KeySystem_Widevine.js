@@ -64,7 +64,7 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
                         self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE,
                             null, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ERROR,'DRM: widevine update, XHR status is "' + xhr.statusText + '" (' + xhr.status +
                                         '), expected to be 200. readyState is ' + xhr.readyState +
-                                        ".  Response is " + ((this.response) ? String.fromCharCode.apply(null, new Uint8Array(this.response)) : "NONE"),null);
+                                        ".  Response is " + ((this.response) ? String.fromCharCode.apply(null, new Uint8Array(this.response)) : "NONE"),null));
                     }
                 };
                 xhr.onabort = function () {

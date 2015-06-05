@@ -43,5 +43,5 @@ MediaPlayer.vo.protection.KeyError = function(code, message, sessionToken, syste
     this.systemCode = systemCode;
 };
 
-MediaPlayer.vo.protection.KeyError.prototype = Object.create(MediaPlayer.vo.protection.Error.prototype);
+MediaPlayer.vo.protection.KeyError.prototype = Object.create(MediaPlayer.vo.Error.prototype);
 MediaPlayer.vo.protection.KeyError.prototype.constructor = MediaPlayer.vo.protection.KeyError;
