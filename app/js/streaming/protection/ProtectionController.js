@@ -39,6 +39,8 @@ MediaPlayer.dependencies.ProtectionController = function () {
         onKeyMessage = function(e) {
             if (e.error) {
                 this.debug.log(e.error);
+                this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
+                            e.error);
             } else {
                 var keyMessageEvent = e.data;
                 this.debug.log("[DRM] onKeyMessage: message = " + keyMessageEvent.message);

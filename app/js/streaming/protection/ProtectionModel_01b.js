@@ -154,8 +154,7 @@ MediaPlayer.models.ProtectionModel_01b = function () {
 
                                 if (pendingSessions.length !== 0) {
                                     self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE, null,
-                                    new MediaPlayer.vo.protection.KeyMessage(sessionToken, event.message, event.defaultURL));
-                                    self.errHandler.mediaKeyMessageError("Multiple key sessions were creates with a user-agent that does not support sessionIDs!! Unpredictable behavior ahead!");
+                                    new MediaPlayer.vo.protection.KeyError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_MULTIKEYS_UNSUPPORTED, event.message + "Multiple key sessions were creates with a user-agent that does not support sessionIDs!! Unpredictable behavior ahead!", sessionToken, null));
                                 }
                             }
 
@@ -170,6 +169,8 @@ MediaPlayer.models.ProtectionModel_01b = function () {
                                     new MediaPlayer.vo.protection.KeyMessage(sessionToken, event.message, event.defaultURL));
                             } else {
                                 self.log("No session token found for key message");
+                                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE, null,
+                                    new MediaPlayer.vo.protection.KeyError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_SESSION, "No session token found for key message", null, null));
                             }
                             break;
                     }

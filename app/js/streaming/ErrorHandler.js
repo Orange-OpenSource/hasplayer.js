@@ -136,3 +136,5 @@ MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NOCHALLENGE = "
 MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ABORTED = "MEDIA_KEYMESSERR_XHR_ABORTED";
 MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ERROR = "MEDIA_KEYMESSERR_XHR_ERROR";
 MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_KEY_UNKNOWN = "MEDIA_KEYMESSERR_KEY_UNKNOWN";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_MULTIKEYS_UNSUPPORTED = "MEDIA_KEYMESSERR_MULTIKEYS_UNSUPPORTED";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_SESSION = "MEDIA_KEYMESSERR_NO_SESSION";
