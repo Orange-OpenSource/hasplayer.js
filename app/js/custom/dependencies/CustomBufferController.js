@@ -15,8 +15,7 @@
  */
 Custom.dependencies.CustomBufferController = function () {
     "use strict";
-    var QUOTA_EXCEEDED_ERROR_CODE = 22,
-        READY = "READY",
+    var READY = "READY",
         state = READY,
         ready = false,
         started = false,
@@ -365,21 +364,23 @@ Custom.dependencies.CustomBufferController = function () {
                                         self.system.notify("bufferUpdated");
                                     },
                                     function(result) {
-                                        // ORANGE : add metric
-                                        self.metricsModel.addError(type,result.err.code,result.err.message,self.videoModel.getCurrentTime());
+                                        var data = {};
+                                        data.currentTime = self.videoModel.getCurrentTime();
 
+                                        self.errHandler.mediaSourceError(result.err.code, result.err.message, data);
                                         self.debug.log("[BufferController]["+type+"] Buffer failed with quality = "+quality+" index = "+index);
                                         // if the append has failed because the buffer is full we should store the data
                                         // that has not been appended and stop request scheduling. We also need to store
                                         // the promise for this append because the next data can be appended only after
                                         // this promise is resolved.
-                                        if (result.err.code === QUOTA_EXCEEDED_ERROR_CODE) {
-                                            rejectedBytes = {data: data, quality: quality, index: index};
-                                            deferredRejectedDataAppend = deferred;
-                                            isQuotaExceeded = true;
-                                            fragmentsToLoad = 0;
-                                            // stop scheduling new requests
-                                            doStop.call(self);
+                                        if(result.err.code === MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_QUOTA_EXCEEDED )
+                                        {
+                                                rejectedBytes = {data: data, quality: quality, index: index};
+                                                deferredRejectedDataAppend = deferred;
+                                                isQuotaExceeded = true;
+                                                fragmentsToLoad = 0;
+                                                // stop scheduling new requests
+                                                doStop.call(self);                                                
                                         }
                                     }
                             );
