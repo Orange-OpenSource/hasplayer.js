@@ -509,26 +509,27 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     ////////////////////////////////////////
 
     function onError(e) {
-        console.error("an error of type "+e.error+" has occured with error code = "+e.event.code);
-
-        switch (e.error) {
-            case "download" : 
-                 console.error(" url :\""+e.event.url+"\" and request response :\""+ e.event.request.responseXML+"\"");
+        console.error("an error has occured with error code = "+e.event.code);
+        debugger;
+        switch (e.event.code) {
+            case "DOWNLOAD_ERR_MANIFEST" :
+            case "DOWNLOAD_ERR_SIDX" :
+            case "DOWNLOAD_ERR_CONTENT" :
+            case "DOWNLOAD_ERR_INIT" :  
+                 console.error(" url :\""+e.event.data.url+"\" and request response :\""+ e.event.data.request.responseXML+"\"");
                  break;
-                 //url: url, request: request
-            case "manifestError" :
-                 console.error("Manifest URL was "+e.event.manifest.mpdUrl+" with message :\""+e.event.message+"\"");
+            case "MANIFEST_ERR_CODEC" :
+            case "MANIFEST_ERR_PARSE" :
+            case "MANIFEST_ERR_NOSTREAM" :
+                 console.error("Manifest URL was "+e.event.data.mpdUrl+" with message :\""+e.event.message+"\"");
                  break;
-            case "cc" : 
-                 console.error("message :\""+e.event.message+"\" for content = "+e.event.cc);
+            case "CC_ERR_PARSE" : 
+                 console.error("message :\""+e.event.message+"\" for content = "+e.event.data);
                  break;
-            case "key_session" :
-                 console.error("message :\""+e.event.message+"\" and systemCode = "+ e.event.systemCode);
-                 break;
-            case "mediasource" : 
-            case "key_message" :
-            case "key_system_selection" :
-                 console.error("message :\""+e.event.message+"\"");
+            default :
+                 if (e.event.message) {
+                    console.error("message :\""+e.event.message+"\"");
+                 }
                  break;
         };
 
