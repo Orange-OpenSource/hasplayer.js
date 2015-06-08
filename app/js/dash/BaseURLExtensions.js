@@ -278,7 +278,11 @@ Dash.dependencies.BaseURLExtensions = function () {
                 }
                 needFailureReport = false;
 
-                self.errHandler.downloadError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_INIT, info.url, request);
+                var data = {};
+                data.url = info.url;
+                data.request = request;
+
+                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_INIT, null, data);
                 deferred.reject(request);
             };
 
@@ -370,8 +374,12 @@ Dash.dependencies.BaseURLExtensions = function () {
                       return;
                     }
                     needFailureReport = false;
+                    
+                    var data = {};
+                    data.url = info.url;
+                    data.request = request;
 
-                    self.errHandler.downloadError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX, info.url, request);
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX, null, data);
                     deferred.reject(request);
                 };
 
@@ -505,7 +513,11 @@ Dash.dependencies.BaseURLExtensions = function () {
                 }
                 needFailureReport = false;
 
-                self.errHandler.downloadError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX, info.url, request);
+                var data = {};
+                data.url = info.url;
+                data.request = request;
+                
+                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX, null, data);
                 deferred.reject(request);
             };
 

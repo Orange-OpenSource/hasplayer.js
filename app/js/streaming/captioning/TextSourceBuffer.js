@@ -46,7 +46,7 @@ MediaPlayer.dependencies.TextSourceBuffer = function () {
                     );
                 },
                 function(errMsg) {
-                    self.errHandler.closedCaptionsError(MediaPlayer.dependencies.ErrorHandler.prototype.CC_ERR_PARSE, errMsg, ccContent);
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CC_ERR_PARSE, errMsg, ccContent);
                 }
             );
         },

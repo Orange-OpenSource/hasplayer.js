@@ -367,7 +367,7 @@ Custom.dependencies.CustomBufferController = function () {
                                         var data = {};
                                         data.currentTime = self.videoModel.getCurrentTime();
 
-                                        self.errHandler.mediaSourceError(result.err.code, result.err.message, data);
+                                        self.errHandler.sendError(result.err.code, result.err.message, data);
                                         self.debug.log("[BufferController]["+type+"] Buffer failed with quality = "+quality+" index = "+index);
                                         // if the append has failed because the buffer is full we should store the data
                                         // that has not been appended and stop request scheduling. We also need to store
@@ -623,7 +623,7 @@ Custom.dependencies.CustomBufferController = function () {
                     self.fragmentController.removeExecutedRequestsBeforeTime(fragmentModel, removeEnd);
                     deferred.resolve(removeEnd - removeStart);
                 }, function () {
-                    self.errHandler.mediaSourceError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_REMOVE_SOURCEBUFFER, "impossible to remove data from SourceBuffer");
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_REMOVE_SOURCEBUFFER, "impossible to remove data from SourceBuffer");
                 }
             );
 
@@ -631,7 +631,8 @@ Custom.dependencies.CustomBufferController = function () {
         },
 
         onBytesError = function (e) {
-
+            var msgError = type + ": Failed to load a request at startTime = "+e.startTime,
+                data = {};
             //if it's the first download error, try to load the same segment for a the lowest quality...
             if(this.ChunkMissingState === false)
             {
@@ -643,10 +644,13 @@ Custom.dependencies.CustomBufferController = function () {
                 }
             }
 
-            this.debug.log(type + ": Failed to load a request at startTime = "+e.startTime);
+            this.debug.log(msgError);
             this.stallTime = e.startTime;
             this.ChunkMissingState = true;
-            this.errHandler.downloadError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, e.url, e);
+
+            data.url = e.url;
+            data.request = e;
+            this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, type + ": Failed to load a request at startTime = "+e.startTime, data);
         },
 
         signalStreamComplete = function (/*request*/) {
@@ -959,7 +963,7 @@ Custom.dependencies.CustomBufferController = function () {
                                                 }
                                             }, function(e) {
                                                 self.debug.error("[BufferController]["+type+"] Problem during init segment generation \"" + e.message+"\"");
-                                                self.errHandler.manifestError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC, e.name+' : '+e.message,self.manifestModel.getValue());
+                                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC, e.name+' : '+e.message,self.manifestModel.getValue());
                                             }
                                         );
                                     } else {

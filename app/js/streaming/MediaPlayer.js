@@ -83,7 +83,7 @@ MediaPlayer = function (aContext) {
             }
 
             if (!this.capabilities.supportsMediaSource()) {
-                this.errHandler.capabilityError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIASOURCE);
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIASOURCE);
                 return;
             }
 

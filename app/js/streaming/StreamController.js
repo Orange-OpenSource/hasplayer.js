@@ -384,7 +384,7 @@
                     self.system.notify("streamsComposed");
                 },
                 function(errMsg) {
-                    self.errHandler.manifestError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM, errMsg, self.manifestModel.getValue());
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM, errMsg, self.manifestModel.getValue());
                     self.reset();
                 }
             );
