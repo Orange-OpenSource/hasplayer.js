@@ -510,7 +510,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
     function onError(e) {
         console.error("an error has occured with error code = "+e.event.code);
-        debugger;
+
         switch (e.event.code) {
             case "DOWNLOAD_ERR_MANIFEST" :
             case "DOWNLOAD_ERR_SIDX" :

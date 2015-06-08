@@ -513,8 +513,7 @@ Mss.dependencies.MssParser = function () {
 
         if (manifest === null) {
             this.debug.error("[MssParser]", "Failed to parse manifest!!");
-            this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE, "parsing the manifest failed", data);
-            return Q.reject(null);
+            return Q.reject("[MssParser] Failed to parse manifest!!");
         }
 
         // Set the manifest base Url
@@ -542,7 +541,6 @@ Mss.dependencies.MssParser = function () {
 
     return {
         debug: undefined,
-        errHandler: undefined,
         system: undefined,
                 
         parse: internalParse
