@@ -367,7 +367,7 @@ Custom.dependencies.CustomBufferController = function () {
                                         var data = {};
                                         data.currentTime = self.videoModel.getCurrentTime();
 
-                                        self.errHandler.sendError(result.err.code, result.err.message, data);
+                                        self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_APPEND_SOURCEBUFFER, result.err.code+':'+result.err.message, data);
                                         self.debug.log("[BufferController]["+type+"] Buffer failed with quality = "+quality+" index = "+index);
                                         // if the append has failed because the buffer is full we should store the data
                                         // that has not been appended and stop request scheduling. We also need to store

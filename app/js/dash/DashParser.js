@@ -344,7 +344,6 @@ Dash.dependencies.DashParser = function () {
                 this.debug.log("Parsing complete: ( xml2json: " + (json.getTime() - start.getTime()) + "ms, objectiron: " + (ironed.getTime() - json.getTime()) + "ms, total: " + ((ironed.getTime() - start.getTime()) / 1000) + "s)");
             } catch (err) {
                 var dataError = {};
-
                 dataError.mpdUrl = baseUrl;
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE, "parsing the manifest failed", dataError);
                 return Q.reject(err);
