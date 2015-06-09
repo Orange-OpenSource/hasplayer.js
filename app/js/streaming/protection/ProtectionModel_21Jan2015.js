@@ -264,8 +264,14 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 message = message.toJWK();
             }
             session.update(message).catch(function (error) {
+                var data = {};
+               
+                data.sessionToken = sessionToken;
+                data.systemCode = null;
+                
+                //error is a DOMException
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR,
-                    new MediaPlayer.vo.protection.KeyError(sessionToken, "Error sending update() message! " + error.name));
+                    new MediaPlayer.vo.Error(error.code, "Error sending update() message! " + error.name, data));
             });
         },
 

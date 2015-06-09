@@ -112,7 +112,7 @@ MediaPlayer.models.ProtectionModel_01b = function () {
                                 data.systemCode = event.systemCode;
                                 // TODO: Build error string based on key error
                                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR,
-                                    new MediaPlayer.vo.protection.KeyError(code, msg, data));
+                                    new MediaPlayer.vo.Error(code, msg, data));
                             } else {
                                 self.log("No session token found for key error");
                             }
@@ -157,8 +157,13 @@ MediaPlayer.models.ProtectionModel_01b = function () {
                                 sessions.push(sessionToken);
 
                                 if (pendingSessions.length !== 0) {
+                                    var data = {};
+                                
+                                    data.sessionToken = sessionToken;
+                                    data.systemCode = null;
+
                                     self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE, null,
-                                    new MediaPlayer.vo.protection.KeyError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_MULTIKEYS_UNSUPPORTED, event.message + "Multiple key sessions were creates with a user-agent that does not support sessionIDs!! Unpredictable behavior ahead!", sessionToken, null));
+                                    new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_MULTIKEYS_UNSUPPORTED, event.message + "Multiple key sessions were creates with a user-agent that does not support sessionIDs!! Unpredictable behavior ahead!", data));
                                 }
                             }
 
@@ -172,9 +177,16 @@ MediaPlayer.models.ProtectionModel_01b = function () {
                                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE,
                                     new MediaPlayer.vo.protection.KeyMessage(sessionToken, event.message, event.defaultURL));
                             } else {
-                                self.log("No session token found for key message");
+                                var data = {},
+                                    msgError = "No session token found for key message";
+                                
+                                data.sessionToken = null;
+                                data.systemCode = null;
+
+                                self.log(msgError);
                                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE, null,
-                                    new MediaPlayer.vo.protection.KeyError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_SESSION, "No session token found for key message", null, null));
+                                    new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_SESSION,
+                                     msgError, data));
                             }
                             break;
                     }
