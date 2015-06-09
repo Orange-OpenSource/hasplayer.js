@@ -115,12 +115,14 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                         doLoad.call(self, url, remainingAttempts);
                     }, RETRY_INTERVAL);
                 } else {
-                    self.debug.log("Failed loading manifest: " + url + " no retry attempts left");
+                    var data = {},
+                        msgError = "Failed loading manifest: " + url + " no retry attempts left";
 
-                    var data = {};
+                    self.debug.log(msgError);
+                    
                     data.url = url;
                     data.request = request;
-                    self.errHandler.sendError(self.errHandler.DOWNLOAD_ERR_MANIFEST, null, data);
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST, msgError, data);
                     deferred.reject(request);
                 }
             };

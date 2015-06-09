@@ -581,7 +581,6 @@ MediaPlayer = function (aContext) {
             }
 
             // TODO : update
-
             if (playing && streamController) {
                 streamController.reset();
                 playing = false;
@@ -634,7 +633,6 @@ MediaPlayer = function (aContext) {
          */
         reset: function() {
             this.attachSource(null);
-            this.attachView(null);
             protectionData = null;
         },
 
