@@ -778,6 +778,8 @@ Custom.dependencies.CustomBufferController = function () {
                     updatePlayListForRepresentation.call(self, currentQuality).then(
                         function () {
                             currentRepresentation = getRepresentationForQuality.call(self, currentQuality);
+                            // Update sequence number
+                            currentSequenceNumber = currentRepresentation.startNumber;
                             updateCheckBufferTimeout.call(self,0);
                         }
                     );

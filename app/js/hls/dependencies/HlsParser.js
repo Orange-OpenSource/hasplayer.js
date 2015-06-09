@@ -246,7 +246,7 @@ Hls.dependencies.HlsParser = function () {
                     isArray: true,
                     //parent: segmentList,
                     // children: [],
-                    media: (media.uri.indexOf("http://") !== -1) ? media.uri : (segmentList.BaseURL + media.uri),
+                    media: (media.uri.indexOf("http://") !== -1 || media.uri.indexOf("https://") !== -1) ? media.uri : (segmentList.BaseURL + media.uri),
                     sequenceNumber: segmentList.startNumber + index,
                     time: (segments.length === 0) ? 0 : segments[segments.length - 1].time + segments[segments.length - 1].duration,
                     duration: media.duration
@@ -551,7 +551,7 @@ Hls.dependencies.HlsParser = function () {
                     bandwidth: stream.bandwidth,
                     width: parseInt(stream.resolution.split('x')[0], 10),
                     height: parseInt(stream.resolution.split('x')[1], 10),
-                    url: (stream.uri.indexOf("http://") > -1) ? stream.uri : (adaptationSet.BaseURL + stream.uri),
+                    url: (stream.uri.indexOf("http://") > -1 || stream.uri.indexOf("https://") > -1) ? stream.uri : (adaptationSet.BaseURL + stream.uri),
                 };
                 representation.BaseURL = parseBaseUrl(representation.url);
                 representations.push(representation);
