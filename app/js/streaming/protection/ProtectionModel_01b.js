@@ -106,9 +106,13 @@ MediaPlayer.models.ProtectionModel_01b = function () {
                                         msg += "An error occurred in a multi-device domain licensing configuration. The most common error is a failure to join the domain.";
                                         break;
                                 }
+                                var data = {};
+                                
+                                data.sessionToken = sessionToken;
+                                data.systemCode = event.systemCode;
                                 // TODO: Build error string based on key error
                                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR,
-                                    new MediaPlayer.vo.protection.KeyError(code, msg, sessionToken, event.systemCode));
+                                    new MediaPlayer.vo.protection.KeyError(code, msg, data));
                             } else {
                                 self.log("No session token found for key error");
                             }

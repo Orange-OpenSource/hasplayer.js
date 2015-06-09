@@ -165,13 +165,14 @@ MediaPlayer.dependencies.FragmentLoader = function () {
                             doLoad.call(self, request, remainingAttempts);
                         }, RETRY_INTERVAL);
                     } else {
-                        self.debug.log("[FragmentLoader]["+request.streamType+"] Failed loading: " + request.type + ":" + request.startTime + " no retry attempts left");
+                        var msgError = "[FragmentLoader]["+request.streamType+"] Failed loading: " + request.type + ":" + request.startTime + " no retry attempts left";
+                        self.debug.log(msgError);
 
                         var data = {};
                         data.url = request.url;
                         data.request = req;
 
-                        self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, null, data);
+                        self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, msgError, data);
                         request.deferred.reject(req);
                     }
                 };
