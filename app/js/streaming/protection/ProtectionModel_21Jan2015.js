@@ -264,14 +264,24 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 message = message.toJWK();
             }
             session.update(message).catch(function (error) {
-                var data = {};
+                var data = {},
+                    codeError = -1;
                
                 data.sessionToken = sessionToken;
                 data.systemCode = null;
-                
-                //error is a DOMException
+                // TO DO : try to specify Hasplayer error with the DOM error
+                switch(error.code) {
+                    case 22 /* DOM Quota Exceeded Error*/ : 
+                    case 15 /* DOM Invalid Access Error*/ :
+                    case 11 /* DOM Invalid State Error*/ :
+                    case 9  /* DOM Not Supported Error*/ :
+                    default :
+                        codeError = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR;
+                        break;
+                }
+
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR,
-                    new MediaPlayer.vo.Error(error.code, "Error sending update() message! " + error.name, data));
+                    new MediaPlayer.vo.Error(codeError, "Error sending update() message! " + error.name, data));
             });
         },
 

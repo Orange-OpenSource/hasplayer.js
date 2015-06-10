@@ -177,16 +177,12 @@ MediaPlayer.models.ProtectionModel_01b = function () {
                                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE,
                                     new MediaPlayer.vo.protection.KeyMessage(sessionToken, event.message, event.defaultURL));
                             } else {
-                                var data = {},
-                                    msgError = "No session token found for key message";
-                                
-                                data.sessionToken = null;
-                                data.systemCode = null;
+                                var msgError = "No session token found for key message";
 
                                 self.log(msgError);
                                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE, null,
                                     new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_SESSION,
-                                     msgError, data));
+                                     msgError, null));
                             }
                             break;
                     }

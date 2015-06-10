@@ -109,7 +109,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
                             this, videoInfo, audioInfo);
                 } catch (error) {
                     this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
-                            new MediaPlayer.vo.Error(null, "[DRM] Unable to select a key system from needkey initData. -- " + error.message, null));
+                            new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_UNSUPPORTED, "[DRM] Unable to select a key system from needkey initData. -- " + error.message, null));
                 }
             } else {
                 // We are in the process of selecting a key system, so just save the data
@@ -122,7 +122,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
                 this.debug.log("[DRM] KeySystem Access Granted");
             } else {
                 this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
-                        new MediaPlayer.vo.Error(null, "[DRM] KeySystem Access Denied! -- " + event.error, null));
+                        new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED, "[DRM] KeySystem Access Denied! -- " + event.error, null));
             }
         },
 
@@ -140,7 +140,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
                 this.debug.log("[DRM] Session created.  SessionID = " + event.data.getSessionID());
             } else {
                 this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
-                        new MediaPlayer.vo.Error(null, "[DRM] Failed to create key session. -- " + event.error, null));
+                        new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_SESSION, "[DRM] Failed to create key session. -- " + event.error, null));
             }
         },
 
@@ -150,7 +150,6 @@ MediaPlayer.dependencies.ProtectionController = function () {
 
         onKeyError = function (event) {
             this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, event.data.error);
-            //new MediaPlayer.vo.Error(null, "[DRM] MediaKeyError - sessionId: " + event.data.sessionToken.getSessionID() + ".  " + event.data.error, null)
         },
 
         onKeySessionClosed = function(event) {
@@ -158,7 +157,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
                 this.debug.log("[DRM] Session closed.  SessionID = " + event.data);
             } else {
                 this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
-                        new MediaPlayer.vo.Error(null, "[DRM] Failed to close key session. -- " + event.error, null));
+                        new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_CLOSE_SESSION, "[DRM] Failed to close key session. -- " + event.error, null));
             }
         },
 
@@ -167,7 +166,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
                 this.debug.log("[DRM] Session removed.  SessionID = " + event.data);
             } else {
                 this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
-                        new MediaPlayer.vo.Error(null, "[DRM] Failed to remove key session. -- " + event.error, null));
+                        new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_REMOVE_SESSION, "[DRM] Failed to remove key session. -- " + event.error, null));
             }
         };
 
@@ -317,7 +316,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
                     this.protectionModel.createKeySession(initDataForKS, this.sessionType, cdmData);
                 } catch (error) {
                     this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, 
-                        new MediaPlayer.vo.Error(null, "Error creating key session! " + error.message,null));
+                        new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_SESSION, "Error creating key session! " + error.message,null));
                 }
             } else {
                 this.debug.log("[DRM] Selected key system is " + this.keySystem.systemString + ".  needkey/encrypted event contains no initData corresponding to that key system!");
