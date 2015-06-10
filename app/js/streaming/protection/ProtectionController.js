@@ -131,7 +131,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
                 this.debug.log("[DRM] License server certificate successfully updated.");
             } else {
                 this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
-                        new MediaPlayer.vo.Error(null, "[DRM] Failed to update license server certificate. -- " + event.error, null));
+                        new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_UPDATE_CERTIFICATE_IMPOSSIBLE, "[DRM] Failed to update license server certificate. -- " + event.error, null));
             }
         },
 
