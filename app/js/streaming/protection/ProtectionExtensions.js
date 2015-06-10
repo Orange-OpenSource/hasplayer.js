@@ -268,6 +268,8 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
                     protCtrl.selectKeySystem(keySystemAccess);
                 } else {
                     self.debug.log(event.error);
+                    protCtrl.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
+                        new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED, "[DRM] KeySystem Access Denied! -- " + event.error, null));
                 }
             };
 
