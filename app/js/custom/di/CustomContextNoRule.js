@@ -13,12 +13,12 @@
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- Custom.di.CustomContext = function () {
+ Custom.di.CustomContextNoRule = function () {
     "use strict";
 
     return {
         system : undefined,
-           
+
         setup : function () {
             //call parent setup
             Custom.di.CustomContext.prototype.setup.call(this);
@@ -44,23 +44,17 @@
             this.system.mapSingleton('metricsModel', Custom.models.CustomMetricsModel);
             this.system.mapSingleton('metricsExt', Custom.dependencies.CustomMetricsExtensions);
             this.system.mapClass('metrics', Custom.models.CustomMetricsList);
-            this.system.mapSingleton('abrController', Custom.dependencies.CustomAbrController);
+            this.system.mapSingleton('abrController', MediaPlayer.dependencies.AbrController);
             this.system.mapClass('bufferController', Custom.dependencies.CustomBufferController);
             this.system.mapSingleton('sourceBufferExt', Custom.dependencies.CustomSourceBufferExtensions);
             this.system.mapSingleton('debug', Custom.utils.CustomDebug);
             this.system.mapSingleton('config', MediaPlayer.utils.Config);
 
-            // overload ABR rules
-            this.system.mapClass('downloadRatioRule', Custom.rules.CustomDownloadRatioRule);
-            this.system.mapClass('insufficientBufferRule', Custom.rules.CustomInsufficientBufferRule);
-
             // plug message handler. When the message is notify, the contextManager is called
             this.system.mapHandler('setContext', 'contextManager', 'setContext');
-
-            //this.system.mapSingleton('notifier', MediaPlayer.dependencies.Notifier);
         }
     };
 };
 
-Custom.di.CustomContext.prototype = new Dash.di.DashContext();
-Custom.di.CustomContext.prototype.constructor = Custom.di.CustomContext;
+Custom.di.CustomContextNoRule.prototype = new Dash.di.DashContext();
+Custom.di.CustomContextNoRule.prototype.constructor = Custom.di.CustomContextNoRule;

@@ -16,38 +16,39 @@
  Custom.dependencies.CustomParser = function () {
     "use strict";
 
-    var customParse = function(data, baseUrl) {
+   var customParse = function(data, baseUrl) {
 
-        var parser = null;
+      var parser = null;
 
-        // we parse the response of the request to know the manifest type        
-        if (data.indexOf("SmoothStreamingMedia")>-1) {
-            this.system.notify('setContext','MSS');
-            //do some business to transform it into a Dash Manifest
-            parser = this.mssParser;
-        } else if (data.indexOf("#EXTM3U")>-1) {
-            this.system.notify('setContext','HLS');
-            parser = this.hlsParser;
-        } else if(data.indexOf("MPD")>-1) {
-            this.system.notify('setContext','MPD');
-            parser = this.dashParser;
-        } else {
-            return Q.reject("manifest cannot be parse, type is unknown !")
-        }
+      // we parse the response of the request to know the manifest type
+      if (data.indexOf("SmoothStreamingMedia")>-1 && typeof(this.mssParser) !== 'undefined') {
+         this.system.notify('setContext','MSS');
+         //do some business to transform it into a Dash Manifest
+         parser = this.mssParser;
+      } else if (data.indexOf("#EXTM3U")>-1 && typeof(this.hlsParser) !== 'undefined') {
+         this.system.notify('setContext','HLS');
+         parser = this.hlsParser;
+      } else if(data.indexOf("MPD")>-1 && typeof(this.dashParser) !== 'undefined') {
+         this.system.notify('setContext','MPD');
+         parser = this.dashParser;
+      }
+      else {
+         return Q.reject("manifest cannot be parsed, protocol is unsupported!")
+      }
 
-        return parser.parse(data,baseUrl);
-    };
+      return parser.parse(data,baseUrl);
+   };
 
-    return {
-        debug: undefined,
-        system: undefined,
-        dashParser: undefined,
-        mssParser: undefined,
-        hlsParser: undefined,
-        metricsModel: undefined,
+   return {
+       debug: undefined,
+       system: undefined,
+       dashParser: undefined,
+       mssParser: undefined,
+       hlsParser: undefined,
+       metricsModel: undefined,
 
-        parse: customParse
-    };
+       parse: customParse
+   };
 };
 
 Custom.dependencies.CustomParser.prototype =  {

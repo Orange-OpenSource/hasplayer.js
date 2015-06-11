@@ -39,6 +39,14 @@ module.exports = {
         options: {
             patterns: [
             {
+                match: /"[ \S]*CustomContext.js"/,
+                replacement: '"../<%= preprocesspath %>/CustomContext.js"'
+            },
+            {
+                match: /"[ \S]*CustomContextNoRule.js"/,
+                replacement: '"../<%= preprocesspath %>/CustomContextNoRule.js"'
+            },
+            {
                 match: /<!-- source -->/,
                 replacement: '<!-- build:js hasplayer.js -->'
             },
@@ -49,7 +57,7 @@ module.exports = {
             ]
         },
         files: [
-            {expand: true, flatten: true, src: ['<%= samples %>/playerSrc.html'], dest: '<%= path %>/source'}
+            {expand: true, flatten: true, src: ['<%= preprocesspath %>/playerSrc.html'], dest: '<%= path %>/source/'}
         ]
     },
 

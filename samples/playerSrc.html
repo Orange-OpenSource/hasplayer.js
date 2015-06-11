@@ -133,16 +133,20 @@
 <script src="../../app/js/dash/DashMetricsExtensions.js"></script>
 <script src="../../app/js/dash/TimelineConverter.js"></script>
 
+<!-- @if INCLUDE_MSS=true -->
 <script src="../../app/js/mss/Mss.js"></script>
 <script src="../../app/js/mss/dependencies/MssParser.js"></script>
 <script src="../../app/js/mss/dependencies/MssHandler.js"></script>
 <script src="../../app/js/mss/dependencies/MssFragmentController.js"></script>
+<!-- @endif -->
 
+<!-- @if INCLUDE_HLS=true -->
 <script src="../../app/js/hls/Hls.js"></script>
 <script src="../../app/js/hls/dependencies/HlsDemux.js"></script>
 <script src="../../app/js/hls/dependencies/HlsParser.js"></script>
 <script src="../../app/js/hls/dependencies/HlsHandler.js"></script>
 <script src="../../app/js/hls/dependencies/HlsFragmentController.js"></script>
+<!-- @endif -->
 
 <script src="../../app/js/custom/Custom.js"></script>
 <script src="../../app/js/custom/dependencies/CustomParser.js"></script>
