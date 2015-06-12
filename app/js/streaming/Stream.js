@@ -1086,8 +1086,9 @@ MediaPlayer.dependencies.Stream = function () {
                 this.protectionController.setProtectionData(protectionData);
             }
             /* @endif */
+
             /* @if PROTECTION=false */
-            console.warn('Protection not initialized because protection module is not included.');
+            /* @exec errorMessage("'Protection not initialized because protection module is not included.'") */
             /* @endif */
         },
 

@@ -473,8 +473,9 @@ Mss.dependencies.MssParser = function () {
             mpd.ContentProtection = (contentProtections.length > 1) ? contentProtections : contentProtections[0];
             mpd.ContentProtection_asArray = contentProtections;
             /* @endif */
-            /* @if PROTECTION=false */
-            console.error('Protected content detected but protection module is not included.');
+            
+            /* @if PROTECTION=false */ 
+            /* @exec errorMessage("'Protected content detected but protection module is not included.'") */
             /* @endif */
         }
 

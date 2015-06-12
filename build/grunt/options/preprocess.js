@@ -28,13 +28,18 @@ module.exports = function(grunt) {
     if (typeof(protection) !== 'boolean') {
         protection = true;
     }
-
+    
+    function errorMessage(s) {
+        return 'console.error(' + s + ');';
+    };
+    
     return {
         options: {
             context : {
                 INCLUDE_HLS: includeHls,
                 INCLUDE_MSS: includeMss,
-                PROTECTION: protection
+                PROTECTION: protection,
+                errorMessage: errorMessage
             }
         },
         multifile : {
