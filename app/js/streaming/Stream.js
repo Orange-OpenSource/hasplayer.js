@@ -65,7 +65,7 @@ MediaPlayer.dependencies.Stream = function () {
         // Encrypted Media Extensions
         onProtectionError = function(event) {
             this.errHandler.sendError(event.data.code, event.data.message,event.data.data);
-            this.debug.error("[Stream] protection error: " + event.data);
+            this.debug.error("[Stream] protection error: " + event.data.code+" - "+event.data.message);
             this.reset();
         },
 
