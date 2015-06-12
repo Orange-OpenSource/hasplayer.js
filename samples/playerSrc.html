@@ -9,7 +9,9 @@
 <script src="../../app/lib/dijon.js"></script>
 <script src="../../app/lib/Math.js"></script>
 <script src="../../app/lib/long.js"></script>
+<!-- @if PROTECTION=true -->
 <script src="../../app/lib/base64.js"></script>
+<!-- @endif -->
 
 <script src="../../app/lib/mp4lib/mp4lib.js"></script>
 <script src="../../app/lib/mp4lib/mp4lib-boxes.js"></script>
@@ -70,6 +72,7 @@
 <script src="../../app/js/streaming/Mp4Processor.js"></script>
 
 
+<!-- @if PROTECTION=true -->
 <!--Protection-->
 <script src="../../app/js/streaming/protection/ProtectionModel.js"></script>
 <script src="../../app/js/streaming/protection/ProtectionModel_01b.js"></script>
@@ -97,7 +100,7 @@
 <script src="../../app/js/streaming/protection/vo/KeySystemAccess.js"></script>
 <script src="../../app/js/streaming/protection/vo/KeySystemConfiguration.js"></script>
 <script src="../../app/js/streaming/protection/vo/MediaCapability.js"></script>
-
+<!-- @endif -->
 
 <script src="../../app/js/streaming/captioning/VTTParser.js"></script>
 <script src="../../app/js/streaming/captioning/TTMLParser.js"></script>

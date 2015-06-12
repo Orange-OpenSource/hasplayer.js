@@ -18,6 +18,7 @@ MediaPlayer.di.Context = function () {
         var videoElement = document.createElement("video"),
             debug = this.system.getObject("debug");
 
+        /* @if PROTECTION=true */
         // Detect EME APIs.  Look for newest API versions first
         if (MediaPlayer.models.ProtectionModel_21Jan2015.detect(videoElement)) {
             this.system.mapClass('protectionModel', MediaPlayer.models.ProtectionModel_21Jan2015);
@@ -32,6 +33,7 @@ MediaPlayer.di.Context = function () {
             debug.log("No supported version of EME detected on this user agent!");
             debug.log("Attempts to play encrypted content will fail!");
         }
+        /* @endif */
     };
 
     return {
@@ -53,20 +55,24 @@ MediaPlayer.di.Context = function () {
             this.system.mapSingleton('uriQueryFragModel', MediaPlayer.models.URIQueryAndFragmentModel);
             //this.system.mapClass('protectionModel', MediaPlayer.models.ProtectionModel);
 
+            /* @if PROTECTION=true */
             this.system.mapSingleton('ksPlayReady', MediaPlayer.dependencies.protection.KeySystem_PlayReady);
             this.system.mapSingleton('ksWidevine', MediaPlayer.dependencies.protection.KeySystem_Widevine);
             this.system.mapSingleton('ksClearKey', MediaPlayer.dependencies.protection.KeySystem_ClearKey);
+            /* @endif */
 
             this.system.mapSingleton('textSourceBuffer', MediaPlayer.dependencies.TextSourceBuffer);
-            this.system.mapSingleton('textTTMLXMLMP4SourceBuffer', MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer);            
+            this.system.mapSingleton('textTTMLXMLMP4SourceBuffer', MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer);
             this.system.mapSingleton('mediaSourceExt', MediaPlayer.dependencies.MediaSourceExtensions);
             this.system.mapSingleton('sourceBufferExt', MediaPlayer.dependencies.SourceBufferExtensions);
             this.system.mapSingleton('bufferExt', MediaPlayer.dependencies.BufferExtensions);
             this.system.mapSingleton('abrController', MediaPlayer.dependencies.AbrController);
             this.system.mapSingleton('errHandler', MediaPlayer.dependencies.ErrorHandler);
-            this.system.mapSingleton('protectionExt', MediaPlayer.dependencies.ProtectionExtensions);
             this.system.mapSingleton('videoExt', MediaPlayer.dependencies.VideoModelExtensions);
+            /* @if PROTECTION=true */
+            this.system.mapSingleton('protectionExt', MediaPlayer.dependencies.ProtectionExtensions);
             this.system.mapClass('protectionController', MediaPlayer.dependencies.ProtectionController);
+            /* @endif */
 
             mapProtectionModel.call(this); // Determines EME API support and version
 

@@ -39,12 +39,24 @@ module.exports = {
         options: {
             patterns: [
             {
-                match: /"[ \S]*CustomContext.js"/,
+                match: /"[ \S]*\/CustomContext.js"/,
                 replacement: '"../<%= preprocesspath %>/CustomContext.js"'
             },
             {
-                match: /"[ \S]*CustomContextNoRule.js"/,
+                match: /"[ \S]*\/CustomContextNoRule.js"/,
                 replacement: '"../<%= preprocesspath %>/CustomContextNoRule.js"'
+            },
+            {
+                match: /"[ \S]*\/Context.js"/,
+                replacement: '"../<%= preprocesspath %>/Context.js"'
+            },
+            {
+                match: /"[ \S]*\/Stream.js"/,
+                replacement: '"../<%= preprocesspath %>/Stream.js"'
+            },
+            {
+                match: /"[ \S]*\/MssParser.js"/,
+                replacement: '"../<%= preprocesspath %>/MssParser.js"'
             },
             {
                 match: /<!-- source -->/,

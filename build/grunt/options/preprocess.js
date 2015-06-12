@@ -1,6 +1,7 @@
 module.exports = function(grunt) {
 
     var protocols  = grunt.option('protocol'),
+        protection = grunt.option('protection'),
         includeHls = true,
         includeMss = true;
 
@@ -23,19 +24,27 @@ module.exports = function(grunt) {
             }
         }
     }
+    
+    if (typeof(protection) !== 'boolean') {
+        protection = true;
+    }
 
     return {
         options: {
             context : {
                 INCLUDE_HLS: includeHls,
-                INCLUDE_MSS: includeMss
+                INCLUDE_MSS: includeMss,
+                PROTECTION: protection
             }
         },
         multifile : {
             files : {
                 '<%= preprocesspath %>/CustomContext.js' : '<%= rootpath %>/app/js/custom/di/CustomContext.js',
                 '<%= preprocesspath %>/CustomContextNoRule.js' : '<%= rootpath %>/app/js/custom/di/CustomContextNoRule.js',
-                '<%= preprocesspath %>/playerSrc.html' : '<%= rootpath %>/samples/playerSrc.html'
+                '<%= preprocesspath %>/playerSrc.html' : '<%= rootpath %>/samples/playerSrc.html',
+                '<%= preprocesspath %>/Context.js' : '<%= rootpath %>/app/js/streaming/Context.js',
+                '<%= preprocesspath %>/Stream.js' : '<%= rootpath %>/app/js/streaming/Stream.js',
+                '<%= preprocesspath %>/MssParser.js' : '<%= rootpath %>/app/js/mss/dependencies/MssParser.js'
             }
         }
     }

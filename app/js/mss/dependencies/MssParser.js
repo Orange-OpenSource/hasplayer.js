@@ -291,6 +291,7 @@ Mss.dependencies.MssParser = function () {
         return segmentTimeline;
     };
 
+    /* @if PROTECTION=true */
     var getKIDFromProtectionHeader = function (protectionHeader) {
         var prHeader,
             wrmHeader,
@@ -396,7 +397,7 @@ Mss.dependencies.MssParser = function () {
 
         return contentProtection;
     };
-
+    
     /*var createCENCContentProtection = function (protectionHeader) {
 
         var contentProtection = {};
@@ -417,6 +418,7 @@ Mss.dependencies.MssParser = function () {
 
         return contentProtection;
     };
+    /* @endif */
 
     var processManifest = function (manifest, manifestLoadedTime) {
         var mpd = {},
@@ -450,6 +452,7 @@ Mss.dependencies.MssParser = function () {
 
         // ContentProtection node
         if (manifest.Protection !== undefined) {
+            /* @if PROTECTION=true */
 
             // Get KID (in CENC format) from protection header 
             KID = getKIDFromProtectionHeader(manifest.Protection.ProtectionHeader);
@@ -469,6 +472,10 @@ Mss.dependencies.MssParser = function () {
 
             mpd.ContentProtection = (contentProtections.length > 1) ? contentProtections : contentProtections[0];
             mpd.ContentProtection_asArray = contentProtections;
+            /* @endif */
+            /* @if PROTECTION=false */
+            console.error('Protected content detected but protection module is not included.');
+            /* @endif */
         }
 
         adaptations = period.AdaptationSet_asArray;

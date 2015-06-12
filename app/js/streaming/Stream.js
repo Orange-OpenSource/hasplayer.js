@@ -938,8 +938,10 @@ MediaPlayer.dependencies.Stream = function () {
             // ORANGE: add event handler "liveEdgeFound"
             this.system.mapHandler("liveEdgeFound", undefined, onLiveEdgeFound.bind(this));
 
+            /* @if PROTECTION=true */
             // Protection event handlers
             this[MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR] = onProtectionError.bind(this);
+            /* @endif */
 
             load = Q.defer();
 
@@ -1075,6 +1077,7 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         initProtection: function(protectionData) {
+            /* @if PROTECTION=true */
             this.protectionController = this.system.getObject("protectionController");
             this.protectionController.subscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
             this.protectionController.setMediaElement(this.videoModel.getElement());
@@ -1082,6 +1085,10 @@ MediaPlayer.dependencies.Stream = function () {
             if (protectionData) {
                 this.protectionController.setProtectionData(protectionData);
             }
+            /* @endif */
+            /* @if PROTECTION=false */
+            console.warn('Protection not initialized because protection module is not included.');
+            /* @endif */
         },
 
         getVideoModel: function() {
