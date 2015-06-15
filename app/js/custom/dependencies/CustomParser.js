@@ -33,7 +33,7 @@
          parser = this.dashParser;
       }
       else {
-         return Q.reject("manifest cannot be parsed, protocol is unsupported!")
+         return Q.reject("manifest cannot be parsed, protocol is unsupported!");
       }
 
       return parser.parse(data,baseUrl);

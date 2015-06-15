@@ -35,8 +35,8 @@
  * 5) Load fragments.
  * 6) Transform fragments.
  * 7) Push fragmemt bytes into SourceBuffer.
- * 
- * 
+ *
+ *
  * @constructs MediaPlayer
  * @param aContext - context used by the MediaPlayer. For the hasplayer, CustomContext is used. The context class is used to
  * inject dijon dependances.
@@ -92,7 +92,7 @@ MediaPlayer = function (aContext) {
             }
 
             playing = true;
-            
+
             //this.debug.log("Playback initiated!");
             if (!streamController) {
                 streamController = system.getObject("streamController");
@@ -348,7 +348,7 @@ MediaPlayer = function (aContext) {
 
         /**
          * @access public
-         * @memberof MediaPlayer# 
+         * @memberof MediaPlayer#
          */
         startup: function () {
             if (!initialized) {
@@ -494,7 +494,7 @@ MediaPlayer = function (aContext) {
         getAutoSwitchQuality : function () {
             return this.abrController.getAutoSwitchBitrate();
         },
-        
+
         /**
          * function to enable or disable auto switch quality by ABR controller.
          * @access public
@@ -511,7 +511,7 @@ MediaPlayer = function (aContext) {
          * @memberof MediaPlayer#
          * @param params - configuration parameters
          * @see {@link http://localhost:8080/OrangeHasPlayer/samples/Dash-IF/hasplayer_config.json}
-         * 
+         *
          */
         setConfig: function (params) {
             if (this.config && params) {
@@ -554,7 +554,7 @@ MediaPlayer = function (aContext) {
         /**
          * get the subtitle track list
          * @access public
-         * @memberof MediaPlayer#         
+         * @memberof MediaPlayer#
          * @return subtitle tracks array.
          */
         getSubtitleTracks: function(){
@@ -590,7 +590,7 @@ MediaPlayer = function (aContext) {
                 doAutoPlay.call(this);
             }
         },
-        
+
         /**
          * add source stream parameters (ex: DRM custom data)
          * @function

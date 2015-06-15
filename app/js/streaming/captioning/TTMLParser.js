@@ -245,7 +245,7 @@ MediaPlayer.utils.TTMLParser = function () {
                 if (!parameterValue) {
                     //find parameter in style referenced in the region referenced in the leaf
                     leafStyle = getDataInfo(json.head.styling, 'style_asArray', getParameterValue(cueRegion,localPrefTT,'style'));
-                    while(!parameterValue && leafStyle){                    
+                    while(!parameterValue && leafStyle){
                         parameterValue = getParameterValue(leafStyle,localPrefStyle,parameter);
                         if (!parameterValue) {
                             leafStyle = getDataInfo(json.head.styling, 'style_asArray', getParameterValue(leafStyle,localPrefTT,'style'));

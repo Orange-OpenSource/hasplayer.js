@@ -19,7 +19,7 @@ Custom.dependencies.CustomAbrController = function () {
 
     rslt.manifestExt = undefined;
     rslt.debug = undefined;
-    rslt.config = undefined; 
+    rslt.config = undefined;
 
     rslt.getQualityBoundaries = function (type, data) {
         var self = this,

@@ -15,52 +15,52 @@
  */
 Mss.dependencies.MssHandler = function() {
 
-	var isDynamic=false,
+    var isDynamic=false,
 
-		/*getIndex = function (adaptation, manifest) {
+        /*getIndex = function (adaptation, manifest) {
 
-			var periods = manifest.Period_asArray,
-				i, j;
+            var periods = manifest.Period_asArray,
+                i, j;
 
-			for (i = 0; i < periods.length; i += 1) {
-				var adaptations = periods[i].AdaptationSet_asArray;
-				for (j = 0; j < adaptations.length; j += 1) {
-					if (adaptations[j] === adaptation) {
-						return j;
-					}
-				}
-			}
+            for (i = 0; i < periods.length; i += 1) {
+                var adaptations = periods[i].AdaptationSet_asArray;
+                for (j = 0; j < adaptations.length; j += 1) {
+                    if (adaptations[j] === adaptation) {
+                        return j;
+                    }
+                }
+            }
 
-			return -1;
-		},
-		
-		/*getType = function (adaptation) {
+            return -1;
+        },
+        
+        /*getType = function (adaptation) {
 
-			var type = (adaptation.mimeType !== undefined) ? adaptation.mimeType : adaptation.contentType;
+            var type = (adaptation.mimeType !== undefined) ? adaptation.mimeType : adaptation.contentType;
 
-			if (type.indexOf("video") != -1)
-			{
-				return "video";
-			}
-			else if (type.indexOf("audio") != -1)
-			{
-				return "audio";
-			}
-			else if (type.indexOf("text") != -1)
-			{
-				return "text";
-			}
+            if (type.indexOf("video") != -1)
+            {
+                return "video";
+            }
+            else if (type.indexOf("audio") != -1)
+            {
+                return "audio";
+            }
+            else if (type.indexOf("text") != -1)
+            {
+                return "text";
+            }
 
-			return "und";
-		},
+            return "und";
+        },
 
-		getRepresentationForQuality = function (quality, adaptation) {
-			var representation = null;
-			if (adaptation && adaptation.Representation_asArray && adaptation.Representation_asArray.length > 0) {
-				representation = adaptation.Representation_asArray[quality];
-			}
-			return representation;
-		},
+        getRepresentationForQuality = function (quality, adaptation) {
+            var representation = null;
+            if (adaptation && adaptation.Representation_asArray && adaptation.Representation_asArray.length > 0) {
+                representation = adaptation.Representation_asArray[quality];
+            }
+            return representation;
+        },
 
 
         getTimescale = function (adaptation) {
@@ -84,107 +84,107 @@ Mss.dependencies.MssHandler = function() {
             return timescale;
         },
 
-		getDuration = function (manifest, isDynamic) {
-			var duration = NaN;
+        getDuration = function (manifest, isDynamic) {
+            var duration = NaN;
 
-			if (isDynamic) {
-				duration = Number.POSITIVE_INFINITY;
-			} else {
-				if (manifest.mediaPresentationDuration) {
-					duration = manifest.mediaPresentationDuration;
-				} else if (manifest.availabilityEndTime && manifest.availabilityStartTime) {
-					duration = (manifest.availabilityEndTime.getTime() - manifest.availabilityStartTime.getTime());
-				}
-			}
+            if (isDynamic) {
+                duration = Number.POSITIVE_INFINITY;
+            } else {
+                if (manifest.mediaPresentationDuration) {
+                    duration = manifest.mediaPresentationDuration;
+                } else if (manifest.availabilityEndTime && manifest.availabilityStartTime) {
+                    duration = (manifest.availabilityEndTime.getTime() - manifest.availabilityStartTime.getTime());
+                }
+            }
 
-			return duration;
-		},*/
+            return duration;
+        },*/
 
-		getAudioChannels = function (adaptation, representation) {
-			var channels = 1;
+        getAudioChannels = function (adaptation, representation) {
+            var channels = 1;
 
-			if (adaptation.audioChannels) {
-				channels = adaptation.audioChannels;
-			} else if (representation.audioChannels) {
-				channels = representation.audioChannels;
-			}
+            if (adaptation.audioChannels) {
+                channels = adaptation.audioChannels;
+            } else if (representation.audioChannels) {
+                channels = representation.audioChannels;
+            }
 
-			return channels;
-		},
+            return channels;
+        },
 
-		getAudioSamplingRate = function (adaptation, representation) {
-			var samplingRate = 1;
+        getAudioSamplingRate = function (adaptation, representation) {
+            var samplingRate = 1;
 
-			if (adaptation.audioSamplingRate) {
-				samplingRate = adaptation.audioSamplingRate;
-			} else {
-				samplingRate = representation.audioSamplingRate;
-			}
+            if (adaptation.audioSamplingRate) {
+                samplingRate = adaptation.audioSamplingRate;
+            } else {
+                samplingRate = representation.audioSamplingRate;
+            }
 
-			return samplingRate;
-		},
+            return samplingRate;
+        },
 
-		getInitData = function(representation) {
-			// return data in byte format
-			// call MP4 lib to generate the init
-			
-			// Get required media information from manifest  to generate initialisation segment
-			//var representation = getRepresentationForQuality(quality, adaptation);
-			if(representation){
-				if(!representation.initData){
-					var manifest = rslt.manifestModel.getValue();
-					var adaptation = representation.adaptation;
-					var realAdaptation = manifest.Period_asArray[adaptation.period.index].AdaptationSet_asArray[adaptation.index];
-					var realRepresentation = realAdaptation.Representation_asArray[representation.index];
+        getInitData = function(representation) {
+            // return data in byte format
+            // call MP4 lib to generate the init
+            
+            // Get required media information from manifest  to generate initialisation segment
+            //var representation = getRepresentationForQuality(quality, adaptation);
+            if(representation){
+                if(!representation.initData){
+                    var manifest = rslt.manifestModel.getValue();
+                    var adaptation = representation.adaptation;
+                    var realAdaptation = manifest.Period_asArray[adaptation.period.index].AdaptationSet_asArray[adaptation.index];
+                    var realRepresentation = realAdaptation.Representation_asArray[representation.index];
 
-					var track = new MediaPlayer.vo.Mp4Track();
-					track.type = rslt.getType() || 'und';
-					track.trackId = adaptation.index + 1; // +1 since track_id shall start from '1'
-					track.timescale = representation.timescale;
-					track.duration = representation.adaptation.period.duration;
-					track.codecs = realRepresentation.codecs;
-					track.codecPrivateData = realRepresentation.codecPrivateData;
-					track.bandwidth = realRepresentation.bandwidth;
+                    var track = new MediaPlayer.vo.Mp4Track();
+                    track.type = rslt.getType() || 'und';
+                    track.trackId = adaptation.index + 1; // +1 since track_id shall start from '1'
+                    track.timescale = representation.timescale;
+                    track.duration = representation.adaptation.period.duration;
+                    track.codecs = realRepresentation.codecs;
+                    track.codecPrivateData = realRepresentation.codecPrivateData;
+                    track.bandwidth = realRepresentation.bandwidth;
 
-					// DRM Protected Adaptation is detected
-					if (realAdaptation.ContentProtection_asArray && (realAdaptation.ContentProtection_asArray.length > 0)) {
-						track.contentProtection = realAdaptation.ContentProtection_asArray;
-					}
+                    // DRM Protected Adaptation is detected
+                    if (realAdaptation.ContentProtection_asArray && (realAdaptation.ContentProtection_asArray.length > 0)) {
+                        track.contentProtection = realAdaptation.ContentProtection_asArray;
+                    }
 
-					// Video related informations
-					track.width = realRepresentation.width || realAdaptation.maxWidth;
-					track.height = realRepresentation.height || realAdaptation.maxHeight;
+                    // Video related informations
+                    track.width = realRepresentation.width || realAdaptation.maxWidth;
+                    track.height = realRepresentation.height || realAdaptation.maxHeight;
 
-					// Audio related informations
-					track.language = realAdaptation.lang ? realAdaptation.lang : 'und';
+                    // Audio related informations
+                    track.language = realAdaptation.lang ? realAdaptation.lang : 'und';
 
-					track.channels = getAudioChannels(realAdaptation, realRepresentation);
-					track.samplingRate = getAudioSamplingRate(realAdaptation, realRepresentation);
+                    track.channels = getAudioChannels(realAdaptation, realRepresentation);
+                    track.samplingRate = getAudioSamplingRate(realAdaptation, realRepresentation);
 
-					representation.initData =  rslt.mp4Processor.generateInitSegment([track]);
-				}
-				return representation.initData;
-			}else{
-				return null;
-			}
-			
-	};
-	
-	var rslt = Custom.utils.copyMethods(Dash.dependencies.DashHandler);
-	rslt.mp4Processor = undefined;
+                    representation.initData =  rslt.mp4Processor.generateInitSegment([track]);
+                }
+                return representation.initData;
+            }else{
+                return null;
+            }
 
-	rslt.getInitRequest = function (representation) {
-			var period = null;
-			var self = this;
-			var presentationStartTime = null;
-			var deferred = Q.defer();
+    };
+
+    var rslt = Custom.utils.copyMethods(Dash.dependencies.DashHandler);
+    rslt.mp4Processor = undefined;
+
+    rslt.getInitRequest = function (representation) {
+            var period = null;
+            var self = this;
+            var presentationStartTime = null;
+            var deferred = Q.defer();
             //Mss.dependencies.MssHandler.prototype.getInitRequest.call(this,quality,data).then(onGetInitRequestSuccess);
             // get the period and startTime
             period = representation.adaptation.period;
             presentationStartTime = period.start;
 
             var manifest = rslt.manifestModel.getValue();
-			isDynamic = rslt.manifestExt.getIsDynamic(manifest);
+            isDynamic = rslt.manifestExt.getIsDynamic(manifest);
 
             var request = new MediaPlayer.vo.SegmentRequest();
 
@@ -192,11 +192,11 @@ Mss.dependencies.MssHandler = function() {
             request.type = "Initialization Segment";
             request.url = null;
             try{
-            	request.data = getInitData(representation);
-			}catch(e){
-				deferred.reject(e);
-				return deferred.promise;
-			}
+                request.data = getInitData(representation);
+            }catch(e){
+                deferred.reject(e);
+                return deferred.promise;
+            }
             request.range =  representation.range;
             request.availabilityStartTime = self.timelineConverter.calcAvailabilityStartTimeFromPresentationTime(presentationStartTime, representation.adaptation.period.mpd, isDynamic);
             request.availabilityEndTime = self.timelineConverter.calcAvailabilityEndTimeFromPresentationTime(presentationStartTime + period.duration, period.mpd, isDynamic);
@@ -206,9 +206,9 @@ Mss.dependencies.MssHandler = function() {
             deferred.resolve(request);
             return deferred.promise;
         };
-	return rslt;
+    return rslt;
 };
 
 Mss.dependencies.MssHandler.prototype =  {
-	constructor : Mss.dependencies.MssHandler
+    constructor : Mss.dependencies.MssHandler
 };

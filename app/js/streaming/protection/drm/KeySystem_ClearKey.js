@@ -144,7 +144,7 @@ MediaPlayer.dependencies.protection.KeySystem_ClearKey = function() {
 
         getInitData: MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection,
 
-        getCDMData: function () {return null;}        
+        getCDMData: function () {return null;}
     };
 };
 

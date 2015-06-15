@@ -11,28 +11,25 @@ module.exports = function(grunt) {
         includeHls = includeMss = false;
 
         for (var i in protocols) {
-            if (protocols[i] === 'dash') {
-                // Do nothing
-            }
-            else if (protocols[i] === 'hls') {
+            if (protocols[i] === 'hls') {
                 includeHls = true;
             } else if (protocols[i] === 'mss') {
                 includeMss = true;
             }
-            else {
-                console.error("PREPROCESS ERROR: protocol '" + protocols[i] + "' is not a valid option. Expected 'hls' and/or 'mss'.");
+            else if (protocols[i] !== 'dash') {
+                console.error("PREPROCESS ERROR: protocol '" + protocols[i] + "' is not supported. Expected 'hls', 'mss' or 'dash'.");
             }
         }
     }
-    
+
     if (typeof(protection) !== 'boolean') {
         protection = true;
     }
-    
-    function errorMessage(s) {
+
+    var errorMessage = function (s) {
         return 'console.error(' + s + ');';
     };
-    
+
     return {
         options: {
             context : {
@@ -52,5 +49,5 @@ module.exports = function(grunt) {
                 '<%= preprocesspath %>/MssParser.js' : '<%= rootpath %>/app/js/mss/dependencies/MssParser.js'
             }
         }
-    }
+    };
 };

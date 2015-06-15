@@ -380,7 +380,7 @@ Custom.dependencies.CustomBufferController = function () {
                                                 isQuotaExceeded = true;
                                                 fragmentsToLoad = 0;
                                                 // stop scheduling new requests
-                                                doStop.call(self);                                                
+                                                doStop.call(self);
                                         }
                                     }
                             );

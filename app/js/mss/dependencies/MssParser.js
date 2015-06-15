@@ -1,15 +1,15 @@
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2014, Orange
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
+ *
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -226,7 +226,7 @@ Mss.dependencies.MssParser = function () {
         }
         else if (objectType === 0)
             objectType = (parseInt(codecPrivateData.substr(0, 2), 16) & 0xF8) >> 3;
-        
+
         return "mp4a.40." + objectType;
     };
 
@@ -311,7 +311,7 @@ Mss.dependencies.MssParser = function () {
         wrmHeader = String.fromCharCode.apply(null, wrmHeader);
 
         // Parse <WRMHeader> to get KID field value
-        xmlReader = (new DOMParser).parseFromString(wrmHeader, "application/xml");
+        xmlReader = (new DOMParser()).parseFromString(wrmHeader, "application/xml");
         KID = xmlReader.querySelector("KID").textContent;
 
         // Get KID (base64 decoded) as byte array
@@ -397,14 +397,14 @@ Mss.dependencies.MssParser = function () {
 
         return contentProtection;
     };
-    
+
     /*var createCENCContentProtection = function (protectionHeader) {
 
         var contentProtection = {};
-        
+
         contentProtection.schemeIdUri = "urn:mpeg:dash:mp4protection:2011";
         contentProtection.value = "cenc";
-        
+
         return contentProtection;
     };*/
 
@@ -454,7 +454,7 @@ Mss.dependencies.MssParser = function () {
         if (manifest.Protection !== undefined) {
             /* @if PROTECTION=true */
 
-            // Get KID (in CENC format) from protection header 
+            // Get KID (in CENC format) from protection header
             KID = getKIDFromProtectionHeader(manifest.Protection.ProtectionHeader);
 
             // Create ContentProtection for PR
@@ -473,8 +473,8 @@ Mss.dependencies.MssParser = function () {
             mpd.ContentProtection = (contentProtections.length > 1) ? contentProtections : contentProtections[0];
             mpd.ContentProtection_asArray = contentProtections;
             /* @endif */
-            
-            /* @if PROTECTION=false */ 
+
+            /* @if PROTECTION=false */
             /* @exec errorMessage("'Protected content detected but protection module is not included.'") */
             /* @endif */
         }
@@ -507,7 +507,7 @@ Mss.dependencies.MssParser = function () {
 
     var internalParse = function(data, baseUrl) {
         this.debug.info("[MssParser]", "Doing parse.");
-        
+
         var manifest = null,
             converter = new X2JS(matchers, '', true),
             start = new Date(),
@@ -550,7 +550,7 @@ Mss.dependencies.MssParser = function () {
     return {
         debug: undefined,
         system: undefined,
-                
+
         parse: internalParse
     };
 };

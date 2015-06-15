@@ -77,9 +77,9 @@ MediaPlayer.models.ProtectionModel_01b = function () {
                             }
 
                             if (sessionToken) {
-                                var msg = "", 
-                                    code = null;                             
-                                                                
+                                var msg = "",
+                                    code = null;
+
                                 switch (event.errorCode.code) {
                                     case 1:
                                         code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
@@ -107,7 +107,7 @@ MediaPlayer.models.ProtectionModel_01b = function () {
                                         break;
                                 }
                                 var data = {};
-                                
+
                                 data.sessionToken = sessionToken;
                                 data.systemCode = event.systemCode;
                                 // TODO: Build error string based on key error
@@ -158,7 +158,7 @@ MediaPlayer.models.ProtectionModel_01b = function () {
 
                                 if (pendingSessions.length !== 0) {
                                     var data = {};
-                                
+
                                     data.sessionToken = sessionToken;
                                     data.systemCode = null;
 

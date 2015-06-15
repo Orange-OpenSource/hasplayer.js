@@ -285,10 +285,14 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 data.systemCode = null;
                 // TO DO : try to specify Hasplayer error with the DOM error
                 switch(error.code) {
-                    case 22 /* DOM Quota Exceeded Error*/ : 
+                    case 22 /* DOM Quota Exceeded Error*/ :
+                        /* falls through */
                     case 15 /* DOM Invalid Access Error*/ :
+                        /* falls through */
                     case 11 /* DOM Invalid State Error*/ :
+                        /* falls through */
                     case 9  /* DOM Not Supported Error*/ :
+                        /* falls through */
                     default :
                         codeError = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR;
                         break;
