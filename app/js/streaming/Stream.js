@@ -61,6 +61,7 @@ MediaPlayer.dependencies.Stream = function () {
         checkStartTimeIntervalId,
 
         eventController = null,
+        protectionController = undefined,
 
         // Encrypted Media Extensions
         onProtectionError = function(event) {
@@ -917,7 +918,6 @@ MediaPlayer.dependencies.Stream = function () {
         fragmentController: undefined,
         abrController: undefined,
         fragmentExt: undefined,
-        protectionController: undefined,
         protectionExt: undefined,
         capabilities: undefined,
         debug: undefined,
@@ -1078,12 +1078,16 @@ MediaPlayer.dependencies.Stream = function () {
 
         initProtection: function(protectionData) {
             /* @if PROTECTION=true */
-            this.protectionController = this.system.getObject("protectionController");
-            this.protectionController.subscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
-            this.protectionController.setMediaElement(this.videoModel.getElement());
-            this.protectionController.init(this.manifestModel.getValue());
-            if (protectionData) {
-                this.protectionController.setProtectionData(protectionData);
+            if (this.capabilities.supportsEncryptedMedia()) {
+                if (!this.protectionController) {
+                    this.protectionController = this.system.getObject("protectionController");
+                }
+                this.protectionController.subscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
+                this.protectionController.setMediaElement(this.videoModel.getElement());
+                this.protectionController.init(this.manifestModel.getValue());
+                if (protectionData) {
+                    this.protectionController.setProtectionData(protectionData);
+                }
             }
             /* @endif */
 
@@ -1134,9 +1138,9 @@ MediaPlayer.dependencies.Stream = function () {
             this.videoModel.unlisten("fullscreenchange", fullScreenListener);
             this.videoModel.unlistenOnParent("fullscreenchange", fullScreenListener);
             this.videoModel.unlistenOnParent("webkitfullscreenchange", fullScreenListener);
-
+            
             tearDownMediaSource.call(this);
-            if (this.protectionController) {
+             if (this.protectionController) {
                 this.protectionController.unsubscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
                 this.protectionController.teardown();
             }

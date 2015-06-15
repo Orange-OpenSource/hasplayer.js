@@ -17,6 +17,7 @@ MediaPlayer.utils.Capabilities = function () {
 
 MediaPlayer.utils.Capabilities.prototype = {
     constructor: MediaPlayer.utils.Capabilities,
+    system: undefined,
 
     supportsMediaSource: function () {
         "use strict";
@@ -35,6 +36,16 @@ MediaPlayer.utils.Capabilities.prototype = {
             hasMediaSource = ("MediaKeys" in window);
 
         return (hasWebKit || hasMs || hasMediaSource);
+    },
+
+    /**
+     * Returns whether Encrypted Media Extensions are supported on this
+     * user agent
+     *
+     * @return {boolean} true if EME is supported, false otherwise
+     */
+    supportsEncryptedMedia: function () {
+        return this.system.hasMapping('protectionModel');
     },
 
     supportsCodec: function (element, codec) {
