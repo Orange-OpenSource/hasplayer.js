@@ -31,8 +31,7 @@
 MediaPlayer.dependencies.ProtectionController = function () {
     "use strict";
 
-    var keySystems = null,
-        pendingNeedKeyData = [],
+    var pendingNeedKeyData = [],
         audioInfo,
         videoInfo,
 
@@ -194,7 +193,6 @@ MediaPlayer.dependencies.ProtectionController = function () {
             this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_REMOVED] = onKeySessionRemoved.bind(this);
             this[MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE] = onLicenseRequestComplete.bind(this);
 
-            keySystems = this.protectionExt.getKeySystems();
             this.protectionModel = this.system.getObject("protectionModel");
             this.protectionModel.init();
         },
