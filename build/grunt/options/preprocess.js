@@ -26,8 +26,12 @@ module.exports = function(grunt) {
         protection = true;
     }
 
-    var errorMessage = function (s) {
-        return 'console.error(' + s + ');';
+    var sendError = function(params) {
+        return  'this.errHandler.sendError(' + params[0] + ', ' + params[1] + ');';
+    };
+
+    var reject = function(params) {
+        return 'return Q.reject(' + params[0] + ')';
     };
 
     return {
@@ -36,7 +40,8 @@ module.exports = function(grunt) {
                 INCLUDE_HLS: includeHls,
                 INCLUDE_MSS: includeMss,
                 PROTECTION: protection,
-                errorMessage: errorMessage
+                sendError: sendError,
+                reject: reject
             }
         },
         multifile : {

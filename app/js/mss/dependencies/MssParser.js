@@ -475,7 +475,8 @@ Mss.dependencies.MssParser = function () {
             /* @endif */
 
             /* @if PROTECTION=false */
-            /* @exec errorMessage("'Protected content detected but protection module is not included.'") */
+            /* @exec sendError('MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED','"protected content detected but protection module is not included."') */
+            /* @exec reject('"[MssParser] Protected content detected but protection module is not included."') */
             /* @endif */
         }
 
@@ -550,6 +551,7 @@ Mss.dependencies.MssParser = function () {
     return {
         debug: undefined,
         system: undefined,
+        errHandler: undefined,
 
         parse: internalParse
     };

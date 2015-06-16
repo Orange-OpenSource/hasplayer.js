@@ -102,7 +102,7 @@ MediaPlayer.dependencies.Stream = function () {
                 startBuffering(time);
             });
         },
- 
+
         // Media Source
         setUpMediaSource = function (mediaSourceArg) {
             var deferred = Q.defer(),
@@ -473,7 +473,7 @@ MediaPlayer.dependencies.Stream = function () {
         onPlay = function () {
             this.debug.info("<video> play event");
             this.debug.log("[Stream] Got play event.");
-            
+
             //if a pause command was detected just before this onPlay event, startBuffering again
             //if it was a pause, follow by a seek (in reality just a seek command), don't startBuffering, it's done in onSeeking event
             // we can't, each time, startBuffering in onPlay event (for seek and pause commands) because onPlay event is not fired on IE after a seek command. :-(
@@ -495,7 +495,7 @@ MediaPlayer.dependencies.Stream = function () {
             }
             this.metricsModel.addCondition(null, isFullScreen, videoElement.videoWidth, videoElement.videoHeight);
         },
-        
+
         // ORANGE : ended event
         onEnded = function() {
             this.debug.info("<video> ended event");
@@ -844,7 +844,7 @@ MediaPlayer.dependencies.Stream = function () {
 
             if (audioController) {
                 audioData = audioController.getData();
-                
+
                 // ORANGE: refer only the audio track index to get new audio data (switch audio use case)
                 //if (!!audioData && audioData.hasOwnProperty("id")) {
                 //    deferredAudioData = self.manifestExt.getDataForId(audioData.id, manifest, periodInfo.index);
@@ -1077,7 +1077,6 @@ MediaPlayer.dependencies.Stream = function () {
         },
 
         initProtection: function(protectionData) {
-            /* @if PROTECTION=true */
             if (this.capabilities.supportsEncryptedMedia()) {
                 if (!this.protectionController) {
                     this.protectionController = this.system.getObject("protectionController");
@@ -1089,11 +1088,6 @@ MediaPlayer.dependencies.Stream = function () {
                     this.protectionController.setProtectionData(protectionData);
                 }
             }
-            /* @endif */
-
-            /* @if PROTECTION=false */
-            /* @exec errorMessage("'Protection not initialized because protection module is not included.'") */
-            /* @endif */
         },
 
         getVideoModel: function() {
@@ -1138,7 +1132,7 @@ MediaPlayer.dependencies.Stream = function () {
             this.videoModel.unlisten("fullscreenchange", fullScreenListener);
             this.videoModel.unlistenOnParent("fullscreenchange", fullScreenListener);
             this.videoModel.unlistenOnParent("webkitfullscreenchange", fullScreenListener);
-            
+
             tearDownMediaSource.call(this);
              if (this.protectionController) {
                 this.protectionController.unsubscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
