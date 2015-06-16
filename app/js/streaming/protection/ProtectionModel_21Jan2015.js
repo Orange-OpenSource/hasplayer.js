@@ -112,8 +112,21 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                     switch (event.type) {
 
                         case "keystatuseschange":
-                            self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED,
-                                    this);
+                         event.target.keyStatuses.forEach(function(status, keyId, map) {
+                              switch (status) {                              
+                                case "expired":
+                                  // Report an expired key.
+                                  self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, null,
+                                        new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED, "License has expired!!!", null));
+                                  break;
+                                case "usable":
+                                case "status-pending":
+                                default:
+                                    self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED,
+                                        {status:status, keyId: keyId});
+                                }
+                              });
+                           
                             break;
 
                         case "message":

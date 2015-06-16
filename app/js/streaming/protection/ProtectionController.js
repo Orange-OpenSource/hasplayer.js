@@ -48,6 +48,16 @@ MediaPlayer.dependencies.ProtectionController = function () {
             }
         },
 
+        onKeyStatusChanged = function(e) {
+            if (e.error) {
+                this.debug.log(e.error);
+                this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
+                            e.error);
+            }else {
+                this.debug.log("[DRM] onKeyStatusChanged: status = " + e.data.status+" pour keyID = "+e.data.keyId);
+            }
+        },
+
         onLicenseRequestComplete = function(e) {
             if (!e.error) {
                 this.debug.log("[DRM] License request successful.  Session ID = " + e.data.requestData.getSessionID());
@@ -192,6 +202,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
             this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CLOSED] = onKeySessionClosed.bind(this);
             this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_REMOVED] = onKeySessionRemoved.bind(this);
             this[MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE] = onLicenseRequestComplete.bind(this);
+            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED] = onKeyStatusChanged.bind(this);
 
             this.protectionModel = this.system.getObject("protectionModel");
             this.protectionModel.init();
@@ -208,6 +219,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
             this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CLOSED, this);
             this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_REMOVED, this);
             this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE, this);
+            this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, this);
             /*
              TODO:  This event is causing failures in Stream.js.  The message causes a PROTECTION_ERROR notification which
              triggers the call of Stream.reset().  Stream.reset() unsubscribes from PROTECTION_ERROR messages which makes
@@ -289,6 +301,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
             this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CLOSED, this);
             this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_REMOVED, this);
             this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE, this);
+            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, this);
             this.keySystem = undefined;
 
             this.protectionModel.teardown();
