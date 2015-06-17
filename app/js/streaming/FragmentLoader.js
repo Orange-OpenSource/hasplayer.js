@@ -1,14 +1,14 @@
 ﻿/*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2013, Digital Primates
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 MediaPlayer.dependencies.FragmentLoader = function () {
@@ -41,7 +41,6 @@ MediaPlayer.dependencies.FragmentLoader = function () {
                                                                       null,
                                                                       null,
                                                                       request.duration,
-                                                                      // ORANGE: add request media start time and quality
                                                                       request.startTime,
                                                                       request.quality);
 
@@ -76,7 +75,14 @@ MediaPlayer.dependencies.FragmentLoader = function () {
                                                       currentTime,
                                                       currentTime.getTime() - lastTraceTime.getTime(),
                                                       [req.response ? req.response.byteLength : 0]);
+
+            if ((lastTraceTime.getTime() - request.requestStartDate.getTime())/1000 > (httpRequestMetrics.mediaduration*2)) {
+                self.debug.log("[FragmentLoader]["+request.streamType+"] Load onprogress: it's too long!!!!!!");
+            }
+
                     lastTraceTime = currentTime;
+
+            //self.debug.log("[FragmentLoader]["+request.streamType+"] Load onprogress: " + request.url);
                 };
 
                 req.onload = function () {
@@ -104,7 +110,6 @@ MediaPlayer.dependencies.FragmentLoader = function () {
                     httpRequestMetrics.tresponse = request.firstByteDate;
                     httpRequestMetrics.tfinish = request.requestEndDate;
                     httpRequestMetrics.responsecode = req.status;
-                    // ORANGE: add segment bytes length
                     httpRequestMetrics.bytesLength = bytes ? bytes.byteLength : 0;
 
                     self.metricsModel.appendHttpTrace(httpRequestMetrics,
@@ -112,7 +117,7 @@ MediaPlayer.dependencies.FragmentLoader = function () {
                                                       currentTime.getTime() - lastTraceTime.getTime(),
                                                       [bytes ? bytes.byteLength : 0]);
                     lastTraceTime = currentTime;
-                    
+
                     request.deferred.resolve({
                         data: bytes,
                         request: request
@@ -218,7 +223,12 @@ MediaPlayer.dependencies.FragmentLoader = function () {
             }
 
             req.deferred = Q.defer();
-            doLoad.call(this, req, RETRY_ATTEMPTS);
+
+            if(req.type == "Initialization Segment" && req.data){
+                req.deferred.resolve(req,{data:req.data});
+            } else {
+                doLoad.call(this, req, RETRY_ATTEMPTS);
+            }
 
             return req.deferred.promise;
         },
