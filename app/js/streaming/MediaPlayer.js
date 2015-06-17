@@ -149,7 +149,8 @@ MediaPlayer = function (aContext) {
         },
 
         /**
-         * seek to a special time (seconds) in the stream
+         * seek to a special time (seconds) in the stream.
+         * html5 video currentTime parameter is better to use than this function.
          * @access public
          */
         seek = function(value) {
@@ -280,10 +281,12 @@ MediaPlayer = function (aContext) {
         config: undefined,
 
         /**
+         * function used to register webapp function on hasplayer events
          * @access public
          * @memberof MediaPlayer#
-         * @param  type - .
-         * @param  listener - .
+         * @param  type - event type event type log, error, subtitlesStyleChanged, updateend, manifestLoaded, metricChanged, metricsChanged, metricAdded
+         *  and metricUpdated.
+         * @param  listener - function callback name.
          * @param  useCapture - .
          */
         addEventListener: function (type, listener, useCapture) {
@@ -296,10 +299,12 @@ MediaPlayer = function (aContext) {
         },
 
         /**
+         * function used to unregister webapp function on hasplayer events
          * @access public
          * @memberof MediaPlayer#
-         * @param  type - .
-         * @param  listener - .
+         * @param  type - event type : log, error, subtitlesStyleChanged, updateend, manifestLoaded, metricChanged, metricsChanged, metricAdded
+         *  and metricUpdated.
+         * @param  listener - function callback name.
          * @param  useCapture - .
          * @return TBD
          */
@@ -482,7 +487,8 @@ MediaPlayer = function (aContext) {
         },
 
         /**
-         * select quality level for audio or video stream
+         * select quality level for audio or video stream.
+         * If you want to set limit up and down for video for instance, you have to use setConfig function.
          * @access public
          * @memberof MediaPlayer#
          * @param type - audio or video stream type.
