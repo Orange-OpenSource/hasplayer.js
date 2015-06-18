@@ -17,7 +17,6 @@ MediaPlayer.dependencies.AbrController = function () {
     var autoSwitchBitrate = true,
         qualityDict = {},
         confidenceDict = {},
-        manifestExt,
 
         getInternalQuality = function (type) {
             var quality;
@@ -106,7 +105,7 @@ MediaPlayer.dependencies.AbrController = function () {
     return {
         debug: undefined,
         abrRulesCollection: undefined,
-        manifestExt: manifestExt,
+        manifestExt: undefined,
         metricsModel: undefined,
         config: undefined,
 

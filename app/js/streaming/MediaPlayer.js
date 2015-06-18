@@ -667,4 +667,5 @@ MediaPlayer.vo = {};
 MediaPlayer.vo.metrics = {};
 MediaPlayer.vo.protection = {};
 MediaPlayer.rules = {};
+MediaPlayer.rules.o = {};
 MediaPlayer.di = {};

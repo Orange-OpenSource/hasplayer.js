@@ -96,6 +96,8 @@
 <script src="../../app/js/streaming/rules/InsufficientBufferRule.js"></script>
 <script src="../../app/js/streaming/rules/LimitSwitchesRule.js"></script>
 <script src="../../app/js/streaming/rules/BaseRulesCollection.js"></script>
+<script src="../../app/js/streaming/rules/o/DownloadRatioRule.js"></script>
+<script src="../../app/js/streaming/rules/o/InsufficientBufferRule.js"></script>
 <script src="../../app/js/streaming/Notifier.js"></script>
 <script src="../../app/js/streaming/EventController.js"></script>
 <script src="../../app/js/streaming/URIQueryAndFragmentModel.js"></script>
@@ -183,16 +185,9 @@
 <script src="../../app/js/hls/dependencies/HlsFragmentController.js"></script>
 
 <script src="../../app/js/custom/Custom.js"></script>
-<script src="../../app/js/custom/dependencies/CustomFragmentLoader.js"></script>
-<script src="../../app/js/custom/dependencies/CustomAbrController.js"></script>
-<script src="../../app/js/custom/dependencies/CustomBufferController.js"></script>
-<script src="../../app/js/custom/dependencies/CustomSourceBufferExtensions.js"></script>
-<script src="../../app/js/custom/di/CustomContext.js"></script>
 <script src="../../app/js/custom/models/CustomMetricsModel.js"></script>
 <script src="../../app/js/custom/models/CustomMetricsList.js"></script>
 <script src="../../app/js/custom/modules/ContextManager.js"></script>
-<script src="../../app/js/custom/rules/CustomDownloadRatioRule.js"></script>
-<script src="../../app/js/custom/rules/CustomInsufficientBufferRule.js"></script>
 <script src="../../app/js/custom/utils/CopyMethods.js"></script>
 <script src="../../app/js/custom/utils/CustomDebug.js"></script>
 <script src="../../app/js/custom/utils/CustomObjectIron.js"></script>
@@ -206,7 +201,19 @@
 <script src="../../app/js/custom/analytics.js"></script>
 <!-- /source -->
 
-<style id="cueStyle" type="text/css"></style>
+    <!-- metricsagent -->
+    <script src="../../../metricsagent.js/src/MetricsAgent.js"></script>
+    <script src="../../../metricsagent.js/src/MetricsDatabase.js"></script>
+    <script src="../../../metricsagent.js/src/MetricsSender.js"></script>
+    <script src="../../../metricsagent.js/src/MetricsVo.js"></script>
+    <script src="../../../metricsagent.js/src/collectors/HasPlayerCollector.js"></script>
+    <script src="../../../metricsagent.js/src/formatters/AbstractFormatter.js"></script>
+    <script src="../../../metricsagent.js/src/formatters/CSQoEFormatter.js"></script>
+    <script src="../../../metricsagent.js/src/formatters/PrismeFormatter.js"></script>
+    <!-- /metricsagent -->
+
+ <style id="cueStyle" type="text/css">
+</style>
 </head>
 
 <body ng-controller="DashController">
@@ -232,7 +239,14 @@
                 <a ng-repeat="item in streamTypes" href="#" class="list-group-item" ng-click="setStreamType(item)" data-dismiss="modal" ng-show="true">{{item}}</a>
             </div>
         </div>
+    </div>
 
+    <div class="modal fade" id="configMetricsAgentModal">
+        <div class="modal-dialog">
+            <div class="list-group modal-list">
+                <a ng-repeat="metricOption in configMetrics" href="#" class="list-group-item" ng-click="setMetricOption(metricOption)" data-dismiss="modal" ng-show="true">{{metricOption.name}}</a>
+            </div>
+        </div>
     </div>
 
     <div class="container">
@@ -262,6 +276,8 @@
                                 <strong>HAS Player Version</strong><br>{{ versionFull }}
                                 <br>
                                 <strong>Date</strong><br>{{ buildDate }}
+                                <br>
+                                <strong ng-show="metricsAgentAvailable">Metrics Agent Version</strong><br>{{metricsAgentVersion}}
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -383,7 +399,7 @@
                         <span class="panel-title">Charts</span>
                         <div class="btn-group">
                             <button type="button" class="btn btn-default" ng-class="{active:showCharts == false}" ng-click="setCharts(false)">Hide</button>
-                            <button type="button" class="btn btn-default" ng-class="{active: (switchCharts == false && showCharts == true)}"ng-click="setSwitchCharts(false)">Buffer Chart</button>
+                            <button type="button" class="btn btn-default" ng-class="{active: (switchCharts == false && showCharts == true)}" ng-click="setSwitchCharts(false)">Buffer Chart</button>
                             <button type="button" class="btn btn-default" ng-class="{active: (switchCharts == true && showCharts == true)}" ng-click="setSwitchCharts(true)">Bandwidth Chart</button>
                         </div>
                     </div>
@@ -446,16 +462,37 @@
             </div>
 
             <div class="col-md-3">
+                <div class="panel" ng-show="metricsAgentAvailable">
+                    <div class="panel-heading panel-top">
+                        <span class="panel-title">Agent</span>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-default" ng-class="{active:!metricsAgentActive}" ng-click="setMetricsAgent(false)"><span>Off</span></button>
+                            <button type="button" class="btn btn-default" ng-class="{active:metricsAgentActive}" ng-click="setMetricsAgent(true)"><span>On</span></button>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <div id="desktop-streams" class="input-group-btn">
+                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                Config <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li ng-repeat="metricOption in configMetrics" ng-click="setMetricOption(metricOption)" ng-show="true">
+                                    <a>{{metricOption.name}}</a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div id="mobile-streams" class="input-group-btn">
+                            <button type="button" class="btn btn-default" data-toggle="modal" href="#configMetricsAgentModal">
+                                Config <span class="caret"></span>
+                            </button>
+                        </div>
+                        <input type="text" class="form-control" placeholder="" ng-model="selected_metric_option.name">
+                    </div>
+                </div>
                 <div class="panel">
                     <div class="panel-heading panel-top">
                         <span class="panel-title">ABR</span>
                         <div class="btn-group">
-                            <button type="button" class="btn btn-default" ng-class="{active:abrEnabled == false}" ng-click="setAbrEnabled(false)">
-                                <span>Off</span>
-                            </button>
-                            <button type="button" class="btn btn-default active" ng-class="{active:abrEnabled == true}" ng-click="setAbrEnabled(true)">
-                                <span>On</span>
-                            </button>
                             <button type="button" class="btn btn-default" ng-class="{active:abrEnabled == false}" ng-click="setAbrEnabled(false)"><span>Off</span></button>
                             <button type="button" class="btn btn-default" ng-class="{active:abrEnabled == true}" ng-click="setAbrEnabled(true)"><span>On</span></button>
                         </div>
@@ -516,6 +553,7 @@
                 </div>
             </div>
         </div>
+
 
     </div>
 </body>

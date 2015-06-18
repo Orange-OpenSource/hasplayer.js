@@ -97,6 +97,42 @@ MediaPlayer.di.Context = function () {
             this.system.mapClass('schedulerModel', MediaPlayer.dependencies.SchedulerModel);
 
             this.system.mapSingleton('notifier', MediaPlayer.dependencies.Notifier);
+
+            this.system.mapClass('indexHandler', Dash.dependencies.DashHandler);
+            this.system.mapClass('baseURLExt', Dash.dependencies.BaseURLExtensions);
+            this.system.mapClass('fragmentExt', Dash.dependencies.FragmentExtensions);
+            this.system.mapSingleton('manifestExt', Dash.dependencies.DashManifestExtensions);
+            this.system.mapSingleton('metricsExt', Dash.dependencies.DashMetricsExtensions);
+            this.system.mapSingleton('timelineConverter', Dash.dependencies.TimelineConverter);
+
+            this.system.mapClass('parser', MediaPlayer.dependencies.Parser);
+
+            // Then, our parser will choose which parser call between Dash, Mss and Hls. To do that, it need references
+            this.system.mapClass('dashParser', Dash.dependencies.DashParser);
+            // @if INCLUDE_MSS=true
+            this.system.mapClass('mssParser', Mss.dependencies.MssParser);
+            // @endif
+            // @if INCLUDE_HLS=true
+            this.system.mapClass('hlsParser', Hls.dependencies.HlsParser);
+            this.system.mapClass('hlsDemux', Hls.dependencies.HlsDemux);
+            // @endif
+
+            // creation of a context manager to plug some specific parts of the code
+            this.system.mapSingleton('contextManager', Custom.modules.ContextManager);
+
+            // here replace dash or streaming modules by ours
+            this.system.mapSingleton('metricsModel', Custom.models.CustomMetricsModel);
+            this.system.mapSingleton('metricsExt', MediaPlayer.dependencies.MetricsExtensions);
+            this.system.mapClass('metrics', Custom.models.CustomMetricsList);
+            this.system.mapSingleton('debug', Custom.utils.CustomDebug);
+            this.system.mapSingleton('config', MediaPlayer.utils.Config);
+
+            // overload ABR rules
+            this.system.mapClass('odownloadRatioRule', MediaPlayer.rules.o.DownloadRatioRule);
+            this.system.mapClass('oinsufficientBufferRule', MediaPlayer.rules.o.InsufficientBufferRule);
+
+            // plug message handler. When the message is notify, the contextManager is called
+            this.system.mapHandler('setContext', 'contextManager', 'setContext');
         }
     };
 };
