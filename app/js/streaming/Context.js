@@ -102,7 +102,7 @@ MediaPlayer.di.Context = function () {
             this.system.mapClass('baseURLExt', Dash.dependencies.BaseURLExtensions);
             this.system.mapClass('fragmentExt', Dash.dependencies.FragmentExtensions);
             this.system.mapSingleton('manifestExt', Dash.dependencies.DashManifestExtensions);
-            this.system.mapSingleton('metricsExt', Dash.dependencies.DashMetricsExtensions);
+            //this.system.mapSingleton('metricsExt', Dash.dependencies.DashMetricsExtensions);
             this.system.mapSingleton('timelineConverter', Dash.dependencies.TimelineConverter);
 
             this.system.mapClass('parser', MediaPlayer.dependencies.Parser);
@@ -121,9 +121,7 @@ MediaPlayer.di.Context = function () {
             this.system.mapSingleton('contextManager', Custom.modules.ContextManager);
 
             // here replace dash or streaming modules by ours
-            this.system.mapSingleton('metricsModel', Custom.models.CustomMetricsModel);
             this.system.mapSingleton('metricsExt', MediaPlayer.dependencies.MetricsExtensions);
-            this.system.mapClass('metrics', Custom.models.CustomMetricsList);
             this.system.mapSingleton('debug', Custom.utils.CustomDebug);
             this.system.mapSingleton('config', MediaPlayer.utils.Config);
 
