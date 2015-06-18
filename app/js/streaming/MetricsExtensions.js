@@ -82,7 +82,7 @@
         return found;
     };
 
-    var rslt = Custom.utils.copyMethods(Dash.dependencies.DashMetricsExtensions);
+    var rslt = MediaPlayer.utils.copyMethods(Dash.dependencies.DashMetricsExtensions);
 
     rslt.getDuration = function() {
         var self = this,
