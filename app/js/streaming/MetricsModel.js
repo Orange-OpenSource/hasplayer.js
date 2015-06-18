@@ -148,7 +148,7 @@
         },
 
         addRepresentationBoundaries: function (streamType, t, min, max) {
-            var vo = new Custom.vo.metrics.RepresentationBoundaries();
+            var vo = new MediaPlayer.vo.metrics.RepresentationBoundaries();
 
             vo.t = t;
             vo.min = min;
@@ -161,7 +161,7 @@
         },
 
         addBandwidthBoundaries: function (streamType, t, min, max) {
-            var vo = new Custom.vo.metrics.BandwidthBoundaries();
+            var vo = new MediaPlayer.vo.metrics.BandwidthBoundaries();
 
             vo.t = t;
             vo.min = min;
@@ -188,7 +188,7 @@
         },
 
         addState: function (streamType, currentState, position, reason) {
-            var vo = new Custom.vo.metrics.State();
+            var vo = new MediaPlayer.vo.metrics.State();
 
             vo.current = currentState;
             vo.position = position;
@@ -199,7 +199,7 @@
         },
 
         addSession: function (streamType,url,loop, endTime, playerType) {
-            var vo = new Custom.vo.metrics.Session();
+            var vo = new MediaPlayer.vo.metrics.Session();
 
             vo.uri = url;
             if (loop) {
@@ -215,7 +215,7 @@
         },
 
         addCondition: function (streamType,isFullScreen,videoWidth, videoHeight, droppedFrames,fps) {
-            var vo = new Custom.vo.metrics.Condition();
+            var vo = new MediaPlayer.vo.metrics.Condition();
 
             vo.isFullScreen = isFullScreen;
             vo.windowSize = videoWidth+"x"+videoHeight;
