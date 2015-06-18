@@ -16,42 +16,143 @@ MediaPlayer.utils.Debug = function () {
 
     var logToBrowserConsole = true,
         // ORANGE: add level
-        level = 4;
+        NONE  = 0,
+        ERROR = 1,
+        WARN  = 2,
+        INFO  = 3,
+        DEBUG = 4,
+        ALL   = 4,
+        level = 4,
+        showLogTimestamp = true,
+        startTime = new Date().getTime(),
+
+        _log = function (logLevel, args) {
+            var self = this;
+            if (getLogToBrowserConsole() && (logLevel <= getLevel())) {
+                var _logger = getLogger(),
+                    message = "",
+                    logTime = null;
+
+                if ((_logger === undefined) || (_logger === null)) {
+                    _logger = console;
+                }
+
+                if (showLogTimestamp) {
+                    logTime = new Date().getTime();
+                    message += "[" + toHHMMSSmmm(logTime - startTime) + "] ";
+                }
+
+                Array.apply(null, args).forEach(function(item) {
+                    message += item + " ";
+                });
+
+                switch (logLevel) {
+                    case ERROR:
+                        _logger.error(message);
+                        break;
+                    case WARN:
+                        _logger.warn(message);
+                        break;
+                    case INFO:
+                        _logger.info(message);
+                        break;
+                    case DEBUG:
+                        _logger.debug(message);
+                        break;
+                }
+            }
+
+            self.eventBus.dispatchEvent({
+                type: "log",
+                message: arguments[0]
+            });
+        },
+
+        toHHMMSSmmm = function (time) {
+            var str,
+                h,
+                m,
+                s,
+                ms = time;
+
+            h = Math.floor(ms / 3600000);
+            ms -= (h * 3600000);
+            m = Math.floor(ms / 60000);
+            ms -= (m * 60000);
+            s = Math.floor(ms / 1000);
+            ms -= (s * 1000);
+
+            if (h < 10) {h = "0"+h;}
+            if (m < 10) {m = "0"+m;}
+            if (s < 10) {s = "0"+s;}
+            if (ms < 10) {ms = "0"+ms;}
+            if (ms < 100) {ms = "0"+ms;}
+
+            str = h+':'+m+':'+s+':'+ms;
+            return str;
+        },
+
+        getLogToBrowserConsole = function() {
+            return logToBrowserConsole;
+        },
+
+        getLevel = function() {
+            return level;
+        },
+
+        getLogger = function () {
+            var _logger = ('undefined' !== typeof(log4javascript)) ? log4javascript.getLogger() : null;
+            if (_logger) {
+                if(!_logger.initialized) {
+                    var appender = new log4javascript.PopUpAppender();
+                    var layout = new log4javascript.PatternLayout("%d{HH:mm:ss.SSS} %-5p - %m%n");
+                    appender.setLayout(layout);
+                    _logger.addAppender(appender);
+                    _logger.setLevel(log4javascript.Level.ALL);
+                    _logger.initialized = true;
+                }
+            }
+            return _logger;
+        };
 
     return {
         eventBus: undefined,
 
         // ORANGE: add level
-        NONE:   0,
-        ERROR:  1,
-        WARN:   2,
-        INFO:   3,
-        DEBUG:  4,
-        ALL:    4,
+        NONE:   NONE,
+        ERROR:  ERROR,
+        WARN:   WARN,
+        INFO:   INFO,
+        DEBUG:  DEBUG,
+        ALL:    ALL,
 
-        setLevel: function(value) {
-            level  = value;
-        },
-        getLevel: function() {
-            return level;
-        },
+        getLevel: getLevel,
+        getLogToBrowserConsole: getLogToBrowserConsole,
+        getLogger: getLogger,
 
         setLogToBrowserConsole: function(value) {
             logToBrowserConsole = value;
         },
-        getLogToBrowserConsole: function() {
-            return logToBrowserConsole;
+
+        setLevel: function(value) {
+            level  = value;
         },
 
-        log: function (message) {
-            if (logToBrowserConsole){
-                console.log(message);
-            }
+        error: function () {
+            _log.call(this, ERROR, arguments);
+        },
 
-            this.eventBus.dispatchEvent({
-                type: "log",
-                message: message
-            });
+        warn: function () {
+            _log.call(this, WARN, arguments);
+        },
+
+        info: function () {
+            _log.call(this, INFO, arguments);
+        },
+
+        // Keep this function for compatibility
+        log: function () {
+            _log.call(this, DEBUG, arguments);
         }
     };
 };

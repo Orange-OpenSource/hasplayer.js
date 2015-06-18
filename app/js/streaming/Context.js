@@ -122,7 +122,6 @@ MediaPlayer.di.Context = function () {
 
             // here replace dash or streaming modules by ours
             this.system.mapSingleton('metricsExt', MediaPlayer.dependencies.MetricsExtensions);
-            this.system.mapSingleton('debug', Custom.utils.CustomDebug);
             this.system.mapSingleton('config', MediaPlayer.utils.Config);
 
             // overload ABR rules
