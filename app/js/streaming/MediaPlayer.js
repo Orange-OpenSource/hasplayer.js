@@ -663,6 +663,7 @@ MediaPlayer.dependencies = {};
 MediaPlayer.dependencies.protection = {};
 MediaPlayer.utils = {};
 MediaPlayer.models = {};
+MediaPlayer.modules = {};
 MediaPlayer.vo = {};
 MediaPlayer.vo.metrics = {};
 MediaPlayer.vo.protection = {};

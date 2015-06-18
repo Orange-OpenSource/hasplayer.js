@@ -118,7 +118,7 @@ MediaPlayer.di.Context = function () {
             // @endif
 
             // creation of a context manager to plug some specific parts of the code
-            this.system.mapSingleton('contextManager', Custom.modules.ContextManager);
+            this.system.mapSingleton('contextManager', MediaPlayer.modules.ContextManager);
 
             // here replace dash or streaming modules by ours
             this.system.mapSingleton('metricsExt', MediaPlayer.dependencies.MetricsExtensions);
