@@ -39,14 +39,6 @@ module.exports = {
         options: {
             patterns: [
             {
-                match: /"[ \S]*\/CustomContext.js"/,
-                replacement: '"../<%= preprocesspath %>/CustomContext.js"'
-            },
-            {
-                match: /"[ \S]*\/CustomContextNoRule.js"/,
-                replacement: '"../<%= preprocesspath %>/CustomContextNoRule.js"'
-            },
-            {
                 match: /"[ \S]*\/Context.js"/,
                 replacement: '"../<%= preprocesspath %>/Context.js"'
             },
