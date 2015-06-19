@@ -8,7 +8,7 @@ module.exports = {
             '<%= path %>/dashif.js',
             '<%= path %>/json.js'
         ],
-        dest: '<%= path %>/dashif.js',
+        dest: '<%= path %>/dashif.js'
     }
 
 };

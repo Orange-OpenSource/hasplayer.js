@@ -10,9 +10,9 @@ module.exports = {
                 expand: true,
                 cwd: '<%= path %>',
                 src: ['*'],
-                dest: '/',
+                dest: '/'
             }
         ]
     }
-    
+
 };

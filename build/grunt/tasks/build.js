@@ -1,7 +1,7 @@
 module.exports = function(grunt) {
 
     grunt.config.set('rootpath',        '../');
-    grunt.config.set('preprocesspath',  '../tmp/preprocess');
+    grunt.config.set('preprocesspath',  '../build/.tmp/preprocess');
     grunt.config.set('path',            '../dist');
     grunt.config.set('samples',         '../samples');
     grunt.config.set('appDemoPlayer',   '../samples/DemoPlayer');
@@ -10,8 +10,8 @@ module.exports = function(grunt) {
     grunt.config.set('appABRTest',      '../samples/ABRTest/');
 
     grunt.registerTask('build', [
-        'preprocess:multifile',     // Preprocess files
         'clean:start',              // Empty folder
+        'preprocess:multifile',     // Preprocess files
         'copy',                     // Copy HTML files
         'replace:sourceByBuild',    // Replace source by call for hasplayer.js
         'replace:sourceForBuild',   // Prepare source file for hasplayer.js
