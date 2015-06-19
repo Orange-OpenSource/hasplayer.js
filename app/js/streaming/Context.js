@@ -125,8 +125,8 @@ MediaPlayer.di.Context = function () {
             this.system.mapSingleton('config', MediaPlayer.utils.Config);
 
             // overload ABR rules
-            this.system.mapClass('odownloadRatioRule', MediaPlayer.rules.o.DownloadRatioRule);
-            this.system.mapClass('oinsufficientBufferRule', MediaPlayer.rules.o.InsufficientBufferRule);
+            this.system.mapClass('downloadRatioRule', MediaPlayer.rules.o.DownloadRatioRule);
+            this.system.mapClass('insufficientBufferRule', MediaPlayer.rules.o.InsufficientBufferRule);
 
             // plug message handler. When the message is notify, the contextManager is called
             this.system.mapHandler('setContext', 'contextManager', 'setContext');

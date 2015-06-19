@@ -19,8 +19,6 @@ MediaPlayer.rules.BaseRulesCollection = function () {
     return {
         downloadRatioRule: undefined,
         insufficientBufferRule: undefined,
-        odownloadRatioRule: undefined,
-        oinsufficientBufferRule: undefined,
 
         getRules: function () {
             return Q.when(rules);
@@ -33,8 +31,6 @@ MediaPlayer.rules.BaseRulesCollection = function () {
                 function (r) {
                     r.push(self.downloadRatioRule);
                     r.push(self.insufficientBufferRule);
-                    r.push(self.odownloadRatioRule);
-                    r.push(self.odownloadRatioRule);
                 }
             );
         }
