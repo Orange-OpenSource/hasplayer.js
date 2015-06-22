@@ -45,7 +45,9 @@
 <script src="../../app/lib/dijon.js"></script>
 <script src="../../app/lib/Math.js"></script>
 <script src="../../app/lib/long.js"></script>
+<!-- @if PROTECTION=true -->
 <script src="../../app/lib/base64.js"></script>
+<!-- @endif -->
 
 <script src="../../app/lib/mp4lib/mp4lib.js"></script>
 <script src="../../app/lib/mp4lib/mp4lib-boxes.js"></script>
@@ -77,6 +79,7 @@
 <script src="../../app/js/streaming/ManifestUpdater.js"></script>
 <script src="../../app/js/streaming/ManifestModel.js"></script>
 <script src="../../app/js/streaming/MediaSourceExtensions.js"></script>
+<script src="../../app/js/streaming/MetricsExtensions.js"></script>
 <script src="../../app/js/streaming/SourceBufferExtensions.js"></script>
 <script src="../../app/js/streaming/VideoModelExtensions.js"></script>
 <script src="../../app/js/streaming/BufferExtensions.js"></script>
@@ -106,11 +109,12 @@
 <script src="../../app/js/streaming/vo/Event.js"></script>
 <script src="../../app/js/streaming/vo/Error.js"></script>
 
+
 <script src="../../app/js/streaming/vo/Mp4Track.js"></script>
 <script src="../../app/js/streaming/Mp4Processor.js"></script>
 
-<script src="../../app/js/streaming/MetricsExtensions.js"></script>
 
+<!-- @if PROTECTION=true -->
 <!--Protection-->
 <script src="../../app/js/streaming/protection/ProtectionModel.js"></script>
 <script src="../../app/js/streaming/protection/ProtectionModel_01b.js"></script>
@@ -138,7 +142,7 @@
 <script src="../../app/js/streaming/protection/vo/KeySystemAccess.js"></script>
 <script src="../../app/js/streaming/protection/vo/KeySystemConfiguration.js"></script>
 <script src="../../app/js/streaming/protection/vo/MediaCapability.js"></script>
-
+<!-- @endif -->
 
 <script src="../../app/js/streaming/captioning/VTTParser.js"></script>
 <script src="../../app/js/streaming/captioning/TTMLParser.js"></script>
@@ -179,22 +183,27 @@
 <script src="../../app/js/dash/DashMetricsExtensions.js"></script>
 <script src="../../app/js/dash/TimelineConverter.js"></script>
 
+<!-- @if INCLUDE_MSS=true -->
 <script src="../../app/js/mss/Mss.js"></script>
 <script src="../../app/js/mss/dependencies/MssParser.js"></script>
 <script src="../../app/js/mss/dependencies/MssHandler.js"></script>
 <script src="../../app/js/mss/dependencies/MssFragmentController.js"></script>
+<!-- @endif -->
 
+<!-- @if INCLUDE_HLS=true -->
 <script src="../../app/js/hls/Hls.js"></script>
 <script src="../../app/js/hls/dependencies/HlsDemux.js"></script>
 <script src="../../app/js/hls/dependencies/HlsParser.js"></script>
 <script src="../../app/js/hls/dependencies/HlsHandler.js"></script>
 <script src="../../app/js/hls/dependencies/HlsFragmentController.js"></script>
+<!-- @endif -->
 
 <script src="../../app/js/utils/CopyMethods.js"></script>
 <script src="../../app/js/utils/ObjectIron.js"></script>
 <script src="../../app/js/utils/xhr.js"></script>
 <script src="../../app/js/utils/analytics.js"></script>
 <!-- /source -->
+
 
     <!-- metricsagent -->
     <script src="../../../metricsagent.js/src/MetricsAgent.js"></script>
