@@ -1,15 +1,15 @@
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2014, Orange
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
+ *
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -179,7 +179,7 @@ Hls.dependencies.HlsParser = function () {
 
     var _getVariantStreams = function(data) {
         var streamsArray = [];
-        
+
         for (var i = 0; i < data.length; i++) {
 
             if (_containsTag(data[i], TAG_EXTXSTREAMINF)) {
@@ -342,19 +342,19 @@ Hls.dependencies.HlsParser = function () {
             manifest.timeShiftBufferDepth = manifestDuration - representation.SegmentList.duration;
         }
 
-        // Set minBufferTime            
+        // Set minBufferTime
         manifest.minBufferTime = representation.SegmentList.duration * 2;//MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME
 
         // Filter invalid representations
         /*for (i = 0; i < adaptationSet.Representation_asArray.length; i++) {
             representation = adaptationSet.Representation_asArray[i];
-            
+
             valid = true;
 
             // Check if segment list is valid
             valid = valid & (representation.SegmentList.SegmentURL_asArray.length > 0);
 
-            // Check if representation (bandwidth) is not already defined 
+            // Check if representation (bandwidth) is not already defined
             if (i > 0) {
                 valid = valid & (adaptationSet.Representation_asArray[i-1].bandwidth !== adaptationSet.Representation_asArray[i].bandwidth);
             }
@@ -492,7 +492,7 @@ Hls.dependencies.HlsParser = function () {
 
         mpd.profiles= "urn:mpeg:dash:profile:isoff-live:2011";
         mpd.type = "static"; // Updated in postProcess()
-        
+
         // PERIOD
         period = {};
         period.name = "Period";
@@ -501,7 +501,7 @@ Hls.dependencies.HlsParser = function () {
         period.parent = mpd;
         period.duration = 0; // To be set at variant playlist parsing
         period.BaseURL = mpd.BaseURL;
-        
+
         mpd.Period = period;
         mpd.Period_asArray = [period];
 
@@ -513,7 +513,7 @@ Hls.dependencies.HlsParser = function () {
         // Get variant streams
         streams = _getVariantStreams(data.slice(1));
 
-        // Sort streams by bandwidth 
+        // Sort streams by bandwidth
         streams.sort(function(a,b){return a.bandwidth-b.bandwidth;});
 
         // Only one adaptationSet (HLS v3)
@@ -551,7 +551,7 @@ Hls.dependencies.HlsParser = function () {
                     bandwidth: stream.bandwidth,
                     width: parseInt(stream.resolution.split('x')[0], 10),
                     height: parseInt(stream.resolution.split('x')[1], 10),
-                    url: (stream.uri.indexOf("http://") > -1) ? stream.uri : (adaptationSet.BaseURL + stream.uri),
+                    url: (stream.uri.indexOf("http://") > -1) ? stream.uri : (adaptationSet.BaseURL + stream.uri)
                 };
                 representation.BaseURL = parseBaseUrl(representation.url);
                 representations.push(representation);
@@ -605,13 +605,13 @@ Hls.dependencies.HlsParser = function () {
                 };
 
                 requestsToDo.push({"url": mediaRepresentation.url, "parent": mediaRepresentation});
-                
+
                 mediaAdaptationSet.Representation = mediaRepresentation;
                 mediaAdaptationSet.Representation_asArray = [mediaRepresentation];
                 adaptationsSet.push(mediaAdaptationSet);
             }
         }*/
-        
+
         // Get representation (variant stream) playlist
         self.abrController.getPlaybackQuality("video", adaptationSet).then(
             function (result) {
@@ -627,7 +627,7 @@ Hls.dependencies.HlsParser = function () {
         );
 
         // store all playlist requests to do
-        
+
         /*var requestPromiseArray = [];
         for (var k= 0; k < requestsToDo.length; k++) {
             requestPromiseArray.push(Custom.utils.doRequestWithPromise.call(this, requestsToDo[k].url, _parsePlaylist, requestsToDo[k].parent));
@@ -649,7 +649,7 @@ Hls.dependencies.HlsParser = function () {
     };
 
     var doUpdatePlaylist = function (representation) {
-        return Custom.utils.doRequestWithPromise.call(this, representation.url, _parsePlaylist, representation);
+        return MediaPlayer.utils.doRequestWithPromise.call(this, representation.url, _parsePlaylist, representation);
     };
 
     return {

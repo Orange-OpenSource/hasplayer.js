@@ -38,7 +38,7 @@
  *
  *
  * @constructs MediaPlayer
- * @param aContext - context used by the MediaPlayer. For the hasplayer, CustomContext is used. The context class is used to
+ * @param aContext - context used by the MediaPlayer. The context class is used to
  * inject dijon dependances.
  */
 MediaPlayer = function (aContext) {
@@ -689,8 +689,10 @@ MediaPlayer.dependencies = {};
 MediaPlayer.dependencies.protection = {};
 MediaPlayer.utils = {};
 MediaPlayer.models = {};
+MediaPlayer.modules = {};
 MediaPlayer.vo = {};
 MediaPlayer.vo.metrics = {};
 MediaPlayer.vo.protection = {};
 MediaPlayer.rules = {};
+MediaPlayer.rules.o = {};
 MediaPlayer.di = {};

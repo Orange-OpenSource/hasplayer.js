@@ -615,7 +615,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     ////////////////////////////////////////
 
     video = document.querySelector(".dash-video-player video");
-    context = new Custom.di.CustomContext();
+    context = new MediaPlayer.di.Context();
     player = new MediaPlayer(context);
     
     $scope.version = player.getVersion();
@@ -898,6 +898,3 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         }
     }
 }]);
-
-
-

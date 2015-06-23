@@ -46,10 +46,8 @@ module.exports = function(grunt) {
         },
         multifile : {
             files : {
-                '<%= preprocesspath %>/CustomContext.js' : '<%= rootpath %>/app/js/custom/di/CustomContext.js',
-                '<%= preprocesspath %>/CustomContextNoRule.js' : '<%= rootpath %>/app/js/custom/di/CustomContextNoRule.js',
-                '<%= preprocesspath %>/playerSrc.html' : '<%= rootpath %>/samples/playerSrc.html',
                 '<%= preprocesspath %>/Context.js' : '<%= rootpath %>/app/js/streaming/Context.js',
+                '<%= preprocesspath %>/playerSrc.html' : '<%= rootpath %>/samples/playerSrc.html',
                 '<%= preprocesspath %>/Stream.js' : '<%= rootpath %>/app/js/streaming/Stream.js',
                 '<%= preprocesspath %>/MssParser.js' : '<%= rootpath %>/app/js/mss/dependencies/MssParser.js'
             }

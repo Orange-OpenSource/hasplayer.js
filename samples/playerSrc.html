@@ -43,6 +43,7 @@
 <script src="../../app/js/streaming/ManifestUpdater.js"></script>
 <script src="../../app/js/streaming/ManifestModel.js"></script>
 <script src="../../app/js/streaming/MediaSourceExtensions.js"></script>
+<script src="../../app/js/streaming/MetricsExtensions.js"></script>
 <script src="../../app/js/streaming/SourceBufferExtensions.js"></script>
 <script src="../../app/js/streaming/VideoModelExtensions.js"></script>
 <script src="../../app/js/streaming/BufferExtensions.js"></script>
@@ -56,17 +57,22 @@
 <script src="../../app/js/streaming/SchedulerModel.js"></script>
 <script src="../../app/js/streaming/Stream.js"></script>
 <script src="../../app/js/streaming/BufferController.js"></script>
+<script src="../../app/js/streaming/Parser.js"></script>
+<script src="../../app/js/streaming/ContextManager.js"></script>
 <script src="../../app/js/streaming/rules/SwitchRequest.js"></script>
 <script src="../../app/js/streaming/rules/DownloadRatioRule.js"></script>
 <script src="../../app/js/streaming/rules/InsufficientBufferRule.js"></script>
 <script src="../../app/js/streaming/rules/LimitSwitchesRule.js"></script>
 <script src="../../app/js/streaming/rules/BaseRulesCollection.js"></script>
+<script src="../../app/js/streaming/rules/o/DownloadRatioRule.js"></script>
+<script src="../../app/js/streaming/rules/o/InsufficientBufferRule.js"></script>
 <script src="../../app/js/streaming/Notifier.js"></script>
 <script src="../../app/js/streaming/EventController.js"></script>
 <script src="../../app/js/streaming/URIQueryAndFragmentModel.js"></script>
 <script src="../../app/js/streaming/vo/URIFragmentData.js"></script>
 <script src="../../app/js/streaming/vo/Event.js"></script>
 <script src="../../app/js/streaming/vo/Error.js"></script>
+
 
 <script src="../../app/js/streaming/vo/Mp4Track.js"></script>
 <script src="../../app/js/streaming/Mp4Processor.js"></script>
@@ -118,6 +124,11 @@
 <script src="../../app/js/streaming/vo/metrics/PlayList.js"></script>
 <script src="../../app/js/streaming/vo/metrics/RepresentationSwitch.js"></script>
 <script src="../../app/js/streaming/vo/metrics/TCPConnection.js"></script>
+<script src="../../app/js/streaming/vo/metrics/BandwidthBoundaries.js"></script>
+<script src="../../app/js/streaming/vo/metrics/RepresentationBoundaries.js"></script>
+<script src="../../app/js/streaming/vo/metrics/State.js"></script>
+<script src="../../app/js/streaming/vo/metrics/Session.js"></script>
+<script src="../../app/js/streaming/vo/metrics/Condition.js"></script>
 
 <script src="../../app/js/dash/Dash.js"></script>
 <script src="../../app/js/dash/DashContext.js"></script>
@@ -151,28 +162,8 @@
 <script src="../../app/js/hls/dependencies/HlsFragmentController.js"></script>
 <!-- @endif -->
 
-<script src="../../app/js/custom/Custom.js"></script>
-<script src="../../app/js/custom/dependencies/CustomParser.js"></script>
-<script src="../../app/js/custom/dependencies/CustomFragmentLoader.js"></script>
-<script src="../../app/js/custom/dependencies/CustomAbrController.js"></script>
-<script src="../../app/js/custom/dependencies/CustomBufferController.js"></script>
-<script src="../../app/js/custom/dependencies/CustomSourceBufferExtensions.js"></script>
-<script src="../../app/js/custom/di/CustomContext.js"></script>
-<script src="../../app/js/custom/models/CustomMetricsModel.js"></script>
-<script src="../../app/js/custom/models/CustomMetricsList.js"></script>
-<script src="../../app/js/custom/modules/ContextManager.js"></script>
-<script src="../../app/js/custom/rules/CustomDownloadRatioRule.js"></script>
-<script src="../../app/js/custom/rules/CustomInsufficientBufferRule.js"></script>
-<script src="../../app/js/custom/utils/CopyMethods.js"></script>
-<script src="../../app/js/custom/utils/CustomDebug.js"></script>
-<script src="../../app/js/custom/utils/CustomObjectIron.js"></script>
-<script src="../../app/js/custom/utils/xhr.js"></script>
-<script src="../../app/js/custom/dependencies/CustomMetricsExtensions.js"></script>
-<script src="../../app/js/custom/vo/metrics/BandwidthBoundaries.js"></script>
-<script src="../../app/js/custom/vo/metrics/RepresentationBoundaries.js"></script>
-<script src="../../app/js/custom/vo/metrics/State.js"></script>
-<script src="../../app/js/custom/vo/metrics/Session.js"></script>
-<script src="../../app/js/custom/vo/metrics/Condition.js"></script>
-
-<script src="../../app/js/custom/analytics.js"></script>
+<script src="../../app/js/utils/CopyMethods.js"></script>
+<script src="../../app/js/utils/ObjectIron.js"></script>
+<script src="../../app/js/utils/xhr.js"></script>
+<script src="../../app/js/utils/analytics.js"></script>
 <!-- /source -->

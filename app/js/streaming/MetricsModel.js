@@ -1,14 +1,14 @@
 /*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2013, Digital Primates
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
  MediaPlayer.models.MetricsModel = function () {
@@ -56,6 +56,13 @@
 
         clearAllCurrentMetrics: function () {
             var self = this;
+
+            for (var prop in this.streamMetrics) {
+                if (this.streamMetrics.hasOwnProperty(prop)) {
+                    delete this.streamMetrics[prop];
+                }
+            }
+
             this.streamMetrics = {};
             this.metricsChanged.call(self);
         },
@@ -140,6 +147,32 @@
             return vo;
         },
 
+        addRepresentationBoundaries: function (streamType, t, min, max) {
+            var vo = new MediaPlayer.vo.metrics.RepresentationBoundaries();
+
+            vo.t = t;
+            vo.min = min;
+            vo.max = max;
+
+            this.getMetricsFor(streamType).RepBoundariesList.push(vo);
+
+            this.metricAdded(streamType, "RepresentationBoundaries", vo);
+            return vo;
+        },
+
+        addBandwidthBoundaries: function (streamType, t, min, max) {
+            var vo = new MediaPlayer.vo.metrics.BandwidthBoundaries();
+
+            vo.t = t;
+            vo.min = min;
+            vo.max = max;
+
+            this.getMetricsFor(streamType).BandwidthBoundariesList.push(vo);
+
+            this.metricAdded(streamType, "BandwidthBoundaries", vo);
+            return vo;
+        },
+
         addRepresentationSwitch: function (streamType, t, mt, to, lto) {
             var vo = new MediaPlayer.vo.metrics.RepresentationSwitch();
 
@@ -152,6 +185,49 @@
 
             this.metricAdded(streamType, "RepresentationSwitch", vo);
             return vo;
+        },
+
+        addState: function (streamType, currentState, position, reason) {
+            var vo = new MediaPlayer.vo.metrics.State();
+
+            vo.current = currentState;
+            vo.position = position;
+            vo.reason = reason;
+
+            this.metricAdded(streamType, "State", vo);
+            return vo;
+        },
+
+        addSession: function (streamType,url,loop, endTime, playerType) {
+            var vo = new MediaPlayer.vo.metrics.Session();
+
+            vo.uri = url;
+            if (loop) {
+                vo.loopMode = 1;
+            } else {
+                vo.loopMode = 0;
+            }
+            vo.endTime = endTime;
+            vo.playerType = playerType;
+
+            this.metricAdded(streamType, "Session", vo);
+            return vo;
+        },
+
+        addCondition: function (streamType,isFullScreen,videoWidth, videoHeight, droppedFrames,fps) {
+            var vo = new MediaPlayer.vo.metrics.Condition();
+
+            vo.isFullScreen = isFullScreen;
+            vo.windowSize = videoWidth+"x"+videoHeight;
+            vo.fps = fps;
+            vo.droppedFrames = droppedFrames;
+
+            this.metricAdded(streamType, "Condition", vo);
+            return vo;
+        },
+
+        addMetaData: function () {
+            this.metricAdded(null, "ManifestReady", null);
         },
 
         addBufferLevel: function (streamType, t, level) {
