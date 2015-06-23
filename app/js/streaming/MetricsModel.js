@@ -271,7 +271,7 @@
             // ORANGE : add decoded video frames
             vo.decodedFrameCount = quality.totalVideoFrames;
 
-            if (list.length > 0 && list[list.length - 1] == vo) {
+            if (list.length > 0 && list[list.length - 1] === vo) {
                 return list[list.length - 1];
             }
 
@@ -305,7 +305,9 @@
 
         updateManifestUpdateInfo: function(manifestUpdate, updatedFields) {
             for (var field in updatedFields) {
-                manifestUpdate[field] = updatedFields[field];
+                if (updatedFields.hasOwnProperty(field)) {
+                    manifestUpdate[field] = updatedFields[field];
+                }
             }
 
             this.metricUpdated(manifestUpdate.streamType, "ManifestUpdate", manifestUpdate);

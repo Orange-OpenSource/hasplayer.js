@@ -160,7 +160,7 @@ Mss.dependencies.MssFragmentController = function () {
                         saiz.sample_info_size[i] = 8+(sepiff.entry[i].NumberOfEntries*6)+2;
                         //8 (Init vector size) + NumberOfEntries*(clear (2) +crypted (4))+ 2 (numberofEntries size (2))
                         if(i>0) {
-                            if (saiz.sample_info_size[i] != saiz.sample_info_size[i-1]) {
+                            if (saiz.sample_info_size[i] !== saiz.sample_info_size[i-1]) {
                                 sizedifferent = true;
                             }
                         }

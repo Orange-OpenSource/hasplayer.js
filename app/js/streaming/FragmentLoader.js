@@ -95,7 +95,7 @@
                 var currentTime = new Date();
                 if (firstProgress) {
                     firstProgress = false;
-                    if (!event.lengthComputable || (event.lengthComputable && event.total != event.loaded)) {
+                    if (!event.lengthComputable || (event.lengthComputable && event.total !== event.loaded)) {
                         request.firstByteDate = currentTime;
                         httpRequestMetrics.tresponse = currentTime;
                     }
@@ -294,7 +294,7 @@
         load: function(req){
             var deferred = Q.defer();
 
-            if(req.type == "Initialization Segment" && req.data){
+            if(req.type === "Initialization Segment" && req.data){
                 deferred.resolve(req,{data:req.data});
             } else {
                 this.planRequests(req).then(function(result) {

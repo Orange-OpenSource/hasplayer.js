@@ -221,8 +221,8 @@ MediaPlayer.dependencies.AbrController = function () {
                                                     quality = max - 1;
                                                 }
 
-                                                if (confidence != MediaPlayer.rules.SwitchRequest.prototype.STRONG &&
-                                                    confidence != MediaPlayer.rules.SwitchRequest.prototype.WEAK) {
+                                                if (confidence !== MediaPlayer.rules.SwitchRequest.prototype.STRONG &&
+                                                    confidence !== MediaPlayer.rules.SwitchRequest.prototype.WEAK) {
                                                     confidence = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
                                                 }
 

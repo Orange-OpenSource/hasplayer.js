@@ -40,7 +40,6 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
         requestLicense = function(message, laURL, requestData) {
             var decodedChallenge = null,
                 headers = {},
-                headerName,
                 key,
                 headerOverrides,
                 parser = new DOMParser(),
@@ -67,7 +66,7 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
             var headerNameList = xmlDoc.getElementsByTagName("name");
             var headerValueList = xmlDoc.getElementsByTagName("value");
 
-            if (headerNameList.length != headerValueList.length) {
+            if (headerNameList.length !== headerValueList.length) {
                 self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE,
                     null, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_INVALID_HEADER, 'DRM: playready update, invalid header name/value pair in keyMessage', null));
             }
@@ -82,7 +81,7 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
 
             var xhr = new XMLHttpRequest();
             xhr.onload = function () {
-                if (xhr.status == 200) {
+                if (xhr.status === 200) {
                     var event = new MediaPlayer.vo.protection.LicenseRequestComplete(new Uint8Array(xhr.response), requestData);
                     self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE,
                         event);
@@ -107,16 +106,20 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
 
             if (headerOverrides) {
                 for (key in headerOverrides) {
-                    headers[key] = headerOverrides[key];
+                    if (headerOverrides.hasOwnProperty(key)) {
+                        headers[key] = headerOverrides[key];
+                    }
                 }
             }
 
-            for (headerName in headers) {
-                if ('authorization' === headerName.toLowerCase()) {
-                    xhr.withCredentials = true;
-                }
+            for (var headerName in headers) {
+                if (headers.hasOwnProperty(headerName)) {
+                    if ('authorization' === headerName.toLowerCase()) {
+                        xhr.withCredentials = true;
+                    }
 
-                xhr.setRequestHeader(headerName, headers[headerName]);
+                    xhr.setRequestHeader(headerName, headers[headerName]);
+                }
             }
 
             if (protData && protData.withCredentials) xhr.withCredentials = true;
@@ -252,4 +255,3 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
 MediaPlayer.dependencies.protection.KeySystem_PlayReady.prototype = {
     constructor: MediaPlayer.dependencies.protection.KeySystem_PlayReady
 };
-

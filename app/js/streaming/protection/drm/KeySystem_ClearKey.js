@@ -62,7 +62,7 @@ MediaPlayer.dependencies.protection.KeySystem_ClearKey = function() {
 
                 var xhr = new XMLHttpRequest();
                 xhr.onload = function () {
-                    if (xhr.status == 200) {
+                    if (xhr.status === 200) {
 
                         if (!xhr.response.hasOwnProperty("keys")) {
                             self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE,
@@ -151,4 +151,3 @@ MediaPlayer.dependencies.protection.KeySystem_ClearKey = function() {
 MediaPlayer.dependencies.protection.KeySystem_ClearKey.prototype = {
     constructor: MediaPlayer.dependencies.protection.KeySystem_ClearKey
 };
-

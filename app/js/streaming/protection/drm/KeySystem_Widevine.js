@@ -41,7 +41,6 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
                 headers = {},
                 key,
                 headerOverrides,
-                headerName,
                 url,
                 self = this;
 
@@ -56,7 +55,7 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
                 xhr.responseType = 'arraybuffer';
                 xhr.onload = function() {
                     //console.saveBinArray(new Uint8Array(this.response), "hasplayer.js_widevine_license_response.bin");
-                    if (this.status == 200) {
+                    if (this.status === 200) {
                         var event = new MediaPlayer.vo.protection.LicenseRequestComplete(new Uint8Array(this.response), requestData);
                         self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE,
                             event);
@@ -79,16 +78,20 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
                 headerOverrides = (protData) ? protData.httpRequestHeaders: null;
                 if (headerOverrides) {
                     for (key in headerOverrides) {
-                        headers[key] = headerOverrides[key];
+                        if (headerOverrides.hasOwnProperty(key)) {
+                            headers[key] = headerOverrides[key];
+                        }
                     }
                 }
 
-                for (headerName in headers) {
-                    if ('authorization' === headerName.toLowerCase()) {
-                        xhr.withCredentials = true;
-                    }
+                for (var headerName in headers) {
+                    if (headers.hasOwnProperty(headerName)) {
+                        if ('authorization' === headerName.toLowerCase()) {
+                            xhr.withCredentials = true;
+                        }
 
-                    xhr.setRequestHeader(headerName, headers[headerName]);
+                        xhr.setRequestHeader(headerName, headers[headerName]);
+                    }
                 }
 
                 xhr.send(message);
@@ -137,4 +140,3 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
 MediaPlayer.dependencies.protection.KeySystem_Widevine.prototype = {
     constructor: MediaPlayer.dependencies.protection.KeySystem_Widevine
 };
-
