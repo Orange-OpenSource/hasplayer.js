@@ -814,18 +814,13 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         //ORANGE : reset subtitles data.
         $scope.textTracks = null;
         $scope.textData = null;
-        
-        // ORANGE: add licenser backUrl parameter and customData
-        var params = new DRMParams();
-        params.backUrl = $scope.selectedItem.backUrl;
-        params.customData = $scope.selectedItem.customData;
 
         // ORANGE: reset ABR controller
         player.setQualityFor("video", 0);
         player.setQualityFor("audio", 0);
 
         $scope.playbackRate = "x1";
-        player.attachSource($scope.selectedItem.url, params);
+        player.attachSource($scope.selectedItem.url, $scope.selectedItem.protData);
     }
 
     $scope.doLoad = function () {

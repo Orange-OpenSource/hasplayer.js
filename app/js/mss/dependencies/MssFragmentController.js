@@ -197,8 +197,8 @@ Mss.dependencies.MssFragmentController = function () {
                 tfdt.version = 1;
                 tfdt.flags = 0;
                 tfdt.baseMediaDecodeTime = Math.floor(request.startTime * request.timescale);
-                // Insert tfdt box just after the tfhd box (and before the trun box)
-                var pos = traf.getBoxPositionByType("tfhd");
+                // Insert tfdt box just after the tfhd box (therefore before the trun box)
+                var pos = traf.getBoxIndexByType("tfhd");
                 traf.boxes.splice(pos + 1, 0, tfdt);
             }
 
@@ -217,21 +217,22 @@ Mss.dependencies.MssFragmentController = function () {
             trun.flags |= 0x000001; // set trun.data-offset-present to true
             trun.data_offset = 0;   // Set a default value for trun.data_offset
 
-            if(sepiff !== null) {
-                //+8 => box size + type
-                var moofpositionInFragment = fragment.getBoxPositionByType("moof")+8;
-                var trafpositionInMoof = moof.getBoxPositionByType("traf")+8;
-                var sencpositionInTraf = traf.getBoxPositionByType("senc")+8;
-                // set offset from begin fragment to the first IV in senc box
-                saio.offset[0] = moofpositionInFragment+trafpositionInMoof+sencpositionInTraf+8;//flags (3) + version (1) + sampleCount (4)
-            }
-
             // Determine new size of the converted fragment
             // and allocate new data buffer
             var fragment_size = fragment.getLength();
 
             // updata trun.data_offset field = offset of first data byte (inside mdat box)
             trun.data_offset = fragment_size - mdat.size + 8; // 8 = 'size' + 'type' mdat fields length
+
+            // Update saio box offset field according to new senc box offset
+            if (sepiff !== null) {
+                var moofPosInFragment = fragment.getBoxOffsetByType("moof");
+                var trafPosInMoof = moof.getBoxOffsetByType("traf");
+                var sencPosInTraf = traf.getBoxOffsetByType("senc");
+                // set offset from begin fragment to the first IV in senc box
+                saio.offset[0] = moofPosInFragment + trafPosInMoof + sencPosInTraf + 16; // box header (12) + sampleCount (4)
+            }
+
 
             // PATCH tfdt and trun samples timestamp values in case of live streams within chrome
             if ((navigator.userAgent.indexOf("Chrome") >= 0) && (manifest.type === "dynamic")){

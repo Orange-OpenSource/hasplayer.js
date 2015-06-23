@@ -255,7 +255,7 @@ Mss.dependencies.MssParser = function () {
             i = 0;
 
 
-        if (chunks.length > 1) {
+        if (chunks && chunks.length > 1) {
 
             // First pass on segments to update timestamp ('t') and duration ('d') fields
             chunks[0].t = chunks[0].t || 0;
@@ -291,9 +291,96 @@ Mss.dependencies.MssParser = function () {
         return segmentTimeline;
     };
 
-    var mapContentProtection = function (protectionHeader) {
+    var getKIDFromProtectionHeader = function (protectionHeader) {
+        var prHeader,
+            wrmHeader,
+            xmlReader,
+            KID;
+
+        // Get PlayReady header as byte array (base64 decoded)
+        prHeader = BASE64.decodeArray(protectionHeader.__text);
+
+        // Get Right Management header (WRMHEADER) from PlayReady header
+        wrmHeader = getWRMHeaderFromPRHeader(prHeader);
+
+        // Convert from multi-byte to unicode
+        wrmHeader = new Uint16Array(wrmHeader.buffer);
+
+        // Convert to string
+        wrmHeader = String.fromCharCode.apply(null, wrmHeader);
+
+        // Parse <WRMHeader> to get KID field value
+        xmlReader = (new DOMParser).parseFromString(wrmHeader, "application/xml");
+        KID = xmlReader.querySelector("KID").textContent;
+
+        // Get KID (base64 decoded) as byte array
+        KID = BASE64.decodeArray(KID);
+
+        // Convert UUID from little-endian to big-endian
+        convertUuidEndianness(KID);
+
+        return KID;
+    };
+
+    var getWRMHeaderFromPRHeader = function (prHeader) {
+        var length,
+            recordCount,
+            recordType,
+            recordLength,
+            recordValue,
+            i = 0;
+
+        // Parse PlayReady header
+
+        // Length - 32 bits (LE format)
+        length = (prHeader[i+3] << 24) + (prHeader[i+2] << 16) + (prHeader[i+1] << 8) + prHeader[i];
+        i += 4;
+
+        // Record count - 16 bits (LE format)
+        recordCount = (prHeader[i+1] << 8) + prHeader[i];
+        i += 2;
+
+        // Parse records
+        while (i < prHeader.length) {
+            // Record type - 16 bits (LE format)
+            recordType = (prHeader[i+1] << 8) + prHeader[i];
+            i += 2;
+
+            // Check if Rights Management header (record type = 0x01)
+            if (recordType === 0x01) {
+
+                // Record length - 16 bits (LE format)
+                recordLength = (prHeader[i+1] << 8) + prHeader[i];
+                i += 2;
+
+                // Record value => contains <WRMHEADER>
+                recordValue = new Uint8Array(recordLength);
+                recordValue.set(prHeader.subarray(i, i + recordLength));
+                return recordValue;
+            }
+        }
+
+        return null;
+    };
+
+    var convertUuidEndianness = function (uuid) {
+        swapBytes(uuid, 0, 3);
+        swapBytes(uuid, 1, 2);
+        swapBytes(uuid, 4, 5);
+        swapBytes(uuid, 6, 7);
+    };
+
+    var swapBytes = function (bytes, pos1, pos2) {
+        var temp = bytes[pos1];
+        bytes[pos1] = bytes[pos2];
+        bytes[pos2] = temp;
+    };
+
+
+    var createPRContentProtection = function (protectionHeader) {
 
         var contentProtection = {},
+            keySystem = this.system.getObject("ksPlayReady"),
             pro,
             systemID = protectionHeader.SystemID;
 
@@ -302,16 +389,32 @@ Mss.dependencies.MssParser = function () {
             __prefix : "mspr"
         };
 
-        //remove {}
-        if (systemID[0] === "{") {
-            systemID = systemID.substring(1, systemID.length-1);
-        }
-        
-        contentProtection.schemeIdUri = "urn:uuid:" + systemID;
-        contentProtection.value = 2;
+        contentProtection.schemeIdUri = keySystem.schemeIdURI;
+        contentProtection.value = 2;//keySystem.systemString;
         contentProtection.pro = pro;
         contentProtection.pro_asArray = pro;
+
+        return contentProtection;
+    };
+
+    /*var createCENCContentProtection = function (protectionHeader) {
+
+        var contentProtection = {};
         
+        contentProtection.schemeIdUri = "urn:mpeg:dash:mp4protection:2011";
+        contentProtection.value = "cenc";
+        
+        return contentProtection;
+    };*/
+
+    var createWidevineContentProtection = function (protectionHeader) {
+
+        var contentProtection = {},
+            keySystem = this.system.getObject("ksWidevine");
+
+        contentProtection.schemeIdUri = keySystem.schemeIdURI;
+        contentProtection.value = keySystem.systemString;
+
         return contentProtection;
     };
 
@@ -319,6 +422,9 @@ Mss.dependencies.MssParser = function () {
         var mpd = {},
             period,
             adaptations,
+            contentProtection,
+            contentProtections = [],
+            KID,
             i;
 
         // Set mpd node properties
@@ -342,10 +448,27 @@ Mss.dependencies.MssParser = function () {
         period = mpd.Period;
         period.start = 0;
 
-        // Map ContentProtection node to ProtectionHeader node
+        // ContentProtection node
         if (manifest.Protection !== undefined) {
-            mpd.ContentProtection = mapContentProtection(manifest.Protection.ProtectionHeader);
-            mpd.ContentProtection_asArray = [mpd.ContentProtection];
+
+            // Get KID (in CENC format) from protection header 
+            KID = getKIDFromProtectionHeader(manifest.Protection.ProtectionHeader);
+
+            // Create ContentProtection for PR
+            contentProtection = createPRContentProtection.call(this, manifest.Protection.ProtectionHeader);
+            contentProtection["cenc:default_KID"] = KID;
+            contentProtections.push(contentProtection);
+
+            // For chrome, create ContentProtection for Widevine as a CENC protection
+            if (navigator.userAgent.indexOf("Chrome") >= 0) {
+                //contentProtections.push(createCENCContentProtection(manifest.Protection.ProtectionHeader));
+                contentProtection = createWidevineContentProtection.call(this, manifest.Protection.ProtectionHeader);
+                contentProtection["cenc:default_KID"] = KID;
+                contentProtections.push(contentProtection);
+            }
+
+            mpd.ContentProtection = (contentProtections.length > 1) ? contentProtections : contentProtections[0];
+            mpd.ContentProtection_asArray = contentProtections;
         }
 
         adaptations = period.AdaptationSet_asArray;
@@ -420,6 +543,7 @@ Mss.dependencies.MssParser = function () {
     return {
         debug: undefined,
         errHandler: undefined,
+        system: undefined,
                 
         parse: internalParse
     };

@@ -67,6 +67,13 @@ MediaPlayer.dependencies.Stream = function () {
 
         eventController = null,
 
+        // Encrypted Media Extensions
+        onProtectionError = function(event) {
+            this.errHandler.mediaKeySessionError(event.data);
+            this.debug.error("[Stream] protection error: " + event.data);
+            this.reset();
+        },
+
         play = function () {
             this.debug.info("[Stream] Attempting play...");
 
@@ -935,7 +942,7 @@ MediaPlayer.dependencies.Stream = function () {
                 deferredTextUpdate = Q.defer(),
                 deferredEventUpdate = Q.defer();
 
-                manifest = self.manifestModel.getValue();
+            manifest = self.manifestModel.getValue();
             periodInfo = updatedPeriodInfo;
             self.debug.log("Manifest updated... set new data on buffers.");
 
@@ -1050,6 +1057,7 @@ MediaPlayer.dependencies.Stream = function () {
         // ORANGE : add metricsModel
         metricsModel: undefined,
         eventBus: undefined,
+        notify: undefined,
 
         setup: function () {
             this.system.mapHandler("setCurrentTime", undefined, currentTimeChanged.bind(this));
@@ -1057,6 +1065,9 @@ MediaPlayer.dependencies.Stream = function () {
             this.system.mapHandler("segmentLoadingFailed", undefined, segmentLoadingFailed.bind(this));
             // ORANGE: add event handler "liveEdgeFound"
             this.system.mapHandler("liveEdgeFound", undefined, onLiveEdgeFound.bind(this));
+
+            // Protection event handlers
+            this[MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR] = onProtectionError.bind(this);
 
             load = Q.defer();
 
@@ -1191,8 +1202,8 @@ MediaPlayer.dependencies.Stream = function () {
             return deferredSubtitleUpdate.promise;
         },
 
-        initProtection: function() {
-            needKeyListener = onMediaSourceNeedsKey.bind(this);
+        initProtection: function(protectionData) {
+            /*needKeyListener = onMediaSourceNeedsKey.bind(this);
             keyMessageListener = onMediaSourceKeyMessage.bind(this);
             keyAddedListener = onMediaSourceKeyAdded.bind(this);
             keyErrorListener = onMediaSourceKeyError.bind(this);
@@ -1205,7 +1216,16 @@ MediaPlayer.dependencies.Stream = function () {
             this.protectionModel.listenToNeedKey(needKeyListener);
             this.protectionModel.listenToKeyMessage(keyMessageListener);
             this.protectionModel.listenToKeyError(keyErrorListener);
-            this.protectionModel.listenToKeyAdded(keyAddedListener);
+            this.protectionModel.listenToKeyAdded(keyAddedListener);*/
+
+            this.protectionController = this.system.getObject("protectionController");
+            this.protectionController.subscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
+            this.protectionController.setMediaElement(this.videoModel.getElement());
+            this.protectionController.init(this.manifestModel.getValue());
+            if (protectionData) {
+                this.protectionController.setProtectionData(protectionData);
+            }
+
         },
 
         getVideoModel: function() {
@@ -1253,7 +1273,8 @@ MediaPlayer.dependencies.Stream = function () {
 
             tearDownMediaSource.call(this);
             if (!!this.protectionController) {
-                this.protectionController.teardownKeySystem(kid);
+                //this.protectionController.teardownKeySystem(kid);
+                this.protectionController.teardown();
             }
             this.protectionController = undefined;
             this.protectionModel = undefined;

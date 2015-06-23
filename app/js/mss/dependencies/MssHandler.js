@@ -146,9 +146,9 @@ Mss.dependencies.MssHandler = function() {
 					track.codecPrivateData = realRepresentation.codecPrivateData;
 					track.bandwidth = realRepresentation.bandwidth;
 
-					//DRM Protected Adaptation is detected
-					if (realAdaptation.ContentProtection !== undefined){
-						track.contentProtection = realAdaptation.ContentProtection;
+					// DRM Protected Adaptation is detected
+					if (realAdaptation.ContentProtection_asArray && (realAdaptation.ContentProtection_asArray.length > 0)) {
+						track.contentProtection = realAdaptation.ContentProtection_asArray;
 					}
 
 					// Video related informations

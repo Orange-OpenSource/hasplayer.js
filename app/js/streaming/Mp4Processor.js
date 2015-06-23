@@ -447,7 +447,7 @@ MediaPlayer.dependencies.Mp4Processor = function () {
             return schi;
         },
 
-        createTrackEncryptionBox = function () {
+        createTrackEncryptionBox = function (track) {
             var tenc = new mp4lib.boxes.TrackEncryptionBox();
 
             tenc.flags = 0; //default value
@@ -455,7 +455,9 @@ MediaPlayer.dependencies.Mp4Processor = function () {
             
             tenc.default_IsEncrypted = 0x1; //default value
             tenc.default_IV_size = 8; //default value, NA => à préciser
-            tenc.default_KID = [0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0];
+            tenc.default_KID = (track.contentProtection && (track.contentProtection.length) > 0 && track.contentProtection[0]["cenc:default_KID"]) ?
+                track.contentProtection[0]["cenc:default_KID"] :
+                [0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0];
 
             return tenc;
         },
@@ -758,31 +760,27 @@ MediaPlayer.dependencies.Mp4Processor = function () {
             return mvex;
         },
 
-        createProtectionSystemSpecificHeaderBox = function (track) {
-            var pssh,
-                schemeIdUri,
-                array;
+        createProtectionSystemSpecificHeaderBox = function (keySystems) {
+            var psshs = [],
+                pssh_bytes,
+                pssh,
+                ks,
+                i;
 
-            pssh = new mp4lib.boxes.ProtectionSystemSpecificHeaderBox();
-            pssh.version = 0; //default value
-            pssh.flags = 0; //default value
+            for (i = 0; i < keySystems.length; i++) {
+                pssh_bytes = new Uint8Array(keySystems[i].initData);
+                pssh = new mp4lib.boxes.ProtectionSystemSpecificHeaderBox();
+                pssh.read(pssh_bytes, 8, pssh_bytes.length); // 8: skip box length and type fields 
+                psshs.push(pssh);
+            }
 
-            //get hexadecimal value from SS manifest
-            //remove 'urn:uuid:' and '-' characters
-            schemeIdUri = track.contentProtection.schemeIdUri.substring(8).replace(/[^A-Fa-f0-9]/g, "");
-            //convert string to hexadecimal value
-            pssh.SystemID = _hexstringtoBuffer(schemeIdUri);
-            //get protection header
-            array = BASE64.decodeArray(track.contentProtection.pro.__text);
-            pssh.DataSize = array.length;
-            pssh.Data = array;
-
-            return pssh;
+            return psshs;
         },
 
         doGenerateInitSegment = function (tracks) {
             var moov_file,
                 moov,
+                supportedKS,
                 i;
 
             // Create file
@@ -802,10 +800,11 @@ MediaPlayer.dependencies.Mp4Processor = function () {
             // Create and add MovieExtends box (mvex)
             moov.boxes.push(createMovieExtendsBox(tracks));
 
-            //Create and add Protection System Specific Header box (pssh)
+            // Create and add Protection System Specific Header box (pssh)
             for (i = 0; i < tracks.length; i++) {
                 if (tracks[i].contentProtection !== undefined) {
-                    moov.boxes.push(createProtectionSystemSpecificHeaderBox(tracks[i]));
+                    supportedKS = this.protectionExt.getSupportedKeySystemsFromContentProtection(tracks[i].contentProtection);
+                    moov.boxes.push.apply(moov.boxes, createProtectionSystemSpecificHeaderBox(supportedKS));
                 }
             }
 
@@ -1024,6 +1023,7 @@ MediaPlayer.dependencies.Mp4Processor = function () {
         };
 
     return {
+        protectionExt: undefined,
 
         generateInitSegment: doGenerateInitSegment,
         generateMediaSegment: doGenerateMediaSegment,

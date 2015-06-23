@@ -91,18 +91,34 @@ mp4lib.boxes.File.prototype.read = function(data) {
 /**
 find child position
 */
-mp4lib.boxes.File.prototype.getBoxPositionByType = function(boxType) {
-    var position = 0, i=0;
+mp4lib.boxes.File.prototype.getBoxOffsetByType = function(boxType) {
+    var offset = 0,
+        i=0;
     
-    for(i = 0; i < this.boxes.length; i++) {
-        if(this.boxes[i].boxtype === boxType) {
-            return position;
+    for (i = 0; i < this.boxes.length; i++) {
+        if (this.boxes[i].boxtype === boxType) {
+            return offset;
         } else {
-            position += this.boxes[i].size;
+            offset += this.boxes[i].size;
         }
     }
-    return null;
+    return -1;
 };
+
+mp4lib.boxes.File.prototype.getBoxIndexByType = function(boxType) {
+    var index = 0,
+        i=0;
+    
+    for (i = 0; i < this.boxes.length; i++) {
+        if (this.boxes[i].boxtype === boxType) {
+            return index;
+        } else {
+            index++;
+        }
+    }
+    return -1;
+};
+
 
 // ---------- Generic Box -------------------------------
 mp4lib.boxes.Box = function(boxType,size,uuid,largesize){
@@ -187,14 +203,32 @@ mp4lib.boxes.Box.prototype.removeBoxByType = function(boxType) {
 /**
 find child position
 */
-mp4lib.boxes.Box.prototype.getBoxPositionByType = function(boxType) {
-    var position = 0, i=0;
+mp4lib.boxes.Box.prototype.getBoxOffsetByType = function(boxType) {
+    var offset = 8,
+        i = 0;
+
     if (this.hasOwnProperty('boxes')){
-        for(i = 0; i < this.boxes.length; i++) {
-            if(this.boxes[i].boxtype === boxType) {
-                return position;
+        for (i = 0; i < this.boxes.length; i++) {
+            if (this.boxes[i].boxtype === boxType) {
+                return offset;
             } else {
-                position += this.boxes[i].size;
+                offset += this.boxes[i].size;
+            }
+        }
+    }
+    return null;
+};
+
+mp4lib.boxes.Box.prototype.getBoxIndexByType = function(boxType) {
+    var index = 0,
+        i = 0;
+
+    if (this.hasOwnProperty('boxes')){
+        for (i = 0; i < this.boxes.length; i++) {
+            if (this.boxes[i].boxtype === boxType) {
+                return index;
+            } else {
+                index++;
             }
         }
     }
