@@ -204,19 +204,7 @@
 <script src="../../app/js/utils/analytics.js"></script>
 <!-- /source -->
 
-
-    <!-- metricsagent -->
-    <script src="../../../metricsagent.js/src/MetricsAgent.js"></script>
-    <script src="../../../metricsagent.js/src/MetricsDatabase.js"></script>
-    <script src="../../../metricsagent.js/src/MetricsSender.js"></script>
-    <script src="../../../metricsagent.js/src/MetricsVo.js"></script>
-    <script src="../../../metricsagent.js/src/collectors/HasPlayerCollector.js"></script>
-    <script src="../../../metricsagent.js/src/formatters/AbstractFormatter.js"></script>
-    <script src="../../../metricsagent.js/src/formatters/CSQoEFormatter.js"></script>
-    <script src="../../../metricsagent.js/src/formatters/PrismeFormatter.js"></script>
-    <!-- /metricsagent -->
-
- <style id="cueStyle" type="text/css">
+<style id="cueStyle" type="text/css">
 </style>
 </head>
 
@@ -241,14 +229,6 @@
         <div class="modal-dialog">
             <div class="list-group modal-list">
                 <a ng-repeat="item in streamTypes" href="#" class="list-group-item" ng-click="setStreamType(item)" data-dismiss="modal" ng-show="true">{{item}}</a>
-            </div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="configMetricsAgentModal">
-        <div class="modal-dialog">
-            <div class="list-group modal-list">
-                <a ng-repeat="metricOption in configMetrics" href="#" class="list-group-item" ng-click="setMetricOption(metricOption)" data-dismiss="modal" ng-show="true">{{metricOption.name}}</a>
             </div>
         </div>
     </div>
@@ -280,8 +260,6 @@
                                 <strong>HAS Player Version</strong><br>{{ versionFull }}
                                 <br>
                                 <strong>Date</strong><br>{{ buildDate }}
-                                <br>
-                                <strong ng-show="metricsAgentAvailable">Metrics Agent Version</strong><br>{{metricsAgentVersion}}
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
@@ -466,33 +444,6 @@
             </div>
 
             <div class="col-md-3">
-                <div class="panel" ng-show="metricsAgentAvailable">
-                    <div class="panel-heading panel-top">
-                        <span class="panel-title">Agent</span>
-                        <div class="btn-group">
-                            <button type="button" class="btn btn-default" ng-class="{active:!metricsAgentActive}" ng-click="setMetricsAgent(false)"><span>Off</span></button>
-                            <button type="button" class="btn btn-default" ng-class="{active:metricsAgentActive}" ng-click="setMetricsAgent(true)"><span>On</span></button>
-                        </div>
-                    </div>
-                    <div class="input-group">
-                        <div id="desktop-streams" class="input-group-btn">
-                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                                Config <span class="caret"></span>
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li ng-repeat="metricOption in configMetrics" ng-click="setMetricOption(metricOption)" ng-show="true">
-                                    <a>{{metricOption.name}}</a>
-                                </li>
-                            </ul>
-                        </div>
-                        <div id="mobile-streams" class="input-group-btn">
-                            <button type="button" class="btn btn-default" data-toggle="modal" href="#configMetricsAgentModal">
-                                Config <span class="caret"></span>
-                            </button>
-                        </div>
-                        <input type="text" class="form-control" placeholder="" ng-model="selected_metric_option.name">
-                    </div>
-                </div>
                 <div class="panel">
                     <div class="panel-heading panel-top">
                         <span class="panel-title">ABR</span>
