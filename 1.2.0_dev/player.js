@@ -1,4 +1,4 @@
-/* Last build : 4.6.2015_9:33:20 / git revision : c48ce7b */
+/* Last build : 23.6.2015_21:44:58 / git revision : 6e3f020 */
 var cast = window.cast || {};
 
 (function() {
@@ -134,6 +134,18 @@ var chartXaxisWindow = 30;
 
 var plotCount = chartXaxisWindow * 1e3 / updateIntervalLength;
 
+var serviceNetBalancerEnabled = true;
+
+var netBalancerLimitValue = 0;
+
+var netBalancerLimitSetted = true;
+
+var streamSource;
+
+var context = "hasplayer_custom";
+
+var startTime;
+
 var downloadRepInfos = {
     quality: -1,
     bandwidth: 0,
@@ -170,7 +182,82 @@ var downloadRepInfos = {
     legend: {
         show: false
     }
-}, video, player, currentIdToToggle = 0, isPlaying = false, isMetricsOn = !hideMetricsAtStart, firstAccess = true, audioTracksSelectIsPresent = false;
+}, video, player, enableMetrics = false, metricsAgent = null, metricsAgentActive = false, currentIdToToggle = 0, isPlaying = false, isMetricsOn = !hideMetricsAtStart, firstAccess = true, audioTracksSelectIsPresent = false;
+
+function hideNetworkLimiter() {
+    if (serviceNetBalancerEnabled) {
+        $("#networkToToggle").toggle();
+    }
+}
+
+function sendNetBalancerLimit(activate, limit) {
+    var http = new XMLHttpRequest(), data = {
+        NetBalancerLimit: {
+            activate: activate,
+            upLimit: limit
+        }
+    };
+    http.open("POST", "http://localhost:8081/NetBalancerLimit", true);
+    http.setRequestHeader("Content-Type", "application/json; charset=UTF-8");
+    http.timeout = 2e3;
+    var stringJson = JSON.stringify(data);
+    http.onload = function() {
+        if (http.status < 200 || http.status > 299) {
+            hideNetworkLimiter();
+            serviceNetBalancerEnabled = false;
+        } else {
+            document.getElementById("networkToToggle").style.visibility = "visible";
+        }
+    };
+    http.send(stringJson);
+}
+
+function initNetBalancerSlider() {
+    var initBW = 5e3;
+    $("#sliderNetworkBandwidth").labeledslider({
+        max: 5e3,
+        min: 0,
+        orientation: "horizontal",
+        step: 100,
+        tweenLabels: false,
+        range: "min",
+        value: 5e3,
+        slide: function(event, ui) {
+            $("#networkBandwidth").html(ui.value + " kb/s");
+        },
+        stop: function(event, ui) {
+            console.log("slider Network value = " + ui.value);
+            $("#networkBandwidth").html(ui.value + " kb/s");
+            netBalancerLimitValue = ui.value;
+            netBalancerLimitSetted = false;
+        }
+    });
+    $("#networkBandwidth").html(5e3 + " kb/s");
+    sendNetBalancerLimit(true, initBW * 1e3);
+}
+
+function setTimeWithSeconds(sec) {
+    var sec_num = parseInt(sec, 10);
+    var hours = Math.floor(sec_num / 3600);
+    var minutes = Math.floor((sec_num - hours * 3600) / 60);
+    var seconds = sec_num - hours * 3600 - minutes * 60;
+    if (hours < 10) {
+        hours = "0" + hours;
+    }
+    if (minutes < 10) {
+        minutes = "0" + minutes;
+    }
+    if (seconds < 10) {
+        seconds = "0" + seconds;
+    }
+    var time = hours + ":" + minutes + ":" + seconds;
+    return time;
+}
+
+function updateSeekBar() {
+    $("#seekBar").attr("value", video.currentTime);
+    $(".current-time").text(setTimeWithSeconds(video.currentTime));
+}
 
 function initChartAndSlider() {
     var metricsExt = player.getMetricsExt(), bdw, bdwM, bdwK, bitrateValues = null, i;
@@ -249,24 +336,6 @@ function initChartAndSlider() {
     }
 }
 
-function setTimeWithSeconds(sec) {
-    var sec_num = parseInt(sec, 10);
-    var hours = Math.floor(sec_num / 3600);
-    var minutes = Math.floor((sec_num - hours * 3600) / 60);
-    var seconds = sec_num - hours * 3600 - minutes * 60;
-    if (hours < 10) {
-        hours = "0" + hours;
-    }
-    if (minutes < 10) {
-        minutes = "0" + minutes;
-    }
-    if (seconds < 10) {
-        seconds = "0" + seconds;
-    }
-    var time = hours + ":" + minutes + ":" + seconds;
-    return time;
-}
-
 function update() {
     var httpRequests, httpRequest, repSwitch, metricsVideo = player.getMetricsFor("video"), metricsExt = player.getMetricsExt(), currentTime = video.currentTime, i, currentSwitch;
     if (!chartBandwidth) {
@@ -291,9 +360,6 @@ function update() {
         bitrate = httpRequest.bytesLength * 8e3 / (httpRequest.tfinish - httpRequest.trequest);
     }
     if (repSwitch && httpRequest && httpRequest.quality != downloadRepInfos.quality) {
-        if (metricsExt.getIndexForRepresentation(repSwitch.to) !== httpRequest.quality) {
-            console.log("!!!!!! demoPlayer ERROR");
-        }
         downloadRepInfos.quality = metricsExt.getIndexForRepresentation(repSwitch.to);
         downloadRepInfos.bandwidth = metricsExt.getBandwidthForRepresentation(repSwitch.to);
         downloadRepInfos.width = metricsExt.getVideoWidthForRepresentation(repSwitch.to);
@@ -364,11 +430,12 @@ function update() {
             $(".live").show();
         }
     }
+    $("#state").html("Playing");
     $("#playingBandwidth").html(Math.round(playRepInfos.bandwidth / 1e3).toLocaleString() + " kb/s");
     $("#playingResolution").html(playRepInfos.width + "x" + playRepInfos.height);
     $("#playingCodecs").html(playRepInfos.codecs);
     $("#bufferLevel").html(bufferLevel + " s</br>");
-    $("#bitrate").html(Math.round(bitrate / 1e3).toLocaleString() + " kb/s");
+    $("#bitrate").html("[" + httpRequest.quality + "] " + Math.round(bitrate / 1e3).toLocaleString() + " kb/s");
     updateTimeout = setTimeout(update, updateIntervalLength);
 }
 
@@ -434,9 +501,10 @@ function hideMetrics() {
     setShowInfo(isMetricsOn);
 }
 
-function updateSeekBar() {
-    $("#seekBar").attr("value", video.currentTime);
-    $(".current-time").text(setTimeWithSeconds(video.currentTime));
+function appendText(message) {
+    var currentTime = new Date(), elapsedTime = (currentTime - startTime) / 1e3;
+    $("#textarea").html($("#textarea").html() + "\n" + elapsedTime.toFixed(3) + ": " + message);
+    $("#textarea").scrollTop($("#textarea")[0].scrollHeight);
 }
 
 function initControlBar() {
@@ -470,17 +538,14 @@ function initControlBar() {
     $(".button-fullscreen").click(function() {
         toggleFullScreen();
     });
-    $("#videoPlayer").dblclick(function() {
-        toggleFullScreen();
+    $("#seekBar").click(function(event) {
+        video.currentTime = event.offsetX * video.duration / $("#seekBar").width();
+        updateSeekBar();
     });
-    if (video.muted) {
-        setVolumeOff(true);
-    }
-    $("#videoPlayer").on("pause", function() {
-        isPlaying = false;
-        setPlaying(false);
-        clearTimeout(updateTimeout);
-    });
+}
+
+function initVideoController() {
+    video = document.querySelector("video");
     $("#videoPlayer").on("play", function() {
         isPlaying = true;
         setPlaying(true);
@@ -488,7 +553,20 @@ function initControlBar() {
             setVolumeOff(true);
         }
         update();
+        appendText("play");
     });
+    $("#videoPlayer").dblclick(function() {
+        toggleFullScreen();
+    });
+    $("#videoPlayer").on("pause", function() {
+        isPlaying = false;
+        setPlaying(false);
+        clearTimeout(updateTimeout);
+        appendText("pause");
+    });
+    if (video.muted) {
+        setVolumeOff(true);
+    }
     $("#videoPlayer").on("volumechange", function() {
         if (video.muted) {
             setVolumeOff(true);
@@ -496,48 +574,135 @@ function initControlBar() {
             setVolumeOff(false);
         }
     });
-    $("#seekBar").click(function(event) {
-        video.currentTime = event.offsetX * video.duration / $("#seekBar").width();
-        updateSeekBar();
+    $("#videoPlayer").on("loadstart", function() {
+        appendText("loadstart");
     });
+    $("#videoPlayer").on("loadedmetadata", function() {
+        appendText("loadedmetadata");
+    });
+    $("#videoPlayer").on("loadeddata", function() {
+        appendText("loadeddata");
+    });
+    $("#videoPlayer").on("canplay", function() {
+        appendText("canplay");
+    });
+    $("#videoPlayer").on("playing", function() {
+        appendText("playing");
+    });
+    $("#videoPlayer").on("stalled", function() {
+        appendText("stalled");
+    });
+    $("#videoPlayer").on("durationchange", function() {
+        appendText("durationchange: " + video.duration);
+    });
+    $("#videoPlayer").on("progress", function() {});
+    $("#videoPlayer").on("timeupdate", function() {});
 }
 
-function initPlayer() {
+function parseUrlParams() {
     var query = window.location.search, anchor = window.location.hash, params, i, name, value;
     if (query) {
         params = query.substring(1).split("&");
         for (i = 0; i < params.length; i++) {
             name = params[i].split("=")[0];
-            value = params[i].split("=")[1];
+            value = params[i].substr(name.length + 1);
             if (name === "file" || name === "url") {
-                player.attachSource(value + anchor);
-                update();
+                streamSource = value + anchor;
+            } else if (name === "context") {
+                context = value;
+            } else if (name === "metrics") {
+                enableMetrics = true;
+            } else if (name === "debug" && value !== "false") {
+                document.getElementById("debugInfos").style.visibility = "visible";
+            } else {
+                streamSource += "&" + params[i];
             }
         }
     }
 }
 
-function onLoaded() {
-    player = new MediaPlayer(new Custom.di.CustomContext());
-    video = document.querySelector("video");
+function metricUpdated(e) {
+    var metric;
+    if (e.data.stream == "video" && e.data.metric == "HttpRequestTrace") {
+        metric = e.data.value;
+        if (metric.tfinish != null && !netBalancerLimitSetted) {
+            console.log("Set NetBalancer Limit" + netBalancerLimitValue);
+            sendNetBalancerLimit(true, netBalancerLimitValue * 1e3);
+            netBalancerLimitSetted = true;
+        }
+    }
+}
+
+function metricAdded(e) {
+    switch (e.data.metric) {
+      case "State":
+        if (e.data.stream === "video") {
+            appendText("Video state = " + e.data.value.current);
+            if (e.data.value.current === "buffering") {
+                document.getElementById("bufferingDiv").style.visibility = "visible";
+            } else {
+                document.getElementById("bufferingDiv").style.visibility = "hidden";
+            }
+        }
+        break;
+    }
+}
+
+function initPlayer() {
+    switch (context) {
+      case "dash":
+        player = new MediaPlayer(new MediaPlayer.di.Context());
+        break;
+
+      case "hasplayer_default":
+        break;
+
+      case "hasplayer_custom":
+      default:
+        player = new MediaPlayer(new MediaPlayer.di.Context());
+        break;
+    }
     player.startup();
     player.attachView(video);
     player.setAutoPlay(true);
+    player.addEventListener("metricUpdated", metricUpdated.bind(this));
+    player.addEventListener("metricAdded", metricAdded.bind(this));
     if (isCrKey) {
         var ccastReceiver = new HasCastReceiver(player);
         player.getDebug().setLogToBrowserConsole(false);
     }
+}
+
+function launchPlayer() {
+    if (metricsAgent && metricsAgentActive) {
+        metricsAgent.createSession();
+    }
+    startTime = new Date();
+    appendText("attachSource");
+    player.attachSource(streamSource);
+    update();
+    initControlBar();
+}
+
+function onLoad() {
+    parseUrlParams();
+    initNetBalancerSlider();
+    initVideoController();
     initPlayer();
     $(document).keydown(function(e) {
         if (e.keyCode == 73 && e.ctrlKey) {
             hideMetrics();
+            hideNetworkLimiter();
             return false;
         }
     });
-    initControlBar();
     if (hideMetricsAtStart) {
         hideMetrics();
     }
+}
+
+function onUnload() {
+    sendNetBalancerLimit(false, 0);
 }
 
 (function(e, t) {
@@ -6121,4 +6286,6 @@ $.widget("ui.labeledslider", $.ui.slider, {
     }
 });
 
-$(document).ready(onLoaded);
+$(document).ready(onLoad);
+
+$(window).unload(onUnload);

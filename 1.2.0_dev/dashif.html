@@ -35,7 +35,6 @@
                 <a ng-repeat="item in streamTypes" href="#" class="list-group-item" ng-click="setStreamType(item)" data-dismiss="modal" ng-show="true">{{item}}</a>
             </div>
         </div>
-
     </div>
 
     <div class="container">
@@ -130,13 +129,12 @@
 
         <div class="row nav-options">
             <div class="input-group col-md-7">
-                <input type="text" class="form-control" placeholder="licenser" ng-model="selectedItem.backUrl">
+                <input type="text" class="form-control" placeholder="licenser" ng-model="selectedItem.protData['com.microsoft.playready'].laURL">
             </div>
             <div class="input-group col-md-5">
-                <input type="text" class="form-control" placeholder="customData" ng-model="selectedItem.customData">
+                <input type="text" class="form-control" placeholder="customData" ng-model="selectedItem.protData['com.microsoft.playready'].customData">
             </div>
         </div>
-
 
         <div class="row">
             <div class="dash-video-player col-md-9">
@@ -260,12 +258,6 @@
                     <div class="panel-heading panel-top">
                         <span class="panel-title">ABR</span>
                         <div class="btn-group">
-                            <button type="button" class="btn btn-default" ng-class="{active:abrEnabled == false}" ng-click="setAbrEnabled(false)">
-                                <span>Off</span>
-                            </button>
-                            <button type="button" class="btn btn-default active" ng-class="{active:abrEnabled == true}" ng-click="setAbrEnabled(true)">
-                                <span>On</span>
-                            </button>
                             <button type="button" class="btn btn-default" ng-class="{active:abrEnabled == false}" ng-click="setAbrEnabled(false)"><span>Off</span>
                             </button>
                             <button type="button" class="btn btn-default" ng-class="{active:abrEnabled == true}" ng-click="setAbrEnabled(true)"><span>On</span>
@@ -343,6 +335,7 @@
                 </div>
             </div>
         </div>
+
 
     </div>
 </body>

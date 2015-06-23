@@ -1,4 +1,4 @@
-/* Last build : 4.6.2015_9:33:20 / git revision : c48ce7b */
+/* Last build : 23.6.2015_21:44:58 / git revision : 6e3f020 */
 (function() {
     var b = void 0, f = !0, j = null, l = !1;
     function m() {
@@ -28175,7 +28175,7 @@ app.directive("chart2", function() {
 });
 
 app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Contributors", "PlayerLibraries", "ShowcaseLibraries", function($scope, $window, Sources, Notes, Contributors, PlayerLibraries, ShowcaseLibraries) {
-    var player, video, context, config = null, videoSeries = [], dlSeries = [], playSeries = [], audioSeries = [], qualityChangements = [], previousPlayedQuality = 0, previousDownloadedQuality = 0, maxGraphPoints = 50, initAudioTracks = true, initTextTracks = true;
+    var player, video, context, config = null, videoSeries = [], dlSeries = [], playSeries = [], audioSeries = [], qualityChangements = [], previousPlayedQuality = 0, previousDownloadedQuality = 0, maxGraphPoints = 50, configMetrics = null, subtitlesCSSStyle = null;
     $scope.chromecast = {};
     $scope.chromecast.apiOk = false;
     $scope.videoBitrate = 0;
@@ -28339,8 +28339,25 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
             return null;
         }
     }
+    function onload(e) {
+        $scope.audioTracks = player.getAudioTracks();
+        $scope.audioData = $scope.audioTracks[0];
+        $scope.textTracks = player.getSubtitleTracks();
+        $scope.textData = $scope.textTracks[0];
+    }
+    function onFullScreenChange() {
+        setSubtitlesCSSStyle(subtitlesCSSStyle);
+    }
+    function setSubtitlesCSSStyle(style) {
+        var fontSize = style.data.fontSize;
+        if (style.data.fontSize[style.data.fontSize.length - 1] === "%") {
+            fontSize = video.clientHeight * style.data.fontSize.substr(0, style.data.fontSize.length - 1) / 100;
+        }
+        document.getElementById("cueStyle").innerHTML = "::cue{ background-color:" + style.data.backgroundColor + ";color:" + style.data.color + ";font-size: " + fontSize + "px;font-family: " + style.data.fontFamily + "}";
+    }
     function onSubtitlesStyleChanged(style) {
-        document.getElementById("cueStyle").innerHTML = "::cue{ background-color:" + style.data.backgroundColor + ";color:" + style.data.color + ";font-size: " + style.data.fontSize + ";font-family: " + style.data.fontFamily + "}";
+        subtitlesCSSStyle = style;
+        setSubtitlesCSSStyle(subtitlesCSSStyle);
     }
     function metricChanged(e) {
         var metrics, point;
@@ -28443,11 +28460,6 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
         if (e.data.stream == "audio") {
             metrics = getCribbedMetricsFor("audio");
             if (metrics) {
-                if (initAudioTracks) {
-                    $scope.audioTracks = player.getAudioTracks();
-                    $scope.audioData = $scope.audioTracks[0];
-                    initAudioTracks = false;
-                }
                 $scope.audioBitrate = metrics.bandwidthValue;
                 $scope.audioIndex = metrics.bitrateIndexValue;
                 $scope.audioPendingIndex = metrics.pendingIndex;
@@ -28473,19 +28485,38 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
                 }
             }
         }
-        if (e.data.stream == "text") {
-            if (initTextTracks) {
-                $scope.textTracks = player.getSubtitleTracks();
-                $scope.textData = $scope.textTracks[0];
-                initTextTracks = false;
-            }
-        }
         $scope.invalidateDisplay(true);
         $scope.safeApply();
     }
     function onError(e) {
-        console.error(e);
-        player.reset();
+        console.error("an error has occured with error code = " + e.event.code);
+        switch (e.event.code) {
+          case "DOWNLOAD_ERR_MANIFEST":
+          case "DOWNLOAD_ERR_SIDX":
+          case "DOWNLOAD_ERR_CONTENT":
+          case "DOWNLOAD_ERR_INIT":
+            console.error(' url :"' + e.event.data.url + '" and request response :"' + e.event.data.request.responseXML + '"');
+            break;
+
+          case "MANIFEST_ERR_CODEC":
+          case "MANIFEST_ERR_PARSE":
+          case "MANIFEST_ERR_NOSTREAM":
+            console.error("Manifest URL was " + e.event.data.mpdUrl + ' with message :"' + e.event.message + '"');
+            break;
+
+          case "CC_ERR_PARSE":
+            console.error('message :"' + e.event.message + '" for content = ' + e.event.data);
+            break;
+
+          default:
+            if (e.event.message) {
+                console.error('message :"' + e.event.message + '"');
+            }
+            break;
+        }
+        if (e.event.code != "HASPLAYER_INIT_ERROR") {
+            player.reset();
+        }
     }
     $scope.invalidateChartDisplay = false;
     $scope.invalidateDisplay = function(value) {
@@ -28535,7 +28566,7 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     reqConfig.setRequestHeader("Content-type", "application/json");
     reqConfig.send();
     video = document.querySelector(".dash-video-player video");
-    context = new Custom.di.CustomContext();
+    context = new MediaPlayer.di.Context();
     player = new MediaPlayer(context);
     $scope.version = player.getVersion();
     $scope.versionHAS = player.getVersionHAS();
@@ -28545,6 +28576,10 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     player.addEventListener("error", onError.bind(this));
     player.addEventListener("metricChanged", metricChanged.bind(this));
     player.addEventListener("subtitlesStyleChanged", onSubtitlesStyleChanged.bind(this));
+    video.addEventListener("loadeddata", onload.bind(this));
+    video.addEventListener("fullscreenchange", onFullScreenChange.bind(this));
+    video.addEventListener("mozfullscreenchange", onFullScreenChange.bind(this));
+    video.addEventListener("webkitfullscreenchange", onFullScreenChange.bind(this));
     player.attachView(video);
     player.setAutoPlay(true);
     player.getDebug().setLevel(4);
@@ -28706,7 +28741,6 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
         });
     }
     function initPlayer() {
-        initAudioTracks = initTextTracks = true;
         function DRMParams() {
             this.backUrl = null;
             this.customData = null;
@@ -28714,13 +28748,10 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
         resetBitratesSlider();
         $scope.textTracks = null;
         $scope.textData = null;
-        var params = new DRMParams();
-        params.backUrl = $scope.selectedItem.backUrl;
-        params.customData = $scope.selectedItem.customData;
         player.setQualityFor("video", 0);
         player.setQualityFor("audio", 0);
         $scope.playbackRate = "x1";
-        player.attachSource($scope.selectedItem.url, params);
+        player.attachSource($scope.selectedItem.url, $scope.selectedItem.protData);
     }
     $scope.doLoad = function() {
         if ($scope.chromecast.playing) {
