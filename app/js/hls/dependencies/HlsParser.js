@@ -658,6 +658,7 @@ Hls.dependencies.HlsParser = function () {
         fragmentLoader: undefined,
         abrController: undefined,
         hlsDemux: undefined,
+        tokenAuthentication : undefined,
 
         parse: internalParse,
         updatePlaylist: doUpdatePlaylist

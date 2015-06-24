@@ -45,6 +45,10 @@ Custom.utils.doRequestWithPromise = function (url, callback, argumentsToForward)
 			callback.call(self, deferred,xhr.response,argumentsToForward);
 		}
 	};
+	if (self.tokenAuthentication) { // FIXME: just must be?
+		url = self.tokenAuthentication.addTokenAsQueryArg(url);
+		xhr = self.tokenAuthentication.setTokenInRequestHeader(xhr);
+	}
 	xhr.open("GET", url, true);
 	xhr.send(null);
 	return deferred.promise;
