@@ -124,7 +124,8 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                 request.onload = onload;
                 request.onloadend = report;
                 request.onerror = report;
-                request.open("GET", url, true);
+                request.open("GET", self.tokenAuthentication.addTokenAsQueryArg(url), true);
+                self.tokenAuthentication.setTokenInRequestHeader(request);
                 request.send();
             } catch(e) {
                 request.onerror();
