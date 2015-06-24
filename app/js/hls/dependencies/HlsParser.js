@@ -67,20 +67,25 @@ Hls.dependencies.HlsParser = function () {
         return value;
     };*/
 
-    var _containsTag = function(data, tag) {
+    var _containsTag = function (data, tag) {
         return (data.indexOf(tag) > -1);
     };
 
-    var _getTagValue = function(data, tag) {
+    var _getTagValue = function (data, tag) {
         // +1 to remove ':' character
         return data.substring(tag.length + 1, data.length);
     };
 
-    var _getTagParams = function(data) {
+    var _getTagParams = function (data) {
         return data.substring(data.indexOf(':') + 1).split(',');
     };
 
-    var _parseStreamInf = function(streamInfArray) {
+    var _isAbsoluteURI = function (uri) {
+        return  (uri.indexOf("http://") === 0) ||
+                (uri.indexOf("https://") === 0);
+    };
+
+    var _parseStreamInf = function (streamInfArray) {
         var stream = {
                 programId: "",
                 bandwidth: 0,
@@ -246,7 +251,7 @@ Hls.dependencies.HlsParser = function () {
                     isArray: true,
                     //parent: segmentList,
                     // children: [],
-                    media: (media.uri.indexOf("http://") !== -1) ? media.uri : (segmentList.BaseURL + media.uri),
+                    media: _isAbsoluteURI(media.uri) ? media.uri : (segmentList.BaseURL + media.uri),
                     sequenceNumber: segmentList.startNumber + index,
                     time: (segments.length === 0) ? 0 : segments[segments.length - 1].time + segments[segments.length - 1].duration,
                     duration: media.duration
@@ -551,7 +556,7 @@ Hls.dependencies.HlsParser = function () {
                     bandwidth: stream.bandwidth,
                     width: parseInt(stream.resolution.split('x')[0], 10),
                     height: parseInt(stream.resolution.split('x')[1], 10),
-                    url: (stream.uri.indexOf("http://") > -1) ? stream.uri : (adaptationSet.BaseURL + stream.uri)
+                    url: _isAbsoluteURI(stream.uri) ? stream.uri : (adaptationSet.BaseURL + stream.uri),
                 };
                 representation.BaseURL = parseBaseUrl(representation.url);
                 representations.push(representation);

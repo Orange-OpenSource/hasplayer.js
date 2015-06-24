@@ -64,10 +64,12 @@ mpegts.h264.getSequenceHeader = function (data) { // data as Uint8Array
         }
     }
 
-    if (pos > 0) {
-        sequenceHeader = new Uint8Array(length);
-        sequenceHeader.set(data.subarray(pos, pos + length));
+    if ((pos === -1) || (length === -1)) {
+        return null;
     }
+
+    sequenceHeader = new Uint8Array(length);
+    sequenceHeader.set(data.subarray(pos, pos + length));
 
     return {
         bytes: sequenceHeader,
