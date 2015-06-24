@@ -716,17 +716,17 @@ MediaPlayer.dependencies.BufferController = function () {
 
             var segmentTime = range ? range.end : time;
 
-            // Reset seeking state
-            if (seeking === true) {
-                seeking = false;
-            }
-
-            if (currentSequenceNumber !== -1) {
+            if ((currentSequenceNumber !== -1) && !seeking) {
                 self.debug.log("[BufferController]["+type+"] loadNextFragment for sequence number: " + currentSequenceNumber);
                 self.indexHandler.getNextSegmentRequestFromSN(currentRepresentation, currentSequenceNumber).then(onFragmentRequest.bind(self));
             } else {
                 self.debug.log("[BufferController]["+type+"] loadNextFragment for time: " + segmentTime);
                 self.indexHandler.getSegmentRequestForTime(currentRepresentation, segmentTime).then(onFragmentRequest.bind(self));
+            }
+
+            // Reset seeking state
+            if (seeking === true) {
+                seeking = false;
             }
 
             //ORANGE : used to test Live chunk download failure
