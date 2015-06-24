@@ -419,9 +419,11 @@ MediaPlayer = function (aContext) {
          * @memberof MediaPlayer#
          * @param name - .
          * @param type - .
+         * 
+         * FIXME: 'type' should better be first argument 
          */
-        setTokenAuthentication:function(name, type) {
-            this.tokenAuthentication.setTokenAuthentication({name:name, type:type});
+        setTokenAuthentication:function(name, type, token) {
+            this.tokenAuthentication.setTokenAuthentication({name:name, type:type, token:token});
         },
 
         /**
