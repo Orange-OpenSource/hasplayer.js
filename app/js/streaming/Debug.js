@@ -14,6 +14,32 @@
 MediaPlayer.utils.Debug = function () {
     "use strict";
 
+    Date.prototype.HHMMSSmmm = function() {
+
+        var h = this.getHours().toString(),
+            m = this.getMinutes().toString(),
+            s = this.getSeconds().toString(),
+            ms = this.getSeconds().toString(),
+            HH = h[1] ? h : "0" + h[0],
+            MM = m[1] ? m : "0" + m[0],
+            SS = s[1] ? s : "0" + s[0],
+            mmm = ms[2] ? ms : "0" + (ms[1] ? ms : "0" + ms[0]);
+
+        return HH + ":" + MM + ":" + SS + "." + mmm;
+    };
+
+    Date.prototype.MMSSmmm = function() {
+
+        var m = this.getMinutes().toString(),
+            s = this.getSeconds().toString(),
+            ms = this.getSeconds().toString(),
+            MM = m[1] ? m : "0" + m[0],
+            SS = s[1] ? s : "0" + s[0],
+            mmm = ms[2] ? ms : "0" + (ms[1] ? ms : "0" + ms[0]);
+
+        return MM + ":" + SS + "." + mmm;
+    };
+
     var logToBrowserConsole = true,
         // ORANGE: add level
         NONE  = 0,
@@ -23,8 +49,9 @@ MediaPlayer.utils.Debug = function () {
         DEBUG = 4,
         ALL   = 4,
         level = 4,
-        showLogTimestamp = true,
-        startTime = new Date().getTime(),
+        showTimestamp = true,
+        showElapsedTime = false,
+        startTime = new Date(),
 
         _log = function (logLevel, args) {
             var self = this;
@@ -37,9 +64,13 @@ MediaPlayer.utils.Debug = function () {
                     _logger = console;
                 }
 
-                if (showLogTimestamp) {
-                    logTime = new Date().getTime();
-                    message += "[" + toHHMMSSmmm(logTime - startTime) + "] ";
+                if (showTimestamp) {
+                    logTime = new Date();
+                    message += "[" + logTime.HHMMSSmmm() + "]";
+                }
+
+                if (showElapsedTime) {
+                    message += "[" + new Date(logTime - startTime).MMSSmmm() + "]";
                 }
 
                 Array.apply(null, args).forEach(function(item) {
@@ -68,30 +99,6 @@ MediaPlayer.utils.Debug = function () {
             });
         },
 
-        toHHMMSSmmm = function (time) {
-            var str,
-                h,
-                m,
-                s,
-                ms = time;
-
-            h = Math.floor(ms / 3600000);
-            ms -= (h * 3600000);
-            m = Math.floor(ms / 60000);
-            ms -= (m * 60000);
-            s = Math.floor(ms / 1000);
-            ms -= (s * 1000);
-
-            if (h < 10) {h = "0"+h;}
-            if (m < 10) {m = "0"+m;}
-            if (s < 10) {s = "0"+s;}
-            if (ms < 10) {ms = "0"+ms;}
-            if (ms < 100) {ms = "0"+ms;}
-
-            str = h+':'+m+':'+s+':'+ms;
-            return str;
-        },
-
         getLogToBrowserConsole = function() {
             return logToBrowserConsole;
         },
@@ -101,7 +108,7 @@ MediaPlayer.utils.Debug = function () {
         },
 
         getLogger = function () {
-            var _logger = ('undefined' !== typeof(log4javascript)) ? log4javascript.getLogger() : null;
+            var _logger = null;//('undefined' !== typeof(log4javascript)) ? log4javascript.getLogger() : null;
             if (_logger) {
                 if(!_logger.initialized) {
                     var appender = new log4javascript.PopUpAppender();
