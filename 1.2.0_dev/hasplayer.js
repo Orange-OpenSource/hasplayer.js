@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 23.6.2015_21:44:58 / git revision : 6e3f020 */
+/* Last build : 24.6.2015_21:44:2 / git revision : 0795739d3 */
 (function(definition) {
     Q = definition();
 })(function() {
@@ -5762,10 +5762,11 @@ mpegts.h264.getSequenceHeader = function(data) {
             i++;
         }
     }
-    if (pos > 0) {
-        sequenceHeader = new Uint8Array(length);
-        sequenceHeader.set(data.subarray(pos, pos + length));
+    if (pos === -1 || length === -1) {
+        return null;
     }
+    sequenceHeader = new Uint8Array(length);
+    sequenceHeader.set(data.subarray(pos, pos + length));
     return {
         bytes: sequenceHeader,
         width: width,
@@ -5929,7 +5930,7 @@ mpegts.h264.NALUTYPE_AU_DELIMITER = 9;
 
 MediaPlayer = function(aContext) {
     "use strict";
-    var VERSION = "1.2.0", VERSION_HAS = "1.2.0_dev", GIT_TAG = "6e3f020", BUILD_DATE = "23.6.2015_21:44:58", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, isReady = function() {
+    var VERSION = "1.2.0", VERSION_HAS = "1.2.0_dev", GIT_TAG = "0795739d3", BUILD_DATE = "24.6.2015_21:44:2", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, isReady = function() {
         return !!element && !!source;
     }, play = function() {
         if (!initialized) {
@@ -6522,16 +6523,27 @@ MediaPlayer.utils.EventBus = function() {
 
 MediaPlayer.utils.Debug = function() {
     "use strict";
-    var logToBrowserConsole = true, NONE = 0, ERROR = 1, WARN = 2, INFO = 3, DEBUG = 4, ALL = 4, level = 4, showLogTimestamp = true, startTime = new Date().getTime(), _log = function(logLevel, args) {
+    Date.prototype.HHMMSSmmm = function() {
+        var h = this.getHours().toString(), m = this.getMinutes().toString(), s = this.getSeconds().toString(), ms = this.getSeconds().toString(), HH = h[1] ? h : "0" + h[0], MM = m[1] ? m : "0" + m[0], SS = s[1] ? s : "0" + s[0], mmm = ms[2] ? ms : "0" + (ms[1] ? ms : "0" + ms[0]);
+        return HH + ":" + MM + ":" + SS + "." + mmm;
+    };
+    Date.prototype.MMSSmmm = function() {
+        var m = this.getMinutes().toString(), s = this.getSeconds().toString(), ms = this.getSeconds().toString(), MM = m[1] ? m : "0" + m[0], SS = s[1] ? s : "0" + s[0], mmm = ms[2] ? ms : "0" + (ms[1] ? ms : "0" + ms[0]);
+        return MM + ":" + SS + "." + mmm;
+    };
+    var logToBrowserConsole = true, NONE = 0, ERROR = 1, WARN = 2, INFO = 3, DEBUG = 4, ALL = 4, level = 4, showTimestamp = true, showElapsedTime = false, startTime = new Date(), _log = function(logLevel, args) {
         var self = this;
         if (getLogToBrowserConsole() && logLevel <= getLevel()) {
             var _logger = getLogger(), message = "", logTime = null;
             if (_logger === undefined || _logger === null) {
                 _logger = console;
             }
-            if (showLogTimestamp) {
-                logTime = new Date().getTime();
-                message += "[" + toHHMMSSmmm(logTime - startTime) + "] ";
+            if (showTimestamp) {
+                logTime = new Date();
+                message += "[" + logTime.HHMMSSmmm() + "]";
+            }
+            if (showElapsedTime) {
+                message += "[" + new Date(logTime - startTime).MMSSmmm() + "]";
             }
             Array.apply(null, args).forEach(function(item) {
                 message += item + " ";
@@ -6558,37 +6570,12 @@ MediaPlayer.utils.Debug = function() {
             type: "log",
             message: arguments[0]
         });
-    }, toHHMMSSmmm = function(time) {
-        var str, h, m, s, ms = time;
-        h = Math.floor(ms / 36e5);
-        ms -= h * 36e5;
-        m = Math.floor(ms / 6e4);
-        ms -= m * 6e4;
-        s = Math.floor(ms / 1e3);
-        ms -= s * 1e3;
-        if (h < 10) {
-            h = "0" + h;
-        }
-        if (m < 10) {
-            m = "0" + m;
-        }
-        if (s < 10) {
-            s = "0" + s;
-        }
-        if (ms < 10) {
-            ms = "0" + ms;
-        }
-        if (ms < 100) {
-            ms = "0" + ms;
-        }
-        str = h + ":" + m + ":" + s + ":" + ms;
-        return str;
     }, getLogToBrowserConsole = function() {
         return logToBrowserConsole;
     }, getLevel = function() {
         return level;
     }, getLogger = function() {
-        var _logger = "undefined" !== typeof log4javascript ? log4javascript.getLogger() : null;
+        var _logger = null;
         if (_logger) {
             if (!_logger.initialized) {
                 var appender = new log4javascript.PopUpAppender();
@@ -9909,15 +9896,15 @@ MediaPlayer.dependencies.BufferController = function() {
         var time = seeking ? seekTarget : currentSegmentTime;
         var range = self.sourceBufferExt.getBufferRange(buffer, time);
         var segmentTime = range ? range.end : time;
-        if (seeking === true) {
-            seeking = false;
-        }
-        if (currentSequenceNumber !== -1) {
+        if (currentSequenceNumber !== -1 && !seeking) {
             self.debug.log("[BufferController][" + type + "] loadNextFragment for sequence number: " + currentSequenceNumber);
             self.indexHandler.getNextSegmentRequestFromSN(currentRepresentation, currentSequenceNumber).then(onFragmentRequest.bind(self));
         } else {
             self.debug.log("[BufferController][" + type + "] loadNextFragment for time: " + segmentTime);
             self.indexHandler.getSegmentRequestForTime(currentRepresentation, segmentTime).then(onFragmentRequest.bind(self));
+        }
+        if (seeking === true) {
+            seeking = false;
         }
     }, onFragmentRequest = function(request) {
         var self = this, manifest = self.manifestModel.getValue();
@@ -17346,33 +17333,42 @@ Hls = function() {
 
 Hls.dependencies.HlsDemux = function() {
     "use strict";
-    var pat = null, pmt = null, pidToTrackId = [], tracks = [], baseDts = -1, dtsOffset = -1, getTsPacket = function(data, pid, pusi) {
-        var i = 0;
+    var _appendArray = function(array1, array2) {
+        var tmp = new Uint8Array(array1.byteLength + array2.byteLength);
+        tmp.set(array1, 0);
+        tmp.set(array2, array1.byteLength);
+        return tmp;
+    };
+    var pat = null, pmt = null, pidToTrackId = [], tracks = [], baseDts = -1, dtsOffset = -1, getTsPacket = function(data, offset, pid, pusi) {
+        var i = offset;
         while (i < data.length) {
             var tsPacket = new mpegts.ts.TsPacket();
             tsPacket.parse(data.subarray(i, i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE));
             if (tsPacket.getPid() === pid && (pusi === undefined || tsPacket.getPusi() === pusi)) {
-                return tsPacket;
+                return {
+                    offset: i,
+                    packet: tsPacket
+                };
             }
             i += mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE;
         }
         return null;
     }, getPAT = function(data) {
-        var tsPacket = getTsPacket.call(this, data, mpegts.ts.TsPacket.prototype.PAT_PID);
+        var tsPacket = getTsPacket.call(this, data, 0, mpegts.ts.TsPacket.prototype.PAT_PID);
         if (tsPacket === null) {
             return null;
         }
         pat = new mpegts.si.PAT();
-        pat.parse(tsPacket.getPayload());
+        pat.parse(tsPacket.packet.getPayload());
         this.debug.log("[HlsDemux] PAT: PMT_PID=" + pat.getPmtPid());
         return pat;
     }, getPMT = function(data, pid) {
-        var tsPacket = getTsPacket.call(this, data, pid);
+        var tsPacket = getTsPacket.call(this, data, 0, pid);
         if (tsPacket === null) {
             return null;
         }
         pmt = new mpegts.si.PMT();
-        pmt.parse(tsPacket.getPayload());
+        pmt.parse(tsPacket.packet.getPayload());
         this.debug.log("[HlsDemux] PMT");
         var trackIdCounter = 1;
         for (var i = 0; i < pmt.m_listOfComponents.length; i++) {
@@ -17515,18 +17511,24 @@ Hls.dependencies.HlsDemux = function() {
             dtsOffset = startTime;
         }
     }, getTrackCodecInfo = function(data, track) {
-        var tsPacket;
+        var tsPacket, pesPacket, esBytes;
         if (track.codecs !== "") {
             return track;
         }
-        tsPacket = getTsPacket.call(this, data, track.pid, true);
+        tsPacket = getTsPacket.call(this, data, 0, track.pid, true);
         if (tsPacket === null) {
             return null;
         }
-        var pesPacket = new mpegts.pes.PesPacket();
-        pesPacket.parse(tsPacket.getPayload());
+        pesPacket = new mpegts.pes.PesPacket();
+        pesPacket.parse(tsPacket.packet.getPayload());
+        esBytes = pesPacket.getPayload();
         if (track.streamType.search("H.264") !== -1) {
-            var sequenceHeader = mpegts.h264.getSequenceHeader(pesPacket.getPayload());
+            var sequenceHeader = mpegts.h264.getSequenceHeader(esBytes);
+            while (sequenceHeader === null) {
+                tsPacket = getTsPacket.call(this, data, tsPacket.offset + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE, track.pid, false);
+                esBytes = _appendArray(esBytes, tsPacket.packet.getPayload());
+                sequenceHeader = mpegts.h264.getSequenceHeader(esBytes);
+            }
             track.codecPrivateData = arrayToHexString(sequenceHeader.bytes);
             track.codecs = "avc1.";
             var nalHeader = /00000001[0-9]7/.exec(track.codecPrivateData);
@@ -17537,7 +17539,7 @@ Hls.dependencies.HlsDemux = function() {
             track.height = sequenceHeader.height;
         }
         if (track.streamType.search("AAC") !== -1) {
-            var codecPrivateData = mpegts.aac.getAudioSpecificConfig(pesPacket.getPayload());
+            var codecPrivateData = mpegts.aac.getAudioSpecificConfig(esBytes);
             var objectType = (codecPrivateData[0] & 248) >> 3;
             track.codecPrivateData = arrayToHexString(codecPrivateData);
             track.codecs = "mp4a.40." + objectType;
@@ -17626,6 +17628,9 @@ Hls.dependencies.HlsParser = function() {
     };
     var _getTagParams = function(data) {
         return data.substring(data.indexOf(":") + 1).split(",");
+    };
+    var _isAbsoluteURI = function(uri) {
+        return uri.indexOf("http://") === 0 || uri.indexOf("https://") === 0;
     };
     var _parseStreamInf = function(streamInfArray) {
         var stream = {
@@ -17723,7 +17728,7 @@ Hls.dependencies.HlsParser = function() {
                     name: "SegmentURL",
                     isRoot: false,
                     isArray: true,
-                    media: media.uri.indexOf("http://") !== -1 ? media.uri : segmentList.BaseURL + media.uri,
+                    media: _isAbsoluteURI(media.uri) ? media.uri : segmentList.BaseURL + media.uri,
                     sequenceNumber: segmentList.startNumber + index,
                     time: segments.length === 0 ? 0 : segments[segments.length - 1].time + segments[segments.length - 1].duration,
                     duration: media.duration
@@ -17850,7 +17855,7 @@ Hls.dependencies.HlsParser = function() {
                     bandwidth: stream.bandwidth,
                     width: parseInt(stream.resolution.split("x")[0], 10),
                     height: parseInt(stream.resolution.split("x")[1], 10),
-                    url: stream.uri.indexOf("http://") > -1 ? stream.uri : adaptationSet.BaseURL + stream.uri
+                    url: _isAbsoluteURI(stream.uri) ? stream.uri : adaptationSet.BaseURL + stream.uri
                 };
                 representation.BaseURL = parseBaseUrl(representation.url);
                 representations.push(representation);
