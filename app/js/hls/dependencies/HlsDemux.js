@@ -17,6 +17,14 @@
 Hls.dependencies.HlsDemux = function () {
     "use strict";
 
+
+    var _appendArray = function(array1, array2) {
+        var tmp = new Uint8Array(array1.byteLength + array2.byteLength);
+        tmp.set(array1, 0);
+        tmp.set(array2, array1.byteLength);
+        return tmp;
+    };
+
     var pat = null,
         pmt = null,
         pidToTrackId = [],
@@ -24,8 +32,8 @@ Hls.dependencies.HlsDemux = function () {
         baseDts = -1,
         dtsOffset = -1,
 
-        getTsPacket = function (data, pid, pusi) {
-            var i = 0;
+        getTsPacket = function (data, offset, pid, pusi) {
+            var i = offset;
 
             while (i < data.length) {
                 var tsPacket = new mpegts.ts.TsPacket();
@@ -34,7 +42,10 @@ Hls.dependencies.HlsDemux = function () {
                 //this.debug.log("[HlsDemux] TS packet: pid=" + tsPacket.getPid() + ", pusi = " + tsPacket.getPusi());
                 
                 if ((tsPacket.getPid() === pid) && ((pusi === undefined) || (tsPacket.getPusi() === pusi))) {
-                    return tsPacket;
+                    return {
+                        offset: i,
+                        packet: tsPacket
+                    };
                 }
                 
                 i += mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE;
@@ -44,7 +55,7 @@ Hls.dependencies.HlsDemux = function () {
         },
 
         getPAT = function (data) {
-            var tsPacket = getTsPacket.call(this, data, mpegts.ts.TsPacket.prototype.PAT_PID);
+            var tsPacket = getTsPacket.call(this, data, 0, mpegts.ts.TsPacket.prototype.PAT_PID);
 
             if (tsPacket === null) {
                 return null;
@@ -52,7 +63,7 @@ Hls.dependencies.HlsDemux = function () {
 
 
             pat = new mpegts.si.PAT();
-            pat.parse(tsPacket.getPayload());
+            pat.parse(tsPacket.packet.getPayload());
 
             this.debug.log("[HlsDemux] PAT: PMT_PID=" + pat.getPmtPid());
 
@@ -60,14 +71,14 @@ Hls.dependencies.HlsDemux = function () {
         },
 
         getPMT = function (data, pid) {
-            var tsPacket = getTsPacket.call(this, data, pid);
+            var tsPacket = getTsPacket.call(this, data, 0, pid);
 
             if (tsPacket === null) {
                 return null;
             }
 
             pmt = new mpegts.si.PMT();
-            pmt.parse(tsPacket.getPayload());
+            pmt.parse(tsPacket.packet.getPayload());
 
             this.debug.log("[HlsDemux] PMT");
 
@@ -301,14 +312,16 @@ Hls.dependencies.HlsDemux = function () {
         },
 
         getTrackCodecInfo = function (data, track) {
-            var tsPacket;
+            var tsPacket,
+                pesPacket,
+                esBytes;
 
             if (track.codecs !== "") {
                 return track;
             }
 
             // Get first TS packet containing start of a PES/sample
-            tsPacket = getTsPacket.call(this, data, track.pid, true);
+            tsPacket = getTsPacket.call(this, data, 0, track.pid, true);
 
             // We have no packet of track's PID , need some more packets to get track info
             if (tsPacket === null) {
@@ -316,12 +329,20 @@ Hls.dependencies.HlsDemux = function () {
             }
 
             // Get PES packet
-            var pesPacket = new mpegts.pes.PesPacket();
-            pesPacket.parse(tsPacket.getPayload());
+            pesPacket = new mpegts.pes.PesPacket();
+            pesPacket.parse(tsPacket.packet.getPayload());
+            esBytes = pesPacket.getPayload();
 
             // H264
             if (track.streamType.search('H.264') !== -1) {
-                var sequenceHeader = mpegts.h264.getSequenceHeader(pesPacket.getPayload());
+                var sequenceHeader = mpegts.h264.getSequenceHeader(esBytes);
+
+                while (sequenceHeader === null) {
+                    tsPacket = getTsPacket.call(this, data, (tsPacket.offset + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE), track.pid, false);
+                    esBytes = _appendArray(esBytes, tsPacket.packet.getPayload());
+                    sequenceHeader = mpegts.h264.getSequenceHeader(esBytes);
+                }
+
                 track.codecPrivateData = arrayToHexString(sequenceHeader.bytes);
                 track.codecs = "avc1.";
 
@@ -341,7 +362,7 @@ Hls.dependencies.HlsDemux = function () {
 
             // AAC
             if (track.streamType.search('AAC') !== -1) {
-                var codecPrivateData = mpegts.aac.getAudioSpecificConfig(pesPacket.getPayload());
+                var codecPrivateData = mpegts.aac.getAudioSpecificConfig(esBytes);
                 var objectType = (codecPrivateData[0] & 0xF8) >> 3;
                 track.codecPrivateData = arrayToHexString(codecPrivateData);
                 track.codecs = "mp4a.40." + objectType;
