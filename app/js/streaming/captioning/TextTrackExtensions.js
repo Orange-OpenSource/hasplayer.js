@@ -16,14 +16,32 @@ MediaPlayer.utils.TextTrackExtensions = function () {
     var Cue;
 
     return {
+        eventBus: undefined,
+
         setup: function() {
             Cue = window.VTTCue || window.TextTrackCue;
         },
 
-        addTextTrack: function(video, captionData,  label, scrlang, isDefaultTrack) {
+        subtitlesStyleChanged : function (style) {
+            this.eventBus.dispatchEvent({
+                type: "subtitlesStyleChanged",
+                data: style
+            });
+        },
 
+        addTextTrack: function(video, captionData,  label, scrlang, isDefaultTrack) {
+            var track = null;
+
+            //no function removeTextTrack is defined
+            //add one, only if it's necessary
+            //deleteCues will be very efficient in this case
+            if (video.textTracks.length === 0) {
             //TODO: Ability to define the KIND in the MPD - ie subtitle vs caption....
-            var track = video.addTextTrack("captions", label, scrlang);
+                track = video.addTextTrack("subtitles", label, scrlang);
+            }else {
+                //this.deleteCues(video);
+                track = video.textTracks[0];
+            }
             // track.default is an object property identifier that is a reserved word
             // The following jshint directive is used to suppressed the warning "Expected an identifier and instead saw 'default' (a reserved word)"
             /*jshint -W024 */
@@ -38,17 +56,38 @@ MediaPlayer.utils.TextTrackExtensions = function () {
             return Q.when(track);
         },
 
+        onCueEnter: function(e){
+            this.subtitlesStyleChanged(e.currentTarget.style);
+        },
+
         // Orange: addCues added so it is possible to add cues during playback,
         //         not only during track initialization
 
         addCues: function(track, captionData) {
+
             for(var item in captionData) {
                 var currentItem = captionData[item];
-                track.addCue(new Cue(currentItem.start, currentItem.end, currentItem.data));
+                var newCue = new Cue(currentItem.start, currentItem.end, currentItem.data);
+
+                newCue.onenter = this.onCueEnter.bind(this);
+
+                newCue.snapToLines = false;
+
+                if (item > 0 && currentItem.start <= captionData[item-1].end) {
+                    newCue.line = captionData[item-1].line + parseFloat(currentItem.style.fontSize.substr(0, currentItem.style.fontSize.length-1))+3;
+                }else {
+                    newCue.line = currentItem.line;
+                }
+
+                if (currentItem.style) {
+                    newCue.style = currentItem.style;
+                }
+
+                track.addCue(newCue);
             }
         },
 
-        deleteCues: function(video) {
+        deleteCues: function(video, disabled) {
             //when multiple tracks are supported - iterate through and delete all cues from all tracks.
             if (video) {
                 var track = video.textTracks[0];
@@ -57,15 +96,17 @@ MediaPlayer.utils.TextTrackExtensions = function () {
                     if (cues) {
                         var lastIdx = cues.length - 1;
 
-            for (var i = lastIdx; i >= 0 ; i -= 1) {
-                track.removeCue(cues[i]);
-            }
+                        for (var i = lastIdx; i >= 0 ; i -= 1) {
+                            track.removeCue(cues[i]);
+                        }
+                    }
+                    //noway to delete track, just disable it
+                    //useful when player switchs between a stream with subtitles and an other one without.
+                    if (disabled) {
+                        track.mode = "disabled";
                     }
                 }
             }
-
-            //track.mode = "disabled";
         }
-
     };
 };

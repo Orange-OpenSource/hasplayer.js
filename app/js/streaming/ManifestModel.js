@@ -28,10 +28,12 @@ MediaPlayer.models.ManifestModel = function () {
             manifest = value;
             this.system.notify("manifestUpdated");
 
-            this.eventBus.dispatchEvent({
-                type: "manifestLoaded",
-                data: value
-            });
+            if (manifest !== null) {
+                this.eventBus.dispatchEvent({
+                    type: "manifestLoaded",
+                    data: value
+                });
+            }
         }
     };
 };

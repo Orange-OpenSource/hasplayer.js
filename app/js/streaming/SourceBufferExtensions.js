@@ -25,15 +25,23 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
         "use strict";
         var deferred = Q.defer(),
             self = this;
+
         try {
             deferred.resolve(mediaSource.addSourceBuffer(codec));
         } catch(ex) {
             if (!self.manifestExt.getIsTextTrack(codec)) {
                 deferred.reject(ex.description);
             } else {
-                deferred.resolve(self.system.getObject("textSourceBuffer"));
+                if ((codec==='text/vtt') || (codec==='text/ttml')) {
+                    deferred.resolve(self.system.getObject("textSourceBuffer"));
+                } else {
+                    if (codec==='application/ttml+xml+mp4') {
+                        deferred.resolve(self.system.getObject("textTTMLXMLMP4SourceBuffer"));
+                    } else {
+                        deferred.reject();
+                    }
+                }
             }
-
         }
         return deferred.promise;
     },
@@ -54,8 +62,6 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
     },
 
     getBufferRange: function (buffer, time, tolerance) {
-        "use strict";
-
         var ranges = null,
             start = 0,
             end = 0,
@@ -69,7 +75,7 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
         try {
             ranges = buffer.buffered;
         } catch(ex) {
-            return Q.when(null);
+            return null;
         }
 
         if (ranges !== null) {
@@ -101,11 +107,11 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
             }
 
             if (firstStart !== null) {
-                return Q.when({start: firstStart, end: lastEnd});
+                return {start: firstStart, end: lastEnd};
             }
         }
 
-        return Q.when(null);
+        return null;
     },
 
     getAllRanges: function(buffer) {
@@ -113,9 +119,9 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
 
         try{
             ranges = buffer.buffered;
-            return Q.when(ranges);
+            return ranges;
         } catch (ex) {
-            return Q.when(null);
+            return null;
         }
     },
 
@@ -123,19 +129,18 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
         "use strict";
 
         var self = this,
-            deferred = Q.defer();
+            range,
+            length;
 
-        self.getBufferRange(buffer, time, tolerance).then(
-            function (range) {
-                if (range === null) {
-                    deferred.resolve(0);
-                } else {
-                    deferred.resolve(range.end - time);
-                }
-            }
-        );
+        range = self.getBufferRange(buffer, time, tolerance);
 
-        return deferred.promise;
+        if (range === null) {
+            length = 0;
+        } else {
+            length = range.end - time;
+        }
+
+        return length;
     },
 
     waitForUpdateEnd: function(buffer) {
@@ -172,7 +177,7 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
         return defer.promise;
     },
 
-    append: function (buffer, bytes /*, videoModel*/) {
+    append: function (buffer, bytes, sync) {
         var deferred = Q.defer();
 
         try {
@@ -181,12 +186,17 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
             } else if ("appendBuffer" in buffer) {
                 buffer.appendBuffer(bytes);
             }
-            // updating is in progress, we should wait for it to complete before signaling that this operation is done
-            this.waitForUpdateEnd(buffer).then(
-                function() {
-                    deferred.resolve();
-                }
-            );
+
+            if (sync) {
+                deferred.resolve();
+            } else {
+                // updating is in progress, we should wait for it to complete before signaling that this operation is done
+                this.waitForUpdateEnd(buffer).then(
+                    function() {
+                        deferred.resolve();
+                    }
+                );
+            }
         } catch (err) {
             deferred.reject({err: err, data: bytes});
         }
@@ -194,7 +204,7 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
         return deferred.promise;
     },
 
-    remove: function (buffer, start, end, duration, mediaSource) {
+    remove: function (buffer, start, end, duration, mediaSource, sync) {
         var deferred = Q.defer();
 
         try {
@@ -202,12 +212,17 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
             if ((start >= 0) && (start < duration) && (end > start) && (mediaSource.readyState !== "ended")) {
                 buffer.remove(start, end);
             }
-            // updating is in progress, we should wait for it to complete before signaling that this operation is done
-            this.waitForUpdateEnd(buffer).then(
-                function() {
-                    deferred.resolve();
-                }
-            );
+
+            if (sync) {
+                deferred.resolve();
+            } else {
+                // updating is in progress, we should wait for it to complete before signaling that this operation is done
+                this.waitForUpdateEnd(buffer).then(
+                    function() {
+                        deferred.resolve();
+                    }
+                );
+            }
         } catch (err) {
             deferred.reject(err);
         }

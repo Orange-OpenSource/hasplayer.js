@@ -268,8 +268,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         "use strict";
         //return Q.when(null);
         //------------------------------------
-        var self = this,
-            adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray,
+        var adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray,
             i,
             len,
             deferred = Q.defer(),
@@ -403,6 +402,13 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         var representation = data.Representation_asArray[0],
             codec = (representation.mimeType + ';codecs="' + representation.codecs + '"');
         return Q.when(codec);
+    },
+
+    getCodec_: function (data) {
+        "use strict";
+        var representation = data.Representation_asArray[0],
+            codec = (representation.mimeType + ';codecs="' + representation.codecs + '"');
+        return codec;
     },
 
     getMimeType: function (data) {
@@ -845,7 +851,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                     eventStream.schemeIdUri = inbandStreams[i].schemeIdUri;
                 } else {
                     throw "Invalid EventStream. SchemeIdUri has to be set";
-    }
+                }
                 if(inbandStreams[i].hasOwnProperty("timescale")) {
                     eventStream.timescale = inbandStreams[i].timescale;
                 }
@@ -885,6 +891,23 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         }
         return eventStreams;
 
+    },
+
+    getRepresentationBandwidth : function (adaptation, index) {
+        var self = this,
+            deferred = Q.defer();
+
+        self.getRepresentationFor(index, adaptation).then(
+            function(rep) {
+                self.getBandwidth(rep).then(
+                    function (bandwidth) {
+                        deferred.resolve(bandwidth);
+                    }
+                );
+            }
+        );
+
+        return deferred.promise;
     }
 
 };

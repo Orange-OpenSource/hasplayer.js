@@ -1,15 +1,15 @@
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2014, Orange
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
+ *
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -132,19 +132,19 @@ Mss.dependencies.MssFragmentController = function () {
             var trun = traf.getBoxByType("trun");
             var tfhd = traf.getBoxByType("tfhd");
             var saio;
-            
+
             //if protected content
             var sepiff = traf.getBoxByType("sepiff");
             if(sepiff !== null) {
                 sepiff.boxtype = "senc";
                 sepiff.extended_type = undefined;
-                // Create Sample Auxiliary Information Offsets Box box (saio) 
+                // Create Sample Auxiliary Information Offsets Box box (saio)
                 saio = new mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox();
                 saio.version = 0;
                 saio.flags = 0;
                 saio.entry_count = 1;
                 saio.offset = [];
-                
+
                 var saiz = new mp4lib.boxes.SampleAuxiliaryInformationSizesBox();
                 saiz.version = 0;
                 saiz.flags = 0;
@@ -197,7 +197,9 @@ Mss.dependencies.MssFragmentController = function () {
                 tfdt.version = 1;
                 tfdt.flags = 0;
                 tfdt.baseMediaDecodeTime = Math.floor(request.startTime * request.timescale);
-                traf.boxes.push(tfdt);
+                // Insert tfdt box just after the tfhd box (therefore before the trun box)
+                var pos = traf.getBoxIndexByType("tfhd");
+                traf.boxes.splice(pos + 1, 0, tfdt);
             }
 
             // Process tfrf box
@@ -215,21 +217,22 @@ Mss.dependencies.MssFragmentController = function () {
             trun.flags |= 0x000001; // set trun.data-offset-present to true
             trun.data_offset = 0;   // Set a default value for trun.data_offset
 
-            if(sepiff !== null) {
-                //+8 => box size + type
-                var moofpositionInFragment = fragment.getBoxPositionByType("moof")+8;
-                var trafpositionInMoof = moof.getBoxPositionByType("traf")+8;
-                var sencpositionInTraf = traf.getBoxPositionByType("senc")+8;
-                // set offset from begin fragment to the first IV in senc box
-                saio.offset[0] = moofpositionInFragment+trafpositionInMoof+sencpositionInTraf+8;//flags (3) + version (1) + sampleCount (4)
-            }
-
             // Determine new size of the converted fragment
             // and allocate new data buffer
             var fragment_size = fragment.getLength();
 
             // updata trun.data_offset field = offset of first data byte (inside mdat box)
             trun.data_offset = fragment_size - mdat.size + 8; // 8 = 'size' + 'type' mdat fields length
+
+            // Update saio box offset field according to new senc box offset
+            if (sepiff !== null) {
+                var moofPosInFragment = fragment.getBoxOffsetByType("moof");
+                var trafPosInMoof = moof.getBoxOffsetByType("traf");
+                var sencPosInTraf = traf.getBoxOffsetByType("senc");
+                // set offset from begin fragment to the first IV in senc box
+                saio.offset[0] = moofPosInFragment + trafPosInMoof + sencPosInTraf + 16; // box header (12) + sampleCount (4)
+            }
+
 
             // PATCH tfdt and trun samples timestamp values in case of live streams within chrome
             if ((navigator.userAgent.indexOf("Chrome") >= 0) && (manifest.type === "dynamic")){
@@ -246,12 +249,10 @@ Mss.dependencies.MssFragmentController = function () {
 
             var new_data = mp4lib.serialize(fragment);
 
-            //console.saveBinArray(new_data, adaptation.type+"_evolution.mp4");
-
             return new_data;
         };
-    
-    var rslt = Custom.utils.copyMethods(MediaPlayer.dependencies.FragmentController);
+
+    var rslt = MediaPlayer.utils.copyMethods(MediaPlayer.dependencies.FragmentController);
 
     rslt.manifestModel = undefined;
     rslt.mp4Processor = undefined;
@@ -263,6 +264,8 @@ Mss.dependencies.MssFragmentController = function () {
 
         if (bytes !== null && bytes !== undefined && bytes.byteLength > 0) {
             result = new Uint8Array(bytes);
+        } else {
+            return Q.when(null);
         }
 
         if (request && (request.type === "Media Segment") && representations && (representations.length > 0)){
@@ -292,10 +295,6 @@ Mss.dependencies.MssFragmentController = function () {
 
             result = mp4lib.serialize(init_segment);
         }
-
-        //if (request !== undefined) {
-        //    console.saveBinArray(result, request.streamType + "_" + request.index + "_" + request.quality + ".mp4");
-        //}
 
         return Q.when(result);
     };

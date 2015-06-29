@@ -18,70 +18,10 @@ MediaPlayer.dependencies.ErrorHandler = function () {
     return {
         eventBus: undefined,
 
-        // "mediasource"|"mediakeys"
-        capabilityError: function (err) {
+        sendError: function (code, message, data) {
             this.eventBus.dispatchEvent({
                 type: "error",
-                error: "capability",
-                event: err
-            });
-        },
-
-        // {id: "manifest"|"SIDX"|"content"|"initialization", url: "", request: {XMLHttpRequest instance}}
-        downloadError: function (id, url, request) {
-            this.eventBus.dispatchEvent({
-                type: "error",
-                error: "download",
-                event: {id: id, url: url, request: request}
-            });
-        },
-
-        // {message: "", id: "codec"|"parse"|"nostreams", manifest: {parsed manifest}}
-        manifestError: function (message, id, manifest) {
-            this.eventBus.dispatchEvent({
-                type: "error",
-                error: "manifestError",
-                event: {message: message, id: id, manifest: manifest}
-            });
-        },
-
-        closedCaptionsError: function (message, id, ccContent) {
-            this.eventBus.dispatchEvent({
-                type: "error",
-                error: "cc",
-                event: {message: message, id: id, cc: ccContent}
-            });
-        },
-
-        mediaSourceError: function (err) {
-            this.eventBus.dispatchEvent({
-                type: "error",
-                error: "mediasource",
-                event: err
-            });
-        },
-
-        mediaKeySessionError: function (err) {
-            this.eventBus.dispatchEvent({
-                type: "error",
-                error: "key_session",
-                event: err
-            });
-        },
-
-        mediaKeyMessageError: function (err) {
-            this.eventBus.dispatchEvent({
-                type: "error",
-                error: "key_message",
-                event: err
-            });
-        },
-
-        mediaKeySystemSelectionError: function (err) {
-            this.eventBus.dispatchEvent({
-                type: "error",
-                error: "key_system_selection",
-                event: err
+                event: {code : code, message: message, data: data}
             });
         }
     };
@@ -90,3 +30,73 @@ MediaPlayer.dependencies.ErrorHandler = function () {
 MediaPlayer.dependencies.ErrorHandler.prototype = {
     constructor: MediaPlayer.dependencies.ErrorHandler
 };
+
+MediaPlayer.dependencies.ErrorHandler.prototype.HASPLAYER_INIT_ERROR = "HASPLAYER_INIT_ERROR";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ABORTED = "MEDIA_ERR_ABORTED";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_NETWORK = "MEDIA_ERR_NETWORK";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_DECODE = "MEDIA_ERR_DECODE";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_SRC_NOT_SUPPORTED = "MEDIA_ERR_SRC_NOT_SUPPORTED";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED = "MEDIA_ERR_ENCRYPTED";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_REMOVE_SOURCEBUFFER = "MEDIA_ERR_REMOVE_SOURCEBUFFER";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER = "MEDIA_ERR_CREATE_SOURCEBUFFER";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_APPEND_SOURCEBUFFER = "MEDIA_ERR_APPEND_SOURCEBUFFER";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC = "MANIFEST_ERR_CODEC";
+MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE = "MANIFEST_ERR_PARSE";
+MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM = "MANIFEST_ERR_NOSTREAM";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIASOURCE = "CAPABILITY_ERR_MEDIASOURCE";
+MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS = "CAPABILITY_ERR_MEDIAKEYS";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST = "DOWNLOAD_ERR_MANIFEST";
+MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX = "DOWNLOAD_ERR_SIDX";
+MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT = "DOWNLOAD_ERR_CONTENT";
+MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_INIT = "DOWNLOAD_ERR_INIT";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.CC_ERR_PARSE = "CC_ERR_PARSE";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR = "MEDIA_KEYERR";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN = "MEDIA_KEYERR_UNKNOWN";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_CLIENT = "MEDIA_KEYERR_CLIENT";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_SERVICE = "MEDIA_KEYERR_SERVICE";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT = "MEDIA_KEYERR_OUTPUT";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_HARDWARECHANGE = "MEDIA_KEYERR_HARDWARECHANGE";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_DOMAIN = "MEDIA_KEYERR_DOMAIN";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_UNSUPPORTED = "MEDIA_KEYSYSERR_UNSUPPORTED";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED = "MEDIA_KEYSYSERR_ACCESS_DENIED";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_UPDATE_CERTIFICATE_IMPOSSIBLE = "MEDIA_KEYSYSERR_UPDATE_CERTIFICATE_IMPOSSIBLE";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR = "MEDIA_KEYMESSERR";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_INVALID_HEADER = "MEDIA_KEYMESSERR_INVALID_HEADER";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_URL_LICENSER_UNKNOWN = "MEDIA_KEYMESSERR_URL_LICENSER_UNKNOWN";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NOCHALLENGE = "MEDIA_KEYMESSERR_NOCHALLENGE";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ABORTED = "MEDIA_KEYMESSERR_XHR_ABORTED";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ERROR = "MEDIA_KEYMESSERR_XHR_ERROR";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_KEY_UNKNOWN = "MEDIA_KEYMESSERR_KEY_UNKNOWN";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_MULTIKEYS_UNSUPPORTED = "MEDIA_KEYMESSERR_MULTIKEYS_UNSUPPORTED";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_SESSION = "MEDIA_KEYMESSERR_NO_SESSION";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_REMOVE_SESSION = "MEDIA_KEYMESSERR_NO_REMOVE_SESSION";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_CLOSE_SESSION = "MEDIA_KEYMESSERR_NO_CLOSE_SESSION";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INDEX_SIZE = 1;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_HIERARCHY_REQUEST = 3;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_WRONG_DOCUMENT = 4;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_CHARACTER = 5;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NO_MODIFICATION_ALLOWED = 7;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_FOUND = 8;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_SUPPORTED = 9;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_STATE = 11;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_SYNTAX = 12;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_MODIFICATION = 13;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NAMESPACE = 14;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS = 15;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_SECURITY = 18;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NETWORK = 19;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_ABORT = 20;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_URL_MISMATCH = 21;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_QUOTA_EXCEEDED = 22;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_TIMEOUT = 23;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_NODE_TYPE = 24;
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_DATA_CLONE = 25;

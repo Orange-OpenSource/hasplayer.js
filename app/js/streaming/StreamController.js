@@ -34,6 +34,7 @@
         // ORANGE: audio language management
         audioTracks,
         subtitleTracks,
+        protectionData,
 
         play = function () {
             activeStream.play();
@@ -124,7 +125,7 @@
         onReloadManifest = function() {
             this.debug.log("[StreamController] ### reloadManifest ####");
             this.reset.call(this);
-            this.load.call(this,this.currentURL,this.currentParams);
+            this.load.call(this, this.currentURL);
         },
 
         /*
@@ -141,7 +142,7 @@
                 playBackQuality = self.videoExt.getPlaybackQuality(videoElement),
                 elapsedTime = (new Date().getTime()- self.startPlayingTime)/1000;
 
-            self.debug.log("[StreamController]", "FPS = " + playBackQuality.totalVideoFrames/elapsedTime);
+            //self.debug.log("[StreamController]", "FPS = " + playBackQuality.totalVideoFrames/elapsedTime);
 
             //ORANGE : replace addDroppedFrames metric by addConditionMetric
             //self.metricsModel.addDroppedFrames("video", playBackQuality);
@@ -168,7 +169,7 @@
                 seekingStream = getStreamForTime(seekingTime);
 
             // ORANGE : add metric
-            this.metricsModel.addState(null, "seeking", activeStream.getVideoModel().getCurrentTime());
+            this.metricsModel.addState("video", "seeking", activeStream.getVideoModel().getCurrentTime());
 
             if (seekingStream && seekingStream !== activeStream) {
                 switchStream.call(this, activeStream, seekingStream, seekingTime);
@@ -178,7 +179,7 @@
         onPause = function() {
             this.manifestUpdater.stop();
             // ORANGE : add metric
-            this.metricsModel.addState(null, "paused", activeStream.getVideoModel().getCurrentTime());
+            this.metricsModel.addState("video", "paused", activeStream.getVideoModel().getCurrentTime());
         },
 
         onPlay = function() {
@@ -319,7 +320,7 @@
                                 if (!stream) {
                                     stream = self.system.getObject("stream");
                                     stream.setVideoModel(pIdx === 0 ? self.videoModel : createVideoModel.call(self));
-                                    stream.initProtection();
+                                    stream.initProtection(self.protectionData);
                                     stream.setAutoPlay(autoPlay);
                                     stream.load(manifest, period);
                                     streams.push(stream);
@@ -383,7 +384,7 @@
                     self.system.notify("streamsComposed");
                 },
                 function(errMsg) {
-                    self.errHandler.manifestError(errMsg, "nostreamscomposed", self.manifestModel.getValue());
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM, errMsg, self.manifestModel.getValue());
                     self.reset();
                 }
             );
@@ -412,7 +413,6 @@
         startTime : undefined,
         startPlayingTime : undefined,
         currentURL: undefined,
-        currentParams: undefined,
 
         setup: function() {
             this.system.mapHandler("manifestUpdated", undefined, manifestHasUpdated.bind(this));
@@ -470,39 +470,34 @@
         },
         
         // ORANGE: add source stream parameters
-        load: function (url, params) {
+        load: function (url, protData) {
             var self = this;
 
             self.currentURL = url;
-            self.currentParams = params;
+            if (protData) {
+                self.protectionData = protData;
+            }
 
-            self.debug.log("[StreamController]", "load url: " + url);
+            self.debug.info("[StreamController] load url: " + url);
 
             self.manifestLoader.load(url).then(
                 function(manifest) {
-                    // ORANGE: get licenser backUrl and customData parameters
-                    if (params !== undefined) {
-                        if (params.backUrl) {
-                            manifest.backUrl = params.backUrl;
-                        }
-                        if (params.customData) {
-                            manifest.customData = params.customData;
-                        }
-                    }
                     self.manifestModel.setValue(manifest);
                     //ORANGE : add Metadata metric
                     self.metricsModel.addMetaData();
-                    self.debug.log("Manifest has loaded.");
+                    self.debug.info("[StreamController] Manifest has loaded.");
                     //self.debug.log(self.manifestModel.getValue());
                     self.manifestUpdater.start();
                 },
                 function () {
-                    self.reset();
+                    self.debug.error("[StreamController] Manifest loading error.");
                 }
             );
         },
 
         reset: function () {
+
+            this.debug.info("[StreamController] Reset");
 
             if (!!activeStream) {
                 detachVideoEvents.call(this, activeStream.getVideoModel());
@@ -523,6 +518,7 @@
             this.metricsModel.clearAllCurrentMetrics();
             isPeriodSwitchingInProgress = false;
             activeStream = null;
+            protectionData = null;
         },
 
         play: play,

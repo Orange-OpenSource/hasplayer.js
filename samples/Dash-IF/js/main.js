@@ -1,6 +1,5 @@
 'use strict';
 // don't disable metrics...
-var DEBUG = true;
 var angular = angular;
 
 angular.module('DashSourcesService', ['ngResource']).
@@ -130,6 +129,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     var player,
     video,
     context,
+    config = null,
     videoSeries = [],
     dlSeries = [],
     playSeries = [],
@@ -138,8 +138,8 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     previousPlayedQuality = 0,
     previousDownloadedQuality= 0,
     maxGraphPoints = 50,
-    initAudioTracks = true,
-    initTextTracks = true;
+    configMetrics = null,
+    subtitlesCSSStyle = null;
 
     $scope.chromecast = {};
     $scope.chromecast.apiOk = false;
@@ -173,22 +173,6 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     $scope.streamTypes = ["HLS", "MSS", "DASH"];
     $scope.streamType = "MSS";
 
-    $('#sliderBitrate').labeledslider({
-        max: 0,
-        step: 1,
-        values: [0],
-        tickLabels: [],
-        orientation: 'vertical',
-        range: true,
-        stop: function(evt, ui) {
-            player.setConfig( {
-                "video": {
-                    "ABR.minQuality": ui.values[0],
-                    "ABR.maxQuality": ui.values[1]
-                }
-            });
-        }
-    });
     $('#sliderAudio').labeledslider({
         max:0,
         step:1,
@@ -272,27 +256,27 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
                 latencyTimes = requestWindow.map(function (req){ return Math.abs(req.tresponse.getTime() - req.trequest.getTime()) / 1000;});
 
                 movingLatency[type] = {
-                    average: latencyTimes.reduce(function(l, r) {return l + r;}) / latencyTimes.length, 
-                    high: latencyTimes.reduce(function(l, r) {return l < r ? r : l;}), 
-                    low: latencyTimes.reduce(function(l, r) {return l < r ? l : r;}), 
+                    average: latencyTimes.reduce(function(l, r) {return l + r;}) / latencyTimes.length,
+                    high: latencyTimes.reduce(function(l, r) {return l < r ? r : l;}),
+                    low: latencyTimes.reduce(function(l, r) {return l < r ? l : r;}),
                     count: latencyTimes.length
                 };
 
                 downloadTimes = requestWindow.map(function (req){ return Math.abs(req.tfinish.getTime() - req.tresponse.getTime()) / 1000;});
 
                 movingDownload[type] = {
-                    average: downloadTimes.reduce(function(l, r) {return l + r;}) / downloadTimes.length, 
-                    high: downloadTimes.reduce(function(l, r) {return l < r ? r : l;}), 
-                    low: downloadTimes.reduce(function(l, r) {return l < r ? l : r;}), 
+                    average: downloadTimes.reduce(function(l, r) {return l + r;}) / downloadTimes.length,
+                    high: downloadTimes.reduce(function(l, r) {return l < r ? r : l;}),
+                    low: downloadTimes.reduce(function(l, r) {return l < r ? l : r;}),
                     count: downloadTimes.length
                 };
 
                 durationTimes = requestWindow.map(function (req){ return req.mediaduration;});
 
                 movingRatio[type] = {
-                    average: (durationTimes.reduce(function(l, r) {return l + r;}) / downloadTimes.length) / movingDownload[type].average, 
-                    high: durationTimes.reduce(function(l, r) {return l < r ? r : l;}) / movingDownload[type].low, 
-                    low: durationTimes.reduce(function(l, r) {return l < r ? l : r;}) / movingDownload[type].high, 
+                    average: (durationTimes.reduce(function(l, r) {return l + r;}) / downloadTimes.length) / movingDownload[type].average,
+                    high: durationTimes.reduce(function(l, r) {return l < r ? r : l;}) / movingDownload[type].low,
+                    low: durationTimes.reduce(function(l, r) {return l < r ? l : r;}) / movingDownload[type].high,
                     count: durationTimes.length
                 };
             }
@@ -363,6 +347,37 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         }
     }
 
+    function onload(e){
+        //init audio tracks
+        $scope.audioTracks = player.getAudioTracks();
+        $scope.audioData = $scope.audioTracks[0];
+        //init subtitles tracks
+        $scope.textTracks = player.getSubtitleTracks();
+        $scope.textData = $scope.textTracks[0];
+    }
+
+    //if video size change, player has to update subtitles size
+    function onFullScreenChange(){
+        setSubtitlesCSSStyle(subtitlesCSSStyle);
+    }
+
+
+    function setSubtitlesCSSStyle(style){
+        var fontSize = style.data.fontSize;
+
+        if (style.data.fontSize[style.data.fontSize.length-1] ==='%') {
+            fontSize  = (video.clientHeight * style.data.fontSize.substr(0, style.data.fontSize.length-1))/100;
+        }
+
+        document.getElementById("cueStyle").innerHTML = '::cue{ background-color:'+style.data.backgroundColor+';color:'+style.data.color+';font-size: '+fontSize+'px;font-family: '+style.data.fontFamily+'}';
+    }
+
+
+    function onSubtitlesStyleChanged(style) {
+        subtitlesCSSStyle = style;
+        setSubtitlesCSSStyle(subtitlesCSSStyle);
+    }
+
     function metricChanged(e) {
         var metrics,
         point;
@@ -377,17 +392,17 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
                 $scope.videoBufferLength = metrics.bufferLengthValue;
                 $scope.videoDroppedFrames = metrics.droppedFramesValue;
 
-                if (metrics.movingLatency["video"]) {
-                    $scope.videoLatencyCount = metrics.movingLatency["video"].count;
-                    $scope.videoLatency = metrics.movingLatency["video"].low.toFixed(3) + " < " + metrics.movingLatency["video"].average.toFixed(3) + " < " + metrics.movingLatency["video"].high.toFixed(3);
+                if (metrics.movingLatency['video']) {
+                    $scope.videoLatencyCount = metrics.movingLatency['video'].count;
+                    $scope.videoLatency = metrics.movingLatency['video'].low.toFixed(3) + " < " + metrics.movingLatency['video'].average.toFixed(3) + " < " + metrics.movingLatency['video'].high.toFixed(3);
                 }
-                if (metrics.movingDownload["video"]) {
-                    $scope.videoDownloadCount = metrics.movingDownload["video"].count;
-                    $scope.videoDownload = metrics.movingDownload["video"].low.toFixed(3) + " < " + metrics.movingDownload["video"].average.toFixed(3) + " < " + metrics.movingDownload["video"].high.toFixed(3);
+                if (metrics.movingDownload['video']) {
+                    $scope.videoDownloadCount = metrics.movingDownload['video'].count;
+                    $scope.videoDownload = metrics.movingDownload['video'].low.toFixed(3) + " < " + metrics.movingDownload['video'].average.toFixed(3) + " < " + metrics.movingDownload['video'].high.toFixed(3);
                 }
-                if (metrics.movingRatio["video"]) {
-                    $scope.videoRatioCount = metrics.movingRatio["video"].count;
-                    $scope.videoRatio = metrics.movingRatio["video"].low.toFixed(3) + " < " + metrics.movingRatio["video"].average.toFixed(3) + " < " + metrics.movingRatio["video"].high.toFixed(3);
+                if (metrics.movingRatio['video']) {
+                    $scope.videoRatioCount = metrics.movingRatio['video'].count;
+                    $scope.videoRatio = metrics.movingRatio['video'].low.toFixed(3) + " < " + metrics.movingRatio['video'].average.toFixed(3) + " < " + metrics.movingRatio['video'].high.toFixed(3);
                 }
 
                 if ($('#sliderBitrate').labeledslider( "option", "max" ) === 0) {
@@ -468,29 +483,23 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         metrics = getCribbedMetricsFor("audio");
         if (metrics) {
 
-            if (initAudioTracks) {
-                $scope.audioTracks = player.getAudioTracks();
-                $scope.audioData = $scope.audioTracks[0];
-                initAudioTracks = false;
-            }
-
             $scope.audioBitrate = metrics.bandwidthValue;
             $scope.audioIndex = metrics.bitrateIndexValue;
             $scope.audioPendingIndex = metrics.pendingIndex;
             $scope.audioMaxIndex = metrics.numBitratesValue;
             $scope.audioBufferLength = metrics.bufferLengthValue;
             $scope.audioDroppedFrames = metrics.droppedFramesValue;
-            if (metrics.movingLatency["audio"]) {
-                $scope.audioLatencyCount = metrics.movingLatency["audio"].count;
-                $scope.audioLatency = metrics.movingLatency["audio"].low.toFixed(3) + " < " + metrics.movingLatency["audio"].average.toFixed(3) + " < " + metrics.movingLatency["audio"].high.toFixed(3);
+            if (metrics.movingLatency['audio']) {
+                $scope.audioLatencyCount = metrics.movingLatency['audio'].count;
+                $scope.audioLatency = metrics.movingLatency['audio'].low.toFixed(3) + " < " + metrics.movingLatency['audio'].average.toFixed(3) + " < " + metrics.movingLatency['audio'].high.toFixed(3);
             }
-            if (metrics.movingDownload["audio"]) {
-                $scope.audioDownloadCount = metrics.movingDownload["audio"].count;
-                $scope.audioDownload = metrics.movingDownload["audio"].low.toFixed(3) + " < " + metrics.movingDownload["audio"].average.toFixed(3) + " < " + metrics.movingDownload["audio"].high.toFixed(3);
+            if (metrics.movingDownload['audio']) {
+                $scope.audioDownloadCount = metrics.movingDownload['audio'].count;
+                $scope.audioDownload = metrics.movingDownload["audio"].low.toFixed(3) + " < " + metrics.movingDownload['audio'].average.toFixed(3) + " < " + metrics.movingDownload['audio'].high.toFixed(3);
             }
-            if (metrics.movingRatio["audio"]) {
-                $scope.audioRatioCount = metrics.movingRatio["audio"].count;
-                $scope.audioRatio = metrics.movingRatio["audio"].low.toFixed(3) + " < " + metrics.movingRatio["audio"].average.toFixed(3) + " < " + metrics.movingRatio["audio"].high.toFixed(3);
+            if (metrics.movingRatio['audio']) {
+                $scope.audioRatioCount = metrics.movingRatio['audio'].count;
+                $scope.audioRatio = metrics.movingRatio['audio'].low.toFixed(3) + " < " + metrics.movingRatio['audio'].average.toFixed(3) + " < " + metrics.movingRatio['audio'].high.toFixed(3);
             }
 
             point = [parseFloat(video.currentTime), Math.round(parseFloat(metrics.bufferLengthValue))];
@@ -499,14 +508,6 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
             if (audioSeries.length > maxGraphPoints) {
                 audioSeries.splice(0, 1);
             }
-        }
-    }
-
-    if (e.data.stream == "text") {
-        if (initTextTracks) {
-            $scope.textTracks = player.getSubtitleTracks();
-            $scope.textData = $scope.textTracks[0];
-            initTextTracks = false;
         }
     }
 
@@ -521,7 +522,34 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     ////////////////////////////////////////
 
     function onError(e) {
-        console.error(e);
+        console.error("an error has occured with error code = "+e.event.code);
+
+        switch (e.event.code) {
+            case "DOWNLOAD_ERR_MANIFEST" :
+            case "DOWNLOAD_ERR_SIDX" :
+            case "DOWNLOAD_ERR_CONTENT" :
+            case "DOWNLOAD_ERR_INIT" :  
+                 console.error(" url :\""+e.event.data.url+"\" and request response :\""+ e.event.data.request.responseXML+"\"");
+                 break;
+            case "MANIFEST_ERR_CODEC" :
+            case "MANIFEST_ERR_PARSE" :
+            case "MANIFEST_ERR_NOSTREAM" :
+                 console.error("Manifest URL was "+e.event.data.mpdUrl+" with message :\""+e.event.message+"\"");
+                 break;
+            case "CC_ERR_PARSE" : 
+                 console.error("message :\""+e.event.message+"\" for content = "+e.event.data);
+                 break;
+            default :
+                 if (e.event.message) {
+                    console.error("message :\""+e.event.message+"\"");
+                 }
+                 break;
+        };
+
+        if (e.event.code != "HASPLAYER_INIT_ERROR") {
+            //stop
+            player.reset();
+        }
     }
 
     ////////////////////////////////////////
@@ -577,12 +605,30 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
     ////////////////////////////////////////
     //
+    // Configuration file
+    //
+    ////////////////////////////////////////
+    var reqConfig = new XMLHttpRequest();
+    reqConfig.onload = function() {
+        if (reqConfig.status === 200) {
+            config = JSON.parse(reqConfig.responseText);
+            if (player) {
+                player.setConfig(config);
+            }
+        }
+    };
+    reqConfig.open("GET", "hasplayer_config.json", true);
+    reqConfig.setRequestHeader("Content-type", "application/json");
+    reqConfig.send();
+
+    ////////////////////////////////////////
+    //
     // Player Setup
     //
     ////////////////////////////////////////
 
     video = document.querySelector(".dash-video-player video");
-    context = new Custom.di.CustomContext();
+    context = new MediaPlayer.di.Context();
     player = new MediaPlayer(context);
     
     $scope.version = player.getVersion();
@@ -593,14 +639,23 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     player.startup();
     player.addEventListener("error", onError.bind(this));
     player.addEventListener("metricChanged", metricChanged.bind(this));
+    player.addEventListener("subtitlesStyleChanged",onSubtitlesStyleChanged.bind(this));
+    video.addEventListener("loadeddata", onload.bind(this));
+    video.addEventListener("fullscreenchange", onFullScreenChange.bind(this));
+    video.addEventListener("mozfullscreenchange", onFullScreenChange.bind(this));
+    video.addEventListener("webkitfullscreenchange", onFullScreenChange.bind(this));
     player.attachView(video);
     player.setAutoPlay(true);
+    player.getDebug().setLevel(4);
+    if (config) {
+        player.setConfig(config);
+    }
     $scope.player = player;
     $scope.videojsIsOn = false;
     
     $scope.activateVideoJS = function() {
         if(!$scope.videojsIsOn) {
-            videojs(video, { "controls": true, "autoplay": true, "preload": "auto" }); 
+            videojs(video, { "controls": true, "autoplay": true, "preload": "auto" });
         }
         $scope.videojsIsOn = true;
     };
@@ -639,7 +694,31 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         player.setQualityFor(type, newQuality);
     };
 
+    $scope.playbackRateUp = function () {
 
+        if (video.playbackRate === 64.0) {
+            return;
+        }
+
+        video.playbackRate = video.playbackRate * 2;
+        $scope.playbackRate = "x" + video.playbackRate;
+        player.setAutoSwitchQuality(false);
+        player.setQualityFor('video', 0);
+    };
+
+    $scope.playbackRateDown = function () {
+
+        if (video.playbackRate === 1.0) {
+            return;
+        }
+
+        video.playbackRate = video.playbackRate / 2;
+        $scope.playbackRate = "x" + video.playbackRate;
+
+        if (video.playbackRate === 1.0) {
+            player.setAutoSwitchQuality(true);
+        }
+    };
 
     ////////////////////////////////////////
     //
@@ -746,20 +825,43 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         $scope.selectedItem = item;
     };
 
-
+    function resetBitratesSlider () {
+        $('#sliderBitrate').labeledslider({
+                    max: 0,
+                    step: 1,
+                    values: [0],
+                    tickLabels: [],
+                    orientation: 'vertical',
+                    range: true,
+                    stop: function(evt, ui) {
+                        player.setConfig( {
+                            "video": {
+                                "ABR.minQuality": ui.values[0],
+                                "ABR.maxQuality": ui.values[1]
+                        }
+                });
+            }
+        });        
+    }
     function initPlayer() {
-        initAudioTracks = initTextTracks = true;
         
         function DRMParams() {
             this.backUrl = null;
             this.customData = null;
         }
+        
+        resetBitratesSlider();
+        
+        //ORANGE : reset subtitles data.
+        $scope.textTracks = null;
+        $scope.textData = null;
 
-        // ORANGE: add licenser backUrl parameter and customData
-        var params = new DRMParams();
-        params.backUrl = $scope.selectedItem.backUrl;
-        params.customData = $scope.selectedItem.customData;
-        player.attachSource($scope.selectedItem.url, params);
+        // ORANGE: reset ABR controller
+        player.setQualityFor("video", 0);
+        player.setQualityFor("audio", 0);
+
+        $scope.playbackRate = "x1";
+        player.attachSource($scope.selectedItem.url, $scope.selectedItem.protData);
     }
 
     $scope.doLoad = function () {
@@ -812,6 +914,3 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         }
     }
 }]);
-
-
-

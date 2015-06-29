@@ -542,13 +542,13 @@
                 throw new Error( 1120 );
             }
             key = key || 'global';
-            handler = handler || eventName;
+            //handler = handler || eventName;
 
             if ( this._handlers.hasOwnProperty( eventName ) && this._handlers[ eventName ].hasOwnProperty( key ) ) {
                 var handlers = this._handlers[ eventName ][ key ];
                 for ( var i in handlers ) {
                     var config = handlers[ i ];
-                    if ( config.handler === handler ) {
+                    if ( (!handler) || (config.handler === handler) ) {
                         handlers.splice( i, 1 );
                         break;
                     }

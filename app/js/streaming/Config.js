@@ -1,10 +1,10 @@
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2014, Orange
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
@@ -16,46 +16,29 @@
 MediaPlayer.utils.Config = function () {
     "use strict";
 
-    var DEFAULT_CONFIG_FILE = "hasplayer_config.json",
-
-        paramsType = ["video", "audio"],
+    var paramsType = ["video", "audio"],
 
         // Default configuration, provides list of possible parameters
         params = {
-            "ABR.switchIncremental": false,
+            // BufferController parameters
+            "BufferController.minBufferTimeForPlaying": -1,
+            "BufferController.minBufferTime": -1,
+            // ABR parameters
             "ABR.minBandwidth": -1,
             "ABR.maxBandwidth": -1,
             "ABR.minQuality": -1,
             "ABR.maxQuality": -1,
+            "ABR.switchUpIncrementally": false,
+            "ABR.switchUpRatioSafetyFactor": -1,
+            "ABR.latencyInBandwidth": true,
+            "ABR.switchDownBufferTime": -1,
+            "ABR.switchDownBufferRatio": -1,
             // Video parameters
             "video": {
-                "ABR.switchIncremental": false,
-                "ABR.minBandwidth": -1,
-                "ABR.maxBandwidth": -1,
-                "ABR.minQuality": -1,
-                "ABR.maxQuality": -1
             },
             // Audio parameters
             "audio": {
-                "ABR.switchIncremental": false,
-                "ABR.minBandwidth": -1,
-                "ABR.maxBandwidth": -1,
-                "ABR.minQuality": -1,
-                "ABR.maxQuality": -1
             },
-        },
-
-        downloadConfigFile = function (url) {
-            var req = new XMLHttpRequest();
-            req.open("GET", url, true);
-            req.setRequestHeader("Content-type", "application/json");
-            req.onreadystatechange = function() {
-                if ((req.readyState == 4) && (req.status == 200)) {
-                    var config = JSON.parse(req.responseText);
-                    doSetParams(config);
-                }
-            };
-            req.send();
         },
 
         doSetParams = function (newParams) {
@@ -64,14 +47,17 @@ MediaPlayer.utils.Config = function () {
                 typeItem;
 
             for (item in newParams) {
-                // check if type parameters
-                if (paramsType.indexOf(item) > -1) {
-                    typeParams = newParams[item];
-                    for (typeItem in typeParams) {
-                        params[item][typeItem] = newParams[item][typeItem];
+                // Check if comment
+                if (item.indexOf('//') === -1) {
+                    // Check if type parameters
+                    if (paramsType.indexOf(item) > -1) {
+                        typeParams = newParams[item];
+                        for (typeItem in typeParams) {
+                            params[item][typeItem] = newParams[item][typeItem];
+                        }
+                    } else {
+                        params[item] = newParams[item];
                     }
-                } else {
-                    params[item] = newParams[item];
                 }
             }
         },
@@ -79,7 +65,7 @@ MediaPlayer.utils.Config = function () {
         getParam = function (params, name, type, def) {
             var value = params[name];
 
-            if (value === undefined) {
+            if ((value === undefined) || (value === -1)) {
                 return def;
             }
 
@@ -108,19 +94,17 @@ MediaPlayer.utils.Config = function () {
         doGetParamFor = function (key, name, type, def) {
             var typeParams = params[key];
 
-            if (typeParams === undefined) {
-                return getParam(params, name, type, def);
+            if ((typeParams !== undefined) && (typeParams[name] !== undefined)) {
+                return getParam(typeParams, name, type, def);
             }
 
-            return getParam(typeParams, name, type, def);
+            return getParam(params, name, type, def);
         };
 
     return {
         debug: undefined,
 
         setup: function () {
-            // Download default configuration file
-          //  downloadConfigFile(DEFAULT_CONFIG_FILE);
         },
 
         setParams: function (newParams) {

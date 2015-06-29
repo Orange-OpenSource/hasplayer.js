@@ -21,11 +21,16 @@
 	}
 
 	</style>
-	<script type="text/javascript">
 
+	<script src="build/hasplayer.js"></script>
+
+
+	<script type="text/javascript">
+		var DEBUG = true;
 		var capablities = {
 
 			mediaKeys:null,
+			encryptedEventSent:false,
 
 		    supportsMediaSource: function () {
 		        "use strict";
@@ -39,13 +44,81 @@
 		    supportsMediaKeys: function () {
 		        "use strict";
 
-		        this.mediaKeys = (window.WebKitMediaKeys) || (window.MSMediaKeys) || (window.MediaKeys);
+		        var hasWebKitMediaKeys = ("WebKitMediaKeys" in window),
+		            hasMsMediaKeys = ("MSMediaKeys" in window),
+		            hasMediaKeys = ("MediaKeys" in window);
 
-		        var hasMediaKeys = this.mediaKeys !== null;
+		        if (hasWebKitMediaKeys) {
+		            this.mediaKeys = window.WebKitMediaKeys;
+		        } else if (hasMsMediaKeys) {
+		            this.mediaKeys = window.MSMediaKeys
+		        } else if (hasMediaKeys) {
+		            this.mediaKeys = window.MediaKeys;
+		        }
 
-		        return hasMediaKeys;
+		        return (hasWebKitMediaKeys || hasMsMediaKeys || hasMediaKeys);
 		    },
+		    detectEME: function (){
+		    	"use strict";
 
+		    	var EMEVersion = document.getElementById("EMEVersion");
+
+		    	var eme = this.supportsMediaKeys();
+
+		    	var video = document.getElementById('testVideo');
+				if (eme) {
+					var onEncrypted = function(event)
+	                {
+	                	EMEVersion.innerHTML = "28-08-2014  : needkey event has been replaced by encrypted event";
+	                	this.encryptedEventSent = true;
+	                };
+
+					var onNeedKey = function(event)
+	                {
+	                	if (!this.encryptedEventSent){
+		                	if (event.type === undefined) {
+		                		EMEVersion.innerHTML = "10-05-2013 : event.type is undefined";
+		                	}
+		                	else
+		                	{	
+		                		if (this.mediaKeys.create)
+		                		{
+		                			EMEVersion.innerHTML = "28-08-2014  : create function is defined on mediaKeys object";
+		                		}
+		                		else if (this.mediaKeys.loadSession === undefined) {
+									EMEVersion.innerHTML = "22-10-2013 : loadSession on mediaKeys object is undefined";
+				    			}
+								else {
+		                			EMEVersion.innerHTML = "18-02-2014 : needkey event has been fired, not encrypted event, and loadSession is defined";
+		                		}
+		                	}
+		                }
+	                };
+
+	                var onError = function(event) {
+						alert('error');
+	                };
+
+	                video.addEventListener('error', onError.bind(this), true);
+
+			    	video.addEventListener('webkitneedkey', onNeedKey.bind(this), true);
+			    	video.addEventListener('needkey', onNeedKey.bind(this), true);
+			    	video.addEventListener('msneedkey', onNeedKey.bind(this), true);
+
+					video.addEventListener('encrypted', onEncrypted.bind(this), true);
+					video.addEventListener('webkitencrypted', onEncrypted.bind(this), true);
+			    	video.addEventListener('msencrypted', onEncrypted.bind(this), true);
+
+					var player = new MediaPlayer(new Custom.di.CustomContext());
+				    
+				    player.startup();
+				    player.attachView(video);
+				    player.setAutoPlay(true);
+				    player.attachSource("http://wams.edgesuite.net/media/SintelTrailer_Smooth_from_WAME_720p_Main_Profile_CENC/CENC/sintel_trailer-720p.ism/manifest(format=mpd-time-csf)");
+				}else {
+					EMEVersion.innerHTML = "EME not Supported."
+				}
+		    },
 		    
 		    supportsCodec: function (codec) {
 		        "use strict";
@@ -58,10 +131,9 @@
 
 		    supportsFlavor: function(codec, flavor){
 		    	this.supportsMediaKeys();
-	    		//console.info(this.mediaKeys, this.mediaKeys.isTypeSupported);
 	    		
 		    	if(this.mediaKeys && this.mediaKeys.isTypeSupported){
-		    		return this.mediaKeys.isTypeSupported(flavor,codec);
+					return this.mediaKeys.isTypeSupported(flavor,codec);
 		    	}else{
 		    		// for chrome ... use canPlayType which is not for that
 		    		var video = document.createElement("video");
@@ -99,13 +171,14 @@
 			WIDEVINE.className = (capablities.supportsFlavor(webMCodec, "com.widevine.alpha")? "ok" : "ko");
 			CLEARKEY.className = (capablities.supportsFlavor(mp4Codec, "org.w3.clearkey")? "ok" : "ko");
 			WKCLEARKEY.className = (capablities.supportsFlavor(mp4Codec, "webkit-org.w3.clearkey")? "ok" : "ko");
+			capablities.detectEME();
 		}
 	</script>
 </head>
 <body onload="doTest()">
 	<h1>MSE/EME capability testing</h1>
 	<div id="userAgent"></div>
-
+  	<video id="testVideo" controls width=300 height=200></video>
 	<table>
 		<tr><td>MSE Extension</td><td><span id="MSE"></span></td></tr>
 		<tr><td>EME Extension</td><td><span id="EME"></span></td></tr>
@@ -116,6 +189,7 @@
 		<tr><td>MP4 with Widevine DRM</td><td><span id="MP4Ww"></span></td></tr>
 		<tr><td>MP4 with Clear Key system</td><td><span id="MP4Ck"></span></td></tr>
 		<tr><td>MP4 with Clear Key system (webkit-org)</td><td><span id="MP4CkWk"></span></td></tr>
+		<tr><td>EME Working Draft version</td><td><span id="EMEVersion"></span></td></tr>
 	</table>
 
 </body>
