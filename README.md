@@ -33,6 +33,9 @@ If your goal is to improve or extend the code and contribute back to this projec
 4. You can also check for other available targter by running:
     * grunt help
 
+The build task can be configured in order to select supported protocol(s) and to integrate or not EME support. For exemple:
+    * grunt build -protocol mss -no-protection ( = mss support only, no EME support)
+
 ## Demo
 
 A builded version of the hasplayer.js and samples is available ah this address:
@@ -57,11 +60,11 @@ Add hasplayer.js to the end of the body.
   <script src="yourPathToHasplayer/hasplayer.js"></script>
 </body>
 ```
-Now comes the good stuff. We need to create a 'custom' context (inherited from dash context and adding Smooth Streaming and HLS stuff). Then from that context we create a media player, initialize it, attach it to our "videoPlayer" and then tell it where to get the video from. We will do this in an anonymous self executing function, that way it will run as soon as the page loads. So, here is how we do it:
+Now comes the good stuff. We need to create a context. Then from that context we create a media player, initialize it, attach it to our "videoPlayer" and then tell it where to get the video from. We will do this in an anonymous self executing function, that way it will run as soon as the page loads. So, here is how we do it:
 ``` js
 (function(){
     var url = "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest";
-    var context = new Custom.di.CustomContext();
+    var context = new MediaPlayer.di.Context();
     var player = new MediaPlayer(context);
     player.startup();
     player.attachView(document.querySelector("#videoPlayer"));
@@ -84,7 +87,7 @@ When it is all done, it should look similar to this:
         <script>
             (function(){
                 var url = "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest";
-                var context = new Custom.di.CustomContext();
+                var context = new MediaPlayer.di.Context();
                 var player = new MediaPlayer(context);
                 player.startup();
                 player.attachView(document.querySelector("#videoPlayer"));
