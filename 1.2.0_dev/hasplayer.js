@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 24.6.2015_21:44:2 / git revision : 0795739d3 */
+/* Last build : 29.6.2015_21:44:1 / git revision : 47b121d */
 (function(definition) {
     Q = definition();
 })(function() {
@@ -5930,7 +5930,7 @@ mpegts.h264.NALUTYPE_AU_DELIMITER = 9;
 
 MediaPlayer = function(aContext) {
     "use strict";
-    var VERSION = "1.2.0", VERSION_HAS = "1.2.0_dev", GIT_TAG = "0795739d3", BUILD_DATE = "24.6.2015_21:44:2", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, isReady = function() {
+    var VERSION = "1.2.0", VERSION_HAS = "1.2.0_dev", GIT_TAG = "47b121d", BUILD_DATE = "29.6.2015_21:44:1", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, isReady = function() {
         return !!element && !!source;
     }, play = function() {
         if (!initialized) {
@@ -6480,7 +6480,7 @@ MediaPlayer.utils.Capabilities.prototype = {
             throw "element must be of type HTMLMediaElement.";
         }
         var canPlay = element.canPlayType(codec);
-        return canPlay === "probably";
+        return canPlay === "probably" || canPlay === "maybe";
     }
 };
 
@@ -6524,11 +6524,11 @@ MediaPlayer.utils.EventBus = function() {
 MediaPlayer.utils.Debug = function() {
     "use strict";
     Date.prototype.HHMMSSmmm = function() {
-        var h = this.getHours().toString(), m = this.getMinutes().toString(), s = this.getSeconds().toString(), ms = this.getSeconds().toString(), HH = h[1] ? h : "0" + h[0], MM = m[1] ? m : "0" + m[0], SS = s[1] ? s : "0" + s[0], mmm = ms[2] ? ms : "0" + (ms[1] ? ms : "0" + ms[0]);
+        var h = this.getHours().toString(), m = this.getMinutes().toString(), s = this.getSeconds().toString(), ms = this.getMilliseconds().toString(), HH = h[1] ? h : "0" + h[0], MM = m[1] ? m : "0" + m[0], SS = s[1] ? s : "0" + s[0], mmm = ms[2] ? ms : "0" + (ms[1] ? ms : "0" + ms[0]);
         return HH + ":" + MM + ":" + SS + "." + mmm;
     };
     Date.prototype.MMSSmmm = function() {
-        var m = this.getMinutes().toString(), s = this.getSeconds().toString(), ms = this.getSeconds().toString(), MM = m[1] ? m : "0" + m[0], SS = s[1] ? s : "0" + s[0], mmm = ms[2] ? ms : "0" + (ms[1] ? ms : "0" + ms[0]);
+        var m = this.getMinutes().toString(), s = this.getSeconds().toString(), ms = this.getMilliseconds().toString(), MM = m[1] ? m : "0" + m[0], SS = s[1] ? s : "0" + s[0], mmm = ms[2] ? ms : "0" + (ms[1] ? ms : "0" + ms[0]);
         return MM + ":" + SS + "." + mmm;
     };
     var logToBrowserConsole = true, NONE = 0, ERROR = 1, WARN = 2, INFO = 3, DEBUG = 4, ALL = 4, level = 4, showTimestamp = true, showElapsedTime = false, startTime = new Date(), _log = function(logLevel, args) {
@@ -9267,7 +9267,7 @@ MediaPlayer.dependencies.Stream = function() {
         if (videoRange === null) {
             return;
         }
-        startTime = videoRange.start + .5;
+        startTime = videoRange.start;
         if (audioController) {
             audioRange = self.sourceBufferExt.getBufferRange(audioController.getBuffer(), initialSeekTime, 2);
             if (audioRange === null) {
@@ -14820,7 +14820,7 @@ Dash.dependencies.DashHandler = function() {
         var baseURL = representation.adaptation.period.mpd.manifest.Period_asArray[representation.adaptation.period.index].AdaptationSet_asArray[representation.adaptation.index].Representation_asArray[representation.index].BaseURL, url;
         if (destination === baseURL) {
             url = destination;
-        } else if (destination.indexOf("http://") !== -1) {
+        } else if (destination.indexOf("http://") !== -1 || destination.indexOf("https://") !== -1) {
             url = destination;
         } else {
             url = baseURL + destination;
