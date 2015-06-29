@@ -19,7 +19,7 @@ MediaPlayer.utils.Debug = function () {
         var h = this.getHours().toString(),
             m = this.getMinutes().toString(),
             s = this.getSeconds().toString(),
-            ms = this.getSeconds().toString(),
+            ms = this.getMilliseconds().toString(),
             HH = h[1] ? h : "0" + h[0],
             MM = m[1] ? m : "0" + m[0],
             SS = s[1] ? s : "0" + s[0],
@@ -32,7 +32,7 @@ MediaPlayer.utils.Debug = function () {
 
         var m = this.getMinutes().toString(),
             s = this.getSeconds().toString(),
-            ms = this.getSeconds().toString(),
+            ms = this.getMilliseconds().toString(),
             MM = m[1] ? m : "0" + m[0],
             SS = s[1] ? s : "0" + s[0],
             mmm = ms[2] ? ms : "0" + (ms[1] ? ms : "0" + ms[0]);
