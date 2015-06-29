@@ -119,7 +119,7 @@ Dash.dependencies.DashHandler = function () {
 
             if (destination === baseURL) {
                 url = destination;
-            } else if (destination.indexOf("http://") !== -1) {
+            } else if ((destination.indexOf("http://") !== -1) || (destination.indexOf("https://") !== -1)) {
                 url = destination;
             } else {
                 url = baseURL + destination;
