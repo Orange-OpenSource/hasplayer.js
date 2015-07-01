@@ -2,14 +2,8 @@
     "items": [
         {
             "type":"HLS",
-            "name":"LIVE Envivio - Arte",
-            "url":"http://iphone.envivio.tv/iphone/downLoads/ch1/index.m3u8",
-            "browsers":"cdsbi"
-        },
-        {
-            "type":"HLS",
-            "name":"LIVE Envivio - BBC",
-            "url":"http://iphone.envivio.tv/iphone/downLoads/ch6/index.m3u8",
+            "name":"Apple BipBop",
+            "url":"http://devimages.apple.com/iphone/samples/bipbop/bipbopall.m3u8",
             "browsers":"cdsbi"
         },
         {
