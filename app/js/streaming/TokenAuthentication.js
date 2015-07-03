@@ -57,6 +57,10 @@ MediaPlayer.utils.TokenAuthentication = function () {
                 request.setRequestHeader(tokenAuthentication.name, tokenAuthentication.token);
                 this.debug.log(tokenAuthentication.name+" is being set in the request header with a value of : " + tokenAuthentication.token);
 
+            } else if (tokenAuthentication.type === MediaPlayer.utils.TokenAuthentication.TYPE_CREDENTIALS) {
+            	
+            	request.withCredentials = !!tokenAuthentication.token;
+            	this.debug.log("withCredentials is being set in the request with a value of : " + request.withCredentials);
             }
 
             return request;
@@ -66,3 +70,4 @@ MediaPlayer.utils.TokenAuthentication = function () {
 
 MediaPlayer.utils.TokenAuthentication.TYPE_QUERY = "query";
 MediaPlayer.utils.TokenAuthentication.TYPE_HEADER = "header";
+MediaPlayer.utils.TokenAuthentication.TYPE_CREDENTIALS = "credentials";
