@@ -15,6 +15,7 @@ var chartXaxisWindow = 30;
 // the number of plots
 var plotCount = (chartXaxisWindow * 1000) / updateIntervalLength;
 
+var enableNetBalancer = false
 var serviceNetBalancerEnabled = true;
 var netBalancerLimitValue = 0;
 var netBalancerLimitSetted = true;
@@ -54,6 +55,10 @@ function hideNetworkLimiter() {
 }
 
 function sendNetBalancerLimit(activate, limit) {
+    if (enableNetBalancer === false) {
+        return;
+    }
+
     var http = new XMLHttpRequest(),
         data = {'NetBalancerLimit':{'activate':activate, 'upLimit':limit}};
 
@@ -77,6 +82,10 @@ function sendNetBalancerLimit(activate, limit) {
 
 function initNetBalancerSlider() {
     var initBW = 5000;
+
+    if (enableNetBalancer === false) {
+        return;
+    }
 
     $('#sliderNetworkBandwidth').labeledslider({
         max: 5000,
@@ -581,6 +590,8 @@ function parseUrlParams () {
                 enableMetrics = true;
             } else if ((name === 'debug') && (value !== 'false')) {
                 document.getElementById('debugInfos').style.visibility="visible";
+            } else if (name === 'netBalancer') {
+                enableNetBalancer = true;
             } else {
                 streamSource += '&' + params[i];
             }
@@ -593,7 +604,7 @@ function metricUpdated(e) {
 
     if (e.data.stream == "video" && e.data.metric == "HttpRequestTrace") {
         metric = e.data.value;
-        if (metric.tfinish != null && !netBalancerLimitSetted) {
+        if (metric.tfinish != null && enableNetBalancer && !netBalancerLimitSetted) {
             console.log("Set NetBalancer Limit"+netBalancerLimitValue);
             sendNetBalancerLimit(true, (netBalancerLimitValue * 1000));
             netBalancerLimitSetted = true;
