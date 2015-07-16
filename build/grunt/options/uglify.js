@@ -16,7 +16,8 @@ module.exports = function() {
                 beautify: true,
                 compress: false,
                 mangle: false,
-                banner: '//COPYRIGHT/* Last build : @@TIMESTAMP / git revision : @@REVISION */\n'
+                banner: '//COPYRIGHT/* Last build : @@TIMESTAMP / git revision : @@REVISION */\n /* jshint ignore:start */\n',
+                footer: '\n/* jshint ignore:end */'
             }
         },
 
