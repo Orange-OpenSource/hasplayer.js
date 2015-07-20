@@ -50,7 +50,15 @@
         },
 
         clearCurrentMetricsForType: function (type) {
-            delete this.streamMetrics[type];
+            //delete this.streamMetrics[type];
+
+            for (var prop in this.streamMetrics[type]) {
+                // We keep HttpList in order to keep bandwidth conditions when switching the input stream
+                if (this.streamMetrics[type].hasOwnProperty(prop) && (prop !== "HttpList")) {
+                    this.streamMetrics[type][prop] = [];
+                }
+            }
+
             this.metricChanged(type);
         },
 
@@ -58,12 +66,12 @@
             var self = this;
 
             for (var prop in this.streamMetrics) {
-                if (this.streamMetrics.hasOwnProperty(prop)) {
+                if (this.streamMetrics.hasOwnProperty(prop) && (prop === "stream")) {
                     delete this.streamMetrics[prop];
                 }
             }
 
-            this.streamMetrics = {};
+            //this.streamMetrics = {};
             this.metricsChanged.call(self);
         },
 
