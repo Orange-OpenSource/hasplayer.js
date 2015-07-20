@@ -1,4 +1,4 @@
-/* Last build : 20.7.2015_10:27:50 / git revision : 2082efe */
+/* Last build : 20.7.2015_10:41:35 / git revision : f1bf19a */
 var cast = window.cast || {};
 
 (function() {
@@ -699,6 +699,7 @@ function onLoad() {
     if (hideMetricsAtStart) {
         hideMetrics();
     }
+    launchPlayer();
 }
 
 function onUnload() {
