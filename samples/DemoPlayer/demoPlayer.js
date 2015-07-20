@@ -694,6 +694,8 @@ function onLoad () {
 		//currentIdToToggle = idsToToggle.length;
 		hideMetrics();
     }
+
+    launchPlayer();
 }
 
 function onUnload () {
