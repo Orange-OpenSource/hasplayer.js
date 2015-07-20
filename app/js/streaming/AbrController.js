@@ -17,6 +17,7 @@ MediaPlayer.dependencies.AbrController = function () {
     var autoSwitchBitrate = true,
         qualityDict = {},
         confidenceDict = {},
+        playerState = "",
 
         getInternalQuality = function (type) {
             var quality;
@@ -169,7 +170,7 @@ MediaPlayer.dependencies.AbrController = function () {
                         self.abrRulesCollection.getRules().then(
                             function (rules) {
                                 for (i = 0, len = rules.length; i < len; i += 1) {
-                                    funcs.push(rules[i].checkIndex(quality, metrics, data));
+                                    funcs.push(rules[i].checkIndex(quality, metrics, data, playerState));
                                 }
                                 Q.all(funcs).then(
                                     function (results) {
@@ -313,6 +314,10 @@ MediaPlayer.dependencies.AbrController = function () {
 
         getQualityFor: function (type) {
             return getInternalQuality(type);
+        },
+
+        setPlayerState: function(state) {
+            playerState = state;
         }
     };
 };

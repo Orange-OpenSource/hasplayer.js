@@ -130,6 +130,9 @@ MediaPlayer.dependencies.BufferController = function () {
                 return;
             }
 
+            // Notify ABR controller we start the buffering in order to adapt ABR rules
+            self.abrController.setPlayerState("buffering");
+
             if (seeking === false) {
                 currentTime = new Date();
                 clearPlayListTraceMetrics(currentTime, MediaPlayer.vo.metrics.PlayList.Trace.USER_REQUEST_STOP_REASON);
@@ -869,6 +872,8 @@ MediaPlayer.dependencies.BufferController = function () {
             if (stalled) {
                 if (bufferLevel > minBufferTimeAtStartup) {
                     setStalled.call(self, false);
+                    // Notify ABR controller we are no more buffering before playing
+                    this.abrController.setPlayerState("playing");
                 }
             }
 
