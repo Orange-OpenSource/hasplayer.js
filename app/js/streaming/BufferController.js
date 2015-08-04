@@ -636,13 +636,20 @@ MediaPlayer.dependencies.BufferController = function () {
         onBytesError = function (e) {
             var msgError = type + ": Failed to load a request at startTime = "+e.startTime,
                 data = {};
+
+            //if request.status = 0, it's an aborted request : do not load chunk from another bitrate, do not send
+            // error.
+            if (e.status !== undefined && e.status === 0 && !isRunning.call(this)) {
+                return;
+            }
+
             //if it's the first download error, try to load the same segment for a the lowest quality...
             if(this.ChunkMissingState === false)
             {
                 if (e.quality !== 0) {
                     currentRepresentation = getRepresentationForQuality.call(this, 0);
                     if (currentRepresentation !== undefined || currentRepresentation !== null) {
-                        loadNextFragment.call(this);
+                       return loadNextFragment.call(this);
                     }
                 }
             }

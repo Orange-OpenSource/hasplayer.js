@@ -258,6 +258,9 @@
                     //if status = 0, request has been aborted, do not retry....
                     if (reqerror.status !== 0) {
                         that.retry(req,d,that);
+                    }else{
+                        req.status = 0;
+                        d.reject(req);
                     }
             });
           }
@@ -319,7 +322,7 @@
             this.debug.log("[FragmentLoader] "+ln+" xhr requests to Abort.");
             for (i = 0; i < ln; i +=1) {
                 req = xhrs[i];
-                this.debug.log("[FragmentLoader]["+req.streamType+"] ### Abort XHR");
+                this.debug.log("[FragmentLoader] ### Abort XHR");
                 req.abort();
                 req = null;
             }
