@@ -34,7 +34,6 @@ MediaPlayer.dependencies.BufferController = function () {
         stalled = false,
         isDynamic = false,
         isBufferingCompleted = false,
-        deferredAppends = [],
         deferredStreamComplete = Q.defer(),
         deferredRejectedDataAppend = null,
         deferredBuffersFlatten = null,
@@ -276,7 +275,7 @@ MediaPlayer.dependencies.BufferController = function () {
             // ORANGE: add request and representations in function parameters, used by MssFragmentController
             self.fragmentController.process(response.data, request, availableRepresentations).then(
                 function (data) {
-                    if (data !== null/* && deferredInitAppend !== null*/) {
+                    if (data !== null) {
                         if(eventStreamAdaption.length > 0 || eventStreamRepresentation.length > 0) {
                             handleInbandEvents.call(self,data,request,eventStreamAdaption,eventStreamRepresentation).then(
                                 function(events) {
@@ -1049,10 +1048,6 @@ MediaPlayer.dependencies.BufferController = function () {
             self.debug.log("[BufferController]["+type+"] updateData");
 
             // Reset stored initialization segments
-            /*if (deferredInitAppend && Q.isPending(deferredInitAppend.promise)) {
-                deferredInitAppend.resolve();
-            }
-            deferredInitAppend = Q.defer();*/
             initializationData = [];
 
             // Update representations
@@ -1377,14 +1372,9 @@ MediaPlayer.dependencies.BufferController = function () {
 
             doStop.call(self);
 
-            //cancel(deferredLiveEdge);
-            //cancel(deferredInitAppend);
             cancel(deferredRejectedDataAppend);
             cancel(deferredBuffersFlatten);
             cancel(deferredFragmentBuffered);
-            // ORANGE: remove uncessary deferredAppends
-            deferredAppends.forEach(cancel);
-            deferredAppends = [];
             cancel(deferredStreamComplete);
             deferredStreamComplete = Q.defer();
 
