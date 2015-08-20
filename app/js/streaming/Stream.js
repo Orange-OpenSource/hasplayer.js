@@ -447,6 +447,8 @@ MediaPlayer.dependencies.Stream = function() {
             this.debug.info("[Stream] Starting playback at offset: " + initialSeekTime);
             // ORANGE: performs a programmatical seek only if initial seek time is different
             // from current time (live use case)
+            
+            isPaused = this.videoModel.isPaused(); 
             if (initialSeekTime !== this.videoModel.getCurrentTime()) {
                 // ORANGE: we start the <video> element at the real start time got from the video buffer
                 // once the first fragment has been appended (see onBufferUpdated)
