@@ -615,10 +615,6 @@ MediaPlayer = function(aContext) {
                 streamController.reset();
                 playing = false;
             }
-
-            if (isReady.call(this)) {
-                doAutoPlay.call(this);
-            }
         },
 
         /**
