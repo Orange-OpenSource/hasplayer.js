@@ -364,13 +364,15 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
 
     function setSubtitlesCSSStyle(style){
-        var fontSize = style.data.fontSize;
+        if(style){
+            var fontSize = style.data.fontSize;
 
-        if (style.data.fontSize[style.data.fontSize.length-1] ==='%') {
-            fontSize  = (video.clientHeight * style.data.fontSize.substr(0, style.data.fontSize.length-1))/100;
+            if (style.data.fontSize[style.data.fontSize.length-1] ==='%') {
+                fontSize  = (video.clientHeight * style.data.fontSize.substr(0, style.data.fontSize.length-1))/100;
+            }
+
+            document.getElementById("cueStyle").innerHTML = '::cue{ background-color:'+style.data.backgroundColor+';color:'+style.data.color+';font-size: '+fontSize+'px;font-family: '+style.data.fontFamily+'}';
         }
-
-        document.getElementById("cueStyle").innerHTML = '::cue{ background-color:'+style.data.backgroundColor+';color:'+style.data.color+';font-size: '+fontSize+'px;font-family: '+style.data.fontFamily+'}';
     }
 
 
@@ -408,7 +410,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
                 if ($('#sliderBitrate').labeledslider( "option", "max" ) === 0) {
                     var labels = [];
-                    for (var i = 0; i < metrics.bitrateValues.length; i++) {
+                    for (var i = 0; metrics.bitrateValues!= null && i < metrics.bitrateValues.length; i++) {
                         labels.push(Math.round(metrics.bitrateValues[i] / 1000) + "k");
                     }
 
@@ -424,7 +426,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
                 }
 
                 // case of downloaded quality change
-                if ((metrics.httpRequest !== null)  && (metrics.bitrateValues[metrics.httpRequest.quality] != previousDownloadedQuality)) {
+                if ((metrics.httpRequest !== null)  && (metrics.bitrateValues!== null && (metrics.bitrateValues[metrics.httpRequest.quality] != previousDownloadedQuality))) {
                 // save quality change for later when video currentTime = mediaStartTime
                 qualityChangements.push({
                     mediaStartTime : metrics.httpRequest.startTime,
