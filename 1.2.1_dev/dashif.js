@@ -1,4 +1,4 @@
-/* Last build : 23.7.2015_21:43:33 / git revision : b23f37f */
+/* Last build : 28.8.2015_14:33:58 / git revision : 1e73c4d */
  /* jshint ignore:start */
 (function() {
     var b = void 0, f = !0, j = null, l = !1;
@@ -28350,11 +28350,13 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
         setSubtitlesCSSStyle(subtitlesCSSStyle);
     }
     function setSubtitlesCSSStyle(style) {
-        var fontSize = style.data.fontSize;
-        if (style.data.fontSize[style.data.fontSize.length - 1] === "%") {
-            fontSize = video.clientHeight * style.data.fontSize.substr(0, style.data.fontSize.length - 1) / 100;
+        if (style) {
+            var fontSize = style.data.fontSize;
+            if (style.data.fontSize[style.data.fontSize.length - 1] === "%") {
+                fontSize = video.clientHeight * style.data.fontSize.substr(0, style.data.fontSize.length - 1) / 100;
+            }
+            document.getElementById("cueStyle").innerHTML = "::cue{ background-color:" + style.data.backgroundColor + ";color:" + style.data.color + ";font-size: " + fontSize + "px;font-family: " + style.data.fontFamily + "}";
         }
-        document.getElementById("cueStyle").innerHTML = "::cue{ background-color:" + style.data.backgroundColor + ";color:" + style.data.color + ";font-size: " + fontSize + "px;font-family: " + style.data.fontFamily + "}";
     }
     function onSubtitlesStyleChanged(style) {
         subtitlesCSSStyle = style;
@@ -28385,7 +28387,7 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
                 }
                 if ($("#sliderBitrate").labeledslider("option", "max") === 0) {
                     var labels = [];
-                    for (var i = 0; i < metrics.bitrateValues.length; i++) {
+                    for (var i = 0; metrics.bitrateValues != null && i < metrics.bitrateValues.length; i++) {
                         labels.push(Math.round(metrics.bitrateValues[i] / 1e3) + "k");
                     }
                     $("#sliderBitrate").labeledslider({
@@ -28405,7 +28407,7 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
                         }
                     });
                 }
-                if (metrics.httpRequest !== null && metrics.bitrateValues[metrics.httpRequest.quality] != previousDownloadedQuality) {
+                if (metrics.httpRequest !== null && (metrics.bitrateValues !== null && metrics.bitrateValues[metrics.httpRequest.quality] != previousDownloadedQuality)) {
                     qualityChangements.push({
                         mediaStartTime: metrics.httpRequest.startTime,
                         switchedQuality: metrics.bitrateValues[metrics.httpRequest.quality],
