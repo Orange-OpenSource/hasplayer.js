@@ -50,7 +50,7 @@ module.exports = function(grunt) {
                 '<%= preprocesspath %>/Context.js' : '<%= rootpath %>/app/js/streaming/Context.js',
                 '<%= preprocesspath %>/playerSrc.html' : '<%= rootpath %>/samples/playerSrc.html',
                 '<%= preprocesspath %>/Stream.js' : '<%= rootpath %>/app/js/streaming/Stream.js',
-                '<%= preprocesspath %>/MssParser.js' : '<%= rootpath %>/app/js/mss/dependencies/MssParser.js'
+                '<%= preprocesspath %>/MssParser.js' : '<%= rootpath %>/app/js/mss/MssParser.js'
             }
         }
     };
