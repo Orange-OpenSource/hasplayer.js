@@ -138,6 +138,8 @@ MediaPlayer.dependencies.BufferController = function () {
                 playListMetrics = this.metricsModel.addPlayList(type, currentTime, 0, MediaPlayer.vo.metrics.PlayList.INITIAL_PLAY_START_REASON);
             }
 
+            this.metricsModel.addState(type, "buffering", this.videoModel.getCurrentTime());
+
             if (isBufferingCompleted) {
                 isBufferingCompleted = false;
             }
