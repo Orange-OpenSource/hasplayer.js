@@ -158,7 +158,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
         },
 
         onKeyError = function (event) {
-            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, event.data.error);
+            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, event.data);
         },
 
         onKeySessionClosed = function(event) {
