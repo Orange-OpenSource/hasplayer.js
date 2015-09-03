@@ -888,6 +888,8 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         if ($scope.chromecast.playing){
             $scope.stopInChromecast();
         }
+        
+        player.reset(0);
 
         initPlayer();
     };
