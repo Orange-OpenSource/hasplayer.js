@@ -551,7 +551,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
         if (e.event.code != "HASPLAYER_INIT_ERROR") {
             //stop
-            player.reset();
+            player.reset(2);
         }
     }
 
