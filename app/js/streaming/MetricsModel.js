@@ -17,6 +17,7 @@
     return {
         system : undefined,
         eventBus: undefined,
+        config: undefined,
         streamMetrics: {},
         metricsChanged: function () {
             this.eventBus.dispatchEvent({
@@ -50,11 +51,11 @@
         },
 
         clearCurrentMetricsForType: function (type) {
-            //delete this.streamMetrics[type];
+            var keepBW = this.config.getParamFor(type, "ABR.keepBandwidthCondition", "boolean", true);
 
             for (var prop in this.streamMetrics[type]) {
                 // We keep HttpList in order to keep bandwidth conditions when switching the input stream
-                if (this.streamMetrics[type].hasOwnProperty(prop) && (prop !== "HttpList")) {
+                if (this.streamMetrics[type].hasOwnProperty(prop) && ((prop !== "HttpList") || (keepBW === false))) {
                     this.streamMetrics[type][prop] = [];
                 }
             }
