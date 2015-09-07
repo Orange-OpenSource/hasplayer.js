@@ -303,7 +303,7 @@
             if(req.type === "Initialization Segment" && req.data){
                 deferred.resolve(req,{data:req.data});
             } else {
-                this.debug.log("[FragmentLoader][load] planRequests"+req.url);
+                //this.debug.log("[FragmentLoader][load] planRequests"+req.url);
                 this.planRequests(req).then(function(result) {
                     deferred.resolve(result);
                 },function (error) {
