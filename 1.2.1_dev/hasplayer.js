@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 1.9.2015_11:30:56 / git revision : dd49f67 */
+/* Last build : 10.9.2015_21:43:46 / git revision : 0dc204c */
  /* jshint ignore:start */
 var UTF8 = {};
 
@@ -5931,7 +5931,7 @@ mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
 
 MediaPlayer = function(aContext) {
     "use strict";
-    var VERSION = "1.2.0", VERSION_HAS = "1.2.1_dev", GIT_TAG = "dd49f67", BUILD_DATE = "1.9.2015_11:30:56", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
+    var VERSION = "1.2.0", VERSION_HAS = "1.2.1_dev", GIT_TAG = "0dc204c", BUILD_DATE = "10.9.2015_21:43:46", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
         return !!element && !!source;
     }, play = function() {
         if (!initialized) {
@@ -5951,9 +5951,9 @@ MediaPlayer = function(aContext) {
             streamController = system.getObject("streamController");
             streamController.setVideoModel(videoModel);
             streamController.setAutoPlay(autoPlay);
-            streamController.setDefaultAudioLang(defaultAudioLang);
-            streamController.setDefaultSubtitleLang(defaultSubtitleLang);
         }
+        streamController.setDefaultAudioLang(defaultAudioLang);
+        streamController.setDefaultSubtitleLang(defaultSubtitleLang);
         streamController.load(source, protectionData);
         system.mapValue("scheduleWhilePaused", scheduleWhilePaused);
         system.mapOutlet("scheduleWhilePaused", "stream");
@@ -6175,8 +6175,6 @@ MediaPlayer = function(aContext) {
             loop = videoModel.getElement().loop;
             if (url) {
                 this.metricsModel.addSession(null, url, loop, null, "HasPlayer.js_" + this.getVersionHAS());
-            } else {
-                this.metricsModel.addState("video", "stopped");
             }
             this.uriQueryFragModel.reset();
             if (url) {
@@ -6193,9 +6191,10 @@ MediaPlayer = function(aContext) {
                 doAutoPlay.call(this);
             }
         },
-        reset: function() {
+        reset: function(reason) {
             this.attachSource(null);
             protectionData = null;
+            this.metricsModel.addState("video", "stopped", this.getVideoModel().getCurrentTime(), reason);
         },
         setDefaultAudioLang: function(language) {
             defaultAudioLang = language;
@@ -6495,6 +6494,7 @@ MediaPlayer.dependencies.BufferController = function() {
             clearPlayListTraceMetrics(currentTime, MediaPlayer.vo.metrics.PlayList.Trace.USER_REQUEST_STOP_REASON);
             playListMetrics = this.metricsModel.addPlayList(type, currentTime, 0, MediaPlayer.vo.metrics.PlayList.INITIAL_PLAY_START_REASON);
         }
+        this.metricsModel.addState(type, "buffering", this.videoModel.getCurrentTime());
         if (isBufferingCompleted) {
             isBufferingCompleted = false;
         }
@@ -7387,6 +7387,11 @@ MediaPlayer.utils.Config = function() {
         "ABR.latencyInBandwidth": true,
         "ABR.switchDownBufferTime": -1,
         "ABR.switchDownBufferRatio": -1,
+        "ABR.switchLowerBufferTime": -1,
+        "ABR.switchLowerBufferRatio": -1,
+        "ABR.switchUpBufferTime": -1,
+        "ABR.switchUpBufferRatio": -1,
+        "ABR.keepBandwidthCondition": true,
         video: {},
         audio: {}
     }, doSetParams = function(newParams) {
@@ -8274,7 +8279,6 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                     data: req.data
                 });
             } else {
-                this.debug.log("[FragmentLoader][load] planRequests" + req.url);
                 this.planRequests(req).then(function(result) {
                     deferred.resolve(result);
                 }, function(error) {
@@ -8870,6 +8874,7 @@ MediaPlayer.models.MetricsModel = function() {
     return {
         system: undefined,
         eventBus: undefined,
+        config: undefined,
         streamMetrics: {},
         metricsChanged: function() {
             this.eventBus.dispatchEvent({
@@ -8909,8 +8914,9 @@ MediaPlayer.models.MetricsModel = function() {
             this.metricChanged(streamType);
         },
         clearCurrentMetricsForType: function(type) {
+            var keepBW = this.config.getParamFor(type, "ABR.keepBandwidthCondition", "boolean", true);
             for (var prop in this.streamMetrics[type]) {
-                if (this.streamMetrics[type].hasOwnProperty(prop) && prop !== "HttpList") {
+                if (this.streamMetrics[type].hasOwnProperty(prop) && (prop !== "HttpList" || keepBW === false)) {
                     this.streamMetrics[type][prop] = [];
                 }
             }
@@ -12265,7 +12271,7 @@ MediaPlayer.dependencies.ProtectionController = function() {
     }, onKeyAdded = function() {
         this.debug.log("[DRM] Key added.");
     }, onKeyError = function(event) {
-        this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, event.data.error);
+        this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, event.data);
     }, onKeySessionClosed = function(event) {
         if (!event.error) {
             this.debug.log("[DRM] Session closed.  SessionID = " + event.data);

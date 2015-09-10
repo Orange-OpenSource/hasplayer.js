@@ -1,4 +1,4 @@
-/* Last build : 1.9.2015_11:30:56 / git revision : dd49f67 */
+/* Last build : 10.9.2015_21:43:46 / git revision : 0dc204c */
  /* jshint ignore:start */
 (function() {
     var b = void 0, f = !0, j = null, l = !1;
@@ -28518,7 +28518,7 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
             break;
         }
         if (e.event.code != "HASPLAYER_INIT_ERROR") {
-            player.reset();
+            player.reset(2);
         }
     }
     $scope.invalidateChartDisplay = false;
@@ -28774,6 +28774,7 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
         if ($scope.chromecast.playing) {
             $scope.stopInChromecast();
         }
+        player.reset(0);
         initPlayer();
     };
     $scope.loadInPlayer = function(url) {
