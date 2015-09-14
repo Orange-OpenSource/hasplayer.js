@@ -87,7 +87,7 @@ MediaPlayer.dependencies.protection.CommonEncryption = {
      * @returns {ArrayBuffer} the init data or null if not found
      */
     parseInitDataFromContentProtection: function(cpData) {
-        if ("pssh" in cpData) {
+        if (cpData && ("pssh" in cpData)) {
             return BASE64.decodeArray(cpData.pssh.__text).buffer;
         }
         return null;

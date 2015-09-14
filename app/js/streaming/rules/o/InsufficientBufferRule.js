@@ -21,8 +21,9 @@ MediaPlayer.rules.o.InsufficientBufferRule = function () {    "use strict";
         metricsExt: undefined,
         manifestModel: undefined,
         config: undefined,
+        isStartBuffering: {},
 
-        checkIndex: function (current, metrics, data) {
+        checkIndex: function (current, metrics, data, playerState) {
             var self = this,
                 bufferLevel = self.metricsExt.getCurrentBufferLevel(metrics),
                 minBufferTime,
@@ -54,22 +55,35 @@ MediaPlayer.rules.o.InsufficientBufferRule = function () {    "use strict";
                     switchUpBufferRatio = self.config.getParamFor(data.type, "ABR.switchUpBufferRatio", "number", 0.75);
                     switchUpBufferTime = self.config.getParamFor(data.type, "ABR.switchUpBufferTime", "number", switchUpBufferRatio * minBufferTime);
 
-                    self.manifestExt.getRepresentationCount(data).then(
-                        function (max) {
-                            max -= 1; // 0 based
+                    // Check if we start buffering the stream. In this case we ignore the rule
+                    if (playerState === 'buffering') {
+                        self.isStartBuffering[data.type] = true;
+                    }
 
-                            if (bufferLevel.level <= switchLowerBufferTime) {
-                                q = 0;
-                                p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
-                            } else if (bufferLevel.level <= switchDownBufferTime) {
-                                q = (current > 0) ? (current - 1) : 0;
-                                p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
-                            }
-
-                            self.debug.log("[InsufficientBufferRule]["+data.type+"] SwitchRequest(" + q + ", " + p + ")");
-                            deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
+                    if ((bufferLevel.level < switchDownBufferTime) && (self.isStartBuffering[data.type])) {
+                        deferred.resolve(new MediaPlayer.rules.SwitchRequest());
+                    } else {
+                        if (bufferLevel.level >= switchDownBufferTime) {
+                            self.isStartBuffering[data.type] = false;
                         }
-                    );
+                        
+                        self.manifestExt.getRepresentationCount(data).then(
+                            function (max) {
+                                max -= 1; // 0 based
+
+                                if (bufferLevel.level <= switchLowerBufferTime) {
+                                    q = 0;
+                                    p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
+                                } else if (bufferLevel.level <= switchDownBufferTime) {
+                                    q = (current > 0) ? (current - 1) : 0;
+                                    p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
+                                }
+
+                                self.debug.log("[InsufficientBufferRule]["+data.type+"] SwitchRequest(" + q + ", " + p + ")");
+                                deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
+                            }
+                        );
+                    }
                 }
             );
 

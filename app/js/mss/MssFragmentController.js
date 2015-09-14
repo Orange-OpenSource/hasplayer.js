@@ -160,7 +160,7 @@ Mss.dependencies.MssFragmentController = function () {
                         saiz.sample_info_size[i] = 8+(sepiff.entry[i].NumberOfEntries*6)+2;
                         //8 (Init vector size) + NumberOfEntries*(clear (2) +crypted (4))+ 2 (numberofEntries size (2))
                         if(i>0) {
-                            if (saiz.sample_info_size[i] != saiz.sample_info_size[i-1]) {
+                            if (saiz.sample_info_size[i] !== saiz.sample_info_size[i-1]) {
                                 sizedifferent = true;
                             }
                         }
@@ -233,20 +233,6 @@ Mss.dependencies.MssFragmentController = function () {
                 saio.offset[0] = moofPosInFragment + trafPosInMoof + sencPosInTraf + 16; // box header (12) + sampleCount (4)
             }
 
-
-            // PATCH tfdt and trun samples timestamp values in case of live streams within chrome
-            if ((navigator.userAgent.indexOf("Chrome") >= 0) && (manifest.type === "dynamic")){
-                tfdt.baseMediaDecodeTime /= 1000;
-                for  (i = 0; i < trun.samples_table.length; i++) {
-                    if (trun.samples_table[i].sample_composition_time_offset > 0) {
-                        trun.samples_table[i].sample_composition_time_offset /= 1000;
-                    }
-                    if (trun.samples_table[i].sample_duration > 0) {
-                        trun.samples_table[i].sample_duration /= 1000;
-                    }
-                }
-            }
-
             var new_data = mp4lib.serialize(fragment);
 
             return new_data;
@@ -277,23 +263,6 @@ Mss.dependencies.MssFragmentController = function () {
             if (!result) {
                 return Q.when(null);
             }
-        }
-
-        // PATCH timescale value in mvhd and mdhd boxes in case of live streams within chrome
-        // Note: request = 'undefined' in case of initialization segments
-        if ((request === undefined) && (navigator.userAgent.indexOf("Chrome") >= 0) && (manifest.type === "dynamic")) {
-            var init_segment = mp4lib.deserialize(result);
-            // FIXME unused variables ?
-            var moov = init_segment.getBoxByType("moov");
-            var mvhd = moov.getBoxByType("mvhd");
-            var trak = moov.getBoxByType("trak");
-            var mdia = trak.getBoxByType("mdia");
-            var mdhd = mdia.getBoxByType("mdhd");
-
-            mvhd.timescale /= 1000;
-            mdhd.timescale /= 1000;
-
-            result = mp4lib.serialize(init_segment);
         }
 
         return Q.when(result);

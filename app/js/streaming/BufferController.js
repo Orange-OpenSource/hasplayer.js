@@ -34,7 +34,6 @@ MediaPlayer.dependencies.BufferController = function () {
         stalled = false,
         isDynamic = false,
         isBufferingCompleted = false,
-        deferredAppends = [],
         deferredStreamComplete = Q.defer(),
         deferredRejectedDataAppend = null,
         deferredBuffersFlatten = null,
@@ -130,11 +129,16 @@ MediaPlayer.dependencies.BufferController = function () {
                 return;
             }
 
+            // Notify ABR controller we start the buffering in order to adapt ABR rules
+            self.abrController.setPlayerState("buffering");
+
             if (seeking === false) {
                 currentTime = new Date();
                 clearPlayListTraceMetrics(currentTime, MediaPlayer.vo.metrics.PlayList.Trace.USER_REQUEST_STOP_REASON);
                 playListMetrics = this.metricsModel.addPlayList(type, currentTime, 0, MediaPlayer.vo.metrics.PlayList.INITIAL_PLAY_START_REASON);
             }
+
+            this.metricsModel.addState(type, "buffering", this.videoModel.getCurrentTime());
 
             if (isBufferingCompleted) {
                 isBufferingCompleted = false;
@@ -273,7 +277,7 @@ MediaPlayer.dependencies.BufferController = function () {
             // ORANGE: add request and representations in function parameters, used by MssFragmentController
             self.fragmentController.process(response.data, request, availableRepresentations).then(
                 function (data) {
-                    if (data !== null/* && deferredInitAppend !== null*/) {
+                    if (data !== null) {
                         if(eventStreamAdaption.length > 0 || eventStreamRepresentation.length > 0) {
                             handleInbandEvents.call(self,data,request,eventStreamAdaption,eventStreamRepresentation).then(
                                 function(events) {
@@ -428,9 +432,9 @@ MediaPlayer.dependencies.BufferController = function () {
             while(i<data.length) {
                 identifier = String.fromCharCode(data[i+4],data[i+5],data[i+6],data[i+7]); // box identifier
                 size = data[i]*expThree + data[i+1]*expTwo + data[i+2]*256 + data[i+3]*1; // size of the box
-                if( identifier == "moov" || identifier == "moof") {
+                if( identifier === "moov" || identifier === "moof") {
                     break;
-                } else if(identifier == "emsg") {
+                } else if(identifier === "emsg") {
                     inbandEventFound = true;
                     var eventBox = ["","",0,0,0,0,""],
                         arrIndex = 0,
@@ -438,7 +442,7 @@ MediaPlayer.dependencies.BufferController = function () {
 
                     while(j < size+i) {
                         /* == string terminates with 0, this indicates end of attribute == */
-                        if(arrIndex === 0 || arrIndex == 1 || arrIndex == 6) {
+                        if(arrIndex === 0 || arrIndex === 1 || arrIndex === 6) {
                             if(data[j] !== 0) {
                                 eventBox[arrIndex] += String.fromCharCode(data[j]);
                             } else {
@@ -500,7 +504,7 @@ MediaPlayer.dependencies.BufferController = function () {
                 size = data[i]*expThree + data[i+1]*expTwo + data[i+2]*256 + data[i+3]*1;
 
 
-                if(identifier != "emsg" ) {
+                if(identifier !== "emsg" ) {
                     for(var l = i ; l < i + size; l++) {
                         modData[j] = data[l];
                         j += 1;
@@ -633,13 +637,20 @@ MediaPlayer.dependencies.BufferController = function () {
         onBytesError = function (e) {
             var msgError = type + ": Failed to load a request at startTime = "+e.startTime,
                 data = {};
+
+            //if request.status = 0, it's an aborted request : do not load chunk from another bitrate, do not send
+            // error.
+            if (e.status !== undefined && e.status === 0 && !isRunning.call(this)) {
+                return;
+            }
+
             //if it's the first download error, try to load the same segment for a the lowest quality...
             if(this.ChunkMissingState === false)
             {
                 if (e.quality !== 0) {
                     currentRepresentation = getRepresentationForQuality.call(this, 0);
                     if (currentRepresentation !== undefined || currentRepresentation !== null) {
-                        loadNextFragment.call(this);
+                       return loadNextFragment.call(this);
                     }
                 }
             }
@@ -869,6 +880,8 @@ MediaPlayer.dependencies.BufferController = function () {
             if (stalled) {
                 if (bufferLevel > minBufferTimeAtStartup) {
                     setStalled.call(self, false);
+                    // Notify ABR controller we are no more buffering before playing
+                    this.abrController.setPlayerState("playing");
                 }
             }
 
@@ -1037,10 +1050,6 @@ MediaPlayer.dependencies.BufferController = function () {
             self.debug.log("[BufferController]["+type+"] updateData");
 
             // Reset stored initialization segments
-            /*if (deferredInitAppend && Q.isPending(deferredInitAppend.promise)) {
-                deferredInitAppend.resolve();
-            }
-            deferredInitAppend = Q.defer();*/
             initializationData = [];
 
             // Update representations
@@ -1365,14 +1374,9 @@ MediaPlayer.dependencies.BufferController = function () {
 
             doStop.call(self);
 
-            //cancel(deferredLiveEdge);
-            //cancel(deferredInitAppend);
             cancel(deferredRejectedDataAppend);
             cancel(deferredBuffersFlatten);
             cancel(deferredFragmentBuffered);
-            // ORANGE: remove uncessary deferredAppends
-            deferredAppends.forEach(cancel);
-            deferredAppends = [];
             cancel(deferredStreamComplete);
             deferredStreamComplete = Q.defer();
 

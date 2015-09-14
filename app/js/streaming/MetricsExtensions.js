@@ -229,6 +229,48 @@
         return bitrateArray;
     };
 
+    rslt.getBitratesWithResolutionForType = function (type) {
+        var self = this,
+            manifest = self.manifestModel.getValue(),
+            periodArray,
+            period,
+            periodArrayIndex,
+            adaptationSet,
+            adaptationSetArray,
+            representation,
+            representationArray,
+            adaptationSetArrayIndex,
+            representationArrayIndex,
+            bitrateArray = [];
+
+        if ((manifest === null) || (manifest === undefined)) {
+            return null;
+        }
+
+        periodArray = manifest.Period_asArray;
+
+        for (periodArrayIndex = 0; periodArrayIndex < periodArray.length; periodArrayIndex = periodArrayIndex + 1) {
+            period = periodArray[periodArrayIndex];
+            adaptationSetArray = period.AdaptationSet_asArray;
+            for (adaptationSetArrayIndex = 0; adaptationSetArrayIndex < adaptationSetArray.length; adaptationSetArrayIndex = adaptationSetArrayIndex + 1) {
+                adaptationSet = adaptationSetArray[adaptationSetArrayIndex];
+                if (adaptationIsType.call(self, adaptationSet, type)) {
+                    //order adaptation in bitrate ascending value
+                    adaptationSet = self.manifestExt.processAdaptation(adaptationSet);
+                    representationArray = adaptationSet.Representation_asArray;
+                    for (representationArrayIndex = 0; representationArrayIndex < representationArray.length; representationArrayIndex = representationArrayIndex + 1) {
+                        representation = representationArray[representationArrayIndex];
+                        var reso = {bitrate: representation.bandwidth, width: representation.width, height: representation.height};
+                        bitrateArray.push(reso);
+                    }
+                    return bitrateArray;
+                }
+            }
+        }
+
+        return bitrateArray;
+    };
+
     rslt.getCurrentRepresentationBoundaries = function (metrics) {
         if (metrics === null) {
             return null;

@@ -52,7 +52,7 @@ app.directive('chart', function() {
         link: function (scope, elem, attrs) {
             var chartBuffer = null,
             optionsBuffer = {series: {shadowSize: 0},yaxis: {min: 0},xaxis: {show: false}};
-            
+
 
             // If the data changes somehow, update it in the chart
             scope.$watch('bufferData', function(v) {
@@ -127,19 +127,20 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     function($scope, $window, Sources, Notes, Contributors, PlayerLibraries, ShowcaseLibraries) {
 
     var player,
-    video,
-    context,
-    config = null,
-    videoSeries = [],
-    dlSeries = [],
-    playSeries = [],
-    audioSeries = [],
-    qualityChangements = [],
-    previousPlayedQuality = 0,
-    previousDownloadedQuality= 0,
-    maxGraphPoints = 50,
-    configMetrics = null,
-    subtitlesCSSStyle = null;
+        video,
+        context,
+        config = null,
+        videoSeries = [],
+        dlSeries = [],
+        playSeries = [],
+        audioSeries = [],
+        qualityChangements = [],
+        previousPlayedQuality = 0,
+        previousDownloadedQuality= 0,
+        maxGraphPoints = 50,
+        metricsAgent = null,
+        configMetrics = null,
+        subtitlesCSSStyle = null;
 
     $scope.chromecast = {};
     $scope.chromecast.apiOk = false;
@@ -363,13 +364,15 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
 
     function setSubtitlesCSSStyle(style){
-        var fontSize = style.data.fontSize;
+        if(style){
+            var fontSize = style.data.fontSize;
 
-        if (style.data.fontSize[style.data.fontSize.length-1] ==='%') {
-            fontSize  = (video.clientHeight * style.data.fontSize.substr(0, style.data.fontSize.length-1))/100;
+            if (style.data.fontSize[style.data.fontSize.length-1] ==='%') {
+                fontSize  = (video.clientHeight * style.data.fontSize.substr(0, style.data.fontSize.length-1))/100;
+            }
+
+            document.getElementById("cueStyle").innerHTML = '::cue{ background-color:'+style.data.backgroundColor+';color:'+style.data.color+';font-size: '+fontSize+'px;font-family: '+style.data.fontFamily+'}';
         }
-
-        document.getElementById("cueStyle").innerHTML = '::cue{ background-color:'+style.data.backgroundColor+';color:'+style.data.color+';font-size: '+fontSize+'px;font-family: '+style.data.fontFamily+'}';
     }
 
 
@@ -407,7 +410,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
                 if ($('#sliderBitrate').labeledslider( "option", "max" ) === 0) {
                     var labels = [];
-                    for (var i = 0; i < metrics.bitrateValues.length; i++) {
+                    for (var i = 0; metrics.bitrateValues!= null && i < metrics.bitrateValues.length; i++) {
                         labels.push(Math.round(metrics.bitrateValues[i] / 1000) + "k");
                     }
 
@@ -423,7 +426,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
                 }
 
                 // case of downloaded quality change
-                if ((metrics.httpRequest !== null)  && (metrics.bitrateValues[metrics.httpRequest.quality] != previousDownloadedQuality)) {
+                if ((metrics.httpRequest !== null)  && (metrics.bitrateValues!== null && (metrics.bitrateValues[metrics.httpRequest.quality] != previousDownloadedQuality))) {
                 // save quality change for later when video currentTime = mediaStartTime
                 qualityChangements.push({
                     mediaStartTime : metrics.httpRequest.startTime,
@@ -432,7 +435,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
                 });
                 previousDownloadedQuality = metrics.bitrateValues[metrics.httpRequest.quality];
             }
-            
+
             for (var p in qualityChangements) {
                 var currentQualityChangement = qualityChangements[p];
                 //time of downloaded quality change
@@ -451,7 +454,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
             dlSeries.push(dlPoint);
             var playPoint = [video.currentTime, Math.round(previousPlayedQuality / 1000)];
             playSeries.push(playPoint);
-            
+
             videoSeries.push([parseFloat(video.currentTime), Math.round(parseFloat(metrics.bufferLengthValue))]);
 
             if (videoSeries.length > maxGraphPoints) {
@@ -528,7 +531,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
             case "DOWNLOAD_ERR_MANIFEST" :
             case "DOWNLOAD_ERR_SIDX" :
             case "DOWNLOAD_ERR_CONTENT" :
-            case "DOWNLOAD_ERR_INIT" :  
+            case "DOWNLOAD_ERR_INIT" :
                  console.error(" url :\""+e.event.data.url+"\" and request response :\""+ e.event.data.request.responseXML+"\"");
                  break;
             case "MANIFEST_ERR_CODEC" :
@@ -536,7 +539,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
             case "MANIFEST_ERR_NOSTREAM" :
                  console.error("Manifest URL was "+e.event.data.mpdUrl+" with message :\""+e.event.message+"\"");
                  break;
-            case "CC_ERR_PARSE" : 
+            case "CC_ERR_PARSE" :
                  console.error("message :\""+e.event.message+"\" for content = "+e.event.data);
                  break;
             default :
@@ -548,7 +551,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
         if (e.event.code != "HASPLAYER_INIT_ERROR") {
             //stop
-            player.reset();
+            player.reset(2);
         }
     }
 
@@ -630,11 +633,14 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     video = document.querySelector(".dash-video-player video");
     context = new MediaPlayer.di.Context();
     player = new MediaPlayer(context);
-    
+
     $scope.version = player.getVersion();
     $scope.versionHAS = player.getVersionHAS();
     $scope.versionFull = player.getVersionFull();
     $scope.buildDate = player.getBuildDate();
+
+    $scope.laURL = "";
+    $scope.customData = "";
 
     player.startup();
     player.addEventListener("error", onError.bind(this));
@@ -652,7 +658,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     }
     $scope.player = player;
     $scope.videojsIsOn = false;
-    
+
     $scope.activateVideoJS = function() {
         if(!$scope.videojsIsOn) {
             videojs(video, { "controls": true, "autoplay": true, "preload": "auto" });
@@ -780,7 +786,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         }
         else {
             return (str.indexOf(filterValue) != -1);
-        }            
+        }
     };
 
     if(window.jsonData === undefined) {
@@ -823,35 +829,49 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
     $scope.setStream = function (item) {
         $scope.selectedItem = item;
+        $scope.laURL = (item.protData && item.protData['com.microsoft.playready']) ? item.protData['com.microsoft.playready'].laURL : "";
+        $scope.customData = (item.protData && item.protData['com.microsoft.playready']) ? item.protData['com.microsoft.playready'].customData : "";
     };
 
     function resetBitratesSlider () {
         $('#sliderBitrate').labeledslider({
-                    max: 0,
-                    step: 1,
-                    values: [0],
-                    tickLabels: [],
-                    orientation: 'vertical',
-                    range: true,
-                    stop: function(evt, ui) {
-                        player.setConfig( {
-                            "video": {
-                                "ABR.minQuality": ui.values[0],
-                                "ABR.maxQuality": ui.values[1]
-                        }
+            max: 0,
+            step: 1,
+            values: [0],
+            tickLabels: [],
+            orientation: 'vertical',
+            range: true,
+            stop: function(evt, ui) {
+                player.setConfig({
+                    "video": {
+                        "ABR.minQuality": ui.values[0],
+                        "ABR.maxQuality": ui.values[1]
+                    }
                 });
             }
-        });        
+        });
     }
     function initPlayer() {
-        
+
         function DRMParams() {
             this.backUrl = null;
             this.customData = null;
         }
-        
+
+        // Update PR protection data
+        if (($scope.laURL.length > 0) || (($scope.customData.length > 0))) {
+            if (!$scope.selectedItem.protData) {
+                $scope.selectedItem.protData = {};
+            }
+            if (!$scope.selectedItem.protData['com.microsoft.playready']) {
+                $scope.selectedItem.protData['com.microsoft.playready'] = {};
+            }
+            $scope.selectedItem.protData['com.microsoft.playready'].laURL = $scope.laURL;
+            $scope.selectedItem.protData['com.microsoft.playready'].customData = $scope.customData;
+        }
+
         resetBitratesSlider();
-        
+
         //ORANGE : reset subtitles data.
         $scope.textTracks = null;
         $scope.textData = null;
@@ -868,13 +888,15 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         if ($scope.chromecast.playing){
             $scope.stopInChromecast();
         }
+        
+        player.reset(0);
 
         initPlayer();
     };
 
     $scope.loadInPlayer = function(url) {
         var demoPlayer;
-        
+
         if(window.jsonData === undefined) {
             demoPlayer = '../DemoPlayer/index.html?url=';
         } else {

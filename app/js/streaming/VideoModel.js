@@ -109,7 +109,7 @@ MediaPlayer.models.VideoModel = function () {
 
             // We don't set the same currentTime because it can cause firing unexpected Pause event in IE11
             // providing playbackRate property equals to zero.
-            if (element.currentTime == currentTime) return;
+            if (element.currentTime === currentTime) return;
 
             element.currentTime = currentTime;
         },

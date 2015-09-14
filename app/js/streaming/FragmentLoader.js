@@ -95,7 +95,7 @@
                 var currentTime = new Date();
                 if (firstProgress) {
                     firstProgress = false;
-                    if (!event.lengthComputable || (event.lengthComputable && event.total != event.loaded)) {
+                    if (!event.lengthComputable || (event.lengthComputable && event.total !== event.loaded)) {
                         request.firstByteDate = currentTime;
                         httpRequestMetrics.tresponse = currentTime;
                     }
@@ -254,8 +254,14 @@
             } else {
                 that.doLoad(req).then(function (result){
                   d.resolve(result);
-                },function (/*reqerror*/){
-                  that.retry(req,d,that);
+                },function (reqerror){
+                    //if status = 0, request has been aborted, do not retry....
+                    if (reqerror.status !== 0) {
+                        that.retry(req,d,that);
+                    }else{
+                        req.status = 0;
+                        d.reject(req);
+                    }
             });
           }
             return d.promise;
@@ -294,9 +300,10 @@
         load: function(req){
             var deferred = Q.defer();
 
-            if(req.type == "Initialization Segment" && req.data){
+            if(req.type === "Initialization Segment" && req.data){
                 deferred.resolve(req,{data:req.data});
             } else {
+                //this.debug.log("[FragmentLoader][load] planRequests"+req.url);
                 this.planRequests(req).then(function(result) {
                     deferred.resolve(result);
                 },function (error) {
@@ -312,9 +319,10 @@
                 req,
                 ln = xhrs.length;
 
+            this.debug.log("[FragmentLoader] "+ln+" xhr requests to Abort.");
             for (i = 0; i < ln; i +=1) {
                 req = xhrs[i];
-                this.debug.log("[FragmentLoader]["+req.streamType+"] ### Abort XHR");
+                this.debug.log("[FragmentLoader] ### Abort XHR");
                 req.abort();
                 req = null;
             }

@@ -109,10 +109,10 @@ MediaPlayer.di.Context = function () {
 
             // Then, our parser will choose which parser call between Dash, Mss and Hls. To do that, it need references
             this.system.mapClass('dashParser', Dash.dependencies.DashParser);
-            // @if INCLUDE_MSS=true
+            // @if MSS=true
             this.system.mapClass('mssParser', Mss.dependencies.MssParser);
             // @endif
-            // @if INCLUDE_HLS=true
+            // @if HLS=true
             this.system.mapClass('hlsParser', Hls.dependencies.HlsParser);
             this.system.mapClass('hlsDemux', Hls.dependencies.HlsDemux);
             // @endif

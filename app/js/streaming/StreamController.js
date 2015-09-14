@@ -35,6 +35,8 @@
         audioTracks,
         subtitleTracks,
         protectionData,
+        defaultAudioLang = 'und',
+        defaultSubtitleLang = 'und',
 
         play = function () {
             activeStream.play();
@@ -322,6 +324,8 @@
                                     stream.setVideoModel(pIdx === 0 ? self.videoModel : createVideoModel.call(self));
                                     stream.initProtection(self.protectionData);
                                     stream.setAutoPlay(autoPlay);
+                                    stream.setDefaultAudioLang(defaultAudioLang);
+                                    stream.setDefaultSubtitleLang(defaultSubtitleLang);
                                     stream.load(manifest, period);
                                     streams.push(stream);
                                 }
@@ -451,6 +455,15 @@
             return audioTracks;
         },
 
+        getSelectedAudioTrack: function() {
+
+            if (activeStream) {
+                return activeStream.getSelectedAudioTrack();
+            }
+
+            return undefined;
+        },
+
         // ORANGE: audioTrack Management
         setAudioTrack:function(audioTrack){
             if(activeStream){
@@ -467,6 +480,15 @@
             if(activeStream){
                 activeStream.setSubtitleTrack(subtitleTrack);
             }
+        },
+        
+        getSelectedSubtitleTrack: function() {
+            
+            if(activeStream){
+                return activeStream.getSelectedSubtitleTrack();
+            }
+
+            return undefined;
         },
         
         // ORANGE: add source stream parameters
@@ -510,6 +532,7 @@
                 if (stream !== activeStream) {
                     removeVideoElement(stream.getVideoModel().getElement());
                 }
+                delete streams[i];
             }
 
             streams = [];
@@ -519,6 +542,14 @@
             isPeriodSwitchingInProgress = false;
             activeStream = null;
             protectionData = null;
+        },
+
+        setDefaultAudioLang: function(language) {
+            defaultAudioLang = language;
+        },
+
+        setDefaultSubtitleLang: function(language) {
+            defaultSubtitleLang = language;
         },
 
         play: play,

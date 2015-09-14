@@ -139,17 +139,17 @@ app.controller('DashController', function($scope, Sources, Notes, Contributors, 
     $scope.getVideoTreeMetrics = function () {
         var metrics = player.getMetricsFor("video");
         $scope.videoMetrics = converter.toTreeViewDataSource(metrics);
-    }
+    };
 
     $scope.getAudioTreeMetrics = function () {
         var metrics = player.getMetricsFor("audio");
         $scope.audioMetrics = converter.toTreeViewDataSource(metrics);
-    }
+    };
 
     // from: https://gist.github.com/siongui/4969449
     $scope.safeApply = function(fn) {
       var phase = this.$root.$$phase;
-      if(phase == '$apply' || phase == '$digest')
+      if(phase === '$apply' || phase === '$digest')
         this.$eval(fn);
       else
         this.$apply(fn);
@@ -187,27 +187,27 @@ app.controller('DashController', function($scope, Sources, Notes, Contributors, 
                     latencyTimes = requestWindow.map(function (req){ return Math.abs(req.tresponse.getTime() - req.trequest.getTime()) / 1000;});
 
                     movingLatency[type] = {
-                        average: latencyTimes.reduce(function(l, r) {return l + r;}) / latencyTimes.length, 
-                        high: latencyTimes.reduce(function(l, r) {return l < r ? r : l;}), 
-                        low: latencyTimes.reduce(function(l, r) {return l < r ? l : r;}), 
+                        average: latencyTimes.reduce(function(l, r) {return l + r;}) / latencyTimes.length,
+                        high: latencyTimes.reduce(function(l, r) {return l < r ? r : l;}),
+                        low: latencyTimes.reduce(function(l, r) {return l < r ? l : r;}),
                         count: latencyTimes.length
                     };
 
                     downloadTimes = requestWindow.map(function (req){ return Math.abs(req.tfinish.getTime() - req.tresponse.getTime()) / 1000;});
 
                     movingDownload[type] = {
-                        average: downloadTimes.reduce(function(l, r) {return l + r;}) / downloadTimes.length, 
-                        high: downloadTimes.reduce(function(l, r) {return l < r ? r : l;}), 
-                        low: downloadTimes.reduce(function(l, r) {return l < r ? l : r;}), 
+                        average: downloadTimes.reduce(function(l, r) {return l + r;}) / downloadTimes.length,
+                        high: downloadTimes.reduce(function(l, r) {return l < r ? r : l;}),
+                        low: downloadTimes.reduce(function(l, r) {return l < r ? l : r;}),
                         count: downloadTimes.length
                     };
 
                     durationTimes = requestWindow.map(function (req){ return req.mediaduration;});
 
                     movingRatio[type] = {
-                        average: (durationTimes.reduce(function(l, r) {return l + r;}) / downloadTimes.length) / movingDownload[type].average, 
-                        high: durationTimes.reduce(function(l, r) {return l < r ? r : l;}) / movingDownload[type].low, 
-                        low: durationTimes.reduce(function(l, r) {return l < r ? l : r;}) / movingDownload[type].high, 
+                        average: (durationTimes.reduce(function(l, r) {return l + r;}) / downloadTimes.length) / movingDownload[type].average,
+                        high: durationTimes.reduce(function(l, r) {return l < r ? r : l;}) / movingDownload[type].low,
+                        low: durationTimes.reduce(function(l, r) {return l < r ? l : r;}) / movingDownload[type].high,
                         count: durationTimes.length
                     };
                 }
@@ -267,7 +267,7 @@ app.controller('DashController', function($scope, Sources, Notes, Contributors, 
                 movingLatency: movingLatency,
                 movingDownload: movingDownload,
                 movingRatio: movingRatio
-            }
+            };
         }
         else {
             return null;
@@ -304,30 +304,32 @@ app.controller('DashController', function($scope, Sources, Notes, Contributors, 
             item = {};
 
             for (prop in info) {
-                prevInfo = data[i - 1];
+                if (info.hasOwnProperty(prop)) {
+                    prevInfo = data[i - 1];
 
-                if (isUpdate) {
-                    item = data[i];
+                    if (isUpdate) {
+                        item = data[i];
+                    }
+
+                    value = info[prop];
+                    hasValue = (value !== null) && (value !== undefined);
+
+                    if (typeof value === "number") {
+                        value = value.toFixed(2);
+                    }
+
+                    item[prop] = hasValue ? value : " - ";
+
+                    if (propsWithDelta.indexOf(prop) === -1 || !hasValue || !prevInfo) continue;
+
+                    delta = value - prevInfo[prop];
+
+                    if (value instanceof(Date)) {
+                        delta /= 1000;
+                    }
+
+                    item[prop + "Delta"] = "(" + delta.toFixed(2) + ")";
                 }
-
-                value = info[prop];
-                hasValue = (value !== null) && (value !== undefined);
-
-                if (typeof value === "number") {
-                    value = value.toFixed(2);
-                }
-
-                item[prop] = hasValue ? value : " - ";
-
-                if (propsWithDelta.indexOf(prop) === -1 || !hasValue || !prevInfo) continue;
-
-                delta = value - prevInfo[prop];
-
-                if (value instanceof(Date)) {
-                    delta /= 1000;
-                }
-
-                item[prop + "Delta"] = "(" + delta.toFixed(2) + ")";
             }
 
             ranges = item.buffered;
@@ -385,7 +387,7 @@ app.controller('DashController', function($scope, Sources, Notes, Contributors, 
             point,
             treeData;
 
-        if (e.data.stream == "video") {
+        if (e.data.stream === "video") {
             metrics = getCribbedMetricsFor("video");
             if (metrics) {
                 $scope.videoBitrate = metrics.bandwidthValue;
@@ -416,7 +418,7 @@ app.controller('DashController', function($scope, Sources, Notes, Contributors, 
             }
         }
 
-        if (e.data.stream == "audio") {
+        if (e.data.stream === "audio") {
             metrics = getCribbedMetricsFor("audio");
             if (metrics) {
                 $scope.audioBitrate = metrics.bandwidthValue;
@@ -486,7 +488,7 @@ app.controller('DashController', function($scope, Sources, Notes, Contributors, 
 
     $scope.invalidateDisplay = function (value) {
         $scope.invalidateChartDisplay = value;
-    }
+    };
 
     $scope.bufferData = [
         {
@@ -504,16 +506,16 @@ app.controller('DashController', function($scope, Sources, Notes, Contributors, 
     $scope.showCharts = false;
     $scope.setCharts = function (show) {
         $scope.showCharts = show;
-    }
+    };
 
     $scope.setBufferLevelChart = function(show) {
         $scope.showBufferLevel = show;
-    }
+    };
 
     $scope.showDebug = false;
     $scope.setDebug = function (show) {
         $scope.showDebug = show;
-    }
+    };
 
     ////////////////////////////////////////
     //
@@ -545,7 +547,7 @@ app.controller('DashController', function($scope, Sources, Notes, Contributors, 
     $scope.setAbrEnabled = function (enabled) {
         $scope.abrEnabled = enabled;
         player.setAutoSwitchQuality(enabled);
-    }
+    };
 
     $scope.abrUp = function (type) {
         var newQuality,
@@ -558,7 +560,7 @@ app.controller('DashController', function($scope, Sources, Notes, Contributors, 
             newQuality = max - 1;
         }
         player.setQualityFor(type, newQuality);
-    }
+    };
 
     $scope.abrDown = function (type) {
         var newQuality = player.getQualityFor(type) - 1;
@@ -566,7 +568,7 @@ app.controller('DashController', function($scope, Sources, Notes, Contributors, 
             newQuality = 0;
         }
         player.setQualityFor(type, newQuality);
-    }
+    };
 
     ////////////////////////////////////////
     //
@@ -611,6 +613,7 @@ app.controller('DashController', function($scope, Sources, Notes, Contributors, 
             filterValue = "a";
             break;
         case "stable":
+            /* falls through */
         default:
             filterValue = "s";
             break;
@@ -621,9 +624,9 @@ app.controller('DashController', function($scope, Sources, Notes, Contributors, 
             return true;
         }
         else {
-            return (str.indexOf(filterValue) != -1);
+            return (str.indexOf(filterValue) !== -1);
         }
-    }
+    };
 
     Sources.query(function (data) {
         $scope.availableStreams = data.items;
@@ -647,43 +650,42 @@ app.controller('DashController', function($scope, Sources, Notes, Contributors, 
 
     $scope.setStream = function (item) {
         $scope.selectedItem = item;
-    }
-
+    };
     $scope.doLoad = function () {
         player.attachSource($scope.selectedItem.url);
         $scope.manifestUpdateInfo = null;
-    }
+    };
 
     $scope.hasLogo = function (item) {
         return (item.hasOwnProperty("logo")
                 && item.logo !== null
                 && item.logo !== undefined
                 && item.logo !== "");
-    }
+    };
 
     // Get initial stream if it was passed in.
-	var paramUrl = null;
+    var paramUrl = null;
 
     if (vars && vars.hasOwnProperty("url")) {
-    	paramUrl = vars.url;
+        paramUrl = vars.url;
     }
 
     if (vars && vars.hasOwnProperty("mpd")) {
-    	paramUrl = vars.mpd;
+        paramUrl = vars.mpd;
     }
 
     if (paramUrl !== null) {
-    	var startPlayback = true;
-    
-    	$scope.selectedItem = {};
+        var startPlayback = true;
+
+        $scope.selectedItem = {};
         $scope.selectedItem.url = paramUrl;
 
         if (vars.hasOwnProperty("autoplay")) {
-        	startPlayback = (vars.autoplay === 'true');
+            startPlayback = (vars.autoplay === 'true');
         }
 
-    	if (startPlayback) {
-	    	$scope.doLoad();
-		}
+        if (startPlayback) {
+            $scope.doLoad();
+        }
     }
 });

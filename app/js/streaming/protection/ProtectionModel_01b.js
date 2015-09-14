@@ -206,7 +206,7 @@ MediaPlayer.models.ProtectionModel_01b = function () {
             } else {
                 var len = sessionArray.length;
                 for (var i = 0; i < len; i++) {
-                    if (sessionArray[i].sessionID == sessionID) {
+                    if (sessionArray[i].sessionID === sessionID) {
                         return sessionArray[i];
                     }
                 }
@@ -467,5 +467,3 @@ MediaPlayer.models.ProtectionModel_01b.detect = function(videoElement) {
 
     return null;
 };
-
-

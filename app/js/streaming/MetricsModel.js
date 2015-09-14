@@ -17,6 +17,7 @@
     return {
         system : undefined,
         eventBus: undefined,
+        config: undefined,
         streamMetrics: {},
         metricsChanged: function () {
             this.eventBus.dispatchEvent({
@@ -50,7 +51,15 @@
         },
 
         clearCurrentMetricsForType: function (type) {
-            delete this.streamMetrics[type];
+            var keepBW = this.config.getParamFor(type, "ABR.keepBandwidthCondition", "boolean", true);
+
+            for (var prop in this.streamMetrics[type]) {
+                // We keep HttpList in order to keep bandwidth conditions when switching the input stream
+                if (this.streamMetrics[type].hasOwnProperty(prop) && ((prop !== "HttpList") || (keepBW === false))) {
+                    this.streamMetrics[type][prop] = [];
+                }
+            }
+
             this.metricChanged(type);
         },
 
@@ -58,12 +67,12 @@
             var self = this;
 
             for (var prop in this.streamMetrics) {
-                if (this.streamMetrics.hasOwnProperty(prop)) {
+                if (this.streamMetrics.hasOwnProperty(prop) && (prop === "stream")) {
                     delete this.streamMetrics[prop];
                 }
             }
 
-            this.streamMetrics = {};
+            //this.streamMetrics = {};
             this.metricsChanged.call(self);
         },
 
@@ -271,7 +280,7 @@
             // ORANGE : add decoded video frames
             vo.decodedFrameCount = quality.totalVideoFrames;
 
-            if (list.length > 0 && list[list.length - 1] == vo) {
+            if (list.length > 0 && list[list.length - 1] === vo) {
                 return list[list.length - 1];
             }
 
@@ -305,7 +314,9 @@
 
         updateManifestUpdateInfo: function(manifestUpdate, updatedFields) {
             for (var field in updatedFields) {
-                manifestUpdate[field] = updatedFields[field];
+                if (updatedFields.hasOwnProperty(field)) {
+                    manifestUpdate[field] = updatedFields[field];
+                }
             }
 
             this.metricUpdated(manifestUpdate.streamType, "ManifestUpdate", manifestUpdate);

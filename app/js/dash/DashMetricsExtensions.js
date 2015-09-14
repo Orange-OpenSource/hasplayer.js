@@ -152,10 +152,14 @@ Dash.dependencies.DashMetricsExtensions = function () {
             var self = this,
                 manifest = self.manifestModel.getValue(),
                 maxIndex,
-                periodArray = manifest.Period_asArray;
+                periodArray = manifest === null ? null : manifest.Period_asArray;
 
-            maxIndex = findMaxBufferIndex.call(this, periodArray, bufferType);
-            return maxIndex;
+            if (periodArray) {
+                maxIndex = findMaxBufferIndex.call(this, periodArray, bufferType);
+                return maxIndex;
+            } else {
+                return null;
+            }
         },
 
         getCurrentRepresentationSwitch = function (metrics) {
