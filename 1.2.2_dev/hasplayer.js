@@ -14,7 +14,982 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 20.7.2015_10:27:50 / git revision : 2082efe */
+/* Last build : 15.9.2015_8:54:7 / git revision : 8cba4b4 */
+ /* jshint ignore:start */
+var UTF8 = {};
+
+UTF8.encode = function(s) {
+    var u = [];
+    for (var i = 0; i < s.length; ++i) {
+        var c = s.charCodeAt(i);
+        if (c < 128) {
+            u.push(c);
+        } else if (c < 2048) {
+            u.push(192 | c >> 6);
+            u.push(128 | 63 & c);
+        } else if (c < 65536) {
+            u.push(224 | c >> 12);
+            u.push(128 | 63 & c >> 6);
+            u.push(128 | 63 & c);
+        } else {
+            u.push(240 | c >> 18);
+            u.push(128 | 63 & c >> 12);
+            u.push(128 | 63 & c >> 6);
+            u.push(128 | 63 & c);
+        }
+    }
+    return u;
+};
+
+UTF8.decode = function(u) {
+    var a = [];
+    var i = 0;
+    while (i < u.length) {
+        var v = u[i++];
+        if (v < 128) {} else if (v < 224) {
+            v = (31 & v) << 6;
+            v |= 63 & u[i++];
+        } else if (v < 240) {
+            v = (15 & v) << 12;
+            v |= (63 & u[i++]) << 6;
+            v |= 63 & u[i++];
+        } else {
+            v = (7 & v) << 18;
+            v |= (63 & u[i++]) << 12;
+            v |= (63 & u[i++]) << 6;
+            v |= 63 & u[i++];
+        }
+        a.push(String.fromCharCode(v));
+    }
+    return a.join("");
+};
+
+var BASE64 = {};
+
+(function(T) {
+    var encodeArray = function(u) {
+        var i = 0;
+        var a = [];
+        var n = 0 | u.length / 3;
+        while (0 < n--) {
+            var v = (u[i] << 16) + (u[i + 1] << 8) + u[i + 2];
+            i += 3;
+            a.push(T.charAt(63 & v >> 18));
+            a.push(T.charAt(63 & v >> 12));
+            a.push(T.charAt(63 & v >> 6));
+            a.push(T.charAt(63 & v));
+        }
+        if (2 == u.length - i) {
+            var v = (u[i] << 16) + (u[i + 1] << 8);
+            a.push(T.charAt(63 & v >> 18));
+            a.push(T.charAt(63 & v >> 12));
+            a.push(T.charAt(63 & v >> 6));
+            a.push("=");
+        } else if (1 == u.length - i) {
+            var v = u[i] << 16;
+            a.push(T.charAt(63 & v >> 18));
+            a.push(T.charAt(63 & v >> 12));
+            a.push("==");
+        }
+        return a.join("");
+    };
+    var R = function() {
+        var a = [];
+        for (var i = 0; i < T.length; ++i) {
+            a[T.charCodeAt(i)] = i;
+        }
+        a["=".charCodeAt(0)] = 0;
+        return a;
+    }();
+    var decodeArray = function(s) {
+        var i = 0;
+        var u = [];
+        var n = 0 | s.length / 4;
+        while (0 < n--) {
+            var v = (R[s.charCodeAt(i)] << 18) + (R[s.charCodeAt(i + 1)] << 12) + (R[s.charCodeAt(i + 2)] << 6) + R[s.charCodeAt(i + 3)];
+            u.push(255 & v >> 16);
+            u.push(255 & v >> 8);
+            u.push(255 & v);
+            i += 4;
+        }
+        if (u) {
+            if ("=" == s.charAt(i - 2)) {
+                u.pop();
+                u.pop();
+            } else if ("=" == s.charAt(i - 1)) {
+                u.pop();
+            }
+        }
+        return u;
+    };
+    var ASCII = {};
+    ASCII.encode = function(s) {
+        var u = [];
+        for (var i = 0; i < s.length; ++i) {
+            u.push(s.charCodeAt(i));
+        }
+        return u;
+    };
+    ASCII.decode = function(u) {
+        for (var i = 0; i < s.length; ++i) {
+            a[i] = String.fromCharCode(a[i]);
+        }
+        return a.join("");
+    };
+    BASE64.decodeArray = function(s) {
+        var u = decodeArray(s);
+        return new Uint8Array(u);
+    };
+    BASE64.encodeASCII = function(s) {
+        var u = ASCII.encode(s);
+        return encodeArray(u);
+    };
+    BASE64.decodeASCII = function(s) {
+        var a = decodeArray(s);
+        return ASCII.decode(a);
+    };
+    BASE64.encode = function(s) {
+        var u = UTF8.encode(s);
+        return encodeArray(u);
+    };
+    BASE64.decode = function(s) {
+        var u = decodeArray(s);
+        return UTF8.decode(u);
+    };
+})("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
+
+if (undefined === btoa) {
+    var btoa = BASE64.encode;
+}
+
+if (undefined === atob) {
+    var atob = BASE64.decode;
+}
+
+(function(scope) {
+    "use strict";
+    var dijon = {
+        VERSION: "0.5.3"
+    };
+    dijon.System = function() {
+        this._mappings = {};
+        this._outlets = {};
+        this._handlers = {};
+        this.strictInjections = true;
+        this.autoMapOutlets = false;
+        this.postInjectionHook = "setup";
+    };
+    dijon.System.prototype = {
+        _createAndSetupInstance: function(key, Clazz) {
+            var instance = new Clazz();
+            this.injectInto(instance, key);
+            return instance;
+        },
+        _retrieveFromCacheOrCreate: function(key, overrideRules) {
+            if (typeof overrideRules === "undefined") {
+                overrideRules = false;
+            }
+            var output;
+            if (this._mappings.hasOwnProperty(key)) {
+                var config = this._mappings[key];
+                if (!overrideRules && config.isSingleton) {
+                    if (config.object == null) {
+                        config.object = this._createAndSetupInstance(key, config.clazz);
+                    }
+                    output = config.object;
+                } else {
+                    if (config.clazz) {
+                        output = this._createAndSetupInstance(key, config.clazz);
+                    } else {
+                        output = config.object;
+                    }
+                }
+            } else {
+                throw new Error(1e3);
+            }
+            return output;
+        },
+        mapOutlet: function(sourceKey, targetKey, outletName) {
+            if (typeof sourceKey === "undefined") {
+                throw new Error(1010);
+            }
+            targetKey = targetKey || "global";
+            outletName = outletName || sourceKey;
+            if (!this._outlets.hasOwnProperty(targetKey)) {
+                this._outlets[targetKey] = {};
+            }
+            this._outlets[targetKey][outletName] = sourceKey;
+            return this;
+        },
+        getObject: function(key) {
+            if (typeof key === "undefined") {
+                throw new Error(1020);
+            }
+            return this._retrieveFromCacheOrCreate(key);
+        },
+        mapValue: function(key, useValue) {
+            if (typeof key === "undefined") {
+                throw new Error(1030);
+            }
+            this._mappings[key] = {
+                clazz: null,
+                object: useValue,
+                isSingleton: true
+            };
+            if (this.autoMapOutlets) {
+                this.mapOutlet(key);
+            }
+            if (this.hasMapping(key)) {
+                this.injectInto(useValue, key);
+            }
+            return this;
+        },
+        hasMapping: function(key) {
+            if (typeof key === "undefined") {
+                throw new Error(1040);
+            }
+            return this._mappings.hasOwnProperty(key);
+        },
+        mapClass: function(key, clazz) {
+            if (typeof key === "undefined") {
+                throw new Error(1050);
+            }
+            if (typeof clazz === "undefined") {
+                throw new Error(1051);
+            }
+            this._mappings[key] = {
+                clazz: clazz,
+                object: null,
+                isSingleton: false
+            };
+            if (this.autoMapOutlets) {
+                this.mapOutlet(key);
+            }
+            return this;
+        },
+        mapSingleton: function(key, clazz) {
+            if (typeof key === "undefined") {
+                throw new Error(1060);
+            }
+            if (typeof clazz === "undefined") {
+                throw new Error(1061);
+            }
+            this._mappings[key] = {
+                clazz: clazz,
+                object: null,
+                isSingleton: true
+            };
+            if (this.autoMapOutlets) {
+                this.mapOutlet(key);
+            }
+            return this;
+        },
+        instantiate: function(key) {
+            if (typeof key === "undefined") {
+                throw new Error(1070);
+            }
+            return this._retrieveFromCacheOrCreate(key, true);
+        },
+        injectInto: function(instance, key) {
+            if (typeof instance === "undefined") {
+                throw new Error(1080);
+            }
+            if (typeof instance === "object") {
+                var o = [];
+                if (this._outlets.hasOwnProperty("global")) {
+                    o.push(this._outlets["global"]);
+                }
+                if (typeof key !== "undefined" && this._outlets.hasOwnProperty(key)) {
+                    o.push(this._outlets[key]);
+                }
+                for (var i in o) {
+                    var l = o[i];
+                    for (var outlet in l) {
+                        var source = l[outlet];
+                        if (!this.strictInjections || outlet in instance) {
+                            instance[outlet] = this.getObject(source);
+                        }
+                    }
+                }
+                if ("setup" in instance) {
+                    instance.setup.call(instance);
+                }
+            }
+            return this;
+        },
+        unmap: function(key) {
+            if (typeof key === "undefined") {
+                throw new Error(1090);
+            }
+            delete this._mappings[key];
+            return this;
+        },
+        unmapOutlet: function(target, outlet) {
+            if (typeof target === "undefined") {
+                throw new Error(1100);
+            }
+            if (typeof outlet === "undefined") {
+                throw new Error(1101);
+            }
+            delete this._outlets[target][outlet];
+            return this;
+        },
+        mapHandler: function(eventName, key, handler, oneShot, passEvent) {
+            if (typeof eventName === "undefined") {
+                throw new Error(1110);
+            }
+            key = key || "global";
+            handler = handler || eventName;
+            if (typeof oneShot === "undefined") {
+                oneShot = false;
+            }
+            if (typeof passEvent === "undefined") {
+                passEvent = false;
+            }
+            if (!this._handlers.hasOwnProperty(eventName)) {
+                this._handlers[eventName] = {};
+            }
+            if (!this._handlers[eventName].hasOwnProperty(key)) {
+                this._handlers[eventName][key] = [];
+            }
+            this._handlers[eventName][key].push({
+                handler: handler,
+                oneShot: oneShot,
+                passEvent: passEvent
+            });
+            return this;
+        },
+        unmapHandler: function(eventName, key, handler) {
+            if (typeof eventName === "undefined") {
+                throw new Error(1120);
+            }
+            key = key || "global";
+            if (this._handlers.hasOwnProperty(eventName) && this._handlers[eventName].hasOwnProperty(key)) {
+                var handlers = this._handlers[eventName][key];
+                for (var i in handlers) {
+                    var config = handlers[i];
+                    if (!handler || config.handler === handler) {
+                        handlers.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+            return this;
+        },
+        notify: function(eventName) {
+            if (typeof eventName === "undefined") {
+                throw new Error(1130);
+            }
+            var argsWithEvent = Array.prototype.slice.call(arguments);
+            var argsClean = argsWithEvent.slice(1);
+            if (this._handlers.hasOwnProperty(eventName)) {
+                var handlers = this._handlers[eventName];
+                for (var key in handlers) {
+                    var configs = handlers[key];
+                    var instance;
+                    if (key !== "global") {
+                        instance = this.getObject(key);
+                    }
+                    var toBeDeleted = [];
+                    var i, n;
+                    for (i = 0, n = configs.length; i < n; i++) {
+                        var handler;
+                        var config = configs[i];
+                        if (instance && typeof config.handler === "string") {
+                            handler = instance[config.handler];
+                        } else {
+                            handler = config.handler;
+                        }
+                        if (config.oneShot) {
+                            toBeDeleted.unshift(i);
+                        }
+                        if (config.passEvent) {
+                            handler.apply(instance, argsWithEvent);
+                        } else {
+                            handler.apply(instance, argsClean);
+                        }
+                    }
+                    for (i = 0, n = toBeDeleted.length; i < n; i++) {
+                        configs.splice(toBeDeleted[i], 1);
+                    }
+                }
+            }
+            return this;
+        }
+    };
+    scope.dijon = dijon;
+})(this);
+
+goog = {};
+
+goog.math = {};
+
+goog.math.Long = function(low, high) {
+    this.low_ = low | 0;
+    this.high_ = high | 0;
+};
+
+goog.math.Long.IntCache_ = {};
+
+goog.math.Long.fromInt = function(value) {
+    if (-128 <= value && value < 128) {
+        var cachedObj = goog.math.Long.IntCache_[value];
+        if (cachedObj) {
+            return cachedObj;
+        }
+    }
+    var obj = new goog.math.Long(value | 0, value < 0 ? -1 : 0);
+    if (-128 <= value && value < 128) {
+        goog.math.Long.IntCache_[value] = obj;
+    }
+    return obj;
+};
+
+goog.math.Long.fromNumber = function(value) {
+    if (isNaN(value) || !isFinite(value)) {
+        return goog.math.Long.ZERO;
+    } else if (value <= -goog.math.Long.TWO_PWR_63_DBL_) {
+        return goog.math.Long.MIN_VALUE;
+    } else if (value + 1 >= goog.math.Long.TWO_PWR_63_DBL_) {
+        return goog.math.Long.MAX_VALUE;
+    } else if (value < 0) {
+        return goog.math.Long.fromNumber(-value).negate();
+    } else {
+        return new goog.math.Long(value % goog.math.Long.TWO_PWR_32_DBL_ | 0, value / goog.math.Long.TWO_PWR_32_DBL_ | 0);
+    }
+};
+
+goog.math.Long.fromBits = function(lowBits, highBits) {
+    return new goog.math.Long(lowBits, highBits);
+};
+
+goog.math.Long.fromString = function(str, opt_radix) {
+    if (str.length == 0) {
+        throw Error("number format error: empty string");
+    }
+    var radix = opt_radix || 10;
+    if (radix < 2 || 36 < radix) {
+        throw Error("radix out of range: " + radix);
+    }
+    if (str.charAt(0) == "-") {
+        return goog.math.Long.fromString(str.substring(1), radix).negate();
+    } else if (str.indexOf("-") >= 0) {
+        throw Error('number format error: interior "-" character: ' + str);
+    }
+    var radixToPower = goog.math.Long.fromNumber(Math.pow(radix, 8));
+    var result = goog.math.Long.ZERO;
+    for (var i = 0; i < str.length; i += 8) {
+        var size = Math.min(8, str.length - i);
+        var value = parseInt(str.substring(i, i + size), radix);
+        if (size < 8) {
+            var power = goog.math.Long.fromNumber(Math.pow(radix, size));
+            result = result.multiply(power).add(goog.math.Long.fromNumber(value));
+        } else {
+            result = result.multiply(radixToPower);
+            result = result.add(goog.math.Long.fromNumber(value));
+        }
+    }
+    return result;
+};
+
+goog.math.Long.TWO_PWR_16_DBL_ = 1 << 16;
+
+goog.math.Long.TWO_PWR_24_DBL_ = 1 << 24;
+
+goog.math.Long.TWO_PWR_32_DBL_ = goog.math.Long.TWO_PWR_16_DBL_ * goog.math.Long.TWO_PWR_16_DBL_;
+
+goog.math.Long.TWO_PWR_31_DBL_ = goog.math.Long.TWO_PWR_32_DBL_ / 2;
+
+goog.math.Long.TWO_PWR_48_DBL_ = goog.math.Long.TWO_PWR_32_DBL_ * goog.math.Long.TWO_PWR_16_DBL_;
+
+goog.math.Long.TWO_PWR_64_DBL_ = goog.math.Long.TWO_PWR_32_DBL_ * goog.math.Long.TWO_PWR_32_DBL_;
+
+goog.math.Long.TWO_PWR_63_DBL_ = goog.math.Long.TWO_PWR_64_DBL_ / 2;
+
+goog.math.Long.ZERO = goog.math.Long.fromInt(0);
+
+goog.math.Long.ONE = goog.math.Long.fromInt(1);
+
+goog.math.Long.NEG_ONE = goog.math.Long.fromInt(-1);
+
+goog.math.Long.MAX_VALUE = goog.math.Long.fromBits(4294967295 | 0, 2147483647 | 0);
+
+goog.math.Long.MIN_VALUE = goog.math.Long.fromBits(0, 2147483648 | 0);
+
+goog.math.Long.TWO_PWR_24_ = goog.math.Long.fromInt(1 << 24);
+
+goog.math.Long.prototype.toInt = function() {
+    return this.low_;
+};
+
+goog.math.Long.prototype.toNumber = function() {
+    return this.high_ * goog.math.Long.TWO_PWR_32_DBL_ + this.getLowBitsUnsigned();
+};
+
+goog.math.Long.prototype.toString = function(opt_radix) {
+    var radix = opt_radix || 10;
+    if (radix < 2 || 36 < radix) {
+        throw Error("radix out of range: " + radix);
+    }
+    if (this.isZero()) {
+        return "0";
+    }
+    if (this.isNegative()) {
+        if (this.equals(goog.math.Long.MIN_VALUE)) {
+            var radixLong = goog.math.Long.fromNumber(radix);
+            var div = this.div(radixLong);
+            var rem = div.multiply(radixLong).subtract(this);
+            return div.toString(radix) + rem.toInt().toString(radix);
+        } else {
+            return "-" + this.negate().toString(radix);
+        }
+    }
+    var radixToPower = goog.math.Long.fromNumber(Math.pow(radix, 6));
+    var rem = this;
+    var result = "";
+    while (true) {
+        var remDiv = rem.div(radixToPower);
+        var intval = rem.subtract(remDiv.multiply(radixToPower)).toInt();
+        var digits = intval.toString(radix);
+        rem = remDiv;
+        if (rem.isZero()) {
+            return digits + result;
+        } else {
+            while (digits.length < 6) {
+                digits = "0" + digits;
+            }
+            result = "" + digits + result;
+        }
+    }
+};
+
+goog.math.Long.prototype.getHighBits = function() {
+    return this.high_;
+};
+
+goog.math.Long.prototype.getLowBits = function() {
+    return this.low_;
+};
+
+goog.math.Long.prototype.getLowBitsUnsigned = function() {
+    return this.low_ >= 0 ? this.low_ : goog.math.Long.TWO_PWR_32_DBL_ + this.low_;
+};
+
+goog.math.Long.prototype.getNumBitsAbs = function() {
+    if (this.isNegative()) {
+        if (this.equals(goog.math.Long.MIN_VALUE)) {
+            return 64;
+        } else {
+            return this.negate().getNumBitsAbs();
+        }
+    } else {
+        var val = this.high_ != 0 ? this.high_ : this.low_;
+        for (var bit = 31; bit > 0; bit--) {
+            if ((val & 1 << bit) != 0) {
+                break;
+            }
+        }
+        return this.high_ != 0 ? bit + 33 : bit + 1;
+    }
+};
+
+goog.math.Long.prototype.isZero = function() {
+    return this.high_ == 0 && this.low_ == 0;
+};
+
+goog.math.Long.prototype.isNegative = function() {
+    return this.high_ < 0;
+};
+
+goog.math.Long.prototype.isOdd = function() {
+    return (this.low_ & 1) == 1;
+};
+
+goog.math.Long.prototype.equals = function(other) {
+    return this.high_ == other.high_ && this.low_ == other.low_;
+};
+
+goog.math.Long.prototype.notEquals = function(other) {
+    return this.high_ != other.high_ || this.low_ != other.low_;
+};
+
+goog.math.Long.prototype.lessThan = function(other) {
+    return this.compare(other) < 0;
+};
+
+goog.math.Long.prototype.lessThanOrEqual = function(other) {
+    return this.compare(other) <= 0;
+};
+
+goog.math.Long.prototype.greaterThan = function(other) {
+    return this.compare(other) > 0;
+};
+
+goog.math.Long.prototype.greaterThanOrEqual = function(other) {
+    return this.compare(other) >= 0;
+};
+
+goog.math.Long.prototype.compare = function(other) {
+    if (this.equals(other)) {
+        return 0;
+    }
+    var thisNeg = this.isNegative();
+    var otherNeg = other.isNegative();
+    if (thisNeg && !otherNeg) {
+        return -1;
+    }
+    if (!thisNeg && otherNeg) {
+        return 1;
+    }
+    if (this.subtract(other).isNegative()) {
+        return -1;
+    } else {
+        return 1;
+    }
+};
+
+goog.math.Long.prototype.negate = function() {
+    if (this.equals(goog.math.Long.MIN_VALUE)) {
+        return goog.math.Long.MIN_VALUE;
+    } else {
+        return this.not().add(goog.math.Long.ONE);
+    }
+};
+
+goog.math.Long.prototype.add = function(other) {
+    var a48 = this.high_ >>> 16;
+    var a32 = this.high_ & 65535;
+    var a16 = this.low_ >>> 16;
+    var a00 = this.low_ & 65535;
+    var b48 = other.high_ >>> 16;
+    var b32 = other.high_ & 65535;
+    var b16 = other.low_ >>> 16;
+    var b00 = other.low_ & 65535;
+    var c48 = 0, c32 = 0, c16 = 0, c00 = 0;
+    c00 += a00 + b00;
+    c16 += c00 >>> 16;
+    c00 &= 65535;
+    c16 += a16 + b16;
+    c32 += c16 >>> 16;
+    c16 &= 65535;
+    c32 += a32 + b32;
+    c48 += c32 >>> 16;
+    c32 &= 65535;
+    c48 += a48 + b48;
+    c48 &= 65535;
+    return goog.math.Long.fromBits(c16 << 16 | c00, c48 << 16 | c32);
+};
+
+goog.math.Long.prototype.subtract = function(other) {
+    return this.add(other.negate());
+};
+
+goog.math.Long.prototype.multiply = function(other) {
+    if (this.isZero()) {
+        return goog.math.Long.ZERO;
+    } else if (other.isZero()) {
+        return goog.math.Long.ZERO;
+    }
+    if (this.equals(goog.math.Long.MIN_VALUE)) {
+        return other.isOdd() ? goog.math.Long.MIN_VALUE : goog.math.Long.ZERO;
+    } else if (other.equals(goog.math.Long.MIN_VALUE)) {
+        return this.isOdd() ? goog.math.Long.MIN_VALUE : goog.math.Long.ZERO;
+    }
+    if (this.isNegative()) {
+        if (other.isNegative()) {
+            return this.negate().multiply(other.negate());
+        } else {
+            return this.negate().multiply(other).negate();
+        }
+    } else if (other.isNegative()) {
+        return this.multiply(other.negate()).negate();
+    }
+    if (this.lessThan(goog.math.Long.TWO_PWR_24_) && other.lessThan(goog.math.Long.TWO_PWR_24_)) {
+        return goog.math.Long.fromNumber(this.toNumber() * other.toNumber());
+    }
+    var a48 = this.high_ >>> 16;
+    var a32 = this.high_ & 65535;
+    var a16 = this.low_ >>> 16;
+    var a00 = this.low_ & 65535;
+    var b48 = other.high_ >>> 16;
+    var b32 = other.high_ & 65535;
+    var b16 = other.low_ >>> 16;
+    var b00 = other.low_ & 65535;
+    var c48 = 0, c32 = 0, c16 = 0, c00 = 0;
+    c00 += a00 * b00;
+    c16 += c00 >>> 16;
+    c00 &= 65535;
+    c16 += a16 * b00;
+    c32 += c16 >>> 16;
+    c16 &= 65535;
+    c16 += a00 * b16;
+    c32 += c16 >>> 16;
+    c16 &= 65535;
+    c32 += a32 * b00;
+    c48 += c32 >>> 16;
+    c32 &= 65535;
+    c32 += a16 * b16;
+    c48 += c32 >>> 16;
+    c32 &= 65535;
+    c32 += a00 * b32;
+    c48 += c32 >>> 16;
+    c32 &= 65535;
+    c48 += a48 * b00 + a32 * b16 + a16 * b32 + a00 * b48;
+    c48 &= 65535;
+    return goog.math.Long.fromBits(c16 << 16 | c00, c48 << 16 | c32);
+};
+
+goog.math.Long.prototype.div = function(other) {
+    if (other.isZero()) {
+        throw Error("division by zero");
+    } else if (this.isZero()) {
+        return goog.math.Long.ZERO;
+    }
+    if (this.equals(goog.math.Long.MIN_VALUE)) {
+        if (other.equals(goog.math.Long.ONE) || other.equals(goog.math.Long.NEG_ONE)) {
+            return goog.math.Long.MIN_VALUE;
+        } else if (other.equals(goog.math.Long.MIN_VALUE)) {
+            return goog.math.Long.ONE;
+        } else {
+            var halfThis = this.shiftRight(1);
+            var approx = halfThis.div(other).shiftLeft(1);
+            if (approx.equals(goog.math.Long.ZERO)) {
+                return other.isNegative() ? goog.math.Long.ONE : goog.math.Long.NEG_ONE;
+            } else {
+                var rem = this.subtract(other.multiply(approx));
+                var result = approx.add(rem.div(other));
+                return result;
+            }
+        }
+    } else if (other.equals(goog.math.Long.MIN_VALUE)) {
+        return goog.math.Long.ZERO;
+    }
+    if (this.isNegative()) {
+        if (other.isNegative()) {
+            return this.negate().div(other.negate());
+        } else {
+            return this.negate().div(other).negate();
+        }
+    } else if (other.isNegative()) {
+        return this.div(other.negate()).negate();
+    }
+    var res = goog.math.Long.ZERO;
+    var rem = this;
+    while (rem.greaterThanOrEqual(other)) {
+        var approx = Math.max(1, Math.floor(rem.toNumber() / other.toNumber()));
+        var log2 = Math.ceil(Math.log(approx) / Math.LN2);
+        var delta = log2 <= 48 ? 1 : Math.pow(2, log2 - 48);
+        var approxRes = goog.math.Long.fromNumber(approx);
+        var approxRem = approxRes.multiply(other);
+        while (approxRem.isNegative() || approxRem.greaterThan(rem)) {
+            approx -= delta;
+            approxRes = goog.math.Long.fromNumber(approx);
+            approxRem = approxRes.multiply(other);
+        }
+        if (approxRes.isZero()) {
+            approxRes = goog.math.Long.ONE;
+        }
+        res = res.add(approxRes);
+        rem = rem.subtract(approxRem);
+    }
+    return res;
+};
+
+goog.math.Long.prototype.modulo = function(other) {
+    return this.subtract(this.div(other).multiply(other));
+};
+
+goog.math.Long.prototype.not = function() {
+    return goog.math.Long.fromBits(~this.low_, ~this.high_);
+};
+
+goog.math.Long.prototype.and = function(other) {
+    return goog.math.Long.fromBits(this.low_ & other.low_, this.high_ & other.high_);
+};
+
+goog.math.Long.prototype.or = function(other) {
+    return goog.math.Long.fromBits(this.low_ | other.low_, this.high_ | other.high_);
+};
+
+goog.math.Long.prototype.xor = function(other) {
+    return goog.math.Long.fromBits(this.low_ ^ other.low_, this.high_ ^ other.high_);
+};
+
+goog.math.Long.prototype.shiftLeft = function(numBits) {
+    numBits &= 63;
+    if (numBits == 0) {
+        return this;
+    } else {
+        var low = this.low_;
+        if (numBits < 32) {
+            var high = this.high_;
+            return goog.math.Long.fromBits(low << numBits, high << numBits | low >>> 32 - numBits);
+        } else {
+            return goog.math.Long.fromBits(0, low << numBits - 32);
+        }
+    }
+};
+
+goog.math.Long.prototype.shiftRight = function(numBits) {
+    numBits &= 63;
+    if (numBits == 0) {
+        return this;
+    } else {
+        var high = this.high_;
+        if (numBits < 32) {
+            var low = this.low_;
+            return goog.math.Long.fromBits(low >>> numBits | high << 32 - numBits, high >> numBits);
+        } else {
+            return goog.math.Long.fromBits(high >> numBits - 32, high >= 0 ? 0 : -1);
+        }
+    }
+};
+
+goog.math.Long.prototype.shiftRightUnsigned = function(numBits) {
+    numBits &= 63;
+    if (numBits == 0) {
+        return this;
+    } else {
+        var high = this.high_;
+        if (numBits < 32) {
+            var low = this.low_;
+            return goog.math.Long.fromBits(low >>> numBits | high << 32 - numBits, high >>> numBits);
+        } else if (numBits == 32) {
+            return goog.math.Long.fromBits(high, 0);
+        } else {
+            return goog.math.Long.fromBits(high >>> numBits - 32, 0);
+        }
+    }
+};
+
+if (typeof utils == "undefined") {
+    var utils = {};
+}
+
+if (typeof utils.Math == "undefined") {
+    utils.Math = {};
+}
+
+utils.Math.to64BitNumber = function(low, high) {
+    var highNum, lowNum, expected;
+    highNum = new goog.math.Long(0, high);
+    lowNum = new goog.math.Long(low, 0);
+    expected = highNum.add(lowNum);
+    return expected.toNumber();
+};
+
+function ObjectIron(map) {
+    var lookup;
+    lookup = [];
+    for (i = 0, len = map.length; i < len; i += 1) {
+        if (map[i].isRoot) {
+            lookup.push("root");
+        } else {
+            lookup.push(map[i].name);
+        }
+    }
+    var mergeValues = function(parentItem, childItem) {
+        var name, parentValue, childValue;
+        if (parentItem === null || childItem === null) {
+            return;
+        }
+        for (name in parentItem) {
+            if (parentItem.hasOwnProperty(name)) {
+                if (!childItem.hasOwnProperty(name)) {
+                    childItem[name] = parentItem[name];
+                }
+            }
+        }
+    }, mapProperties = function(properties, parent, child) {
+        var i, len, property, parentValue, childValue;
+        if (properties === null || properties.length === 0) {
+            return;
+        }
+        for (i = 0, len = properties.length; i < len; i += 1) {
+            property = properties[i];
+            if (parent.hasOwnProperty(property.name)) {
+                if (child.hasOwnProperty(property.name)) {
+                    if (property.merge) {
+                        parentValue = parent[property.name];
+                        childValue = child[property.name];
+                        if (typeof parentValue === "object" && typeof childValue === "object") {
+                            mergeValues(parentValue, childValue);
+                        } else {
+                            if (property.mergeFunction != null) {
+                                child[property.name] = property.mergeFunction(parentValue, childValue);
+                            } else {
+                                child[property.name] = parentValue + childValue;
+                            }
+                        }
+                    }
+                } else {
+                    child[property.name] = parent[property.name];
+                }
+            }
+        }
+    }, mapItem = function(obj, node) {
+        var item = obj, i, len, v, len2, array, childItem, childNode, property;
+        if (item.children === null || item.children.length === 0) {
+            return;
+        }
+        for (i = 0, len = item.children.length; i < len; i += 1) {
+            childItem = item.children[i];
+            if (node.hasOwnProperty(childItem.name)) {
+                if (childItem.isArray) {
+                    array = node[childItem.name + "_asArray"];
+                    for (v = 0, len2 = array.length; v < len2; v += 1) {
+                        childNode = array[v];
+                        mapProperties(item.properties, node, childNode);
+                        mapItem(childItem, childNode);
+                    }
+                } else {
+                    childNode = node[childItem.name];
+                    mapProperties(item.properties, node, childNode);
+                    mapItem(childItem, childNode);
+                }
+            }
+        }
+    }, performMapping = function(source) {
+        var i, len, pi, pp, item, node, array;
+        if (source === null) {
+            return source;
+        }
+        if (typeof source !== "object") {
+            return source;
+        }
+        for (i = 0, len = lookup.length; i < len; i += 1) {
+            if (lookup[i] === "root") {
+                item = map[i];
+                node = source;
+                mapItem(item, node);
+            }
+        }
+        for (pp in source) {
+            if (source.hasOwnProperty(pp)) {
+                pi = lookup.indexOf(pp);
+                if (pi !== -1) {
+                    item = map[pi];
+                    if (item.isArray) {
+                        array = source[pp + "_asArray"];
+                        for (i = 0, len = array.length; i < len; i += 1) {
+                            node = array[i];
+                            mapItem(item, node);
+                        }
+                    } else {
+                        node = source[pp];
+                        mapItem(item, node);
+                    }
+                }
+                performMapping(source[pp]);
+            }
+        }
+        return source;
+    };
+    return {
+        run: performMapping
+    };
+}
+
 (function(definition) {
     Q = definition();
 })(function() {
@@ -1055,980 +2030,6 @@ function X2JS(matchers, attrPrefix, ignoreRoot) {
     this.escapeMode = function(enabled) {
         escapeMode = enabled;
     };
-}
-
-function ObjectIron(map) {
-    var lookup;
-    lookup = [];
-    for (i = 0, len = map.length; i < len; i += 1) {
-        if (map[i].isRoot) {
-            lookup.push("root");
-        } else {
-            lookup.push(map[i].name);
-        }
-    }
-    var mergeValues = function(parentItem, childItem) {
-        var name, parentValue, childValue;
-        if (parentItem === null || childItem === null) {
-            return;
-        }
-        for (name in parentItem) {
-            if (parentItem.hasOwnProperty(name)) {
-                if (!childItem.hasOwnProperty(name)) {
-                    childItem[name] = parentItem[name];
-                }
-            }
-        }
-    }, mapProperties = function(properties, parent, child) {
-        var i, len, property, parentValue, childValue;
-        if (properties === null || properties.length === 0) {
-            return;
-        }
-        for (i = 0, len = properties.length; i < len; i += 1) {
-            property = properties[i];
-            if (parent.hasOwnProperty(property.name)) {
-                if (child.hasOwnProperty(property.name)) {
-                    if (property.merge) {
-                        parentValue = parent[property.name];
-                        childValue = child[property.name];
-                        if (typeof parentValue === "object" && typeof childValue === "object") {
-                            mergeValues(parentValue, childValue);
-                        } else {
-                            if (property.mergeFunction != null) {
-                                child[property.name] = property.mergeFunction(parentValue, childValue);
-                            } else {
-                                child[property.name] = parentValue + childValue;
-                            }
-                        }
-                    }
-                } else {
-                    child[property.name] = parent[property.name];
-                }
-            }
-        }
-    }, mapItem = function(obj, node) {
-        var item = obj, i, len, v, len2, array, childItem, childNode, property;
-        if (item.children === null || item.children.length === 0) {
-            return;
-        }
-        for (i = 0, len = item.children.length; i < len; i += 1) {
-            childItem = item.children[i];
-            if (node.hasOwnProperty(childItem.name)) {
-                if (childItem.isArray) {
-                    array = node[childItem.name + "_asArray"];
-                    for (v = 0, len2 = array.length; v < len2; v += 1) {
-                        childNode = array[v];
-                        mapProperties(item.properties, node, childNode);
-                        mapItem(childItem, childNode);
-                    }
-                } else {
-                    childNode = node[childItem.name];
-                    mapProperties(item.properties, node, childNode);
-                    mapItem(childItem, childNode);
-                }
-            }
-        }
-    }, performMapping = function(source) {
-        var i, len, pi, pp, item, node, array;
-        if (source === null) {
-            return source;
-        }
-        if (typeof source !== "object") {
-            return source;
-        }
-        for (i = 0, len = lookup.length; i < len; i += 1) {
-            if (lookup[i] === "root") {
-                item = map[i];
-                node = source;
-                mapItem(item, node);
-            }
-        }
-        for (pp in source) {
-            if (source.hasOwnProperty(pp)) {
-                pi = lookup.indexOf(pp);
-                if (pi !== -1) {
-                    item = map[pi];
-                    if (item.isArray) {
-                        array = source[pp + "_asArray"];
-                        for (i = 0, len = array.length; i < len; i += 1) {
-                            node = array[i];
-                            mapItem(item, node);
-                        }
-                    } else {
-                        node = source[pp];
-                        mapItem(item, node);
-                    }
-                }
-                performMapping(source[pp]);
-            }
-        }
-        return source;
-    };
-    return {
-        run: performMapping
-    };
-}
-
-(function(scope) {
-    "use strict";
-    var dijon = {
-        VERSION: "0.5.3"
-    };
-    dijon.System = function() {
-        this._mappings = {};
-        this._outlets = {};
-        this._handlers = {};
-        this.strictInjections = true;
-        this.autoMapOutlets = false;
-        this.postInjectionHook = "setup";
-    };
-    dijon.System.prototype = {
-        _createAndSetupInstance: function(key, Clazz) {
-            var instance = new Clazz();
-            this.injectInto(instance, key);
-            return instance;
-        },
-        _retrieveFromCacheOrCreate: function(key, overrideRules) {
-            if (typeof overrideRules === "undefined") {
-                overrideRules = false;
-            }
-            var output;
-            if (this._mappings.hasOwnProperty(key)) {
-                var config = this._mappings[key];
-                if (!overrideRules && config.isSingleton) {
-                    if (config.object == null) {
-                        config.object = this._createAndSetupInstance(key, config.clazz);
-                    }
-                    output = config.object;
-                } else {
-                    if (config.clazz) {
-                        output = this._createAndSetupInstance(key, config.clazz);
-                    } else {
-                        output = config.object;
-                    }
-                }
-            } else {
-                throw new Error(1e3);
-            }
-            return output;
-        },
-        mapOutlet: function(sourceKey, targetKey, outletName) {
-            if (typeof sourceKey === "undefined") {
-                throw new Error(1010);
-            }
-            targetKey = targetKey || "global";
-            outletName = outletName || sourceKey;
-            if (!this._outlets.hasOwnProperty(targetKey)) {
-                this._outlets[targetKey] = {};
-            }
-            this._outlets[targetKey][outletName] = sourceKey;
-            return this;
-        },
-        getObject: function(key) {
-            if (typeof key === "undefined") {
-                throw new Error(1020);
-            }
-            return this._retrieveFromCacheOrCreate(key);
-        },
-        mapValue: function(key, useValue) {
-            if (typeof key === "undefined") {
-                throw new Error(1030);
-            }
-            this._mappings[key] = {
-                clazz: null,
-                object: useValue,
-                isSingleton: true
-            };
-            if (this.autoMapOutlets) {
-                this.mapOutlet(key);
-            }
-            if (this.hasMapping(key)) {
-                this.injectInto(useValue, key);
-            }
-            return this;
-        },
-        hasMapping: function(key) {
-            if (typeof key === "undefined") {
-                throw new Error(1040);
-            }
-            return this._mappings.hasOwnProperty(key);
-        },
-        mapClass: function(key, clazz) {
-            if (typeof key === "undefined") {
-                throw new Error(1050);
-            }
-            if (typeof clazz === "undefined") {
-                throw new Error(1051);
-            }
-            this._mappings[key] = {
-                clazz: clazz,
-                object: null,
-                isSingleton: false
-            };
-            if (this.autoMapOutlets) {
-                this.mapOutlet(key);
-            }
-            return this;
-        },
-        mapSingleton: function(key, clazz) {
-            if (typeof key === "undefined") {
-                throw new Error(1060);
-            }
-            if (typeof clazz === "undefined") {
-                throw new Error(1061);
-            }
-            this._mappings[key] = {
-                clazz: clazz,
-                object: null,
-                isSingleton: true
-            };
-            if (this.autoMapOutlets) {
-                this.mapOutlet(key);
-            }
-            return this;
-        },
-        instantiate: function(key) {
-            if (typeof key === "undefined") {
-                throw new Error(1070);
-            }
-            return this._retrieveFromCacheOrCreate(key, true);
-        },
-        injectInto: function(instance, key) {
-            if (typeof instance === "undefined") {
-                throw new Error(1080);
-            }
-            if (typeof instance === "object") {
-                var o = [];
-                if (this._outlets.hasOwnProperty("global")) {
-                    o.push(this._outlets["global"]);
-                }
-                if (typeof key !== "undefined" && this._outlets.hasOwnProperty(key)) {
-                    o.push(this._outlets[key]);
-                }
-                for (var i in o) {
-                    var l = o[i];
-                    for (var outlet in l) {
-                        var source = l[outlet];
-                        if (!this.strictInjections || outlet in instance) {
-                            instance[outlet] = this.getObject(source);
-                        }
-                    }
-                }
-                if ("setup" in instance) {
-                    instance.setup.call(instance);
-                }
-            }
-            return this;
-        },
-        unmap: function(key) {
-            if (typeof key === "undefined") {
-                throw new Error(1090);
-            }
-            delete this._mappings[key];
-            return this;
-        },
-        unmapOutlet: function(target, outlet) {
-            if (typeof target === "undefined") {
-                throw new Error(1100);
-            }
-            if (typeof outlet === "undefined") {
-                throw new Error(1101);
-            }
-            delete this._outlets[target][outlet];
-            return this;
-        },
-        mapHandler: function(eventName, key, handler, oneShot, passEvent) {
-            if (typeof eventName === "undefined") {
-                throw new Error(1110);
-            }
-            key = key || "global";
-            handler = handler || eventName;
-            if (typeof oneShot === "undefined") {
-                oneShot = false;
-            }
-            if (typeof passEvent === "undefined") {
-                passEvent = false;
-            }
-            if (!this._handlers.hasOwnProperty(eventName)) {
-                this._handlers[eventName] = {};
-            }
-            if (!this._handlers[eventName].hasOwnProperty(key)) {
-                this._handlers[eventName][key] = [];
-            }
-            this._handlers[eventName][key].push({
-                handler: handler,
-                oneShot: oneShot,
-                passEvent: passEvent
-            });
-            return this;
-        },
-        unmapHandler: function(eventName, key, handler) {
-            if (typeof eventName === "undefined") {
-                throw new Error(1120);
-            }
-            key = key || "global";
-            if (this._handlers.hasOwnProperty(eventName) && this._handlers[eventName].hasOwnProperty(key)) {
-                var handlers = this._handlers[eventName][key];
-                for (var i in handlers) {
-                    var config = handlers[i];
-                    if (!handler || config.handler === handler) {
-                        handlers.splice(i, 1);
-                        break;
-                    }
-                }
-            }
-            return this;
-        },
-        notify: function(eventName) {
-            if (typeof eventName === "undefined") {
-                throw new Error(1130);
-            }
-            var argsWithEvent = Array.prototype.slice.call(arguments);
-            var argsClean = argsWithEvent.slice(1);
-            if (this._handlers.hasOwnProperty(eventName)) {
-                var handlers = this._handlers[eventName];
-                for (var key in handlers) {
-                    var configs = handlers[key];
-                    var instance;
-                    if (key !== "global") {
-                        instance = this.getObject(key);
-                    }
-                    var toBeDeleted = [];
-                    var i, n;
-                    for (i = 0, n = configs.length; i < n; i++) {
-                        var handler;
-                        var config = configs[i];
-                        if (instance && typeof config.handler === "string") {
-                            handler = instance[config.handler];
-                        } else {
-                            handler = config.handler;
-                        }
-                        if (config.oneShot) {
-                            toBeDeleted.unshift(i);
-                        }
-                        if (config.passEvent) {
-                            handler.apply(instance, argsWithEvent);
-                        } else {
-                            handler.apply(instance, argsClean);
-                        }
-                    }
-                    for (i = 0, n = toBeDeleted.length; i < n; i++) {
-                        configs.splice(toBeDeleted[i], 1);
-                    }
-                }
-            }
-            return this;
-        }
-    };
-    scope.dijon = dijon;
-})(this);
-
-if (typeof utils == "undefined") {
-    var utils = {};
-}
-
-if (typeof utils.Math == "undefined") {
-    utils.Math = {};
-}
-
-utils.Math.to64BitNumber = function(low, high) {
-    var highNum, lowNum, expected;
-    highNum = new goog.math.Long(0, high);
-    lowNum = new goog.math.Long(low, 0);
-    expected = highNum.add(lowNum);
-    return expected.toNumber();
-};
-
-goog = {};
-
-goog.math = {};
-
-goog.math.Long = function(low, high) {
-    this.low_ = low | 0;
-    this.high_ = high | 0;
-};
-
-goog.math.Long.IntCache_ = {};
-
-goog.math.Long.fromInt = function(value) {
-    if (-128 <= value && value < 128) {
-        var cachedObj = goog.math.Long.IntCache_[value];
-        if (cachedObj) {
-            return cachedObj;
-        }
-    }
-    var obj = new goog.math.Long(value | 0, value < 0 ? -1 : 0);
-    if (-128 <= value && value < 128) {
-        goog.math.Long.IntCache_[value] = obj;
-    }
-    return obj;
-};
-
-goog.math.Long.fromNumber = function(value) {
-    if (isNaN(value) || !isFinite(value)) {
-        return goog.math.Long.ZERO;
-    } else if (value <= -goog.math.Long.TWO_PWR_63_DBL_) {
-        return goog.math.Long.MIN_VALUE;
-    } else if (value + 1 >= goog.math.Long.TWO_PWR_63_DBL_) {
-        return goog.math.Long.MAX_VALUE;
-    } else if (value < 0) {
-        return goog.math.Long.fromNumber(-value).negate();
-    } else {
-        return new goog.math.Long(value % goog.math.Long.TWO_PWR_32_DBL_ | 0, value / goog.math.Long.TWO_PWR_32_DBL_ | 0);
-    }
-};
-
-goog.math.Long.fromBits = function(lowBits, highBits) {
-    return new goog.math.Long(lowBits, highBits);
-};
-
-goog.math.Long.fromString = function(str, opt_radix) {
-    if (str.length == 0) {
-        throw Error("number format error: empty string");
-    }
-    var radix = opt_radix || 10;
-    if (radix < 2 || 36 < radix) {
-        throw Error("radix out of range: " + radix);
-    }
-    if (str.charAt(0) == "-") {
-        return goog.math.Long.fromString(str.substring(1), radix).negate();
-    } else if (str.indexOf("-") >= 0) {
-        throw Error('number format error: interior "-" character: ' + str);
-    }
-    var radixToPower = goog.math.Long.fromNumber(Math.pow(radix, 8));
-    var result = goog.math.Long.ZERO;
-    for (var i = 0; i < str.length; i += 8) {
-        var size = Math.min(8, str.length - i);
-        var value = parseInt(str.substring(i, i + size), radix);
-        if (size < 8) {
-            var power = goog.math.Long.fromNumber(Math.pow(radix, size));
-            result = result.multiply(power).add(goog.math.Long.fromNumber(value));
-        } else {
-            result = result.multiply(radixToPower);
-            result = result.add(goog.math.Long.fromNumber(value));
-        }
-    }
-    return result;
-};
-
-goog.math.Long.TWO_PWR_16_DBL_ = 1 << 16;
-
-goog.math.Long.TWO_PWR_24_DBL_ = 1 << 24;
-
-goog.math.Long.TWO_PWR_32_DBL_ = goog.math.Long.TWO_PWR_16_DBL_ * goog.math.Long.TWO_PWR_16_DBL_;
-
-goog.math.Long.TWO_PWR_31_DBL_ = goog.math.Long.TWO_PWR_32_DBL_ / 2;
-
-goog.math.Long.TWO_PWR_48_DBL_ = goog.math.Long.TWO_PWR_32_DBL_ * goog.math.Long.TWO_PWR_16_DBL_;
-
-goog.math.Long.TWO_PWR_64_DBL_ = goog.math.Long.TWO_PWR_32_DBL_ * goog.math.Long.TWO_PWR_32_DBL_;
-
-goog.math.Long.TWO_PWR_63_DBL_ = goog.math.Long.TWO_PWR_64_DBL_ / 2;
-
-goog.math.Long.ZERO = goog.math.Long.fromInt(0);
-
-goog.math.Long.ONE = goog.math.Long.fromInt(1);
-
-goog.math.Long.NEG_ONE = goog.math.Long.fromInt(-1);
-
-goog.math.Long.MAX_VALUE = goog.math.Long.fromBits(4294967295 | 0, 2147483647 | 0);
-
-goog.math.Long.MIN_VALUE = goog.math.Long.fromBits(0, 2147483648 | 0);
-
-goog.math.Long.TWO_PWR_24_ = goog.math.Long.fromInt(1 << 24);
-
-goog.math.Long.prototype.toInt = function() {
-    return this.low_;
-};
-
-goog.math.Long.prototype.toNumber = function() {
-    return this.high_ * goog.math.Long.TWO_PWR_32_DBL_ + this.getLowBitsUnsigned();
-};
-
-goog.math.Long.prototype.toString = function(opt_radix) {
-    var radix = opt_radix || 10;
-    if (radix < 2 || 36 < radix) {
-        throw Error("radix out of range: " + radix);
-    }
-    if (this.isZero()) {
-        return "0";
-    }
-    if (this.isNegative()) {
-        if (this.equals(goog.math.Long.MIN_VALUE)) {
-            var radixLong = goog.math.Long.fromNumber(radix);
-            var div = this.div(radixLong);
-            var rem = div.multiply(radixLong).subtract(this);
-            return div.toString(radix) + rem.toInt().toString(radix);
-        } else {
-            return "-" + this.negate().toString(radix);
-        }
-    }
-    var radixToPower = goog.math.Long.fromNumber(Math.pow(radix, 6));
-    var rem = this;
-    var result = "";
-    while (true) {
-        var remDiv = rem.div(radixToPower);
-        var intval = rem.subtract(remDiv.multiply(radixToPower)).toInt();
-        var digits = intval.toString(radix);
-        rem = remDiv;
-        if (rem.isZero()) {
-            return digits + result;
-        } else {
-            while (digits.length < 6) {
-                digits = "0" + digits;
-            }
-            result = "" + digits + result;
-        }
-    }
-};
-
-goog.math.Long.prototype.getHighBits = function() {
-    return this.high_;
-};
-
-goog.math.Long.prototype.getLowBits = function() {
-    return this.low_;
-};
-
-goog.math.Long.prototype.getLowBitsUnsigned = function() {
-    return this.low_ >= 0 ? this.low_ : goog.math.Long.TWO_PWR_32_DBL_ + this.low_;
-};
-
-goog.math.Long.prototype.getNumBitsAbs = function() {
-    if (this.isNegative()) {
-        if (this.equals(goog.math.Long.MIN_VALUE)) {
-            return 64;
-        } else {
-            return this.negate().getNumBitsAbs();
-        }
-    } else {
-        var val = this.high_ != 0 ? this.high_ : this.low_;
-        for (var bit = 31; bit > 0; bit--) {
-            if ((val & 1 << bit) != 0) {
-                break;
-            }
-        }
-        return this.high_ != 0 ? bit + 33 : bit + 1;
-    }
-};
-
-goog.math.Long.prototype.isZero = function() {
-    return this.high_ == 0 && this.low_ == 0;
-};
-
-goog.math.Long.prototype.isNegative = function() {
-    return this.high_ < 0;
-};
-
-goog.math.Long.prototype.isOdd = function() {
-    return (this.low_ & 1) == 1;
-};
-
-goog.math.Long.prototype.equals = function(other) {
-    return this.high_ == other.high_ && this.low_ == other.low_;
-};
-
-goog.math.Long.prototype.notEquals = function(other) {
-    return this.high_ != other.high_ || this.low_ != other.low_;
-};
-
-goog.math.Long.prototype.lessThan = function(other) {
-    return this.compare(other) < 0;
-};
-
-goog.math.Long.prototype.lessThanOrEqual = function(other) {
-    return this.compare(other) <= 0;
-};
-
-goog.math.Long.prototype.greaterThan = function(other) {
-    return this.compare(other) > 0;
-};
-
-goog.math.Long.prototype.greaterThanOrEqual = function(other) {
-    return this.compare(other) >= 0;
-};
-
-goog.math.Long.prototype.compare = function(other) {
-    if (this.equals(other)) {
-        return 0;
-    }
-    var thisNeg = this.isNegative();
-    var otherNeg = other.isNegative();
-    if (thisNeg && !otherNeg) {
-        return -1;
-    }
-    if (!thisNeg && otherNeg) {
-        return 1;
-    }
-    if (this.subtract(other).isNegative()) {
-        return -1;
-    } else {
-        return 1;
-    }
-};
-
-goog.math.Long.prototype.negate = function() {
-    if (this.equals(goog.math.Long.MIN_VALUE)) {
-        return goog.math.Long.MIN_VALUE;
-    } else {
-        return this.not().add(goog.math.Long.ONE);
-    }
-};
-
-goog.math.Long.prototype.add = function(other) {
-    var a48 = this.high_ >>> 16;
-    var a32 = this.high_ & 65535;
-    var a16 = this.low_ >>> 16;
-    var a00 = this.low_ & 65535;
-    var b48 = other.high_ >>> 16;
-    var b32 = other.high_ & 65535;
-    var b16 = other.low_ >>> 16;
-    var b00 = other.low_ & 65535;
-    var c48 = 0, c32 = 0, c16 = 0, c00 = 0;
-    c00 += a00 + b00;
-    c16 += c00 >>> 16;
-    c00 &= 65535;
-    c16 += a16 + b16;
-    c32 += c16 >>> 16;
-    c16 &= 65535;
-    c32 += a32 + b32;
-    c48 += c32 >>> 16;
-    c32 &= 65535;
-    c48 += a48 + b48;
-    c48 &= 65535;
-    return goog.math.Long.fromBits(c16 << 16 | c00, c48 << 16 | c32);
-};
-
-goog.math.Long.prototype.subtract = function(other) {
-    return this.add(other.negate());
-};
-
-goog.math.Long.prototype.multiply = function(other) {
-    if (this.isZero()) {
-        return goog.math.Long.ZERO;
-    } else if (other.isZero()) {
-        return goog.math.Long.ZERO;
-    }
-    if (this.equals(goog.math.Long.MIN_VALUE)) {
-        return other.isOdd() ? goog.math.Long.MIN_VALUE : goog.math.Long.ZERO;
-    } else if (other.equals(goog.math.Long.MIN_VALUE)) {
-        return this.isOdd() ? goog.math.Long.MIN_VALUE : goog.math.Long.ZERO;
-    }
-    if (this.isNegative()) {
-        if (other.isNegative()) {
-            return this.negate().multiply(other.negate());
-        } else {
-            return this.negate().multiply(other).negate();
-        }
-    } else if (other.isNegative()) {
-        return this.multiply(other.negate()).negate();
-    }
-    if (this.lessThan(goog.math.Long.TWO_PWR_24_) && other.lessThan(goog.math.Long.TWO_PWR_24_)) {
-        return goog.math.Long.fromNumber(this.toNumber() * other.toNumber());
-    }
-    var a48 = this.high_ >>> 16;
-    var a32 = this.high_ & 65535;
-    var a16 = this.low_ >>> 16;
-    var a00 = this.low_ & 65535;
-    var b48 = other.high_ >>> 16;
-    var b32 = other.high_ & 65535;
-    var b16 = other.low_ >>> 16;
-    var b00 = other.low_ & 65535;
-    var c48 = 0, c32 = 0, c16 = 0, c00 = 0;
-    c00 += a00 * b00;
-    c16 += c00 >>> 16;
-    c00 &= 65535;
-    c16 += a16 * b00;
-    c32 += c16 >>> 16;
-    c16 &= 65535;
-    c16 += a00 * b16;
-    c32 += c16 >>> 16;
-    c16 &= 65535;
-    c32 += a32 * b00;
-    c48 += c32 >>> 16;
-    c32 &= 65535;
-    c32 += a16 * b16;
-    c48 += c32 >>> 16;
-    c32 &= 65535;
-    c32 += a00 * b32;
-    c48 += c32 >>> 16;
-    c32 &= 65535;
-    c48 += a48 * b00 + a32 * b16 + a16 * b32 + a00 * b48;
-    c48 &= 65535;
-    return goog.math.Long.fromBits(c16 << 16 | c00, c48 << 16 | c32);
-};
-
-goog.math.Long.prototype.div = function(other) {
-    if (other.isZero()) {
-        throw Error("division by zero");
-    } else if (this.isZero()) {
-        return goog.math.Long.ZERO;
-    }
-    if (this.equals(goog.math.Long.MIN_VALUE)) {
-        if (other.equals(goog.math.Long.ONE) || other.equals(goog.math.Long.NEG_ONE)) {
-            return goog.math.Long.MIN_VALUE;
-        } else if (other.equals(goog.math.Long.MIN_VALUE)) {
-            return goog.math.Long.ONE;
-        } else {
-            var halfThis = this.shiftRight(1);
-            var approx = halfThis.div(other).shiftLeft(1);
-            if (approx.equals(goog.math.Long.ZERO)) {
-                return other.isNegative() ? goog.math.Long.ONE : goog.math.Long.NEG_ONE;
-            } else {
-                var rem = this.subtract(other.multiply(approx));
-                var result = approx.add(rem.div(other));
-                return result;
-            }
-        }
-    } else if (other.equals(goog.math.Long.MIN_VALUE)) {
-        return goog.math.Long.ZERO;
-    }
-    if (this.isNegative()) {
-        if (other.isNegative()) {
-            return this.negate().div(other.negate());
-        } else {
-            return this.negate().div(other).negate();
-        }
-    } else if (other.isNegative()) {
-        return this.div(other.negate()).negate();
-    }
-    var res = goog.math.Long.ZERO;
-    var rem = this;
-    while (rem.greaterThanOrEqual(other)) {
-        var approx = Math.max(1, Math.floor(rem.toNumber() / other.toNumber()));
-        var log2 = Math.ceil(Math.log(approx) / Math.LN2);
-        var delta = log2 <= 48 ? 1 : Math.pow(2, log2 - 48);
-        var approxRes = goog.math.Long.fromNumber(approx);
-        var approxRem = approxRes.multiply(other);
-        while (approxRem.isNegative() || approxRem.greaterThan(rem)) {
-            approx -= delta;
-            approxRes = goog.math.Long.fromNumber(approx);
-            approxRem = approxRes.multiply(other);
-        }
-        if (approxRes.isZero()) {
-            approxRes = goog.math.Long.ONE;
-        }
-        res = res.add(approxRes);
-        rem = rem.subtract(approxRem);
-    }
-    return res;
-};
-
-goog.math.Long.prototype.modulo = function(other) {
-    return this.subtract(this.div(other).multiply(other));
-};
-
-goog.math.Long.prototype.not = function() {
-    return goog.math.Long.fromBits(~this.low_, ~this.high_);
-};
-
-goog.math.Long.prototype.and = function(other) {
-    return goog.math.Long.fromBits(this.low_ & other.low_, this.high_ & other.high_);
-};
-
-goog.math.Long.prototype.or = function(other) {
-    return goog.math.Long.fromBits(this.low_ | other.low_, this.high_ | other.high_);
-};
-
-goog.math.Long.prototype.xor = function(other) {
-    return goog.math.Long.fromBits(this.low_ ^ other.low_, this.high_ ^ other.high_);
-};
-
-goog.math.Long.prototype.shiftLeft = function(numBits) {
-    numBits &= 63;
-    if (numBits == 0) {
-        return this;
-    } else {
-        var low = this.low_;
-        if (numBits < 32) {
-            var high = this.high_;
-            return goog.math.Long.fromBits(low << numBits, high << numBits | low >>> 32 - numBits);
-        } else {
-            return goog.math.Long.fromBits(0, low << numBits - 32);
-        }
-    }
-};
-
-goog.math.Long.prototype.shiftRight = function(numBits) {
-    numBits &= 63;
-    if (numBits == 0) {
-        return this;
-    } else {
-        var high = this.high_;
-        if (numBits < 32) {
-            var low = this.low_;
-            return goog.math.Long.fromBits(low >>> numBits | high << 32 - numBits, high >> numBits);
-        } else {
-            return goog.math.Long.fromBits(high >> numBits - 32, high >= 0 ? 0 : -1);
-        }
-    }
-};
-
-goog.math.Long.prototype.shiftRightUnsigned = function(numBits) {
-    numBits &= 63;
-    if (numBits == 0) {
-        return this;
-    } else {
-        var high = this.high_;
-        if (numBits < 32) {
-            var low = this.low_;
-            return goog.math.Long.fromBits(low >>> numBits | high << 32 - numBits, high >>> numBits);
-        } else if (numBits == 32) {
-            return goog.math.Long.fromBits(high, 0);
-        } else {
-            return goog.math.Long.fromBits(high >>> numBits - 32, 0);
-        }
-    }
-};
-
-var UTF8 = {};
-
-UTF8.encode = function(s) {
-    var u = [];
-    for (var i = 0; i < s.length; ++i) {
-        var c = s.charCodeAt(i);
-        if (c < 128) {
-            u.push(c);
-        } else if (c < 2048) {
-            u.push(192 | c >> 6);
-            u.push(128 | 63 & c);
-        } else if (c < 65536) {
-            u.push(224 | c >> 12);
-            u.push(128 | 63 & c >> 6);
-            u.push(128 | 63 & c);
-        } else {
-            u.push(240 | c >> 18);
-            u.push(128 | 63 & c >> 12);
-            u.push(128 | 63 & c >> 6);
-            u.push(128 | 63 & c);
-        }
-    }
-    return u;
-};
-
-UTF8.decode = function(u) {
-    var a = [];
-    var i = 0;
-    while (i < u.length) {
-        var v = u[i++];
-        if (v < 128) {} else if (v < 224) {
-            v = (31 & v) << 6;
-            v |= 63 & u[i++];
-        } else if (v < 240) {
-            v = (15 & v) << 12;
-            v |= (63 & u[i++]) << 6;
-            v |= 63 & u[i++];
-        } else {
-            v = (7 & v) << 18;
-            v |= (63 & u[i++]) << 12;
-            v |= (63 & u[i++]) << 6;
-            v |= 63 & u[i++];
-        }
-        a.push(String.fromCharCode(v));
-    }
-    return a.join("");
-};
-
-var BASE64 = {};
-
-(function(T) {
-    var encodeArray = function(u) {
-        var i = 0;
-        var a = [];
-        var n = 0 | u.length / 3;
-        while (0 < n--) {
-            var v = (u[i] << 16) + (u[i + 1] << 8) + u[i + 2];
-            i += 3;
-            a.push(T.charAt(63 & v >> 18));
-            a.push(T.charAt(63 & v >> 12));
-            a.push(T.charAt(63 & v >> 6));
-            a.push(T.charAt(63 & v));
-        }
-        if (2 == u.length - i) {
-            var v = (u[i] << 16) + (u[i + 1] << 8);
-            a.push(T.charAt(63 & v >> 18));
-            a.push(T.charAt(63 & v >> 12));
-            a.push(T.charAt(63 & v >> 6));
-            a.push("=");
-        } else if (1 == u.length - i) {
-            var v = u[i] << 16;
-            a.push(T.charAt(63 & v >> 18));
-            a.push(T.charAt(63 & v >> 12));
-            a.push("==");
-        }
-        return a.join("");
-    };
-    var R = function() {
-        var a = [];
-        for (var i = 0; i < T.length; ++i) {
-            a[T.charCodeAt(i)] = i;
-        }
-        a["=".charCodeAt(0)] = 0;
-        return a;
-    }();
-    var decodeArray = function(s) {
-        var i = 0;
-        var u = [];
-        var n = 0 | s.length / 4;
-        while (0 < n--) {
-            var v = (R[s.charCodeAt(i)] << 18) + (R[s.charCodeAt(i + 1)] << 12) + (R[s.charCodeAt(i + 2)] << 6) + R[s.charCodeAt(i + 3)];
-            u.push(255 & v >> 16);
-            u.push(255 & v >> 8);
-            u.push(255 & v);
-            i += 4;
-        }
-        if (u) {
-            if ("=" == s.charAt(i - 2)) {
-                u.pop();
-                u.pop();
-            } else if ("=" == s.charAt(i - 1)) {
-                u.pop();
-            }
-        }
-        return u;
-    };
-    var ASCII = {};
-    ASCII.encode = function(s) {
-        var u = [];
-        for (var i = 0; i < s.length; ++i) {
-            u.push(s.charCodeAt(i));
-        }
-        return u;
-    };
-    ASCII.decode = function(u) {
-        for (var i = 0; i < s.length; ++i) {
-            a[i] = String.fromCharCode(a[i]);
-        }
-        return a.join("");
-    };
-    BASE64.decodeArray = function(s) {
-        var u = decodeArray(s);
-        return new Uint8Array(u);
-    };
-    BASE64.encodeASCII = function(s) {
-        var u = ASCII.encode(s);
-        return encodeArray(u);
-    };
-    BASE64.decodeASCII = function(s) {
-        var a = decodeArray(s);
-        return ASCII.decode(a);
-    };
-    BASE64.encode = function(s) {
-        var u = UTF8.encode(s);
-        return encodeArray(u);
-    };
-    BASE64.decode = function(s) {
-        var u = decodeArray(s);
-        return UTF8.decode(u);
-    };
-})("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
-
-if (undefined === btoa) {
-    var btoa = BASE64.encode;
-}
-
-if (undefined === atob) {
-    var atob = BASE64.decode;
 }
 
 var mp4lib = function() {
@@ -4952,103 +4953,76 @@ var mpegts = function() {
 
 if (typeof module !== "undefined" && typeof module.exports !== "undefined") module.exports = mpegts; else window.mpegts = mpegts;
 
-mpegts.ts.TsPacket = function() {
-    this.m_cSync = null;
-    this.m_bTransportError = null;
-    this.m_bPUSI = null;
-    this.m_bTransportPriority = null;
-    this.m_nPID = null;
-    this.m_cTransportScramblingCtrl = null;
-    this.m_cAdaptationFieldCtrl = null;
-    this.m_cContinuityCounter = null;
-    this.m_pAdaptationField = null;
-    this.m_payloadArray = null;
-    this.m_cPayloadLength = null;
-    this.m_bDirty = null;
-    this.m_time = null;
-    this.m_arrivalTime = null;
-    this.m_bIgnored = null;
+mpegts.aac.SAMPLING_FREQUENCY = [ 96e3, 88200, 64e3, 48e3, 44100, 32e3, 24e3, 22050, 16e3, 12e3, 11025, 8e3, 7350 ];
+
+mpegts.aac.getAudioSpecificConfig = function(data) {
+    var profile = mpegts.binary.getValueFromByte(data[2], 0, 2);
+    var sampling_frequency_index = mpegts.binary.getValueFromByte(data[2], 2, 4);
+    var channel_configuration = mpegts.binary.getValueFrom2Bytes(data.subarray(2, 5), 7, 3);
+    var audioSpecificConfig = new Uint8Array(2);
+    audioSpecificConfig[0] = profile + 1 << 3;
+    audioSpecificConfig[0] |= (sampling_frequency_index & 14) >> 1;
+    audioSpecificConfig[1] |= (sampling_frequency_index & 1) << 7;
+    audioSpecificConfig[1] |= channel_configuration << 3;
+    return audioSpecificConfig;
 };
 
-mpegts.ts.TsPacket.prototype.parse = function(data) {
-    var byteId = 0;
-    this.m_cSync = data[byteId];
-    if (this.m_cSync !== this.SYNC_WORD) {
+mpegts.aac.parseADTS = function(data) {
+    var aacFrames = [], adtsHeader = {}, aacFrame, adtsFrameIndex, i = 0;
+    while (i < data.length) {
+        adtsFrameIndex = i;
+        adtsHeader.syncword = (data[i] << 4) + ((data[i + 1] & 240) >> 4);
+        adtsHeader.protection_absent = data[i + 1] & 1;
+        adtsHeader.sampling_frequency_index = (data[i + 2] & 60) >> 2;
+        adtsHeader.channel_configuration = ((data[i + 2] & 1) << 1) + ((data[i + 3] & 192) >> 6);
+        adtsHeader.aac_frame_length = ((data[i + 3] & 3) << 11) + (data[i + 4] << 3) + ((data[i + 5] & 224) >> 5);
+        adtsHeader.number_of_raw_data_blocks_in_frame = (data[i + 6] & 3) >> 2;
+        i += 7;
+        if (adtsHeader.number_of_raw_data_blocks_in_frame === 0) {
+            if (adtsHeader.protection_absent === 0) {
+                i += 2;
+            }
+            aacFrame = {};
+            aacFrame.offset = i;
+            aacFrame.length = adtsHeader.aac_frame_length - (i - adtsFrameIndex);
+            aacFrames.push(aacFrame);
+            i += aacFrame.length;
+        } else {}
+    }
+    return aacFrames;
+};
+
+mpegts.ts.AdaptationField = function() {
+    this.m_cAFLength = null;
+    this.m_bDiscontinuityInd = null;
+    this.m_bRAI = null;
+    this.m_bESPriority = null;
+    this.m_bPCRFlag = null;
+    this.m_bOPCRFlag = null;
+    this.m_bSplicingPointFlag = null;
+    this.m_bPrivateDataFlag = null;
+    this.m_bAdaptationFieldExtFlag = null;
+};
+
+mpegts.ts.AdaptationField.prototype.getLength = function() {
+    return this.m_cAFLength + 1;
+};
+
+mpegts.ts.AdaptationField.prototype.parse = function(data) {
+    this.m_cAFLength = data[0];
+    if (this.m_cAFLength === 0) {
         return;
     }
-    byteId++;
-    this.m_bTransportError = mpegts.binary.getBitFromByte(data[byteId], 0);
-    this.m_bPUSI = mpegts.binary.getBitFromByte(data[byteId], 1);
-    this.m_bTransportPriority = mpegts.binary.getBitFromByte(data[byteId], 2);
-    this.m_nPID = mpegts.binary.getValueFrom2Bytes(data.subarray(byteId, byteId + 2), 3, 13);
-    byteId += 2;
-    this.m_cTransportScramblingCtrl = mpegts.binary.getValueFromByte(data[byteId], 0, 2);
-    this.m_cAdaptationFieldCtrl = mpegts.binary.getValueFromByte(data[byteId], 2, 2);
-    this.m_cContinuityCounter = mpegts.binary.getValueFromByte(data[byteId], 4, 4);
-    byteId++;
-    if (this.m_cAdaptationFieldCtrl & 2) {
-        var cAFLength = data[byteId];
-        if (cAFLength + byteId >= this.TS_PACKET_SIZE) {
-            return;
-        }
-        this.m_pAdaptationField = new mpegts.ts.AdaptationField();
-        this.m_pAdaptationField.parse(data.subarray(byteId));
-        byteId += this.m_pAdaptationField.getLength();
-    }
-    if (this.m_cAdaptationFieldCtrl === 0) {
-        return;
-    }
-    if (this.m_cAdaptationFieldCtrl & 1) {
-        this.m_cPayloadLength = this.TS_PACKET_SIZE - byteId;
-        this.m_payloadArray = data.subarray(byteId, byteId + this.m_cPayloadLength);
-    }
+    var index = 1;
+    this.m_bDiscontinuityInd = mpegts.binary.getBitFromByte(data[index], 0);
+    this.m_bRAI = mpegts.binary.getBitFromByte(data[index], 1);
+    this.m_bESPriority = mpegts.binary.getBitFromByte(data[index], 2);
+    this.m_bPCRFlag = mpegts.binary.getBitFromByte(data[index], 3);
+    this.m_bOPCRFlag = mpegts.binary.getBitFromByte(data[index], 4);
+    this.m_bSplicingPointFlag = mpegts.binary.getBitFromByte(data[index], 5);
+    this.m_bPrivateDataFlag = mpegts.binary.getBitFromByte(data[index], 6);
+    this.m_bAdaptationFieldExtFlag = mpegts.binary.getBitFromByte(data[index], 7);
 };
-
-mpegts.ts.TsPacket.prototype.getPid = function() {
-    return this.m_nPID;
-};
-
-mpegts.ts.TsPacket.prototype.getPayload = function() {
-    return this.m_payloadArray;
-};
-
-mpegts.ts.TsPacket.prototype.getPayloadLength = function() {
-    return this.m_cPayloadLength;
-};
-
-mpegts.ts.TsPacket.prototype.getPusi = function() {
-    return this.m_bPUSI;
-};
-
-mpegts.ts.TsPacket.prototype.hasAdaptationFieldOnly = function() {
-    return this.m_cAdaptationFieldCtrl === 2;
-};
-
-mpegts.ts.TsPacket.prototype.SYNC_WORD = 71;
-
-mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE = 188;
-
-mpegts.ts.TsPacket.prototype.UNDEFINED_PID = 65535;
-
-mpegts.ts.TsPacket.prototype.PAT_PID = 0;
-
-mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_MAP = 188;
-
-mpegts.ts.TsPacket.prototype.STREAM_ID_PADDING_STREAM = 190;
-
-mpegts.ts.TsPacket.prototype.STREAM_ID_PADDING_STREAM = 190;
-
-mpegts.ts.TsPacket.prototype.STREAM_ID_PRIVATE_STREAM_2 = 191;
-
-mpegts.ts.TsPacket.prototype.STREAM_ID_ECM_STREAM = 240;
-
-mpegts.ts.TsPacket.prototype.STREAM_ID_EMM_STREAM = 241;
-
-mpegts.ts.TsPacket.prototype.STREAM_ID_DSMCC_STREAM = 242;
-
-mpegts.ts.TsPacket.prototype.STREAM_ID_H2221_TYPE_E_STREAM = 248;
-
-mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
 
 mpegts.binary.readBytes = function(buf, pos, nbBytes) {
     var value = 0;
@@ -5113,6 +5087,314 @@ mpegts.binary.getValueFromByte = function(data, msbIndex, nbBits, bShift) {
         cValue >>= 7 - lsbIndex;
     }
     return cValue;
+};
+
+mpegts.h264.getSequenceHeader = function(data) {
+    var pos = -1, length = -1, i = 0, naluType, sequenceHeader = null, width = 0, height = 0;
+    while (i < data.length) {
+        if (data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 0 && data[i + 3] === 1) {
+            naluType = data[i + 4] & 31;
+            if (naluType >= mpegts.h264.NALUTYPE_SPS && naluType <= mpegts.h264.NALUTYPE_PPS) {
+                if (pos === -1) {
+                    pos = i;
+                }
+                if (naluType === mpegts.h264.NALUTYPE_SPS) {
+                    var sps = mpegts.h264.parseSPS(data.subarray(i + 5));
+                    width = sps.pic_width_in_mbs_minus1 + 1 << 4;
+                    height = sps.pic_height_in_map_units_minus1 + 1 << 4;
+                }
+            } else if (pos > 0) {
+                length = i - pos;
+            }
+            if (naluType === mpegts.h264.NALUTYPE_IDR || naluType === mpegts.h264.NALUTYPE_NONIDR) {
+                break;
+            }
+            i += 4;
+        } else if (data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 1) {
+            if (pos > 0) {
+                length = i - pos;
+            }
+            break;
+        } else {
+            i++;
+        }
+    }
+    if (pos === -1 || length === -1) {
+        return null;
+    }
+    sequenceHeader = new Uint8Array(length);
+    sequenceHeader.set(data.subarray(pos, pos + length));
+    return {
+        bytes: sequenceHeader,
+        width: width,
+        height: height
+    };
+};
+
+mpegts.h264.read_ue = function(data, ctx) {
+    var value = 1, temp = 0, numZeros = 0;
+    ctx._bit = ctx._byte >> ctx._bitPos & 1;
+    ctx._bitPos--;
+    if (ctx._bitPos < 0) {
+        ctx._byte = data[ctx._bytePos];
+        ctx._bytePos++;
+        ctx._bitPos = 7;
+    }
+    while (ctx._bit === 0) {
+        numZeros++;
+        value = value << 1;
+        ctx._bit = ctx._byte >> ctx._bitPos & 1;
+        ctx._bitPos--;
+        if (ctx._bitPos < 0) {
+            ctx._byte = data[ctx._bytePos];
+            ctx._bytePos++;
+            ctx._bitPos = 7;
+        }
+    }
+    value -= 1;
+    temp = 0;
+    if (numZeros) {
+        while (numZeros > 0) {
+            ctx._bit = ctx._byte >> ctx._bitPos & 1;
+            ctx._bitPos--;
+            temp = (temp << 1) + ctx._bit;
+            numZeros--;
+            if (ctx._bitPos < 0) {
+                ctx._byte = data[ctx._bytePos];
+                ctx._bytePos++;
+                ctx._bitPos = 7;
+            }
+        }
+    }
+    value = value + temp;
+    return value;
+};
+
+mpegts.h264.read_flag = function(data, ctx) {
+    var value = 0;
+    ctx._bit = ctx._byte >> ctx._bitPos & 1;
+    ctx._bitPos--;
+    if (ctx._bitPos < 0) {
+        ctx._byte = data[ctx._bytePos];
+        ctx._bytePos++;
+        ctx._bitPos = 7;
+    }
+    value = ctx._bit;
+    return value;
+};
+
+mpegts.h264.parseSPS = function(data) {
+    var sps = {
+        profile_idc: 0,
+        constraint_set0_flag: 0,
+        constraint_set1_flag: 0,
+        constraint_set2_flag: 0,
+        constraint_set3_flag: 0,
+        level_idc: 0,
+        seq_parameter_set_id: 0,
+        chroma_format_idc: 0,
+        separate_colour_plane_flag: 0,
+        bit_depth_luma_minus8: 0,
+        bit_depth_chroma_minus8: 0,
+        qpprime_y_zero_transform_bypass_flag: 0,
+        seq_scaling_matrix_present_flag: 0,
+        log2_max_frame_num_minus4: 0,
+        pic_order_cnt_type: 0,
+        log2_max_pic_order_cnt_lsb_minus4: 0,
+        num_ref_frames: 0,
+        gaps_in_frame_num_value_allowed_flag: 0,
+        pic_width_in_mbs_minus1: 0,
+        pic_height_in_map_units_minus1: 0
+    }, ctx = {
+        _byte: 0,
+        _bit: 0,
+        _bytePos: 0,
+        _bitPos: 0
+    };
+    ctx._bytePos = ctx._bitPos = 0;
+    ctx._byte = data[ctx._bytePos];
+    ctx._bytePos++;
+    sps.profile_idc = ctx._byte;
+    ctx._byte = data[ctx._bytePos];
+    ctx._bytePos++;
+    sps.constraint_set0_flag = (ctx._byte & 128) >> 7;
+    sps.constraint_set1_flag = (ctx._byte & 64) >> 6;
+    sps.constraint_set2_flag = (ctx._byte & 32) >> 5;
+    sps.constraint_set3_flag = (ctx._byte & 16) >> 4;
+    ctx._byte = data[ctx._bytePos];
+    ctx._bytePos++;
+    sps.level_idc = ctx._byte;
+    ctx._bitPos = 7;
+    sps.seq_parameter_set_id = mpegts.h264.read_ue(data, ctx);
+    if (sps.profileIdc == 100 || sps.profileIdc == 110 || sps.profileIdc == 122 || sps.profileIdc == 244 || sps.profileIdc == 44 || sps.profileIdc == 83 || sps.profileIdc == 86) {
+        sps.chroma_format_idc = mpegts.h264.read_ue(data, ctx);
+        if (sps.chroma_format_idc === 3) {
+            sps.separate_colour_plane_flag = mpegts.h264.read_flag(data, ctx);
+        }
+        sps.bit_depth_luma_minus8 = mpegts.h264.read_ue(data, ctx);
+        sps.bit_depth_chroma_minus8 = mpegts.h264.read_ue(data, ctx);
+        sps.qpprime_y_zero_transform_bypass_flag = mpegts.h264.read_flag(data, ctx);
+        sps.seq_scaling_matrix_present_flag = mpegts.h264.read_flag(data, ctx);
+        if (sps.seq_scaling_matrix_present_flag === 1) {}
+    }
+    sps.log2_max_frame_num_minus4 = mpegts.h264.read_ue(data, ctx);
+    sps.pic_order_cnt_type = mpegts.h264.read_ue(data, ctx);
+    if (sps.pic_order_cnt_type === 0) {
+        sps.log2_max_pic_order_cnt_lsb_minus4 = mpegts.h264.read_ue(data, ctx);
+    } else if (sps.pic_order_cnt_type === 1) {}
+    sps.num_ref_frames = mpegts.h264.read_ue(data, ctx);
+    sps.gaps_in_frame_num_value_allowed_flag = mpegts.h264.read_flag(data, ctx);
+    sps.pic_width_in_mbs_minus1 = mpegts.h264.read_ue(data, ctx);
+    sps.pic_height_in_map_units_minus1 = mpegts.h264.read_ue(data, ctx);
+    return sps;
+};
+
+mpegts.h264.bytestreamToMp4 = function(data) {
+    var i = 0, length = data.length, startCodeIndex = -1, naluSize = 0;
+    while (i < length) {
+        if (data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 0 && data[i + 3] === 1) {
+            if (startCodeIndex >= 0) {
+                naluSize = i - startCodeIndex - 4;
+                data[startCodeIndex] = (naluSize & 4278190080) >> 24;
+                data[startCodeIndex + 1] = (naluSize & 16711680) >> 16;
+                data[startCodeIndex + 2] = (naluSize & 65280) >> 8;
+                data[startCodeIndex + 3] = naluSize & 255;
+            }
+            startCodeIndex = i;
+            i += 4;
+        } else {
+            i++;
+        }
+    }
+    naluSize = i - startCodeIndex - 4;
+    data[startCodeIndex] = (naluSize & 4278190080) >> 24;
+    data[startCodeIndex + 1] = (naluSize & 16711680) >> 16;
+    data[startCodeIndex + 2] = (naluSize & 65280) >> 8;
+    data[startCodeIndex + 3] = naluSize & 255;
+};
+
+mpegts.h264.NALUTYPE_NONIDR = 1;
+
+mpegts.h264.NALUTYPE_IDR = 5;
+
+mpegts.h264.NALUTYPE_SEI = 6;
+
+mpegts.h264.NALUTYPE_SPS = 7;
+
+mpegts.h264.NALUTYPE_PPS = 8;
+
+mpegts.h264.NALUTYPE_AU_DELIMITER = 9;
+
+mpegts.si.PSISection = function(table_id) {
+    this.m_table_id = table_id;
+    this.m_section_syntax_indicator = 1;
+    this.m_section_length = mpegts.si.PSISection.prototype.SECTION_LENGTH;
+    this.m_transport_stream_id = 0;
+    this.m_version_number = 0;
+    this.m_current_next_indicator = true;
+    this.m_section_number = 0;
+    this.m_last_section_number = 0;
+    this.m_bValid = null;
+};
+
+mpegts.si.PSISection.prototype.parse = function(data) {
+    this.m_bValid = false;
+    var id = 0;
+    var pointerField = data[id];
+    id = pointerField === 0 ? id + 1 : id + pointerField;
+    this.m_table_id = data[id];
+    id++;
+    this.m_section_syntax_indicator = mpegts.binary.getBitFromByte(data[id], 0);
+    this.m_section_length = mpegts.binary.getValueFrom2Bytes(data.subarray(id, id + 2), 4);
+    id += 2;
+    this.m_transport_stream_id = mpegts.binary.getValueFrom2Bytes(data.subarray(id, id + 2));
+    id += 2;
+    this.m_version_number = mpegts.binary.getValueFromByte(data[id], 2, 5);
+    this.m_current_next_indicator = mpegts.binary.getBitFromByte(data[id], 7);
+    id++;
+    this.m_section_number = data[id];
+    id++;
+    this.m_last_section_number = data[id];
+    this.m_bValid = true;
+    return id;
+};
+
+mpegts.si.PSISection.prototype.getSectionLength = function() {
+    return this.m_section_length;
+};
+
+mpegts.si.PSISection.prototype.SECTION_LENGTH = 9;
+
+mpegts.si.PSISection.prototype.HEADER_LENGTH = 8;
+
+mpegts.si.PAT = function() {
+    mpegts.si.PSISection.call(this, mpegts.si.PAT.prototype.TABLE_ID);
+    this.m_listOfProgramAssociation = [];
+    this.m_network_pid = null;
+};
+
+mpegts.si.PAT.prototype = Object.create(mpegts.si.PSISection.prototype);
+
+mpegts.si.PAT.prototype.constructor = mpegts.si.PAT;
+
+mpegts.si.PAT.prototype.parse = function(data) {
+    var id = mpegts.si.PSISection.prototype.parse.call(this, data);
+    id++;
+    if (!this.m_bValid) {
+        return;
+    }
+    this.m_bValid = false;
+    if (this.m_table_id != this.TABLE_ID) {
+        return;
+    }
+    var remainingBytes = this.getSectionLength() - this.SECTION_LENGTH;
+    while (remainingBytes >= 4) {
+        var prog = new mpegts.si.ProgramAssociation(data.subarray(id, id + 4));
+        if (prog.getProgramNumber() === 0) {
+            this.m_network_pid = prog.getProgramMapPid();
+        } else {
+            this.m_listOfProgramAssociation.push(prog);
+        }
+        remainingBytes -= 4;
+        id += 4;
+    }
+    this.m_bValid = true;
+};
+
+mpegts.si.PAT.prototype.getPmtPid = function() {
+    var pid = mpegts.ts.TsPacket.prototype.UNDEFINED_PID;
+    if (this.m_listOfProgramAssociation.length >= 1) {
+        var prog = this.m_listOfProgramAssociation[0];
+        pid = prog.getProgramMapPid();
+    }
+    return pid;
+};
+
+mpegts.si.PAT.prototype.TABLE_ID = 0;
+
+mpegts.si.PAT.prototype.PID = 0;
+
+mpegts.si.ProgramAssociation = function(data) {
+    this.m_program_number = 0;
+    this.m_program_map_pid = 0;
+    this.parse(data);
+};
+
+mpegts.si.ProgramAssociation.prototype.getProgramNumber = function() {
+    return this.m_program_number;
+};
+
+mpegts.si.ProgramAssociation.prototype.getProgramMapPid = function() {
+    return this.m_program_map_pid;
+};
+
+mpegts.si.ProgramAssociation.prototype.getLength = function() {
+    return 4;
+};
+
+mpegts.si.ProgramAssociation.prototype.parse = function(data) {
+    this.m_program_number = mpegts.binary.getValueFrom2Bytes(data.subarray(0, 2));
+    this.m_program_map_pid = mpegts.binary.getValueFrom2Bytes(data.subarray(2, 4), 3, 13);
 };
 
 mpegts.pes.PesPacket = function() {
@@ -5257,177 +5539,6 @@ mpegts.pes.PesPacket.prototype.FIXED_OPTIONAL_HEADER_LENGTH = 3;
 mpegts.pes.PesPacket.prototype.FLAG_DTS = 1;
 
 mpegts.pes.PesPacket.prototype.FLAG_PTS = 2;
-
-mpegts.si.PSISection = function(table_id) {
-    this.m_table_id = table_id;
-    this.m_section_syntax_indicator = 1;
-    this.m_section_length = mpegts.si.PSISection.prototype.SECTION_LENGTH;
-    this.m_transport_stream_id = 0;
-    this.m_version_number = 0;
-    this.m_current_next_indicator = true;
-    this.m_section_number = 0;
-    this.m_last_section_number = 0;
-    this.m_bValid = null;
-};
-
-mpegts.si.PSISection.prototype.parse = function(data) {
-    this.m_bValid = false;
-    var id = 0;
-    var pointerField = data[id];
-    id = pointerField === 0 ? id + 1 : id + pointerField;
-    this.m_table_id = data[id];
-    id++;
-    this.m_section_syntax_indicator = mpegts.binary.getBitFromByte(data[id], 0);
-    this.m_section_length = mpegts.binary.getValueFrom2Bytes(data.subarray(id, id + 2), 4);
-    id += 2;
-    this.m_transport_stream_id = mpegts.binary.getValueFrom2Bytes(data.subarray(id, id + 2));
-    id += 2;
-    this.m_version_number = mpegts.binary.getValueFromByte(data[id], 2, 5);
-    this.m_current_next_indicator = mpegts.binary.getBitFromByte(data[id], 7);
-    id++;
-    this.m_section_number = data[id];
-    id++;
-    this.m_last_section_number = data[id];
-    this.m_bValid = true;
-    return id;
-};
-
-mpegts.si.PSISection.prototype.getSectionLength = function() {
-    return this.m_section_length;
-};
-
-mpegts.si.PSISection.prototype.SECTION_LENGTH = 9;
-
-mpegts.si.PSISection.prototype.HEADER_LENGTH = 8;
-
-mpegts.ts.AdaptationField = function() {
-    this.m_cAFLength = null;
-    this.m_bDiscontinuityInd = null;
-    this.m_bRAI = null;
-    this.m_bESPriority = null;
-    this.m_bPCRFlag = null;
-    this.m_bOPCRFlag = null;
-    this.m_bSplicingPointFlag = null;
-    this.m_bPrivateDataFlag = null;
-    this.m_bAdaptationFieldExtFlag = null;
-};
-
-mpegts.ts.AdaptationField.prototype.getLength = function() {
-    return this.m_cAFLength + 1;
-};
-
-mpegts.ts.AdaptationField.prototype.parse = function(data) {
-    this.m_cAFLength = data[0];
-    if (this.m_cAFLength === 0) {
-        return;
-    }
-    var index = 1;
-    this.m_bDiscontinuityInd = mpegts.binary.getBitFromByte(data[index], 0);
-    this.m_bRAI = mpegts.binary.getBitFromByte(data[index], 1);
-    this.m_bESPriority = mpegts.binary.getBitFromByte(data[index], 2);
-    this.m_bPCRFlag = mpegts.binary.getBitFromByte(data[index], 3);
-    this.m_bOPCRFlag = mpegts.binary.getBitFromByte(data[index], 4);
-    this.m_bSplicingPointFlag = mpegts.binary.getBitFromByte(data[index], 5);
-    this.m_bPrivateDataFlag = mpegts.binary.getBitFromByte(data[index], 6);
-    this.m_bAdaptationFieldExtFlag = mpegts.binary.getBitFromByte(data[index], 7);
-};
-
-mpegts.Pts = function(data) {
-    var low, high;
-    var bits3230 = data[0] >> 1 & 7;
-    high = bits3230 >> 2;
-    low = (bits3230 & 3) << 30 >>> 0;
-    var bits2922 = data[1];
-    low = (low | bits2922 << 22) >>> 0;
-    var bits2115 = data[2] >> 1;
-    low = (low | bits2115 << 15) >>> 0;
-    var bits1407 = data[3];
-    low = (low | bits1407 << 7) >>> 0;
-    var bits0701 = data[4] >> 1;
-    low = (low | bits0701) >>> 0;
-    this.m_lPTS = goog.math.Long.fromBits(low, high).toNumber();
-    this.m_fPTS = this.m_lPTS / mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY;
-};
-
-mpegts.Pts.prototype.getValue = function() {
-    return this.m_lPTS;
-};
-
-mpegts.Pts.prototype.getValueInSeconds = function() {
-    return this.m_fPTS;
-};
-
-mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY = 9e4;
-
-mpegts.si.PAT = function() {
-    mpegts.si.PSISection.call(this, mpegts.si.PAT.prototype.TABLE_ID);
-    this.m_listOfProgramAssociation = [];
-    this.m_network_pid = null;
-};
-
-mpegts.si.PAT.prototype = Object.create(mpegts.si.PSISection.prototype);
-
-mpegts.si.PAT.prototype.constructor = mpegts.si.PAT;
-
-mpegts.si.PAT.prototype.parse = function(data) {
-    var id = mpegts.si.PSISection.prototype.parse.call(this, data);
-    id++;
-    if (!this.m_bValid) {
-        return;
-    }
-    this.m_bValid = false;
-    if (this.m_table_id != this.TABLE_ID) {
-        return;
-    }
-    var remainingBytes = this.getSectionLength() - this.SECTION_LENGTH;
-    while (remainingBytes >= 4) {
-        var prog = new mpegts.si.ProgramAssociation(data.subarray(id, id + 4));
-        if (prog.getProgramNumber() === 0) {
-            this.m_network_pid = prog.getProgramMapPid();
-        } else {
-            this.m_listOfProgramAssociation.push(prog);
-        }
-        remainingBytes -= 4;
-        id += 4;
-    }
-    this.m_bValid = true;
-};
-
-mpegts.si.PAT.prototype.getPmtPid = function() {
-    var pid = mpegts.ts.TsPacket.prototype.UNDEFINED_PID;
-    if (this.m_listOfProgramAssociation.length >= 1) {
-        var prog = this.m_listOfProgramAssociation[0];
-        pid = prog.getProgramMapPid();
-    }
-    return pid;
-};
-
-mpegts.si.PAT.prototype.TABLE_ID = 0;
-
-mpegts.si.PAT.prototype.PID = 0;
-
-mpegts.si.ProgramAssociation = function(data) {
-    this.m_program_number = 0;
-    this.m_program_map_pid = 0;
-    this.parse(data);
-};
-
-mpegts.si.ProgramAssociation.prototype.getProgramNumber = function() {
-    return this.m_program_number;
-};
-
-mpegts.si.ProgramAssociation.prototype.getProgramMapPid = function() {
-    return this.m_program_map_pid;
-};
-
-mpegts.si.ProgramAssociation.prototype.getLength = function() {
-    return 4;
-};
-
-mpegts.si.ProgramAssociation.prototype.parse = function(data) {
-    this.m_program_number = mpegts.binary.getValueFrom2Bytes(data.subarray(0, 2));
-    this.m_program_map_pid = mpegts.binary.getValueFrom2Bytes(data.subarray(2, 4), 3, 13);
-};
 
 mpegts.si.PMT = function() {
     mpegts.si.PSISection.call(this, mpegts.si.PMT.prototype.TABLE_ID);
@@ -5693,244 +5804,134 @@ mpegts.si.ESDescription.prototype.parse = function(data) {
     this.m_ES_info_length = mpegts.binary.getValueFrom2Bytes(data.subarray(3, 5), 4);
 };
 
-mpegts.aac.SAMPLING_FREQUENCY = [ 96e3, 88200, 64e3, 48e3, 44100, 32e3, 24e3, 22050, 16e3, 12e3, 11025, 8e3, 7350 ];
-
-mpegts.aac.getAudioSpecificConfig = function(data) {
-    var profile = mpegts.binary.getValueFromByte(data[2], 0, 2);
-    var sampling_frequency_index = mpegts.binary.getValueFromByte(data[2], 2, 4);
-    var channel_configuration = mpegts.binary.getValueFrom2Bytes(data.subarray(2, 5), 7, 3);
-    var audioSpecificConfig = new Uint8Array(2);
-    audioSpecificConfig[0] = profile + 1 << 3;
-    audioSpecificConfig[0] |= (sampling_frequency_index & 14) >> 1;
-    audioSpecificConfig[1] |= (sampling_frequency_index & 1) << 7;
-    audioSpecificConfig[1] |= channel_configuration << 3;
-    return audioSpecificConfig;
+mpegts.Pts = function(data) {
+    var low, high;
+    var bits3230 = data[0] >> 1 & 7;
+    high = bits3230 >> 2;
+    low = (bits3230 & 3) << 30 >>> 0;
+    var bits2922 = data[1];
+    low = (low | bits2922 << 22) >>> 0;
+    var bits2115 = data[2] >> 1;
+    low = (low | bits2115 << 15) >>> 0;
+    var bits1407 = data[3];
+    low = (low | bits1407 << 7) >>> 0;
+    var bits0701 = data[4] >> 1;
+    low = (low | bits0701) >>> 0;
+    this.m_lPTS = goog.math.Long.fromBits(low, high).toNumber();
+    this.m_fPTS = this.m_lPTS / mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY;
 };
 
-mpegts.aac.parseADTS = function(data) {
-    var aacFrames = [], adtsHeader = {}, aacFrame, adtsFrameIndex, i = 0;
-    while (i < data.length) {
-        adtsFrameIndex = i;
-        adtsHeader.syncword = (data[i] << 4) + ((data[i + 1] & 240) >> 4);
-        adtsHeader.protection_absent = data[i + 1] & 1;
-        adtsHeader.sampling_frequency_index = (data[i + 2] & 60) >> 2;
-        adtsHeader.channel_configuration = ((data[i + 2] & 1) << 1) + ((data[i + 3] & 192) >> 6);
-        adtsHeader.aac_frame_length = ((data[i + 3] & 3) << 11) + (data[i + 4] << 3) + ((data[i + 5] & 224) >> 5);
-        adtsHeader.number_of_raw_data_blocks_in_frame = (data[i + 6] & 3) >> 2;
-        i += 7;
-        if (adtsHeader.number_of_raw_data_blocks_in_frame === 0) {
-            if (adtsHeader.protection_absent === 0) {
-                i += 2;
-            }
-            aacFrame = {};
-            aacFrame.offset = i;
-            aacFrame.length = adtsHeader.aac_frame_length - (i - adtsFrameIndex);
-            aacFrames.push(aacFrame);
-            i += aacFrame.length;
-        } else {}
+mpegts.Pts.prototype.getValue = function() {
+    return this.m_lPTS;
+};
+
+mpegts.Pts.prototype.getValueInSeconds = function() {
+    return this.m_fPTS;
+};
+
+mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY = 9e4;
+
+mpegts.ts.TsPacket = function() {
+    this.m_cSync = null;
+    this.m_bTransportError = null;
+    this.m_bPUSI = null;
+    this.m_bTransportPriority = null;
+    this.m_nPID = null;
+    this.m_cTransportScramblingCtrl = null;
+    this.m_cAdaptationFieldCtrl = null;
+    this.m_cContinuityCounter = null;
+    this.m_pAdaptationField = null;
+    this.m_payloadArray = null;
+    this.m_cPayloadLength = null;
+    this.m_bDirty = null;
+    this.m_time = null;
+    this.m_arrivalTime = null;
+    this.m_bIgnored = null;
+};
+
+mpegts.ts.TsPacket.prototype.parse = function(data) {
+    var byteId = 0;
+    this.m_cSync = data[byteId];
+    if (this.m_cSync !== this.SYNC_WORD) {
+        return;
     }
-    return aacFrames;
-};
-
-mpegts.h264.getSequenceHeader = function(data) {
-    var pos = -1, length = -1, i = 0, naluType, sequenceHeader = null, width = 0, height = 0;
-    while (i < data.length) {
-        if (data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 0 && data[i + 3] === 1) {
-            naluType = data[i + 4] & 31;
-            if (naluType >= mpegts.h264.NALUTYPE_SPS && naluType <= mpegts.h264.NALUTYPE_PPS) {
-                if (pos === -1) {
-                    pos = i;
-                }
-                if (naluType === mpegts.h264.NALUTYPE_SPS) {
-                    var sps = mpegts.h264.parseSPS(data.subarray(i + 5));
-                    width = sps.pic_width_in_mbs_minus1 + 1 << 4;
-                    height = sps.pic_height_in_map_units_minus1 + 1 << 4;
-                }
-            } else if (pos > 0) {
-                length = i - pos;
-            }
-            if (naluType === mpegts.h264.NALUTYPE_IDR || naluType === mpegts.h264.NALUTYPE_NONIDR) {
-                break;
-            }
-            i += 4;
-        } else if (data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 1) {
-            if (pos > 0) {
-                length = i - pos;
-            }
-            break;
-        } else {
-            i++;
+    byteId++;
+    this.m_bTransportError = mpegts.binary.getBitFromByte(data[byteId], 0);
+    this.m_bPUSI = mpegts.binary.getBitFromByte(data[byteId], 1);
+    this.m_bTransportPriority = mpegts.binary.getBitFromByte(data[byteId], 2);
+    this.m_nPID = mpegts.binary.getValueFrom2Bytes(data.subarray(byteId, byteId + 2), 3, 13);
+    byteId += 2;
+    this.m_cTransportScramblingCtrl = mpegts.binary.getValueFromByte(data[byteId], 0, 2);
+    this.m_cAdaptationFieldCtrl = mpegts.binary.getValueFromByte(data[byteId], 2, 2);
+    this.m_cContinuityCounter = mpegts.binary.getValueFromByte(data[byteId], 4, 4);
+    byteId++;
+    if (this.m_cAdaptationFieldCtrl & 2) {
+        var cAFLength = data[byteId];
+        if (cAFLength + byteId >= this.TS_PACKET_SIZE) {
+            return;
         }
+        this.m_pAdaptationField = new mpegts.ts.AdaptationField();
+        this.m_pAdaptationField.parse(data.subarray(byteId));
+        byteId += this.m_pAdaptationField.getLength();
     }
-    if (pos === -1 || length === -1) {
-        return null;
+    if (this.m_cAdaptationFieldCtrl === 0) {
+        return;
     }
-    sequenceHeader = new Uint8Array(length);
-    sequenceHeader.set(data.subarray(pos, pos + length));
-    return {
-        bytes: sequenceHeader,
-        width: width,
-        height: height
-    };
+    if (this.m_cAdaptationFieldCtrl & 1) {
+        this.m_cPayloadLength = this.TS_PACKET_SIZE - byteId;
+        this.m_payloadArray = data.subarray(byteId, byteId + this.m_cPayloadLength);
+    }
 };
 
-mpegts.h264.read_ue = function(data, ctx) {
-    var value = 1, temp = 0, numZeros = 0;
-    ctx._bit = ctx._byte >> ctx._bitPos & 1;
-    ctx._bitPos--;
-    if (ctx._bitPos < 0) {
-        ctx._byte = data[ctx._bytePos];
-        ctx._bytePos++;
-        ctx._bitPos = 7;
-    }
-    while (ctx._bit === 0) {
-        numZeros++;
-        value = value << 1;
-        ctx._bit = ctx._byte >> ctx._bitPos & 1;
-        ctx._bitPos--;
-        if (ctx._bitPos < 0) {
-            ctx._byte = data[ctx._bytePos];
-            ctx._bytePos++;
-            ctx._bitPos = 7;
-        }
-    }
-    value -= 1;
-    temp = 0;
-    if (numZeros) {
-        while (numZeros > 0) {
-            ctx._bit = ctx._byte >> ctx._bitPos & 1;
-            ctx._bitPos--;
-            temp = (temp << 1) + ctx._bit;
-            numZeros--;
-            if (ctx._bitPos < 0) {
-                ctx._byte = data[ctx._bytePos];
-                ctx._bytePos++;
-                ctx._bitPos = 7;
-            }
-        }
-    }
-    value = value + temp;
-    return value;
+mpegts.ts.TsPacket.prototype.getPid = function() {
+    return this.m_nPID;
 };
 
-mpegts.h264.read_flag = function(data, ctx) {
-    var value = 0;
-    ctx._bit = ctx._byte >> ctx._bitPos & 1;
-    ctx._bitPos--;
-    if (ctx._bitPos < 0) {
-        ctx._byte = data[ctx._bytePos];
-        ctx._bytePos++;
-        ctx._bitPos = 7;
-    }
-    value = ctx._bit;
-    return value;
+mpegts.ts.TsPacket.prototype.getPayload = function() {
+    return this.m_payloadArray;
 };
 
-mpegts.h264.parseSPS = function(data) {
-    var sps = {
-        profile_idc: 0,
-        constraint_set0_flag: 0,
-        constraint_set1_flag: 0,
-        constraint_set2_flag: 0,
-        constraint_set3_flag: 0,
-        level_idc: 0,
-        seq_parameter_set_id: 0,
-        chroma_format_idc: 0,
-        separate_colour_plane_flag: 0,
-        bit_depth_luma_minus8: 0,
-        bit_depth_chroma_minus8: 0,
-        qpprime_y_zero_transform_bypass_flag: 0,
-        seq_scaling_matrix_present_flag: 0,
-        log2_max_frame_num_minus4: 0,
-        pic_order_cnt_type: 0,
-        log2_max_pic_order_cnt_lsb_minus4: 0,
-        num_ref_frames: 0,
-        gaps_in_frame_num_value_allowed_flag: 0,
-        pic_width_in_mbs_minus1: 0,
-        pic_height_in_map_units_minus1: 0
-    }, ctx = {
-        _byte: 0,
-        _bit: 0,
-        _bytePos: 0,
-        _bitPos: 0
-    };
-    ctx._bytePos = ctx._bitPos = 0;
-    ctx._byte = data[ctx._bytePos];
-    ctx._bytePos++;
-    sps.profile_idc = ctx._byte;
-    ctx._byte = data[ctx._bytePos];
-    ctx._bytePos++;
-    sps.constraint_set0_flag = (ctx._byte & 128) >> 7;
-    sps.constraint_set1_flag = (ctx._byte & 64) >> 6;
-    sps.constraint_set2_flag = (ctx._byte & 32) >> 5;
-    sps.constraint_set3_flag = (ctx._byte & 16) >> 4;
-    ctx._byte = data[ctx._bytePos];
-    ctx._bytePos++;
-    sps.level_idc = ctx._byte;
-    ctx._bitPos = 7;
-    sps.seq_parameter_set_id = mpegts.h264.read_ue(data, ctx);
-    if (sps.profileIdc == 100 || sps.profileIdc == 110 || sps.profileIdc == 122 || sps.profileIdc == 244 || sps.profileIdc == 44 || sps.profileIdc == 83 || sps.profileIdc == 86) {
-        sps.chroma_format_idc = mpegts.h264.read_ue(data, ctx);
-        if (sps.chroma_format_idc === 3) {
-            sps.separate_colour_plane_flag = mpegts.h264.read_flag(data, ctx);
-        }
-        sps.bit_depth_luma_minus8 = mpegts.h264.read_ue(data, ctx);
-        sps.bit_depth_chroma_minus8 = mpegts.h264.read_ue(data, ctx);
-        sps.qpprime_y_zero_transform_bypass_flag = mpegts.h264.read_flag(data, ctx);
-        sps.seq_scaling_matrix_present_flag = mpegts.h264.read_flag(data, ctx);
-        if (sps.seq_scaling_matrix_present_flag === 1) {}
-    }
-    sps.log2_max_frame_num_minus4 = mpegts.h264.read_ue(data, ctx);
-    sps.pic_order_cnt_type = mpegts.h264.read_ue(data, ctx);
-    if (sps.pic_order_cnt_type === 0) {
-        sps.log2_max_pic_order_cnt_lsb_minus4 = mpegts.h264.read_ue(data, ctx);
-    } else if (sps.pic_order_cnt_type === 1) {}
-    sps.num_ref_frames = mpegts.h264.read_ue(data, ctx);
-    sps.gaps_in_frame_num_value_allowed_flag = mpegts.h264.read_flag(data, ctx);
-    sps.pic_width_in_mbs_minus1 = mpegts.h264.read_ue(data, ctx);
-    sps.pic_height_in_map_units_minus1 = mpegts.h264.read_ue(data, ctx);
-    return sps;
+mpegts.ts.TsPacket.prototype.getPayloadLength = function() {
+    return this.m_cPayloadLength;
 };
 
-mpegts.h264.bytestreamToMp4 = function(data) {
-    var i = 0, length = data.length, startCodeIndex = -1, naluSize = 0;
-    while (i < length) {
-        if (data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 0 && data[i + 3] === 1) {
-            if (startCodeIndex >= 0) {
-                naluSize = i - startCodeIndex - 4;
-                data[startCodeIndex] = (naluSize & 4278190080) >> 24;
-                data[startCodeIndex + 1] = (naluSize & 16711680) >> 16;
-                data[startCodeIndex + 2] = (naluSize & 65280) >> 8;
-                data[startCodeIndex + 3] = naluSize & 255;
-            }
-            startCodeIndex = i;
-            i += 4;
-        } else {
-            i++;
-        }
-    }
-    naluSize = i - startCodeIndex - 4;
-    data[startCodeIndex] = (naluSize & 4278190080) >> 24;
-    data[startCodeIndex + 1] = (naluSize & 16711680) >> 16;
-    data[startCodeIndex + 2] = (naluSize & 65280) >> 8;
-    data[startCodeIndex + 3] = naluSize & 255;
+mpegts.ts.TsPacket.prototype.getPusi = function() {
+    return this.m_bPUSI;
 };
 
-mpegts.h264.NALUTYPE_NONIDR = 1;
+mpegts.ts.TsPacket.prototype.hasAdaptationFieldOnly = function() {
+    return this.m_cAdaptationFieldCtrl === 2;
+};
 
-mpegts.h264.NALUTYPE_IDR = 5;
+mpegts.ts.TsPacket.prototype.SYNC_WORD = 71;
 
-mpegts.h264.NALUTYPE_SEI = 6;
+mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE = 188;
 
-mpegts.h264.NALUTYPE_SPS = 7;
+mpegts.ts.TsPacket.prototype.UNDEFINED_PID = 65535;
 
-mpegts.h264.NALUTYPE_PPS = 8;
+mpegts.ts.TsPacket.prototype.PAT_PID = 0;
 
-mpegts.h264.NALUTYPE_AU_DELIMITER = 9;
+mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_MAP = 188;
+
+mpegts.ts.TsPacket.prototype.STREAM_ID_PADDING_STREAM = 190;
+
+mpegts.ts.TsPacket.prototype.STREAM_ID_PADDING_STREAM = 190;
+
+mpegts.ts.TsPacket.prototype.STREAM_ID_PRIVATE_STREAM_2 = 191;
+
+mpegts.ts.TsPacket.prototype.STREAM_ID_ECM_STREAM = 240;
+
+mpegts.ts.TsPacket.prototype.STREAM_ID_EMM_STREAM = 241;
+
+mpegts.ts.TsPacket.prototype.STREAM_ID_DSMCC_STREAM = 242;
+
+mpegts.ts.TsPacket.prototype.STREAM_ID_H2221_TYPE_E_STREAM = 248;
+
+mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
 
 MediaPlayer = function(aContext) {
     "use strict";
-    var VERSION = "1.2.0", VERSION_HAS = "1.2.1_dev", GIT_TAG = "2082efe", BUILD_DATE = "20.7.2015_10:27:50", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, isReady = function() {
+    var VERSION = "1.2.0", VERSION_HAS = "1.2.1_dev", GIT_TAG = "8cba4b4", BUILD_DATE = "15.9.2015_8:54:7", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
         return !!element && !!source;
     }, play = function() {
         if (!initialized) {
@@ -5951,6 +5952,8 @@ MediaPlayer = function(aContext) {
             streamController.setVideoModel(videoModel);
             streamController.setAutoPlay(autoPlay);
         }
+        streamController.setDefaultAudioLang(defaultAudioLang);
+        streamController.setDefaultSubtitleLang(defaultSubtitleLang);
         streamController.load(source, protectionData);
         system.mapValue("scheduleWhilePaused", scheduleWhilePaused);
         system.mapOutlet("scheduleWhilePaused", "stream");
@@ -6127,6 +6130,12 @@ MediaPlayer = function(aContext) {
         setAudioTrack: function(audioTrack) {
             streamController.setAudioTrack(audioTrack);
         },
+        getSelectedAudioTrack: function() {
+            return streamController.getSelectedAudioTrack();
+        },
+        getSelectedSubtitleTrack: function() {
+            return streamController.getSelectedSubtitleTrack();
+        },
         getAudioTracks: function() {
             return streamController.getAudioTracks();
         },
@@ -6151,9 +6160,6 @@ MediaPlayer = function(aContext) {
                 streamController.reset();
                 playing = false;
             }
-            if (isReady.call(this)) {
-                doAutoPlay.call(this);
-            }
         },
         attachSource: function(url, protData) {
             var loop, videoModel;
@@ -6167,7 +6173,9 @@ MediaPlayer = function(aContext) {
                 return;
             }
             loop = videoModel.getElement().loop;
-            this.metricsModel.addSession(null, url, loop, null, "HasPlayer.js_" + this.getVersionHAS());
+            if (url) {
+                this.metricsModel.addSession(null, url, loop, null, "HasPlayer.js_" + this.getVersionHAS());
+            }
             this.uriQueryFragModel.reset();
             if (url) {
                 source = this.uriQueryFragModel.parseURI(url);
@@ -6183,9 +6191,16 @@ MediaPlayer = function(aContext) {
                 doAutoPlay.call(this);
             }
         },
-        reset: function() {
+        reset: function(reason) {
             this.attachSource(null);
             protectionData = null;
+            this.metricsModel.addState("video", "stopped", this.getVideoModel().getCurrentTime(), reason);
+        },
+        setDefaultAudioLang: function(language) {
+            defaultAudioLang = language;
+        },
+        setDefaultSubtitleLang: function(language) {
+            defaultSubtitleLang = language;
         },
         play: play,
         isReady: isReady,
@@ -6227,1472 +6242,9 @@ MediaPlayer.rules.o = {};
 
 MediaPlayer.di = {};
 
-MediaPlayer.di.Context = function() {
-    "use strict";
-    var mapProtectionModel = function() {
-        var videoElement = document.createElement("video"), debug = this.system.getObject("debug");
-        if (MediaPlayer.models.ProtectionModel_21Jan2015.detect(videoElement)) {
-            this.system.mapClass("protectionModel", MediaPlayer.models.ProtectionModel_21Jan2015);
-            debug.log("Load ProtectionModel 21Jan2015");
-        } else if (MediaPlayer.models.ProtectionModel_3Feb2014.detect(videoElement)) {
-            this.system.mapClass("protectionModel", MediaPlayer.models.ProtectionModel_3Feb2014);
-            debug.log("Load ProtectionModel 3Feb2014");
-        } else if (MediaPlayer.models.ProtectionModel_01b.detect(videoElement)) {
-            this.system.mapClass("protectionModel", MediaPlayer.models.ProtectionModel_01b);
-            debug.log("Load ProtectionModel 01b");
-        } else {
-            debug.log("No supported version of EME detected on this user agent!");
-            debug.log("Attempts to play encrypted content will fail!");
-        }
-    };
-    return {
-        system: undefined,
-        setup: function() {
-            this.system.autoMapOutlets = true;
-            this.system.mapSingleton("debug", MediaPlayer.utils.Debug);
-            this.system.mapSingleton("tokenAuthentication", MediaPlayer.utils.TokenAuthentication);
-            this.system.mapSingleton("eventBus", MediaPlayer.utils.EventBus);
-            this.system.mapSingleton("capabilities", MediaPlayer.utils.Capabilities);
-            this.system.mapSingleton("textTrackExtensions", MediaPlayer.utils.TextTrackExtensions);
-            this.system.mapSingleton("vttParser", MediaPlayer.utils.VTTParser);
-            this.system.mapSingleton("ttmlParser", MediaPlayer.utils.TTMLParser);
-            this.system.mapClass("videoModel", MediaPlayer.models.VideoModel);
-            this.system.mapSingleton("manifestModel", MediaPlayer.models.ManifestModel);
-            this.system.mapSingleton("metricsModel", MediaPlayer.models.MetricsModel);
-            this.system.mapSingleton("uriQueryFragModel", MediaPlayer.models.URIQueryAndFragmentModel);
-            this.system.mapSingleton("ksPlayReady", MediaPlayer.dependencies.protection.KeySystem_PlayReady);
-            this.system.mapSingleton("ksWidevine", MediaPlayer.dependencies.protection.KeySystem_Widevine);
-            this.system.mapSingleton("ksClearKey", MediaPlayer.dependencies.protection.KeySystem_ClearKey);
-            this.system.mapSingleton("textSourceBuffer", MediaPlayer.dependencies.TextSourceBuffer);
-            this.system.mapSingleton("textTTMLXMLMP4SourceBuffer", MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer);
-            this.system.mapSingleton("mediaSourceExt", MediaPlayer.dependencies.MediaSourceExtensions);
-            this.system.mapSingleton("sourceBufferExt", MediaPlayer.dependencies.SourceBufferExtensions);
-            this.system.mapSingleton("bufferExt", MediaPlayer.dependencies.BufferExtensions);
-            this.system.mapSingleton("abrController", MediaPlayer.dependencies.AbrController);
-            this.system.mapSingleton("errHandler", MediaPlayer.dependencies.ErrorHandler);
-            this.system.mapSingleton("videoExt", MediaPlayer.dependencies.VideoModelExtensions);
-            this.system.mapSingleton("protectionExt", MediaPlayer.dependencies.ProtectionExtensions);
-            this.system.mapClass("protectionController", MediaPlayer.dependencies.ProtectionController);
-            mapProtectionModel.call(this);
-            this.system.mapClass("metrics", MediaPlayer.models.MetricsList);
-            this.system.mapClass("downloadRatioRule", MediaPlayer.rules.DownloadRatioRule);
-            this.system.mapClass("insufficientBufferRule", MediaPlayer.rules.InsufficientBufferRule);
-            this.system.mapClass("limitSwitchesRule", MediaPlayer.rules.LimitSwitchesRule);
-            this.system.mapClass("abrRulesCollection", MediaPlayer.rules.BaseRulesCollection);
-            this.system.mapClass("eventController", MediaPlayer.dependencies.EventController);
-            this.system.mapClass("textController", MediaPlayer.dependencies.TextController);
-            this.system.mapClass("bufferController", MediaPlayer.dependencies.BufferController);
-            this.system.mapClass("manifestLoader", MediaPlayer.dependencies.ManifestLoader);
-            this.system.mapSingleton("manifestUpdater", MediaPlayer.dependencies.ManifestUpdater);
-            this.system.mapClass("fragmentController", MediaPlayer.dependencies.FragmentController);
-            this.system.mapClass("fragmentLoader", MediaPlayer.dependencies.FragmentLoader);
-            this.system.mapClass("fragmentModel", MediaPlayer.dependencies.FragmentModel);
-            this.system.mapSingleton("streamController", MediaPlayer.dependencies.StreamController);
-            this.system.mapClass("stream", MediaPlayer.dependencies.Stream);
-            this.system.mapClass("requestScheduler", MediaPlayer.dependencies.RequestScheduler);
-            this.system.mapSingleton("schedulerExt", MediaPlayer.dependencies.SchedulerExtensions);
-            this.system.mapClass("schedulerModel", MediaPlayer.dependencies.SchedulerModel);
-            this.system.mapSingleton("notifier", MediaPlayer.dependencies.Notifier);
-            this.system.mapClass("indexHandler", Dash.dependencies.DashHandler);
-            this.system.mapClass("baseURLExt", Dash.dependencies.BaseURLExtensions);
-            this.system.mapClass("fragmentExt", Dash.dependencies.FragmentExtensions);
-            this.system.mapSingleton("manifestExt", Dash.dependencies.DashManifestExtensions);
-            this.system.mapSingleton("timelineConverter", Dash.dependencies.TimelineConverter);
-            this.system.mapClass("parser", MediaPlayer.dependencies.Parser);
-            this.system.mapClass("dashParser", Dash.dependencies.DashParser);
-            this.system.mapClass("mssParser", Mss.dependencies.MssParser);
-            this.system.mapClass("hlsParser", Hls.dependencies.HlsParser);
-            this.system.mapClass("hlsDemux", Hls.dependencies.HlsDemux);
-            this.system.mapSingleton("contextManager", MediaPlayer.modules.ContextManager);
-            this.system.mapSingleton("metricsExt", MediaPlayer.dependencies.MetricsExtensions);
-            this.system.mapSingleton("config", MediaPlayer.utils.Config);
-            this.system.mapClass("downloadRatioRule", MediaPlayer.rules.o.DownloadRatioRule);
-            this.system.mapClass("insufficientBufferRule", MediaPlayer.rules.o.InsufficientBufferRule);
-            this.system.mapHandler("setContext", "contextManager", "setContext");
-        }
-    };
-};
-
-MediaPlayer.dependencies.ErrorHandler = function() {
-    "use strict";
-    return {
-        eventBus: undefined,
-        sendError: function(code, message, data) {
-            this.eventBus.dispatchEvent({
-                type: "error",
-                event: {
-                    code: code,
-                    message: message,
-                    data: data
-                }
-            });
-        }
-    };
-};
-
-MediaPlayer.dependencies.ErrorHandler.prototype = {
-    constructor: MediaPlayer.dependencies.ErrorHandler
-};
-
-MediaPlayer.dependencies.ErrorHandler.prototype.HASPLAYER_INIT_ERROR = "HASPLAYER_INIT_ERROR";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ABORTED = "MEDIA_ERR_ABORTED";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_NETWORK = "MEDIA_ERR_NETWORK";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_DECODE = "MEDIA_ERR_DECODE";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_SRC_NOT_SUPPORTED = "MEDIA_ERR_SRC_NOT_SUPPORTED";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED = "MEDIA_ERR_ENCRYPTED";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_REMOVE_SOURCEBUFFER = "MEDIA_ERR_REMOVE_SOURCEBUFFER";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER = "MEDIA_ERR_CREATE_SOURCEBUFFER";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_APPEND_SOURCEBUFFER = "MEDIA_ERR_APPEND_SOURCEBUFFER";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC = "MANIFEST_ERR_CODEC";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE = "MANIFEST_ERR_PARSE";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM = "MANIFEST_ERR_NOSTREAM";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIASOURCE = "CAPABILITY_ERR_MEDIASOURCE";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS = "CAPABILITY_ERR_MEDIAKEYS";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST = "DOWNLOAD_ERR_MANIFEST";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX = "DOWNLOAD_ERR_SIDX";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT = "DOWNLOAD_ERR_CONTENT";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_INIT = "DOWNLOAD_ERR_INIT";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.CC_ERR_PARSE = "CC_ERR_PARSE";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR = "MEDIA_KEYERR";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN = "MEDIA_KEYERR_UNKNOWN";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_CLIENT = "MEDIA_KEYERR_CLIENT";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_SERVICE = "MEDIA_KEYERR_SERVICE";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT = "MEDIA_KEYERR_OUTPUT";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_HARDWARECHANGE = "MEDIA_KEYERR_HARDWARECHANGE";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_DOMAIN = "MEDIA_KEYERR_DOMAIN";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_UNSUPPORTED = "MEDIA_KEYSYSERR_UNSUPPORTED";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED = "MEDIA_KEYSYSERR_ACCESS_DENIED";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_UPDATE_CERTIFICATE_IMPOSSIBLE = "MEDIA_KEYSYSERR_UPDATE_CERTIFICATE_IMPOSSIBLE";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR = "MEDIA_KEYMESSERR";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_INVALID_HEADER = "MEDIA_KEYMESSERR_INVALID_HEADER";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_URL_LICENSER_UNKNOWN = "MEDIA_KEYMESSERR_URL_LICENSER_UNKNOWN";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NOCHALLENGE = "MEDIA_KEYMESSERR_NOCHALLENGE";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ABORTED = "MEDIA_KEYMESSERR_XHR_ABORTED";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ERROR = "MEDIA_KEYMESSERR_XHR_ERROR";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_KEY_UNKNOWN = "MEDIA_KEYMESSERR_KEY_UNKNOWN";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_MULTIKEYS_UNSUPPORTED = "MEDIA_KEYMESSERR_MULTIKEYS_UNSUPPORTED";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_SESSION = "MEDIA_KEYMESSERR_NO_SESSION";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_REMOVE_SESSION = "MEDIA_KEYMESSERR_NO_REMOVE_SESSION";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_CLOSE_SESSION = "MEDIA_KEYMESSERR_NO_CLOSE_SESSION";
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INDEX_SIZE = 1;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_HIERARCHY_REQUEST = 3;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_WRONG_DOCUMENT = 4;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_CHARACTER = 5;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NO_MODIFICATION_ALLOWED = 7;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_FOUND = 8;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_SUPPORTED = 9;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_STATE = 11;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_SYNTAX = 12;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_MODIFICATION = 13;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NAMESPACE = 14;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS = 15;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_SECURITY = 18;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NETWORK = 19;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_ABORT = 20;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_URL_MISMATCH = 21;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_QUOTA_EXCEEDED = 22;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_TIMEOUT = 23;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_NODE_TYPE = 24;
-
-MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_DATA_CLONE = 25;
-
-MediaPlayer.utils.Capabilities = function() {
-    "use strict";
-};
-
-MediaPlayer.utils.Capabilities.prototype = {
-    constructor: MediaPlayer.utils.Capabilities,
-    system: undefined,
-    supportsMediaSource: function() {
-        "use strict";
-        var hasWebKit = "WebKitMediaSource" in window, hasMediaSource = "MediaSource" in window;
-        return hasWebKit || hasMediaSource;
-    },
-    supportsMediaKeys: function() {
-        "use strict";
-        var hasWebKit = "WebKitMediaKeys" in window, hasMs = "MSMediaKeys" in window, hasMediaSource = "MediaKeys" in window;
-        return hasWebKit || hasMs || hasMediaSource;
-    },
-    supportsEncryptedMedia: function() {
-        return this.system.hasMapping("protectionModel");
-    },
-    supportsCodec: function(element, codec) {
-        "use strict";
-        if (!(element instanceof HTMLMediaElement)) {
-            throw "element must be of type HTMLMediaElement.";
-        }
-        var canPlay = element.canPlayType(codec);
-        return canPlay === "probably" || canPlay === "maybe";
-    }
-};
-
-MediaPlayer.utils.EventBus = function() {
-    "use strict";
-    var registrations, getListeners = function(type, useCapture) {
-        var captype = (useCapture ? "1" : "0") + type;
-        if (!(captype in registrations)) {
-            registrations[captype] = [];
-        }
-        return registrations[captype];
-    }, init = function() {
-        registrations = {};
-    };
-    init();
-    return {
-        addEventListener: function(type, listener, useCapture) {
-            var listeners = getListeners(type, useCapture);
-            var idx = listeners.indexOf(listener);
-            if (idx === -1) {
-                listeners.push(listener);
-            }
-        },
-        removeEventListener: function(type, listener, useCapture) {
-            var listeners = getListeners(type, useCapture);
-            var idx = listeners.indexOf(listener);
-            if (idx !== -1) {
-                listeners.splice(idx, 1);
-            }
-        },
-        dispatchEvent: function(evt) {
-            var listeners = getListeners(evt.type, false).slice();
-            for (var i = 0; i < listeners.length; i++) {
-                listeners[i].call(this, evt);
-            }
-            return !evt.defaultPrevented;
-        }
-    };
-};
-
-MediaPlayer.utils.Debug = function() {
-    "use strict";
-    Date.prototype.HHMMSSmmm = function() {
-        var h = this.getHours().toString(), m = this.getMinutes().toString(), s = this.getSeconds().toString(), ms = this.getMilliseconds().toString(), HH = h[1] ? h : "0" + h[0], MM = m[1] ? m : "0" + m[0], SS = s[1] ? s : "0" + s[0], mmm = ms[2] ? ms : "0" + (ms[1] ? ms : "0" + ms[0]);
-        return HH + ":" + MM + ":" + SS + "." + mmm;
-    };
-    Date.prototype.MMSSmmm = function() {
-        var m = this.getMinutes().toString(), s = this.getSeconds().toString(), ms = this.getMilliseconds().toString(), MM = m[1] ? m : "0" + m[0], SS = s[1] ? s : "0" + s[0], mmm = ms[2] ? ms : "0" + (ms[1] ? ms : "0" + ms[0]);
-        return MM + ":" + SS + "." + mmm;
-    };
-    var logToBrowserConsole = true, NONE = 0, ERROR = 1, WARN = 2, INFO = 3, DEBUG = 4, ALL = 4, level = 4, showTimestamp = true, showElapsedTime = false, startTime = new Date(), _log = function(logLevel, args) {
-        var self = this;
-        if (getLogToBrowserConsole() && logLevel <= getLevel()) {
-            var _logger = getLogger(), message = "", logTime = null;
-            if (_logger === undefined || _logger === null) {
-                _logger = console;
-            }
-            if (showTimestamp) {
-                logTime = new Date();
-                message += "[" + logTime.HHMMSSmmm() + "]";
-            }
-            if (showElapsedTime) {
-                message += "[" + new Date(logTime - startTime).MMSSmmm() + "]";
-            }
-            Array.apply(null, args).forEach(function(item) {
-                message += item + " ";
-            });
-            switch (logLevel) {
-              case ERROR:
-                _logger.error(message);
-                break;
-
-              case WARN:
-                _logger.warn(message);
-                break;
-
-              case INFO:
-                _logger.info(message);
-                break;
-
-              case DEBUG:
-                _logger.debug(message);
-                break;
-            }
-        }
-        self.eventBus.dispatchEvent({
-            type: "log",
-            message: arguments[0]
-        });
-    }, getLogToBrowserConsole = function() {
-        return logToBrowserConsole;
-    }, getLevel = function() {
-        return level;
-    }, getLogger = function() {
-        var _logger = null;
-        if (_logger) {
-            if (!_logger.initialized) {
-                var appender = new log4javascript.PopUpAppender();
-                var layout = new log4javascript.PatternLayout("%d{HH:mm:ss.SSS} %-5p - %m%n");
-                appender.setLayout(layout);
-                _logger.addAppender(appender);
-                _logger.setLevel(log4javascript.Level.ALL);
-                _logger.initialized = true;
-            }
-        }
-        return _logger;
-    };
-    return {
-        eventBus: undefined,
-        NONE: NONE,
-        ERROR: ERROR,
-        WARN: WARN,
-        INFO: INFO,
-        DEBUG: DEBUG,
-        ALL: ALL,
-        getLevel: getLevel,
-        getLogToBrowserConsole: getLogToBrowserConsole,
-        getLogger: getLogger,
-        setLogToBrowserConsole: function(value) {
-            logToBrowserConsole = value;
-        },
-        setLevel: function(value) {
-            level = value;
-        },
-        error: function() {
-            _log.call(this, ERROR, arguments);
-        },
-        warn: function() {
-            _log.call(this, WARN, arguments);
-        },
-        info: function() {
-            _log.call(this, INFO, arguments);
-        },
-        log: function() {
-            _log.call(this, DEBUG, arguments);
-        }
-    };
-};
-
-MediaPlayer.utils.Config = function() {
-    "use strict";
-    var paramsType = [ "video", "audio" ], params = {
-        "BufferController.minBufferTimeForPlaying": -1,
-        "BufferController.minBufferTime": -1,
-        "ABR.minBandwidth": -1,
-        "ABR.maxBandwidth": -1,
-        "ABR.minQuality": -1,
-        "ABR.maxQuality": -1,
-        "ABR.switchUpIncrementally": false,
-        "ABR.switchUpRatioSafetyFactor": -1,
-        "ABR.latencyInBandwidth": true,
-        "ABR.switchDownBufferTime": -1,
-        "ABR.switchDownBufferRatio": -1,
-        video: {},
-        audio: {}
-    }, doSetParams = function(newParams) {
-        var item, typeParams, typeItem;
-        for (item in newParams) {
-            if (item.indexOf("//") === -1) {
-                if (paramsType.indexOf(item) > -1) {
-                    typeParams = newParams[item];
-                    for (typeItem in typeParams) {
-                        params[item][typeItem] = newParams[item][typeItem];
-                    }
-                } else {
-                    params[item] = newParams[item];
-                }
-            }
-        }
-    }, getParam = function(params, name, type, def) {
-        var value = params[name];
-        if (value === undefined || value === -1) {
-            return def;
-        }
-        if (type !== undefined && typeof value !== type) {
-            switch (type) {
-              case "number":
-                value = Number(value);
-                break;
-
-              case "boolean":
-                value = value === "true" || value === "1" || value === 1;
-                break;
-
-              default:
-                break;
-            }
-        }
-        return value;
-    }, doGetParam = function(name, type, def) {
-        return getParam(params, name, type, def);
-    }, doGetParamFor = function(key, name, type, def) {
-        var typeParams = params[key];
-        if (typeParams !== undefined && typeParams[name] !== undefined) {
-            return getParam(typeParams, name, type, def);
-        }
-        return getParam(params, name, type, def);
-    };
-    return {
-        debug: undefined,
-        setup: function() {},
-        setParams: function(newParams) {
-            doSetParams(newParams);
-        },
-        getParam: function(name, type, def) {
-            return doGetParam(name, type, def);
-        },
-        getParamFor: function(key, name, type, def) {
-            return doGetParamFor(key, name, type, def);
-        }
-    };
-};
-
-MediaPlayer.utils.Config.prototype = {
-    constructor: MediaPlayer.utils.Config
-};
-
-MediaPlayer.utils.TokenAuthentication = function() {
-    "use strict";
-    var tokenAuthentication = {
-        type: MediaPlayer.utils.TokenAuthentication.TYPE_QUERY
-    };
-    return {
-        debug: undefined,
-        getTokenAuthentication: function() {
-            return tokenAuthentication;
-        },
-        setTokenAuthentication: function(object) {
-            tokenAuthentication = object;
-        },
-        checkRequestHeaderForToken: function(request) {
-            if (tokenAuthentication.name !== undefined && request.getResponseHeader(tokenAuthentication.name) !== null) {
-                tokenAuthentication.token = request.getResponseHeader(tokenAuthentication.name);
-                this.debug.log(tokenAuthentication.name + " received: " + tokenAuthentication.token);
-            }
-        },
-        addTokenAsQueryArg: function(url) {
-            if (tokenAuthentication.name !== undefined && tokenAuthentication.token !== undefined) {
-                if (tokenAuthentication.type === MediaPlayer.utils.TokenAuthentication.TYPE_QUERY) {
-                    var modifier = url.indexOf("?") === -1 ? "?" : "&";
-                    url += modifier + tokenAuthentication.name + "=" + tokenAuthentication.token;
-                    this.debug.log(tokenAuthentication.name + " is being appended on the request url with a value of : " + tokenAuthentication.token);
-                }
-            }
-            return url;
-        },
-        setTokenInRequestHeader: function(request) {
-            if (tokenAuthentication.type === MediaPlayer.utils.TokenAuthentication.TYPE_HEADER) {
-                request.setRequestHeader(tokenAuthentication.name, tokenAuthentication.token);
-                this.debug.log(tokenAuthentication.name + " is being set in the request header with a value of : " + tokenAuthentication.token);
-            }
-            return request;
-        }
-    };
-};
-
-MediaPlayer.utils.TokenAuthentication.TYPE_QUERY = "query";
-
-MediaPlayer.utils.TokenAuthentication.TYPE_HEADER = "header";
-
-MediaPlayer.models.VideoModel = function() {
-    "use strict";
-    var element, stalledStreams = [], isStalled = function() {
-        return stalledStreams.length > 0;
-    }, addStalledStream = function(type) {
-        if (type === null) {
-            return;
-        }
-        element.playbackRate = 0;
-        if (stalledStreams[type] === true) {
-            return;
-        }
-        stalledStreams.push(type);
-        stalledStreams[type] = true;
-    }, removeStalledStream = function(type) {
-        if (type === null) {
-            return;
-        }
-        stalledStreams[type] = false;
-        var index = stalledStreams.indexOf(type);
-        if (index !== -1) {
-            stalledStreams.splice(index, 1);
-        }
-        if (isStalled() === false) {
-            element.playbackRate = 1;
-        }
-    }, stallStream = function(type, isStalled) {
-        if (isStalled) {
-            addStalledStream(type);
-        } else {
-            removeStalledStream(type);
-        }
-    };
-    return {
-        system: undefined,
-        setup: function() {},
-        play: function() {
-            element.play();
-        },
-        pause: function() {
-            element.pause();
-        },
-        isPaused: function() {
-            return element.paused;
-        },
-        isSeeking: function() {
-            return element.seeking;
-        },
-        getPlaybackRate: function() {
-            return element.playbackRate;
-        },
-        setPlaybackRate: function(value) {
-            element.playbackRate = value;
-        },
-        getCurrentTime: function() {
-            return element.currentTime;
-        },
-        setCurrentTime: function(currentTime) {
-            if (element.currentTime == currentTime) return;
-            element.currentTime = currentTime;
-        },
-        listen: function(type, callback) {
-            element.addEventListener(type, callback, false);
-        },
-        unlisten: function(type, callback) {
-            element.removeEventListener(type, callback, false);
-        },
-        listenOnParent: function(type, callback) {
-            element.parentElement.addEventListener(type, callback, false);
-        },
-        unlistenOnParent: function(type, callback) {
-            element.parentElement.removeEventListener(type, callback, false);
-        },
-        getElement: function() {
-            return element;
-        },
-        setElement: function(value) {
-            element = value;
-        },
-        setSource: function(source) {
-            element.src = source;
-        },
-        isStalled: function() {
-            return element.playbackRate === 0;
-        },
-        stallStream: stallStream
-    };
-};
-
-MediaPlayer.models.VideoModel.prototype = {
-    constructor: MediaPlayer.models.VideoModel
-};
-
-MediaPlayer.vo.SegmentRequest = function() {
-    "use strict";
-    this.action = "download";
-    this.startTime = NaN;
-    this.streamType = null;
-    this.type = null;
-    this.duration = NaN;
-    this.timescale = NaN;
-    this.range = null;
-    this.url = null;
-    this.requestStartDate = null;
-    this.firstByteDate = null;
-    this.requestEndDate = null;
-    this.deferred = null;
-    this.quality = NaN;
-    this.index = NaN;
-    this.availabilityStartTime = null;
-    this.availabilityEndTime = null;
-    this.wallStartTime = null;
-};
-
-MediaPlayer.vo.SegmentRequest.prototype = {
-    constructor: MediaPlayer.vo.SegmentRequest,
-    ACTION_DOWNLOAD: "download",
-    ACTION_COMPLETE: "complete"
-};
-
-MediaPlayer.dependencies.ManifestLoader = function() {
-    "use strict";
-    var RETRY_ATTEMPTS = 3, RETRY_INTERVAL = 500, deferred = null, parseBaseUrl = function(url) {
-        var base = null;
-        if (url.indexOf("/") !== -1) {
-            if (url.indexOf("?") !== -1) {
-                url = url.substring(0, url.indexOf("?"));
-            }
-            base = url.substring(0, url.lastIndexOf("/") + 1);
-        }
-        return base;
-    }, doLoad = function(url, remainingAttempts) {
-        var baseUrl = parseBaseUrl(url), request = new XMLHttpRequest(), requestTime = new Date(), mpdLoadedTime = null, needFailureReport = true, onload = null, report = null, self = this;
-        onload = function() {
-            if (request.status < 200 || request.status > 299) {
-                return;
-            }
-            self.debug.log("[ManifestLoader] Manifest downloaded");
-            if (request.responseURL) {
-                self.debug.log("[ManifestLoader] Redirect URL: " + request.responseURL);
-                baseUrl = parseBaseUrl(request.responseURL);
-            }
-            needFailureReport = false;
-            mpdLoadedTime = new Date();
-            self.tokenAuthentication.checkRequestHeaderForToken(request);
-            self.metricsModel.addHttpRequest("stream", null, "MPD", url, null, null, requestTime, mpdLoadedTime, request.status, null, null);
-            self.parser.parse(request.responseText, baseUrl).then(function(manifest) {
-                manifest.mpdUrl = url;
-                manifest.mpdLoadedTime = mpdLoadedTime;
-                self.metricsModel.addManifestUpdate("stream", manifest.type, requestTime, mpdLoadedTime, manifest.availabilityStartTime);
-                deferred.resolve(manifest);
-            }, function(error) {
-                self.debug.error("[ManifestLoader] Manifest parsing error.");
-                var data = {};
-                data.mpdUrl = url;
-                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE, "parsing the manifest failed : " + error, data);
-                deferred.reject(request);
-            });
-        };
-        report = function() {
-            if (!needFailureReport) {
-                return;
-            }
-            needFailureReport = false;
-            self.metricsModel.addHttpRequest("stream", null, "MPD", url, null, null, requestTime, new Date(), request.status, null, null);
-            if (remainingAttempts > 0) {
-                self.debug.log("Failed loading manifest: " + url + ", retry in " + RETRY_INTERVAL + "ms" + " attempts: " + remainingAttempts);
-                remainingAttempts--;
-                setTimeout(function() {
-                    doLoad.call(self, url, remainingAttempts);
-                }, RETRY_INTERVAL);
-            } else {
-                var data = {}, msgError = "Failed loading manifest: " + url + " no retry attempts left";
-                self.debug.log(msgError);
-                data.url = url;
-                data.request = request;
-                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST, msgError, data);
-                deferred.reject(request);
-            }
-        };
-        try {
-            request.onload = onload;
-            request.onloadend = report;
-            request.onerror = report;
-            request.open("GET", url, true);
-            request.send();
-        } catch (e) {
-            request.onerror();
-        }
-    };
-    return {
-        debug: undefined,
-        parser: undefined,
-        errHandler: undefined,
-        metricsModel: undefined,
-        tokenAuthentication: undefined,
-        load: function(url) {
-            deferred = Q.defer();
-            doLoad.call(this, url, RETRY_ATTEMPTS);
-            return deferred.promise;
-        }
-    };
-};
-
-MediaPlayer.dependencies.ManifestLoader.prototype = {
-    constructor: MediaPlayer.dependencies.ManifestLoader
-};
-
-MediaPlayer.dependencies.ManifestUpdater = function() {
-    "use strict";
-    var refreshDelay = NaN, refreshTimer = null, isStopped = false, deferredUpdate, clear = function() {
-        if (refreshTimer !== null) {
-            clearInterval(refreshTimer);
-            refreshTimer = null;
-        }
-    }, start = function() {
-        clear.call(this);
-        if (!isNaN(refreshDelay)) {
-            this.debug.log("Refresh manifest in " + refreshDelay + " seconds.");
-            refreshTimer = setTimeout(onRefreshTimer.bind(this), Math.min(refreshDelay * 1e3, Math.pow(2, 31) - 1), this);
-        }
-    }, update = function() {
-        var self = this, manifest = self.manifestModel.getValue(), timeSinceLastUpdate;
-        if (manifest !== undefined && manifest !== null) {
-            self.manifestExt.getRefreshDelay(manifest).then(function(t) {
-                timeSinceLastUpdate = (new Date().getTime() - manifest.mpdLoadedTime.getTime()) / 1e3;
-                refreshDelay = Math.max(t - timeSinceLastUpdate, 0);
-                start.call(self);
-            });
-        }
-    }, onRefreshTimer = function() {
-        var self = this, manifest, url;
-        Q.when(deferredUpdate ? deferredUpdate.promise : true).then(function() {
-            deferredUpdate = Q.defer();
-            manifest = self.manifestModel.getValue();
-            url = manifest.mpdUrl;
-            if (manifest.hasOwnProperty("Location")) {
-                url = manifest.Location;
-            }
-            self.manifestLoader.load(url).then(function(manifestResult) {
-                self.manifestModel.setValue(manifestResult);
-                self.debug.log("Manifest has been refreshed.");
-                if (isStopped) return;
-                update.call(self);
-            });
-        });
-    }, onStreamsComposed = function() {
-        if (deferredUpdate) {
-            deferredUpdate.resolve();
-        }
-    };
-    return {
-        debug: undefined,
-        system: undefined,
-        manifestModel: undefined,
-        manifestExt: undefined,
-        manifestLoader: undefined,
-        setup: function() {
-            update.call(this);
-            this.system.mapHandler("streamsComposed", undefined, onStreamsComposed.bind(this));
-        },
-        start: function() {
-            isStopped = false;
-            update.call(this);
-        },
-        stop: function() {
-            isStopped = true;
-            clear.call(this);
-        }
-    };
-};
-
-MediaPlayer.dependencies.ManifestUpdater.prototype = {
-    constructor: MediaPlayer.dependencies.ManifestUpdater
-};
-
-MediaPlayer.models.ManifestModel = function() {
-    "use strict";
-    var manifest;
-    return {
-        system: undefined,
-        eventBus: undefined,
-        getValue: function() {
-            return manifest;
-        },
-        setValue: function(value) {
-            manifest = value;
-            this.system.notify("manifestUpdated");
-            if (manifest !== null) {
-                this.eventBus.dispatchEvent({
-                    type: "manifestLoaded",
-                    data: value
-                });
-            }
-        }
-    };
-};
-
-MediaPlayer.models.ManifestModel.prototype = {
-    constructor: MediaPlayer.models.ManifestModel
-};
-
-MediaPlayer.dependencies.MediaSourceExtensions = function() {
-    "use strict";
-};
-
-MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
-    constructor: MediaPlayer.dependencies.MediaSourceExtensions,
-    createMediaSource: function() {
-        "use strict";
-        var hasWebKit = "WebKitMediaSource" in window, hasMediaSource = "MediaSource" in window;
-        if (hasMediaSource) {
-            return Q.when(new MediaSource());
-        } else if (hasWebKit) {
-            return Q.when(new WebKitMediaSource());
-        }
-        return null;
-    },
-    attachMediaSource: function(source, videoModel) {
-        "use strict";
-        videoModel.setSource(window.URL.createObjectURL(source));
-        return Q.when(true);
-    },
-    detachMediaSource: function(videoModel) {
-        "use strict";
-        videoModel.setSource("");
-        return Q.when(true);
-    },
-    setDuration: function(source, value) {
-        "use strict";
-        source.duration = value;
-        return Q.when(source.duration);
-    },
-    signalEndOfStream: function(source) {
-        "use strict";
-        source.endOfStream();
-        return Q.when(true);
-    }
-};
-
-MediaPlayer.dependencies.MetricsExtensions = function() {
-    "use strict";
-    var h264ProfileMap = {
-        "42": "Baseline",
-        "4D": "Main",
-        "58": "Extended",
-        "64": "High"
-    };
-    var findRepresentionInPeriodArray = function(periodArray, representationId) {
-        var period, adaptationSet, adaptationSetArray, representation, representationArray, periodArrayIndex, adaptationSetArrayIndex, representationArrayIndex;
-        for (periodArrayIndex = 0; periodArrayIndex < periodArray.length; periodArrayIndex = periodArrayIndex + 1) {
-            period = periodArray[periodArrayIndex];
-            adaptationSetArray = period.AdaptationSet_asArray;
-            for (adaptationSetArrayIndex = 0; adaptationSetArrayIndex < adaptationSetArray.length; adaptationSetArrayIndex = adaptationSetArrayIndex + 1) {
-                adaptationSet = adaptationSetArray[adaptationSetArrayIndex];
-                representationArray = adaptationSet.Representation_asArray;
-                for (representationArrayIndex = 0; representationArrayIndex < representationArray.length; representationArrayIndex = representationArrayIndex + 1) {
-                    representation = representationArray[representationArrayIndex];
-                    if (representationId === representation.id) {
-                        return representation;
-                    }
-                }
-            }
-        }
-        return null;
-    };
-    var adaptationIsType = function(adaptation, bufferType) {
-        var found = false;
-        if (bufferType === "video") {
-            this.manifestExt.getIsVideo(adaptation);
-            if (adaptation.type === "video") {
-                found = true;
-            }
-        } else if (bufferType === "audio") {
-            this.manifestExt.getIsAudio(adaptation);
-            if (adaptation.type === "audio") {
-                found = true;
-            }
-        } else {
-            found = false;
-        }
-        return found;
-    };
-    var rslt = MediaPlayer.utils.copyMethods(Dash.dependencies.DashMetricsExtensions);
-    rslt.getDuration = function() {
-        var self = this, manifest = self.manifestModel.getValue();
-        var duration = manifest.Period.duration;
-        if (duration !== Infinity) {
-            return duration;
-        }
-        return -1;
-    };
-    rslt.getFormatForType = function(type) {
-        var self = this, manifest = self.manifestModel.getValue();
-        for (var i = 0; i < manifest.Period.AdaptationSet.length; i++) {
-            var adaptation = manifest.Period.AdaptationSet[i];
-            if (adaptation.type === type) {
-                return adaptation.mimeType;
-            }
-        }
-        return null;
-    };
-    rslt.getCodecForType = function(type) {
-        var self = this, manifest = self.manifestModel.getValue();
-        for (var i = 0; i < manifest.Period.AdaptationSet.length; i++) {
-            var adaptation = manifest.Period.AdaptationSet[i];
-            if (adaptation.type === type || adaptation.contentType === type) {
-                return adaptation.Representation[0].codecs;
-            }
-        }
-        return null;
-    };
-    rslt.getVideoWidthForRepresentation = function(representationId) {
-        var self = this, manifest = self.manifestModel.getValue(), representation, periodArray = manifest.Period_asArray;
-        representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
-        if (representation === null) {
-            return null;
-        }
-        return representation.width;
-    };
-    rslt.getVideoHeightForRepresentation = function(representationId) {
-        var self = this, manifest = self.manifestModel.getValue(), representation, periodArray = manifest.Period_asArray;
-        representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
-        if (representation === null) {
-            return null;
-        }
-        return representation.height;
-    };
-    rslt.getCodecsForRepresentation = function(representationId) {
-        var self = this, manifest = self.manifestModel.getValue(), representation, periodArray = manifest.Period_asArray;
-        representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
-        if (representation === null) {
-            return null;
-        }
-        return representation.codecs;
-    };
-    rslt.getH264ProfileLevel = function(codecs) {
-        if (codecs.indexOf("avc1") < 0) {
-            return "";
-        }
-        var profile = h264ProfileMap[codecs.substr(5, 2)];
-        var level = parseInt(codecs.substr(9, 2), 16) / 10;
-        return profile + "@" + level.toString();
-    };
-    rslt.getBitratesForType = function(type) {
-        var self = this, manifest = self.manifestModel.getValue(), periodArray, period, periodArrayIndex, adaptationSet, adaptationSetArray, representation, representationArray, adaptationSetArrayIndex, representationArrayIndex, bitrateArray = [];
-        if (manifest === null || manifest === undefined) {
-            return null;
-        }
-        periodArray = manifest.Period_asArray;
-        for (periodArrayIndex = 0; periodArrayIndex < periodArray.length; periodArrayIndex = periodArrayIndex + 1) {
-            period = periodArray[periodArrayIndex];
-            adaptationSetArray = period.AdaptationSet_asArray;
-            for (adaptationSetArrayIndex = 0; adaptationSetArrayIndex < adaptationSetArray.length; adaptationSetArrayIndex = adaptationSetArrayIndex + 1) {
-                adaptationSet = adaptationSetArray[adaptationSetArrayIndex];
-                if (adaptationIsType.call(self, adaptationSet, type)) {
-                    adaptationSet = self.manifestExt.processAdaptation(adaptationSet);
-                    representationArray = adaptationSet.Representation_asArray;
-                    for (representationArrayIndex = 0; representationArrayIndex < representationArray.length; representationArrayIndex = representationArrayIndex + 1) {
-                        representation = representationArray[representationArrayIndex];
-                        bitrateArray.push(representation.bandwidth);
-                    }
-                    return bitrateArray;
-                }
-            }
-        }
-        return bitrateArray;
-    };
-    rslt.getCurrentRepresentationBoundaries = function(metrics) {
-        if (metrics === null) {
-            return null;
-        }
-        var repBoundaries = metrics.RepBoundariesList;
-        if (repBoundaries === null || repBoundaries.length <= 0) {
-            return null;
-        }
-        return repBoundaries[repBoundaries.length - 1];
-    };
-    rslt.getCurrentBandwidthBoundaries = function(metrics) {
-        if (metrics === null) {
-            return null;
-        }
-        var bandwidthBoundaries = metrics.BandwidthBoundariesList;
-        if (bandwidthBoundaries === null || bandwidthBoundaries.length <= 0) {
-            return null;
-        }
-        return bandwidthBoundaries[bandwidthBoundaries.length - 1];
-    };
-    return rslt;
-};
-
-MediaPlayer.dependencies.MetricsExtensions.prototype = {
-    constructor: MediaPlayer.dependencies.MetricsExtensions
-};
-
-MediaPlayer.dependencies.SourceBufferExtensions = function() {
-    "use strict";
-    this.system = undefined;
-    this.manifestExt = undefined;
-};
-
-MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
-    constructor: MediaPlayer.dependencies.SourceBufferExtensions,
-    createSourceBuffer: function(mediaSource, codec) {
-        "use strict";
-        var deferred = Q.defer(), self = this;
-        try {
-            deferred.resolve(mediaSource.addSourceBuffer(codec));
-        } catch (ex) {
-            if (!self.manifestExt.getIsTextTrack(codec)) {
-                deferred.reject(ex.description);
-            } else {
-                if (codec === "text/vtt" || codec === "text/ttml") {
-                    deferred.resolve(self.system.getObject("textSourceBuffer"));
-                } else {
-                    if (codec === "application/ttml+xml+mp4") {
-                        deferred.resolve(self.system.getObject("textTTMLXMLMP4SourceBuffer"));
-                    } else {
-                        deferred.reject();
-                    }
-                }
-            }
-        }
-        return deferred.promise;
-    },
-    removeSourceBuffer: function(mediaSource, buffer) {
-        "use strict";
-        var deferred = Q.defer();
-        try {
-            deferred.resolve(mediaSource.removeSourceBuffer(buffer));
-        } catch (ex) {
-            if (buffer && typeof buffer.getTextTrackExtensions === "function") {
-                deferred.resolve();
-            } else {
-                deferred.reject(ex.description);
-            }
-        }
-        return deferred.promise;
-    },
-    getBufferRange: function(buffer, time, tolerance) {
-        var ranges = null, start = 0, end = 0, firstStart = null, lastEnd = null, gap = 0, toler = tolerance || .15, len, i;
-        try {
-            ranges = buffer.buffered;
-        } catch (ex) {
-            return null;
-        }
-        if (ranges !== null) {
-            for (i = 0, len = ranges.length; i < len; i += 1) {
-                start = ranges.start(i);
-                end = ranges.end(i);
-                if (firstStart === null) {
-                    gap = Math.abs(start - time);
-                    if (time >= start && time < end) {
-                        firstStart = start;
-                        lastEnd = end;
-                        continue;
-                    } else if (gap <= toler) {
-                        firstStart = start;
-                        lastEnd = end;
-                        continue;
-                    }
-                } else {
-                    gap = start - lastEnd;
-                    if (gap <= toler) {
-                        lastEnd = end;
-                    } else {
-                        break;
-                    }
-                }
-            }
-            if (firstStart !== null) {
-                return {
-                    start: firstStart,
-                    end: lastEnd
-                };
-            }
-        }
-        return null;
-    },
-    getAllRanges: function(buffer) {
-        var ranges = null;
-        try {
-            ranges = buffer.buffered;
-            return ranges;
-        } catch (ex) {
-            return null;
-        }
-    },
-    getBufferLength: function(buffer, time, tolerance) {
-        "use strict";
-        var self = this, range, length;
-        range = self.getBufferRange(buffer, time, tolerance);
-        if (range === null) {
-            length = 0;
-        } else {
-            length = range.end - time;
-        }
-        return length;
-    },
-    waitForUpdateEnd: function(buffer) {
-        "use strict";
-        var defer = Q.defer(), intervalId, CHECK_INTERVAL = 50, checkIsUpdateEnded = function() {
-            if (buffer.updating) return;
-            clearInterval(intervalId);
-            defer.resolve(true);
-        }, updateEndHandler = function() {
-            if (buffer.updating) return;
-            buffer.removeEventListener("updateend", updateEndHandler, false);
-            defer.resolve(true);
-        };
-        if (typeof buffer.addEventListener === "function") {
-            try {
-                buffer.addEventListener("updateend", updateEndHandler, false);
-            } catch (err) {
-                intervalId = setInterval(checkIsUpdateEnded, CHECK_INTERVAL);
-            }
-        } else {
-            intervalId = setInterval(checkIsUpdateEnded, CHECK_INTERVAL);
-        }
-        return defer.promise;
-    },
-    append: function(buffer, bytes, sync) {
-        var deferred = Q.defer();
-        try {
-            if ("append" in buffer) {
-                buffer.append(bytes);
-            } else if ("appendBuffer" in buffer) {
-                buffer.appendBuffer(bytes);
-            }
-            if (sync) {
-                deferred.resolve();
-            } else {
-                this.waitForUpdateEnd(buffer).then(function() {
-                    deferred.resolve();
-                });
-            }
-        } catch (err) {
-            deferred.reject({
-                err: err,
-                data: bytes
-            });
-        }
-        return deferred.promise;
-    },
-    remove: function(buffer, start, end, duration, mediaSource, sync) {
-        var deferred = Q.defer();
-        try {
-            if (start >= 0 && start < duration && end > start && mediaSource.readyState !== "ended") {
-                buffer.remove(start, end);
-            }
-            if (sync) {
-                deferred.resolve();
-            } else {
-                this.waitForUpdateEnd(buffer).then(function() {
-                    deferred.resolve();
-                });
-            }
-        } catch (err) {
-            deferred.reject(err);
-        }
-        return deferred.promise;
-    },
-    abort: function(mediaSource, buffer) {
-        "use strict";
-        var deferred = Q.defer();
-        try {
-            if (mediaSource.readyState === "open") {
-                buffer.abort();
-            }
-            deferred.resolve();
-        } catch (ex) {
-            deferred.reject(ex.description);
-        }
-        return deferred.promise;
-    }
-};
-
-MediaPlayer.dependencies.VideoModelExtensions = function() {
-    "use strict";
-    return {
-        getPlaybackQuality: function(videoElement) {
-            var hasWebKit = "webkitDroppedFrameCount" in videoElement, hasQuality = "getVideoPlaybackQuality" in videoElement, result = null;
-            if (hasQuality) {
-                result = videoElement.getVideoPlaybackQuality();
-            } else if (hasWebKit) {
-                result = {
-                    droppedVideoFrames: videoElement.webkitDroppedFrameCount,
-                    creationTime: new Date(),
-                    totalVideoFrames: videoElement.webkitDecodedFrameCount
-                };
-            }
-            return result;
-        }
-    };
-};
-
-MediaPlayer.dependencies.VideoModelExtensions.prototype = {
-    constructor: MediaPlayer.dependencies.VideoModelExtensions
-};
-
-MediaPlayer.dependencies.BufferExtensions = function() {
-    "use strict";
-    var minBufferTarget, currentBufferTarget, topAudioQualityIndex = 0, topVideoQualityIndex = 0, audioData = null, videoData = null, getCurrentHttpRequestLatency = function(metrics) {
-        var httpRequest = this.metricsExt.getCurrentHttpRequest(metrics);
-        if (httpRequest !== null) {
-            return (httpRequest.tresponse.getTime() - httpRequest.trequest.getTime()) / 1e3;
-        }
-        return 0;
-    }, isPlayingAtTopQuality = function() {
-        var self = this, audioQuality, videoQuality, isAtTop;
-        audioQuality = audioData ? self.abrController.getQualityFor("audio") : topAudioQualityIndex;
-        videoQuality = videoData ? self.abrController.getQualityFor("video") : topVideoQualityIndex;
-        isAtTop = audioQuality === topAudioQualityIndex && videoQuality === topVideoQualityIndex;
-        return isAtTop;
-    };
-    return {
-        system: undefined,
-        videoModel: undefined,
-        manifestExt: undefined,
-        metricsExt: undefined,
-        metricsModel: undefined,
-        abrController: undefined,
-        bufferMax: undefined,
-        updateData: function(data, type) {
-            var topIndex = data.Representation_asArray.length - 1;
-            if (type === "audio") {
-                topAudioQualityIndex = topIndex;
-                audioData = data;
-            } else if (type === "video") {
-                topVideoQualityIndex = topIndex;
-                videoData = data;
-            }
-        },
-        getTopQualityIndex: function(type) {
-            var topQualityIndex = null;
-            if (type === "audio") {
-                topQualityIndex = topAudioQualityIndex;
-            } else if (type === "video") {
-                topQualityIndex = topVideoQualityIndex;
-            }
-            return topQualityIndex;
-        },
-        decideBufferLength: function(minBufferTime, duration) {
-            if (isNaN(duration) || MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME < duration && minBufferTime < duration) {
-                minBufferTarget = Math.max(MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME, minBufferTime);
-            } else if (minBufferTime >= duration) {
-                minBufferTarget = Math.min(duration, MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME);
-            } else {
-                minBufferTarget = Math.min(duration, minBufferTime);
-            }
-            return Q.when(minBufferTarget);
-        },
-        getLeastBufferLevel: function() {
-            var videoMetrics = this.metricsModel.getReadOnlyMetricsFor("video"), videoBufferLevel = this.metricsExt.getCurrentBufferLevel(videoMetrics), audioMetrics = this.metricsModel.getReadOnlyMetricsFor("audio"), audioBufferLevel = this.metricsExt.getCurrentBufferLevel(audioMetrics), leastLevel = null;
-            if (videoBufferLevel === null || audioBufferLevel === null) {
-                leastLevel = audioBufferLevel !== null ? audioBufferLevel.level : videoBufferLevel !== null ? videoBufferLevel.level : null;
-            } else {
-                leastLevel = Math.min(audioBufferLevel.level, videoBufferLevel.level);
-            }
-            return leastLevel;
-        },
-        getRequiredBufferLength: function(waitingForBuffer, delay, isDynamic, duration) {
-            var self = this, vmetrics = self.metricsModel.getReadOnlyMetricsFor("video"), ametrics = self.metricsModel.getReadOnlyMetricsFor("audio"), isLongFormContent = duration >= MediaPlayer.dependencies.BufferExtensions.LONG_FORM_CONTENT_DURATION_THRESHOLD, deferred = Q.defer(), isAtTop = false, requiredBufferLength;
-            if (self.bufferMax === MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_MIN) {
-                requiredBufferLength = minBufferTarget;
-                deferred.resolve(requiredBufferLength);
-            } else if (self.bufferMax === MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_INFINITY) {
-                requiredBufferLength = duration;
-                deferred.resolve(requiredBufferLength);
-            } else if (self.bufferMax === MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED) {
-                currentBufferTarget = minBufferTarget;
-                if (!isDynamic) {
-                    if (!waitingForBuffer) {
-                        isAtTop = isPlayingAtTopQuality.call(self);
-                    }
-                }
-                if (isAtTop) {
-                    currentBufferTarget = isLongFormContent ? MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_TOP_QUALITY_LONG_FORM : MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_TOP_QUALITY;
-                }
-                requiredBufferLength = currentBufferTarget + delay + Math.max(getCurrentHttpRequestLatency.call(self, vmetrics), getCurrentHttpRequestLatency.call(self, ametrics));
-                deferred.resolve(requiredBufferLength);
-            } else {
-                deferred.reject("invalid bufferMax value: " + self.bufferMax);
-            }
-            return deferred.promise;
-        },
-        getBufferTarget: function() {
-            return currentBufferTarget === undefined ? minBufferTarget : currentBufferTarget;
-        }
-    };
-};
-
-MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED = "required";
-
-MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_MIN = "min";
-
-MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_INFINITY = "infinity";
-
-MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_STARTUP = 1;
-
-MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME = 16;
-
-MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_TOP_QUALITY = 30;
-
-MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_TOP_QUALITY_LONG_FORM = 300;
-
-MediaPlayer.dependencies.BufferExtensions.LONG_FORM_CONTENT_DURATION_THRESHOLD = 600;
-
-MediaPlayer.dependencies.BufferExtensions.prototype.constructor = MediaPlayer.dependencies.BufferExtensions;
-
-MediaPlayer.dependencies.FragmentController = function() {
-    "use strict";
-    var fragmentModels = [], findModel = function(bufferController) {
-        var ln = fragmentModels.length;
-        for (var i = 0; i < ln; i++) {
-            if (fragmentModels[i].getContext() == bufferController) {
-                return fragmentModels[i];
-            }
-        }
-        return null;
-    }, isReadyToLoadNextFragment = function() {
-        var isReady = true, ln = fragmentModels.length;
-        for (var i = 0; i < ln; i++) {
-            if (!fragmentModels[i].isReady()) {
-                isReady = false;
-                break;
-            }
-        }
-        return isReady;
-    }, executeRequests = function() {
-        for (var i = 0; i < fragmentModels.length; i++) {
-            fragmentModels[i].executeCurrentRequest();
-        }
-    };
-    return {
-        system: undefined,
-        debug: undefined,
-        fragmentLoader: undefined,
-        process: function(bytes) {
-            var result = null;
-            if (bytes !== null && bytes !== undefined && bytes.byteLength > 0) {
-                result = new Uint8Array(bytes);
-            }
-            return Q.when(result);
-        },
-        attachBufferController: function(bufferController) {
-            if (!bufferController) return null;
-            var model = findModel(bufferController);
-            if (!model) {
-                model = this.system.getObject("fragmentModel");
-                model.setContext(bufferController);
-                fragmentModels.push(model);
-            }
-            return model;
-        },
-        detachBufferController: function(bufferController) {
-            var idx = fragmentModels.indexOf(bufferController);
-            if (idx > -1) {
-                fragmentModels.splice(idx, 1);
-            }
-        },
-        onBufferControllerStateChange: function() {
-            if (isReadyToLoadNextFragment()) {
-                executeRequests.call(this);
-            }
-        },
-        isFragmentLoadedOrPending: function(bufferController, request) {
-            var fragmentModel = findModel(bufferController), isLoaded;
-            if (!fragmentModel) {
-                return false;
-            }
-            isLoaded = fragmentModel.isFragmentLoadedOrPending(request);
-            return isLoaded;
-        },
-        getPendingRequests: function(bufferController) {
-            var fragmentModel = findModel(bufferController);
-            if (!fragmentModel) {
-                return null;
-            }
-            return fragmentModel.getPendingRequests();
-        },
-        getLoadingRequests: function(bufferController) {
-            var fragmentModel = findModel(bufferController);
-            if (!fragmentModel) {
-                return null;
-            }
-            return fragmentModel.getLoadingRequests();
-        },
-        isInitializationRequest: function(request) {
-            return request && request.type && request.type.toLowerCase() === "initialization segment";
-        },
-        getLoadingTime: function(bufferController) {
-            var fragmentModel = findModel(bufferController);
-            if (!fragmentModel) {
-                return null;
-            }
-            return fragmentModel.getLoadingTime();
-        },
-        getExecutedRequestForTime: function(model, time) {
-            if (model) {
-                return model.getExecutedRequestForTime(time);
-            }
-            return null;
-        },
-        removeExecutedRequest: function(model, request) {
-            if (model) {
-                model.removeExecutedRequest(request);
-            }
-        },
-        removeExecutedRequestsBeforeTime: function(model, time) {
-            if (model) {
-                model.removeExecutedRequestsBeforeTime(time);
-            }
-        },
-        cancelPendingRequestsForModel: function(model) {
-            if (model) {
-                model.cancelPendingRequests();
-            }
-        },
-        abortRequestsForModel: function(model) {
-            if (model) {
-                model.abortRequests();
-            }
-        },
-        isFragmentExists: function(request) {
-            var deferred = Q.defer();
-            this.fragmentLoader.checkForExistence(request).then(function() {
-                deferred.resolve(true);
-            }, function() {
-                deferred.resolve(false);
-            });
-            return deferred.promise;
-        },
-        prepareFragmentForLoading: function(bufferController, request, startLoadingCallback, successLoadingCallback, errorLoadingCallback, streamEndCallback) {
-            var fragmentModel = findModel(bufferController);
-            if (!fragmentModel || !request) {
-                return Q.when(null);
-            }
-            fragmentModel.addRequest(request);
-            fragmentModel.setCallbacks(startLoadingCallback, successLoadingCallback, errorLoadingCallback, streamEndCallback);
-            return Q.when(true);
-        }
-    };
-};
-
-MediaPlayer.dependencies.FragmentController.prototype = {
-    constructor: MediaPlayer.dependencies.FragmentController
-};
-
 MediaPlayer.dependencies.AbrController = function() {
     "use strict";
-    var autoSwitchBitrate = true, qualityDict = {}, confidenceDict = {}, getInternalQuality = function(type) {
+    var autoSwitchBitrate = true, qualityDict = {}, confidenceDict = {}, playerState = "", getInternalQuality = function(type) {
         var quality;
         if (!qualityDict.hasOwnProperty(type)) {
             qualityDict[type] = 0;
@@ -7785,7 +6337,7 @@ MediaPlayer.dependencies.AbrController = function() {
                 self.getMetricsFor(data).then(function(metrics) {
                     self.abrRulesCollection.getRules().then(function(rules) {
                         for (i = 0, len = rules.length; i < len; i += 1) {
-                            funcs.push(rules[i].checkIndex(quality, metrics, data));
+                            funcs.push(rules[i].checkIndex(quality, metrics, data, playerState));
                         }
                         Q.all(funcs).then(function(results) {
                             values = {};
@@ -7824,7 +6376,7 @@ MediaPlayer.dependencies.AbrController = function() {
                                 if (quality >= max) {
                                     quality = max - 1;
                                 }
-                                if (confidence != MediaPlayer.rules.SwitchRequest.prototype.STRONG && confidence != MediaPlayer.rules.SwitchRequest.prototype.WEAK) {
+                                if (confidence !== MediaPlayer.rules.SwitchRequest.prototype.STRONG && confidence !== MediaPlayer.rules.SwitchRequest.prototype.WEAK) {
                                     confidence = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
                                 }
                                 self.debug.log("[AbrController][" + type + "] Set quality: " + quality);
@@ -7890,6 +6442,9 @@ MediaPlayer.dependencies.AbrController = function() {
         },
         getQualityFor: function(type) {
             return getInternalQuality(type);
+        },
+        setPlayerState: function(state) {
+            playerState = state;
         }
     };
 };
@@ -7898,1648 +6453,9 @@ MediaPlayer.dependencies.AbrController.prototype = {
     constructor: MediaPlayer.dependencies.AbrController
 };
 
-MediaPlayer.dependencies.FragmentLoader = function() {
-    "use strict";
-    var rslt = {};
-    var RETRY_ATTEMPTS = 3, RETRY_INTERVAL = 500, BYTESLENGTH = false, retryCount = 0, xhrs = [], _checkForExistence = function(request) {
-        var req = new XMLHttpRequest(), isSuccessful = false;
-        req.open("HEAD", request.url, true);
-        req.onload = function() {
-            if (req.status < 200 || req.status > 299) return;
-            isSuccessful = true;
-            request.deferred.resolve(request);
-        };
-        req.onloadend = req.onerror = function() {
-            if (isSuccessful) return;
-            request.deferred.reject(req);
-        };
-        req.send();
-    };
-    return {
-        metricsModel: undefined,
-        errHandler: undefined,
-        debug: undefined,
-        tokenAuthentication: undefined,
-        doLoad: function(request, bytesRange) {
-            var d = Q.defer();
-            var req = new XMLHttpRequest(), httpRequestMetrics = null, firstProgress = true, needFailureReport = true, lastTraceTime = null, self = this;
-            xhrs.push(req);
-            request.requestStartDate = new Date();
-            httpRequestMetrics = self.metricsModel.addHttpRequest(request.streamType, null, request.type, request.url, null, request.range, request.requestStartDate, null, null, null, null, request.duration, request.startTime, request.quality);
-            self.metricsModel.appendHttpTrace(httpRequestMetrics, request.requestStartDate, request.requestStartDate.getTime() - request.requestStartDate.getTime(), [ 0 ]);
-            lastTraceTime = request.requestStartDate;
-            req.open("GET", self.tokenAuthentication.addTokenAsQueryArg(request.url), true);
-            req.responseType = "arraybuffer";
-            req = self.tokenAuthentication.setTokenInRequestHeader(req);
-            if (bytesRange) {
-                req.setRequestHeader("Range", bytesRange);
-            }
-            req.onprogress = function(event) {
-                var currentTime = new Date();
-                if (firstProgress) {
-                    firstProgress = false;
-                    if (!event.lengthComputable || event.lengthComputable && event.total != event.loaded) {
-                        request.firstByteDate = currentTime;
-                        httpRequestMetrics.tresponse = currentTime;
-                    }
-                }
-                self.metricsModel.appendHttpTrace(httpRequestMetrics, currentTime, currentTime.getTime() - lastTraceTime.getTime(), [ req.response ? req.response.byteLength : 0 ]);
-                if ((lastTraceTime.getTime() - request.requestStartDate.getTime()) / 1e3 > httpRequestMetrics.mediaduration * 2) {
-                    self.debug.log("[FragmentLoader][" + request.streamType + "] Load onprogress: it's too long!!!!!!");
-                }
-                lastTraceTime = currentTime;
-            };
-            req.onload = function() {
-                if (req.status < 200 || req.status > 299) {
-                    return;
-                }
-                needFailureReport = false;
-                var currentTime = new Date(), bytes = req.response, latency, download;
-                if (!request.firstByteDate) {
-                    request.firstByteDate = request.requestStartDate;
-                }
-                request.requestEndDate = currentTime;
-                latency = request.firstByteDate.getTime() - request.requestStartDate.getTime();
-                download = request.requestEndDate.getTime() - request.firstByteDate.getTime();
-                self.debug.log("[FragmentLoader][" + request.streamType + "] Loaded: " + request.url + " (" + req.status + ", " + latency + "ms, " + download + "ms)");
-                httpRequestMetrics.tresponse = request.firstByteDate;
-                httpRequestMetrics.tfinish = request.requestEndDate;
-                httpRequestMetrics.responsecode = req.status;
-                httpRequestMetrics.bytesLength = bytes ? bytes.byteLength : 0;
-                self.metricsModel.appendHttpTrace(httpRequestMetrics, currentTime, currentTime.getTime() - lastTraceTime.getTime(), [ bytes ? bytes.byteLength : 0 ]);
-                lastTraceTime = currentTime;
-                d.resolve({
-                    data: bytes,
-                    request: request
-                });
-            };
-            req.onloadend = req.onerror = function() {
-                if (xhrs.indexOf(req) === -1) {
-                    return;
-                } else {
-                    xhrs.splice(xhrs.indexOf(req), 1);
-                }
-                if (!needFailureReport) {
-                    return;
-                }
-                needFailureReport = false;
-                var currentTime = new Date(), bytes = req.response, latency, download;
-                if (!request.firstByteDate) {
-                    request.firstByteDate = request.requestStartDate;
-                }
-                request.requestEndDate = currentTime;
-                latency = request.firstByteDate.getTime() - request.requestStartDate.getTime();
-                download = request.requestEndDate.getTime() - request.firstByteDate.getTime();
-                httpRequestMetrics.tresponse = request.firstByteDate;
-                httpRequestMetrics.tfinish = request.requestEndDate;
-                httpRequestMetrics.responsecode = req.status;
-                self.metricsModel.appendHttpTrace(httpRequestMetrics, currentTime, currentTime.getTime() - lastTraceTime.getTime(), [ bytes ? bytes.byteLength : 0 ]);
-                lastTraceTime = currentTime;
-                d.reject(req);
-            };
-            self.debug.log("[FragmentLoader][" + request.streamType + "] Load: " + request.url);
-            req.send();
-            return d.promise;
-        },
-        getBytesLength: function(request) {
-            var d = Q.defer();
-            var http = new XMLHttpRequest();
-            http.open("HEAD", request.url);
-            http.onreadystatechange = function() {
-                if (http.status < 200 || http.status > 299) {
-                    d.reject();
-                } else {
-                    if (http.getResponseHeader("Content-Length")) {
-                        d.resolve(http.getResponseHeader("Content-Length"));
-                    } else {
-                        d.reject();
-                    }
-                }
-            };
-            http.send();
-            return d.promise;
-        },
-        planRequests: function(req) {
-            if (!req) {
-                return Q.when(null);
-            }
-            var that = this;
-            var d = Q.defer();
-            if (BYTESLENGTH) {
-                this.getBytesLength(req).then(function(bytesLength) {
-                    BYTESLENGTH = true;
-                    that.loadRequests(bytesLength, req).then(function(datas) {
-                        var buffer1 = datas[0].data, buffer2 = datas[1].data, tmp = new Uint8Array(buffer1.byteLength + buffer2.byteLength);
-                        tmp.set(new Uint8Array(buffer1), 0);
-                        tmp.set(new Uint8Array(buffer2), buffer1.byteLength);
-                        d.resolve({
-                            data: tmp.buffer,
-                            request: req
-                        });
-                    });
-                }, function() {
-                    BYTESLENGTH = false;
-                    d.resolve(that.doLoad(req, RETRY_ATTEMPTS));
-                });
-            } else {
-                that.doLoad(req).then(function(result) {
-                    d.resolve(result);
-                }, function() {
-                    that.retry(req, d, that);
-                });
-            }
-            return d.promise;
-        },
-        retry: function(request, d, that) {
-            setTimeout(function() {
-                that.doLoad(request).then(function(result) {
-                    retryCount = 0;
-                    d.resolve(result);
-                }, function(error) {
-                    retryCount++;
-                    if (retryCount < RETRY_ATTEMPTS) {
-                        that.retry(request, d, that);
-                    } else {
-                        retryCount = 0;
-                        d.reject(error);
-                    }
-                });
-            }, RETRY_INTERVAL);
-        },
-        loadRequests: function(bytesLength, req) {
-            var halfBytes = Math.floor(bytesLength / 2), bytesFirstHalf = "bytes=0-" + (halfBytes - 1), bytesSecondHalf = "bytes=" + halfBytes + "-" + bytesLength;
-            return Q.all([ this.doLoad(req, RETRY_ATTEMPTS, bytesFirstHalf), this.doLoad(req, RETRY_ATTEMPTS, bytesSecondHalf) ]);
-        },
-        load: function(req) {
-            var deferred = Q.defer();
-            if (req.type == "Initialization Segment" && req.data) {
-                deferred.resolve(req, {
-                    data: req.data
-                });
-            } else {
-                this.planRequests(req).then(function(result) {
-                    deferred.resolve(result);
-                }, function(error) {
-                    deferred.reject(error);
-                });
-            }
-            return deferred.promise;
-        },
-        abort: function() {
-            var i, req, ln = xhrs.length;
-            for (i = 0; i < ln; i += 1) {
-                req = xhrs[i];
-                this.debug.log("[FragmentLoader][" + req.streamType + "] ### Abort XHR");
-                req.abort();
-                req = null;
-            }
-            xhrs.length = 0;
-            xhrs = [];
-        },
-        checkForExistence: function(req) {
-            if (!req) {
-                return Q.when(null);
-            }
-            req.deferred = Q.defer();
-            _checkForExistence.call(this, req);
-            return req.deferred.promise;
-        }
-    };
-};
-
-MediaPlayer.dependencies.FragmentLoader.prototype = {
-    constructor: MediaPlayer.dependencies.FragmentLoader
-};
-
-MediaPlayer.dependencies.FragmentModel = function() {
-    "use strict";
-    var context, executedRequests = [], pendingRequests = [], loadingRequests = [], startLoadingCallback, successLoadingCallback, errorLoadingCallback, streamEndCallback, LOADING_REQUEST_THRESHOLD = 2, loadCurrentFragment = function(request) {
-        var onSuccess, onError, self = this;
-        startLoadingCallback.call(context, request);
-        onSuccess = function(request, response) {
-            loadingRequests.splice(loadingRequests.indexOf(request), 1);
-            executedRequests.push(request);
-            successLoadingCallback.call(context, request, response);
-            request.deferred = null;
-        };
-        onError = function(request) {
-            loadingRequests.splice(loadingRequests.indexOf(request), 1);
-            errorLoadingCallback.call(context, request);
-            request.deferred = null;
-        };
-        self.fragmentLoader.load(request).then(onSuccess.bind(context, request), onError.bind(context, request));
-    }, sortRequestsByProperty = function(requestsArray, sortProp) {
-        var compare = function(req1, req2) {
-            if (req1[sortProp] < req2[sortProp]) return -1;
-            if (req1[sortProp] > req2[sortProp]) return 1;
-            return 0;
-        };
-        requestsArray.sort(compare);
-    }, removeExecutedRequest = function(request) {
-        var idx = executedRequests.indexOf(request);
-        if (idx !== -1) {
-            executedRequests.splice(idx, 1);
-        }
-    };
-    return {
-        system: undefined,
-        debug: undefined,
-        fragmentLoader: undefined,
-        setContext: function(value) {
-            context = value;
-        },
-        getContext: function() {
-            return context;
-        },
-        addRequest: function(value) {
-            if (value) {
-                if (this.isFragmentLoadedOrPending(value)) return;
-                pendingRequests.push(value);
-                sortRequestsByProperty.call(this, pendingRequests, "index");
-            }
-        },
-        setCallbacks: function(onLoadingStart, onLoadingSuccess, onLoadingError, onStreamEnd) {
-            startLoadingCallback = onLoadingStart;
-            streamEndCallback = onStreamEnd;
-            errorLoadingCallback = onLoadingError;
-            successLoadingCallback = onLoadingSuccess;
-        },
-        isFragmentLoadedOrPending: function(request) {
-            var isLoaded = false, ln = executedRequests.length, req;
-            for (var i = 0; i < ln; i++) {
-                req = executedRequests[i];
-                if (request.startTime === req.startTime || req.action === "complete" && request.action === req.action) {
-                    if (request.url === req.url) {
-                        isLoaded = true;
-                        break;
-                    } else {
-                        removeExecutedRequest(request);
-                    }
-                }
-            }
-            if (!isLoaded) {
-                for (i = 0, ln = pendingRequests.length; i < ln; i += 1) {
-                    req = pendingRequests[i];
-                    if (request.url === req.url && request.startTime === req.startTime) {
-                        isLoaded = true;
-                    }
-                }
-            }
-            if (!isLoaded) {
-                for (i = 0, ln = loadingRequests.length; i < ln; i += 1) {
-                    req = loadingRequests[i];
-                    if (request.url === req.url && request.startTime === req.startTime) {
-                        isLoaded = true;
-                    }
-                }
-            }
-            return isLoaded;
-        },
-        isReady: function() {
-            return context.isReady();
-        },
-        getPendingRequests: function() {
-            return pendingRequests;
-        },
-        getLoadingRequests: function() {
-            return loadingRequests;
-        },
-        getLoadingTime: function() {
-            var loadingTime = 0, req, i;
-            for (i = executedRequests.length - 1; i >= 0; i -= 1) {
-                req = executedRequests[i];
-                if (req.requestEndDate instanceof Date && req.firstByteDate instanceof Date) {
-                    loadingTime = req.requestEndDate.getTime() - req.firstByteDate.getTime();
-                    break;
-                }
-            }
-            return loadingTime;
-        },
-        getExecutedRequestForTime: function(time) {
-            var lastIdx = executedRequests.length - 1, start = NaN, end = NaN, req = null, i;
-            for (i = lastIdx; i >= 0; i -= 1) {
-                req = executedRequests[i];
-                start = req.startTime;
-                end = start + req.duration;
-                if (!isNaN(start) && !isNaN(end) && time > start && time < end) {
-                    return req;
-                }
-            }
-            return null;
-        },
-        getExecutedRequestForQualityAndIndex: function(quality, index) {
-            var lastIdx = executedRequests.length - 1, req = null, i;
-            for (i = lastIdx; i >= 0; i -= 1) {
-                req = executedRequests[i];
-                if (req.quality === quality && req.index === index) {
-                    return req;
-                }
-            }
-            return null;
-        },
-        removeExecutedRequest: function(request) {
-            removeExecutedRequest.call(this, request);
-        },
-        removeExecutedRequestsBeforeTime: function(time) {
-            var lastIdx = executedRequests.length - 1, start = NaN, req = null, i;
-            for (i = lastIdx; i >= 0; i -= 1) {
-                req = executedRequests[i];
-                start = req.startTime;
-                if (!isNaN(start) && start < time) {
-                    removeExecutedRequest.call(this, req);
-                }
-            }
-        },
-        cancelPendingRequests: function() {
-            pendingRequests = [];
-        },
-        abortRequests: function() {
-            this.fragmentLoader.abort();
-            loadingRequests = [];
-        },
-        executeCurrentRequest: function() {
-            var self = this, currentRequest;
-            if (pendingRequests.length === 0) return;
-            if (loadingRequests.length >= LOADING_REQUEST_THRESHOLD) {
-                return;
-            }
-            currentRequest = pendingRequests.shift();
-            switch (currentRequest.action) {
-              case "complete":
-                executedRequests.push(currentRequest);
-                streamEndCallback.call(context, currentRequest);
-                break;
-
-              case "download":
-                loadingRequests.push(currentRequest);
-                loadCurrentFragment.call(self, currentRequest);
-                break;
-
-              default:
-                this.debug.log("Unknown request action.");
-                if (currentRequest.deferred) {
-                    currentRequest.deferred.reject();
-                    currentRequest.deferred = null;
-                } else {
-                    errorLoadingCallback.call(context, currentRequest);
-                }
-            }
-        }
-    };
-};
-
-MediaPlayer.dependencies.FragmentModel.prototype = {
-    constructor: MediaPlayer.dependencies.FragmentModel
-};
-
-MediaPlayer.dependencies.StreamController = function() {
-    "use strict";
-    var streams = [], activeStream, STREAM_BUFFER_END_THRESHOLD = 6, STREAM_END_THRESHOLD = .2, autoPlay = true, isPeriodSwitchingInProgress = false, timeupdateListener, seekingListener, progressListener, pauseListener, playListener, audioTracks, subtitleTracks, protectionData, play = function() {
-        activeStream.play();
-    }, pause = function() {
-        activeStream.pause();
-    }, seek = function(time) {
-        activeStream.seek(time);
-    }, switchVideoModel = function(fromVideoModel, toVideoModel) {
-        var activeVideoElement = fromVideoModel.getElement(), newVideoElement = toVideoModel.getElement();
-        if (!newVideoElement.parentNode) {
-            activeVideoElement.parentNode.insertBefore(newVideoElement, activeVideoElement);
-        }
-        activeVideoElement.style.width = "0px";
-        newVideoElement.style.width = "100%";
-        copyVideoProperties(activeVideoElement, newVideoElement);
-        detachVideoEvents.call(this, fromVideoModel);
-        attachVideoEvents.call(this, toVideoModel);
-        return Q.when(true);
-    }, attachVideoEvents = function(videoModel) {
-        videoModel.listen("seeking", seekingListener);
-        videoModel.listen("progress", progressListener);
-        videoModel.listen("timeupdate", timeupdateListener);
-        videoModel.listen("pause", pauseListener);
-        videoModel.listen("play", playListener);
-    }, detachVideoEvents = function(videoModel) {
-        videoModel.unlisten("seeking", seekingListener);
-        videoModel.unlisten("progress", progressListener);
-        videoModel.unlisten("timeupdate", timeupdateListener);
-        videoModel.unlisten("pause", pauseListener);
-        videoModel.unlisten("play", playListener);
-    }, copyVideoProperties = function(fromVideoElement, toVideoElement) {
-        [ "controls", "loop", "muted", "playbackRate", "volume" ].forEach(function(prop) {
-            toVideoElement[prop] = fromVideoElement[prop];
-        });
-    }, onProgress = function() {
-        var ranges = activeStream.getVideoModel().getElement().buffered;
-        if (!ranges.length) {
-            return;
-        }
-        var lastRange = ranges.length - 1, bufferEndTime = ranges.end(lastRange), remainingBufferDuration = activeStream.getStartTime() + activeStream.getDuration() - bufferEndTime;
-        if (remainingBufferDuration < STREAM_BUFFER_END_THRESHOLD) {
-            activeStream.getVideoModel().unlisten("progress", progressListener);
-            onStreamBufferingEnd();
-        }
-    }, onReloadManifest = function() {
-        this.debug.log("[StreamController] ### reloadManifest ####");
-        this.reset.call(this);
-        this.load.call(this, this.currentURL);
-    }, onTimeupdate = function() {
-        var streamEndTime = activeStream.getStartTime() + activeStream.getDuration(), currentTime = activeStream.getVideoModel().getCurrentTime(), self = this, videoElement = activeStream.getVideoModel().getElement(), playBackQuality = self.videoExt.getPlaybackQuality(videoElement), elapsedTime = (new Date().getTime() - self.startPlayingTime) / 1e3;
-        self.metricsModel.addCondition(null, null, videoElement.videoWidth, videoElement.videoHeight, playBackQuality.droppedVideoFrames, playBackQuality.totalVideoFrames / elapsedTime);
-        if (!getNextStream()) return;
-        if (activeStream.getVideoModel().getElement().seeking) return;
-        if (streamEndTime - currentTime < STREAM_END_THRESHOLD) {
-            switchStream.call(this, activeStream, getNextStream());
-        }
-    }, onSeeking = function() {
-        var seekingTime = activeStream.getVideoModel().getCurrentTime(), seekingStream = getStreamForTime(seekingTime);
-        this.metricsModel.addState("video", "seeking", activeStream.getVideoModel().getCurrentTime());
-        if (seekingStream && seekingStream !== activeStream) {
-            switchStream.call(this, activeStream, seekingStream, seekingTime);
-        }
-    }, onPause = function() {
-        this.manifestUpdater.stop();
-        this.metricsModel.addState("video", "paused", activeStream.getVideoModel().getCurrentTime());
-    }, onPlay = function() {
-        this.manifestUpdater.start();
-        if (this.startPlayingTime === undefined) {
-            this.startPlayingTime = new Date().getTime();
-        }
-        var videoElement = activeStream.getVideoModel().getElement();
-        this.metricsModel.addCondition(null, 0, videoElement.videoWidth, videoElement.videoHeight);
-    }, onStreamBufferingEnd = function() {
-        var nextStream = getNextStream();
-        if (nextStream) {
-            nextStream.seek(nextStream.getStartTime());
-        }
-    }, getNextStream = function() {
-        var nextIndex = activeStream.getPeriodIndex() + 1;
-        return nextIndex < streams.length ? streams[nextIndex] : null;
-    }, getStreamForTime = function(time) {
-        var duration = 0, stream = null, ln = streams.length;
-        if (ln > 0) {
-            duration += streams[0].getStartTime();
-        }
-        for (var i = 0; i < ln; i++) {
-            stream = streams[i];
-            duration += stream.getDuration();
-            if (time < duration) {
-                return stream;
-            }
-        }
-    }, createVideoModel = function() {
-        var model = this.system.getObject("videoModel"), video = document.createElement("video");
-        model.setElement(video);
-        return model;
-    }, removeVideoElement = function(element) {
-        if (element.parentNode) {
-            element.parentNode.removeChild(element);
-        }
-    }, switchStream = function(from, to, seekTo) {
-        if (isPeriodSwitchingInProgress || !from || !to || from === to) return;
-        isPeriodSwitchingInProgress = true;
-        from.pause();
-        activeStream = to;
-        switchVideoModel.call(this, from.getVideoModel(), to.getVideoModel());
-        if (seekTo) {
-            seek(from.getVideoModel().getCurrentTime());
-        } else {
-            seek(to.getStartTime());
-        }
-        play();
-        from.resetEventController();
-        activeStream.startEventController();
-        isPeriodSwitchingInProgress = false;
-    }, composeStreams = function() {
-        var self = this, manifest = self.manifestModel.getValue(), metrics = self.metricsModel.getMetricsFor("stream"), manifestUpdateInfo = self.metricsExt.getCurrentManifestUpdate(metrics), periodInfo, deferred = Q.defer(), updatedStreams = [], pLen, sLen, pIdx, sIdx, period, stream;
-        self.startPlayingTime = undefined;
-        if (!manifest) {
-            return Q.when(false);
-        }
-        self.manifestExt.getMpd(manifest).then(function(mpd) {
-            if (activeStream) {
-                periodInfo = activeStream.getPeriodInfo();
-                mpd.isClientServerTimeSyncCompleted = periodInfo.mpd.isClientServerTimeSyncCompleted;
-                mpd.clientServerTimeShift = periodInfo.mpd.clientServerTimeShift;
-            }
-            self.manifestExt.getRegularPeriods(manifest, mpd).then(function(periods) {
-                if (periods.length === 0) {
-                    return deferred.reject("There are no regular periods");
-                }
-                self.metricsModel.updateManifestUpdateInfo(manifestUpdateInfo, {
-                    currentTime: self.videoModel.getCurrentTime(),
-                    buffered: self.videoModel.getElement().buffered,
-                    presentationStartTime: periods[0].start,
-                    clientTimeOffset: mpd.clientServerTimeShift
-                });
-                for (pIdx = 0, pLen = periods.length; pIdx < pLen; pIdx += 1) {
-                    period = periods[pIdx];
-                    for (sIdx = 0, sLen = streams.length; sIdx < sLen; sIdx += 1) {
-                        if (streams[sIdx].getId() === period.id) {
-                            stream = streams[sIdx];
-                            updatedStreams.push(stream.updateData(period));
-                        }
-                    }
-                    if (!stream) {
-                        stream = self.system.getObject("stream");
-                        stream.setVideoModel(pIdx === 0 ? self.videoModel : createVideoModel.call(self));
-                        stream.initProtection(self.protectionData);
-                        stream.setAutoPlay(autoPlay);
-                        stream.load(manifest, period);
-                        streams.push(stream);
-                    }
-                    self.metricsModel.addManifestUpdatePeriodInfo(manifestUpdateInfo, period.id, period.index, period.start, period.duration);
-                    stream = null;
-                }
-                if (!activeStream) {
-                    activeStream = streams[0];
-                    attachVideoEvents.call(self, activeStream.getVideoModel());
-                }
-                Q.all(updatedStreams).then(function() {
-                    deferred.resolve();
-                });
-            });
-        });
-        return deferred.promise;
-    }, updateAudioTracks = function() {
-        if (activeStream) {
-            var self = this;
-            self.manifestExt.getAudioDatas(self.manifestModel.getValue(), activeStream.getPeriodIndex()).then(function(audiosDatas) {
-                audioTracks = audiosDatas;
-                self.system.notify("audioTracksUpdated");
-            });
-        }
-    }, updateSubtitleTracks = function() {
-        if (activeStream) {
-            var self = this;
-            self.manifestExt.getTextDatas(self.manifestModel.getValue(), activeStream.getPeriodIndex()).then(function(textDatas) {
-                subtitleTracks = textDatas;
-                self.system.notify("subtitleTracksUpdated");
-            });
-        }
-    }, manifestHasUpdated = function() {
-        var self = this;
-        composeStreams.call(self).then(function() {
-            updateAudioTracks.call(self);
-            updateSubtitleTracks.call(self);
-            self.system.notify("streamsComposed");
-        }, function(errMsg) {
-            self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM, errMsg, self.manifestModel.getValue());
-            self.reset();
-        });
-    };
-    return {
-        system: undefined,
-        videoModel: undefined,
-        manifestLoader: undefined,
-        manifestUpdater: undefined,
-        manifestModel: undefined,
-        mediaSourceExt: undefined,
-        sourceBufferExt: undefined,
-        bufferExt: undefined,
-        manifestExt: undefined,
-        fragmentController: undefined,
-        abrController: undefined,
-        fragmentExt: undefined,
-        capabilities: undefined,
-        debug: undefined,
-        metricsModel: undefined,
-        metricsExt: undefined,
-        videoExt: undefined,
-        errHandler: undefined,
-        startTime: undefined,
-        startPlayingTime: undefined,
-        currentURL: undefined,
-        setup: function() {
-            this.system.mapHandler("manifestUpdated", undefined, manifestHasUpdated.bind(this));
-            timeupdateListener = onTimeupdate.bind(this);
-            progressListener = onProgress.bind(this);
-            seekingListener = onSeeking.bind(this);
-            pauseListener = onPause.bind(this);
-            playListener = onPlay.bind(this);
-            this.system.mapHandler("reloadManifest", undefined, onReloadManifest.bind(this));
-        },
-        getManifestExt: function() {
-            return activeStream.getManifestExt();
-        },
-        setAutoPlay: function(value) {
-            autoPlay = value;
-        },
-        getAutoPlay: function() {
-            return autoPlay;
-        },
-        getVideoModel: function() {
-            return this.videoModel;
-        },
-        setVideoModel: function(value) {
-            this.videoModel = value;
-        },
-        getAudioTracks: function() {
-            return audioTracks;
-        },
-        setAudioTrack: function(audioTrack) {
-            if (activeStream) {
-                activeStream.setAudioTrack(audioTrack);
-            }
-        },
-        getSubtitleTracks: function() {
-            return subtitleTracks;
-        },
-        setSubtitleTrack: function(subtitleTrack) {
-            if (activeStream) {
-                activeStream.setSubtitleTrack(subtitleTrack);
-            }
-        },
-        load: function(url, protData) {
-            var self = this;
-            self.currentURL = url;
-            if (protData) {
-                self.protectionData = protData;
-            }
-            self.debug.info("[StreamController] load url: " + url);
-            self.manifestLoader.load(url).then(function(manifest) {
-                self.manifestModel.setValue(manifest);
-                self.metricsModel.addMetaData();
-                self.debug.info("[StreamController] Manifest has loaded.");
-                self.manifestUpdater.start();
-            }, function() {
-                self.debug.error("[StreamController] Manifest loading error.");
-            });
-        },
-        reset: function() {
-            this.debug.info("[StreamController] Reset");
-            if (!!activeStream) {
-                detachVideoEvents.call(this, activeStream.getVideoModel());
-            }
-            for (var i = 0, ln = streams.length; i < ln; i++) {
-                var stream = streams[i];
-                stream.reset();
-                if (stream !== activeStream) {
-                    removeVideoElement(stream.getVideoModel().getElement());
-                }
-            }
-            streams = [];
-            this.manifestUpdater.stop();
-            this.manifestModel.setValue(null);
-            this.metricsModel.clearAllCurrentMetrics();
-            isPeriodSwitchingInProgress = false;
-            activeStream = null;
-            protectionData = null;
-        },
-        play: play,
-        seek: seek,
-        pause: pause
-    };
-};
-
-MediaPlayer.dependencies.StreamController.prototype = {
-    constructor: MediaPlayer.dependencies.StreamController
-};
-
-MediaPlayer.dependencies.RequestScheduler = function() {
-    "use strict";
-    var schedulerModels = [], periodicExecuteInterval = null, periodicExecuteId = null, isCheckingForVideoTimeTriggersStarted = false, PERIODICALLY_TRIGGERED_TASK = 0, WALL_TIME_TRIGGERED_TASK = 1, VIDEO_TIME_TRIGGERED_TASK = 2, setVideoTimeTrigger = function(executeContext, executeFunction, dueTime) {
-        if (!executeContext || !executeFunction) return;
-        var schedulerModel;
-        schedulerModel = registerSchedulerModel.call(this, executeContext, VIDEO_TIME_TRIGGERED_TASK);
-        schedulerModel.setScheduledTask(executeFunction);
-        schedulerModel.setIsScheduled(true);
-        schedulerModel.setExecuteTime(dueTime);
-        if (!isCheckingForVideoTimeTriggersStarted) {
-            startCheckingDueTimeForVideoTimeTrigger.call(this);
-        }
-    }, startCheckingDueTimeForVideoTimeTrigger = function() {
-        var element = this.videoModel.getElement();
-        this.schedulerExt.attachScheduleListener(element, checkDueTimeForVideoTimeTriggers.bind(this));
-        this.schedulerExt.attachUpdateScheduleListener(element, onUpdateSchedule.bind(this));
-        isCheckingForVideoTimeTriggersStarted = true;
-    }, checkDueTimeForVideoTimeTriggers = function() {
-        var videoTimeTriggers = getAllModelsForType.call(this, VIDEO_TIME_TRIGGERED_TASK), ln = videoTimeTriggers.length, now = this.videoModel.getCurrentTime(), model, due, i;
-        for (i = 0; i < ln; i += 1) {
-            model = videoTimeTriggers[i];
-            due = model.getExecuteTime();
-            if (model.getIsScheduled() && now > due) {
-                model.executeScheduledTask();
-                model.setIsScheduled(false);
-            }
-        }
-    }, removeVideoTimeTrigger = function(executeContext) {
-        var schedulerModel = findSchedulerModel(executeContext, VIDEO_TIME_TRIGGERED_TASK), videoTimeTriggers;
-        if (schedulerModel) {
-            unregisterSchedulerModel(schedulerModel);
-            videoTimeTriggers = getAllModelsForType.call(this, VIDEO_TIME_TRIGGERED_TASK);
-            if (videoTimeTriggers.length === 0) {
-                stopCheckingDueTimeForVideoTimeTrigger.call(this);
-            }
-        }
-    }, stopCheckingDueTimeForVideoTimeTrigger = function() {
-        var element = this.videoModel.getElement();
-        this.schedulerExt.detachScheduleListener(element, checkDueTimeForVideoTimeTriggers.bind(this));
-        this.schedulerExt.detachUpdateScheduleListener(element, onUpdateSchedule.bind(this));
-        isCheckingForVideoTimeTriggersStarted = false;
-    }, onUpdateSchedule = function() {
-        rescheduleVideoTimeTriggers.call(this);
-        checkDueTimeForVideoTimeTriggers.call(this);
-    }, rescheduleVideoTimeTriggers = function() {
-        var videoTimeTriggers = getAllModelsForType.call(this, VIDEO_TIME_TRIGGERED_TASK), ln = videoTimeTriggers.length, i;
-        for (i = 0; i < ln; i += 1) {
-            videoTimeTriggers[i].setIsScheduled(true);
-        }
-    }, setTriggerForWallTime = function(executeContext, executeFunction, wallTime) {
-        if (!executeContext || !executeFunction) return;
-        var executeTimeout = wallTime.getTime() - new Date().getTime(), executeId, schedulerModel;
-        schedulerModel = registerSchedulerModel.call(this, executeContext, WALL_TIME_TRIGGERED_TASK);
-        schedulerModel.setScheduledTask(executeFunction);
-        executeId = setTimeout(function() {
-            schedulerModel.executeScheduledTask();
-            unregisterSchedulerModel(schedulerModel);
-        }, executeTimeout);
-        schedulerModel.setExecuteId(executeId);
-    }, removeTriggerForWallTime = function(executeContext) {
-        var schedulerModel = findSchedulerModel(executeContext, WALL_TIME_TRIGGERED_TASK);
-        if (schedulerModel) {
-            clearTimeout(schedulerModel.getExecuteId());
-            unregisterSchedulerModel(schedulerModel);
-        }
-    }, startScheduling = function(executeContext, executeFunction) {
-        if (!executeContext || !executeFunction) return;
-        var schedulerModel = findSchedulerModel(executeContext, PERIODICALLY_TRIGGERED_TASK);
-        if (!schedulerModel) {
-            schedulerModel = registerSchedulerModel.call(this, executeContext, PERIODICALLY_TRIGGERED_TASK);
-        }
-        schedulerModel.setIsScheduled(true);
-        schedulerModel.setScheduledTask(executeFunction);
-        startPeriodicScheduleListener.call(this);
-        executeFunction.call(executeContext);
-    }, onScheduledTimeOccurred = function() {
-        runScheduledTasks.call(this);
-    }, runScheduledTasks = function() {
-        var self = this, schedulerModel, periodicModels = getAllModelsForType.call(self, PERIODICALLY_TRIGGERED_TASK), ln = periodicModels.length, i;
-        for (i = 0; i < ln; i += 1) {
-            schedulerModel = periodicModels[i];
-            if (schedulerModel.getIsScheduled()) {
-                schedulerModel.executeScheduledTask();
-            }
-        }
-    }, startPeriodicScheduleListener = function() {
-        if (periodicExecuteId !== null) return;
-        this.adjustExecuteInterval();
-        periodicExecuteId = setInterval(onScheduledTimeOccurred.bind(this), periodicExecuteInterval);
-    }, stopPeriodicScheduling = function(executeContext) {
-        var schedulerModel = findSchedulerModel(executeContext, PERIODICALLY_TRIGGERED_TASK), periodicModels = getAllModelsForType.call(this, PERIODICALLY_TRIGGERED_TASK);
-        if (schedulerModel) {
-            unregisterSchedulerModel(schedulerModel);
-            if (periodicModels.length === 0) {
-                stopPeriodicScheduleListener.call(this);
-            }
-        }
-    }, stopPeriodicScheduleListener = function() {
-        clearInterval(periodicExecuteId);
-        periodicExecuteId = null;
-    }, registerSchedulerModel = function(executeContext, type) {
-        if (!executeContext) return null;
-        var model = this.system.getObject("schedulerModel");
-        model.setContext(executeContext);
-        model.setType(type);
-        schedulerModels.push(model);
-        return model;
-    }, getAllModelsForType = function(type) {
-        var models = [], model, i;
-        for (i = 0; i < schedulerModels.length; i += 1) {
-            model = schedulerModels[i];
-            if (model.getType() === type) {
-                models.push(model);
-            }
-        }
-        return models;
-    }, unregisterSchedulerModel = function(schedulerModel) {
-        var index = schedulerModels.indexOf(schedulerModel);
-        if (index !== -1) {
-            schedulerModels.splice(index, 1);
-        }
-    }, findSchedulerModel = function(executeContext, type) {
-        for (var i = 0; i < schedulerModels.length; i++) {
-            if (schedulerModels[i].getContext() === executeContext && schedulerModels[i].getType() === type) {
-                return schedulerModels[i];
-            }
-        }
-        return null;
-    };
-    return {
-        system: undefined,
-        videoModel: undefined,
-        debug: undefined,
-        schedulerExt: undefined,
-        isScheduled: function(executeContext) {
-            var schedulerModel = findSchedulerModel(executeContext, PERIODICALLY_TRIGGERED_TASK);
-            return !!schedulerModel && schedulerModel.getIsScheduled();
-        },
-        getExecuteInterval: function() {
-            return periodicExecuteInterval;
-        },
-        adjustExecuteInterval: function() {
-            if (schedulerModels.length < 1) return;
-            var newExecuteInterval = this.schedulerExt.getExecuteInterval(schedulerModels[0].getContext());
-            if (periodicExecuteInterval !== newExecuteInterval) {
-                periodicExecuteInterval = newExecuteInterval;
-                if (periodicExecuteId !== null) {
-                    this.debug.log("Changing execute interval: " + periodicExecuteInterval);
-                    clearInterval(periodicExecuteId);
-                    periodicExecuteId = setInterval(onScheduledTimeOccurred.bind(this), periodicExecuteInterval);
-                }
-            }
-        },
-        startScheduling: startScheduling,
-        stopScheduling: stopPeriodicScheduling,
-        setTriggerForVideoTime: setVideoTimeTrigger,
-        setTriggerForWallTime: setTriggerForWallTime,
-        removeTriggerForVideoTime: removeVideoTimeTrigger,
-        removeTriggerForWallTime: removeTriggerForWallTime
-    };
-};
-
-MediaPlayer.dependencies.RequestScheduler.prototype = {
-    constructor: MediaPlayer.dependencies.RequestScheduler
-};
-
-MediaPlayer.dependencies.SchedulerExtensions = function() {
-    "use strict";
-};
-
-MediaPlayer.dependencies.SchedulerExtensions.prototype = {
-    constructor: MediaPlayer.dependencies.SchedulerExtensions,
-    getExecuteInterval: function(context) {
-        var interval = 1e3;
-        if (typeof context.getMinBufferTime !== "undefined") {
-            interval = context.getMinBufferTime() * 1e3 / 4;
-            interval = Math.max(interval, 1e3);
-        }
-        return interval;
-    },
-    attachScheduleListener: function(element, scheduleListener) {
-        element.addEventListener("timeupdate", scheduleListener);
-    },
-    detachScheduleListener: function(element, scheduleListener) {
-        element.removeEventListener("timeupdate", scheduleListener);
-    },
-    attachUpdateScheduleListener: function(element, updateScheduleListener) {
-        element.addEventListener("seeking", updateScheduleListener);
-    },
-    detachUpdateScheduleListener: function(element, updateScheduleListener) {
-        element.removeEventListener("seeking", updateScheduleListener);
-    }
-};
-
-MediaPlayer.dependencies.SchedulerModel = function() {
-    "use strict";
-    var context, scheduledTask, type, executeTime, executeId, isScheduled = false;
-    return {
-        system: undefined,
-        debug: undefined,
-        schedulerExt: undefined,
-        setContext: function(value) {
-            context = value;
-        },
-        getContext: function() {
-            return context;
-        },
-        setScheduledTask: function(value) {
-            scheduledTask = value;
-        },
-        executeScheduledTask: function() {
-            scheduledTask.call(context);
-        },
-        setExecuteTime: function(value) {
-            executeTime = value;
-        },
-        getExecuteTime: function() {
-            return executeTime;
-        },
-        setExecuteId: function(value) {
-            executeId = value;
-        },
-        getExecuteId: function() {
-            return executeId;
-        },
-        setType: function(value) {
-            type = value;
-        },
-        getType: function() {
-            return type;
-        },
-        setIsScheduled: function(value) {
-            isScheduled = value;
-        },
-        getIsScheduled: function() {
-            return isScheduled;
-        }
-    };
-};
-
-MediaPlayer.dependencies.SchedulerModel.prototype = {
-    constructor: MediaPlayer.dependencies.SchedulerModel
-};
-
-MediaPlayer.dependencies.Stream = function() {
-    "use strict";
-    var manifest, mediaSource, videoCodec = null, audioCodec = null, contentProtection = null, videoController = null, videoTrackIndex = -1, audioController = null, audioTrackIndex = -1, textController = null, textTrackIndex = -1, autoPlay = true, initialized = false, load, errored = false, kid = null, initData = [], fullScreenListener, endedListener, loadedListener, playListener, pauseListener, errorListener, seekingListener, seekedListener, timeupdateListener, durationchangeListener, progressListener, ratechangeListener, canplayListener, playingListener, loadstartListener, waitingListener, periodInfo = null, isPaused = false, isSeeked = false, initialSeekTime, checkStartTimeIntervalId, eventController = null, protectionController = undefined, onProtectionError = function(event) {
-        this.errHandler.sendError(event.data.code, event.data.message, event.data.data);
-        this.debug.error("[Stream] protection error: " + event.data.code + " - " + event.data.message);
-        this.reset();
-    }, play = function() {
-        this.debug.info("[Stream] Attempting play...");
-        if (!initialized) {
-            return;
-        }
-        this.debug.info("[Stream] Do play.");
-        this.videoModel.play();
-    }, pause = function() {
-        this.debug.info("[Stream] Do pause.");
-        this.videoModel.pause();
-    }, seek = function(time) {
-        this.debug.log("[Stream] Attempting seek...");
-        if (!initialized) {
-            return;
-        }
-        this.debug.info("[Stream] Do seek: " + time);
-        this.system.notify("setCurrentTime");
-        this.videoModel.setCurrentTime(time);
-        updateBuffer.call(this).then(function() {
-            startBuffering(time);
-        });
-    }, setUpMediaSource = function(mediaSourceArg) {
-        var deferred = Q.defer(), self = this, onMediaSourceOpen = function() {
-            mediaSourceArg.removeEventListener("sourceopen", onMediaSourceOpen);
-            mediaSourceArg.removeEventListener("webkitsourceopen", onMediaSourceOpen);
-            deferred.resolve(mediaSourceArg);
-        };
-        mediaSourceArg.addEventListener("sourceopen", onMediaSourceOpen, false);
-        mediaSourceArg.addEventListener("webkitsourceopen", onMediaSourceOpen, false);
-        self.mediaSourceExt.attachMediaSource(mediaSourceArg, self.videoModel);
-        return deferred.promise;
-    }, tearDownMediaSource = function() {
-        var self = this;
-        if (!!videoController) {
-            videoController.reset(errored);
-        }
-        if (!!audioController) {
-            audioController.reset(errored);
-        }
-        if (!!textController) {
-            textController.reset(errored);
-        }
-        if (!!eventController) {
-            eventController.reset();
-        }
-        if (!!mediaSource) {
-            self.mediaSourceExt.detachMediaSource(self.videoModel);
-        }
-        initialized = false;
-        kid = null;
-        initData = [];
-        contentProtection = null;
-        videoController = null;
-        audioController = null;
-        textController = null;
-        videoCodec = null;
-        audioCodec = null;
-        mediaSource = null;
-        manifest = null;
-    }, checkIfInitialized = function(videoReady, audioReady, textTrackReady, deferred) {
-        if (videoReady && audioReady && textTrackReady) {
-            if (videoController === null && audioController === null && textController === null) {
-                var msg = "No streams to play.";
-                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM, msg, manifest);
-                this.debug.log(msg);
-                deferred.reject();
-            } else {
-                deferred.resolve(true);
-            }
-        }
-    }, initializeMediaSource = function() {
-        var initialize = Q.defer(), videoReady = false, audioReady = false, textTrackReady = false, self = this;
-        eventController = self.system.getObject("eventController");
-        eventController.initialize(self.videoModel);
-        self.manifestExt.getDuration(manifest, periodInfo).then(function() {
-            self.manifestExt.getVideoData(manifest, periodInfo.index).then(function(videoData) {
-                if (videoData !== null) {
-                    self.manifestExt.getDataIndex(videoData, manifest, periodInfo.index).then(function(index) {
-                        videoTrackIndex = index;
-                    });
-                    self.manifestExt.getCodec(videoData).then(function(codec) {
-                        self.debug.info("[Stream] Video codec: " + codec);
-                        videoCodec = codec;
-                        return self.manifestExt.getContentProtectionData(videoData).then(function(contentProtectionData) {
-                            self.debug.log("[Stream] video contentProtection");
-                            if (!!contentProtectionData && !self.capabilities.supportsMediaKeys()) {
-                                self.debug.error("[Stream] mediakeys not supported!");
-                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS);
-                                return Q.when(null);
-                            }
-                            contentProtection = contentProtectionData;
-                            if (!self.capabilities.supportsCodec(self.videoModel.getElement(), codec)) {
-                                var msg = "Video Codec (" + codec + ") is not supported.";
-                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC, msg, manifest);
-                                return Q.when(null);
-                            }
-                            return self.sourceBufferExt.createSourceBuffer(mediaSource, codec);
-                        });
-                    }).then(function(buffer) {
-                        if (buffer === null) {
-                            self.debug.log("No buffer was created, skipping video stream.");
-                        } else {
-                            videoController = self.system.getObject("bufferController");
-                            videoController.initialize("video", periodInfo, videoData, buffer, self.videoModel, self.requestScheduler, self.fragmentController, mediaSource, eventController);
-                        }
-                        videoReady = true;
-                        checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
-                    }, function() {
-                        self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Error creating video source buffer.");
-                        videoReady = true;
-                        checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
-                    });
-                } else {
-                    self.debug.log("[Stream] No video data.");
-                    videoReady = true;
-                    checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
-                }
-                return self.manifestExt.getAudioDatas(manifest, periodInfo.index);
-            }).then(function(audioDatas) {
-                if (audioDatas !== null && audioDatas.length > 0) {
-                    self.manifestExt.getPrimaryAudioData(manifest, periodInfo.index).then(function(primaryAudioData) {
-                        self.manifestExt.getDataIndex(primaryAudioData, manifest, periodInfo.index).then(function(index) {
-                            audioTrackIndex = index;
-                        });
-                        self.manifestExt.getCodec(primaryAudioData).then(function(codec) {
-                            self.debug.info("[Stream] Audio codec: " + codec);
-                            audioCodec = codec;
-                            return self.manifestExt.getContentProtectionData(primaryAudioData).then(function(contentProtectionData) {
-                                self.debug.log("[Stream] Audio contentProtection");
-                                if (!!contentProtectionData && !self.capabilities.supportsMediaKeys()) {
-                                    self.debug.error("[Stream] mediakeys not supported!");
-                                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS);
-                                    return Q.when(null);
-                                }
-                                contentProtection = contentProtectionData;
-                                if (!self.capabilities.supportsCodec(self.videoModel.getElement(), codec)) {
-                                    var msg = "Audio Codec (" + codec + ") is not supported.";
-                                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC, msg, manifest);
-                                    self.debug.error("[Stream] ", msg);
-                                    return Q.when(null);
-                                }
-                                return self.sourceBufferExt.createSourceBuffer(mediaSource, codec);
-                            });
-                        }).then(function(buffer) {
-                            if (buffer === null) {
-                                self.debug.log("[Stream] No buffer was created, skipping audio stream.");
-                            } else {
-                                audioController = self.system.getObject("bufferController");
-                                audioController.initialize("audio", periodInfo, primaryAudioData, buffer, self.videoModel, self.requestScheduler, self.fragmentController, mediaSource, eventController);
-                            }
-                            audioReady = true;
-                            checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
-                        }, function() {
-                            self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Error creating audio source buffer.");
-                            audioReady = true;
-                            checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
-                        });
-                    });
-                } else {
-                    self.debug.log("[Stream] No audio streams.");
-                    audioReady = true;
-                    checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
-                }
-                return self.manifestExt.getTextDatas(manifest, periodInfo.index);
-            }).then(function(textDatas) {
-                var mimeType;
-                if (textDatas !== null && textDatas.length > 0) {
-                    self.debug.log("Have subtitles streams: " + textDatas.length);
-                    self.manifestExt.getPrimaryTextData(manifest, periodInfo.index).then(function(primarySubtitleData) {
-                        self.manifestExt.getDataIndex(primarySubtitleData, manifest, periodInfo.index).then(function(index) {
-                            textTrackIndex = index;
-                            self.debug.log("Save text track: " + textTrackIndex);
-                        });
-                        self.manifestExt.getMimeType(primarySubtitleData).then(function(type) {
-                            mimeType = type;
-                            return self.sourceBufferExt.createSourceBuffer(mediaSource, mimeType);
-                        }).then(function(buffer) {
-                            if (buffer === null) {
-                                self.debug.log("Source buffer was not created for text track");
-                            } else {
-                                textController = self.system.getObject("bufferController");
-                                textController.initialize("text", periodInfo, primarySubtitleData, buffer, self.videoModel, self.requestScheduler, self.fragmentController, mediaSource);
-                                if (buffer.hasOwnProperty("initialize")) {
-                                    buffer.initialize(mimeType, textController, primarySubtitleData);
-                                }
-                                textTrackReady = true;
-                                checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
-                            }
-                        }, function(error) {
-                            self.debug.log("Error creating text source buffer:");
-                            self.debug.log(error);
-                            self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Error creating text source buffer.");
-                            textTrackReady = true;
-                            checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
-                        });
-                    });
-                } else {
-                    self.debug.log("[Stream] No text tracks.");
-                    textTrackReady = true;
-                    checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
-                }
-                return self.manifestExt.getEventsForPeriod(manifest, periodInfo);
-            }).then(function(events) {
-                eventController.addInlineEvents(events);
-            });
-        });
-        return initialize.promise;
-    }, initializePlayback = function() {
-        var self = this, initialize = Q.defer();
-        self.manifestExt.getDuration(self.manifestModel.getValue(), periodInfo).then(function(duration) {
-            self.debug.log("[Stream] Setting duration: " + duration);
-            return self.mediaSourceExt.setDuration(mediaSource, duration);
-        }).then(function() {
-            initialized = true;
-            initialize.resolve(true);
-        });
-        return initialize.promise;
-    }, onLoad = function() {
-        var self = this;
-        this.debug.info("<video> loadedmetadata event");
-        this.debug.log("[Stream] Got loadedmetadata event.");
-        initialSeekTime = this.timelineConverter.calcPresentationStartTime(periodInfo);
-        this.debug.info("[Stream] Starting playback at offset: " + initialSeekTime);
-        if (initialSeekTime != this.videoModel.getCurrentTime()) {
-            this.system.mapHandler("bufferUpdated", undefined, onBufferUpdated.bind(self));
-        } else {
-            load.resolve(null);
-        }
-    }, onCanPlay = function() {
-        this.debug.info("<video> canplay event");
-        this.debug.log("[Stream] Got canplay event.");
-    }, onPlaying = function() {
-        this.debug.info("<video> playing event");
-        this.debug.log("[Stream] Got playing event.");
-    }, onLoadStart = function() {
-        this.debug.info("<video> loadstart event");
-    }, onWaiting = function() {
-        this.debug.info("<video> waiting event");
-    }, onPlay = function() {
-        this.debug.info("<video> play event");
-        this.debug.log("[Stream] Got play event.");
-        if (isPaused && !isSeeked) {
-            startBuffering();
-        }
-        isPaused = false;
-        isSeeked = false;
-    }, onFullScreenChange = function() {
-        var videoElement = this.videoModel.getElement(), isFullScreen = 0;
-        if (document.webkitIsFullScreen || document.msFullscreenElement || document.mozFullScreen) {
-            isFullScreen = 1;
-        }
-        this.metricsModel.addCondition(null, isFullScreen, videoElement.videoWidth, videoElement.videoHeight);
-    }, onEnded = function() {
-        this.debug.info("<video> ended event");
-        this.metricsModel.addState("video", "stopped", this.videoModel.getCurrentTime(), 1);
-    }, onPause = function() {
-        this.debug.info("<video> pause event");
-        isPaused = true;
-        suspend.call(this);
-    }, onError = function(event) {
-        var error = event.srcElement.error, code, msgError = "<video> error event";
-        this.debug.info(msgError);
-        if (error.code === -1) {
-            return;
-        }
-        switch (error.code) {
-          case 1:
-            code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ABORTED;
-            break;
-
-          case 2:
-            code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_NETWORK;
-            break;
-
-          case 3:
-            code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_DECODE;
-            break;
-
-          case 4:
-            code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_SRC_NOT_SUPPORTED;
-            break;
-
-          case 5:
-            code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED;
-            break;
-        }
-        errored = true;
-        this.debug.log("Video Element Error: " + code);
-        this.debug.log(error);
-        this.errHandler.sendError(code, msgError);
-        this.reset();
-    }, onSeeking = function() {
-        var time = this.videoModel.getCurrentTime();
-        this.debug.info("<video> seeking event: " + time);
-        isSeeked = true;
-        startBuffering(time);
-    }, onSeeked = function() {
-        this.debug.info("<video> seeked event");
-        this.videoModel.listen("seeking", seekingListener);
-        this.videoModel.unlisten("seeked", seekedListener);
-    }, onProgress = function() {
-        this.debug.info("<video> progress event");
-    }, onTimeupdate = function() {
-        this.debug.info("<video> timeupdate event: " + this.videoModel.getCurrentTime());
-        updateBuffer.call(this);
-    }, onDurationchange = function() {
-        this.debug.info("<video> durationchange event: " + this.videoModel.getElement().duration);
-    }, onRatechange = function() {
-        this.debug.info("<video> ratechange event: " + this.videoModel.getElement().playbackRate);
-        if (videoController) {
-            videoController.updateStalledState();
-        }
-        if (audioController) {
-            audioController.updateStalledState();
-        }
-        if (textController) {
-            textController.updateStalledState();
-        }
-    }, updateBuffer = function() {
-        if (videoController) {
-            videoController.updateBufferState();
-        }
-        if (audioController) {
-            audioController.updateBufferState();
-        }
-        if (textController) {
-            textController.updateBufferState();
-        }
-    }, startBuffering = function(time) {
-        if (videoController) {
-            if (time === undefined) {
-                videoController.start();
-            } else {
-                videoController.seek(time);
-            }
-        }
-        if (audioController) {
-            if (time === undefined) {
-                audioController.start();
-            } else {
-                audioController.seek(time);
-            }
-        }
-        if (textController) {
-            if (time === undefined) {
-                textController.start();
-            } else {
-                textController.seek(time);
-            }
-        }
-    }, stopBuffering = function() {
-        if (videoController) {
-            videoController.stop();
-        }
-        if (audioController) {
-            audioController.stop();
-        }
-        if (textController) {
-            textController.stop();
-        }
-    }, suspend = function() {
-        if (!this.scheduleWhilePaused || this.manifestExt.getIsDynamic(manifest)) {
-            stopBuffering.call(this);
-        }
-        clearInterval(checkStartTimeIntervalId);
-    }, doLoad = function(manifestResult) {
-        var self = this;
-        manifest = manifestResult;
-        self.debug.log("[Stream] Create MediaSource");
-        return self.mediaSourceExt.createMediaSource().then(function(mediaSourceResult) {
-            self.debug.log("[Stream] Setup MediaSource");
-            return setUpMediaSource.call(self, mediaSourceResult);
-        }).then(function(mediaSourceResult) {
-            mediaSource = mediaSourceResult;
-            self.debug.log("[Stream] Initialize MediaSource");
-            return initializeMediaSource.call(self);
-        }).then(function() {
-            self.debug.log("[Stream] Initialize playback");
-            return initializePlayback.call(self);
-        }).then(function() {
-            self.debug.log("[Stream] Playback initialized");
-            return load.promise;
-        }).then(function() {
-            self.debug.log("[Stream] element loaded!");
-            if (periodInfo.index === 0) {
-                eventController.start();
-                if (autoPlay) {
-                    play.call(self);
-                }
-            }
-        });
-    }, currentTimeChanged = function() {
-        this.debug.log("[Stream] Current time has changed, block programmatic seek.");
-        this.videoModel.unlisten("seeking", seekingListener);
-        this.videoModel.listen("seeked", seekedListener);
-    }, bufferingCompleted = function() {
-        if (videoController && !videoController.isBufferingCompleted() || audioController && !audioController.isBufferingCompleted()) {
-            return;
-        }
-        if (mediaSource) {
-            this.debug.info("[Stream] Signal end of stream");
-            this.mediaSourceExt.signalEndOfStream(mediaSource);
-        }
-    }, segmentLoadingFailed = function() {
-        stopBuffering.call(this);
-    }, onLiveEdgeFound = function(liveEdgeTime) {
-        this.debug.info("[Stream] ### LiveEdge = " + liveEdgeTime);
-        if (videoController) {
-            videoController.seek(liveEdgeTime);
-        }
-        if (audioController) {
-            audioController.seek(liveEdgeTime);
-        }
-        if (textController) {
-            textController.seek(liveEdgeTime);
-        }
-    }, onBufferUpdated = function() {
-        var self = this, videoRange, audioRange, startTime;
-        self.debug.info("[Stream] Check start time");
-        videoRange = self.sourceBufferExt.getBufferRange(videoController.getBuffer(), initialSeekTime, 2);
-        if (videoRange === null) {
-            return;
-        }
-        startTime = videoRange.start;
-        if (audioController) {
-            audioRange = self.sourceBufferExt.getBufferRange(audioController.getBuffer(), initialSeekTime, 2);
-            if (audioRange === null) {
-                return;
-            }
-            self.debug.info("[Stream] Check start time: A[" + audioRange.start + "-" + audioRange.end + "], V[" + videoRange.start + "-" + videoRange.end + "]");
-            if (audioRange.end < startTime) {
-                return;
-            }
-        }
-        self.debug.info("[Stream] Check start time: OK");
-        self.system.unmapHandler("bufferUpdated");
-        self.system.notify("setCurrentTime");
-        self.videoModel.setCurrentTime(startTime);
-        load.resolve(null);
-    }, updateData = function(updatedPeriodInfo) {
-        var self = this, videoData, audioData, textData, deferredVideoData, deferredAudioData, deferredTextData, deferred = Q.defer(), deferredVideoUpdate = Q.defer(), deferredAudioUpdate = Q.defer(), deferredTextUpdate = Q.defer(), deferredEventUpdate = Q.defer();
-        manifest = self.manifestModel.getValue();
-        periodInfo = updatedPeriodInfo;
-        self.debug.log("Manifest updated... set new data on buffers.");
-        if (videoController) {
-            videoData = videoController.getData();
-            if (!!videoData && videoData.hasOwnProperty("id")) {
-                deferredVideoData = self.manifestExt.getDataForId(videoData.id, manifest, periodInfo.index);
-            } else {
-                deferredVideoData = self.manifestExt.getDataForIndex(videoTrackIndex, manifest, periodInfo.index);
-            }
-            deferredVideoData.then(function(data) {
-                videoController.updateData(data, periodInfo).then(function() {
-                    deferredVideoUpdate.resolve();
-                });
-            });
-        } else {
-            deferredVideoUpdate.resolve();
-        }
-        if (audioController) {
-            audioData = audioController.getData();
-            deferredAudioData = self.manifestExt.getDataForIndex(audioTrackIndex, manifest, periodInfo.index);
-            deferredAudioData.then(function(data) {
-                audioController.updateData(data, periodInfo).then(function() {
-                    deferredAudioUpdate.resolve();
-                });
-            });
-        } else {
-            deferredAudioUpdate.resolve();
-        }
-        if (textController) {
-            textData = textController.getData();
-            deferredTextData = self.manifestExt.getDataForIndex(textTrackIndex, manifest, periodInfo.index);
-            deferredTextData.then(function(data) {
-                textController.updateData(data, periodInfo).then(function() {
-                    deferredTextUpdate.resolve();
-                });
-            });
-        }
-        if (eventController) {
-            self.manifestExt.getEventsForPeriod(manifest, periodInfo).then(function(events) {
-                eventController.addInlineEvents(events);
-                deferredEventUpdate.resolve();
-            });
-        }
-        Q.when(deferredVideoUpdate.promise, deferredAudioUpdate.promise, deferredTextUpdate.promise).then(function() {
-            deferred.resolve();
-        });
-        return deferred.promise;
-    };
-    return {
-        system: undefined,
-        videoModel: undefined,
-        manifestLoader: undefined,
-        manifestModel: undefined,
-        mediaSourceExt: undefined,
-        sourceBufferExt: undefined,
-        bufferExt: undefined,
-        manifestExt: undefined,
-        fragmentController: undefined,
-        abrController: undefined,
-        fragmentExt: undefined,
-        protectionExt: undefined,
-        capabilities: undefined,
-        debug: undefined,
-        metricsExt: undefined,
-        errHandler: undefined,
-        timelineConverter: undefined,
-        requestScheduler: undefined,
-        scheduleWhilePaused: undefined,
-        metricsModel: undefined,
-        eventBus: undefined,
-        notify: undefined,
-        setup: function() {
-            this.system.mapHandler("setCurrentTime", undefined, currentTimeChanged.bind(this));
-            this.system.mapHandler("bufferingCompleted", undefined, bufferingCompleted.bind(this));
-            this.system.mapHandler("segmentLoadingFailed", undefined, segmentLoadingFailed.bind(this));
-            this.system.mapHandler("liveEdgeFound", undefined, onLiveEdgeFound.bind(this));
-            this[MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR] = onProtectionError.bind(this);
-            load = Q.defer();
-            playListener = onPlay.bind(this);
-            pauseListener = onPause.bind(this);
-            errorListener = onError.bind(this);
-            seekingListener = onSeeking.bind(this);
-            seekedListener = onSeeked.bind(this);
-            progressListener = onProgress.bind(this);
-            ratechangeListener = onRatechange.bind(this);
-            timeupdateListener = onTimeupdate.bind(this);
-            durationchangeListener = onDurationchange.bind(this);
-            loadedListener = onLoad.bind(this);
-            canplayListener = onCanPlay.bind(this);
-            playingListener = onPlaying.bind(this);
-            loadstartListener = onLoadStart.bind(this);
-            waitingListener = onWaiting.bind(this);
-            fullScreenListener = onFullScreenChange.bind(this);
-            endedListener = onEnded.bind(this);
-        },
-        load: function(manifest, periodInfoValue) {
-            periodInfo = periodInfoValue;
-            doLoad.call(this, manifest);
-        },
-        setVideoModel: function(value) {
-            this.videoModel = value;
-            this.videoModel.listen("play", playListener);
-            this.videoModel.listen("pause", pauseListener);
-            this.videoModel.listen("error", errorListener);
-            this.videoModel.listen("seeking", seekingListener);
-            this.videoModel.listen("timeupdate", timeupdateListener);
-            this.videoModel.listen("durationchange", durationchangeListener);
-            this.videoModel.listen("progress", progressListener);
-            this.videoModel.listen("ratechange", ratechangeListener);
-            this.videoModel.listen("loadedmetadata", loadedListener);
-            this.videoModel.listen("ended", endedListener);
-            this.videoModel.listen("canplay", canplayListener);
-            this.videoModel.listen("playing", playingListener);
-            this.videoModel.listen("loadstart", loadstartListener);
-            this.videoModel.listen("webkitfullscreenchange", fullScreenListener);
-            this.videoModel.listen("fullscreenchange", fullScreenListener);
-            this.videoModel.listenOnParent("fullscreenchange", fullScreenListener);
-            this.videoModel.listenOnParent("webkitfullscreenchange", fullScreenListener);
-            this.requestScheduler.videoModel = value;
-        },
-        setAudioTrack: function(audioTrack) {
-            var deferredAudioUpdate = Q.defer(), manifest = this.manifestModel.getValue(), url, self = this;
-            if (audioController) {
-                self.manifestExt.getDataIndex(audioTrack, manifest, periodInfo.index).then(function(index) {
-                    audioTrackIndex = index;
-                    url = manifest.mpdUrl;
-                    if (manifest.hasOwnProperty("Location")) {
-                        url = manifest.Location;
-                    }
-                    self.debug.log("### Refresh manifest @ " + url);
-                    self.manifestLoader.load(url).then(function(manifestResult) {
-                        self.manifestModel.setValue(manifestResult);
-                        self.debug.log("### Manifest has been refreshed.");
-                        deferredAudioUpdate.resolve();
-                    });
-                });
-            } else {
-                deferredAudioUpdate.reject();
-            }
-            return deferredAudioUpdate.promise;
-        },
-        setSubtitleTrack: function(subtitleTrack) {
-            var deferredSubtitleUpdate = Q.defer(), manifest = this.manifestModel.getValue(), url, self = this;
-            if (textController) {
-                self.manifestExt.getDataIndex(subtitleTrack, manifest, periodInfo.index).then(function(index) {
-                    textTrackIndex = index;
-                    url = manifest.mpdUrl;
-                    if (manifest.hasOwnProperty("Location")) {
-                        url = manifest.Location;
-                    }
-                    self.debug.log("### Refresh manifest @ " + url);
-                    self.manifestLoader.load(url).then(function(manifestResult) {
-                        self.manifestModel.setValue(manifestResult);
-                        self.debug.log("### Manifest has been refreshed.");
-                        deferredSubtitleUpdate.resolve();
-                    });
-                });
-            } else {
-                deferredSubtitleUpdate.reject();
-            }
-            return deferredSubtitleUpdate.promise;
-        },
-        initProtection: function(protectionData) {
-            if (this.capabilities.supportsEncryptedMedia()) {
-                if (!this.protectionController) {
-                    this.protectionController = this.system.getObject("protectionController");
-                }
-                this.protectionController.subscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
-                this.protectionController.setMediaElement(this.videoModel.getElement());
-                this.protectionController.init(this.manifestModel.getValue());
-                if (protectionData) {
-                    this.protectionController.setProtectionData(protectionData);
-                }
-            }
-        },
-        getVideoModel: function() {
-            return this.videoModel;
-        },
-        getManifestExt: function() {
-            var self = this;
-            return self.manifestExt;
-        },
-        setAutoPlay: function(value) {
-            autoPlay = value;
-        },
-        getAutoPlay: function() {
-            return autoPlay;
-        },
-        reset: function() {
-            this.debug.info("[Stream] Reset");
-            pause.call(this);
-            this.videoModel.unlisten("play", playListener);
-            this.videoModel.unlisten("pause", pauseListener);
-            this.videoModel.unlisten("error", errorListener);
-            this.videoModel.unlisten("seeking", seekingListener);
-            this.videoModel.unlisten("timeupdate", timeupdateListener);
-            this.videoModel.unlisten("durationchange", durationchangeListener);
-            this.videoModel.unlisten("progress", progressListener);
-            this.videoModel.unlisten("ratechange", ratechangeListener);
-            this.videoModel.unlisten("loadedmetadata", loadedListener);
-            this.videoModel.unlisten("ended", endedListener);
-            this.videoModel.unlisten("canplay", canplayListener);
-            this.videoModel.unlisten("playing", playingListener);
-            this.videoModel.unlisten("loadstart", loadstartListener);
-            this.videoModel.unlisten("webkitfullscreenchange", fullScreenListener);
-            this.videoModel.unlisten("fullscreenchange", fullScreenListener);
-            this.videoModel.unlistenOnParent("fullscreenchange", fullScreenListener);
-            this.videoModel.unlistenOnParent("webkitfullscreenchange", fullScreenListener);
-            tearDownMediaSource.call(this);
-            if (this.protectionController) {
-                this.protectionController.unsubscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
-                this.protectionController.teardown();
-            }
-            this.protectionController = undefined;
-            this.fragmentController = undefined;
-            this.requestScheduler = undefined;
-            this.system.unmapHandler("bufferUpdated");
-            load = Q.defer();
-        },
-        getDuration: function() {
-            return periodInfo.duration;
-        },
-        getStartTime: function() {
-            return periodInfo.start;
-        },
-        getPeriodIndex: function() {
-            return periodInfo.index;
-        },
-        getId: function() {
-            return periodInfo.id;
-        },
-        getPeriodInfo: function() {
-            return periodInfo;
-        },
-        startEventController: function() {
-            eventController.start();
-        },
-        resetEventController: function() {
-            eventController.reset();
-        },
-        updateData: updateData,
-        play: play,
-        seek: seek,
-        pause: pause
-    };
-};
-
-MediaPlayer.dependencies.Stream.prototype = {
-    constructor: MediaPlayer.dependencies.Stream
-};
-
 MediaPlayer.dependencies.BufferController = function() {
     "use strict";
-    var READY = "READY", state = READY, ready = false, started = false, waitingForBuffer = false, initialPlayback = true, initializationData = [], currentSegmentTime = 0, seeking = false, seekTarget = -1, dataChanged = true, availableRepresentations, currentRepresentation, currentQuality = -1, initialQuality = -1, stalled = false, isDynamic = false, isBufferingCompleted = false, deferredAppends = [], deferredStreamComplete = Q.defer(), deferredRejectedDataAppend = null, deferredBuffersFlatten = null, periodInfo = null, fragmentsToLoad = 0, fragmentModel = null, bufferLevel = 0, isQuotaExceeded = false, rejectedBytes = null, fragmentDuration = 0, appendingRejectedData = false, mediaSource, type, data = null, buffer = null, minBufferTime, minBufferTimeAtStartup, bufferTimeout, playListMetrics = null, playListTraceMetrics = null, playListTraceMetricsClosed = true, inbandEventFound = false, htmlVideoState = -1, lastBufferLevel = -1, deferredFragmentBuffered = null, appendSync = false, currentSequenceNumber = -1, sendRequest = function() {
+    var READY = "READY", state = READY, ready = false, started = false, waitingForBuffer = false, initialPlayback = true, initializationData = [], currentSegmentTime = 0, seeking = false, seekTarget = -1, dataChanged = true, availableRepresentations, currentRepresentation, currentQuality = -1, initialQuality = -1, stalled = false, isDynamic = false, isBufferingCompleted = false, deferredStreamComplete = Q.defer(), deferredRejectedDataAppend = null, deferredBuffersFlatten = null, periodInfo = null, fragmentsToLoad = 0, fragmentModel = null, bufferLevel = 0, isQuotaExceeded = false, rejectedBytes = null, fragmentDuration = 0, appendingRejectedData = false, mediaSource, type, data = null, buffer = null, minBufferTime, minBufferTimeAtStartup, bufferTimeout, playListMetrics = null, playListTraceMetrics = null, playListTraceMetricsClosed = true, inbandEventFound = false, htmlVideoState = -1, lastBufferLevel = -1, deferredFragmentBuffered = null, appendSync = false, currentSequenceNumber = -1, sendRequest = function() {
         if (!isRunning.call(this)) {
             return;
         }
@@ -9572,11 +6488,13 @@ MediaPlayer.dependencies.BufferController = function() {
         if (started === true) {
             return;
         }
+        self.abrController.setPlayerState("buffering");
         if (seeking === false) {
             currentTime = new Date();
             clearPlayListTraceMetrics(currentTime, MediaPlayer.vo.metrics.PlayList.Trace.USER_REQUEST_STOP_REASON);
             playListMetrics = this.metricsModel.addPlayList(type, currentTime, 0, MediaPlayer.vo.metrics.PlayList.INITIAL_PLAY_START_REASON);
         }
+        this.metricsModel.addState(type, "buffering", this.videoModel.getCurrentTime());
         if (isBufferingCompleted) {
             isBufferingCompleted = false;
         }
@@ -9737,13 +6655,13 @@ MediaPlayer.dependencies.BufferController = function() {
         while (i < data.length) {
             identifier = String.fromCharCode(data[i + 4], data[i + 5], data[i + 6], data[i + 7]);
             size = data[i] * expThree + data[i + 1] * expTwo + data[i + 2] * 256 + data[i + 3] * 1;
-            if (identifier == "moov" || identifier == "moof") {
+            if (identifier === "moov" || identifier === "moof") {
                 break;
-            } else if (identifier == "emsg") {
+            } else if (identifier === "emsg") {
                 inbandEventFound = true;
                 var eventBox = [ "", "", 0, 0, 0, 0, "" ], arrIndex = 0, j = i + 12;
                 while (j < size + i) {
-                    if (arrIndex === 0 || arrIndex == 1 || arrIndex == 6) {
+                    if (arrIndex === 0 || arrIndex === 1 || arrIndex === 6) {
                         if (data[j] !== 0) {
                             eventBox[arrIndex] += String.fromCharCode(data[j]);
                         } else {
@@ -9781,7 +6699,7 @@ MediaPlayer.dependencies.BufferController = function() {
         while (i < length) {
             identifier = String.fromCharCode(data[i + 4], data[i + 5], data[i + 6], data[i + 7]);
             size = data[i] * expThree + data[i + 1] * expTwo + data[i + 2] * 256 + data[i + 3] * 1;
-            if (identifier != "emsg") {
+            if (identifier !== "emsg") {
                 for (var l = i; l < i + size; l++) {
                     modData[j] = data[l];
                     j += 1;
@@ -9849,11 +6767,14 @@ MediaPlayer.dependencies.BufferController = function() {
         return deferred.promise;
     }, onBytesError = function(e) {
         var msgError = type + ": Failed to load a request at startTime = " + e.startTime, data = {};
+        if (e.status !== undefined && e.status === 0 && !isRunning.call(this)) {
+            return;
+        }
         if (this.ChunkMissingState === false) {
             if (e.quality !== 0) {
                 currentRepresentation = getRepresentationForQuality.call(this, 0);
                 if (currentRepresentation !== undefined || currentRepresentation !== null) {
-                    loadNextFragment.call(this);
+                    return loadNextFragment.call(this);
                 }
             }
         }
@@ -9973,6 +6894,7 @@ MediaPlayer.dependencies.BufferController = function() {
         if (stalled) {
             if (bufferLevel > minBufferTimeAtStartup) {
                 setStalled.call(self, false);
+                this.abrController.setPlayerState("playing");
             }
         }
         var timeToEnd = getTimeToEnd.call(self);
@@ -10283,8 +7205,6 @@ MediaPlayer.dependencies.BufferController = function() {
             cancel(deferredRejectedDataAppend);
             cancel(deferredBuffersFlatten);
             cancel(deferredFragmentBuffered);
-            deferredAppends.forEach(cancel);
-            deferredAppends = [];
             cancel(deferredStreamComplete);
             deferredStreamComplete = Q.defer();
             self.clearMetrics();
@@ -10313,37 +7233,317 @@ MediaPlayer.dependencies.BufferController.prototype = {
     constructor: MediaPlayer.dependencies.BufferController
 };
 
-MediaPlayer.dependencies.Parser = function() {
+MediaPlayer.dependencies.BufferExtensions = function() {
     "use strict";
-    var customParse = function(data, baseUrl) {
-        var parser = null;
-        if (data.indexOf("SmoothStreamingMedia") > -1 && typeof this.mssParser !== "undefined") {
-            this.system.notify("setContext", "MSS");
-            parser = this.mssParser;
-        } else if (data.indexOf("#EXTM3U") > -1 && typeof this.hlsParser !== "undefined") {
-            this.system.notify("setContext", "HLS");
-            parser = this.hlsParser;
-        } else if (data.indexOf("MPD") > -1 && typeof this.dashParser !== "undefined") {
-            this.system.notify("setContext", "MPD");
-            parser = this.dashParser;
-        } else {
-            return Q.reject("manifest cannot be parsed, protocol is unsupported!");
+    var minBufferTarget, currentBufferTarget, topAudioQualityIndex = 0, topVideoQualityIndex = 0, audioData = null, videoData = null, getCurrentHttpRequestLatency = function(metrics) {
+        var httpRequest = this.metricsExt.getCurrentHttpRequest(metrics);
+        if (httpRequest !== null) {
+            return (httpRequest.tresponse.getTime() - httpRequest.trequest.getTime()) / 1e3;
         }
-        return parser.parse(data, baseUrl);
+        return 0;
+    }, isPlayingAtTopQuality = function() {
+        var self = this, audioQuality, videoQuality, isAtTop;
+        audioQuality = audioData ? self.abrController.getQualityFor("audio") : topAudioQualityIndex;
+        videoQuality = videoData ? self.abrController.getQualityFor("video") : topVideoQualityIndex;
+        isAtTop = audioQuality === topAudioQualityIndex && videoQuality === topVideoQualityIndex;
+        return isAtTop;
     };
     return {
-        debug: undefined,
         system: undefined,
-        dashParser: undefined,
-        mssParser: undefined,
-        hlsParser: undefined,
+        videoModel: undefined,
+        manifestExt: undefined,
+        metricsExt: undefined,
         metricsModel: undefined,
-        parse: customParse
+        abrController: undefined,
+        bufferMax: undefined,
+        updateData: function(data, type) {
+            var topIndex = data.Representation_asArray.length - 1;
+            if (type === "audio") {
+                topAudioQualityIndex = topIndex;
+                audioData = data;
+            } else if (type === "video") {
+                topVideoQualityIndex = topIndex;
+                videoData = data;
+            }
+        },
+        getTopQualityIndex: function(type) {
+            var topQualityIndex = null;
+            if (type === "audio") {
+                topQualityIndex = topAudioQualityIndex;
+            } else if (type === "video") {
+                topQualityIndex = topVideoQualityIndex;
+            }
+            return topQualityIndex;
+        },
+        decideBufferLength: function(minBufferTime, duration) {
+            if (isNaN(duration) || MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME < duration && minBufferTime < duration) {
+                minBufferTarget = Math.max(MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME, minBufferTime);
+            } else if (minBufferTime >= duration) {
+                minBufferTarget = Math.min(duration, MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME);
+            } else {
+                minBufferTarget = Math.min(duration, minBufferTime);
+            }
+            return Q.when(minBufferTarget);
+        },
+        getLeastBufferLevel: function() {
+            var videoMetrics = this.metricsModel.getReadOnlyMetricsFor("video"), videoBufferLevel = this.metricsExt.getCurrentBufferLevel(videoMetrics), audioMetrics = this.metricsModel.getReadOnlyMetricsFor("audio"), audioBufferLevel = this.metricsExt.getCurrentBufferLevel(audioMetrics), leastLevel = null;
+            if (videoBufferLevel === null || audioBufferLevel === null) {
+                leastLevel = audioBufferLevel !== null ? audioBufferLevel.level : videoBufferLevel !== null ? videoBufferLevel.level : null;
+            } else {
+                leastLevel = Math.min(audioBufferLevel.level, videoBufferLevel.level);
+            }
+            return leastLevel;
+        },
+        getRequiredBufferLength: function(waitingForBuffer, delay, isDynamic, duration) {
+            var self = this, vmetrics = self.metricsModel.getReadOnlyMetricsFor("video"), ametrics = self.metricsModel.getReadOnlyMetricsFor("audio"), isLongFormContent = duration >= MediaPlayer.dependencies.BufferExtensions.LONG_FORM_CONTENT_DURATION_THRESHOLD, deferred = Q.defer(), isAtTop = false, requiredBufferLength;
+            if (self.bufferMax === MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_MIN) {
+                requiredBufferLength = minBufferTarget;
+                deferred.resolve(requiredBufferLength);
+            } else if (self.bufferMax === MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_INFINITY) {
+                requiredBufferLength = duration;
+                deferred.resolve(requiredBufferLength);
+            } else if (self.bufferMax === MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED) {
+                currentBufferTarget = minBufferTarget;
+                if (!isDynamic) {
+                    if (!waitingForBuffer) {
+                        isAtTop = isPlayingAtTopQuality.call(self);
+                    }
+                }
+                if (isAtTop) {
+                    currentBufferTarget = isLongFormContent ? MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_TOP_QUALITY_LONG_FORM : MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_TOP_QUALITY;
+                }
+                requiredBufferLength = currentBufferTarget + delay + Math.max(getCurrentHttpRequestLatency.call(self, vmetrics), getCurrentHttpRequestLatency.call(self, ametrics));
+                deferred.resolve(requiredBufferLength);
+            } else {
+                deferred.reject("invalid bufferMax value: " + self.bufferMax);
+            }
+            return deferred.promise;
+        },
+        getBufferTarget: function() {
+            return currentBufferTarget === undefined ? minBufferTarget : currentBufferTarget;
+        }
     };
 };
 
-MediaPlayer.dependencies.Parser.prototype = {
-    constructor: MediaPlayer.dependencies.Parser
+MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED = "required";
+
+MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_MIN = "min";
+
+MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_INFINITY = "infinity";
+
+MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_STARTUP = 1;
+
+MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME = 16;
+
+MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_TOP_QUALITY = 30;
+
+MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_TOP_QUALITY_LONG_FORM = 300;
+
+MediaPlayer.dependencies.BufferExtensions.LONG_FORM_CONTENT_DURATION_THRESHOLD = 600;
+
+MediaPlayer.dependencies.BufferExtensions.prototype.constructor = MediaPlayer.dependencies.BufferExtensions;
+
+MediaPlayer.utils.Capabilities = function() {
+    "use strict";
+};
+
+MediaPlayer.utils.Capabilities.prototype = {
+    constructor: MediaPlayer.utils.Capabilities,
+    system: undefined,
+    supportsMediaSource: function() {
+        "use strict";
+        var hasWebKit = "WebKitMediaSource" in window, hasMediaSource = "MediaSource" in window;
+        return hasWebKit || hasMediaSource;
+    },
+    supportsMediaKeys: function() {
+        "use strict";
+        var hasWebKit = "WebKitMediaKeys" in window, hasMs = "MSMediaKeys" in window, hasMediaSource = "MediaKeys" in window;
+        return hasWebKit || hasMs || hasMediaSource;
+    },
+    supportsEncryptedMedia: function() {
+        return this.system.hasMapping("protectionModel");
+    },
+    supportsCodec: function(element, codec) {
+        "use strict";
+        if (!(element instanceof HTMLMediaElement)) {
+            throw "element must be of type HTMLMediaElement.";
+        }
+        var canPlay = element.canPlayType(codec);
+        return canPlay === "probably" || canPlay === "maybe";
+    }
+};
+
+MediaPlayer.utils.Config = function() {
+    "use strict";
+    var paramsType = [ "video", "audio" ], params = {
+        "BufferController.minBufferTimeForPlaying": -1,
+        "BufferController.minBufferTime": -1,
+        "ABR.minBandwidth": -1,
+        "ABR.maxBandwidth": -1,
+        "ABR.minQuality": -1,
+        "ABR.maxQuality": -1,
+        "ABR.switchUpIncrementally": false,
+        "ABR.switchUpRatioSafetyFactor": -1,
+        "ABR.latencyInBandwidth": true,
+        "ABR.switchDownBufferTime": -1,
+        "ABR.switchDownBufferRatio": -1,
+        "ABR.switchLowerBufferTime": -1,
+        "ABR.switchLowerBufferRatio": -1,
+        "ABR.switchUpBufferTime": -1,
+        "ABR.switchUpBufferRatio": -1,
+        "ABR.keepBandwidthCondition": true,
+        video: {},
+        audio: {}
+    }, doSetParams = function(newParams) {
+        var item, typeParams, typeItem;
+        for (item in newParams) {
+            if (newParams.hasOwnProperty(item)) {
+                if (item.indexOf("//") === -1) {
+                    if (paramsType.indexOf(item) > -1) {
+                        typeParams = newParams[item];
+                        for (typeItem in typeParams) {
+                            if (typeParams.hasOwnProperty(typeItem)) {
+                                params[item][typeItem] = newParams[item][typeItem];
+                            }
+                        }
+                    } else {
+                        params[item] = newParams[item];
+                    }
+                }
+            }
+        }
+    }, getParam = function(params, name, type, def) {
+        var value = params[name];
+        if (value === undefined || value === -1) {
+            return def;
+        }
+        if (type !== undefined && typeof value !== type) {
+            switch (type) {
+              case "number":
+                value = Number(value);
+                break;
+
+              case "boolean":
+                value = value === "true" || value === "1" || value === 1;
+                break;
+
+              default:
+                break;
+            }
+        }
+        return value;
+    }, doGetParam = function(name, type, def) {
+        return getParam(params, name, type, def);
+    }, doGetParamFor = function(key, name, type, def) {
+        var typeParams = params[key];
+        if (typeParams !== undefined && typeParams[name] !== undefined) {
+            return getParam(typeParams, name, type, def);
+        }
+        return getParam(params, name, type, def);
+    };
+    return {
+        debug: undefined,
+        setup: function() {},
+        setParams: function(newParams) {
+            doSetParams(newParams);
+        },
+        getParam: function(name, type, def) {
+            return doGetParam(name, type, def);
+        },
+        getParamFor: function(key, name, type, def) {
+            return doGetParamFor(key, name, type, def);
+        }
+    };
+};
+
+MediaPlayer.utils.Config.prototype = {
+    constructor: MediaPlayer.utils.Config
+};
+
+MediaPlayer.di.Context = function() {
+    "use strict";
+    var mapProtectionModel = function() {
+        var videoElement = document.createElement("video"), debug = this.system.getObject("debug");
+        if (MediaPlayer.models.ProtectionModel_21Jan2015.detect(videoElement)) {
+            this.system.mapClass("protectionModel", MediaPlayer.models.ProtectionModel_21Jan2015);
+            debug.log("Load ProtectionModel 21Jan2015");
+        } else if (MediaPlayer.models.ProtectionModel_3Feb2014.detect(videoElement)) {
+            this.system.mapClass("protectionModel", MediaPlayer.models.ProtectionModel_3Feb2014);
+            debug.log("Load ProtectionModel 3Feb2014");
+        } else if (MediaPlayer.models.ProtectionModel_01b.detect(videoElement)) {
+            this.system.mapClass("protectionModel", MediaPlayer.models.ProtectionModel_01b);
+            debug.log("Load ProtectionModel 01b");
+        } else {
+            debug.log("No supported version of EME detected on this user agent!");
+            debug.log("Attempts to play encrypted content will fail!");
+        }
+    };
+    return {
+        system: undefined,
+        setup: function() {
+            this.system.autoMapOutlets = true;
+            this.system.mapSingleton("debug", MediaPlayer.utils.Debug);
+            this.system.mapSingleton("tokenAuthentication", MediaPlayer.utils.TokenAuthentication);
+            this.system.mapSingleton("eventBus", MediaPlayer.utils.EventBus);
+            this.system.mapSingleton("capabilities", MediaPlayer.utils.Capabilities);
+            this.system.mapSingleton("textTrackExtensions", MediaPlayer.utils.TextTrackExtensions);
+            this.system.mapSingleton("vttParser", MediaPlayer.utils.VTTParser);
+            this.system.mapSingleton("ttmlParser", MediaPlayer.utils.TTMLParser);
+            this.system.mapClass("videoModel", MediaPlayer.models.VideoModel);
+            this.system.mapSingleton("manifestModel", MediaPlayer.models.ManifestModel);
+            this.system.mapSingleton("metricsModel", MediaPlayer.models.MetricsModel);
+            this.system.mapSingleton("uriQueryFragModel", MediaPlayer.models.URIQueryAndFragmentModel);
+            this.system.mapSingleton("ksPlayReady", MediaPlayer.dependencies.protection.KeySystem_PlayReady);
+            this.system.mapSingleton("ksWidevine", MediaPlayer.dependencies.protection.KeySystem_Widevine);
+            this.system.mapSingleton("ksClearKey", MediaPlayer.dependencies.protection.KeySystem_ClearKey);
+            this.system.mapSingleton("textSourceBuffer", MediaPlayer.dependencies.TextSourceBuffer);
+            this.system.mapSingleton("textTTMLXMLMP4SourceBuffer", MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer);
+            this.system.mapSingleton("mediaSourceExt", MediaPlayer.dependencies.MediaSourceExtensions);
+            this.system.mapSingleton("sourceBufferExt", MediaPlayer.dependencies.SourceBufferExtensions);
+            this.system.mapSingleton("bufferExt", MediaPlayer.dependencies.BufferExtensions);
+            this.system.mapSingleton("abrController", MediaPlayer.dependencies.AbrController);
+            this.system.mapSingleton("errHandler", MediaPlayer.dependencies.ErrorHandler);
+            this.system.mapSingleton("videoExt", MediaPlayer.dependencies.VideoModelExtensions);
+            this.system.mapSingleton("protectionExt", MediaPlayer.dependencies.ProtectionExtensions);
+            this.system.mapClass("protectionController", MediaPlayer.dependencies.ProtectionController);
+            mapProtectionModel.call(this);
+            this.system.mapClass("metrics", MediaPlayer.models.MetricsList);
+            this.system.mapClass("downloadRatioRule", MediaPlayer.rules.DownloadRatioRule);
+            this.system.mapClass("insufficientBufferRule", MediaPlayer.rules.InsufficientBufferRule);
+            this.system.mapClass("limitSwitchesRule", MediaPlayer.rules.LimitSwitchesRule);
+            this.system.mapClass("abrRulesCollection", MediaPlayer.rules.BaseRulesCollection);
+            this.system.mapClass("eventController", MediaPlayer.dependencies.EventController);
+            this.system.mapClass("textController", MediaPlayer.dependencies.TextController);
+            this.system.mapClass("bufferController", MediaPlayer.dependencies.BufferController);
+            this.system.mapClass("manifestLoader", MediaPlayer.dependencies.ManifestLoader);
+            this.system.mapSingleton("manifestUpdater", MediaPlayer.dependencies.ManifestUpdater);
+            this.system.mapClass("fragmentController", MediaPlayer.dependencies.FragmentController);
+            this.system.mapClass("fragmentLoader", MediaPlayer.dependencies.FragmentLoader);
+            this.system.mapClass("fragmentModel", MediaPlayer.dependencies.FragmentModel);
+            this.system.mapSingleton("streamController", MediaPlayer.dependencies.StreamController);
+            this.system.mapClass("stream", MediaPlayer.dependencies.Stream);
+            this.system.mapClass("requestScheduler", MediaPlayer.dependencies.RequestScheduler);
+            this.system.mapSingleton("schedulerExt", MediaPlayer.dependencies.SchedulerExtensions);
+            this.system.mapClass("schedulerModel", MediaPlayer.dependencies.SchedulerModel);
+            this.system.mapSingleton("notifier", MediaPlayer.dependencies.Notifier);
+            this.system.mapClass("indexHandler", Dash.dependencies.DashHandler);
+            this.system.mapClass("baseURLExt", Dash.dependencies.BaseURLExtensions);
+            this.system.mapClass("fragmentExt", Dash.dependencies.FragmentExtensions);
+            this.system.mapSingleton("manifestExt", Dash.dependencies.DashManifestExtensions);
+            this.system.mapSingleton("timelineConverter", Dash.dependencies.TimelineConverter);
+            this.system.mapClass("parser", MediaPlayer.dependencies.Parser);
+            this.system.mapClass("dashParser", Dash.dependencies.DashParser);
+            this.system.mapClass("mssParser", Mss.dependencies.MssParser);
+            this.system.mapClass("hlsParser", Hls.dependencies.HlsParser);
+            this.system.mapClass("hlsDemux", Hls.dependencies.HlsDemux);
+            this.system.mapSingleton("contextManager", MediaPlayer.modules.ContextManager);
+            this.system.mapSingleton("metricsExt", MediaPlayer.dependencies.MetricsExtensions);
+            this.system.mapSingleton("config", MediaPlayer.utils.Config);
+            this.system.mapClass("downloadRatioRule", MediaPlayer.rules.o.DownloadRatioRule);
+            this.system.mapClass("insufficientBufferRule", MediaPlayer.rules.o.InsufficientBufferRule);
+            this.system.mapHandler("setContext", "contextManager", "setContext");
+        }
+    };
 };
 
 MediaPlayer.modules.ContextManager = function() {
@@ -10373,423 +7573,281 @@ MediaPlayer.modules.ContextManager.prototype = {
     constructor: MediaPlayer.modules.ContextManager
 };
 
-MediaPlayer.rules.SwitchRequest = function(q, p) {
+MediaPlayer.utils.Debug = function() {
     "use strict";
-    this.quality = q;
-    this.priority = p;
-    if (this.quality === undefined) {
-        this.quality = 999;
-    }
-    if (this.priority === undefined) {
-        this.priority = .5;
-    }
-};
-
-MediaPlayer.rules.SwitchRequest.prototype = {
-    constructor: MediaPlayer.rules.SwitchRequest,
-    NO_CHANGE: 999,
-    DEFAULT: .5,
-    STRONG: 1,
-    WEAK: 0
-};
-
-MediaPlayer.rules.DownloadRatioRule = function() {
-    "use strict";
-    var checkRatio = function(newIdx, currentBandwidth, data) {
-        var self = this, deferred = Q.defer();
-        self.manifestExt.getRepresentationFor(newIdx, data).then(function(rep) {
-            self.manifestExt.getBandwidth(rep).then(function(newBandwidth) {
-                deferred.resolve(newBandwidth / currentBandwidth);
+    Date.prototype.HHMMSSmmm = function() {
+        var h = this.getHours().toString(), m = this.getMinutes().toString(), s = this.getSeconds().toString(), ms = this.getMilliseconds().toString(), HH = h[1] ? h : "0" + h[0], MM = m[1] ? m : "0" + m[0], SS = s[1] ? s : "0" + s[0], mmm = ms[2] ? ms : "0" + (ms[1] ? ms : "0" + ms[0]);
+        return HH + ":" + MM + ":" + SS + "." + mmm;
+    };
+    Date.prototype.MMSSmmm = function() {
+        var m = this.getMinutes().toString(), s = this.getSeconds().toString(), ms = this.getMilliseconds().toString(), MM = m[1] ? m : "0" + m[0], SS = s[1] ? s : "0" + s[0], mmm = ms[2] ? ms : "0" + (ms[1] ? ms : "0" + ms[0]);
+        return MM + ":" + SS + "." + mmm;
+    };
+    var logToBrowserConsole = true, NONE = 0, ERROR = 1, WARN = 2, INFO = 3, DEBUG = 4, ALL = 4, level = 4, showTimestamp = true, showElapsedTime = false, startTime = new Date(), _log = function(logLevel, args) {
+        var self = this;
+        if (getLogToBrowserConsole() && logLevel <= getLevel()) {
+            var _logger = getLogger(), message = "", logTime = null;
+            if (_logger === undefined || _logger === null) {
+                _logger = console;
+            }
+            if (showTimestamp) {
+                logTime = new Date();
+                message += "[" + logTime.HHMMSSmmm() + "]";
+            }
+            if (showElapsedTime) {
+                message += "[" + new Date(logTime - startTime).MMSSmmm() + "]";
+            }
+            Array.apply(null, args).forEach(function(item) {
+                message += item + " ";
             });
+            switch (logLevel) {
+              case ERROR:
+                _logger.error(message);
+                break;
+
+              case WARN:
+                _logger.warn(message);
+                break;
+
+              case INFO:
+                _logger.info(message);
+                break;
+
+              case DEBUG:
+                _logger.debug(message);
+                break;
+            }
+        }
+        self.eventBus.dispatchEvent({
+            type: "log",
+            message: arguments[0]
         });
-        return deferred.promise;
-    };
-    return {
-        debug: undefined,
-        manifestExt: undefined,
-        metricsExt: undefined,
-        checkIndex: function(current, metrics, data) {
-            var self = this, lastRequest = self.metricsExt.getCurrentHttpRequest(metrics), downloadTime, totalTime, downloadRatio, totalRatio, switchRatio, deferred, funcs, i, len, DOWNLOAD_RATIO_SAFETY_FACTOR = .75;
-            if (!metrics) {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
-            }
-            if (lastRequest === null) {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
-            }
-            totalTime = (lastRequest.tfinish.getTime() - lastRequest.trequest.getTime()) / 1e3;
-            downloadTime = (lastRequest.tfinish.getTime() - lastRequest.tresponse.getTime()) / 1e3;
-            if (totalTime <= 0) {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
-            }
-            if (lastRequest.mediaduration === null || lastRequest.mediaduration === undefined || lastRequest.mediaduration <= 0 || isNaN(lastRequest.mediaduration)) {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
-            }
-            deferred = Q.defer();
-            totalRatio = lastRequest.mediaduration / totalTime;
-            downloadRatio = lastRequest.mediaduration / downloadTime * DOWNLOAD_RATIO_SAFETY_FACTOR;
-            if (isNaN(downloadRatio) || isNaN(totalRatio)) {
-                self.debug.log("The ratios are NaN, bailing.");
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
-            }
-            if (isNaN(downloadRatio)) {
-                deferred.resolve(new MediaPlayer.rules.SwitchRequest());
-            } else if (downloadRatio < 4) {
-                if (current > 0) {
-                    self.debug.log("We are not at the lowest bitrate, so switch down.");
-                    self.manifestExt.getRepresentationFor(current - 1, data).then(function(representation1) {
-                        self.manifestExt.getBandwidth(representation1).then(function(oneDownBandwidth) {
-                            self.manifestExt.getRepresentationFor(current, data).then(function(representation2) {
-                                self.manifestExt.getBandwidth(representation2).then(function(currentBandwidth) {
-                                    switchRatio = oneDownBandwidth / currentBandwidth;
-                                    if (downloadRatio < switchRatio) {
-                                        self.debug.log("Things must be going pretty bad, switch all the way down.");
-                                        deferred.resolve(new MediaPlayer.rules.SwitchRequest(0));
-                                    } else {
-                                        self.debug.log("Things could be better, so just switch down one index.");
-                                        deferred.resolve(new MediaPlayer.rules.SwitchRequest(current - 1));
-                                    }
-                                });
-                            });
-                        });
-                    });
-                } else {
-                    deferred.resolve(new MediaPlayer.rules.SwitchRequest(current));
-                }
-            } else {
-                self.manifestExt.getRepresentationCount(data).then(function(max) {
-                    max -= 1;
-                    if (current < max) {
-                        self.manifestExt.getRepresentationFor(current + 1, data).then(function(representation1) {
-                            self.manifestExt.getBandwidth(representation1).then(function(oneUpBandwidth) {
-                                self.manifestExt.getRepresentationFor(current, data).then(function(representation2) {
-                                    self.manifestExt.getBandwidth(representation2).then(function(currentBandwidth) {
-                                        switchRatio = oneUpBandwidth / currentBandwidth;
-                                        if (downloadRatio >= switchRatio) {
-                                            if (downloadRatio > 100) {
-                                                self.debug.log("Tons of bandwidth available, go all the way up.");
-                                                deferred.resolve(new MediaPlayer.rules.SwitchRequest(max - 1));
-                                            } else if (downloadRatio > 10) {
-                                                self.debug.log("Just enough bandwidth available, switch up one.");
-                                                deferred.resolve(new MediaPlayer.rules.SwitchRequest(current + 1));
-                                            } else {
-                                                i = -1;
-                                                funcs = [];
-                                                while ((i += 1) < max) {
-                                                    funcs.push(checkRatio.call(self, i, currentBandwidth, data));
-                                                }
-                                                Q.all(funcs).then(function(results) {
-                                                    for (i = 0, len = results.length; i < len; i += 1) {
-                                                        if (downloadRatio < results[i]) {
-                                                            break;
-                                                        }
-                                                    }
-                                                    self.debug.log("Calculated ideal new quality index is: " + i);
-                                                    deferred.resolve(new MediaPlayer.rules.SwitchRequest(i));
-                                                });
-                                            }
-                                        } else {
-                                            deferred.resolve(new MediaPlayer.rules.SwitchRequest());
-                                        }
-                                    });
-                                });
-                            });
-                        });
-                    } else {
-                        deferred.resolve(new MediaPlayer.rules.SwitchRequest(max));
-                    }
-                });
-            }
-            return deferred.promise;
-        }
-    };
-};
-
-MediaPlayer.rules.DownloadRatioRule.prototype = {
-    constructor: MediaPlayer.rules.DownloadRatioRule
-};
-
-MediaPlayer.rules.InsufficientBufferRule = function() {
-    "use strict";
-    var dryBufferHits = 0, DRY_BUFFER_LIMIT = 3;
-    return {
-        debug: undefined,
-        checkIndex: function(current, metrics) {
-            var self = this, playlist, trace, shift = false, p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
-            if (metrics.PlayList === null || metrics.PlayList === undefined || metrics.PlayList.length === 0) {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
-            }
-            playlist = metrics.PlayList[metrics.PlayList.length - 1];
-            if (playlist === null || playlist === undefined || playlist.trace.length === 0) {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
-            }
-            trace = playlist.trace[playlist.trace.length - 2];
-            if (trace === null || trace === undefined || trace.stopreason === null || trace.stopreason === undefined) {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
-            }
-            if (trace.stopreason === MediaPlayer.vo.metrics.PlayList.Trace.REBUFFERING_REASON) {
-                shift = true;
-                dryBufferHits += 1;
-                self.debug.log("Number of times the buffer has run dry: " + dryBufferHits);
-            }
-            if (dryBufferHits > DRY_BUFFER_LIMIT) {
-                p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
-                self.debug.log("Apply STRONG to buffer rule.");
-            }
-            if (shift) {
-                self.debug.log("The buffer ran dry recently, switch down.");
-                return Q.when(new MediaPlayer.rules.SwitchRequest(current - 1, p));
-            } else if (dryBufferHits > DRY_BUFFER_LIMIT) {
-                self.debug.log("Too many dry buffer hits, quit switching bitrates.");
-                return Q.when(new MediaPlayer.rules.SwitchRequest(current, p));
-            } else {
-                return Q.when(new MediaPlayer.rules.SwitchRequest(MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE, p));
+    }, getLogToBrowserConsole = function() {
+        return logToBrowserConsole;
+    }, getLevel = function() {
+        return level;
+    }, getLogger = function() {
+        var _logger = null;
+        if (_logger) {
+            if (!_logger.initialized) {
+                var appender = new log4javascript.PopUpAppender();
+                var layout = new log4javascript.PatternLayout("%d{HH:mm:ss.SSS} %-5p - %m%n");
+                appender.setLayout(layout);
+                _logger.addAppender(appender);
+                _logger.setLevel(log4javascript.Level.ALL);
+                _logger.initialized = true;
             }
         }
+        return _logger;
     };
-};
-
-MediaPlayer.rules.InsufficientBufferRule.prototype = {
-    constructor: MediaPlayer.rules.InsufficientBufferRule
-};
-
-MediaPlayer.rules.LimitSwitchesRule = function() {
-    "use strict";
-    var MAX_SWITCHES = 10, VALIDATION_TIME = 2e4, WAIT_COUNT = 5, waiting = 0;
     return {
-        debug: undefined,
-        checkIndex: function(current, metrics) {
-            if (waiting > 0) {
-                waiting -= 1;
-                return Q.when(new MediaPlayer.rules.SwitchRequest(current, MediaPlayer.rules.SwitchRequest.prototype.STRONG));
-            }
-            var self = this, panic = false, rs, now = new Date().getTime(), delay, i, numSwitches = metrics.RepSwitchList.length;
-            for (i = numSwitches - 1; i >= 0; i -= 1) {
-                rs = metrics.RepSwitchList[i];
-                delay = now - rs.t.getTime();
-                if (delay >= VALIDATION_TIME) {
-                    self.debug.log("Reached time limit, bailing.");
-                    break;
-                }
-                if (i >= MAX_SWITCHES) {
-                    self.debug.log("Found too many switches within validation time, force the stream to not change.");
-                    panic = true;
-                    break;
-                }
-            }
-            if (panic) {
-                self.debug.log("Wait some time before allowing another switch.");
-                waiting = WAIT_COUNT;
-                return Q.when(new MediaPlayer.rules.SwitchRequest(current, MediaPlayer.rules.SwitchRequest.prototype.STRONG));
-            } else {
-                return Q.when(new MediaPlayer.rules.SwitchRequest(MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE, MediaPlayer.rules.SwitchRequest.prototype.STRONG));
-            }
-        }
-    };
-};
-
-MediaPlayer.rules.LimitSwitchesRule.prototype = {
-    constructor: MediaPlayer.rules.LimitSwitchesRule
-};
-
-MediaPlayer.rules.BaseRulesCollection = function() {
-    "use strict";
-    var rules = [];
-    return {
-        downloadRatioRule: undefined,
-        insufficientBufferRule: undefined,
-        getRules: function() {
-            return Q.when(rules);
+        eventBus: undefined,
+        NONE: NONE,
+        ERROR: ERROR,
+        WARN: WARN,
+        INFO: INFO,
+        DEBUG: DEBUG,
+        ALL: ALL,
+        getLevel: getLevel,
+        getLogToBrowserConsole: getLogToBrowserConsole,
+        getLogger: getLogger,
+        setLogToBrowserConsole: function(value) {
+            logToBrowserConsole = value;
         },
-        setup: function() {
-            var self = this;
-            self.getRules().then(function(r) {
-                r.push(self.downloadRatioRule);
-                r.push(self.insufficientBufferRule);
+        setLevel: function(value) {
+            level = value;
+        },
+        error: function() {
+            _log.call(this, ERROR, arguments);
+        },
+        warn: function() {
+            _log.call(this, WARN, arguments);
+        },
+        info: function() {
+            _log.call(this, INFO, arguments);
+        },
+        log: function() {
+            _log.call(this, DEBUG, arguments);
+        }
+    };
+};
+
+MediaPlayer.dependencies.ErrorHandler = function() {
+    "use strict";
+    return {
+        eventBus: undefined,
+        sendError: function(code, message, data) {
+            this.eventBus.dispatchEvent({
+                type: "error",
+                event: {
+                    code: code,
+                    message: message,
+                    data: data
+                }
             });
         }
     };
 };
 
-MediaPlayer.rules.BaseRulesCollection.prototype = {
-    constructor: MediaPlayer.rules.BaseRulesCollection
+MediaPlayer.dependencies.ErrorHandler.prototype = {
+    constructor: MediaPlayer.dependencies.ErrorHandler
 };
 
-MediaPlayer.rules.o.DownloadRatioRule = function() {
+MediaPlayer.dependencies.ErrorHandler.prototype.HASPLAYER_INIT_ERROR = "HASPLAYER_INIT_ERROR";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ABORTED = "MEDIA_ERR_ABORTED";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_NETWORK = "MEDIA_ERR_NETWORK";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_DECODE = "MEDIA_ERR_DECODE";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_SRC_NOT_SUPPORTED = "MEDIA_ERR_SRC_NOT_SUPPORTED";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED = "MEDIA_ERR_ENCRYPTED";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_REMOVE_SOURCEBUFFER = "MEDIA_ERR_REMOVE_SOURCEBUFFER";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER = "MEDIA_ERR_CREATE_SOURCEBUFFER";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_APPEND_SOURCEBUFFER = "MEDIA_ERR_APPEND_SOURCEBUFFER";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC = "MANIFEST_ERR_CODEC";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE = "MANIFEST_ERR_PARSE";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM = "MANIFEST_ERR_NOSTREAM";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIASOURCE = "CAPABILITY_ERR_MEDIASOURCE";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS = "CAPABILITY_ERR_MEDIAKEYS";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST = "DOWNLOAD_ERR_MANIFEST";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX = "DOWNLOAD_ERR_SIDX";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT = "DOWNLOAD_ERR_CONTENT";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_INIT = "DOWNLOAD_ERR_INIT";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.CC_ERR_PARSE = "CC_ERR_PARSE";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR = "MEDIA_KEYERR";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN = "MEDIA_KEYERR_UNKNOWN";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_CLIENT = "MEDIA_KEYERR_CLIENT";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_SERVICE = "MEDIA_KEYERR_SERVICE";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT = "MEDIA_KEYERR_OUTPUT";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_HARDWARECHANGE = "MEDIA_KEYERR_HARDWARECHANGE";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_DOMAIN = "MEDIA_KEYERR_DOMAIN";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_UNSUPPORTED = "MEDIA_KEYSYSERR_UNSUPPORTED";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED = "MEDIA_KEYSYSERR_ACCESS_DENIED";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_UPDATE_CERTIFICATE_IMPOSSIBLE = "MEDIA_KEYSYSERR_UPDATE_CERTIFICATE_IMPOSSIBLE";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR = "MEDIA_KEYMESSERR";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_INVALID_HEADER = "MEDIA_KEYMESSERR_INVALID_HEADER";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_URL_LICENSER_UNKNOWN = "MEDIA_KEYMESSERR_URL_LICENSER_UNKNOWN";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NOCHALLENGE = "MEDIA_KEYMESSERR_NOCHALLENGE";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ABORTED = "MEDIA_KEYMESSERR_XHR_ABORTED";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ERROR = "MEDIA_KEYMESSERR_XHR_ERROR";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_KEY_UNKNOWN = "MEDIA_KEYMESSERR_KEY_UNKNOWN";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_MULTIKEYS_UNSUPPORTED = "MEDIA_KEYMESSERR_MULTIKEYS_UNSUPPORTED";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_SESSION = "MEDIA_KEYMESSERR_NO_SESSION";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_REMOVE_SESSION = "MEDIA_KEYMESSERR_NO_REMOVE_SESSION";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_CLOSE_SESSION = "MEDIA_KEYMESSERR_NO_CLOSE_SESSION";
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INDEX_SIZE = 1;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_HIERARCHY_REQUEST = 3;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_WRONG_DOCUMENT = 4;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_CHARACTER = 5;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NO_MODIFICATION_ALLOWED = 7;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_FOUND = 8;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_SUPPORTED = 9;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_STATE = 11;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_SYNTAX = 12;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_MODIFICATION = 13;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NAMESPACE = 14;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS = 15;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_SECURITY = 18;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NETWORK = 19;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_ABORT = 20;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_URL_MISMATCH = 21;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_QUOTA_EXCEEDED = 22;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_TIMEOUT = 23;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_NODE_TYPE = 24;
+
+MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_DATA_CLONE = 25;
+
+MediaPlayer.utils.EventBus = function() {
     "use strict";
+    var registrations, getListeners = function(type, useCapture) {
+        var captype = (useCapture ? "1" : "0") + type;
+        if (!(captype in registrations)) {
+            registrations[captype] = [];
+        }
+        return registrations[captype];
+    }, init = function() {
+        registrations = {};
+    };
+    init();
     return {
-        debug: undefined,
-        manifestExt: undefined,
-        metricsExt: undefined,
-        manifestModel: undefined,
-        config: undefined,
-        checkIndex: function(current, metrics, data) {
-            var self = this, lastRequest = self.metricsExt.getCurrentHttpRequest(metrics), requests = self.metricsExt.getHttpRequests(metrics), downloadTime, totalTime, calculatedBandwidth, latencyInBandwidth = self.config.getParamFor(data.type, "ABR.latencyInBandwidth", "boolean", true), switchUpRatioSafetyFactor = self.config.getParamFor(data.type, "ABR.switchUpRatioSafetyFactor", "number", 1.5), deferred, funcs = [], i, q = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE, totalBytesLength = 0, p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
-            self.debug.log("[DownloadRatioRule][" + data.type + "] Checking download ratio rule... (current = " + current + ")");
-            if (!metrics) {
-                self.debug.log("[DownloadRatioRule][" + data.type + "]No metrics, bailing.");
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
+        addEventListener: function(type, listener, useCapture) {
+            var listeners = getListeners(type, useCapture);
+            var idx = listeners.indexOf(listener);
+            if (idx === -1) {
+                listeners.push(listener);
             }
-            if (lastRequest === null) {
-                self.debug.log("[DownloadRatioRule][" + data.type + "]No requests made for this stream yet, bailing.");
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
-            }
-            totalTime = (lastRequest.tfinish.getTime() - lastRequest.trequest.getTime()) / 1e3;
-            downloadTime = (lastRequest.tfinish.getTime() - lastRequest.tresponse.getTime()) / 1e3;
-            if (totalTime <= 0) {
-                self.debug.log("[DownloadRatioRule][" + data.type + "]Don't know how long the download of the last fragment took, bailing.");
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
-            }
-            if (lastRequest.mediaduration === null || lastRequest.mediaduration === undefined || lastRequest.mediaduration <= 0 || isNaN(lastRequest.mediaduration)) {
-                self.debug.log("[DownloadRatioRule][" + data.type + "] Don't know the duration of the last media fragment, bailing.");
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
-            }
-            deferred = Q.defer();
-            totalBytesLength = lastRequest.bytesLength;
-            if (requests.length >= 3) {
-                for (i = requests.length - 2; i >= requests.length - 3; i--) {
-                    totalBytesLength += requests[i].bytesLength;
-                    totalTime += (requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1e3;
-                    downloadTime += (requests[i].tfinish.getTime() - requests[i].tresponse.getTime()) / 1e3;
-                }
-            }
-            totalBytesLength *= 8;
-            calculatedBandwidth = latencyInBandwidth ? totalBytesLength / totalTime : totalBytesLength / downloadTime;
-            self.debug.log("[DownloadRatioRule][" + data.type + "] DL: " + downloadTime + "s, Total: " + totalTime + "s => calculatedBandwidth: " + calculatedBandwidth);
-            if (isNaN(calculatedBandwidth)) {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
-            }
-            self.manifestExt.getRepresentationCount(data).then(function(count) {
-                self.manifestExt.getRepresentationFor(current, data).then(function(currentRepresentation) {
-                    self.manifestExt.getBandwidth(currentRepresentation).then(function(currentBandwidth) {
-                        for (i = 0; i < count; i += 1) {
-                            funcs.push(self.manifestExt.getRepresentationBandwidth(data, i));
-                        }
-                        Q.all(funcs).then(function(bandwidths) {
-                            if (calculatedBandwidth <= currentBandwidth) {
-                                for (i = current - 1; i > 0; i -= 1) {
-                                    if (bandwidths[i] <= calculatedBandwidth) {
-                                        break;
-                                    }
-                                }
-                                q = i;
-                                p = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
-                                self.debug.log("[DownloadRatioRule][" + data.type + "] SwitchRequest(" + q + ", " + p + ")");
-                                deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
-                            } else {
-                                for (i = count - 1; i > current; i -= 1) {
-                                    if (calculatedBandwidth > bandwidths[i] * switchUpRatioSafetyFactor) {
-                                        self.debug.log("[DownloadRatioRule][" + data.type + "] calculatedBandwidth = " + calculatedBandwidth + " results[i] * switchUpRatioSafetyFactor =" + bandwidths[i] * switchUpRatioSafetyFactor + " with i=" + i);
-                                        break;
-                                    }
-                                }
-                                q = i;
-                                p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
-                                self.debug.log("[DownloadRatioRule][" + data.type + "] SwitchRequest(" + q + ", " + p + ")");
-                                deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
-                            }
-                        });
-                    });
-                });
-            });
-            return deferred.promise;
-        }
-    };
-};
-
-MediaPlayer.rules.o.DownloadRatioRule.prototype = {
-    constructor: MediaPlayer.rules.o.DownloadRatioRule
-};
-
-MediaPlayer.rules.o.InsufficientBufferRule = function() {
-    "use strict";
-    return {
-        debug: undefined,
-        manifestExt: undefined,
-        metricsExt: undefined,
-        manifestModel: undefined,
-        config: undefined,
-        checkIndex: function(current, metrics, data) {
-            var self = this, bufferLevel = self.metricsExt.getCurrentBufferLevel(metrics), minBufferTime, switchLowerBufferRatio, switchLowerBufferTime, switchDownBufferRatio, switchDownBufferTime, switchUpBufferRatio, switchUpBufferTime, deferred, q = current, p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
-            if (bufferLevel === null) {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
-            }
-            self.debug.log("[InsufficientBufferRule][" + data.type + "] Checking buffer level ... (current = " + current + ", buffer level = " + bufferLevel.level + ")");
-            deferred = Q.defer();
-            self.manifestExt.getMpd(self.manifestModel.getValue()).then(function(mpd) {
-                minBufferTime = self.config.getParamFor(data.type, "BufferController.minBufferTime", "number", mpd.manifest.minBufferTime);
-                switchLowerBufferRatio = self.config.getParamFor(data.type, "ABR.switchLowerBufferRatio", "number", .25);
-                switchLowerBufferTime = self.config.getParamFor(data.type, "ABR.switchLowerBufferTime", "number", switchLowerBufferRatio * minBufferTime);
-                switchDownBufferRatio = self.config.getParamFor(data.type, "ABR.switchDownBufferRatio", "number", .5);
-                switchDownBufferTime = self.config.getParamFor(data.type, "ABR.switchDownBufferTime", "number", switchDownBufferRatio * minBufferTime);
-                switchUpBufferRatio = self.config.getParamFor(data.type, "ABR.switchUpBufferRatio", "number", .75);
-                switchUpBufferTime = self.config.getParamFor(data.type, "ABR.switchUpBufferTime", "number", switchUpBufferRatio * minBufferTime);
-                self.manifestExt.getRepresentationCount(data).then(function(max) {
-                    max -= 1;
-                    if (bufferLevel.level <= switchLowerBufferTime) {
-                        q = 0;
-                        p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
-                    } else if (bufferLevel.level <= switchDownBufferTime) {
-                        q = current > 0 ? current - 1 : 0;
-                        p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
-                    }
-                    self.debug.log("[InsufficientBufferRule][" + data.type + "] SwitchRequest(" + q + ", " + p + ")");
-                    deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
-                });
-            });
-            return deferred.promise;
-        }
-    };
-};
-
-MediaPlayer.rules.o.InsufficientBufferRule.prototype = {
-    constructor: MediaPlayer.rules.o.OInsufficientBufferRule
-};
-
-MediaPlayer.dependencies.Notifier = function() {
-    "use strict";
-    var OBSERVABLE_ID_PROP = "observableId", system, id = 0, getId = function() {
-        if (!this[OBSERVABLE_ID_PROP]) {
-            id += 1;
-            this[OBSERVABLE_ID_PROP] = "_id_" + id;
-        }
-        return this[OBSERVABLE_ID_PROP];
-    };
-    return {
-        system: undefined,
-        setup: function() {
-            system = this.system;
-            system.mapValue("notify", this.notify);
-            system.mapValue("subscribe", this.subscribe);
-            system.mapValue("unsubscribe", this.unsubscribe);
         },
-        notify: function() {
-            var eventId = arguments[0] + getId.call(this), event = new MediaPlayer.vo.Event();
-            event.sender = this;
-            event.type = arguments[0];
-            event.data = arguments[1];
-            event.error = arguments[2];
-            event.timestamp = new Date().getTime();
-            system.notify.call(system, eventId, event);
-        },
-        subscribe: function(eventName, observer, handler, oneShot) {
-            if (!handler && observer[eventName]) {
-                handler = observer[eventName] = observer[eventName].bind(observer);
+        removeEventListener: function(type, listener, useCapture) {
+            var listeners = getListeners(type, useCapture);
+            var idx = listeners.indexOf(listener);
+            if (idx !== -1) {
+                listeners.splice(idx, 1);
             }
-            if (!observer) throw "observer object cannot be null or undefined";
-            if (!handler) throw "event handler cannot be null or undefined";
-            eventName += getId.call(this);
-            system.mapHandler(eventName, undefined, handler, oneShot);
         },
-        unsubscribe: function(eventName, observer, handler) {
-            handler = handler || observer[eventName];
-            eventName += getId.call(this);
-            system.unmapHandler(eventName, undefined, handler);
+        dispatchEvent: function(evt) {
+            var listeners = getListeners(evt.type, false).slice();
+            for (var i = 0; i < listeners.length; i++) {
+                listeners[i].call(this, evt);
+            }
+            return !evt.defaultPrevented;
         }
     };
-};
-
-MediaPlayer.dependencies.Notifier.prototype = {
-    constructor: MediaPlayer.dependencies.Notifier
 };
 
 MediaPlayer.dependencies.EventController = function() {
@@ -10841,7 +7899,7 @@ MediaPlayer.dependencies.EventController = function() {
                     if (presentationTime === 0 || presentationTime <= currentVideoTime && presentationTime + presentationTimeThreshold > currentVideoTime) {
                         self.debug.log("[EventController] Start Event at " + currentVideoTime);
                         if (curr.duration > 0) activeEvents.push(curr);
-                        if (curr.eventStream.schemeIdUri == MPD_RELOAD_SCHEME && curr.eventStream.value == MPD_RELOAD_VALUE) refreshManifest.call(this);
+                        if (curr.eventStream.schemeIdUri === MPD_RELOAD_SCHEME && curr.eventStream.value === MPD_RELOAD_VALUE) refreshManifest.call(this);
                         events.splice(j, 1);
                     }
                 }
@@ -10898,129 +7956,1243 @@ MediaPlayer.dependencies.EventController.prototype = {
     constructor: MediaPlayer.dependencies.EventController
 };
 
-MediaPlayer.models.URIQueryAndFragmentModel = function() {
+MediaPlayer.dependencies.FragmentController = function() {
     "use strict";
-    var URIFragmentDataVO = new MediaPlayer.vo.URIFragmentData(), URIQueryData = [], reset = function() {
-        URIFragmentDataVO = new MediaPlayer.vo.URIFragmentData();
-        URIQueryData = [];
-    }, parseURI = function(uri) {
-        var URIFragmentData = [], testQuery = new RegExp(/[?]/), testFragment = new RegExp(/[#]/), isQuery = testQuery.test(uri), isFragment = testFragment.test(uri), mappedArr;
-        function reduceArray(previousValue, currentValue, index, array) {
-            var arr = array[0].split(/[=]/);
-            array.push({
-                key: arr[0],
-                value: arr[1]
-            });
-            array.shift();
-            return array;
-        }
-        function mapArray(currentValue, index, array) {
-            if (index > 0) {
-                if (isQuery && URIQueryData.length === 0) {
-                    URIQueryData = array[index].split(/[&]/);
-                } else if (isFragment) {
-                    URIFragmentData = array[index].split(/[&]/);
-                }
+    var fragmentModels = [], findModel = function(bufferController) {
+        var ln = fragmentModels.length;
+        for (var i = 0; i < ln; i++) {
+            if (fragmentModels[i].getContext() === bufferController) {
+                return fragmentModels[i];
             }
-            return array;
         }
-        mappedArr = uri.split(/[?#]/).map(mapArray);
-        if (URIQueryData.length > 0) {
-            URIQueryData = URIQueryData.reduce(reduceArray, null);
+        return null;
+    }, isReadyToLoadNextFragment = function() {
+        var isReady = true, ln = fragmentModels.length;
+        for (var i = 0; i < ln; i++) {
+            if (!fragmentModels[i].isReady()) {
+                isReady = false;
+                break;
+            }
         }
-        if (URIFragmentData.length > 0) {
-            URIFragmentData = URIFragmentData.reduce(reduceArray, null);
-            URIFragmentData.forEach(function(object) {
-                URIFragmentDataVO[object.key] = object.value;
-            });
+        return isReady;
+    }, executeRequests = function() {
+        for (var i = 0; i < fragmentModels.length; i++) {
+            fragmentModels[i].executeCurrentRequest();
         }
-        return uri;
     };
     return {
-        parseURI: parseURI,
-        reset: reset,
-        getURIFragmentData: function() {
-            return URIFragmentDataVO;
+        system: undefined,
+        debug: undefined,
+        fragmentLoader: undefined,
+        process: function(bytes) {
+            var result = null;
+            if (bytes !== null && bytes !== undefined && bytes.byteLength > 0) {
+                result = new Uint8Array(bytes);
+            }
+            return Q.when(result);
         },
-        getURIQueryData: URIQueryData
+        attachBufferController: function(bufferController) {
+            if (!bufferController) return null;
+            var model = findModel(bufferController);
+            if (!model) {
+                model = this.system.getObject("fragmentModel");
+                model.setContext(bufferController);
+                fragmentModels.push(model);
+            }
+            return model;
+        },
+        detachBufferController: function(bufferController) {
+            var idx = fragmentModels.indexOf(bufferController);
+            if (idx > -1) {
+                fragmentModels.splice(idx, 1);
+            }
+        },
+        onBufferControllerStateChange: function() {
+            if (isReadyToLoadNextFragment()) {
+                executeRequests.call(this);
+            }
+        },
+        isFragmentLoadedOrPending: function(bufferController, request) {
+            var fragmentModel = findModel(bufferController), isLoaded;
+            if (!fragmentModel) {
+                return false;
+            }
+            isLoaded = fragmentModel.isFragmentLoadedOrPending(request);
+            return isLoaded;
+        },
+        getPendingRequests: function(bufferController) {
+            var fragmentModel = findModel(bufferController);
+            if (!fragmentModel) {
+                return null;
+            }
+            return fragmentModel.getPendingRequests();
+        },
+        getLoadingRequests: function(bufferController) {
+            var fragmentModel = findModel(bufferController);
+            if (!fragmentModel) {
+                return null;
+            }
+            return fragmentModel.getLoadingRequests();
+        },
+        isInitializationRequest: function(request) {
+            return request && request.type && request.type.toLowerCase() === "initialization segment";
+        },
+        getLoadingTime: function(bufferController) {
+            var fragmentModel = findModel(bufferController);
+            if (!fragmentModel) {
+                return null;
+            }
+            return fragmentModel.getLoadingTime();
+        },
+        getExecutedRequestForTime: function(model, time) {
+            if (model) {
+                return model.getExecutedRequestForTime(time);
+            }
+            return null;
+        },
+        removeExecutedRequest: function(model, request) {
+            if (model) {
+                model.removeExecutedRequest(request);
+            }
+        },
+        removeExecutedRequestsBeforeTime: function(model, time) {
+            if (model) {
+                model.removeExecutedRequestsBeforeTime(time);
+            }
+        },
+        cancelPendingRequestsForModel: function(model) {
+            if (model) {
+                model.cancelPendingRequests();
+            }
+        },
+        abortRequestsForModel: function(model) {
+            if (model) {
+                model.abortRequests();
+            }
+        },
+        isFragmentExists: function(request) {
+            var deferred = Q.defer();
+            this.fragmentLoader.checkForExistence(request).then(function() {
+                deferred.resolve(true);
+            }, function() {
+                deferred.resolve(false);
+            });
+            return deferred.promise;
+        },
+        prepareFragmentForLoading: function(bufferController, request, startLoadingCallback, successLoadingCallback, errorLoadingCallback, streamEndCallback) {
+            var fragmentModel = findModel(bufferController);
+            if (!fragmentModel || !request) {
+                return Q.when(null);
+            }
+            fragmentModel.addRequest(request);
+            fragmentModel.setCallbacks(startLoadingCallback, successLoadingCallback, errorLoadingCallback, streamEndCallback);
+            return Q.when(true);
+        }
     };
 };
 
-MediaPlayer.models.URIQueryAndFragmentModel.prototype = {
-    constructor: MediaPlayer.models.URIQueryAndFragmentModel
+MediaPlayer.dependencies.FragmentController.prototype = {
+    constructor: MediaPlayer.dependencies.FragmentController
 };
 
-MediaPlayer.vo.URIFragmentData = function() {
+MediaPlayer.dependencies.FragmentLoader = function() {
     "use strict";
-    this.t = null;
-    this.xywh = null;
-    this.track = null;
-    this.id = null;
-    this.s = null;
+    var rslt = {};
+    var RETRY_ATTEMPTS = 3, RETRY_INTERVAL = 500, BYTESLENGTH = false, retryCount = 0, xhrs = [], _checkForExistence = function(request) {
+        var req = new XMLHttpRequest(), isSuccessful = false;
+        req.open("HEAD", request.url, true);
+        req.onload = function() {
+            if (req.status < 200 || req.status > 299) return;
+            isSuccessful = true;
+            request.deferred.resolve(request);
+        };
+        req.onloadend = req.onerror = function() {
+            if (isSuccessful) return;
+            request.deferred.reject(req);
+        };
+        req.send();
+    };
+    return {
+        metricsModel: undefined,
+        errHandler: undefined,
+        debug: undefined,
+        tokenAuthentication: undefined,
+        doLoad: function(request, bytesRange) {
+            var d = Q.defer();
+            var req = new XMLHttpRequest(), httpRequestMetrics = null, firstProgress = true, needFailureReport = true, lastTraceTime = null, self = this;
+            xhrs.push(req);
+            request.requestStartDate = new Date();
+            httpRequestMetrics = self.metricsModel.addHttpRequest(request.streamType, null, request.type, request.url, null, request.range, request.requestStartDate, null, null, null, null, request.duration, request.startTime, request.quality);
+            self.metricsModel.appendHttpTrace(httpRequestMetrics, request.requestStartDate, request.requestStartDate.getTime() - request.requestStartDate.getTime(), [ 0 ]);
+            lastTraceTime = request.requestStartDate;
+            req.open("GET", self.tokenAuthentication.addTokenAsQueryArg(request.url), true);
+            req.responseType = "arraybuffer";
+            req = self.tokenAuthentication.setTokenInRequestHeader(req);
+            if (bytesRange) {
+                req.setRequestHeader("Range", bytesRange);
+            }
+            req.onprogress = function(event) {
+                var currentTime = new Date();
+                if (firstProgress) {
+                    firstProgress = false;
+                    if (!event.lengthComputable || event.lengthComputable && event.total !== event.loaded) {
+                        request.firstByteDate = currentTime;
+                        httpRequestMetrics.tresponse = currentTime;
+                    }
+                }
+                self.metricsModel.appendHttpTrace(httpRequestMetrics, currentTime, currentTime.getTime() - lastTraceTime.getTime(), [ req.response ? req.response.byteLength : 0 ]);
+                if ((lastTraceTime.getTime() - request.requestStartDate.getTime()) / 1e3 > httpRequestMetrics.mediaduration * 2) {
+                    self.debug.log("[FragmentLoader][" + request.streamType + "] Load onprogress: it's too long!!!!!!");
+                }
+                lastTraceTime = currentTime;
+            };
+            req.onload = function() {
+                if (req.status < 200 || req.status > 299) {
+                    return;
+                }
+                needFailureReport = false;
+                var currentTime = new Date(), bytes = req.response, latency, download;
+                if (!request.firstByteDate) {
+                    request.firstByteDate = request.requestStartDate;
+                }
+                request.requestEndDate = currentTime;
+                latency = request.firstByteDate.getTime() - request.requestStartDate.getTime();
+                download = request.requestEndDate.getTime() - request.firstByteDate.getTime();
+                self.debug.log("[FragmentLoader][" + request.streamType + "] Loaded: " + request.url + " (" + req.status + ", " + latency + "ms, " + download + "ms)");
+                httpRequestMetrics.tresponse = request.firstByteDate;
+                httpRequestMetrics.tfinish = request.requestEndDate;
+                httpRequestMetrics.responsecode = req.status;
+                httpRequestMetrics.bytesLength = bytes ? bytes.byteLength : 0;
+                self.metricsModel.appendHttpTrace(httpRequestMetrics, currentTime, currentTime.getTime() - lastTraceTime.getTime(), [ bytes ? bytes.byteLength : 0 ]);
+                lastTraceTime = currentTime;
+                d.resolve({
+                    data: bytes,
+                    request: request
+                });
+            };
+            req.onloadend = req.onerror = function() {
+                if (xhrs.indexOf(req) === -1) {
+                    return;
+                } else {
+                    xhrs.splice(xhrs.indexOf(req), 1);
+                }
+                if (!needFailureReport) {
+                    return;
+                }
+                needFailureReport = false;
+                var currentTime = new Date(), bytes = req.response, latency, download;
+                if (!request.firstByteDate) {
+                    request.firstByteDate = request.requestStartDate;
+                }
+                request.requestEndDate = currentTime;
+                latency = request.firstByteDate.getTime() - request.requestStartDate.getTime();
+                download = request.requestEndDate.getTime() - request.firstByteDate.getTime();
+                httpRequestMetrics.tresponse = request.firstByteDate;
+                httpRequestMetrics.tfinish = request.requestEndDate;
+                httpRequestMetrics.responsecode = req.status;
+                self.metricsModel.appendHttpTrace(httpRequestMetrics, currentTime, currentTime.getTime() - lastTraceTime.getTime(), [ bytes ? bytes.byteLength : 0 ]);
+                lastTraceTime = currentTime;
+                d.reject(req);
+            };
+            self.debug.log("[FragmentLoader][" + request.streamType + "] Load: " + request.url);
+            req.send();
+            return d.promise;
+        },
+        getBytesLength: function(request) {
+            var d = Q.defer();
+            var http = new XMLHttpRequest();
+            http.open("HEAD", request.url);
+            http.onreadystatechange = function() {
+                if (http.status < 200 || http.status > 299) {
+                    d.reject();
+                } else {
+                    if (http.getResponseHeader("Content-Length")) {
+                        d.resolve(http.getResponseHeader("Content-Length"));
+                    } else {
+                        d.reject();
+                    }
+                }
+            };
+            http.send();
+            return d.promise;
+        },
+        planRequests: function(req) {
+            if (!req) {
+                return Q.when(null);
+            }
+            var that = this;
+            var d = Q.defer();
+            if (BYTESLENGTH) {
+                this.getBytesLength(req).then(function(bytesLength) {
+                    BYTESLENGTH = true;
+                    that.loadRequests(bytesLength, req).then(function(datas) {
+                        var buffer1 = datas[0].data, buffer2 = datas[1].data, tmp = new Uint8Array(buffer1.byteLength + buffer2.byteLength);
+                        tmp.set(new Uint8Array(buffer1), 0);
+                        tmp.set(new Uint8Array(buffer2), buffer1.byteLength);
+                        d.resolve({
+                            data: tmp.buffer,
+                            request: req
+                        });
+                    });
+                }, function() {
+                    BYTESLENGTH = false;
+                    d.resolve(that.doLoad(req, RETRY_ATTEMPTS));
+                });
+            } else {
+                that.doLoad(req).then(function(result) {
+                    d.resolve(result);
+                }, function(reqerror) {
+                    if (reqerror.status !== 0) {
+                        that.retry(req, d, that);
+                    } else {
+                        req.status = 0;
+                        d.reject(req);
+                    }
+                });
+            }
+            return d.promise;
+        },
+        retry: function(request, d, that) {
+            setTimeout(function() {
+                that.doLoad(request).then(function(result) {
+                    retryCount = 0;
+                    d.resolve(result);
+                }, function(error) {
+                    retryCount++;
+                    if (retryCount < RETRY_ATTEMPTS) {
+                        that.retry(request, d, that);
+                    } else {
+                        retryCount = 0;
+                        d.reject(error);
+                    }
+                });
+            }, RETRY_INTERVAL);
+        },
+        loadRequests: function(bytesLength, req) {
+            var halfBytes = Math.floor(bytesLength / 2), bytesFirstHalf = "bytes=0-" + (halfBytes - 1), bytesSecondHalf = "bytes=" + halfBytes + "-" + bytesLength;
+            return Q.all([ this.doLoad(req, RETRY_ATTEMPTS, bytesFirstHalf), this.doLoad(req, RETRY_ATTEMPTS, bytesSecondHalf) ]);
+        },
+        load: function(req) {
+            var deferred = Q.defer();
+            if (req.type === "Initialization Segment" && req.data) {
+                deferred.resolve(req, {
+                    data: req.data
+                });
+            } else {
+                this.planRequests(req).then(function(result) {
+                    deferred.resolve(result);
+                }, function(error) {
+                    deferred.reject(error);
+                });
+            }
+            return deferred.promise;
+        },
+        abort: function() {
+            var i, req, ln = xhrs.length;
+            this.debug.log("[FragmentLoader] " + ln + " xhr requests to Abort.");
+            for (i = 0; i < ln; i += 1) {
+                req = xhrs[i];
+                this.debug.log("[FragmentLoader] ### Abort XHR");
+                req.abort();
+                req = null;
+            }
+            xhrs.length = 0;
+            xhrs = [];
+        },
+        checkForExistence: function(req) {
+            if (!req) {
+                return Q.when(null);
+            }
+            req.deferred = Q.defer();
+            _checkForExistence.call(this, req);
+            return req.deferred.promise;
+        }
+    };
 };
 
-MediaPlayer.vo.URIFragmentData.prototype = {
-    constructor: MediaPlayer.vo.URIFragmentData
+MediaPlayer.dependencies.FragmentLoader.prototype = {
+    constructor: MediaPlayer.dependencies.FragmentLoader
 };
 
-MediaPlayer.vo.Event = function() {
+MediaPlayer.dependencies.FragmentModel = function() {
     "use strict";
-    this.type = null;
-    this.sender = null;
-    this.data = null;
-    this.error = null;
-    this.timestamp = NaN;
+    var context, executedRequests = [], pendingRequests = [], loadingRequests = [], startLoadingCallback, successLoadingCallback, errorLoadingCallback, streamEndCallback, LOADING_REQUEST_THRESHOLD = 2, loadCurrentFragment = function(request) {
+        var onSuccess, onError, self = this;
+        startLoadingCallback.call(context, request);
+        onSuccess = function(request, response) {
+            loadingRequests.splice(loadingRequests.indexOf(request), 1);
+            executedRequests.push(request);
+            successLoadingCallback.call(context, request, response);
+            request.deferred = null;
+        };
+        onError = function(request) {
+            loadingRequests.splice(loadingRequests.indexOf(request), 1);
+            errorLoadingCallback.call(context, request);
+            request.deferred = null;
+        };
+        self.fragmentLoader.load(request).then(onSuccess.bind(context, request), onError.bind(context, request));
+    }, sortRequestsByProperty = function(requestsArray, sortProp) {
+        var compare = function(req1, req2) {
+            if (req1[sortProp] < req2[sortProp]) return -1;
+            if (req1[sortProp] > req2[sortProp]) return 1;
+            return 0;
+        };
+        requestsArray.sort(compare);
+    }, removeExecutedRequest = function(request) {
+        var idx = executedRequests.indexOf(request);
+        if (idx !== -1) {
+            executedRequests.splice(idx, 1);
+        }
+    };
+    return {
+        system: undefined,
+        debug: undefined,
+        fragmentLoader: undefined,
+        setContext: function(value) {
+            context = value;
+        },
+        getContext: function() {
+            return context;
+        },
+        addRequest: function(value) {
+            if (value) {
+                if (this.isFragmentLoadedOrPending(value)) return;
+                pendingRequests.push(value);
+                sortRequestsByProperty.call(this, pendingRequests, "index");
+            }
+        },
+        setCallbacks: function(onLoadingStart, onLoadingSuccess, onLoadingError, onStreamEnd) {
+            startLoadingCallback = onLoadingStart;
+            streamEndCallback = onStreamEnd;
+            errorLoadingCallback = onLoadingError;
+            successLoadingCallback = onLoadingSuccess;
+        },
+        isFragmentLoadedOrPending: function(request) {
+            var isLoaded = false, ln = executedRequests.length, req;
+            for (var i = 0; i < ln; i++) {
+                req = executedRequests[i];
+                if (request.startTime === req.startTime || req.action === "complete" && request.action === req.action) {
+                    if (request.url === req.url) {
+                        isLoaded = true;
+                        break;
+                    } else {
+                        removeExecutedRequest(request);
+                    }
+                }
+            }
+            if (!isLoaded) {
+                for (i = 0, ln = pendingRequests.length; i < ln; i += 1) {
+                    req = pendingRequests[i];
+                    if (request.url === req.url && request.startTime === req.startTime) {
+                        isLoaded = true;
+                    }
+                }
+            }
+            if (!isLoaded) {
+                for (i = 0, ln = loadingRequests.length; i < ln; i += 1) {
+                    req = loadingRequests[i];
+                    if (request.url === req.url && request.startTime === req.startTime) {
+                        isLoaded = true;
+                    }
+                }
+            }
+            return isLoaded;
+        },
+        isReady: function() {
+            return context.isReady();
+        },
+        getPendingRequests: function() {
+            return pendingRequests;
+        },
+        getLoadingRequests: function() {
+            return loadingRequests;
+        },
+        getLoadingTime: function() {
+            var loadingTime = 0, req, i;
+            for (i = executedRequests.length - 1; i >= 0; i -= 1) {
+                req = executedRequests[i];
+                if (req.requestEndDate instanceof Date && req.firstByteDate instanceof Date) {
+                    loadingTime = req.requestEndDate.getTime() - req.firstByteDate.getTime();
+                    break;
+                }
+            }
+            return loadingTime;
+        },
+        getExecutedRequestForTime: function(time) {
+            var lastIdx = executedRequests.length - 1, start = NaN, end = NaN, req = null, i;
+            for (i = lastIdx; i >= 0; i -= 1) {
+                req = executedRequests[i];
+                start = req.startTime;
+                end = start + req.duration;
+                if (!isNaN(start) && !isNaN(end) && time > start && time < end) {
+                    return req;
+                }
+            }
+            return null;
+        },
+        getExecutedRequestForQualityAndIndex: function(quality, index) {
+            var lastIdx = executedRequests.length - 1, req = null, i;
+            for (i = lastIdx; i >= 0; i -= 1) {
+                req = executedRequests[i];
+                if (req.quality === quality && req.index === index) {
+                    return req;
+                }
+            }
+            return null;
+        },
+        removeExecutedRequest: function(request) {
+            removeExecutedRequest.call(this, request);
+        },
+        removeExecutedRequestsBeforeTime: function(time) {
+            var lastIdx = executedRequests.length - 1, start = NaN, req = null, i;
+            for (i = lastIdx; i >= 0; i -= 1) {
+                req = executedRequests[i];
+                start = req.startTime;
+                if (!isNaN(start) && start < time) {
+                    removeExecutedRequest.call(this, req);
+                }
+            }
+        },
+        cancelPendingRequests: function() {
+            pendingRequests = [];
+        },
+        abortRequests: function() {
+            this.fragmentLoader.abort();
+            loadingRequests = [];
+        },
+        executeCurrentRequest: function() {
+            var self = this, currentRequest;
+            if (pendingRequests.length === 0) return;
+            if (loadingRequests.length >= LOADING_REQUEST_THRESHOLD) {
+                return;
+            }
+            currentRequest = pendingRequests.shift();
+            switch (currentRequest.action) {
+              case "complete":
+                executedRequests.push(currentRequest);
+                streamEndCallback.call(context, currentRequest);
+                break;
+
+              case "download":
+                loadingRequests.push(currentRequest);
+                loadCurrentFragment.call(self, currentRequest);
+                break;
+
+              default:
+                this.debug.log("Unknown request action.");
+                if (currentRequest.deferred) {
+                    currentRequest.deferred.reject();
+                    currentRequest.deferred = null;
+                } else {
+                    errorLoadingCallback.call(context, currentRequest);
+                }
+            }
+        }
+    };
 };
 
-MediaPlayer.vo.Event.prototype = {
-    constructor: MediaPlayer.vo.Event
+MediaPlayer.dependencies.FragmentModel.prototype = {
+    constructor: MediaPlayer.dependencies.FragmentModel
 };
 
-MediaPlayer.vo.Error = function(code, message, data) {
+MediaPlayer.dependencies.ManifestLoader = function() {
     "use strict";
-    this.code = code || null;
-    this.message = message || null;
-    this.data = data || null;
+    var RETRY_ATTEMPTS = 3, RETRY_INTERVAL = 500, deferred = null, parseBaseUrl = function(url) {
+        var base = null;
+        if (url.indexOf("/") !== -1) {
+            if (url.indexOf("?") !== -1) {
+                url = url.substring(0, url.indexOf("?"));
+            }
+            base = url.substring(0, url.lastIndexOf("/") + 1);
+        }
+        return base;
+    }, doLoad = function(url, remainingAttempts) {
+        var baseUrl = parseBaseUrl(url), request = new XMLHttpRequest(), requestTime = new Date(), mpdLoadedTime = null, needFailureReport = true, onload = null, report = null, self = this;
+        onload = function() {
+            if (request.status < 200 || request.status > 299) {
+                return;
+            }
+            self.debug.log("[ManifestLoader] Manifest downloaded");
+            if (request.responseURL) {
+                self.debug.log("[ManifestLoader] Redirect URL: " + request.responseURL);
+                baseUrl = parseBaseUrl(request.responseURL);
+            }
+            needFailureReport = false;
+            mpdLoadedTime = new Date();
+            self.tokenAuthentication.checkRequestHeaderForToken(request);
+            self.metricsModel.addHttpRequest("stream", null, "MPD", url, null, null, requestTime, mpdLoadedTime, request.status, null, null);
+            self.parser.parse(request.responseText, baseUrl).then(function(manifest) {
+                manifest.mpdUrl = url;
+                manifest.mpdLoadedTime = mpdLoadedTime;
+                self.metricsModel.addManifestUpdate("stream", manifest.type, requestTime, mpdLoadedTime, manifest.availabilityStartTime);
+                deferred.resolve(manifest);
+            }, function(error) {
+                self.debug.error("[ManifestLoader] Manifest parsing error.");
+                var data = {};
+                data.mpdUrl = url;
+                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE, "parsing the manifest failed : " + error, data);
+                deferred.reject(request);
+            });
+        };
+        report = function() {
+            if (!needFailureReport) {
+                return;
+            }
+            needFailureReport = false;
+            self.metricsModel.addHttpRequest("stream", null, "MPD", url, null, null, requestTime, new Date(), request.status, null, null);
+            if (remainingAttempts > 0) {
+                self.debug.log("Failed loading manifest: " + url + ", retry in " + RETRY_INTERVAL + "ms" + " attempts: " + remainingAttempts);
+                remainingAttempts--;
+                setTimeout(function() {
+                    doLoad.call(self, url, remainingAttempts);
+                }, RETRY_INTERVAL);
+            } else {
+                var data = {}, msgError = "Failed loading manifest: " + url + " no retry attempts left";
+                self.debug.log(msgError);
+                data.url = url;
+                data.request = request;
+                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST, msgError, data);
+                deferred.reject(request);
+            }
+        };
+        try {
+            request.onload = onload;
+            request.onloadend = report;
+            request.onerror = report;
+            request.open("GET", url, true);
+            request.send();
+        } catch (e) {
+            request.onerror();
+        }
+    };
+    return {
+        debug: undefined,
+        parser: undefined,
+        errHandler: undefined,
+        metricsModel: undefined,
+        tokenAuthentication: undefined,
+        load: function(url) {
+            deferred = Q.defer();
+            doLoad.call(this, url, RETRY_ATTEMPTS);
+            return deferred.promise;
+        }
+    };
 };
 
-MediaPlayer.vo.Error.prototype = {
-    constructor: MediaPlayer.vo.Error
+MediaPlayer.dependencies.ManifestLoader.prototype = {
+    constructor: MediaPlayer.dependencies.ManifestLoader
 };
 
-MediaPlayer.vo.Mp4Track = function() {
+MediaPlayer.dependencies.ManifestUpdater = function() {
     "use strict";
-    this.type = "und";
-    this.trackId = 0;
-    this.timescale = 0;
-    this.duration = 0;
-    this.codecs = "";
-    this.codecPrivateData = "";
-    this.bandwidth = "";
-    this.width = 0;
-    this.height = 0;
-    this.language = "und";
-    this.channels = 0;
-    this.samplingRate = 0;
-    this.contentProtection = undefined;
-    this.samples = [];
-    this.data = null;
+    var refreshDelay = NaN, refreshTimer = null, isStopped = false, deferredUpdate, clear = function() {
+        if (refreshTimer !== null) {
+            clearInterval(refreshTimer);
+            refreshTimer = null;
+        }
+    }, start = function() {
+        clear.call(this);
+        if (!isNaN(refreshDelay)) {
+            this.debug.log("Refresh manifest in " + refreshDelay + " seconds.");
+            refreshTimer = setTimeout(onRefreshTimer.bind(this), Math.min(refreshDelay * 1e3, Math.pow(2, 31) - 1), this);
+        }
+    }, update = function() {
+        var self = this, manifest = self.manifestModel.getValue(), timeSinceLastUpdate;
+        if (manifest !== undefined && manifest !== null) {
+            self.manifestExt.getRefreshDelay(manifest).then(function(t) {
+                timeSinceLastUpdate = (new Date().getTime() - manifest.mpdLoadedTime.getTime()) / 1e3;
+                refreshDelay = Math.max(t - timeSinceLastUpdate, 0);
+                start.call(self);
+            });
+        }
+    }, onRefreshTimer = function() {
+        var self = this, manifest, url;
+        Q.when(deferredUpdate ? deferredUpdate.promise : true).then(function() {
+            deferredUpdate = Q.defer();
+            manifest = self.manifestModel.getValue();
+            url = manifest.mpdUrl;
+            if (manifest.hasOwnProperty("Location")) {
+                url = manifest.Location;
+            }
+            self.manifestLoader.load(url).then(function(manifestResult) {
+                self.manifestModel.setValue(manifestResult);
+                self.debug.log("Manifest has been refreshed.");
+                if (isStopped) return;
+                update.call(self);
+            });
+        });
+    }, onStreamsComposed = function() {
+        if (deferredUpdate) {
+            deferredUpdate.resolve();
+        }
+    };
+    return {
+        debug: undefined,
+        system: undefined,
+        manifestModel: undefined,
+        manifestExt: undefined,
+        manifestLoader: undefined,
+        setup: function() {
+            update.call(this);
+            this.system.mapHandler("streamsComposed", undefined, onStreamsComposed.bind(this));
+        },
+        start: function() {
+            isStopped = false;
+            update.call(this);
+        },
+        stop: function() {
+            isStopped = true;
+            clear.call(this);
+        }
+    };
 };
 
-MediaPlayer.vo.Mp4Track.prototype = {
-    constructor: MediaPlayer.vo.Mp4Track
+MediaPlayer.dependencies.ManifestUpdater.prototype = {
+    constructor: MediaPlayer.dependencies.ManifestUpdater
 };
 
-MediaPlayer.vo.Mp4Track.Sample = function() {
+MediaPlayer.models.ManifestModel = function() {
     "use strict";
-    this.dts = 0;
-    this.cts = 0;
-    this.duration = 0;
-    this.data = null;
-    this.size = 0;
+    var manifest;
+    return {
+        system: undefined,
+        eventBus: undefined,
+        getValue: function() {
+            return manifest;
+        },
+        setValue: function(value) {
+            manifest = value;
+            this.system.notify("manifestUpdated");
+            if (manifest !== null) {
+                this.eventBus.dispatchEvent({
+                    type: "manifestLoaded",
+                    data: value
+                });
+            }
+        }
+    };
 };
 
-MediaPlayer.vo.Mp4Track.Sample.prototype = {
-    constructor: MediaPlayer.vo.Mp4Track.Sample
+MediaPlayer.models.ManifestModel.prototype = {
+    constructor: MediaPlayer.models.ManifestModel
+};
+
+MediaPlayer.dependencies.MediaSourceExtensions = function() {
+    "use strict";
+};
+
+MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
+    constructor: MediaPlayer.dependencies.MediaSourceExtensions,
+    createMediaSource: function() {
+        "use strict";
+        var hasWebKit = "WebKitMediaSource" in window, hasMediaSource = "MediaSource" in window;
+        if (hasMediaSource) {
+            return Q.when(new MediaSource());
+        } else if (hasWebKit) {
+            return Q.when(new WebKitMediaSource());
+        }
+        return null;
+    },
+    attachMediaSource: function(source, videoModel) {
+        "use strict";
+        videoModel.setSource(window.URL.createObjectURL(source));
+        return Q.when(true);
+    },
+    detachMediaSource: function(videoModel) {
+        "use strict";
+        return Q.when(true);
+    },
+    setDuration: function(source, value) {
+        "use strict";
+        source.duration = value;
+        return Q.when(source.duration);
+    },
+    signalEndOfStream: function(source) {
+        "use strict";
+        source.endOfStream();
+        return Q.when(true);
+    }
+};
+
+MediaPlayer.dependencies.MetricsExtensions = function() {
+    "use strict";
+    var h264ProfileMap = {
+        "42": "Baseline",
+        "4D": "Main",
+        "58": "Extended",
+        "64": "High"
+    };
+    var findRepresentionInPeriodArray = function(periodArray, representationId) {
+        var period, adaptationSet, adaptationSetArray, representation, representationArray, periodArrayIndex, adaptationSetArrayIndex, representationArrayIndex;
+        for (periodArrayIndex = 0; periodArrayIndex < periodArray.length; periodArrayIndex = periodArrayIndex + 1) {
+            period = periodArray[periodArrayIndex];
+            adaptationSetArray = period.AdaptationSet_asArray;
+            for (adaptationSetArrayIndex = 0; adaptationSetArrayIndex < adaptationSetArray.length; adaptationSetArrayIndex = adaptationSetArrayIndex + 1) {
+                adaptationSet = adaptationSetArray[adaptationSetArrayIndex];
+                representationArray = adaptationSet.Representation_asArray;
+                for (representationArrayIndex = 0; representationArrayIndex < representationArray.length; representationArrayIndex = representationArrayIndex + 1) {
+                    representation = representationArray[representationArrayIndex];
+                    if (representationId === representation.id) {
+                        return representation;
+                    }
+                }
+            }
+        }
+        return null;
+    };
+    var adaptationIsType = function(adaptation, bufferType) {
+        var found = false;
+        if (bufferType === "video") {
+            this.manifestExt.getIsVideo(adaptation);
+            if (adaptation.type === "video") {
+                found = true;
+            }
+        } else if (bufferType === "audio") {
+            this.manifestExt.getIsAudio(adaptation);
+            if (adaptation.type === "audio") {
+                found = true;
+            }
+        } else {
+            found = false;
+        }
+        return found;
+    };
+    var rslt = MediaPlayer.utils.copyMethods(Dash.dependencies.DashMetricsExtensions);
+    rslt.getDuration = function() {
+        var self = this, manifest = self.manifestModel.getValue();
+        var duration = manifest.Period.duration;
+        if (duration !== Infinity) {
+            return duration;
+        }
+        return -1;
+    };
+    rslt.getFormatForType = function(type) {
+        var self = this, manifest = self.manifestModel.getValue();
+        for (var i = 0; i < manifest.Period.AdaptationSet.length; i++) {
+            var adaptation = manifest.Period.AdaptationSet[i];
+            if (adaptation.type === type) {
+                return adaptation.mimeType;
+            }
+        }
+        return null;
+    };
+    rslt.getCodecForType = function(type) {
+        var self = this, manifest = self.manifestModel.getValue();
+        for (var i = 0; i < manifest.Period.AdaptationSet.length; i++) {
+            var adaptation = manifest.Period.AdaptationSet[i];
+            if (adaptation.type === type || adaptation.contentType === type) {
+                return adaptation.Representation[0].codecs;
+            }
+        }
+        return null;
+    };
+    rslt.getVideoWidthForRepresentation = function(representationId) {
+        var self = this, manifest = self.manifestModel.getValue(), representation, periodArray = manifest.Period_asArray;
+        representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
+        if (representation === null) {
+            return null;
+        }
+        return representation.width;
+    };
+    rslt.getVideoHeightForRepresentation = function(representationId) {
+        var self = this, manifest = self.manifestModel.getValue(), representation, periodArray = manifest.Period_asArray;
+        representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
+        if (representation === null) {
+            return null;
+        }
+        return representation.height;
+    };
+    rslt.getCodecsForRepresentation = function(representationId) {
+        var self = this, manifest = self.manifestModel.getValue(), representation, periodArray = manifest.Period_asArray;
+        representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
+        if (representation === null) {
+            return null;
+        }
+        return representation.codecs;
+    };
+    rslt.getH264ProfileLevel = function(codecs) {
+        if (codecs.indexOf("avc1") < 0) {
+            return "";
+        }
+        var profile = h264ProfileMap[codecs.substr(5, 2)];
+        var level = parseInt(codecs.substr(9, 2), 16) / 10;
+        return profile + "@" + level.toString();
+    };
+    rslt.getBitratesForType = function(type) {
+        var self = this, manifest = self.manifestModel.getValue(), periodArray, period, periodArrayIndex, adaptationSet, adaptationSetArray, representation, representationArray, adaptationSetArrayIndex, representationArrayIndex, bitrateArray = [];
+        if (manifest === null || manifest === undefined) {
+            return null;
+        }
+        periodArray = manifest.Period_asArray;
+        for (periodArrayIndex = 0; periodArrayIndex < periodArray.length; periodArrayIndex = periodArrayIndex + 1) {
+            period = periodArray[periodArrayIndex];
+            adaptationSetArray = period.AdaptationSet_asArray;
+            for (adaptationSetArrayIndex = 0; adaptationSetArrayIndex < adaptationSetArray.length; adaptationSetArrayIndex = adaptationSetArrayIndex + 1) {
+                adaptationSet = adaptationSetArray[adaptationSetArrayIndex];
+                if (adaptationIsType.call(self, adaptationSet, type)) {
+                    adaptationSet = self.manifestExt.processAdaptation(adaptationSet);
+                    representationArray = adaptationSet.Representation_asArray;
+                    for (representationArrayIndex = 0; representationArrayIndex < representationArray.length; representationArrayIndex = representationArrayIndex + 1) {
+                        representation = representationArray[representationArrayIndex];
+                        bitrateArray.push(representation.bandwidth);
+                    }
+                    return bitrateArray;
+                }
+            }
+        }
+        return bitrateArray;
+    };
+    rslt.getBitratesWithResolutionForType = function(type) {
+        var self = this, manifest = self.manifestModel.getValue(), periodArray, period, periodArrayIndex, adaptationSet, adaptationSetArray, representation, representationArray, adaptationSetArrayIndex, representationArrayIndex, bitrateArray = [];
+        if (manifest === null || manifest === undefined) {
+            return null;
+        }
+        periodArray = manifest.Period_asArray;
+        for (periodArrayIndex = 0; periodArrayIndex < periodArray.length; periodArrayIndex = periodArrayIndex + 1) {
+            period = periodArray[periodArrayIndex];
+            adaptationSetArray = period.AdaptationSet_asArray;
+            for (adaptationSetArrayIndex = 0; adaptationSetArrayIndex < adaptationSetArray.length; adaptationSetArrayIndex = adaptationSetArrayIndex + 1) {
+                adaptationSet = adaptationSetArray[adaptationSetArrayIndex];
+                if (adaptationIsType.call(self, adaptationSet, type)) {
+                    adaptationSet = self.manifestExt.processAdaptation(adaptationSet);
+                    representationArray = adaptationSet.Representation_asArray;
+                    for (representationArrayIndex = 0; representationArrayIndex < representationArray.length; representationArrayIndex = representationArrayIndex + 1) {
+                        representation = representationArray[representationArrayIndex];
+                        var reso = {
+                            bitrate: representation.bandwidth,
+                            width: representation.width,
+                            height: representation.height
+                        };
+                        bitrateArray.push(reso);
+                    }
+                    return bitrateArray;
+                }
+            }
+        }
+        return bitrateArray;
+    };
+    rslt.getCurrentRepresentationBoundaries = function(metrics) {
+        if (metrics === null) {
+            return null;
+        }
+        var repBoundaries = metrics.RepBoundariesList;
+        if (repBoundaries === null || repBoundaries.length <= 0) {
+            return null;
+        }
+        return repBoundaries[repBoundaries.length - 1];
+    };
+    rslt.getCurrentBandwidthBoundaries = function(metrics) {
+        if (metrics === null) {
+            return null;
+        }
+        var bandwidthBoundaries = metrics.BandwidthBoundariesList;
+        if (bandwidthBoundaries === null || bandwidthBoundaries.length <= 0) {
+            return null;
+        }
+        return bandwidthBoundaries[bandwidthBoundaries.length - 1];
+    };
+    return rslt;
+};
+
+MediaPlayer.dependencies.MetricsExtensions.prototype = {
+    constructor: MediaPlayer.dependencies.MetricsExtensions
+};
+
+MediaPlayer.models.MetricsModel = function() {
+    "use strict";
+    return {
+        system: undefined,
+        eventBus: undefined,
+        config: undefined,
+        streamMetrics: {},
+        metricsChanged: function() {
+            this.eventBus.dispatchEvent({
+                type: "metricsChanged",
+                data: {}
+            });
+        },
+        metricChanged: function(streamType) {
+            this.eventBus.dispatchEvent({
+                type: "metricChanged",
+                data: {
+                    stream: streamType
+                }
+            });
+            this.metricsChanged();
+        },
+        metricUpdated: function(streamType, metricType, vo) {
+            this.eventBus.dispatchEvent({
+                type: "metricUpdated",
+                data: {
+                    stream: streamType,
+                    metric: metricType,
+                    value: vo
+                }
+            });
+            this.metricChanged(streamType);
+        },
+        metricAdded: function(streamType, metricType, vo) {
+            this.eventBus.dispatchEvent({
+                type: "metricAdded",
+                data: {
+                    stream: streamType,
+                    metric: metricType,
+                    value: vo
+                }
+            });
+            this.metricChanged(streamType);
+        },
+        clearCurrentMetricsForType: function(type) {
+            var keepBW = this.config.getParamFor(type, "ABR.keepBandwidthCondition", "boolean", true);
+            for (var prop in this.streamMetrics[type]) {
+                if (this.streamMetrics[type].hasOwnProperty(prop) && (prop !== "HttpList" || keepBW === false)) {
+                    this.streamMetrics[type][prop] = [];
+                }
+            }
+            this.metricChanged(type);
+        },
+        clearAllCurrentMetrics: function() {
+            var self = this;
+            for (var prop in this.streamMetrics) {
+                if (this.streamMetrics.hasOwnProperty(prop) && prop === "stream") {
+                    delete this.streamMetrics[prop];
+                }
+            }
+            this.metricsChanged.call(self);
+        },
+        getReadOnlyMetricsFor: function(type) {
+            if (this.streamMetrics.hasOwnProperty(type)) {
+                return this.streamMetrics[type];
+            }
+            return null;
+        },
+        getMetricsFor: function(type) {
+            var metrics;
+            if (this.streamMetrics.hasOwnProperty(type)) {
+                metrics = this.streamMetrics[type];
+            } else {
+                metrics = this.system.getObject("metrics");
+                this.streamMetrics[type] = metrics;
+            }
+            return metrics;
+        },
+        addTcpConnection: function(streamType, tcpid, dest, topen, tclose, tconnect) {
+            var vo = new MediaPlayer.vo.metrics.TCPConnection();
+            vo.tcpid = tcpid;
+            vo.dest = dest;
+            vo.topen = topen;
+            vo.tclose = tclose;
+            vo.tconnect = tconnect;
+            this.getMetricsFor(streamType).TcpList.push(vo);
+            this.metricAdded(streamType, "TcpConnection", vo);
+            return vo;
+        },
+        addHttpRequest: function(streamType, tcpid, type, url, actualurl, range, trequest, tresponse, tfinish, responsecode, interval, mediaduration, startTime, quality) {
+            var vo = new MediaPlayer.vo.metrics.HTTPRequest();
+            vo.stream = streamType;
+            vo.tcpid = tcpid;
+            vo.type = type;
+            vo.url = url;
+            vo.actualurl = actualurl;
+            vo.range = range;
+            vo.trequest = trequest;
+            vo.tresponse = tresponse;
+            vo.tfinish = tfinish;
+            vo.responsecode = responsecode;
+            vo.interval = interval;
+            vo.mediaduration = mediaduration;
+            vo.startTime = startTime;
+            vo.quality = quality;
+            this.getMetricsFor(streamType).HttpList.push(vo);
+            if (this.getMetricsFor(streamType).HttpList.length > 10) {
+                this.getMetricsFor(streamType).HttpList.shift();
+            }
+            this.metricAdded(streamType, "HttpRequest", vo);
+            return vo;
+        },
+        appendHttpTrace: function(httpRequest, s, d, b) {
+            var vo = new MediaPlayer.vo.metrics.HTTPRequest.Trace();
+            vo.s = s;
+            vo.d = d;
+            vo.b = b;
+            httpRequest.trace.push(vo);
+            this.metricUpdated(httpRequest.stream, "HttpRequestTrace", httpRequest);
+            return vo;
+        },
+        addRepresentationBoundaries: function(streamType, t, min, max) {
+            var vo = new MediaPlayer.vo.metrics.RepresentationBoundaries();
+            vo.t = t;
+            vo.min = min;
+            vo.max = max;
+            this.getMetricsFor(streamType).RepBoundariesList.push(vo);
+            this.metricAdded(streamType, "RepresentationBoundaries", vo);
+            return vo;
+        },
+        addBandwidthBoundaries: function(streamType, t, min, max) {
+            var vo = new MediaPlayer.vo.metrics.BandwidthBoundaries();
+            vo.t = t;
+            vo.min = min;
+            vo.max = max;
+            this.getMetricsFor(streamType).BandwidthBoundariesList.push(vo);
+            this.metricAdded(streamType, "BandwidthBoundaries", vo);
+            return vo;
+        },
+        addRepresentationSwitch: function(streamType, t, mt, to, lto) {
+            var vo = new MediaPlayer.vo.metrics.RepresentationSwitch();
+            vo.t = t;
+            vo.mt = mt;
+            vo.to = to;
+            vo.lto = lto;
+            this.getMetricsFor(streamType).RepSwitchList.push(vo);
+            this.metricAdded(streamType, "RepresentationSwitch", vo);
+            return vo;
+        },
+        addState: function(streamType, currentState, position, reason) {
+            var vo = new MediaPlayer.vo.metrics.State();
+            vo.current = currentState;
+            vo.position = position;
+            vo.reason = reason;
+            this.metricAdded(streamType, "State", vo);
+            return vo;
+        },
+        addSession: function(streamType, url, loop, endTime, playerType) {
+            var vo = new MediaPlayer.vo.metrics.Session();
+            vo.uri = url;
+            if (loop) {
+                vo.loopMode = 1;
+            } else {
+                vo.loopMode = 0;
+            }
+            vo.endTime = endTime;
+            vo.playerType = playerType;
+            this.metricAdded(streamType, "Session", vo);
+            return vo;
+        },
+        addCondition: function(streamType, isFullScreen, videoWidth, videoHeight, droppedFrames, fps) {
+            var vo = new MediaPlayer.vo.metrics.Condition();
+            vo.isFullScreen = isFullScreen;
+            vo.windowSize = videoWidth + "x" + videoHeight;
+            vo.fps = fps;
+            vo.droppedFrames = droppedFrames;
+            this.metricAdded(streamType, "Condition", vo);
+            return vo;
+        },
+        addMetaData: function() {
+            this.metricAdded(null, "ManifestReady", null);
+        },
+        addBufferLevel: function(streamType, t, level) {
+            var vo = new MediaPlayer.vo.metrics.BufferLevel();
+            vo.t = t;
+            vo.level = level;
+            this.getMetricsFor(streamType).BufferLevel.push(vo);
+            if (this.getMetricsFor(streamType).BufferLevel.length > 10) {
+                this.getMetricsFor(streamType).BufferLevel.shift();
+            }
+            this.metricAdded(streamType, "BufferLevel", vo);
+            return vo;
+        },
+        addDVRInfo: function(streamType, currentTime, mpd, range) {
+            var vo = new MediaPlayer.vo.metrics.DVRInfo();
+            vo.time = currentTime;
+            vo.range = range;
+            vo.mpd = mpd;
+            this.getMetricsFor(streamType).DVRInfo.push(vo);
+            this.metricAdded(streamType, "DVRInfo", vo);
+            return vo;
+        },
+        addDroppedFrames: function(streamType, quality) {
+            var vo = new MediaPlayer.vo.metrics.DroppedFrames(), list = this.getMetricsFor(streamType).DroppedFrames;
+            vo.time = quality.creationTime;
+            vo.droppedFrames = quality.droppedVideoFrames;
+            vo.decodedFrameCount = quality.totalVideoFrames;
+            if (list.length > 0 && list[list.length - 1] === vo) {
+                return list[list.length - 1];
+            }
+            list.push(vo);
+            this.metricAdded(streamType, "DroppedFrames", vo);
+            return vo;
+        },
+        addManifestUpdate: function(streamType, type, requestTime, fetchTime, availabilityStartTime, presentationStartTime, clientTimeOffset, currentTime, buffered, latency) {
+            var vo = new MediaPlayer.vo.metrics.ManifestUpdate(), metrics = this.getMetricsFor("stream");
+            vo.streamType = streamType;
+            vo.type = type;
+            vo.requestTime = requestTime;
+            vo.fetchTime = fetchTime;
+            vo.availabilityStartTime = availabilityStartTime;
+            vo.presentationStartTime = presentationStartTime;
+            vo.clientTimeOffset = clientTimeOffset;
+            vo.currentTime = currentTime;
+            vo.buffered = buffered;
+            vo.latency = latency;
+            metrics.ManifestUpdate.push(vo);
+            this.metricAdded(streamType, "ManifestUpdate", vo);
+            return vo;
+        },
+        updateManifestUpdateInfo: function(manifestUpdate, updatedFields) {
+            for (var field in updatedFields) {
+                if (updatedFields.hasOwnProperty(field)) {
+                    manifestUpdate[field] = updatedFields[field];
+                }
+            }
+            this.metricUpdated(manifestUpdate.streamType, "ManifestUpdate", manifestUpdate);
+        },
+        addManifestUpdatePeriodInfo: function(manifestUpdate, id, index, start, duration) {
+            var vo = new MediaPlayer.vo.metrics.ManifestUpdate.PeriodInfo();
+            vo.id = id;
+            vo.index = index;
+            vo.start = start;
+            vo.duration = duration;
+            manifestUpdate.periodInfo.push(vo);
+            this.metricUpdated(manifestUpdate.streamType, "ManifestUpdatePeriodInfo", manifestUpdate);
+            return vo;
+        },
+        addManifestUpdateRepresentationInfo: function(manifestUpdate, id, index, periodIndex, streamType, presentationTimeOffset, startNumber, segmentInfoType) {
+            var vo = new MediaPlayer.vo.metrics.ManifestUpdate.RepresentationInfo();
+            vo.id = id;
+            vo.index = index;
+            vo.periodIndex = periodIndex;
+            vo.streamType = streamType;
+            vo.startNumber = startNumber;
+            vo.segmentInfoType = segmentInfoType;
+            vo.presentationTimeOffset = presentationTimeOffset;
+            manifestUpdate.representationInfo.push(vo);
+            this.metricUpdated(manifestUpdate.streamType, "ManifestUpdateRepresentationInfo", manifestUpdate);
+            return vo;
+        },
+        addPlayList: function(streamType, start, mstart, starttype) {
+            var vo = new MediaPlayer.vo.metrics.PlayList();
+            vo.stream = streamType;
+            vo.start = start;
+            vo.mstart = mstart;
+            vo.starttype = starttype;
+            this.getMetricsFor(streamType).PlayList.push(vo);
+            if (this.getMetricsFor(streamType).PlayList.length > 10) {
+                this.getMetricsFor(streamType).PlayList.shift();
+            }
+            this.metricAdded(streamType, "PlayList", vo);
+            return vo;
+        },
+        appendPlayListTrace: function(playList, representationid, subreplevel, start, mstart, duration, playbackspeed, stopreason) {
+            var vo = new MediaPlayer.vo.metrics.PlayList.Trace();
+            vo.representationid = representationid;
+            vo.subreplevel = subreplevel;
+            vo.start = start;
+            vo.mstart = mstart;
+            vo.duration = duration;
+            vo.playbackspeed = playbackspeed;
+            vo.stopreason = stopreason;
+            playList.trace.push(vo);
+            if (playList.trace.length > 10) {
+                playList.trace.shift();
+            }
+            this.metricUpdated(playList.stream, "PlayListTrace", playList);
+            return vo;
+        }
+    };
+};
+
+MediaPlayer.models.MetricsModel.prototype = {
+    constructor: MediaPlayer.models.MetricsModel
 };
 
 MediaPlayer.dependencies.Mp4Processor = function() {
@@ -11553,6 +9725,2882 @@ MediaPlayer.dependencies.Mp4Processor.prototype = {
     constructor: MediaPlayer.dependencies.Mp4Processor
 };
 
+MediaPlayer.dependencies.Notifier = function() {
+    "use strict";
+    var OBSERVABLE_ID_PROP = "observableId", system, id = 0, getId = function() {
+        if (!this[OBSERVABLE_ID_PROP]) {
+            id += 1;
+            this[OBSERVABLE_ID_PROP] = "_id_" + id;
+        }
+        return this[OBSERVABLE_ID_PROP];
+    };
+    return {
+        system: undefined,
+        setup: function() {
+            system = this.system;
+            system.mapValue("notify", this.notify);
+            system.mapValue("subscribe", this.subscribe);
+            system.mapValue("unsubscribe", this.unsubscribe);
+        },
+        notify: function() {
+            var eventId = arguments[0] + getId.call(this), event = new MediaPlayer.vo.Event();
+            event.sender = this;
+            event.type = arguments[0];
+            event.data = arguments[1];
+            event.error = arguments[2];
+            event.timestamp = new Date().getTime();
+            system.notify.call(system, eventId, event);
+        },
+        subscribe: function(eventName, observer, handler, oneShot) {
+            if (!handler && observer[eventName]) {
+                handler = observer[eventName] = observer[eventName].bind(observer);
+            }
+            if (!observer) throw "observer object cannot be null or undefined";
+            if (!handler) throw "event handler cannot be null or undefined";
+            eventName += getId.call(this);
+            system.mapHandler(eventName, undefined, handler, oneShot);
+        },
+        unsubscribe: function(eventName, observer, handler) {
+            handler = handler || observer[eventName];
+            eventName += getId.call(this);
+            system.unmapHandler(eventName, undefined, handler);
+        }
+    };
+};
+
+MediaPlayer.dependencies.Notifier.prototype = {
+    constructor: MediaPlayer.dependencies.Notifier
+};
+
+MediaPlayer.dependencies.Parser = function() {
+    "use strict";
+    var customParse = function(data, baseUrl) {
+        var parser = null;
+        if (data.indexOf("SmoothStreamingMedia") > -1 && typeof this.mssParser !== "undefined") {
+            this.system.notify("setContext", "MSS");
+            parser = this.mssParser;
+        } else if (data.indexOf("#EXTM3U") > -1 && typeof this.hlsParser !== "undefined") {
+            this.system.notify("setContext", "HLS");
+            parser = this.hlsParser;
+        } else if (data.indexOf("MPD") > -1 && typeof this.dashParser !== "undefined") {
+            this.system.notify("setContext", "MPD");
+            parser = this.dashParser;
+        } else {
+            return Q.reject("manifest cannot be parsed, protocol is unsupported!");
+        }
+        return parser.parse(data, baseUrl);
+    };
+    return {
+        debug: undefined,
+        system: undefined,
+        dashParser: undefined,
+        mssParser: undefined,
+        hlsParser: undefined,
+        metricsModel: undefined,
+        parse: customParse
+    };
+};
+
+MediaPlayer.dependencies.Parser.prototype = {
+    constructor: MediaPlayer.dependencies.Parser
+};
+
+MediaPlayer.dependencies.RequestScheduler = function() {
+    "use strict";
+    var schedulerModels = [], periodicExecuteInterval = null, periodicExecuteId = null, isCheckingForVideoTimeTriggersStarted = false, PERIODICALLY_TRIGGERED_TASK = 0, WALL_TIME_TRIGGERED_TASK = 1, VIDEO_TIME_TRIGGERED_TASK = 2, setVideoTimeTrigger = function(executeContext, executeFunction, dueTime) {
+        if (!executeContext || !executeFunction) return;
+        var schedulerModel;
+        schedulerModel = registerSchedulerModel.call(this, executeContext, VIDEO_TIME_TRIGGERED_TASK);
+        schedulerModel.setScheduledTask(executeFunction);
+        schedulerModel.setIsScheduled(true);
+        schedulerModel.setExecuteTime(dueTime);
+        if (!isCheckingForVideoTimeTriggersStarted) {
+            startCheckingDueTimeForVideoTimeTrigger.call(this);
+        }
+    }, startCheckingDueTimeForVideoTimeTrigger = function() {
+        var element = this.videoModel.getElement();
+        this.schedulerExt.attachScheduleListener(element, checkDueTimeForVideoTimeTriggers.bind(this));
+        this.schedulerExt.attachUpdateScheduleListener(element, onUpdateSchedule.bind(this));
+        isCheckingForVideoTimeTriggersStarted = true;
+    }, checkDueTimeForVideoTimeTriggers = function() {
+        var videoTimeTriggers = getAllModelsForType.call(this, VIDEO_TIME_TRIGGERED_TASK), ln = videoTimeTriggers.length, now = this.videoModel.getCurrentTime(), model, due, i;
+        for (i = 0; i < ln; i += 1) {
+            model = videoTimeTriggers[i];
+            due = model.getExecuteTime();
+            if (model.getIsScheduled() && now > due) {
+                model.executeScheduledTask();
+                model.setIsScheduled(false);
+            }
+        }
+    }, removeVideoTimeTrigger = function(executeContext) {
+        var schedulerModel = findSchedulerModel(executeContext, VIDEO_TIME_TRIGGERED_TASK), videoTimeTriggers;
+        if (schedulerModel) {
+            unregisterSchedulerModel(schedulerModel);
+            videoTimeTriggers = getAllModelsForType.call(this, VIDEO_TIME_TRIGGERED_TASK);
+            if (videoTimeTriggers.length === 0) {
+                stopCheckingDueTimeForVideoTimeTrigger.call(this);
+            }
+        }
+    }, stopCheckingDueTimeForVideoTimeTrigger = function() {
+        var element = this.videoModel.getElement();
+        this.schedulerExt.detachScheduleListener(element, checkDueTimeForVideoTimeTriggers.bind(this));
+        this.schedulerExt.detachUpdateScheduleListener(element, onUpdateSchedule.bind(this));
+        isCheckingForVideoTimeTriggersStarted = false;
+    }, onUpdateSchedule = function() {
+        rescheduleVideoTimeTriggers.call(this);
+        checkDueTimeForVideoTimeTriggers.call(this);
+    }, rescheduleVideoTimeTriggers = function() {
+        var videoTimeTriggers = getAllModelsForType.call(this, VIDEO_TIME_TRIGGERED_TASK), ln = videoTimeTriggers.length, i;
+        for (i = 0; i < ln; i += 1) {
+            videoTimeTriggers[i].setIsScheduled(true);
+        }
+    }, setTriggerForWallTime = function(executeContext, executeFunction, wallTime) {
+        if (!executeContext || !executeFunction) return;
+        var executeTimeout = wallTime.getTime() - new Date().getTime(), executeId, schedulerModel;
+        schedulerModel = registerSchedulerModel.call(this, executeContext, WALL_TIME_TRIGGERED_TASK);
+        schedulerModel.setScheduledTask(executeFunction);
+        executeId = setTimeout(function() {
+            schedulerModel.executeScheduledTask();
+            unregisterSchedulerModel(schedulerModel);
+        }, executeTimeout);
+        schedulerModel.setExecuteId(executeId);
+    }, removeTriggerForWallTime = function(executeContext) {
+        var schedulerModel = findSchedulerModel(executeContext, WALL_TIME_TRIGGERED_TASK);
+        if (schedulerModel) {
+            clearTimeout(schedulerModel.getExecuteId());
+            unregisterSchedulerModel(schedulerModel);
+        }
+    }, startScheduling = function(executeContext, executeFunction) {
+        if (!executeContext || !executeFunction) return;
+        var schedulerModel = findSchedulerModel(executeContext, PERIODICALLY_TRIGGERED_TASK);
+        if (!schedulerModel) {
+            schedulerModel = registerSchedulerModel.call(this, executeContext, PERIODICALLY_TRIGGERED_TASK);
+        }
+        schedulerModel.setIsScheduled(true);
+        schedulerModel.setScheduledTask(executeFunction);
+        startPeriodicScheduleListener.call(this);
+        executeFunction.call(executeContext);
+    }, onScheduledTimeOccurred = function() {
+        runScheduledTasks.call(this);
+    }, runScheduledTasks = function() {
+        var self = this, schedulerModel, periodicModels = getAllModelsForType.call(self, PERIODICALLY_TRIGGERED_TASK), ln = periodicModels.length, i;
+        for (i = 0; i < ln; i += 1) {
+            schedulerModel = periodicModels[i];
+            if (schedulerModel.getIsScheduled()) {
+                schedulerModel.executeScheduledTask();
+            }
+        }
+    }, startPeriodicScheduleListener = function() {
+        if (periodicExecuteId !== null) return;
+        this.adjustExecuteInterval();
+        periodicExecuteId = setInterval(onScheduledTimeOccurred.bind(this), periodicExecuteInterval);
+    }, stopPeriodicScheduling = function(executeContext) {
+        var schedulerModel = findSchedulerModel(executeContext, PERIODICALLY_TRIGGERED_TASK), periodicModels = getAllModelsForType.call(this, PERIODICALLY_TRIGGERED_TASK);
+        if (schedulerModel) {
+            unregisterSchedulerModel(schedulerModel);
+            if (periodicModels.length === 0) {
+                stopPeriodicScheduleListener.call(this);
+            }
+        }
+    }, stopPeriodicScheduleListener = function() {
+        clearInterval(periodicExecuteId);
+        periodicExecuteId = null;
+    }, registerSchedulerModel = function(executeContext, type) {
+        if (!executeContext) return null;
+        var model = this.system.getObject("schedulerModel");
+        model.setContext(executeContext);
+        model.setType(type);
+        schedulerModels.push(model);
+        return model;
+    }, getAllModelsForType = function(type) {
+        var models = [], model, i;
+        for (i = 0; i < schedulerModels.length; i += 1) {
+            model = schedulerModels[i];
+            if (model.getType() === type) {
+                models.push(model);
+            }
+        }
+        return models;
+    }, unregisterSchedulerModel = function(schedulerModel) {
+        var index = schedulerModels.indexOf(schedulerModel);
+        if (index !== -1) {
+            schedulerModels.splice(index, 1);
+        }
+    }, findSchedulerModel = function(executeContext, type) {
+        for (var i = 0; i < schedulerModels.length; i++) {
+            if (schedulerModels[i].getContext() === executeContext && schedulerModels[i].getType() === type) {
+                return schedulerModels[i];
+            }
+        }
+        return null;
+    };
+    return {
+        system: undefined,
+        videoModel: undefined,
+        debug: undefined,
+        schedulerExt: undefined,
+        isScheduled: function(executeContext) {
+            var schedulerModel = findSchedulerModel(executeContext, PERIODICALLY_TRIGGERED_TASK);
+            return !!schedulerModel && schedulerModel.getIsScheduled();
+        },
+        getExecuteInterval: function() {
+            return periodicExecuteInterval;
+        },
+        adjustExecuteInterval: function() {
+            if (schedulerModels.length < 1) return;
+            var newExecuteInterval = this.schedulerExt.getExecuteInterval(schedulerModels[0].getContext());
+            if (periodicExecuteInterval !== newExecuteInterval) {
+                periodicExecuteInterval = newExecuteInterval;
+                if (periodicExecuteId !== null) {
+                    this.debug.log("Changing execute interval: " + periodicExecuteInterval);
+                    clearInterval(periodicExecuteId);
+                    periodicExecuteId = setInterval(onScheduledTimeOccurred.bind(this), periodicExecuteInterval);
+                }
+            }
+        },
+        startScheduling: startScheduling,
+        stopScheduling: stopPeriodicScheduling,
+        setTriggerForVideoTime: setVideoTimeTrigger,
+        setTriggerForWallTime: setTriggerForWallTime,
+        removeTriggerForVideoTime: removeVideoTimeTrigger,
+        removeTriggerForWallTime: removeTriggerForWallTime
+    };
+};
+
+MediaPlayer.dependencies.RequestScheduler.prototype = {
+    constructor: MediaPlayer.dependencies.RequestScheduler
+};
+
+MediaPlayer.dependencies.SchedulerExtensions = function() {
+    "use strict";
+};
+
+MediaPlayer.dependencies.SchedulerExtensions.prototype = {
+    constructor: MediaPlayer.dependencies.SchedulerExtensions,
+    getExecuteInterval: function(context) {
+        var interval = 1e3;
+        if (typeof context.getMinBufferTime !== "undefined") {
+            interval = context.getMinBufferTime() * 1e3 / 4;
+            interval = Math.max(interval, 1e3);
+        }
+        return interval;
+    },
+    attachScheduleListener: function(element, scheduleListener) {
+        element.addEventListener("timeupdate", scheduleListener);
+    },
+    detachScheduleListener: function(element, scheduleListener) {
+        element.removeEventListener("timeupdate", scheduleListener);
+    },
+    attachUpdateScheduleListener: function(element, updateScheduleListener) {
+        element.addEventListener("seeking", updateScheduleListener);
+    },
+    detachUpdateScheduleListener: function(element, updateScheduleListener) {
+        element.removeEventListener("seeking", updateScheduleListener);
+    }
+};
+
+MediaPlayer.dependencies.SchedulerModel = function() {
+    "use strict";
+    var context, scheduledTask, type, executeTime, executeId, isScheduled = false;
+    return {
+        system: undefined,
+        debug: undefined,
+        schedulerExt: undefined,
+        setContext: function(value) {
+            context = value;
+        },
+        getContext: function() {
+            return context;
+        },
+        setScheduledTask: function(value) {
+            scheduledTask = value;
+        },
+        executeScheduledTask: function() {
+            scheduledTask.call(context);
+        },
+        setExecuteTime: function(value) {
+            executeTime = value;
+        },
+        getExecuteTime: function() {
+            return executeTime;
+        },
+        setExecuteId: function(value) {
+            executeId = value;
+        },
+        getExecuteId: function() {
+            return executeId;
+        },
+        setType: function(value) {
+            type = value;
+        },
+        getType: function() {
+            return type;
+        },
+        setIsScheduled: function(value) {
+            isScheduled = value;
+        },
+        getIsScheduled: function() {
+            return isScheduled;
+        }
+    };
+};
+
+MediaPlayer.dependencies.SchedulerModel.prototype = {
+    constructor: MediaPlayer.dependencies.SchedulerModel
+};
+
+MediaPlayer.dependencies.SourceBufferExtensions = function() {
+    "use strict";
+    this.system = undefined;
+    this.manifestExt = undefined;
+};
+
+MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
+    constructor: MediaPlayer.dependencies.SourceBufferExtensions,
+    createSourceBuffer: function(mediaSource, codec) {
+        "use strict";
+        var deferred = Q.defer(), self = this;
+        try {
+            deferred.resolve(mediaSource.addSourceBuffer(codec));
+        } catch (ex) {
+            if (!self.manifestExt.getIsTextTrack(codec)) {
+                deferred.reject(ex.description);
+            } else {
+                if (codec === "text/vtt" || codec === "text/ttml") {
+                    deferred.resolve(self.system.getObject("textSourceBuffer"));
+                } else {
+                    if (codec === "application/ttml+xml+mp4") {
+                        deferred.resolve(self.system.getObject("textTTMLXMLMP4SourceBuffer"));
+                    } else {
+                        deferred.reject();
+                    }
+                }
+            }
+        }
+        return deferred.promise;
+    },
+    removeSourceBuffer: function(mediaSource, buffer) {
+        "use strict";
+        var deferred = Q.defer();
+        try {
+            deferred.resolve(mediaSource.removeSourceBuffer(buffer));
+        } catch (ex) {
+            if (buffer && typeof buffer.getTextTrackExtensions === "function") {
+                deferred.resolve();
+            } else {
+                deferred.reject(ex.description);
+            }
+        }
+        return deferred.promise;
+    },
+    getBufferRange: function(buffer, time, tolerance) {
+        var ranges = null, start = 0, end = 0, firstStart = null, lastEnd = null, gap = 0, toler = tolerance || .15, len, i;
+        try {
+            ranges = buffer.buffered;
+        } catch (ex) {
+            return null;
+        }
+        if (ranges !== null) {
+            for (i = 0, len = ranges.length; i < len; i += 1) {
+                start = ranges.start(i);
+                end = ranges.end(i);
+                if (firstStart === null) {
+                    gap = Math.abs(start - time);
+                    if (time >= start && time < end) {
+                        firstStart = start;
+                        lastEnd = end;
+                        continue;
+                    } else if (gap <= toler) {
+                        firstStart = start;
+                        lastEnd = end;
+                        continue;
+                    }
+                } else {
+                    gap = start - lastEnd;
+                    if (gap <= toler) {
+                        lastEnd = end;
+                    } else {
+                        break;
+                    }
+                }
+            }
+            if (firstStart !== null) {
+                return {
+                    start: firstStart,
+                    end: lastEnd
+                };
+            }
+        }
+        return null;
+    },
+    getAllRanges: function(buffer) {
+        var ranges = null;
+        try {
+            ranges = buffer.buffered;
+            return ranges;
+        } catch (ex) {
+            return null;
+        }
+    },
+    getBufferLength: function(buffer, time, tolerance) {
+        "use strict";
+        var self = this, range, length;
+        range = self.getBufferRange(buffer, time, tolerance);
+        if (range === null) {
+            length = 0;
+        } else {
+            length = range.end - time;
+        }
+        return length;
+    },
+    waitForUpdateEnd: function(buffer) {
+        "use strict";
+        var defer = Q.defer(), intervalId, CHECK_INTERVAL = 50, checkIsUpdateEnded = function() {
+            if (buffer.updating) return;
+            clearInterval(intervalId);
+            defer.resolve(true);
+        }, updateEndHandler = function() {
+            if (buffer.updating) return;
+            buffer.removeEventListener("updateend", updateEndHandler, false);
+            defer.resolve(true);
+        };
+        if (typeof buffer.addEventListener === "function") {
+            try {
+                buffer.addEventListener("updateend", updateEndHandler, false);
+            } catch (err) {
+                intervalId = setInterval(checkIsUpdateEnded, CHECK_INTERVAL);
+            }
+        } else {
+            intervalId = setInterval(checkIsUpdateEnded, CHECK_INTERVAL);
+        }
+        return defer.promise;
+    },
+    append: function(buffer, bytes, sync) {
+        var deferred = Q.defer();
+        try {
+            if ("append" in buffer) {
+                buffer.append(bytes);
+            } else if ("appendBuffer" in buffer) {
+                buffer.appendBuffer(bytes);
+            }
+            if (sync) {
+                deferred.resolve();
+            } else {
+                this.waitForUpdateEnd(buffer).then(function() {
+                    deferred.resolve();
+                });
+            }
+        } catch (err) {
+            deferred.reject({
+                err: err,
+                data: bytes
+            });
+        }
+        return deferred.promise;
+    },
+    remove: function(buffer, start, end, duration, mediaSource, sync) {
+        var deferred = Q.defer();
+        try {
+            if (start >= 0 && start < duration && end > start && mediaSource.readyState !== "ended") {
+                buffer.remove(start, end);
+            }
+            if (sync) {
+                deferred.resolve();
+            } else {
+                this.waitForUpdateEnd(buffer).then(function() {
+                    deferred.resolve();
+                });
+            }
+        } catch (err) {
+            deferred.reject(err);
+        }
+        return deferred.promise;
+    },
+    abort: function(mediaSource, buffer) {
+        "use strict";
+        var deferred = Q.defer();
+        try {
+            if (mediaSource.readyState === "open") {
+                buffer.abort();
+            }
+            deferred.resolve();
+        } catch (ex) {
+            deferred.reject(ex.description);
+        }
+        return deferred.promise;
+    }
+};
+
+MediaPlayer.dependencies.Stream = function() {
+    "use strict";
+    var manifest, mediaSource, videoCodec = null, audioCodec = null, currentTimeToSet = 0, contentProtection = null, videoController = null, videoTrackIndex = -1, audioController = null, audioTrackIndex = -1, textController = null, textTrackIndex = -1, autoPlay = true, initialized = false, load, errored = false, kid = null, initData = [], fullScreenListener, endedListener, loadedListener, playListener, pauseListener, errorListener, seekingListener, seekedListener, timeupdateListener, durationchangeListener, progressListener, ratechangeListener, canplayListener, playingListener, loadstartListener, waitingListener, defaultAudioLang = "und", defaultSubtitleLang = "und", periodInfo = null, isPaused = false, isSeeked = false, initialSeekTime, checkStartTimeIntervalId, eventController = null, protectionController = undefined, onProtectionError = function(event) {
+        this.errHandler.sendError(event.data.code, event.data.message, event.data.data);
+        this.debug.error("[Stream] protection error: " + event.data.code + " - " + event.data.message);
+        this.reset();
+    }, play = function() {
+        this.debug.info("[Stream] Attempting play...");
+        if (!initialized) {
+            return;
+        }
+        this.debug.info("[Stream] Do play.");
+        this.videoModel.play();
+    }, pause = function() {
+        this.debug.info("[Stream] Do pause.");
+        this.videoModel.pause();
+    }, seek = function(time) {
+        this.debug.log("[Stream] Attempting seek...");
+        if (!initialized) {
+            return;
+        }
+        this.debug.info("[Stream] Do seek: " + time);
+        this.system.notify("setCurrentTime");
+        this.videoModel.setCurrentTime(time);
+        updateBuffer.call(this).then(function() {
+            startBuffering(time);
+        });
+    }, setUpMediaSource = function(mediaSourceArg) {
+        var deferred = Q.defer(), self = this, onMediaSourceOpen = function() {
+            mediaSourceArg.removeEventListener("sourceopen", onMediaSourceOpen);
+            mediaSourceArg.removeEventListener("webkitsourceopen", onMediaSourceOpen);
+            deferred.resolve(mediaSourceArg);
+        };
+        mediaSourceArg.addEventListener("sourceopen", onMediaSourceOpen, false);
+        mediaSourceArg.addEventListener("webkitsourceopen", onMediaSourceOpen, false);
+        self.mediaSourceExt.attachMediaSource(mediaSourceArg, self.videoModel);
+        return deferred.promise;
+    }, tearDownMediaSource = function() {
+        var self = this;
+        if (!!videoController) {
+            videoController.reset(errored);
+            videoController = undefined;
+        }
+        if (!!audioController) {
+            audioController.reset(errored);
+            audioController = undefined;
+        }
+        if (!!textController) {
+            textController.reset(errored);
+            textController = undefined;
+        }
+        if (!!eventController) {
+            eventController.reset();
+            eventController = undefined;
+        }
+        if (!!mediaSource) {
+            self.mediaSourceExt.detachMediaSource(self.videoModel);
+        }
+        initialized = false;
+        kid = null;
+        initData = [];
+        contentProtection = null;
+        videoController = null;
+        audioController = null;
+        textController = null;
+        videoCodec = null;
+        audioCodec = null;
+        mediaSource = null;
+        manifest = null;
+    }, checkIfInitialized = function(videoReady, audioReady, textTrackReady, deferred) {
+        if (videoReady && audioReady && textTrackReady) {
+            if (videoController === null && audioController === null && textController === null) {
+                var msg = "No streams to play.";
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM, msg, manifest);
+                this.debug.log(msg);
+                deferred.reject();
+            } else {
+                deferred.resolve(true);
+            }
+        }
+    }, initializeMediaSource = function() {
+        var initialize = Q.defer(), videoReady = false, audioReady = false, textTrackReady = false, self = this;
+        eventController = self.system.getObject("eventController");
+        eventController.initialize(self.videoModel);
+        self.manifestExt.getDuration(manifest, periodInfo).then(function() {
+            self.manifestExt.getVideoData(manifest, periodInfo.index).then(function(videoData) {
+                if (videoData !== null) {
+                    self.manifestExt.getDataIndex(videoData, manifest, periodInfo.index).then(function(index) {
+                        videoTrackIndex = index;
+                    });
+                    self.manifestExt.getCodec(videoData).then(function(codec) {
+                        self.debug.info("[Stream] Video codec: " + codec);
+                        videoCodec = codec;
+                        return self.manifestExt.getContentProtectionData(videoData).then(function(contentProtectionData) {
+                            self.debug.log("[Stream] video contentProtection");
+                            if (!!contentProtectionData && !self.capabilities.supportsMediaKeys()) {
+                                self.debug.error("[Stream] mediakeys not supported!");
+                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS);
+                                return Q.when(null);
+                            }
+                            contentProtection = contentProtectionData;
+                            if (!self.capabilities.supportsCodec(self.videoModel.getElement(), codec)) {
+                                var msg = "Video Codec (" + codec + ") is not supported.";
+                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC, msg, manifest);
+                                return Q.when(null);
+                            }
+                            return self.sourceBufferExt.createSourceBuffer(mediaSource, codec);
+                        });
+                    }).then(function(buffer) {
+                        if (buffer === null) {
+                            self.debug.log("No buffer was created, skipping video stream.");
+                        } else {
+                            videoController = self.system.getObject("bufferController");
+                            videoController.initialize("video", periodInfo, videoData, buffer, self.videoModel, self.requestScheduler, self.fragmentController, mediaSource, eventController);
+                        }
+                        videoReady = true;
+                        checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
+                    }, function() {
+                        self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Error creating video source buffer.");
+                        videoReady = true;
+                        checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
+                    });
+                } else {
+                    self.debug.log("[Stream] No video data.");
+                    videoReady = true;
+                    checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
+                }
+                return self.manifestExt.getAudioDatas(manifest, periodInfo.index);
+            }).then(function(audioDatas) {
+                if (audioDatas !== null && audioDatas.length > 0) {
+                    self.manifestExt.getSpecificAudioData(manifest, periodInfo.index, defaultAudioLang).then(function(specificAudioData) {
+                        self.manifestExt.getDataIndex(specificAudioData, manifest, periodInfo.index).then(function(index) {
+                            audioTrackIndex = index;
+                        });
+                        self.manifestExt.getCodec(specificAudioData).then(function(codec) {
+                            self.debug.info("[Stream] Audio codec: " + codec);
+                            audioCodec = codec;
+                            return self.manifestExt.getContentProtectionData(specificAudioData).then(function(contentProtectionData) {
+                                self.debug.log("[Stream] Audio contentProtection");
+                                if (!!contentProtectionData && !self.capabilities.supportsMediaKeys()) {
+                                    self.debug.error("[Stream] mediakeys not supported!");
+                                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS);
+                                    return Q.when(null);
+                                }
+                                contentProtection = contentProtectionData;
+                                if (!self.capabilities.supportsCodec(self.videoModel.getElement(), codec)) {
+                                    var msg = "Audio Codec (" + codec + ") is not supported.";
+                                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC, msg, manifest);
+                                    self.debug.error("[Stream] ", msg);
+                                    return Q.when(null);
+                                }
+                                return self.sourceBufferExt.createSourceBuffer(mediaSource, codec);
+                            });
+                        }).then(function(buffer) {
+                            if (buffer === null) {
+                                self.debug.log("[Stream] No buffer was created, skipping audio stream.");
+                            } else {
+                                audioController = self.system.getObject("bufferController");
+                                audioController.initialize("audio", periodInfo, specificAudioData, buffer, self.videoModel, self.requestScheduler, self.fragmentController, mediaSource, eventController);
+                            }
+                            audioReady = true;
+                            checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
+                        }, function() {
+                            self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Error creating audio source buffer.");
+                            audioReady = true;
+                            checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
+                        });
+                    });
+                } else {
+                    self.debug.log("[Stream] No audio streams.");
+                    audioReady = true;
+                    checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
+                }
+                return self.manifestExt.getTextDatas(manifest, periodInfo.index);
+            }).then(function(textDatas) {
+                var mimeType;
+                if (textDatas !== null && textDatas.length > 0) {
+                    self.debug.log("Have subtitles streams: " + textDatas.length);
+                    self.manifestExt.getSpecificTextData(manifest, periodInfo.index, defaultSubtitleLang).then(function(specificSubtitleData) {
+                        self.manifestExt.getDataIndex(specificSubtitleData, manifest, periodInfo.index).then(function(index) {
+                            textTrackIndex = index;
+                            self.debug.log("Save text track: " + textTrackIndex);
+                        });
+                        self.manifestExt.getMimeType(specificSubtitleData).then(function(type) {
+                            mimeType = type;
+                            return self.sourceBufferExt.createSourceBuffer(mediaSource, mimeType);
+                        }).then(function(buffer) {
+                            if (buffer === null) {
+                                self.debug.log("Source buffer was not created for text track");
+                            } else {
+                                textController = self.system.getObject("bufferController");
+                                textController.initialize("text", periodInfo, specificSubtitleData, buffer, self.videoModel, self.requestScheduler, self.fragmentController, mediaSource);
+                                if (buffer.hasOwnProperty("initialize")) {
+                                    buffer.initialize(mimeType, textController, specificSubtitleData);
+                                }
+                                textTrackReady = true;
+                                checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
+                            }
+                        }, function(error) {
+                            self.debug.log("Error creating text source buffer:");
+                            self.debug.log(error);
+                            self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Error creating text source buffer.");
+                            textTrackReady = true;
+                            checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
+                        });
+                    });
+                } else {
+                    self.debug.log("[Stream] No text tracks.");
+                    textTrackReady = true;
+                    checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
+                }
+                return self.manifestExt.getEventsForPeriod(manifest, periodInfo);
+            }).then(function(events) {
+                eventController.addInlineEvents(events);
+            });
+        });
+        return initialize.promise;
+    }, initializePlayback = function() {
+        var self = this, initialize = Q.defer();
+        self.manifestExt.getDuration(self.manifestModel.getValue(), periodInfo).then(function(duration) {
+            self.debug.log("[Stream] Setting duration: " + duration);
+            return self.mediaSourceExt.setDuration(mediaSource, duration);
+        }).then(function() {
+            initialized = true;
+            initialize.resolve(true);
+        });
+        return initialize.promise;
+    }, onLoad = function() {
+        var self = this;
+        this.debug.info("<video> loadedmetadata event");
+        this.debug.log("[Stream] Got loadedmetadata event.");
+        initialSeekTime = this.timelineConverter.calcPresentationStartTime(periodInfo);
+        this.debug.info("[Stream] Starting playback at offset: " + initialSeekTime);
+        isPaused = this.videoModel.isPaused();
+        if (initialSeekTime !== this.videoModel.getCurrentTime()) {
+            this.system.mapHandler("bufferUpdated", undefined, onBufferUpdated.bind(self));
+        } else {
+            load.resolve(null);
+        }
+    }, onCanPlay = function(e) {
+        this.debug.info("<video> " + e.type + " event");
+        this.debug.log("[Stream] Got canplay event.");
+    }, onPlaying = function() {
+        this.debug.info("<video> playing event");
+        this.debug.log("[Stream] Got playing event.");
+    }, onLoadStart = function() {
+        this.debug.info("<video> loadstart event");
+    }, onWaiting = function() {
+        this.debug.info("<video> waiting event");
+    }, onPlay = function() {
+        this.debug.info("<video> play event");
+        this.debug.log("[Stream] Got play event.");
+        if (currentTimeToSet !== 0 && this.videoModel.getCurrentTime() === 0) {
+            this.system.notify("setCurrentTime");
+            this.videoModel.setCurrentTime(currentTimeToSet);
+            currentTimeToSet = 0;
+        }
+        if (isPaused && !isSeeked) {
+            startBuffering();
+        }
+        this.metricsModel.addPlayList("video", new Date().getTime(), this.videoModel.getCurrentTime(), "play");
+        isPaused = false;
+        isSeeked = false;
+    }, onFullScreenChange = function() {
+        var videoElement = this.videoModel.getElement(), isFullScreen = 0;
+        if (document.webkitIsFullScreen || document.msFullscreenElement || document.mozFullScreen) {
+            isFullScreen = 1;
+        }
+        this.metricsModel.addCondition(null, isFullScreen, videoElement.videoWidth, videoElement.videoHeight);
+    }, onEnded = function() {
+        this.debug.info("<video> ended event");
+        this.metricsModel.addState("video", "stopped", this.videoModel.getCurrentTime(), 1);
+    }, onPause = function() {
+        this.debug.info("<video> pause event");
+        isPaused = true;
+        this.metricsModel.addPlayList("video", new Date().getTime(), this.videoModel.getCurrentTime(), "pause");
+        suspend.call(this);
+    }, onError = function(event) {
+        var error = event.srcElement.error, code, msgError = "<video> error event";
+        this.debug.info(msgError);
+        if (error.code === -1) {
+            return;
+        }
+        switch (error.code) {
+          case 1:
+            code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ABORTED;
+            break;
+
+          case 2:
+            code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_NETWORK;
+            break;
+
+          case 3:
+            code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_DECODE;
+            break;
+
+          case 4:
+            code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_SRC_NOT_SUPPORTED;
+            break;
+
+          case 5:
+            code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED;
+            break;
+        }
+        errored = true;
+        this.debug.log("Video Element Error: " + code);
+        this.debug.log(error);
+        this.errHandler.sendError(code, msgError);
+        this.reset();
+    }, onSeeking = function() {
+        var time = this.videoModel.getCurrentTime();
+        this.debug.info("<video> seeking event: " + time);
+        isSeeked = true;
+        startBuffering(time);
+    }, onSeeked = function() {
+        this.debug.info("<video> seeked event");
+        this.videoModel.listen("seeking", seekingListener);
+        this.videoModel.unlisten("seeked", seekedListener);
+    }, onProgress = function() {
+        this.debug.info("<video> progress event");
+    }, onTimeupdate = function() {
+        this.debug.info("<video> timeupdate event: " + this.videoModel.getCurrentTime());
+        updateBuffer.call(this);
+    }, onDurationchange = function() {
+        this.debug.info("<video> durationchange event: " + this.videoModel.getElement().duration);
+    }, onRatechange = function() {
+        this.debug.info("<video> ratechange event: " + this.videoModel.getElement().playbackRate);
+        if (videoController) {
+            videoController.updateStalledState();
+        }
+        if (audioController) {
+            audioController.updateStalledState();
+        }
+        if (textController) {
+            textController.updateStalledState();
+        }
+    }, updateBuffer = function() {
+        if (videoController) {
+            videoController.updateBufferState();
+        }
+        if (audioController) {
+            audioController.updateBufferState();
+        }
+        if (textController) {
+            textController.updateBufferState();
+        }
+    }, startBuffering = function(time) {
+        if (videoController) {
+            if (time === undefined) {
+                videoController.start();
+            } else {
+                videoController.seek(time);
+            }
+        }
+        if (audioController) {
+            if (time === undefined) {
+                audioController.start();
+            } else {
+                audioController.seek(time);
+            }
+        }
+        if (textController) {
+            if (time === undefined) {
+                textController.start();
+            } else {
+                textController.seek(time);
+            }
+        }
+    }, stopBuffering = function() {
+        if (videoController) {
+            videoController.stop();
+        }
+        if (audioController) {
+            audioController.stop();
+        }
+        if (textController) {
+            textController.stop();
+        }
+    }, suspend = function() {
+        if (!this.scheduleWhilePaused || this.manifestExt.getIsDynamic(manifest)) {
+            stopBuffering.call(this);
+        }
+        clearInterval(checkStartTimeIntervalId);
+    }, doLoad = function(manifestResult) {
+        var self = this;
+        manifest = manifestResult;
+        self.debug.log("[Stream] Create MediaSource");
+        return self.mediaSourceExt.createMediaSource().then(function(mediaSourceResult) {
+            self.debug.log("[Stream] Setup MediaSource");
+            return setUpMediaSource.call(self, mediaSourceResult);
+        }).then(function(mediaSourceResult) {
+            mediaSource = mediaSourceResult;
+            self.debug.log("[Stream] Initialize MediaSource");
+            return initializeMediaSource.call(self);
+        }).then(function() {
+            self.debug.log("[Stream] Initialize playback");
+            return initializePlayback.call(self);
+        }).then(function() {
+            self.debug.log("[Stream] Playback initialized");
+            return load.promise;
+        }).then(function() {
+            self.debug.log("[Stream] element loaded!");
+            if (periodInfo.index === 0) {
+                eventController.start();
+                if (autoPlay) {
+                    play.call(self);
+                }
+            }
+        });
+    }, currentTimeChanged = function() {
+        this.debug.log("[Stream] Current time has changed, block programmatic seek.");
+        this.videoModel.unlisten("seeking", seekingListener);
+        this.videoModel.listen("seeked", seekedListener);
+    }, bufferingCompleted = function() {
+        if (videoController && !videoController.isBufferingCompleted() || audioController && !audioController.isBufferingCompleted()) {
+            return;
+        }
+        if (mediaSource) {
+            this.debug.info("[Stream] Signal end of stream");
+            this.mediaSourceExt.signalEndOfStream(mediaSource);
+        }
+    }, segmentLoadingFailed = function() {
+        stopBuffering.call(this);
+    }, onLiveEdgeFound = function(liveEdgeTime) {
+        this.debug.info("[Stream] ### LiveEdge = " + liveEdgeTime);
+        if (videoController) {
+            videoController.seek(liveEdgeTime);
+        }
+        if (audioController) {
+            audioController.seek(liveEdgeTime);
+        }
+        if (textController) {
+            textController.seek(liveEdgeTime);
+        }
+    }, onBufferUpdated = function() {
+        var self = this, videoRange, audioRange, startTime;
+        self.debug.info("[Stream] Check start time");
+        videoRange = self.sourceBufferExt.getBufferRange(videoController.getBuffer(), initialSeekTime, 2);
+        if (videoRange === null) {
+            return;
+        }
+        startTime = videoRange.start;
+        if (audioController) {
+            audioRange = self.sourceBufferExt.getBufferRange(audioController.getBuffer(), initialSeekTime, 2);
+            if (audioRange === null) {
+                return;
+            }
+            self.debug.info("[Stream] Check start time: A[" + audioRange.start + "-" + audioRange.end + "], V[" + videoRange.start + "-" + videoRange.end + "]");
+            if (audioRange.end < startTime) {
+                return;
+            }
+        }
+        self.debug.info("[Stream] Check start time: OK");
+        self.system.unmapHandler("bufferUpdated");
+        if (isPaused === false) {
+            self.system.notify("setCurrentTime");
+            self.videoModel.setCurrentTime(startTime);
+        } else {
+            currentTimeToSet = startTime;
+        }
+        load.resolve(null);
+    }, updateData = function(updatedPeriodInfo) {
+        var self = this, videoData, deferredVideoData, deferredAudioData, deferredTextData, deferred = Q.defer(), deferredVideoUpdate = Q.defer(), deferredAudioUpdate = Q.defer(), deferredTextUpdate = Q.defer(), deferredEventUpdate = Q.defer();
+        manifest = self.manifestModel.getValue();
+        periodInfo = updatedPeriodInfo;
+        self.debug.log("Manifest updated... set new data on buffers.");
+        if (videoController) {
+            videoData = videoController.getData();
+            if (!!videoData && videoData.hasOwnProperty("id")) {
+                deferredVideoData = self.manifestExt.getDataForId(videoData.id, manifest, periodInfo.index);
+            } else {
+                deferredVideoData = self.manifestExt.getDataForIndex(videoTrackIndex, manifest, periodInfo.index);
+            }
+            deferredVideoData.then(function(data) {
+                videoController.updateData(data, periodInfo).then(function() {
+                    deferredVideoUpdate.resolve();
+                });
+            });
+        } else {
+            deferredVideoUpdate.resolve();
+        }
+        if (audioController) {
+            deferredAudioData = self.manifestExt.getDataForIndex(audioTrackIndex, manifest, periodInfo.index);
+            deferredAudioData.then(function(data) {
+                audioController.updateData(data, periodInfo).then(function() {
+                    deferredAudioUpdate.resolve();
+                });
+            });
+        } else {
+            deferredAudioUpdate.resolve();
+        }
+        if (textController) {
+            deferredTextData = self.manifestExt.getDataForIndex(textTrackIndex, manifest, periodInfo.index);
+            deferredTextData.then(function(data) {
+                textController.updateData(data, periodInfo).then(function() {
+                    deferredTextUpdate.resolve();
+                });
+            });
+        }
+        if (eventController) {
+            self.manifestExt.getEventsForPeriod(manifest, periodInfo).then(function(events) {
+                eventController.addInlineEvents(events);
+                deferredEventUpdate.resolve();
+            });
+        }
+        Q.when(deferredVideoUpdate.promise, deferredAudioUpdate.promise, deferredTextUpdate.promise).then(function() {
+            deferred.resolve();
+        });
+        return deferred.promise;
+    };
+    return {
+        system: undefined,
+        videoModel: undefined,
+        manifestLoader: undefined,
+        manifestModel: undefined,
+        mediaSourceExt: undefined,
+        sourceBufferExt: undefined,
+        bufferExt: undefined,
+        manifestExt: undefined,
+        fragmentController: undefined,
+        abrController: undefined,
+        fragmentExt: undefined,
+        protectionExt: undefined,
+        capabilities: undefined,
+        debug: undefined,
+        metricsExt: undefined,
+        errHandler: undefined,
+        timelineConverter: undefined,
+        requestScheduler: undefined,
+        scheduleWhilePaused: undefined,
+        metricsModel: undefined,
+        eventBus: undefined,
+        notify: undefined,
+        setup: function() {
+            this.system.mapHandler("setCurrentTime", undefined, currentTimeChanged.bind(this));
+            this.system.mapHandler("bufferingCompleted", undefined, bufferingCompleted.bind(this));
+            this.system.mapHandler("segmentLoadingFailed", undefined, segmentLoadingFailed.bind(this));
+            this.system.mapHandler("liveEdgeFound", undefined, onLiveEdgeFound.bind(this));
+            this[MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR] = onProtectionError.bind(this);
+            load = Q.defer();
+            playListener = onPlay.bind(this);
+            pauseListener = onPause.bind(this);
+            errorListener = onError.bind(this);
+            seekingListener = onSeeking.bind(this);
+            seekedListener = onSeeked.bind(this);
+            progressListener = onProgress.bind(this);
+            ratechangeListener = onRatechange.bind(this);
+            timeupdateListener = onTimeupdate.bind(this);
+            durationchangeListener = onDurationchange.bind(this);
+            loadedListener = onLoad.bind(this);
+            canplayListener = onCanPlay.bind(this);
+            playingListener = onPlaying.bind(this);
+            loadstartListener = onLoadStart.bind(this);
+            waitingListener = onWaiting.bind(this);
+            fullScreenListener = onFullScreenChange.bind(this);
+            endedListener = onEnded.bind(this);
+        },
+        load: function(manifest, periodInfoValue) {
+            periodInfo = periodInfoValue;
+            doLoad.call(this, manifest);
+        },
+        setVideoModel: function(value) {
+            this.videoModel = value;
+            this.videoModel.listen("play", playListener);
+            this.videoModel.listen("pause", pauseListener);
+            this.videoModel.listen("error", errorListener);
+            this.videoModel.listen("seeking", seekingListener);
+            this.videoModel.listen("timeupdate", timeupdateListener);
+            this.videoModel.listen("durationchange", durationchangeListener);
+            this.videoModel.listen("progress", progressListener);
+            this.videoModel.listen("ratechange", ratechangeListener);
+            this.videoModel.listen("loadedmetadata", loadedListener);
+            this.videoModel.listen("ended", endedListener);
+            this.videoModel.listen("canplay", canplayListener);
+            this.videoModel.listen("playing", playingListener);
+            this.videoModel.listen("loadstart", loadstartListener);
+            this.videoModel.listen("webkitfullscreenchange", fullScreenListener);
+            this.videoModel.listen("fullscreenchange", fullScreenListener);
+            this.videoModel.listenOnParent("fullscreenchange", fullScreenListener);
+            this.videoModel.listenOnParent("webkitfullscreenchange", fullScreenListener);
+            this.requestScheduler.videoModel = value;
+        },
+        setAudioTrack: function(audioTrack) {
+            var deferredAudioUpdate = Q.defer(), manifest = this.manifestModel.getValue(), url, self = this;
+            if (audioController) {
+                self.manifestExt.getDataIndex(audioTrack, manifest, periodInfo.index).then(function(index) {
+                    audioTrackIndex = index;
+                    url = manifest.mpdUrl;
+                    if (manifest.hasOwnProperty("Location")) {
+                        url = manifest.Location;
+                    }
+                    self.debug.log("### Refresh manifest @ " + url);
+                    self.manifestLoader.load(url).then(function(manifestResult) {
+                        self.manifestModel.setValue(manifestResult);
+                        self.debug.log("### Manifest has been refreshed.");
+                        deferredAudioUpdate.resolve();
+                    });
+                });
+            } else {
+                deferredAudioUpdate.reject();
+            }
+            return deferredAudioUpdate.promise;
+        },
+        getSelectedAudioTrack: function() {
+            var self = this, manifest = self.manifestModel.getValue();
+            if (audioController) {
+                return self.manifestExt.getDataForIndex_(audioTrackIndex, manifest, periodInfo.index);
+            }
+            return undefined;
+        },
+        setSubtitleTrack: function(subtitleTrack) {
+            var deferredSubtitleUpdate = Q.defer(), manifest = this.manifestModel.getValue(), url, self = this;
+            if (textController) {
+                self.manifestExt.getDataIndex(subtitleTrack, manifest, periodInfo.index).then(function(index) {
+                    textTrackIndex = index;
+                    url = manifest.mpdUrl;
+                    if (manifest.hasOwnProperty("Location")) {
+                        url = manifest.Location;
+                    }
+                    self.debug.log("### Refresh manifest @ " + url);
+                    self.manifestLoader.load(url).then(function(manifestResult) {
+                        self.manifestModel.setValue(manifestResult);
+                        self.debug.log("### Manifest has been refreshed.");
+                        deferredSubtitleUpdate.resolve();
+                    });
+                });
+            } else {
+                deferredSubtitleUpdate.reject();
+            }
+            return deferredSubtitleUpdate.promise;
+        },
+        getSelectedSubtitleTrack: function() {
+            var self = this, manifest = self.manifestModel.getValue();
+            if (textController) {
+                return self.manifestExt.getDataForIndex_(textTrackIndex, manifest, periodInfo.index);
+            }
+            return undefined;
+        },
+        initProtection: function(protectionData) {
+            if (this.capabilities.supportsEncryptedMedia()) {
+                if (!this.protectionController) {
+                    this.protectionController = this.system.getObject("protectionController");
+                }
+                this.protectionController.subscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
+                this.protectionController.setMediaElement(this.videoModel.getElement());
+                this.protectionController.init(this.manifestModel.getValue());
+                if (protectionData) {
+                    this.protectionController.setProtectionData(protectionData);
+                }
+            }
+        },
+        getVideoModel: function() {
+            return this.videoModel;
+        },
+        getManifestExt: function() {
+            var self = this;
+            return self.manifestExt;
+        },
+        setAutoPlay: function(value) {
+            autoPlay = value;
+        },
+        setDefaultAudioLang: function(language) {
+            defaultAudioLang = language;
+        },
+        setDefaultSubtitleLang: function(language) {
+            defaultSubtitleLang = language;
+        },
+        getAutoPlay: function() {
+            return autoPlay;
+        },
+        reset: function() {
+            this.debug.info("[Stream] Reset");
+            pause.call(this);
+            this.videoModel.unlisten("play", playListener);
+            this.videoModel.unlisten("pause", pauseListener);
+            this.videoModel.unlisten("error", errorListener);
+            this.videoModel.unlisten("seeking", seekingListener);
+            this.videoModel.unlisten("timeupdate", timeupdateListener);
+            this.videoModel.unlisten("durationchange", durationchangeListener);
+            this.videoModel.unlisten("progress", progressListener);
+            this.videoModel.unlisten("ratechange", ratechangeListener);
+            this.videoModel.unlisten("loadedmetadata", loadedListener);
+            this.videoModel.unlisten("ended", endedListener);
+            this.videoModel.unlisten("canplay", canplayListener);
+            this.videoModel.unlisten("playing", playingListener);
+            this.videoModel.unlisten("loadstart", loadstartListener);
+            this.videoModel.unlisten("webkitfullscreenchange", fullScreenListener);
+            this.videoModel.unlisten("fullscreenchange", fullScreenListener);
+            this.videoModel.unlistenOnParent("fullscreenchange", fullScreenListener);
+            this.videoModel.unlistenOnParent("webkitfullscreenchange", fullScreenListener);
+            this.system.unmapHandler("bufferUpdated");
+            this.system.unmapHandler("liveEdgeFound");
+            this.system.unmapHandler("setCurrentTime");
+            this.system.unmapHandler("bufferingCompleted");
+            this.system.unmapHandler("segmentLoadingFailed");
+            tearDownMediaSource.call(this);
+            if (this.protectionController) {
+                this.protectionController.unsubscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
+                this.protectionController.teardown();
+            }
+            this.protectionController = undefined;
+            this.fragmentController = undefined;
+            this.requestScheduler = undefined;
+            load = Q.defer();
+        },
+        getDuration: function() {
+            return periodInfo.duration;
+        },
+        getStartTime: function() {
+            return periodInfo.start;
+        },
+        getPeriodIndex: function() {
+            return periodInfo.index;
+        },
+        getId: function() {
+            return periodInfo.id;
+        },
+        getPeriodInfo: function() {
+            return periodInfo;
+        },
+        startEventController: function() {
+            eventController.start();
+        },
+        resetEventController: function() {
+            eventController.reset();
+        },
+        updateData: updateData,
+        play: play,
+        seek: seek,
+        pause: pause
+    };
+};
+
+MediaPlayer.dependencies.Stream.prototype = {
+    constructor: MediaPlayer.dependencies.Stream
+};
+
+MediaPlayer.dependencies.StreamController = function() {
+    "use strict";
+    var streams = [], activeStream, STREAM_BUFFER_END_THRESHOLD = 6, STREAM_END_THRESHOLD = .2, autoPlay = true, isPeriodSwitchingInProgress = false, timeupdateListener, seekingListener, progressListener, pauseListener, playListener, audioTracks, subtitleTracks, protectionData, defaultAudioLang = "und", defaultSubtitleLang = "und", play = function() {
+        activeStream.play();
+    }, pause = function() {
+        activeStream.pause();
+    }, seek = function(time) {
+        activeStream.seek(time);
+    }, switchVideoModel = function(fromVideoModel, toVideoModel) {
+        var activeVideoElement = fromVideoModel.getElement(), newVideoElement = toVideoModel.getElement();
+        if (!newVideoElement.parentNode) {
+            activeVideoElement.parentNode.insertBefore(newVideoElement, activeVideoElement);
+        }
+        activeVideoElement.style.width = "0px";
+        newVideoElement.style.width = "100%";
+        copyVideoProperties(activeVideoElement, newVideoElement);
+        detachVideoEvents.call(this, fromVideoModel);
+        attachVideoEvents.call(this, toVideoModel);
+        return Q.when(true);
+    }, attachVideoEvents = function(videoModel) {
+        videoModel.listen("seeking", seekingListener);
+        videoModel.listen("progress", progressListener);
+        videoModel.listen("timeupdate", timeupdateListener);
+        videoModel.listen("pause", pauseListener);
+        videoModel.listen("play", playListener);
+    }, detachVideoEvents = function(videoModel) {
+        videoModel.unlisten("seeking", seekingListener);
+        videoModel.unlisten("progress", progressListener);
+        videoModel.unlisten("timeupdate", timeupdateListener);
+        videoModel.unlisten("pause", pauseListener);
+        videoModel.unlisten("play", playListener);
+    }, copyVideoProperties = function(fromVideoElement, toVideoElement) {
+        [ "controls", "loop", "muted", "playbackRate", "volume" ].forEach(function(prop) {
+            toVideoElement[prop] = fromVideoElement[prop];
+        });
+    }, onProgress = function() {
+        var ranges = activeStream.getVideoModel().getElement().buffered;
+        if (!ranges.length) {
+            return;
+        }
+        var lastRange = ranges.length - 1, bufferEndTime = ranges.end(lastRange), remainingBufferDuration = activeStream.getStartTime() + activeStream.getDuration() - bufferEndTime;
+        if (remainingBufferDuration < STREAM_BUFFER_END_THRESHOLD) {
+            activeStream.getVideoModel().unlisten("progress", progressListener);
+            onStreamBufferingEnd();
+        }
+    }, onReloadManifest = function() {
+        this.debug.log("[StreamController] ### reloadManifest ####");
+        this.reset.call(this);
+        this.load.call(this, this.currentURL);
+    }, onTimeupdate = function() {
+        var streamEndTime = activeStream.getStartTime() + activeStream.getDuration(), currentTime = activeStream.getVideoModel().getCurrentTime(), self = this, videoElement = activeStream.getVideoModel().getElement(), playBackQuality = self.videoExt.getPlaybackQuality(videoElement), elapsedTime = (new Date().getTime() - self.startPlayingTime) / 1e3;
+        self.metricsModel.addCondition(null, null, videoElement.videoWidth, videoElement.videoHeight, playBackQuality.droppedVideoFrames, playBackQuality.totalVideoFrames / elapsedTime);
+        if (!getNextStream()) return;
+        if (activeStream.getVideoModel().getElement().seeking) return;
+        if (streamEndTime - currentTime < STREAM_END_THRESHOLD) {
+            switchStream.call(this, activeStream, getNextStream());
+        }
+    }, onSeeking = function() {
+        var seekingTime = activeStream.getVideoModel().getCurrentTime(), seekingStream = getStreamForTime(seekingTime);
+        this.metricsModel.addState("video", "seeking", activeStream.getVideoModel().getCurrentTime());
+        if (seekingStream && seekingStream !== activeStream) {
+            switchStream.call(this, activeStream, seekingStream, seekingTime);
+        }
+    }, onPause = function() {
+        this.manifestUpdater.stop();
+        this.metricsModel.addState("video", "paused", activeStream.getVideoModel().getCurrentTime());
+    }, onPlay = function() {
+        this.manifestUpdater.start();
+        if (this.startPlayingTime === undefined) {
+            this.startPlayingTime = new Date().getTime();
+        }
+        var videoElement = activeStream.getVideoModel().getElement();
+        this.metricsModel.addCondition(null, 0, videoElement.videoWidth, videoElement.videoHeight);
+    }, onStreamBufferingEnd = function() {
+        var nextStream = getNextStream();
+        if (nextStream) {
+            nextStream.seek(nextStream.getStartTime());
+        }
+    }, getNextStream = function() {
+        var nextIndex = activeStream.getPeriodIndex() + 1;
+        return nextIndex < streams.length ? streams[nextIndex] : null;
+    }, getStreamForTime = function(time) {
+        var duration = 0, stream = null, ln = streams.length;
+        if (ln > 0) {
+            duration += streams[0].getStartTime();
+        }
+        for (var i = 0; i < ln; i++) {
+            stream = streams[i];
+            duration += stream.getDuration();
+            if (time < duration) {
+                return stream;
+            }
+        }
+    }, createVideoModel = function() {
+        var model = this.system.getObject("videoModel"), video = document.createElement("video");
+        model.setElement(video);
+        return model;
+    }, removeVideoElement = function(element) {
+        if (element.parentNode) {
+            element.parentNode.removeChild(element);
+        }
+    }, switchStream = function(from, to, seekTo) {
+        if (isPeriodSwitchingInProgress || !from || !to || from === to) return;
+        isPeriodSwitchingInProgress = true;
+        from.pause();
+        activeStream = to;
+        switchVideoModel.call(this, from.getVideoModel(), to.getVideoModel());
+        if (seekTo) {
+            seek(from.getVideoModel().getCurrentTime());
+        } else {
+            seek(to.getStartTime());
+        }
+        play();
+        from.resetEventController();
+        activeStream.startEventController();
+        isPeriodSwitchingInProgress = false;
+    }, composeStreams = function() {
+        var self = this, manifest = self.manifestModel.getValue(), metrics = self.metricsModel.getMetricsFor("stream"), manifestUpdateInfo = self.metricsExt.getCurrentManifestUpdate(metrics), periodInfo, deferred = Q.defer(), updatedStreams = [], pLen, sLen, pIdx, sIdx, period, stream;
+        self.startPlayingTime = undefined;
+        if (!manifest) {
+            return Q.when(false);
+        }
+        self.manifestExt.getMpd(manifest).then(function(mpd) {
+            if (activeStream) {
+                periodInfo = activeStream.getPeriodInfo();
+                mpd.isClientServerTimeSyncCompleted = periodInfo.mpd.isClientServerTimeSyncCompleted;
+                mpd.clientServerTimeShift = periodInfo.mpd.clientServerTimeShift;
+            }
+            self.manifestExt.getRegularPeriods(manifest, mpd).then(function(periods) {
+                if (periods.length === 0) {
+                    return deferred.reject("There are no regular periods");
+                }
+                self.metricsModel.updateManifestUpdateInfo(manifestUpdateInfo, {
+                    currentTime: self.videoModel.getCurrentTime(),
+                    buffered: self.videoModel.getElement().buffered,
+                    presentationStartTime: periods[0].start,
+                    clientTimeOffset: mpd.clientServerTimeShift
+                });
+                for (pIdx = 0, pLen = periods.length; pIdx < pLen; pIdx += 1) {
+                    period = periods[pIdx];
+                    for (sIdx = 0, sLen = streams.length; sIdx < sLen; sIdx += 1) {
+                        if (streams[sIdx].getId() === period.id) {
+                            stream = streams[sIdx];
+                            updatedStreams.push(stream.updateData(period));
+                        }
+                    }
+                    if (!stream) {
+                        stream = self.system.getObject("stream");
+                        stream.setVideoModel(pIdx === 0 ? self.videoModel : createVideoModel.call(self));
+                        stream.initProtection(self.protectionData);
+                        stream.setAutoPlay(autoPlay);
+                        stream.setDefaultAudioLang(defaultAudioLang);
+                        stream.setDefaultSubtitleLang(defaultSubtitleLang);
+                        stream.load(manifest, period);
+                        streams.push(stream);
+                    }
+                    self.metricsModel.addManifestUpdatePeriodInfo(manifestUpdateInfo, period.id, period.index, period.start, period.duration);
+                    stream = null;
+                }
+                if (!activeStream) {
+                    activeStream = streams[0];
+                    attachVideoEvents.call(self, activeStream.getVideoModel());
+                }
+                Q.all(updatedStreams).then(function() {
+                    deferred.resolve();
+                });
+            });
+        });
+        return deferred.promise;
+    }, updateAudioTracks = function() {
+        if (activeStream) {
+            var self = this;
+            self.manifestExt.getAudioDatas(self.manifestModel.getValue(), activeStream.getPeriodIndex()).then(function(audiosDatas) {
+                audioTracks = audiosDatas;
+                self.system.notify("audioTracksUpdated");
+            });
+        }
+    }, updateSubtitleTracks = function() {
+        if (activeStream) {
+            var self = this;
+            self.manifestExt.getTextDatas(self.manifestModel.getValue(), activeStream.getPeriodIndex()).then(function(textDatas) {
+                subtitleTracks = textDatas;
+                self.system.notify("subtitleTracksUpdated");
+            });
+        }
+    }, manifestHasUpdated = function() {
+        var self = this;
+        composeStreams.call(self).then(function() {
+            updateAudioTracks.call(self);
+            updateSubtitleTracks.call(self);
+            self.system.notify("streamsComposed");
+        }, function(errMsg) {
+            self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM, errMsg, self.manifestModel.getValue());
+            self.reset();
+        });
+    };
+    return {
+        system: undefined,
+        videoModel: undefined,
+        manifestLoader: undefined,
+        manifestUpdater: undefined,
+        manifestModel: undefined,
+        mediaSourceExt: undefined,
+        sourceBufferExt: undefined,
+        bufferExt: undefined,
+        manifestExt: undefined,
+        fragmentController: undefined,
+        abrController: undefined,
+        fragmentExt: undefined,
+        capabilities: undefined,
+        debug: undefined,
+        metricsModel: undefined,
+        metricsExt: undefined,
+        videoExt: undefined,
+        errHandler: undefined,
+        startTime: undefined,
+        startPlayingTime: undefined,
+        currentURL: undefined,
+        setup: function() {
+            this.system.mapHandler("manifestUpdated", undefined, manifestHasUpdated.bind(this));
+            timeupdateListener = onTimeupdate.bind(this);
+            progressListener = onProgress.bind(this);
+            seekingListener = onSeeking.bind(this);
+            pauseListener = onPause.bind(this);
+            playListener = onPlay.bind(this);
+            this.system.mapHandler("reloadManifest", undefined, onReloadManifest.bind(this));
+        },
+        getManifestExt: function() {
+            return activeStream.getManifestExt();
+        },
+        setAutoPlay: function(value) {
+            autoPlay = value;
+        },
+        getAutoPlay: function() {
+            return autoPlay;
+        },
+        getVideoModel: function() {
+            return this.videoModel;
+        },
+        setVideoModel: function(value) {
+            this.videoModel = value;
+        },
+        getAudioTracks: function() {
+            return audioTracks;
+        },
+        getSelectedAudioTrack: function() {
+            if (activeStream) {
+                return activeStream.getSelectedAudioTrack();
+            }
+            return undefined;
+        },
+        setAudioTrack: function(audioTrack) {
+            if (activeStream) {
+                activeStream.setAudioTrack(audioTrack);
+            }
+        },
+        getSubtitleTracks: function() {
+            return subtitleTracks;
+        },
+        setSubtitleTrack: function(subtitleTrack) {
+            if (activeStream) {
+                activeStream.setSubtitleTrack(subtitleTrack);
+            }
+        },
+        getSelectedSubtitleTrack: function() {
+            if (activeStream) {
+                return activeStream.getSelectedSubtitleTrack();
+            }
+            return undefined;
+        },
+        load: function(url, protData) {
+            var self = this;
+            self.currentURL = url;
+            if (protData) {
+                self.protectionData = protData;
+            }
+            self.debug.info("[StreamController] load url: " + url);
+            self.manifestLoader.load(url).then(function(manifest) {
+                self.manifestModel.setValue(manifest);
+                self.metricsModel.addMetaData();
+                self.debug.info("[StreamController] Manifest has loaded.");
+                self.manifestUpdater.start();
+            }, function() {
+                self.debug.error("[StreamController] Manifest loading error.");
+            });
+        },
+        reset: function() {
+            this.debug.info("[StreamController] Reset");
+            if (!!activeStream) {
+                detachVideoEvents.call(this, activeStream.getVideoModel());
+            }
+            for (var i = 0, ln = streams.length; i < ln; i++) {
+                var stream = streams[i];
+                stream.reset();
+                if (stream !== activeStream) {
+                    removeVideoElement(stream.getVideoModel().getElement());
+                }
+                delete streams[i];
+            }
+            streams = [];
+            this.manifestUpdater.stop();
+            this.manifestModel.setValue(null);
+            this.metricsModel.clearAllCurrentMetrics();
+            isPeriodSwitchingInProgress = false;
+            activeStream = null;
+            protectionData = null;
+        },
+        setDefaultAudioLang: function(language) {
+            defaultAudioLang = language;
+        },
+        setDefaultSubtitleLang: function(language) {
+            defaultSubtitleLang = language;
+        },
+        play: play,
+        seek: seek,
+        pause: pause
+    };
+};
+
+MediaPlayer.dependencies.StreamController.prototype = {
+    constructor: MediaPlayer.dependencies.StreamController
+};
+
+MediaPlayer.utils.TokenAuthentication = function() {
+    "use strict";
+    var tokenAuthentication = {
+        type: MediaPlayer.utils.TokenAuthentication.TYPE_QUERY
+    };
+    return {
+        debug: undefined,
+        getTokenAuthentication: function() {
+            return tokenAuthentication;
+        },
+        setTokenAuthentication: function(object) {
+            tokenAuthentication = object;
+        },
+        checkRequestHeaderForToken: function(request) {
+            if (tokenAuthentication.name !== undefined && request.getResponseHeader(tokenAuthentication.name) !== null) {
+                tokenAuthentication.token = request.getResponseHeader(tokenAuthentication.name);
+                this.debug.log(tokenAuthentication.name + " received: " + tokenAuthentication.token);
+            }
+        },
+        addTokenAsQueryArg: function(url) {
+            if (tokenAuthentication.name !== undefined && tokenAuthentication.token !== undefined) {
+                if (tokenAuthentication.type === MediaPlayer.utils.TokenAuthentication.TYPE_QUERY) {
+                    var modifier = url.indexOf("?") === -1 ? "?" : "&";
+                    url += modifier + tokenAuthentication.name + "=" + tokenAuthentication.token;
+                    this.debug.log(tokenAuthentication.name + " is being appended on the request url with a value of : " + tokenAuthentication.token);
+                }
+            }
+            return url;
+        },
+        setTokenInRequestHeader: function(request) {
+            if (tokenAuthentication.type === MediaPlayer.utils.TokenAuthentication.TYPE_HEADER) {
+                request.setRequestHeader(tokenAuthentication.name, tokenAuthentication.token);
+                this.debug.log(tokenAuthentication.name + " is being set in the request header with a value of : " + tokenAuthentication.token);
+            }
+            return request;
+        }
+    };
+};
+
+MediaPlayer.utils.TokenAuthentication.TYPE_QUERY = "query";
+
+MediaPlayer.utils.TokenAuthentication.TYPE_HEADER = "header";
+
+MediaPlayer.models.URIQueryAndFragmentModel = function() {
+    "use strict";
+    var URIFragmentDataVO = new MediaPlayer.vo.URIFragmentData(), URIQueryData = [], reset = function() {
+        URIFragmentDataVO = new MediaPlayer.vo.URIFragmentData();
+        URIQueryData = [];
+    }, parseURI = function(uri) {
+        var URIFragmentData = [], testQuery = new RegExp(/[?]/), testFragment = new RegExp(/[#]/), isQuery = testQuery.test(uri), isFragment = testFragment.test(uri), mappedArr;
+        function reduceArray(previousValue, currentValue, index, array) {
+            var arr = array[0].split(/[=]/);
+            array.push({
+                key: arr[0],
+                value: arr[1]
+            });
+            array.shift();
+            return array;
+        }
+        function mapArray(currentValue, index, array) {
+            if (index > 0) {
+                if (isQuery && URIQueryData.length === 0) {
+                    URIQueryData = array[index].split(/[&]/);
+                } else if (isFragment) {
+                    URIFragmentData = array[index].split(/[&]/);
+                }
+            }
+            return array;
+        }
+        mappedArr = uri.split(/[?#]/).map(mapArray);
+        if (URIQueryData.length > 0) {
+            URIQueryData = URIQueryData.reduce(reduceArray, null);
+        }
+        if (URIFragmentData.length > 0) {
+            URIFragmentData = URIFragmentData.reduce(reduceArray, null);
+            URIFragmentData.forEach(function(object) {
+                URIFragmentDataVO[object.key] = object.value;
+            });
+        }
+        return uri;
+    };
+    return {
+        parseURI: parseURI,
+        reset: reset,
+        getURIFragmentData: function() {
+            return URIFragmentDataVO;
+        },
+        getURIQueryData: URIQueryData
+    };
+};
+
+MediaPlayer.models.URIQueryAndFragmentModel.prototype = {
+    constructor: MediaPlayer.models.URIQueryAndFragmentModel
+};
+
+MediaPlayer.models.VideoModel = function() {
+    "use strict";
+    var element, stalledStreams = [], isStalled = function() {
+        return stalledStreams.length > 0;
+    }, addStalledStream = function(type) {
+        if (type === null) {
+            return;
+        }
+        element.playbackRate = 0;
+        if (stalledStreams[type] === true) {
+            return;
+        }
+        stalledStreams.push(type);
+        stalledStreams[type] = true;
+    }, removeStalledStream = function(type) {
+        if (type === null) {
+            return;
+        }
+        stalledStreams[type] = false;
+        var index = stalledStreams.indexOf(type);
+        if (index !== -1) {
+            stalledStreams.splice(index, 1);
+        }
+        if (isStalled() === false) {
+            element.playbackRate = 1;
+        }
+    }, stallStream = function(type, isStalled) {
+        if (isStalled) {
+            addStalledStream(type);
+        } else {
+            removeStalledStream(type);
+        }
+    };
+    return {
+        system: undefined,
+        setup: function() {},
+        play: function() {
+            element.play();
+        },
+        pause: function() {
+            element.pause();
+        },
+        isPaused: function() {
+            return element.paused;
+        },
+        isSeeking: function() {
+            return element.seeking;
+        },
+        getPlaybackRate: function() {
+            return element.playbackRate;
+        },
+        setPlaybackRate: function(value) {
+            element.playbackRate = value;
+        },
+        getCurrentTime: function() {
+            return element.currentTime;
+        },
+        setCurrentTime: function(currentTime) {
+            if (element.currentTime === currentTime) return;
+            element.currentTime = currentTime;
+        },
+        listen: function(type, callback) {
+            element.addEventListener(type, callback, false);
+        },
+        unlisten: function(type, callback) {
+            element.removeEventListener(type, callback, false);
+        },
+        listenOnParent: function(type, callback) {
+            element.parentElement.addEventListener(type, callback, false);
+        },
+        unlistenOnParent: function(type, callback) {
+            element.parentElement.removeEventListener(type, callback, false);
+        },
+        getElement: function() {
+            return element;
+        },
+        setElement: function(value) {
+            element = value;
+        },
+        setSource: function(source) {
+            element.src = source;
+        },
+        isStalled: function() {
+            return element.playbackRate === 0;
+        },
+        stallStream: stallStream
+    };
+};
+
+MediaPlayer.models.VideoModel.prototype = {
+    constructor: MediaPlayer.models.VideoModel
+};
+
+MediaPlayer.dependencies.VideoModelExtensions = function() {
+    "use strict";
+    return {
+        getPlaybackQuality: function(videoElement) {
+            var hasWebKit = "webkitDroppedFrameCount" in videoElement, hasQuality = "getVideoPlaybackQuality" in videoElement, result = null;
+            if (hasQuality) {
+                result = videoElement.getVideoPlaybackQuality();
+            } else if (hasWebKit) {
+                result = {
+                    droppedVideoFrames: videoElement.webkitDroppedFrameCount,
+                    creationTime: new Date(),
+                    totalVideoFrames: videoElement.webkitDecodedFrameCount
+                };
+            }
+            return result;
+        }
+    };
+};
+
+MediaPlayer.dependencies.VideoModelExtensions.prototype = {
+    constructor: MediaPlayer.dependencies.VideoModelExtensions
+};
+
+MediaPlayer.dependencies.TextController = function() {
+    var LOADING = "LOADING", READY = "READY", initialized = false, periodInfo = null, mediaSource, data, buffer, availableRepresentations, state = READY, setState = function(value) {
+        this.debug.log("TextController setState to:" + value);
+        state = value;
+    }, startPlayback = function() {
+        if (!initialized || state !== READY) {
+            return;
+        }
+        var self = this;
+        self.indexHandler.getInitRequest(availableRepresentations[0]).then(function(request) {
+            self.fragmentLoader.load(request).then(onBytesLoaded.bind(self, request), onBytesError.bind(self, request));
+            setState.call(self, LOADING);
+        });
+    }, doStart = function() {
+        startPlayback.call(this);
+    }, updateRepresentations = function(data, periodInfo) {
+        var self = this, deferred = Q.defer(), manifest = self.manifestModel.getValue();
+        self.manifestExt.getDataIndex(data, manifest, periodInfo.index).then(function(idx) {
+            self.manifestExt.getAdaptationsForPeriod(manifest, periodInfo).then(function(adaptations) {
+                self.manifestExt.getRepresentationsForAdaptation(manifest, adaptations[idx]).then(function(representations) {
+                    deferred.resolve(representations);
+                });
+            });
+        });
+        return deferred.promise;
+    }, onBytesLoaded = function(request, response) {
+        var self = this;
+        self.fragmentController.process(response.data, request).then(function(data) {
+            if (data !== null) {
+                self.sourceBufferExt.append(buffer, data, self.videoModel);
+            }
+        });
+    }, onBytesError = function() {};
+    return {
+        videoModel: undefined,
+        fragmentLoader: undefined,
+        fragmentController: undefined,
+        indexHandler: undefined,
+        sourceBufferExt: undefined,
+        manifestModel: undefined,
+        manifestExt: undefined,
+        debug: undefined,
+        initialize: function(periodInfo, data, buffer, videoModel, source) {
+            var self = this;
+            self.setVideoModel(videoModel);
+            self.setBuffer(buffer);
+            self.setMediaSource(source);
+            self.updateData(data, periodInfo).then(function() {
+                initialized = true;
+                startPlayback.call(self);
+            });
+        },
+        setPeriodInfo: function(value) {
+            periodInfo = value;
+        },
+        getPeriodIndex: function() {
+            return periodInfo.index;
+        },
+        getVideoModel: function() {
+            return this.videoModel;
+        },
+        setVideoModel: function(value) {
+            this.videoModel = value;
+        },
+        getData: function() {
+            return data;
+        },
+        setData: function(value) {
+            data = value;
+        },
+        getBuffer: function() {
+            return buffer;
+        },
+        setBuffer: function(value) {
+            buffer = value;
+        },
+        setMediaSource: function(value) {
+            mediaSource = value;
+        },
+        updateData: function(dataValue, periodInfoValue) {
+            var self = this, deferred = Q.defer();
+            data = dataValue;
+            periodInfo = periodInfoValue;
+            updateRepresentations.call(self, data, periodInfo).then(function(representations) {
+                availableRepresentations = representations;
+                setState.call(self, READY);
+                startPlayback.call(self);
+                deferred.resolve();
+            });
+            return deferred.promise;
+        },
+        reset: function(errored) {
+            if (!errored) {
+                this.sourceBufferExt.abort(mediaSource, buffer);
+                this.sourceBufferExt.removeSourceBuffer(mediaSource, buffer);
+            }
+        },
+        start: doStart
+    };
+};
+
+MediaPlayer.dependencies.TextController.prototype = {
+    constructor: MediaPlayer.dependencies.TextController
+};
+
+MediaPlayer.dependencies.TextSourceBuffer = function() {
+    var video, data, mimeType;
+    return {
+        system: undefined,
+        eventBus: undefined,
+        errHandler: undefined,
+        initialize: function(type, bufferController) {
+            mimeType = type;
+            video = bufferController.getVideoModel().getElement();
+            data = bufferController.getData();
+        },
+        append: function(bytes) {
+            var self = this, ccContent = String.fromCharCode.apply(null, new Uint16Array(bytes));
+            self.getParser().parse(ccContent).then(function(result) {
+                var label = data.Representation_asArray[0].id, lang = data.lang;
+                self.getTextTrackExtensions().addTextTrack(video, result, label, lang, true).then(function() {
+                    self.eventBus.dispatchEvent({
+                        type: "updateend"
+                    });
+                });
+            }, function(errMsg) {
+                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CC_ERR_PARSE, errMsg, ccContent);
+            });
+        },
+        abort: function() {
+            this.getTextTrackExtensions().deleteCues(video);
+        },
+        getParser: function() {
+            var parser;
+            if (mimeType === "text/vtt") {
+                parser = this.system.getObject("vttParser");
+            } else if (mimeType === "application/ttml+xml") {
+                parser = this.system.getObject("ttmlParser");
+            }
+            return parser;
+        },
+        getTextTrackExtensions: function() {
+            return this.system.getObject("textTrackExtensions");
+        },
+        addEventListener: function(type, listener, useCapture) {
+            this.eventBus.addEventListener(type, listener, useCapture);
+        },
+        removeEventListener: function(type, listener, useCapture) {
+            this.eventBus.removeEventListener(type, listener, useCapture);
+        }
+    };
+};
+
+MediaPlayer.dependencies.TextSourceBuffer.prototype = {
+    constructor: MediaPlayer.dependencies.TextSourceBuffer
+};
+
+MediaPlayer.utils.TextTrackExtensions = function() {
+    "use strict";
+    var Cue;
+    return {
+        eventBus: undefined,
+        setup: function() {
+            Cue = window.VTTCue || window.TextTrackCue;
+        },
+        subtitlesStyleChanged: function(style) {
+            this.eventBus.dispatchEvent({
+                type: "subtitlesStyleChanged",
+                data: style
+            });
+        },
+        addTextTrack: function(video, captionData, label, scrlang, isDefaultTrack) {
+            var track = null;
+            if (video.textTracks.length === 0) {
+                track = video.addTextTrack("subtitles", label, scrlang);
+            } else {
+                track = video.textTracks[0];
+            }
+            track.default = isDefaultTrack;
+            track.mode = "showing";
+            for (var item in captionData) {
+                var currentItem = captionData[item];
+                track.addCue(new Cue(currentItem.start, currentItem.end, currentItem.data));
+            }
+            return Q.when(track);
+        },
+        onCueEnter: function(e) {
+            this.subtitlesStyleChanged(e.currentTarget.style);
+        },
+        addCues: function(track, captionData) {
+            for (var item in captionData) {
+                var currentItem = captionData[item];
+                var newCue = new Cue(currentItem.start, currentItem.end, currentItem.data);
+                newCue.onenter = this.onCueEnter.bind(this);
+                newCue.snapToLines = false;
+                if (item > 0 && currentItem.start <= captionData[item - 1].end) {
+                    newCue.line = captionData[item - 1].line + parseFloat(currentItem.style.fontSize.substr(0, currentItem.style.fontSize.length - 1)) + 3;
+                } else {
+                    newCue.line = currentItem.line;
+                }
+                if (currentItem.style) {
+                    newCue.style = currentItem.style;
+                }
+                track.addCue(newCue);
+            }
+        },
+        deleteCues: function(video, disabled) {
+            if (video) {
+                var track = video.textTracks[0];
+                if (track) {
+                    var cues = track.cues;
+                    if (cues) {
+                        var lastIdx = cues.length - 1;
+                        for (var i = lastIdx; i >= 0; i -= 1) {
+                            track.removeCue(cues[i]);
+                        }
+                    }
+                    if (disabled) {
+                        track.mode = "disabled";
+                    }
+                }
+            }
+        }
+    };
+};
+
+MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
+    var video, mimeType, currentLang, currentId, buffered = {
+        length: 0,
+        ranges: [],
+        start: function(index) {
+            return this.ranges[index].start;
+        },
+        end: function(index) {
+            return this.ranges[index].end;
+        },
+        addRange: function(start, end) {
+            this.ranges.push({
+                start: start,
+                end: end
+            });
+            this.length = this.length + 1;
+            this.ranges.sort(function(a, b) {
+                return a.start - b.start;
+            });
+        },
+        removeRange: function(start, end) {
+            for (var i = this.ranges.length - 1; i >= 0; i--) {
+                if (this.ranges[i].start >= start && this.ranges[i].end <= end) this.ranges.splice(i, 1);
+            }
+            this.length = this.ranges.length;
+        },
+        reset: function() {
+            this.length = 0;
+            this.ranges = [];
+        }
+    };
+    return {
+        updating: false,
+        system: undefined,
+        eventBus: undefined,
+        buffered: buffered,
+        textTrackExtensions: undefined,
+        ttmlParser: undefined,
+        initialize: function(type, bufferController, subtitleData) {
+            mimeType = type;
+            video = bufferController.getVideoModel().getElement();
+            buffered.reset();
+            currentLang = subtitleData.lang;
+            currentId = subtitleData.id;
+        },
+        remove: function(start, end) {
+            if (start < 0 || start >= end) {
+                throw "INVALID_ACCESS_ERR";
+            }
+            this.getTextTrackExtensions().deleteCues(video, false);
+            this.buffered.removeRange(start, end);
+        },
+        append: function(bytes) {
+            var self = this;
+            var file = mp4lib.deserialize(bytes);
+            var moov = file.getBoxByType("moov");
+            if (moov) {
+                var mvhd = moov.getBoxByType("mvhd");
+                self.timescale = mvhd.timescale;
+                self.textTrackExtensions.addTextTrack(video, [], currentId, currentLang, true).then(function(track) {
+                    self.track = track;
+                    self.eventBus.dispatchEvent({
+                        type: "updateend"
+                    });
+                });
+                return;
+            }
+            var moof = file.getBoxByType("moof");
+            if (moof) {
+                var mdat = file.getBoxByType("mdat");
+                var traf = moof.getBoxByType("traf");
+                var tfhd = traf.getBoxByType("tfhd");
+                var tfdt = traf.getBoxByType("tfdt");
+                var trun = traf.getBoxByType("trun");
+                var fragmentStart = tfdt.baseMediaDecodeTime / self.timescale;
+                var fragmentDuration = 0;
+                if (trun.flags & 256) {
+                    fragmentDuration = trun.samples_table[0].sample_duration / self.timescale;
+                } else {
+                    fragmentDuration = tfhd.default_sample_duration / self.timescale;
+                }
+                self.buffered.addRange(fragmentStart, fragmentStart + fragmentDuration);
+                self.convertUTF8ToString(mdat.data).then(function(result) {
+                    self.ttmlParser.parse(result).then(function(cues) {
+                        var i;
+                        if (cues) {
+                            for (i = 0; i < cues.length; i++) {
+                                cues[i].start = cues[i].start + fragmentStart;
+                                cues[i].end = cues[i].end + fragmentStart;
+                            }
+                            self.textTrackExtensions.addCues(self.track, cues);
+                            self.eventBus.dispatchEvent({
+                                type: "updateend"
+                            });
+                        }
+                    });
+                });
+            }
+            return;
+        },
+        convertUTF8ToString: function(buf) {
+            var deferred = Q.defer();
+            var blob = new Blob([ buf ], {
+                type: "text/xml"
+            });
+            var f = new FileReader();
+            f.onload = function(e) {
+                deferred.resolve(e.target.result);
+            };
+            f.readAsText(blob);
+            return deferred.promise;
+        },
+        abort: function() {
+            this.getTextTrackExtensions().deleteCues(video, true);
+        },
+        getTextTrackExtensions: function() {
+            return this.textTrackExtensions;
+        },
+        addEventListener: function(type, listener, useCapture) {
+            this.eventBus.addEventListener(type, listener, useCapture);
+            if (!this.updating) this.eventBus.dispatchEvent({
+                type: "updateend"
+            });
+        },
+        removeEventListener: function(type, listener, useCapture) {
+            this.eventBus.removeEventListener(type, listener, useCapture);
+        }
+    };
+};
+
+MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer.prototype = {
+    constructor: MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer
+};
+
+MediaPlayer.utils.TTMLParser = function() {
+    "use strict";
+    var SECONDS_IN_HOUR = 60 * 60, SECONDS_IN_MIN = 60, TTAF_URI = "http://www.w3.org/2006/10/ttaf1", TTAF_PARAMETER_URI = "http://www.w3.org/2006/10/ttaf1#parameter", TTAF_STYLE_URI = "http://www.w3.org/2006/10/ttaf1#styling", TTML_URI = "http://www.w3.org/ns/ttml", TTML_PARAMETER_URI = "http://www.w3.org/ns/ttml#parameter", TTML_STYLE_URI = "http://www.w3.org/ns/ttml#styling", globalPrefTTNameSpace, globalPrefStyleNameSpace, globalPrefParameterNameSpace, timingRegexClockTime = /^(0[0-9]|1[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])((\.[0-9][0-9][0-9])|(:[0-9][0-9]))$/, timingRegexOffsetTime = /^\d+(\.\d+|)(h|m|s|ms|f)$/, ttml, parseTimings = function(timingStr) {
+        var timeParts, parsedTime, frameRate, metric;
+        if (timingRegexClockTime.test(timingStr)) {
+            timeParts = timingStr.split(":");
+            parsedTime = parseFloat(timeParts[0]) * SECONDS_IN_HOUR + parseFloat(timeParts[1]) * SECONDS_IN_MIN + parseFloat(timeParts[2]);
+            if (timeParts[3]) {
+                frameRate = ttml.tt.frameRate;
+                if (frameRate && !isNaN(frameRate)) {
+                    parsedTime += parseFloat(timeParts[3]) / frameRate;
+                }
+            }
+            return parsedTime;
+        }
+        if (timingRegexOffsetTime.test(timingStr)) {
+            if (timingStr.substr(timingStr.length - 2) == "ms") {
+                parsedTime = parseFloat(timingStr.substr(0, timingStr.length - 3));
+                metric = timingStr.substr(timingStr.length - 2);
+            } else {
+                parsedTime = parseFloat(timingStr.substr(0, timingStr.length - 2));
+                metric = timingStr.substr(timingStr.length - 1);
+            }
+            switch (metric) {
+              case "h":
+                parsedTime = parsedTime * 60 * 60;
+                break;
+
+              case "m":
+                parsedTime = parsedTime * 60;
+                break;
+
+              case "s":
+                break;
+
+              case "ms":
+                parsedTime = parsedTime * .01;
+                break;
+
+              case "f":
+                frameRate = ttml.tt.frameRate;
+                if (frameRate && !isNaN(frameRate)) {
+                    parsedTime = parsedTime / frameRate;
+                } else {
+                    return NaN;
+                }
+                break;
+            }
+            return parsedTime;
+        }
+        return NaN;
+    }, passStructuralConstraints = function() {
+        var passed = false, hasTt = ttml.hasOwnProperty("tt"), hasHead = hasTt ? ttml.tt.hasOwnProperty("head") : false, hasLayout = hasHead ? ttml.tt.head.hasOwnProperty("layout") : false, hasStyling = hasHead ? ttml.tt.head.hasOwnProperty("styling") : false, hasBody = hasTt ? ttml.tt.hasOwnProperty("body") : false;
+        if (hasTt && hasHead && hasLayout && hasStyling && hasBody) {
+            passed = true;
+        }
+        return passed;
+    }, getNamespacePrefix = function(json, ns) {
+        var r = Object.keys(json).filter(function(k) {
+            return k.split(":")[0] === "xmlns" && json[k] === ns;
+        }).map(function(k) {
+            var splitValues = k.split(":");
+            if (splitValues.length > 1) {
+                return k.split(":")[1] + ":";
+            } else {
+                return "";
+            }
+        });
+        if (r.length === 0) {
+            r[0] = "";
+        }
+        return r;
+    }, getLocalNamespace = function(json, ns) {
+        var localNs = null;
+        switch (ns) {
+          case "ttml":
+            localNs = getNamespacePrefix(json, TTAF_URI);
+            if (localNs.length === 1 && localNs[0] === "") {
+                localNs = getNamespacePrefix(json, TTML_URI);
+            }
+            break;
+
+          case "style":
+            localNs = getNamespacePrefix(json, TTAF_STYLE_URI);
+            if (localNs.length === 1 && localNs[0] === "") {
+                localNs = getNamespacePrefix(json, TTML_STYLE_URI);
+            }
+            break;
+
+          case "parameter":
+            localNs = getNamespacePrefix(json, TTML_PARAMETER_URI);
+            if (localNs.length === 1 && localNs[0] === "") {
+                localNs = getNamespacePrefix(json, TTAF_PARAMETER_URI);
+            }
+            break;
+        }
+        return localNs;
+    }, getDataInfo = function(jsonLayout, jsonArrayName, infoName) {
+        var j = 0;
+        if (jsonLayout) {
+            for (j = 0; j < jsonLayout[jsonArrayName].length; j++) {
+                var tab = jsonLayout[jsonArrayName][j];
+                if (tab["xml:id"] === infoName) {
+                    return tab;
+                }
+            }
+        }
+        return null;
+    }, getParameterValue = function(json, prefix, parameter) {
+        var j = 0;
+        for (j = 0; j < prefix.length; j++) {
+            if (json.hasOwnProperty(prefix[j] === "" ? parameter : prefix[j] + parameter)) {
+                return json[prefix[j] + parameter];
+            }
+        }
+        return null;
+    }, findParameterInRegion = function(json, leaf, prefTT, prefStyle, parameter) {
+        var parameterValue = null, localPrefTT = prefTT, localPrefStyle = prefStyle, leafStyle;
+        var cueRegion = getDataInfo(json.head.layout, "region_asArray", getParameterValue(leaf, localPrefTT, "region"));
+        if (cueRegion) {
+            localPrefTT = getLocalNamespace(cueRegion, "ttml");
+            localPrefStyle = getLocalNamespace(cueRegion, "style");
+            localPrefStyle = globalPrefStyleNameSpace.concat(localPrefStyle);
+            localPrefTT = globalPrefTTNameSpace.concat(localPrefTT);
+            parameterValue = getParameterValue(cueRegion, localPrefStyle, parameter);
+            if (!parameterValue) {
+                leafStyle = getDataInfo(json.head.styling, "style_asArray", getParameterValue(cueRegion, localPrefTT, "style"));
+                while (!parameterValue && leafStyle) {
+                    parameterValue = getParameterValue(leafStyle, localPrefStyle, parameter);
+                    if (!parameterValue) {
+                        leafStyle = getDataInfo(json.head.styling, "style_asArray", getParameterValue(leafStyle, localPrefTT, "style"));
+                        localPrefTT = getLocalNamespace(leafStyle, "ttml");
+                        localPrefStyle = getLocalNamespace(leafStyle, "style");
+                        localPrefStyle = globalPrefStyleNameSpace.concat(localPrefStyle);
+                        localPrefTT = globalPrefTTNameSpace.concat(localPrefTT);
+                    }
+                }
+            }
+        }
+        return parameterValue;
+    }, findParameter = function(json, leaf, prefTT, prefStyle, parameter) {
+        var parameterValue = null, localPrefTT = prefTT, localPrefStyle = prefStyle;
+        parameterValue = getParameterValue(leaf, localPrefStyle, parameter);
+        if (!parameterValue) {
+            var leafStyle = getDataInfo(json.head.styling, "style_asArray", getParameterValue(leaf, localPrefTT, "style"));
+            if (leafStyle) {
+                parameterValue = getParameterValue(leafStyle, localPrefStyle, parameter);
+                if (!parameterValue) {
+                    parameterValue = findParameterInRegion(json, leaf, localPrefTT, localPrefStyle, parameter);
+                }
+            } else {
+                parameterValue = findParameterInRegion(json, leaf, localPrefTT, localPrefStyle, parameter);
+            }
+        }
+        return parameterValue;
+    }, internalParse = function(data) {
+        var captionArray = [], converter = new X2JS([], "", false), errorMsg, cues, cue, startTime, endTime, cuePrefTTNameSpace, cuePrefStyleNameSpace, regionPrefTTNameSpace, regionPrefStyleNameSpace, cssStyle = {
+            backgroundColor: null,
+            color: null,
+            fontSize: null,
+            fontFamily: null
+        }, caption, i;
+        try {
+            ttml = converter.xml_str2json(data);
+            if (!passStructuralConstraints()) {
+                errorMsg = "TTML document has incorrect structure";
+                return Q.reject(errorMsg);
+            }
+            globalPrefTTNameSpace = getLocalNamespace(ttml.tt, "ttml");
+            globalPrefParameterNameSpace = getLocalNamespace(ttml.tt, "parameter");
+            globalPrefStyleNameSpace = getLocalNamespace(ttml.tt, "style");
+            var frameRate = getParameterValue(ttml.tt, globalPrefParameterNameSpace, "frameRate");
+            if (frameRate) {
+                ttml.tt.frameRate = parseInt(frameRate, 10);
+            }
+            if (!ttml.tt.body.div_asArray) {
+                errorMsg = "TTML document does not contain any div";
+                return Q.reject(errorMsg);
+            }
+            cues = ttml.tt.body.div_asArray[0].p_asArray;
+            if (!cues || cues.length === 0) {
+                errorMsg = "TTML document does not contain any cues";
+                return Q.reject(errorMsg);
+            }
+            for (i = 0; i < cues.length; i += 1) {
+                caption = null;
+                cue = cues[i];
+                cuePrefTTNameSpace = getLocalNamespace(cue, "ttml");
+                cuePrefStyleNameSpace = getLocalNamespace(cue, "style");
+                var prefTT = globalPrefTTNameSpace.concat(cuePrefTTNameSpace);
+                startTime = parseTimings(getParameterValue(cue, prefTT, "begin"));
+                endTime = parseTimings(getParameterValue(cue, prefTT, "end"));
+                var prefStyle = globalPrefStyleNameSpace.concat(cuePrefStyleNameSpace);
+                if (isNaN(startTime) || isNaN(endTime)) {
+                    errorMsg = "TTML document has incorrect timing value";
+                    return Q.reject(errorMsg);
+                }
+                cssStyle.backgroundColor = findParameter(ttml.tt, cue, prefTT, prefStyle, "backgroundColor");
+                cssStyle.color = findParameter(ttml.tt, cue, prefTT, prefStyle, "color");
+                cssStyle.fontSize = findParameter(ttml.tt, cue, prefTT, prefStyle, "fontSize");
+                cssStyle.fontFamily = findParameter(ttml.tt, cue, prefTT, prefStyle, "fontFamily");
+                var extent = findParameter(ttml.tt, cue, prefTT, prefStyle, "extent");
+                if (cssStyle.fontSize[cssStyle.fontSize.length - 1] === "%" && extent) {
+                    extent = extent.split(" ")[1];
+                    extent = parseFloat(extent.substr(0, extent.length - 1));
+                    cssStyle.fontSize = parseInt(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1)) * extent / 100 + "%";
+                }
+                caption = {
+                    start: startTime,
+                    end: endTime,
+                    data: cue.__text,
+                    line: 80,
+                    style: cssStyle
+                };
+                captionArray.push(caption);
+            }
+            return Q.when(captionArray);
+        } catch (err) {
+            errorMsg = err.message;
+            return Q.reject(errorMsg);
+        }
+    };
+    return {
+        parse: internalParse
+    };
+};
+
+MediaPlayer.utils.VTTParser = function() {
+    "use strict";
+    var convertCuePointTimes = function(time) {
+        var timeArray = time.split(":"), len = timeArray.length - 1;
+        time = parseInt(timeArray[len - 1], 10) * 60 + parseFloat(timeArray[len], 10);
+        if (len === 2) {
+            time += parseInt(timeArray[0], 10) * 3600;
+        }
+        return time;
+    };
+    return {
+        parse: function(data) {
+            var regExNewLine = /(?:\r\n|\r|\n)/gm, regExToken = /-->/, regExWhiteSpace = /(^[\s]+|[\s]+$)/g, captionArray = [], len;
+            data = data.split(regExNewLine);
+            len = data.length;
+            for (var i = 0; i < len; i++) {
+                var item = data[i];
+                if (item.length > 0 && item !== "WEBVTT") {
+                    if (item.match(regExToken)) {
+                        var cuePoints = item.split(regExToken);
+                        var sublines = data[i + 1];
+                        captionArray.push({
+                            start: convertCuePointTimes(cuePoints[0].replace(regExWhiteSpace, "")),
+                            end: convertCuePointTimes(cuePoints[1].replace(regExWhiteSpace, "")),
+                            data: sublines
+                        });
+                    }
+                }
+            }
+            return Q.when(captionArray);
+        }
+    };
+};
+
+MediaPlayer.dependencies.protection.CommonEncryption = {
+    findCencContentProtection: function(cpArray) {
+        var retVal = null;
+        for (var i = 0; i < cpArray.length; ++i) {
+            var cp = cpArray[i];
+            if (cp.schemeIdUri.toLowerCase() === "urn:mpeg:dash:mp4protection:2011" && cp.value.toLowerCase() === "cenc") retVal = cp;
+        }
+        return retVal;
+    },
+    getPSSHData: function(pssh) {
+        return pssh.slice(32);
+    },
+    getPSSHForKeySystem: function(keySystem, initData) {
+        var psshList = MediaPlayer.dependencies.protection.CommonEncryption.parsePSSHList(initData);
+        if (psshList.hasOwnProperty(keySystem.uuid.toLowerCase())) {
+            return psshList[keySystem.uuid.toLowerCase()];
+        }
+        return null;
+    },
+    parseInitDataFromContentProtection: function(cpData) {
+        if (cpData && "pssh" in cpData) {
+            return BASE64.decodeArray(cpData.pssh.__text).buffer;
+        }
+        return null;
+    },
+    readBytes: function(buf, pos, nbBytes) {
+        var value = 0;
+        for (var i = 0; i < nbBytes; i++) {
+            value = value << 8;
+            value = value + buf[pos];
+            pos++;
+        }
+        return value;
+    },
+    parsePSSHList: function(data) {
+        if (data === null) return [];
+        var buffer = data;
+        if (!data.buffer) {
+            buffer = new Uint8Array(data);
+        }
+        var done = false;
+        var pssh = {};
+        var byteCursor = 0;
+        while (!done) {
+            var size, nextBox, version, systemID, psshDataSize, boxStart = byteCursor;
+            if (byteCursor >= buffer.byteLength) break;
+            size = this.readBytes(buffer, byteCursor, 4);
+            nextBox = byteCursor + size;
+            byteCursor += 4;
+            if (this.readBytes(buffer, byteCursor, 4) !== 1886614376) {
+                byteCursor = nextBox;
+                continue;
+            }
+            byteCursor += 4;
+            version = this.readBytes(buffer, byteCursor, 1);
+            if (version !== 0 && version !== 1) {
+                byteCursor = nextBox;
+                continue;
+            }
+            byteCursor += 1;
+            byteCursor += 3;
+            systemID = "";
+            var i, val;
+            for (i = 0; i < 4; i++) {
+                val = this.readBytes(buffer, byteCursor + i, 1).toString(16);
+                systemID += val.length === 1 ? "0" + val : val;
+            }
+            byteCursor += 4;
+            systemID += "-";
+            for (i = 0; i < 2; i++) {
+                val = this.readBytes(buffer, byteCursor + i, 1).toString(16);
+                systemID += val.length === 1 ? "0" + val : val;
+            }
+            byteCursor += 2;
+            systemID += "-";
+            for (i = 0; i < 2; i++) {
+                val = this.readBytes(buffer, byteCursor + i, 1).toString(16);
+                systemID += val.length === 1 ? "0" + val : val;
+            }
+            byteCursor += 2;
+            systemID += "-";
+            for (i = 0; i < 2; i++) {
+                val = this.readBytes(buffer, byteCursor + i, 1).toString(16);
+                systemID += val.length === 1 ? "0" + val : val;
+            }
+            byteCursor += 2;
+            systemID += "-";
+            for (i = 0; i < 6; i++) {
+                val = this.readBytes(buffer, byteCursor + i, 1).toString(16);
+                systemID += val.length === 1 ? "0" + val : val;
+            }
+            byteCursor += 6;
+            systemID = systemID.toLowerCase();
+            psshDataSize = this.readBytes(buffer, byteCursor, 4);
+            byteCursor += 4;
+            pssh[systemID] = buffer.subarray(boxStart, nextBox).buffer;
+            byteCursor = nextBox;
+        }
+        return pssh;
+    }
+};
+
+MediaPlayer.dependencies.ProtectionController = function() {
+    "use strict";
+    var pendingNeedKeyData = [], audioInfo, videoInfo, onKeyMessage = function(e) {
+        if (e.error) {
+            this.debug.log(e.error);
+            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, e.error);
+        } else {
+            var keyMessageEvent = e.data;
+            this.debug.log("[DRM] onKeyMessage: message = " + keyMessageEvent.message);
+            this.protectionModel.keySystem.doLicenseRequest(keyMessageEvent.message, keyMessageEvent.defaultURL, keyMessageEvent.sessionToken);
+        }
+    }, onKeyStatusChanged = function(e) {
+        if (e.error) {
+            this.debug.log(e.error);
+            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, e.error);
+        } else {
+            this.debug.log("[DRM] onKeyStatusChanged: status = " + e.data.status + " pour keyID = " + e.data.keyId);
+        }
+    }, onLicenseRequestComplete = function(e) {
+        if (!e.error) {
+            this.debug.log("[DRM] License request successful.  Session ID = " + e.data.requestData.getSessionID());
+            this.updateKeySession(e.data.requestData, e.data.message);
+        } else {
+            this.debug.log("[DRM] License request failed! -- " + e.error);
+            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, e.error);
+        }
+    }, onKeySystemSelected = function() {
+        this.protectionModel.keySystem.subscribe(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE, this);
+        this.debug.log("[DRM] Key system selected: " + this.protectionModel.keySystem.ks);
+        if (!this.keySystem) {
+            this.keySystem = this.protectionModel.keySystem;
+        }
+        for (var i = 0; i < pendingNeedKeyData.length; i++) {
+            this.createKeySession(pendingNeedKeyData[i]);
+        }
+        pendingNeedKeyData = [];
+    }, onNeedKey = function(event) {
+        if (event.data.initDataType !== "cenc") {
+            this.debug.log("[DRM] Only 'cenc' initData is supported!  Ignoring initData of type: " + event.data.initDataType);
+            return;
+        }
+        this.debug.log("[DRM] NeedKey");
+        var abInitData = event.data.initData;
+        if (this.keySystem) {
+            this.createKeySession(abInitData, this.keySystem.cdmData);
+        } else if (this.keySystem === undefined) {
+            this.keySystem = null;
+            pendingNeedKeyData.push(abInitData);
+            try {
+                this.protectionExt.autoSelectKeySystem(this.protectionExt.getSupportedKeySystems(abInitData), this, videoInfo, audioInfo);
+            } catch (error) {
+                this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_UNSUPPORTED, "[DRM] Unable to select a key system from needkey initData. -- " + error.message, null));
+            }
+        } else {
+            pendingNeedKeyData.push(abInitData);
+        }
+    }, onKeySystemAccessComplete = function(event) {
+        if (!event.error) {
+            this.debug.log("[DRM] KeySystem Access Granted");
+        } else {
+            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED, "[DRM] KeySystem Access Denied! -- " + event.error, null));
+        }
+    }, onServerCertificateUpdated = function(event) {
+        if (!event.error) {
+            this.debug.log("[DRM] License server certificate successfully updated.");
+        } else {
+            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_UPDATE_CERTIFICATE_IMPOSSIBLE, "[DRM] Failed to update license server certificate. -- " + event.error, null));
+        }
+    }, onKeySessionCreated = function(event) {
+        if (!event.error) {
+            this.debug.log("[DRM] Session created.  SessionID = " + event.data.getSessionID());
+        } else {
+            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_SESSION, "[DRM] Failed to create key session. -- " + event.error, null));
+        }
+    }, onKeyAdded = function() {
+        this.debug.log("[DRM] Key added.");
+    }, onKeyError = function(event) {
+        this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, event.data);
+    }, onKeySessionClosed = function(event) {
+        if (!event.error) {
+            this.debug.log("[DRM] Session closed.  SessionID = " + event.data);
+        } else {
+            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_CLOSE_SESSION, "[DRM] Failed to close key session. -- " + event.error, null));
+        }
+    }, onKeySessionRemoved = function(event) {
+        if (!event.error) {
+            this.debug.log("[DRM] Session removed.  SessionID = " + event.data);
+        } else {
+            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_REMOVE_SESSION, "[DRM] Failed to remove key session. -- " + event.error, null));
+        }
+    };
+    return {
+        system: undefined,
+        debug: undefined,
+        notify: undefined,
+        subscribe: undefined,
+        unsubscribe: undefined,
+        protectionExt: undefined,
+        keySystem: undefined,
+        manifestExt: undefined,
+        sessionType: "temporary",
+        setup: function() {
+            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE] = onKeyMessage.bind(this);
+            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED] = onKeySystemSelected.bind(this);
+            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE] = onKeySystemAccessComplete.bind(this);
+            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY] = onNeedKey.bind(this);
+            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_SERVER_CERTIFICATE_UPDATED] = onServerCertificateUpdated.bind(this);
+            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ADDED] = onKeyAdded.bind(this);
+            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR] = onKeyError.bind(this);
+            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CREATED] = onKeySessionCreated.bind(this);
+            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CLOSED] = onKeySessionClosed.bind(this);
+            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_REMOVED] = onKeySessionRemoved.bind(this);
+            this[MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE] = onLicenseRequestComplete.bind(this);
+            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED] = onKeyStatusChanged.bind(this);
+            this.protectionModel = this.system.getObject("protectionModel");
+            this.protectionModel.init();
+        },
+        init: function(manifest) {
+            var self = this;
+            this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_SERVER_CERTIFICATE_UPDATED, this);
+            this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ADDED, this);
+            this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR, this);
+            this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CREATED, this);
+            this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CLOSED, this);
+            this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_REMOVED, this);
+            this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE, this);
+            this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, this);
+            this.manifestExt.getVideoData(manifest, 0).then(function(videoData) {
+                self.manifestExt.getPrimaryAudioData(manifest, 0).then(function(audioData) {
+                    self.manifestExt.getContentProtectionData(videoData).then(function(contentProtectionData) {
+                        var supportedKS = self.protectionExt.getSupportedKeySystemsFromContentProtection(contentProtectionData);
+                        if (supportedKS && supportedKS.length > 0) {
+                            var ksSelected = {};
+                            ksSelected[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED] = function(event) {
+                                self.debug.log("[DRM] Key system selected");
+                                if (!event.error) {
+                                    self.keySystem = self.protectionModel.keySystem;
+                                    self.keySystem.subscribe(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE, self);
+                                    for (var ksIdx = 0; ksIdx < supportedKS.length; ksIdx++) {
+                                        if (self.keySystem === supportedKS[ksIdx].ks) {
+                                            self.debug.log("[DRM] Create key session for key system " + self.keySystem.systemString);
+                                            self.createKeySession(supportedKS[ksIdx].initData, supportedKS[ksIdx].cdmData);
+                                            break;
+                                        }
+                                    }
+                                } else {
+                                    self.debug.log("[DRM] Could not select key system from ContentProtection elements!  Falling back to needkey mechanism...");
+                                    self.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY, self);
+                                    self.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED, self);
+                                }
+                                self.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED, ksSelected);
+                            };
+                            self.keySystem = null;
+                            self.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED, ksSelected);
+                            self.protectionExt.autoSelectKeySystem(supportedKS, self, self.manifestExt.getCodec_(videoData), self.manifestExt.getCodec_(audioData));
+                        } else {
+                            self.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY, self);
+                            self.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED, self);
+                        }
+                    });
+                });
+            });
+        },
+        teardown: function() {
+            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE, this);
+            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED, this);
+            if (this.protectionModel.keySystem) {
+                this.protectionModel.keySystem.unsubscribe(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE, this);
+            }
+            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_SERVER_CERTIFICATE_UPDATED, this);
+            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ADDED, this);
+            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR, this);
+            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CREATED, this);
+            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CLOSED, this);
+            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_REMOVED, this);
+            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE, this);
+            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, this);
+            this.keySystem = undefined;
+            this.protectionModel.teardown();
+            this.protectionModel = undefined;
+        },
+        requestKeySystemAccess: function(ksConfiguration) {
+            this.protectionModel.requestKeySystemAccess(ksConfiguration);
+        },
+        selectKeySystem: function(keySystemAccess) {
+            if (this.protectionModel.keySystem) {
+                throw new Error("[DRM] KeySystem already selected!");
+            }
+            this.protectionModel.selectKeySystem(keySystemAccess);
+        },
+        createKeySession: function(initData, cdmData) {
+            this.debug.log("[DRM] Create key session, initData = " + initData);
+            var initDataForKS = MediaPlayer.dependencies.protection.CommonEncryption.getPSSHForKeySystem(this.keySystem, initData);
+            if (initDataForKS) {
+                try {
+                    this.protectionModel.createKeySession(initDataForKS, this.sessionType, cdmData);
+                } catch (error) {
+                    this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_SESSION, "Error creating key session! " + error.message, null));
+                }
+            } else {
+                this.debug.log("[DRM] Selected key system is " + this.keySystem.systemString + ".  needkey/encrypted event contains no initData corresponding to that key system!");
+            }
+        },
+        updateKeySession: function(sessionToken, message) {
+            this.protectionModel.updateKeySession(sessionToken, message);
+        },
+        loadKeySession: function(sessionID) {
+            this.protectionModel.loadKeySession(sessionID);
+        },
+        removeKeySession: function(sessionToken) {
+            this.protectionModel.removeKeySession(sessionToken);
+        },
+        closeKeySession: function(sessionToken) {
+            this.protectionModel.closeKeySession(sessionToken);
+        },
+        setServerCertificate: function(serverCertificate) {
+            this.protectionModel.setServerCertificate(serverCertificate);
+        },
+        setMediaElement: function(element) {
+            this.protectionModel.setMediaElement(element);
+        },
+        setSessionType: function(sessionType) {
+            this.sessionType = sessionType;
+        },
+        setProtectionData: function(data) {
+            this.protectionExt.init(data);
+        }
+    };
+};
+
+MediaPlayer.dependencies.ProtectionController.eventList = {
+    ENAME_PROTECTION_ERROR: "protectionError"
+};
+
+MediaPlayer.dependencies.ProtectionController.prototype = {
+    constructor: MediaPlayer.dependencies.ProtectionController
+};
+
+MediaPlayer.dependencies.ProtectionExtensions = function() {
+    "use strict";
+    this.system = undefined;
+    this.debug = undefined;
+    this.keySystems = [];
+    this.clearkeyKeySystem = undefined;
+};
+
+MediaPlayer.dependencies.ProtectionExtensions.prototype = {
+    constructor: MediaPlayer.dependencies.ProtectionExtensions,
+    setup: function() {
+        var keySystem;
+        keySystem = this.system.getObject("ksPlayReady");
+        this.keySystems.push(keySystem);
+        keySystem = this.system.getObject("ksWidevine");
+        this.keySystems.push(keySystem);
+        keySystem = this.system.getObject("ksClearKey");
+        this.keySystems.push(keySystem);
+        this.clearkeyKeySystem = keySystem;
+    },
+    init: function(protectionDataSet) {
+        var getProtectionData = function(keySystemString) {
+            var protData = null;
+            if (protectionDataSet) {
+                protData = keySystemString in protectionDataSet ? protectionDataSet[keySystemString] : null;
+            }
+            return protData;
+        };
+        for (var i = 0; i < this.keySystems.length; i++) {
+            var keySystem = this.keySystems[i];
+            keySystem.init(getProtectionData(keySystem.systemString));
+        }
+    },
+    getKeySystems: function() {
+        return this.keySystems;
+    },
+    getKeySystemBySystemString: function(systemString) {
+        for (var i = 0; i < this.keySystems.length; i++) {
+            if (this.keySystems[i].systemString === systemString) {
+                return this.keySystems[i];
+            }
+        }
+        return null;
+    },
+    isClearKey: function(keySystem) {
+        return keySystem === this.clearkeyKeySystem;
+    },
+    initDataEquals: function(initData1, initData2) {
+        if (initData1.byteLength === initData2.byteLength) {
+            for (var j = 0; j < initData1.byteLength; j++) {
+                if (initData1[j] !== initData2[j]) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    },
+    getSupportedKeySystemsFromContentProtection: function(cps) {
+        var cp, ks, ksIdx, cpIdx, supportedKS = [];
+        this.debug.log("[DRM] Get supported key systems from content protection");
+        if (cps) {
+            for (ksIdx = 0; ksIdx < this.keySystems.length; ++ksIdx) {
+                ks = this.keySystems[ksIdx];
+                for (cpIdx = 0; cpIdx < cps.length; ++cpIdx) {
+                    cp = cps[cpIdx];
+                    if (cp.schemeIdUri.toLowerCase() === ks.schemeIdURI) {
+                        this.debug.log("[DRM] Supported key systems: " + ks.schemeIdURI);
+                        var initData = ks.getInitData(cp);
+                        if (!!initData) {
+                            supportedKS.push({
+                                ks: this.keySystems[ksIdx],
+                                initData: initData,
+                                cdmData: ks.getCDMData()
+                            });
+                        }
+                    }
+                }
+            }
+        }
+        return supportedKS;
+    },
+    getSupportedKeySystems: function(initData) {
+        var ksIdx, supportedKS = [], pssh = MediaPlayer.dependencies.protection.CommonEncryption.parsePSSHList(initData);
+        this.debug.log("[DRM] Get supported key systems from init data");
+        for (ksIdx = 0; ksIdx < this.keySystems.length; ++ksIdx) {
+            if (this.keySystems[ksIdx].uuid in pssh) {
+                this.debug.log("[DRM] Add supported key system: " + this.keySystems[ksIdx].systemString);
+                supportedKS.push({
+                    ks: this.keySystems[ksIdx],
+                    initData: pssh[this.keySystems[ksIdx].uuid]
+                });
+            }
+        }
+        return supportedKS;
+    },
+    autoSelectKeySystem: function(supportedKS, protectionController, videoCodec, audioCodec) {
+        this.debug.log("[DRM] Auto select key system: ");
+        this.debug.log("[DRM] ---- video codec = " + videoCodec);
+        this.debug.log("[DRM] ---- audio codec = " + audioCodec);
+        if (supportedKS.length === 0) {
+            throw new Error("DRM system for this content not supported by the player!");
+        }
+        var audioCapabilities = [], videoCapabilities = [];
+        if (videoCodec) {
+            videoCapabilities.push(new MediaPlayer.vo.protection.MediaCapability(videoCodec));
+        }
+        if (audioCodec) {
+            audioCapabilities.push(new MediaPlayer.vo.protection.MediaCapability(audioCodec));
+        }
+        var ksConfig = new MediaPlayer.vo.protection.KeySystemConfiguration(audioCapabilities, videoCapabilities);
+        var requestedKeySystems = [];
+        for (var i = 0; i < supportedKS.length; i++) {
+            requestedKeySystems.push({
+                ks: supportedKS[i].ks,
+                configs: [ ksConfig ]
+            });
+        }
+        var self = this;
+        (function(protCtrl) {
+            var cbObj = {};
+            cbObj[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE] = function(event) {
+                protCtrl.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE, this);
+                if (!event.error) {
+                    var keySystemAccess = event.data;
+                    self.debug.log("[DRM] KeySystem Access Granted (" + keySystemAccess.keySystem.systemString + ")!");
+                    protCtrl.selectKeySystem(keySystemAccess);
+                } else {
+                    self.debug.log(event.error);
+                    protCtrl.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED, "[DRM] KeySystem Access Denied! -- " + event.error, null));
+                }
+            };
+            protCtrl.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE, cbObj);
+            protCtrl.requestKeySystemAccess(requestedKeySystems);
+        })(protectionController);
+    }
+};
+
 MediaPlayer.models.ProtectionModel = {};
 
 MediaPlayer.models.ProtectionModel.eventList = {
@@ -11677,7 +12725,7 @@ MediaPlayer.models.ProtectionModel_01b = function() {
         } else {
             var len = sessionArray.length;
             for (var i = 0; i < len; i++) {
-                if (sessionArray[i].sessionID == sessionID) {
+                if (sessionArray[i].sessionID === sessionID) {
                     return sessionArray[i];
                 }
             }
@@ -12329,543 +13377,6 @@ MediaPlayer.models.ProtectionModel_21Jan2015.prototype = {
     constructor: MediaPlayer.models.ProtectionModel_21Jan2015
 };
 
-MediaPlayer.vo.protection.ClearKeyKeySet = function(keyPairs, type) {
-    if (type && type !== "persistent" && type !== "temporary") throw new Error("Invalid ClearKey key set type!  Must be one of 'persistent' or 'temporary'");
-    this.keyPairs = keyPairs;
-    this.type = type;
-    this.toJWK = function() {
-        var i, numKeys = this.keyPairs.length, jwk = {};
-        jwk.keys = [];
-        for (i = 0; i < numKeys; i++) {
-            var key = {
-                kty: "oct",
-                alg: "A128KW",
-                kid: this.keyPairs[i].keyID,
-                k: this.keyPairs[i].key
-            };
-            jwk.keys.push(key);
-        }
-        if (this.type) {
-            jwk.type = this.type;
-        }
-        var jwkString = JSON.stringify(jwk);
-        var len = jwkString.length;
-        var buf = new ArrayBuffer(len);
-        var bView = new Uint8Array(buf);
-        for (i = 0; i < len; i++) bView[i] = jwkString.charCodeAt(i);
-        return buf;
-    };
-};
-
-MediaPlayer.vo.protection.ClearKeyKeySet.prototype = {
-    constructor: MediaPlayer.vo.protection.ClearKeyKeySet
-};
-
-MediaPlayer.vo.protection.KeyPair = function(keyID, key) {
-    "use strict";
-    this.keyID = keyID;
-    this.key = key;
-};
-
-MediaPlayer.vo.protection.KeyPair.prototype = {
-    constructor: MediaPlayer.vo.protection.KeyPair
-};
-
-MediaPlayer.models.SessionToken = function() {
-    "use strict";
-};
-
-MediaPlayer.models.SessionToken.prototype = {
-    initData: null,
-    getSessionID: function() {
-        return "";
-    },
-    getExpirationTime: function() {
-        return NaN;
-    },
-    getKeyStatuses: function() {
-        return null;
-    }
-};
-
-MediaPlayer.dependencies.ProtectionController = function() {
-    "use strict";
-    var pendingNeedKeyData = [], audioInfo, videoInfo, onKeyMessage = function(e) {
-        if (e.error) {
-            this.debug.log(e.error);
-            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, e.error);
-        } else {
-            var keyMessageEvent = e.data;
-            this.debug.log("[DRM] onKeyMessage: message = " + keyMessageEvent.message);
-            this.protectionModel.keySystem.doLicenseRequest(keyMessageEvent.message, keyMessageEvent.defaultURL, keyMessageEvent.sessionToken);
-        }
-    }, onKeyStatusChanged = function(e) {
-        if (e.error) {
-            this.debug.log(e.error);
-            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, e.error);
-        } else {
-            this.debug.log("[DRM] onKeyStatusChanged: status = " + e.data.status + " pour keyID = " + e.data.keyId);
-        }
-    }, onLicenseRequestComplete = function(e) {
-        if (!e.error) {
-            this.debug.log("[DRM] License request successful.  Session ID = " + e.data.requestData.getSessionID());
-            this.updateKeySession(e.data.requestData, e.data.message);
-        } else {
-            this.debug.log("[DRM] License request failed! -- " + e.error);
-            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, e.error);
-        }
-    }, onKeySystemSelected = function() {
-        this.protectionModel.keySystem.subscribe(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE, this);
-        this.debug.log("[DRM] Key system selected: " + this.protectionModel.keySystem.ks);
-        if (!this.keySystem) {
-            this.keySystem = this.protectionModel.keySystem;
-        }
-        for (var i = 0; i < pendingNeedKeyData.length; i++) {
-            this.createKeySession(pendingNeedKeyData[i]);
-        }
-        pendingNeedKeyData = [];
-    }, onNeedKey = function(event) {
-        if (event.data.initDataType !== "cenc") {
-            this.debug.log("[DRM] Only 'cenc' initData is supported!  Ignoring initData of type: " + event.data.initDataType);
-            return;
-        }
-        this.debug.log("[DRM] NeedKey");
-        var abInitData = event.data.initData;
-        if (this.keySystem) {
-            this.createKeySession(abInitData, this.keySystem.cdmData);
-        } else if (this.keySystem === undefined) {
-            this.keySystem = null;
-            pendingNeedKeyData.push(abInitData);
-            try {
-                this.protectionExt.autoSelectKeySystem(this.protectionExt.getSupportedKeySystems(abInitData), this, videoInfo, audioInfo);
-            } catch (error) {
-                this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_UNSUPPORTED, "[DRM] Unable to select a key system from needkey initData. -- " + error.message, null));
-            }
-        } else {
-            pendingNeedKeyData.push(abInitData);
-        }
-    }, onKeySystemAccessComplete = function(event) {
-        if (!event.error) {
-            this.debug.log("[DRM] KeySystem Access Granted");
-        } else {
-            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED, "[DRM] KeySystem Access Denied! -- " + event.error, null));
-        }
-    }, onServerCertificateUpdated = function(event) {
-        if (!event.error) {
-            this.debug.log("[DRM] License server certificate successfully updated.");
-        } else {
-            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_UPDATE_CERTIFICATE_IMPOSSIBLE, "[DRM] Failed to update license server certificate. -- " + event.error, null));
-        }
-    }, onKeySessionCreated = function(event) {
-        if (!event.error) {
-            this.debug.log("[DRM] Session created.  SessionID = " + event.data.getSessionID());
-        } else {
-            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_SESSION, "[DRM] Failed to create key session. -- " + event.error, null));
-        }
-    }, onKeyAdded = function() {
-        this.debug.log("[DRM] Key added.");
-    }, onKeyError = function(event) {
-        this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, event.data.error);
-    }, onKeySessionClosed = function(event) {
-        if (!event.error) {
-            this.debug.log("[DRM] Session closed.  SessionID = " + event.data);
-        } else {
-            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_CLOSE_SESSION, "[DRM] Failed to close key session. -- " + event.error, null));
-        }
-    }, onKeySessionRemoved = function(event) {
-        if (!event.error) {
-            this.debug.log("[DRM] Session removed.  SessionID = " + event.data);
-        } else {
-            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_REMOVE_SESSION, "[DRM] Failed to remove key session. -- " + event.error, null));
-        }
-    };
-    return {
-        system: undefined,
-        debug: undefined,
-        notify: undefined,
-        subscribe: undefined,
-        unsubscribe: undefined,
-        protectionExt: undefined,
-        keySystem: undefined,
-        manifestExt: undefined,
-        sessionType: "temporary",
-        setup: function() {
-            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE] = onKeyMessage.bind(this);
-            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED] = onKeySystemSelected.bind(this);
-            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE] = onKeySystemAccessComplete.bind(this);
-            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY] = onNeedKey.bind(this);
-            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_SERVER_CERTIFICATE_UPDATED] = onServerCertificateUpdated.bind(this);
-            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ADDED] = onKeyAdded.bind(this);
-            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR] = onKeyError.bind(this);
-            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CREATED] = onKeySessionCreated.bind(this);
-            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CLOSED] = onKeySessionClosed.bind(this);
-            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_REMOVED] = onKeySessionRemoved.bind(this);
-            this[MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE] = onLicenseRequestComplete.bind(this);
-            this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED] = onKeyStatusChanged.bind(this);
-            this.protectionModel = this.system.getObject("protectionModel");
-            this.protectionModel.init();
-        },
-        init: function(manifest) {
-            var self = this;
-            this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_SERVER_CERTIFICATE_UPDATED, this);
-            this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ADDED, this);
-            this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR, this);
-            this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CREATED, this);
-            this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CLOSED, this);
-            this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_REMOVED, this);
-            this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE, this);
-            this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, this);
-            this.manifestExt.getVideoData(manifest, 0).then(function(videoData) {
-                self.manifestExt.getPrimaryAudioData(manifest, 0).then(function(audioData) {
-                    self.manifestExt.getContentProtectionData(videoData).then(function(contentProtectionData) {
-                        var supportedKS = self.protectionExt.getSupportedKeySystemsFromContentProtection(contentProtectionData);
-                        if (supportedKS && supportedKS.length > 0) {
-                            var ksSelected = {};
-                            ksSelected[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED] = function(event) {
-                                self.debug.log("[DRM] Key system selected");
-                                if (!event.error) {
-                                    self.keySystem = self.protectionModel.keySystem;
-                                    self.keySystem.subscribe(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE, self);
-                                    for (var ksIdx = 0; ksIdx < supportedKS.length; ksIdx++) {
-                                        if (self.keySystem === supportedKS[ksIdx].ks) {
-                                            self.debug.log("[DRM] Create key session for key system " + self.keySystem.systemString);
-                                            self.createKeySession(supportedKS[ksIdx].initData, supportedKS[ksIdx].cdmData);
-                                            break;
-                                        }
-                                    }
-                                } else {
-                                    self.debug.log("[DRM] Could not select key system from ContentProtection elements!  Falling back to needkey mechanism...");
-                                    self.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY, self);
-                                    self.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED, self);
-                                }
-                                self.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED, ksSelected);
-                            };
-                            self.keySystem = null;
-                            self.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED, ksSelected);
-                            self.protectionExt.autoSelectKeySystem(supportedKS, self, self.manifestExt.getCodec_(videoData), self.manifestExt.getCodec_(audioData));
-                        } else {
-                            self.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY, self);
-                            self.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED, self);
-                        }
-                    });
-                });
-            });
-        },
-        teardown: function() {
-            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE, this);
-            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED, this);
-            if (this.protectionModel.keySystem) {
-                this.protectionModel.keySystem.unsubscribe(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE, this);
-            }
-            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_SERVER_CERTIFICATE_UPDATED, this);
-            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ADDED, this);
-            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR, this);
-            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CREATED, this);
-            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CLOSED, this);
-            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_REMOVED, this);
-            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE, this);
-            this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, this);
-            this.keySystem = undefined;
-            this.protectionModel.teardown();
-            this.protectionModel = undefined;
-        },
-        requestKeySystemAccess: function(ksConfiguration) {
-            this.protectionModel.requestKeySystemAccess(ksConfiguration);
-        },
-        selectKeySystem: function(keySystemAccess) {
-            if (this.protectionModel.keySystem) {
-                throw new Error("[DRM] KeySystem already selected!");
-            }
-            this.protectionModel.selectKeySystem(keySystemAccess);
-        },
-        createKeySession: function(initData, cdmData) {
-            this.debug.log("[DRM] Create key session, initData = " + initData);
-            var initDataForKS = MediaPlayer.dependencies.protection.CommonEncryption.getPSSHForKeySystem(this.keySystem, initData);
-            if (initDataForKS) {
-                try {
-                    this.protectionModel.createKeySession(initDataForKS, this.sessionType, cdmData);
-                } catch (error) {
-                    this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_SESSION, "Error creating key session! " + error.message, null));
-                }
-            } else {
-                this.debug.log("[DRM] Selected key system is " + this.keySystem.systemString + ".  needkey/encrypted event contains no initData corresponding to that key system!");
-            }
-        },
-        updateKeySession: function(sessionToken, message) {
-            this.protectionModel.updateKeySession(sessionToken, message);
-        },
-        loadKeySession: function(sessionID) {
-            this.protectionModel.loadKeySession(sessionID);
-        },
-        removeKeySession: function(sessionToken) {
-            this.protectionModel.removeKeySession(sessionToken);
-        },
-        closeKeySession: function(sessionToken) {
-            this.protectionModel.closeKeySession(sessionToken);
-        },
-        setServerCertificate: function(serverCertificate) {
-            this.protectionModel.setServerCertificate(serverCertificate);
-        },
-        setMediaElement: function(element) {
-            this.protectionModel.setMediaElement(element);
-        },
-        setSessionType: function(sessionType) {
-            this.sessionType = sessionType;
-        },
-        setProtectionData: function(data) {
-            this.protectionExt.init(data);
-        }
-    };
-};
-
-MediaPlayer.dependencies.ProtectionController.eventList = {
-    ENAME_PROTECTION_ERROR: "protectionError"
-};
-
-MediaPlayer.dependencies.ProtectionController.prototype = {
-    constructor: MediaPlayer.dependencies.ProtectionController
-};
-
-MediaPlayer.dependencies.ProtectionExtensions = function() {
-    "use strict";
-    this.system = undefined;
-    this.debug = undefined;
-    this.keySystems = [];
-    this.clearkeyKeySystem = undefined;
-};
-
-MediaPlayer.dependencies.ProtectionExtensions.prototype = {
-    constructor: MediaPlayer.dependencies.ProtectionExtensions,
-    setup: function() {
-        var keySystem;
-        keySystem = this.system.getObject("ksPlayReady");
-        this.keySystems.push(keySystem);
-        keySystem = this.system.getObject("ksWidevine");
-        this.keySystems.push(keySystem);
-        keySystem = this.system.getObject("ksClearKey");
-        this.keySystems.push(keySystem);
-        this.clearkeyKeySystem = keySystem;
-    },
-    init: function(protectionDataSet) {
-        var getProtectionData = function(keySystemString) {
-            var protData = null;
-            if (protectionDataSet) {
-                protData = keySystemString in protectionDataSet ? protectionDataSet[keySystemString] : null;
-            }
-            return protData;
-        };
-        for (var i = 0; i < this.keySystems.length; i++) {
-            var keySystem = this.keySystems[i];
-            keySystem.init(getProtectionData(keySystem.systemString));
-        }
-    },
-    getKeySystems: function() {
-        return this.keySystems;
-    },
-    getKeySystemBySystemString: function(systemString) {
-        for (var i = 0; i < this.keySystems.length; i++) {
-            if (this.keySystems[i].systemString === systemString) {
-                return this.keySystems[i];
-            }
-        }
-        return null;
-    },
-    isClearKey: function(keySystem) {
-        return keySystem === this.clearkeyKeySystem;
-    },
-    initDataEquals: function(initData1, initData2) {
-        if (initData1.byteLength === initData2.byteLength) {
-            for (var j = 0; j < initData1.byteLength; j++) {
-                if (initData1[j] !== initData2[j]) {
-                    return false;
-                }
-            }
-            return true;
-        }
-        return false;
-    },
-    getSupportedKeySystemsFromContentProtection: function(cps) {
-        var cp, ks, ksIdx, cpIdx, supportedKS = [];
-        this.debug.log("[DRM] Get supported key systems from content protection");
-        if (cps) {
-            for (ksIdx = 0; ksIdx < this.keySystems.length; ++ksIdx) {
-                ks = this.keySystems[ksIdx];
-                for (cpIdx = 0; cpIdx < cps.length; ++cpIdx) {
-                    cp = cps[cpIdx];
-                    if (cp.schemeIdUri.toLowerCase() === ks.schemeIdURI) {
-                        this.debug.log("[DRM] Supported key systems: " + ks.schemeIdURI);
-                        var initData = ks.getInitData(cp);
-                        if (!!initData) {
-                            supportedKS.push({
-                                ks: this.keySystems[ksIdx],
-                                initData: initData,
-                                cdmData: ks.getCDMData()
-                            });
-                        }
-                    }
-                }
-            }
-        }
-        return supportedKS;
-    },
-    getSupportedKeySystems: function(initData) {
-        var ksIdx, supportedKS = [], pssh = MediaPlayer.dependencies.protection.CommonEncryption.parsePSSHList(initData);
-        this.debug.log("[DRM] Get supported key systems from init data");
-        for (ksIdx = 0; ksIdx < this.keySystems.length; ++ksIdx) {
-            if (this.keySystems[ksIdx].uuid in pssh) {
-                this.debug.log("[DRM] Add supported key system: " + this.keySystems[ksIdx].systemString);
-                supportedKS.push({
-                    ks: this.keySystems[ksIdx],
-                    initData: pssh[this.keySystems[ksIdx].uuid]
-                });
-            }
-        }
-        return supportedKS;
-    },
-    autoSelectKeySystem: function(supportedKS, protectionController, videoCodec, audioCodec) {
-        this.debug.log("[DRM] Auto select key system: ");
-        this.debug.log("[DRM] ---- video codec = " + videoCodec);
-        this.debug.log("[DRM] ---- audio codec = " + audioCodec);
-        if (supportedKS.length === 0) {
-            throw new Error("DRM system for this content not supported by the player!");
-        }
-        var audioCapabilities = [], videoCapabilities = [];
-        if (videoCodec) {
-            videoCapabilities.push(new MediaPlayer.vo.protection.MediaCapability(videoCodec));
-        }
-        if (audioCodec) {
-            audioCapabilities.push(new MediaPlayer.vo.protection.MediaCapability(audioCodec));
-        }
-        var ksConfig = new MediaPlayer.vo.protection.KeySystemConfiguration(audioCapabilities, videoCapabilities);
-        var requestedKeySystems = [];
-        for (var i = 0; i < supportedKS.length; i++) {
-            requestedKeySystems.push({
-                ks: supportedKS[i].ks,
-                configs: [ ksConfig ]
-            });
-        }
-        var self = this;
-        (function(protCtrl) {
-            var cbObj = {};
-            cbObj[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE] = function(event) {
-                protCtrl.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE, this);
-                if (!event.error) {
-                    var keySystemAccess = event.data;
-                    self.debug.log("[DRM] KeySystem Access Granted (" + keySystemAccess.keySystem.systemString + ")!");
-                    protCtrl.selectKeySystem(keySystemAccess);
-                } else {
-                    self.debug.log(event.error);
-                    protCtrl.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED, "[DRM] KeySystem Access Denied! -- " + event.error, null));
-                }
-            };
-            protCtrl.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE, cbObj);
-            protCtrl.requestKeySystemAccess(requestedKeySystems);
-        })(protectionController);
-    }
-};
-
-MediaPlayer.dependencies.protection.CommonEncryption = {
-    findCencContentProtection: function(cpArray) {
-        var retVal = null;
-        for (var i = 0; i < cpArray.length; ++i) {
-            var cp = cpArray[i];
-            if (cp.schemeIdUri.toLowerCase() === "urn:mpeg:dash:mp4protection:2011" && cp.value.toLowerCase() === "cenc") retVal = cp;
-        }
-        return retVal;
-    },
-    getPSSHData: function(pssh) {
-        return pssh.slice(32);
-    },
-    getPSSHForKeySystem: function(keySystem, initData) {
-        var psshList = MediaPlayer.dependencies.protection.CommonEncryption.parsePSSHList(initData);
-        if (psshList.hasOwnProperty(keySystem.uuid.toLowerCase())) {
-            return psshList[keySystem.uuid.toLowerCase()];
-        }
-        return null;
-    },
-    parseInitDataFromContentProtection: function(cpData) {
-        if ("pssh" in cpData) {
-            return BASE64.decodeArray(cpData.pssh.__text).buffer;
-        }
-        return null;
-    },
-    readBytes: function(buf, pos, nbBytes) {
-        var value = 0;
-        for (var i = 0; i < nbBytes; i++) {
-            value = value << 8;
-            value = value + buf[pos];
-            pos++;
-        }
-        return value;
-    },
-    parsePSSHList: function(data) {
-        if (data === null) return [];
-        var buffer = data;
-        if (!data.buffer) {
-            buffer = new Uint8Array(data);
-        }
-        var done = false;
-        var pssh = {};
-        var byteCursor = 0;
-        while (!done) {
-            var size, nextBox, version, systemID, psshDataSize, boxStart = byteCursor;
-            if (byteCursor >= buffer.byteLength) break;
-            size = this.readBytes(buffer, byteCursor, 4);
-            nextBox = byteCursor + size;
-            byteCursor += 4;
-            if (this.readBytes(buffer, byteCursor, 4) !== 1886614376) {
-                byteCursor = nextBox;
-                continue;
-            }
-            byteCursor += 4;
-            version = this.readBytes(buffer, byteCursor, 1);
-            if (version !== 0 && version !== 1) {
-                byteCursor = nextBox;
-                continue;
-            }
-            byteCursor += 1;
-            byteCursor += 3;
-            systemID = "";
-            var i, val;
-            for (i = 0; i < 4; i++) {
-                val = this.readBytes(buffer, byteCursor + i, 1).toString(16);
-                systemID += val.length === 1 ? "0" + val : val;
-            }
-            byteCursor += 4;
-            systemID += "-";
-            for (i = 0; i < 2; i++) {
-                val = this.readBytes(buffer, byteCursor + i, 1).toString(16);
-                systemID += val.length === 1 ? "0" + val : val;
-            }
-            byteCursor += 2;
-            systemID += "-";
-            for (i = 0; i < 2; i++) {
-                val = this.readBytes(buffer, byteCursor + i, 1).toString(16);
-                systemID += val.length === 1 ? "0" + val : val;
-            }
-            byteCursor += 2;
-            systemID += "-";
-            for (i = 0; i < 2; i++) {
-                val = this.readBytes(buffer, byteCursor + i, 1).toString(16);
-                systemID += val.length === 1 ? "0" + val : val;
-            }
-            byteCursor += 2;
-            systemID += "-";
-            for (i = 0; i < 6; i++) {
-                val = this.readBytes(buffer, byteCursor + i, 1).toString(16);
-                systemID += val.length === 1 ? "0" + val : val;
-            }
-            byteCursor += 6;
-            systemID = systemID.toLowerCase();
-            psshDataSize = this.readBytes(buffer, byteCursor, 4);
-            byteCursor += 4;
-            pssh[systemID] = buffer.subarray(boxStart, nextBox).buffer;
-            byteCursor = nextBox;
-        }
-        return pssh;
-    }
-};
-
 MediaPlayer.dependencies.protection.KeySystem = {
     eventList: {
         ENAME_LICENSE_REQUEST_COMPLETE: "licenseRequestComplete"
@@ -12893,7 +13404,7 @@ MediaPlayer.dependencies.protection.KeySystem_ClearKey = function() {
             laURL = laURL.substring(0, laURL.length - 1);
             var xhr = new XMLHttpRequest();
             xhr.onload = function() {
-                if (xhr.status == 200) {
+                if (xhr.status === 200) {
                     if (!xhr.response.hasOwnProperty("keys")) {
                         self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE, null, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_XHR_ERROR, "DRM: ClearKey Remote update, Illegal response JSON", null));
                     }
@@ -12960,7 +13471,7 @@ MediaPlayer.dependencies.protection.KeySystem_ClearKey.prototype = {
 MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
     "use strict";
     var keySystemStr = "com.microsoft.playready", keySystemUUID = "9a04f079-9840-4286-ab92-e65be0885f95", PRCDMData = '<PlayReadyCDMData type="LicenseAcquisition"><LicenseAcquisition version="1.0" Proactive="true"><CustomData encoding="base64encoded">%CUSTOMDATA%</CustomData></LicenseAcquisition></PlayReadyCDMData>', protData, requestLicense = function(message, laURL, requestData) {
-        var decodedChallenge = null, headers = {}, headerName, key, headerOverrides, parser = new DOMParser(), xmlDoc, msg, bytes, self = this;
+        var decodedChallenge = null, headers = {}, key, headerOverrides, parser = new DOMParser(), xmlDoc, msg, bytes, self = this;
         bytes = new Uint16Array(message.buffer);
         msg = String.fromCharCode.apply(null, bytes);
         xmlDoc = parser.parseFromString(msg, "application/xml");
@@ -12974,7 +13485,7 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
         }
         var headerNameList = xmlDoc.getElementsByTagName("name");
         var headerValueList = xmlDoc.getElementsByTagName("value");
-        if (headerNameList.length != headerValueList.length) {
+        if (headerNameList.length !== headerValueList.length) {
             self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE, null, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_INVALID_HEADER, "DRM: playready update, invalid header name/value pair in keyMessage", null));
         }
         for (var i = 0; i < headerNameList.length; i++) {
@@ -12985,7 +13496,7 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
         }
         var xhr = new XMLHttpRequest();
         xhr.onload = function() {
-            if (xhr.status == 200) {
+            if (xhr.status === 200) {
                 var event = new MediaPlayer.vo.protection.LicenseRequestComplete(new Uint8Array(xhr.response), requestData);
                 self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE, event);
             } else {
@@ -13003,14 +13514,18 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
         headerOverrides = protData ? protData.httpRequestHeaders : null;
         if (headerOverrides) {
             for (key in headerOverrides) {
-                headers[key] = headerOverrides[key];
+                if (headerOverrides.hasOwnProperty(key)) {
+                    headers[key] = headerOverrides[key];
+                }
             }
         }
-        for (headerName in headers) {
-            if ("authorization" === headerName.toLowerCase()) {
-                xhr.withCredentials = true;
+        for (var headerName in headers) {
+            if (headers.hasOwnProperty(headerName)) {
+                if ("authorization" === headerName.toLowerCase()) {
+                    xhr.withCredentials = true;
+                }
+                xhr.setRequestHeader(headerName, headers[headerName]);
             }
-            xhr.setRequestHeader(headerName, headers[headerName]);
         }
         if (protData && protData.withCredentials) xhr.withCredentials = true;
         xhr.send(decodedChallenge);
@@ -13085,7 +13600,7 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady.prototype = {
 MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
     "use strict";
     var keySystemStr = "com.widevine.alpha", keySystemUUID = "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed", protData, requestLicense = function(message, laURL, requestData) {
-        var xhr = new XMLHttpRequest(), headers = {}, key, headerOverrides, headerName, url, self = this;
+        var xhr = new XMLHttpRequest(), headers = {}, key, headerOverrides, url, self = this;
         url = protData && protData.laURL && protData.laURL !== "" ? protData.laURL : laURL;
         if (!url) {
             self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE, null, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_URL_LICENSER_UNKNOWN, "DRM: No valid Widevine Proxy Server URL specified!", null));
@@ -13093,7 +13608,7 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
             xhr.open("POST", url, true);
             xhr.responseType = "arraybuffer";
             xhr.onload = function() {
-                if (this.status == 200) {
+                if (this.status === 200) {
                     var event = new MediaPlayer.vo.protection.LicenseRequestComplete(new Uint8Array(this.response), requestData);
                     self.notify(MediaPlayer.dependencies.protection.KeySystem.eventList.ENAME_LICENSE_REQUEST_COMPLETE, event);
                 } else {
@@ -13109,22 +13624,26 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
             headerOverrides = protData ? protData.httpRequestHeaders : null;
             if (headerOverrides) {
                 for (key in headerOverrides) {
-                    headers[key] = headerOverrides[key];
+                    if (headerOverrides.hasOwnProperty(key)) {
+                        headers[key] = headerOverrides[key];
+                    }
                 }
             }
-            for (headerName in headers) {
-                if ("authorization" === headerName.toLowerCase()) {
-                    xhr.withCredentials = true;
+            for (var headerName in headers) {
+                if (headers.hasOwnProperty(headerName)) {
+                    if ("authorization" === headerName.toLowerCase()) {
+                        xhr.withCredentials = true;
+                    }
+                    xhr.setRequestHeader(headerName, headers[headerName]);
                 }
-                xhr.setRequestHeader(headerName, headers[headerName]);
             }
             xhr.send(message);
         }
-    }, doGetInitData = function() {
-        if (protData.pssh) {
+    }, doGetInitData = function(cpData) {
+        if (protData && protData.pssh) {
             return BASE64.decodeArray(protData.pssh).buffer;
         }
-        return MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection();
+        return MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection(cpData);
     };
     return {
         schemeIdURI: "urn:uuid:" + keySystemUUID,
@@ -13148,6 +13667,38 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine.prototype = {
     constructor: MediaPlayer.dependencies.protection.KeySystem_Widevine
 };
 
+MediaPlayer.vo.protection.ClearKeyKeySet = function(keyPairs, type) {
+    if (type && type !== "persistent" && type !== "temporary") throw new Error("Invalid ClearKey key set type!  Must be one of 'persistent' or 'temporary'");
+    this.keyPairs = keyPairs;
+    this.type = type;
+    this.toJWK = function() {
+        var i, numKeys = this.keyPairs.length, jwk = {};
+        jwk.keys = [];
+        for (i = 0; i < numKeys; i++) {
+            var key = {
+                kty: "oct",
+                alg: "A128KW",
+                kid: this.keyPairs[i].keyID,
+                k: this.keyPairs[i].key
+            };
+            jwk.keys.push(key);
+        }
+        if (this.type) {
+            jwk.type = this.type;
+        }
+        var jwkString = JSON.stringify(jwk);
+        var len = jwkString.length;
+        var buf = new ArrayBuffer(len);
+        var bView = new Uint8Array(buf);
+        for (i = 0; i < len; i++) bView[i] = jwkString.charCodeAt(i);
+        return buf;
+    };
+};
+
+MediaPlayer.vo.protection.ClearKeyKeySet.prototype = {
+    constructor: MediaPlayer.vo.protection.ClearKeyKeySet
+};
+
 MediaPlayer.vo.protection.KeyMessage = function(sessionToken, message, defaultURL, messageType) {
     "use strict";
     this.sessionToken = sessionToken;
@@ -13160,34 +13711,14 @@ MediaPlayer.vo.protection.KeyMessage.prototype = {
     constructor: MediaPlayer.vo.protection.KeyMessage
 };
 
-MediaPlayer.vo.protection.LicenseRequestComplete = function(message, requestData) {
+MediaPlayer.vo.protection.KeyPair = function(keyID, key) {
     "use strict";
-    this.message = message;
-    this.requestData = requestData;
+    this.keyID = keyID;
+    this.key = key;
 };
 
-MediaPlayer.vo.protection.LicenseRequestComplete.prototype = {
-    constructor: MediaPlayer.vo.protection.LicenseRequestComplete
-};
-
-MediaPlayer.vo.protection.NeedKey = function(initData, initDataType) {
-    this.initData = initData;
-    this.initDataType = initDataType;
-};
-
-MediaPlayer.vo.protection.NeedKey.prototype = {
-    constructor: MediaPlayer.vo.protection.NeedKey
-};
-
-MediaPlayer.vo.protection.ProtectionData = function(laURL, httpRequestHeaders, bearerToken, clearkeys) {
-    this.laURL = laURL;
-    this.httpRequestHeaders = httpRequestHeaders;
-    this.bearerToken = bearerToken;
-    this.clearkeys = clearkeys;
-};
-
-MediaPlayer.vo.protection.ProtectionData.prototype = {
-    constructor: MediaPlayer.vo.protection.ProtectionData
+MediaPlayer.vo.protection.KeyPair.prototype = {
+    constructor: MediaPlayer.vo.protection.KeyPair
 };
 
 MediaPlayer.vo.protection.KeySystemAccess = function(keySystem, ksConfiguration) {
@@ -13211,6 +13742,16 @@ MediaPlayer.vo.protection.KeySystemConfiguration.prototype = {
     constructor: MediaPlayer.vo.protection.KeySystemConfiguration
 };
 
+MediaPlayer.vo.protection.LicenseRequestComplete = function(message, requestData) {
+    "use strict";
+    this.message = message;
+    this.requestData = requestData;
+};
+
+MediaPlayer.vo.protection.LicenseRequestComplete.prototype = {
+    constructor: MediaPlayer.vo.protection.LicenseRequestComplete
+};
+
 MediaPlayer.vo.protection.MediaCapability = function(contentType, robustness) {
     this.contentType = contentType;
     this.robustness = robustness;
@@ -13220,625 +13761,448 @@ MediaPlayer.vo.protection.MediaCapability.prototype = {
     constructor: MediaPlayer.vo.protection.MediaCapability
 };
 
-MediaPlayer.utils.VTTParser = function() {
-    "use strict";
-    var convertCuePointTimes = function(time) {
-        var timeArray = time.split(":"), len = timeArray.length - 1;
-        time = parseInt(timeArray[len - 1], 10) * 60 + parseFloat(timeArray[len], 10);
-        if (len === 2) {
-            time += parseInt(timeArray[0], 10) * 3600;
-        }
-        return time;
-    };
-    return {
-        parse: function(data) {
-            var regExNewLine = /(?:\r\n|\r|\n)/gm, regExToken = /-->/, regExWhiteSpace = /(^[\s]+|[\s]+$)/g, captionArray = [], len;
-            data = data.split(regExNewLine);
-            len = data.length;
-            for (var i = 0; i < len; i++) {
-                var item = data[i];
-                if (item.length > 0 && item !== "WEBVTT") {
-                    if (item.match(regExToken)) {
-                        var cuePoints = item.split(regExToken);
-                        var sublines = data[i + 1];
-                        captionArray.push({
-                            start: convertCuePointTimes(cuePoints[0].replace(regExWhiteSpace, "")),
-                            end: convertCuePointTimes(cuePoints[1].replace(regExWhiteSpace, "")),
-                            data: sublines
-                        });
-                    }
-                }
-            }
-            return Q.when(captionArray);
-        }
-    };
+MediaPlayer.vo.protection.NeedKey = function(initData, initDataType) {
+    this.initData = initData;
+    this.initDataType = initDataType;
 };
 
-MediaPlayer.utils.TTMLParser = function() {
+MediaPlayer.vo.protection.NeedKey.prototype = {
+    constructor: MediaPlayer.vo.protection.NeedKey
+};
+
+MediaPlayer.vo.protection.ProtectionData = function(laURL, httpRequestHeaders, bearerToken, clearkeys) {
+    this.laURL = laURL;
+    this.httpRequestHeaders = httpRequestHeaders;
+    this.bearerToken = bearerToken;
+    this.clearkeys = clearkeys;
+};
+
+MediaPlayer.vo.protection.ProtectionData.prototype = {
+    constructor: MediaPlayer.vo.protection.ProtectionData
+};
+
+MediaPlayer.models.SessionToken = function() {
     "use strict";
-    var SECONDS_IN_HOUR = 60 * 60, SECONDS_IN_MIN = 60, TTAF_URI = "http://www.w3.org/2006/10/ttaf1", TTAF_PARAMETER_URI = "http://www.w3.org/2006/10/ttaf1#parameter", TTAF_STYLE_URI = "http://www.w3.org/2006/10/ttaf1#styling", TTML_URI = "http://www.w3.org/ns/ttml", TTML_PARAMETER_URI = "http://www.w3.org/ns/ttml#parameter", TTML_STYLE_URI = "http://www.w3.org/ns/ttml#styling", globalPrefTTNameSpace, globalPrefStyleNameSpace, globalPrefParameterNameSpace, timingRegexClockTime = /^(0[0-9]|1[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])((\.[0-9][0-9][0-9])|(:[0-9][0-9]))$/, timingRegexOffsetTime = /^\d+(\.\d+|)(h|m|s|ms|f)$/, ttml, parseTimings = function(timingStr) {
-        var timeParts, parsedTime, frameRate, metric;
-        if (timingRegexClockTime.test(timingStr)) {
-            timeParts = timingStr.split(":");
-            parsedTime = parseFloat(timeParts[0]) * SECONDS_IN_HOUR + parseFloat(timeParts[1]) * SECONDS_IN_MIN + parseFloat(timeParts[2]);
-            if (timeParts[3]) {
-                frameRate = ttml.tt.frameRate;
-                if (frameRate && !isNaN(frameRate)) {
-                    parsedTime += parseFloat(timeParts[3]) / frameRate;
-                }
-            }
-            return parsedTime;
-        }
-        if (timingRegexOffsetTime.test(timingStr)) {
-            if (timingStr.substr(timingStr.length - 2) == "ms") {
-                parsedTime = parseFloat(timingStr.substr(0, timingStr.length - 3));
-                metric = timingStr.substr(timingStr.length - 2);
-            } else {
-                parsedTime = parseFloat(timingStr.substr(0, timingStr.length - 2));
-                metric = timingStr.substr(timingStr.length - 1);
-            }
-            switch (metric) {
-              case "h":
-                parsedTime = parsedTime * 60 * 60;
-                break;
+};
 
-              case "m":
-                parsedTime = parsedTime * 60;
-                break;
-
-              case "s":
-                break;
-
-              case "ms":
-                parsedTime = parsedTime * .01;
-                break;
-
-              case "f":
-                frameRate = ttml.tt.frameRate;
-                if (frameRate && !isNaN(frameRate)) {
-                    parsedTime = parsedTime / frameRate;
-                } else {
-                    return NaN;
-                }
-                break;
-            }
-            return parsedTime;
-        }
+MediaPlayer.models.SessionToken.prototype = {
+    initData: null,
+    getSessionID: function() {
+        return "";
+    },
+    getExpirationTime: function() {
         return NaN;
-    }, passStructuralConstraints = function() {
-        var passed = false, hasTt = ttml.hasOwnProperty("tt"), hasHead = hasTt ? ttml.tt.hasOwnProperty("head") : false, hasLayout = hasHead ? ttml.tt.head.hasOwnProperty("layout") : false, hasStyling = hasHead ? ttml.tt.head.hasOwnProperty("styling") : false, hasBody = hasTt ? ttml.tt.hasOwnProperty("body") : false;
-        if (hasTt && hasHead && hasLayout && hasStyling && hasBody) {
-            passed = true;
-        }
-        return passed;
-    }, getNamespacePrefix = function(json, ns) {
-        var r = Object.keys(json).filter(function(k) {
-            return k.split(":")[0] === "xmlns" && json[k] === ns;
-        }).map(function(k) {
-            var splitValues = k.split(":");
-            if (splitValues.length > 1) {
-                return k.split(":")[1] + ":";
-            } else {
-                return "";
-            }
-        });
-        if (r.length === 0) {
-            r[0] = "";
-        }
-        return r;
-    }, getLocalNamespace = function(json, ns) {
-        var localNs = null;
-        switch (ns) {
-          case "ttml":
-            localNs = getNamespacePrefix(json, TTAF_URI);
-            if (localNs.length === 1 && localNs[0] === "") {
-                localNs = getNamespacePrefix(json, TTML_URI);
-            }
-            break;
-
-          case "style":
-            localNs = getNamespacePrefix(json, TTAF_STYLE_URI);
-            if (localNs.length === 1 && localNs[0] === "") {
-                localNs = getNamespacePrefix(json, TTML_STYLE_URI);
-            }
-            break;
-
-          case "parameter":
-            localNs = getNamespacePrefix(json, TTML_PARAMETER_URI);
-            if (localNs.length === 1 && localNs[0] === "") {
-                localNs = getNamespacePrefix(json, TTAF_PARAMETER_URI);
-            }
-            break;
-        }
-        return localNs;
-    }, getDataInfo = function(jsonLayout, jsonArrayName, infoName) {
-        var j = 0;
-        if (jsonLayout) {
-            for (j = 0; j < jsonLayout[jsonArrayName].length; j++) {
-                var tab = jsonLayout[jsonArrayName][j];
-                if (tab["xml:id"] === infoName) {
-                    return tab;
-                }
-            }
-        }
+    },
+    getKeyStatuses: function() {
         return null;
-    }, getParameterValue = function(json, prefix, parameter) {
-        var j = 0;
-        for (j = 0; j < prefix.length; j++) {
-            if (json.hasOwnProperty(prefix[j] === "" ? parameter : prefix[j] + parameter)) {
-                return json[prefix[j] + parameter];
-            }
-        }
-        return null;
-    }, findParameterInRegion = function(json, leaf, prefTT, prefStyle, parameter) {
-        var parameterValue = null, localPrefTT = prefTT, localPrefStyle = prefStyle, leafStyle;
-        var cueRegion = getDataInfo(json.head.layout, "region_asArray", getParameterValue(leaf, localPrefTT, "region"));
-        if (cueRegion) {
-            localPrefTT = getLocalNamespace(cueRegion, "ttml");
-            localPrefStyle = getLocalNamespace(cueRegion, "style");
-            localPrefStyle = globalPrefStyleNameSpace.concat(localPrefStyle);
-            localPrefTT = globalPrefTTNameSpace.concat(localPrefTT);
-            parameterValue = getParameterValue(cueRegion, localPrefStyle, parameter);
-            if (!parameterValue) {
-                leafStyle = getDataInfo(json.head.styling, "style_asArray", getParameterValue(cueRegion, localPrefTT, "style"));
-                while (!parameterValue && leafStyle) {
-                    parameterValue = getParameterValue(leafStyle, localPrefStyle, parameter);
-                    if (!parameterValue) {
-                        leafStyle = getDataInfo(json.head.styling, "style_asArray", getParameterValue(leafStyle, localPrefTT, "style"));
-                        localPrefTT = getLocalNamespace(leafStyle, "ttml");
-                        localPrefStyle = getLocalNamespace(leafStyle, "style");
-                        localPrefStyle = globalPrefStyleNameSpace.concat(localPrefStyle);
-                        localPrefTT = globalPrefTTNameSpace.concat(localPrefTT);
-                    }
-                }
-            }
-        }
-        return parameterValue;
-    }, findParameter = function(json, leaf, prefTT, prefStyle, parameter) {
-        var parameterValue = null, localPrefTT = prefTT, localPrefStyle = prefStyle;
-        parameterValue = getParameterValue(leaf, localPrefStyle, parameter);
-        if (!parameterValue) {
-            var leafStyle = getDataInfo(json.head.styling, "style_asArray", getParameterValue(leaf, localPrefTT, "style"));
-            if (leafStyle) {
-                parameterValue = getParameterValue(leafStyle, localPrefStyle, parameter);
-                if (!parameterValue) {
-                    parameterValue = findParameterInRegion(json, leaf, localPrefTT, localPrefStyle, parameter);
-                }
-            } else {
-                parameterValue = findParameterInRegion(json, leaf, localPrefTT, localPrefStyle, parameter);
-            }
-        }
-        return parameterValue;
-    }, internalParse = function(data) {
-        var captionArray = [], converter = new X2JS([], "", false), errorMsg, cues, cue, startTime, endTime, cuePrefTTNameSpace, cuePrefStyleNameSpace, regionPrefTTNameSpace, regionPrefStyleNameSpace, cssStyle = {
-            backgroundColor: null,
-            color: null,
-            fontSize: null,
-            fontFamily: null
-        }, caption, i;
-        try {
-            ttml = converter.xml_str2json(data);
-            if (!passStructuralConstraints()) {
-                errorMsg = "TTML document has incorrect structure";
-                return Q.reject(errorMsg);
-            }
-            globalPrefTTNameSpace = getLocalNamespace(ttml.tt, "ttml");
-            globalPrefParameterNameSpace = getLocalNamespace(ttml.tt, "parameter");
-            globalPrefStyleNameSpace = getLocalNamespace(ttml.tt, "style");
-            var frameRate = getParameterValue(ttml.tt, globalPrefParameterNameSpace, "frameRate");
-            if (frameRate) {
-                ttml.tt.frameRate = parseInt(frameRate, 10);
-            }
-            if (!ttml.tt.body.div_asArray) {
-                errorMsg = "TTML document does not contain any div";
-                return Q.reject(errorMsg);
-            }
-            cues = ttml.tt.body.div_asArray[0].p_asArray;
-            if (!cues || cues.length === 0) {
-                errorMsg = "TTML document does not contain any cues";
-                return Q.reject(errorMsg);
-            }
-            for (i = 0; i < cues.length; i += 1) {
-                caption = null;
-                cue = cues[i];
-                cuePrefTTNameSpace = getLocalNamespace(cue, "ttml");
-                cuePrefStyleNameSpace = getLocalNamespace(cue, "style");
-                var prefTT = globalPrefTTNameSpace.concat(cuePrefTTNameSpace);
-                startTime = parseTimings(getParameterValue(cue, prefTT, "begin"));
-                endTime = parseTimings(getParameterValue(cue, prefTT, "end"));
-                var prefStyle = globalPrefStyleNameSpace.concat(cuePrefStyleNameSpace);
-                if (isNaN(startTime) || isNaN(endTime)) {
-                    errorMsg = "TTML document has incorrect timing value";
-                    return Q.reject(errorMsg);
-                }
-                cssStyle.backgroundColor = findParameter(ttml.tt, cue, prefTT, prefStyle, "backgroundColor");
-                cssStyle.color = findParameter(ttml.tt, cue, prefTT, prefStyle, "color");
-                cssStyle.fontSize = findParameter(ttml.tt, cue, prefTT, prefStyle, "fontSize");
-                cssStyle.fontFamily = findParameter(ttml.tt, cue, prefTT, prefStyle, "fontFamily");
-                var extent = findParameter(ttml.tt, cue, prefTT, prefStyle, "extent");
-                if (cssStyle.fontSize[cssStyle.fontSize.length - 1] === "%" && extent) {
-                    extent = extent.split(" ")[1];
-                    extent = parseFloat(extent.substr(0, extent.length - 1));
-                    cssStyle.fontSize = parseInt(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1)) * extent / 100 + "%";
-                }
-                caption = {
-                    start: startTime,
-                    end: endTime,
-                    data: cue.__text,
-                    line: 80,
-                    style: cssStyle
-                };
-                captionArray.push(caption);
-            }
-            return Q.when(captionArray);
-        } catch (err) {
-            errorMsg = err.message;
-            return Q.reject(errorMsg);
-        }
-    };
-    return {
-        parse: internalParse
-    };
+    }
 };
 
-MediaPlayer.utils.TextTrackExtensions = function() {
+MediaPlayer.rules.BaseRulesCollection = function() {
     "use strict";
-    var Cue;
+    var rules = [];
     return {
-        eventBus: undefined,
+        downloadRatioRule: undefined,
+        insufficientBufferRule: undefined,
+        getRules: function() {
+            return Q.when(rules);
+        },
         setup: function() {
-            Cue = window.VTTCue || window.TextTrackCue;
-        },
-        subtitlesStyleChanged: function(style) {
-            this.eventBus.dispatchEvent({
-                type: "subtitlesStyleChanged",
-                data: style
+            var self = this;
+            self.getRules().then(function(r) {
+                r.push(self.downloadRatioRule);
+                r.push(self.insufficientBufferRule);
             });
-        },
-        addTextTrack: function(video, captionData, label, scrlang, isDefaultTrack) {
-            var track = null;
-            if (video.textTracks.length === 0) {
-                track = video.addTextTrack("subtitles", label, scrlang);
-            } else {
-                track = video.textTracks[0];
-            }
-            track.default = isDefaultTrack;
-            track.mode = "showing";
-            for (var item in captionData) {
-                var currentItem = captionData[item];
-                track.addCue(new Cue(currentItem.start, currentItem.end, currentItem.data));
-            }
-            return Q.when(track);
-        },
-        onCueEnter: function(e) {
-            this.subtitlesStyleChanged(e.currentTarget.style);
-        },
-        addCues: function(track, captionData) {
-            for (var item in captionData) {
-                var currentItem = captionData[item];
-                var newCue = new Cue(currentItem.start, currentItem.end, currentItem.data);
-                newCue.onenter = this.onCueEnter.bind(this);
-                newCue.snapToLines = false;
-                if (item > 0 && currentItem.start <= captionData[item - 1].end) {
-                    newCue.line = captionData[item - 1].line + parseFloat(currentItem.style.fontSize.substr(0, currentItem.style.fontSize.length - 1)) + 3;
-                } else {
-                    newCue.line = currentItem.line;
-                }
-                if (currentItem.style) {
-                    newCue.style = currentItem.style;
-                }
-                track.addCue(newCue);
-            }
-        },
-        deleteCues: function(video, disabled) {
-            if (video) {
-                var track = video.textTracks[0];
-                if (track) {
-                    var cues = track.cues;
-                    if (cues) {
-                        var lastIdx = cues.length - 1;
-                        for (var i = lastIdx; i >= 0; i -= 1) {
-                            track.removeCue(cues[i]);
-                        }
-                    }
-                    if (disabled) {
-                        track.mode = "disabled";
-                    }
-                }
-            }
         }
     };
 };
 
-MediaPlayer.dependencies.TextSourceBuffer = function() {
-    var video, data, mimeType;
-    return {
-        system: undefined,
-        eventBus: undefined,
-        errHandler: undefined,
-        initialize: function(type, bufferController) {
-            mimeType = type;
-            video = bufferController.getVideoModel().getElement();
-            data = bufferController.getData();
-        },
-        append: function(bytes) {
-            var self = this, ccContent = String.fromCharCode.apply(null, new Uint16Array(bytes));
-            self.getParser().parse(ccContent).then(function(result) {
-                var label = data.Representation_asArray[0].id, lang = data.lang;
-                self.getTextTrackExtensions().addTextTrack(video, result, label, lang, true).then(function() {
-                    self.eventBus.dispatchEvent({
-                        type: "updateend"
-                    });
-                });
-            }, function(errMsg) {
-                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CC_ERR_PARSE, errMsg, ccContent);
-            });
-        },
-        abort: function() {
-            this.getTextTrackExtensions().deleteCues(video);
-        },
-        getParser: function() {
-            var parser;
-            if (mimeType === "text/vtt") {
-                parser = this.system.getObject("vttParser");
-            } else if (mimeType === "application/ttml+xml") {
-                parser = this.system.getObject("ttmlParser");
-            }
-            return parser;
-        },
-        getTextTrackExtensions: function() {
-            return this.system.getObject("textTrackExtensions");
-        },
-        addEventListener: function(type, listener, useCapture) {
-            this.eventBus.addEventListener(type, listener, useCapture);
-        },
-        removeEventListener: function(type, listener, useCapture) {
-            this.eventBus.removeEventListener(type, listener, useCapture);
-        }
-    };
+MediaPlayer.rules.BaseRulesCollection.prototype = {
+    constructor: MediaPlayer.rules.BaseRulesCollection
 };
 
-MediaPlayer.dependencies.TextSourceBuffer.prototype = {
-    constructor: MediaPlayer.dependencies.TextSourceBuffer
-};
-
-MediaPlayer.dependencies.TextController = function() {
-    var LOADING = "LOADING", READY = "READY", initialized = false, periodInfo = null, mediaSource, data, buffer, availableRepresentations, state = READY, setState = function(value) {
-        this.debug.log("TextController setState to:" + value);
-        state = value;
-    }, startPlayback = function() {
-        if (!initialized || state !== READY) {
-            return;
-        }
-        var self = this;
-        self.indexHandler.getInitRequest(availableRepresentations[0]).then(function(request) {
-            self.fragmentLoader.load(request).then(onBytesLoaded.bind(self, request), onBytesError.bind(self, request));
-            setState.call(self, LOADING);
-        });
-    }, doStart = function() {
-        startPlayback.call(this);
-    }, updateRepresentations = function(data, periodInfo) {
-        var self = this, deferred = Q.defer(), manifest = self.manifestModel.getValue();
-        self.manifestExt.getDataIndex(data, manifest, periodInfo.index).then(function(idx) {
-            self.manifestExt.getAdaptationsForPeriod(manifest, periodInfo).then(function(adaptations) {
-                self.manifestExt.getRepresentationsForAdaptation(manifest, adaptations[idx]).then(function(representations) {
-                    deferred.resolve(representations);
-                });
+MediaPlayer.rules.DownloadRatioRule = function() {
+    "use strict";
+    var checkRatio = function(newIdx, currentBandwidth, data) {
+        var self = this, deferred = Q.defer();
+        self.manifestExt.getRepresentationFor(newIdx, data).then(function(rep) {
+            self.manifestExt.getBandwidth(rep).then(function(newBandwidth) {
+                deferred.resolve(newBandwidth / currentBandwidth);
             });
         });
         return deferred.promise;
-    }, onBytesLoaded = function(request, response) {
-        var self = this;
-        self.fragmentController.process(response.data, request).then(function(data) {
-            if (data !== null) {
-                self.sourceBufferExt.append(buffer, data, self.videoModel);
-            }
-        });
-    }, onBytesError = function() {};
+    };
     return {
-        videoModel: undefined,
-        fragmentLoader: undefined,
-        fragmentController: undefined,
-        indexHandler: undefined,
-        sourceBufferExt: undefined,
-        manifestModel: undefined,
-        manifestExt: undefined,
         debug: undefined,
-        initialize: function(periodInfo, data, buffer, videoModel, source) {
-            var self = this;
-            self.setVideoModel(videoModel);
-            self.setBuffer(buffer);
-            self.setMediaSource(source);
-            self.updateData(data, periodInfo).then(function() {
-                initialized = true;
-                startPlayback.call(self);
-            });
-        },
-        setPeriodInfo: function(value) {
-            periodInfo = value;
-        },
-        getPeriodIndex: function() {
-            return periodInfo.index;
-        },
-        getVideoModel: function() {
-            return this.videoModel;
-        },
-        setVideoModel: function(value) {
-            this.videoModel = value;
-        },
-        getData: function() {
-            return data;
-        },
-        setData: function(value) {
-            data = value;
-        },
-        getBuffer: function() {
-            return buffer;
-        },
-        setBuffer: function(value) {
-            buffer = value;
-        },
-        setMediaSource: function(value) {
-            mediaSource = value;
-        },
-        updateData: function(dataValue, periodInfoValue) {
-            var self = this, deferred = Q.defer();
-            data = dataValue;
-            periodInfo = periodInfoValue;
-            updateRepresentations.call(self, data, periodInfo).then(function(representations) {
-                availableRepresentations = representations;
-                setState.call(self, READY);
-                startPlayback.call(self);
-                deferred.resolve();
-            });
-            return deferred.promise;
-        },
-        reset: function(errored) {
-            if (!errored) {
-                this.sourceBufferExt.abort(mediaSource, buffer);
-                this.sourceBufferExt.removeSourceBuffer(mediaSource, buffer);
+        manifestExt: undefined,
+        metricsExt: undefined,
+        checkIndex: function(current, metrics, data) {
+            var self = this, lastRequest = self.metricsExt.getCurrentHttpRequest(metrics), downloadTime, totalTime, downloadRatio, totalRatio, switchRatio, deferred, funcs, i, len, DOWNLOAD_RATIO_SAFETY_FACTOR = .75;
+            if (!metrics) {
+                return Q.when(new MediaPlayer.rules.SwitchRequest());
             }
-        },
-        start: doStart
-    };
-};
-
-MediaPlayer.dependencies.TextController.prototype = {
-    constructor: MediaPlayer.dependencies.TextController
-};
-
-MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
-    var video, mimeType, currentLang, currentId, buffered = {
-        length: 0,
-        ranges: [],
-        start: function(index) {
-            return this.ranges[index].start;
-        },
-        end: function(index) {
-            return this.ranges[index].end;
-        },
-        addRange: function(start, end) {
-            this.ranges.push({
-                start: start,
-                end: end
-            });
-            this.length = this.length + 1;
-            this.ranges.sort(function(a, b) {
-                return a.start - b.start;
-            });
-        },
-        removeRange: function(start, end) {
-            for (var i = this.ranges.length - 1; i >= 0; i--) {
-                if (this.ranges[i].start >= start && this.ranges[i].end <= end) this.ranges.splice(i, 1);
+            if (lastRequest === null) {
+                return Q.when(new MediaPlayer.rules.SwitchRequest());
             }
-            this.length = this.ranges.length;
-        },
-        reset: function() {
-            this.length = 0;
-            this.ranges = [];
-        }
-    };
-    return {
-        updating: false,
-        system: undefined,
-        eventBus: undefined,
-        buffered: buffered,
-        textTrackExtensions: undefined,
-        ttmlParser: undefined,
-        initialize: function(type, bufferController, subtitleData) {
-            mimeType = type;
-            video = bufferController.getVideoModel().getElement();
-            buffered.reset();
-            currentLang = subtitleData.lang;
-            currentId = subtitleData.id;
-        },
-        remove: function(start, end) {
-            if (start < 0 || start >= end) {
-                throw "INVALID_ACCESS_ERR";
+            totalTime = (lastRequest.tfinish.getTime() - lastRequest.trequest.getTime()) / 1e3;
+            downloadTime = (lastRequest.tfinish.getTime() - lastRequest.tresponse.getTime()) / 1e3;
+            if (totalTime <= 0) {
+                return Q.when(new MediaPlayer.rules.SwitchRequest());
             }
-            this.getTextTrackExtensions().deleteCues(video, false);
-            this.buffered.removeRange(start, end);
-        },
-        append: function(bytes) {
-            var self = this;
-            var file = mp4lib.deserialize(bytes);
-            var moov = file.getBoxByType("moov");
-            if (moov) {
-                var mvhd = moov.getBoxByType("mvhd");
-                self.timescale = mvhd.timescale;
-                self.textTrackExtensions.addTextTrack(video, [], currentId, currentLang, true).then(function(track) {
-                    self.track = track;
-                    self.eventBus.dispatchEvent({
-                        type: "updateend"
-                    });
-                });
-                return;
+            if (lastRequest.mediaduration === null || lastRequest.mediaduration === undefined || lastRequest.mediaduration <= 0 || isNaN(lastRequest.mediaduration)) {
+                return Q.when(new MediaPlayer.rules.SwitchRequest());
             }
-            var moof = file.getBoxByType("moof");
-            if (moof) {
-                var mdat = file.getBoxByType("mdat");
-                var traf = moof.getBoxByType("traf");
-                var tfhd = traf.getBoxByType("tfhd");
-                var tfdt = traf.getBoxByType("tfdt");
-                var trun = traf.getBoxByType("trun");
-                var fragmentStart = tfdt.baseMediaDecodeTime / self.timescale;
-                var fragmentDuration = 0;
-                if (trun.flags & 256) {
-                    fragmentDuration = trun.samples_table[0].sample_duration / self.timescale;
-                } else {
-                    fragmentDuration = tfhd.default_sample_duration / self.timescale;
-                }
-                self.buffered.addRange(fragmentStart, fragmentStart + fragmentDuration);
-                self.convertUTF8ToString(mdat.data).then(function(result) {
-                    self.ttmlParser.parse(result).then(function(cues) {
-                        var i;
-                        if (cues) {
-                            for (i = 0; i < cues.length; i++) {
-                                cues[i].start = cues[i].start + fragmentStart;
-                                cues[i].end = cues[i].end + fragmentStart;
-                            }
-                            self.textTrackExtensions.addCues(self.track, cues);
-                            self.eventBus.dispatchEvent({
-                                type: "updateend"
+            deferred = Q.defer();
+            totalRatio = lastRequest.mediaduration / totalTime;
+            downloadRatio = lastRequest.mediaduration / downloadTime * DOWNLOAD_RATIO_SAFETY_FACTOR;
+            if (isNaN(downloadRatio) || isNaN(totalRatio)) {
+                self.debug.log("The ratios are NaN, bailing.");
+                return Q.when(new MediaPlayer.rules.SwitchRequest());
+            }
+            if (isNaN(downloadRatio)) {
+                deferred.resolve(new MediaPlayer.rules.SwitchRequest());
+            } else if (downloadRatio < 4) {
+                if (current > 0) {
+                    self.debug.log("We are not at the lowest bitrate, so switch down.");
+                    self.manifestExt.getRepresentationFor(current - 1, data).then(function(representation1) {
+                        self.manifestExt.getBandwidth(representation1).then(function(oneDownBandwidth) {
+                            self.manifestExt.getRepresentationFor(current, data).then(function(representation2) {
+                                self.manifestExt.getBandwidth(representation2).then(function(currentBandwidth) {
+                                    switchRatio = oneDownBandwidth / currentBandwidth;
+                                    if (downloadRatio < switchRatio) {
+                                        self.debug.log("Things must be going pretty bad, switch all the way down.");
+                                        deferred.resolve(new MediaPlayer.rules.SwitchRequest(0));
+                                    } else {
+                                        self.debug.log("Things could be better, so just switch down one index.");
+                                        deferred.resolve(new MediaPlayer.rules.SwitchRequest(current - 1));
+                                    }
+                                });
                             });
-                        }
+                        });
                     });
+                } else {
+                    deferred.resolve(new MediaPlayer.rules.SwitchRequest(current));
+                }
+            } else {
+                self.manifestExt.getRepresentationCount(data).then(function(max) {
+                    max -= 1;
+                    if (current < max) {
+                        self.manifestExt.getRepresentationFor(current + 1, data).then(function(representation1) {
+                            self.manifestExt.getBandwidth(representation1).then(function(oneUpBandwidth) {
+                                self.manifestExt.getRepresentationFor(current, data).then(function(representation2) {
+                                    self.manifestExt.getBandwidth(representation2).then(function(currentBandwidth) {
+                                        switchRatio = oneUpBandwidth / currentBandwidth;
+                                        if (downloadRatio >= switchRatio) {
+                                            if (downloadRatio > 100) {
+                                                self.debug.log("Tons of bandwidth available, go all the way up.");
+                                                deferred.resolve(new MediaPlayer.rules.SwitchRequest(max - 1));
+                                            } else if (downloadRatio > 10) {
+                                                self.debug.log("Just enough bandwidth available, switch up one.");
+                                                deferred.resolve(new MediaPlayer.rules.SwitchRequest(current + 1));
+                                            } else {
+                                                i = -1;
+                                                funcs = [];
+                                                while ((i += 1) < max) {
+                                                    funcs.push(checkRatio.call(self, i, currentBandwidth, data));
+                                                }
+                                                Q.all(funcs).then(function(results) {
+                                                    for (i = 0, len = results.length; i < len; i += 1) {
+                                                        if (downloadRatio < results[i]) {
+                                                            break;
+                                                        }
+                                                    }
+                                                    self.debug.log("Calculated ideal new quality index is: " + i);
+                                                    deferred.resolve(new MediaPlayer.rules.SwitchRequest(i));
+                                                });
+                                            }
+                                        } else {
+                                            deferred.resolve(new MediaPlayer.rules.SwitchRequest());
+                                        }
+                                    });
+                                });
+                            });
+                        });
+                    } else {
+                        deferred.resolve(new MediaPlayer.rules.SwitchRequest(max));
+                    }
                 });
             }
-            return;
-        },
-        convertUTF8ToString: function(buf) {
-            var deferred = Q.defer();
-            var blob = new Blob([ buf ], {
-                type: "text/xml"
-            });
-            var f = new FileReader();
-            f.onload = function(e) {
-                deferred.resolve(e.target.result);
-            };
-            f.readAsText(blob);
             return deferred.promise;
-        },
-        abort: function() {
-            this.getTextTrackExtensions().deleteCues(video, true);
-        },
-        getTextTrackExtensions: function() {
-            return this.textTrackExtensions;
-        },
-        addEventListener: function(type, listener, useCapture) {
-            this.eventBus.addEventListener(type, listener, useCapture);
-            if (!this.updating) this.eventBus.dispatchEvent({
-                type: "updateend"
-            });
-        },
-        removeEventListener: function(type, listener, useCapture) {
-            this.eventBus.removeEventListener(type, listener, useCapture);
         }
     };
 };
 
-MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer.prototype = {
-    constructor: MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer
+MediaPlayer.rules.DownloadRatioRule.prototype = {
+    constructor: MediaPlayer.rules.DownloadRatioRule
+};
+
+MediaPlayer.rules.InsufficientBufferRule = function() {
+    "use strict";
+    var dryBufferHits = 0, DRY_BUFFER_LIMIT = 3;
+    return {
+        debug: undefined,
+        checkIndex: function(current, metrics) {
+            var self = this, playlist, trace, shift = false, p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
+            if (metrics.PlayList === null || metrics.PlayList === undefined || metrics.PlayList.length === 0) {
+                return Q.when(new MediaPlayer.rules.SwitchRequest());
+            }
+            playlist = metrics.PlayList[metrics.PlayList.length - 1];
+            if (playlist === null || playlist === undefined || playlist.trace.length === 0) {
+                return Q.when(new MediaPlayer.rules.SwitchRequest());
+            }
+            trace = playlist.trace[playlist.trace.length - 2];
+            if (trace === null || trace === undefined || trace.stopreason === null || trace.stopreason === undefined) {
+                return Q.when(new MediaPlayer.rules.SwitchRequest());
+            }
+            if (trace.stopreason === MediaPlayer.vo.metrics.PlayList.Trace.REBUFFERING_REASON) {
+                shift = true;
+                dryBufferHits += 1;
+                self.debug.log("Number of times the buffer has run dry: " + dryBufferHits);
+            }
+            if (dryBufferHits > DRY_BUFFER_LIMIT) {
+                p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
+                self.debug.log("Apply STRONG to buffer rule.");
+            }
+            if (shift) {
+                self.debug.log("The buffer ran dry recently, switch down.");
+                return Q.when(new MediaPlayer.rules.SwitchRequest(current - 1, p));
+            } else if (dryBufferHits > DRY_BUFFER_LIMIT) {
+                self.debug.log("Too many dry buffer hits, quit switching bitrates.");
+                return Q.when(new MediaPlayer.rules.SwitchRequest(current, p));
+            } else {
+                return Q.when(new MediaPlayer.rules.SwitchRequest(MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE, p));
+            }
+        }
+    };
+};
+
+MediaPlayer.rules.InsufficientBufferRule.prototype = {
+    constructor: MediaPlayer.rules.InsufficientBufferRule
+};
+
+MediaPlayer.rules.LimitSwitchesRule = function() {
+    "use strict";
+    var MAX_SWITCHES = 10, VALIDATION_TIME = 2e4, WAIT_COUNT = 5, waiting = 0;
+    return {
+        debug: undefined,
+        checkIndex: function(current, metrics) {
+            if (waiting > 0) {
+                waiting -= 1;
+                return Q.when(new MediaPlayer.rules.SwitchRequest(current, MediaPlayer.rules.SwitchRequest.prototype.STRONG));
+            }
+            var self = this, panic = false, rs, now = new Date().getTime(), delay, i, numSwitches = metrics.RepSwitchList.length;
+            for (i = numSwitches - 1; i >= 0; i -= 1) {
+                rs = metrics.RepSwitchList[i];
+                delay = now - rs.t.getTime();
+                if (delay >= VALIDATION_TIME) {
+                    self.debug.log("Reached time limit, bailing.");
+                    break;
+                }
+                if (i >= MAX_SWITCHES) {
+                    self.debug.log("Found too many switches within validation time, force the stream to not change.");
+                    panic = true;
+                    break;
+                }
+            }
+            if (panic) {
+                self.debug.log("Wait some time before allowing another switch.");
+                waiting = WAIT_COUNT;
+                return Q.when(new MediaPlayer.rules.SwitchRequest(current, MediaPlayer.rules.SwitchRequest.prototype.STRONG));
+            } else {
+                return Q.when(new MediaPlayer.rules.SwitchRequest(MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE, MediaPlayer.rules.SwitchRequest.prototype.STRONG));
+            }
+        }
+    };
+};
+
+MediaPlayer.rules.LimitSwitchesRule.prototype = {
+    constructor: MediaPlayer.rules.LimitSwitchesRule
+};
+
+MediaPlayer.rules.SwitchRequest = function(q, p) {
+    "use strict";
+    this.quality = q;
+    this.priority = p;
+    if (this.quality === undefined) {
+        this.quality = 999;
+    }
+    if (this.priority === undefined) {
+        this.priority = .5;
+    }
+};
+
+MediaPlayer.rules.SwitchRequest.prototype = {
+    constructor: MediaPlayer.rules.SwitchRequest,
+    NO_CHANGE: 999,
+    DEFAULT: .5,
+    STRONG: 1,
+    WEAK: 0
+};
+
+MediaPlayer.rules.o.DownloadRatioRule = function() {
+    "use strict";
+    return {
+        debug: undefined,
+        manifestExt: undefined,
+        metricsExt: undefined,
+        manifestModel: undefined,
+        config: undefined,
+        checkIndex: function(current, metrics, data) {
+            var self = this, lastRequest = self.metricsExt.getCurrentHttpRequest(metrics), requests = self.metricsExt.getHttpRequests(metrics), downloadTime, totalTime, calculatedBandwidth, latencyInBandwidth = self.config.getParamFor(data.type, "ABR.latencyInBandwidth", "boolean", true), switchUpRatioSafetyFactor = self.config.getParamFor(data.type, "ABR.switchUpRatioSafetyFactor", "number", 1.5), deferred, funcs = [], i, q = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE, totalBytesLength = 0, p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
+            self.debug.log("[DownloadRatioRule][" + data.type + "] Checking download ratio rule... (current = " + current + ")");
+            if (!metrics) {
+                self.debug.log("[DownloadRatioRule][" + data.type + "]No metrics, bailing.");
+                return Q.when(new MediaPlayer.rules.SwitchRequest());
+            }
+            if (lastRequest === null) {
+                self.debug.log("[DownloadRatioRule][" + data.type + "]No requests made for this stream yet, bailing.");
+                return Q.when(new MediaPlayer.rules.SwitchRequest());
+            }
+            totalTime = (lastRequest.tfinish.getTime() - lastRequest.trequest.getTime()) / 1e3;
+            downloadTime = (lastRequest.tfinish.getTime() - lastRequest.tresponse.getTime()) / 1e3;
+            if (totalTime <= 0) {
+                self.debug.log("[DownloadRatioRule][" + data.type + "]Don't know how long the download of the last fragment took, bailing.");
+                return Q.when(new MediaPlayer.rules.SwitchRequest());
+            }
+            if (lastRequest.mediaduration === null || lastRequest.mediaduration === undefined || lastRequest.mediaduration <= 0 || isNaN(lastRequest.mediaduration)) {
+                self.debug.log("[DownloadRatioRule][" + data.type + "] Don't know the duration of the last media fragment, bailing.");
+                return Q.when(new MediaPlayer.rules.SwitchRequest());
+            }
+            deferred = Q.defer();
+            totalBytesLength = lastRequest.bytesLength;
+            if (requests.length >= 3) {
+                for (i = requests.length - 2; i >= requests.length - 3; i--) {
+                    totalBytesLength += requests[i].bytesLength;
+                    totalTime += (requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1e3;
+                    downloadTime += (requests[i].tfinish.getTime() - requests[i].tresponse.getTime()) / 1e3;
+                }
+            }
+            totalBytesLength *= 8;
+            calculatedBandwidth = latencyInBandwidth ? totalBytesLength / totalTime : totalBytesLength / downloadTime;
+            self.debug.log("[DownloadRatioRule][" + data.type + "] DL: " + downloadTime + "s, Total: " + totalTime + "s => calculatedBandwidth: " + calculatedBandwidth);
+            if (isNaN(calculatedBandwidth)) {
+                return Q.when(new MediaPlayer.rules.SwitchRequest());
+            }
+            self.manifestExt.getRepresentationCount(data).then(function(count) {
+                self.manifestExt.getRepresentationFor(current, data).then(function(currentRepresentation) {
+                    self.manifestExt.getBandwidth(currentRepresentation).then(function(currentBandwidth) {
+                        for (i = 0; i < count; i += 1) {
+                            funcs.push(self.manifestExt.getRepresentationBandwidth(data, i));
+                        }
+                        Q.all(funcs).then(function(bandwidths) {
+                            if (calculatedBandwidth <= currentBandwidth) {
+                                for (i = current - 1; i > 0; i -= 1) {
+                                    if (bandwidths[i] <= calculatedBandwidth) {
+                                        break;
+                                    }
+                                }
+                                q = i;
+                                p = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
+                                self.debug.log("[DownloadRatioRule][" + data.type + "] SwitchRequest(" + q + ", " + p + ")");
+                                deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
+                            } else {
+                                for (i = count - 1; i > current; i -= 1) {
+                                    if (calculatedBandwidth > bandwidths[i] * switchUpRatioSafetyFactor) {
+                                        self.debug.log("[DownloadRatioRule][" + data.type + "] calculatedBandwidth = " + calculatedBandwidth + " results[i] * switchUpRatioSafetyFactor =" + bandwidths[i] * switchUpRatioSafetyFactor + " with i=" + i);
+                                        break;
+                                    }
+                                }
+                                q = i;
+                                p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
+                                self.debug.log("[DownloadRatioRule][" + data.type + "] SwitchRequest(" + q + ", " + p + ")");
+                                deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
+                            }
+                        });
+                    });
+                });
+            });
+            return deferred.promise;
+        }
+    };
+};
+
+MediaPlayer.rules.o.DownloadRatioRule.prototype = {
+    constructor: MediaPlayer.rules.o.DownloadRatioRule
+};
+
+MediaPlayer.rules.o.InsufficientBufferRule = function() {
+    "use strict";
+    return {
+        debug: undefined,
+        manifestExt: undefined,
+        metricsExt: undefined,
+        manifestModel: undefined,
+        config: undefined,
+        isStartBuffering: {},
+        checkIndex: function(current, metrics, data, playerState) {
+            var self = this, bufferLevel = self.metricsExt.getCurrentBufferLevel(metrics), minBufferTime, switchLowerBufferRatio, switchLowerBufferTime, switchDownBufferRatio, switchDownBufferTime, switchUpBufferRatio, switchUpBufferTime, deferred, q = current, p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
+            if (bufferLevel === null) {
+                return Q.when(new MediaPlayer.rules.SwitchRequest());
+            }
+            self.debug.log("[InsufficientBufferRule][" + data.type + "] Checking buffer level ... (current = " + current + ", buffer level = " + bufferLevel.level + ")");
+            deferred = Q.defer();
+            self.manifestExt.getMpd(self.manifestModel.getValue()).then(function(mpd) {
+                minBufferTime = self.config.getParamFor(data.type, "BufferController.minBufferTime", "number", mpd.manifest.minBufferTime);
+                switchLowerBufferRatio = self.config.getParamFor(data.type, "ABR.switchLowerBufferRatio", "number", .25);
+                switchLowerBufferTime = self.config.getParamFor(data.type, "ABR.switchLowerBufferTime", "number", switchLowerBufferRatio * minBufferTime);
+                switchDownBufferRatio = self.config.getParamFor(data.type, "ABR.switchDownBufferRatio", "number", .5);
+                switchDownBufferTime = self.config.getParamFor(data.type, "ABR.switchDownBufferTime", "number", switchDownBufferRatio * minBufferTime);
+                switchUpBufferRatio = self.config.getParamFor(data.type, "ABR.switchUpBufferRatio", "number", .75);
+                switchUpBufferTime = self.config.getParamFor(data.type, "ABR.switchUpBufferTime", "number", switchUpBufferRatio * minBufferTime);
+                if (playerState === "buffering") {
+                    self.isStartBuffering[data.type] = true;
+                }
+                if (bufferLevel.level < switchDownBufferTime && self.isStartBuffering[data.type]) {
+                    deferred.resolve(new MediaPlayer.rules.SwitchRequest());
+                } else {
+                    if (bufferLevel.level >= switchDownBufferTime) {
+                        self.isStartBuffering[data.type] = false;
+                    }
+                    self.manifestExt.getRepresentationCount(data).then(function(max) {
+                        max -= 1;
+                        if (bufferLevel.level <= switchLowerBufferTime) {
+                            q = 0;
+                            p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
+                        } else if (bufferLevel.level <= switchDownBufferTime) {
+                            q = current > 0 ? current - 1 : 0;
+                            p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
+                        }
+                        self.debug.log("[InsufficientBufferRule][" + data.type + "] SwitchRequest(" + q + ", " + p + ")");
+                        deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
+                    });
+                }
+            });
+            return deferred.promise;
+        }
+    };
+};
+
+MediaPlayer.rules.o.InsufficientBufferRule.prototype = {
+    constructor: MediaPlayer.rules.o.OInsufficientBufferRule
+};
+
+MediaPlayer.vo.Error = function(code, message, data) {
+    "use strict";
+    this.code = code || null;
+    this.message = message || null;
+    this.data = data || null;
+};
+
+MediaPlayer.vo.Error.prototype = {
+    constructor: MediaPlayer.vo.Error
+};
+
+MediaPlayer.vo.Event = function() {
+    "use strict";
+    this.type = null;
+    this.sender = null;
+    this.data = null;
+    this.error = null;
+    this.timestamp = NaN;
+};
+
+MediaPlayer.vo.Event.prototype = {
+    constructor: MediaPlayer.vo.Event
 };
 
 MediaPlayer.models.MetricsList = function() {
@@ -13861,294 +14225,80 @@ MediaPlayer.models.MetricsList.prototype = {
     constructor: MediaPlayer.models.MetricsList
 };
 
-MediaPlayer.models.MetricsModel = function() {
+MediaPlayer.vo.Mp4Track = function() {
     "use strict";
-    return {
-        system: undefined,
-        eventBus: undefined,
-        streamMetrics: {},
-        metricsChanged: function() {
-            this.eventBus.dispatchEvent({
-                type: "metricsChanged",
-                data: {}
-            });
-        },
-        metricChanged: function(streamType) {
-            this.eventBus.dispatchEvent({
-                type: "metricChanged",
-                data: {
-                    stream: streamType
-                }
-            });
-            this.metricsChanged();
-        },
-        metricUpdated: function(streamType, metricType, vo) {
-            this.eventBus.dispatchEvent({
-                type: "metricUpdated",
-                data: {
-                    stream: streamType,
-                    metric: metricType,
-                    value: vo
-                }
-            });
-            this.metricChanged(streamType);
-        },
-        metricAdded: function(streamType, metricType, vo) {
-            this.eventBus.dispatchEvent({
-                type: "metricAdded",
-                data: {
-                    stream: streamType,
-                    metric: metricType,
-                    value: vo
-                }
-            });
-            this.metricChanged(streamType);
-        },
-        clearCurrentMetricsForType: function(type) {
-            delete this.streamMetrics[type];
-            this.metricChanged(type);
-        },
-        clearAllCurrentMetrics: function() {
-            var self = this;
-            for (var prop in this.streamMetrics) {
-                if (this.streamMetrics.hasOwnProperty(prop)) {
-                    delete this.streamMetrics[prop];
-                }
-            }
-            this.streamMetrics = {};
-            this.metricsChanged.call(self);
-        },
-        getReadOnlyMetricsFor: function(type) {
-            if (this.streamMetrics.hasOwnProperty(type)) {
-                return this.streamMetrics[type];
-            }
-            return null;
-        },
-        getMetricsFor: function(type) {
-            var metrics;
-            if (this.streamMetrics.hasOwnProperty(type)) {
-                metrics = this.streamMetrics[type];
-            } else {
-                metrics = this.system.getObject("metrics");
-                this.streamMetrics[type] = metrics;
-            }
-            return metrics;
-        },
-        addTcpConnection: function(streamType, tcpid, dest, topen, tclose, tconnect) {
-            var vo = new MediaPlayer.vo.metrics.TCPConnection();
-            vo.tcpid = tcpid;
-            vo.dest = dest;
-            vo.topen = topen;
-            vo.tclose = tclose;
-            vo.tconnect = tconnect;
-            this.getMetricsFor(streamType).TcpList.push(vo);
-            this.metricAdded(streamType, "TcpConnection", vo);
-            return vo;
-        },
-        addHttpRequest: function(streamType, tcpid, type, url, actualurl, range, trequest, tresponse, tfinish, responsecode, interval, mediaduration, startTime, quality) {
-            var vo = new MediaPlayer.vo.metrics.HTTPRequest();
-            vo.stream = streamType;
-            vo.tcpid = tcpid;
-            vo.type = type;
-            vo.url = url;
-            vo.actualurl = actualurl;
-            vo.range = range;
-            vo.trequest = trequest;
-            vo.tresponse = tresponse;
-            vo.tfinish = tfinish;
-            vo.responsecode = responsecode;
-            vo.interval = interval;
-            vo.mediaduration = mediaduration;
-            vo.startTime = startTime;
-            vo.quality = quality;
-            this.getMetricsFor(streamType).HttpList.push(vo);
-            if (this.getMetricsFor(streamType).HttpList.length > 10) {
-                this.getMetricsFor(streamType).HttpList.shift();
-            }
-            this.metricAdded(streamType, "HttpRequest", vo);
-            return vo;
-        },
-        appendHttpTrace: function(httpRequest, s, d, b) {
-            var vo = new MediaPlayer.vo.metrics.HTTPRequest.Trace();
-            vo.s = s;
-            vo.d = d;
-            vo.b = b;
-            httpRequest.trace.push(vo);
-            this.metricUpdated(httpRequest.stream, "HttpRequestTrace", httpRequest);
-            return vo;
-        },
-        addRepresentationBoundaries: function(streamType, t, min, max) {
-            var vo = new MediaPlayer.vo.metrics.RepresentationBoundaries();
-            vo.t = t;
-            vo.min = min;
-            vo.max = max;
-            this.getMetricsFor(streamType).RepBoundariesList.push(vo);
-            this.metricAdded(streamType, "RepresentationBoundaries", vo);
-            return vo;
-        },
-        addBandwidthBoundaries: function(streamType, t, min, max) {
-            var vo = new MediaPlayer.vo.metrics.BandwidthBoundaries();
-            vo.t = t;
-            vo.min = min;
-            vo.max = max;
-            this.getMetricsFor(streamType).BandwidthBoundariesList.push(vo);
-            this.metricAdded(streamType, "BandwidthBoundaries", vo);
-            return vo;
-        },
-        addRepresentationSwitch: function(streamType, t, mt, to, lto) {
-            var vo = new MediaPlayer.vo.metrics.RepresentationSwitch();
-            vo.t = t;
-            vo.mt = mt;
-            vo.to = to;
-            vo.lto = lto;
-            this.getMetricsFor(streamType).RepSwitchList.push(vo);
-            this.metricAdded(streamType, "RepresentationSwitch", vo);
-            return vo;
-        },
-        addState: function(streamType, currentState, position, reason) {
-            var vo = new MediaPlayer.vo.metrics.State();
-            vo.current = currentState;
-            vo.position = position;
-            vo.reason = reason;
-            this.metricAdded(streamType, "State", vo);
-            return vo;
-        },
-        addSession: function(streamType, url, loop, endTime, playerType) {
-            var vo = new MediaPlayer.vo.metrics.Session();
-            vo.uri = url;
-            if (loop) {
-                vo.loopMode = 1;
-            } else {
-                vo.loopMode = 0;
-            }
-            vo.endTime = endTime;
-            vo.playerType = playerType;
-            this.metricAdded(streamType, "Session", vo);
-            return vo;
-        },
-        addCondition: function(streamType, isFullScreen, videoWidth, videoHeight, droppedFrames, fps) {
-            var vo = new MediaPlayer.vo.metrics.Condition();
-            vo.isFullScreen = isFullScreen;
-            vo.windowSize = videoWidth + "x" + videoHeight;
-            vo.fps = fps;
-            vo.droppedFrames = droppedFrames;
-            this.metricAdded(streamType, "Condition", vo);
-            return vo;
-        },
-        addMetaData: function() {
-            this.metricAdded(null, "ManifestReady", null);
-        },
-        addBufferLevel: function(streamType, t, level) {
-            var vo = new MediaPlayer.vo.metrics.BufferLevel();
-            vo.t = t;
-            vo.level = level;
-            this.getMetricsFor(streamType).BufferLevel.push(vo);
-            if (this.getMetricsFor(streamType).BufferLevel.length > 10) {
-                this.getMetricsFor(streamType).BufferLevel.shift();
-            }
-            this.metricAdded(streamType, "BufferLevel", vo);
-            return vo;
-        },
-        addDVRInfo: function(streamType, currentTime, mpd, range) {
-            var vo = new MediaPlayer.vo.metrics.DVRInfo();
-            vo.time = currentTime;
-            vo.range = range;
-            vo.mpd = mpd;
-            this.getMetricsFor(streamType).DVRInfo.push(vo);
-            this.metricAdded(streamType, "DVRInfo", vo);
-            return vo;
-        },
-        addDroppedFrames: function(streamType, quality) {
-            var vo = new MediaPlayer.vo.metrics.DroppedFrames(), list = this.getMetricsFor(streamType).DroppedFrames;
-            vo.time = quality.creationTime;
-            vo.droppedFrames = quality.droppedVideoFrames;
-            vo.decodedFrameCount = quality.totalVideoFrames;
-            if (list.length > 0 && list[list.length - 1] == vo) {
-                return list[list.length - 1];
-            }
-            list.push(vo);
-            this.metricAdded(streamType, "DroppedFrames", vo);
-            return vo;
-        },
-        addManifestUpdate: function(streamType, type, requestTime, fetchTime, availabilityStartTime, presentationStartTime, clientTimeOffset, currentTime, buffered, latency) {
-            var vo = new MediaPlayer.vo.metrics.ManifestUpdate(), metrics = this.getMetricsFor("stream");
-            vo.streamType = streamType;
-            vo.type = type;
-            vo.requestTime = requestTime;
-            vo.fetchTime = fetchTime;
-            vo.availabilityStartTime = availabilityStartTime;
-            vo.presentationStartTime = presentationStartTime;
-            vo.clientTimeOffset = clientTimeOffset;
-            vo.currentTime = currentTime;
-            vo.buffered = buffered;
-            vo.latency = latency;
-            metrics.ManifestUpdate.push(vo);
-            this.metricAdded(streamType, "ManifestUpdate", vo);
-            return vo;
-        },
-        updateManifestUpdateInfo: function(manifestUpdate, updatedFields) {
-            for (var field in updatedFields) {
-                manifestUpdate[field] = updatedFields[field];
-            }
-            this.metricUpdated(manifestUpdate.streamType, "ManifestUpdate", manifestUpdate);
-        },
-        addManifestUpdatePeriodInfo: function(manifestUpdate, id, index, start, duration) {
-            var vo = new MediaPlayer.vo.metrics.ManifestUpdate.PeriodInfo();
-            vo.id = id;
-            vo.index = index;
-            vo.start = start;
-            vo.duration = duration;
-            manifestUpdate.periodInfo.push(vo);
-            this.metricUpdated(manifestUpdate.streamType, "ManifestUpdatePeriodInfo", manifestUpdate);
-            return vo;
-        },
-        addManifestUpdateRepresentationInfo: function(manifestUpdate, id, index, periodIndex, streamType, presentationTimeOffset, startNumber, segmentInfoType) {
-            var vo = new MediaPlayer.vo.metrics.ManifestUpdate.RepresentationInfo();
-            vo.id = id;
-            vo.index = index;
-            vo.periodIndex = periodIndex;
-            vo.streamType = streamType;
-            vo.startNumber = startNumber;
-            vo.segmentInfoType = segmentInfoType;
-            vo.presentationTimeOffset = presentationTimeOffset;
-            manifestUpdate.representationInfo.push(vo);
-            this.metricUpdated(manifestUpdate.streamType, "ManifestUpdateRepresentationInfo", manifestUpdate);
-            return vo;
-        },
-        addPlayList: function(streamType, start, mstart, starttype) {
-            var vo = new MediaPlayer.vo.metrics.PlayList();
-            vo.stream = streamType;
-            vo.start = start;
-            vo.mstart = mstart;
-            vo.starttype = starttype;
-            this.getMetricsFor(streamType).PlayList.push(vo);
-            if (this.getMetricsFor(streamType).PlayList.length > 10) {
-                this.getMetricsFor(streamType).PlayList.shift();
-            }
-            this.metricAdded(streamType, "PlayList", vo);
-            return vo;
-        },
-        appendPlayListTrace: function(playList, representationid, subreplevel, start, mstart, duration, playbackspeed, stopreason) {
-            var vo = new MediaPlayer.vo.metrics.PlayList.Trace();
-            vo.representationid = representationid;
-            vo.subreplevel = subreplevel;
-            vo.start = start;
-            vo.mstart = mstart;
-            vo.duration = duration;
-            vo.playbackspeed = playbackspeed;
-            vo.stopreason = stopreason;
-            playList.trace.push(vo);
-            if (playList.trace.length > 10) {
-                playList.trace.shift();
-            }
-            this.metricUpdated(playList.stream, "PlayListTrace", playList);
-            return vo;
-        }
-    };
+    this.type = "und";
+    this.trackId = 0;
+    this.timescale = 0;
+    this.duration = 0;
+    this.codecs = "";
+    this.codecPrivateData = "";
+    this.bandwidth = "";
+    this.width = 0;
+    this.height = 0;
+    this.language = "und";
+    this.channels = 0;
+    this.samplingRate = 0;
+    this.contentProtection = undefined;
+    this.samples = [];
+    this.data = null;
 };
 
-MediaPlayer.models.MetricsModel.prototype = {
-    constructor: MediaPlayer.models.MetricsModel
+MediaPlayer.vo.Mp4Track.prototype = {
+    constructor: MediaPlayer.vo.Mp4Track
+};
+
+MediaPlayer.vo.Mp4Track.Sample = function() {
+    "use strict";
+    this.dts = 0;
+    this.cts = 0;
+    this.duration = 0;
+    this.data = null;
+    this.size = 0;
+};
+
+MediaPlayer.vo.Mp4Track.Sample.prototype = {
+    constructor: MediaPlayer.vo.Mp4Track.Sample
+};
+
+MediaPlayer.vo.SegmentRequest = function() {
+    "use strict";
+    this.action = "download";
+    this.startTime = NaN;
+    this.streamType = null;
+    this.type = null;
+    this.duration = NaN;
+    this.timescale = NaN;
+    this.range = null;
+    this.url = null;
+    this.requestStartDate = null;
+    this.firstByteDate = null;
+    this.requestEndDate = null;
+    this.deferred = null;
+    this.quality = NaN;
+    this.index = NaN;
+    this.availabilityStartTime = null;
+    this.availabilityEndTime = null;
+    this.wallStartTime = null;
+};
+
+MediaPlayer.vo.SegmentRequest.prototype = {
+    constructor: MediaPlayer.vo.SegmentRequest,
+    ACTION_DOWNLOAD: "download",
+    ACTION_COMPLETE: "complete"
+};
+
+MediaPlayer.vo.URIFragmentData = function() {
+    "use strict";
+    this.t = null;
+    this.xywh = null;
+    this.track = null;
+    this.id = null;
+    this.s = null;
+};
+
+MediaPlayer.vo.URIFragmentData.prototype = {
+    constructor: MediaPlayer.vo.URIFragmentData
 };
 
 MediaPlayer.vo.metrics.BufferLevel = function() {
@@ -14387,6 +14537,342 @@ Dash = function() {
     };
 }();
 
+Dash.dependencies.BaseURLExtensions = function() {
+    "use strict";
+    var parseSIDX = function(ab, ab_first_byte_offset) {
+        var d = new DataView(ab), sidx = {}, pos = 0, offset, time, sidxEnd, i, ref_type, ref_size, ref_dur, type, size, charCode;
+        while (type !== "sidx" && pos < d.byteLength) {
+            size = d.getUint32(pos);
+            pos += 4;
+            type = "";
+            for (i = 0; i < 4; i += 1) {
+                charCode = d.getInt8(pos);
+                type += String.fromCharCode(charCode);
+                pos += 1;
+            }
+            if (type !== "moof" && type !== "traf" && type !== "sidx") {
+                pos += size - 8;
+            } else if (type === "sidx") {
+                pos -= 8;
+            }
+        }
+        sidxEnd = d.getUint32(pos, false) + pos;
+        if (sidxEnd > ab.byteLength) {
+            throw "sidx terminates after array buffer";
+        }
+        sidx.version = d.getUint8(pos + 8);
+        pos += 12;
+        sidx.timescale = d.getUint32(pos + 4, false);
+        pos += 8;
+        if (sidx.version === 0) {
+            sidx.earliest_presentation_time = d.getUint32(pos, false);
+            sidx.first_offset = d.getUint32(pos + 4, false);
+            pos += 8;
+        } else {
+            sidx.earliest_presentation_time = utils.Math.to64BitNumber(d.getUint32(pos + 4, false), d.getUint32(pos, false));
+            sidx.first_offset = (d.getUint32(pos + 8, false) << 32) + d.getUint32(pos + 12, false);
+            pos += 16;
+        }
+        sidx.first_offset += sidxEnd + (ab_first_byte_offset || 0);
+        sidx.reference_count = d.getUint16(pos + 2, false);
+        pos += 4;
+        sidx.references = [];
+        offset = sidx.first_offset;
+        time = sidx.earliest_presentation_time;
+        for (i = 0; i < sidx.reference_count; i += 1) {
+            ref_size = d.getUint32(pos, false);
+            ref_type = ref_size >>> 31;
+            ref_size = ref_size & 2147483647;
+            ref_dur = d.getUint32(pos + 4, false);
+            pos += 12;
+            sidx.references.push({
+                size: ref_size,
+                type: ref_type,
+                offset: offset,
+                duration: ref_dur,
+                time: time,
+                timescale: sidx.timescale
+            });
+            offset += ref_size;
+            time += ref_dur;
+        }
+        if (pos !== sidxEnd) {
+            throw "Error: final pos " + pos + " differs from SIDX end " + sidxEnd;
+        }
+        return sidx;
+    }, parseSegments = function(data, media, offset) {
+        var parsed, ref, segments, segment, i, len, start, end;
+        parsed = parseSIDX.call(this, data, offset);
+        ref = parsed.references;
+        segments = [];
+        for (i = 0, len = ref.length; i < len; i += 1) {
+            segment = new Dash.vo.Segment();
+            segment.duration = ref[i].duration;
+            segment.media = media;
+            segment.startTime = ref[i].time;
+            segment.timescale = ref[i].timescale;
+            start = ref[i].offset;
+            end = ref[i].offset + ref[i].size - 1;
+            segment.mediaRange = start + "-" + end;
+            segments.push(segment);
+        }
+        this.debug.log("Parsed SIDX box: " + segments.length + " segments.");
+        return Q.when(segments);
+    }, findInit = function(data, info) {
+        var deferred = Q.defer(), ftyp, moov, start, end, d = new DataView(data), pos = 0, type = "", size = 0, bytesAvailable, i, c, request, loaded = false, irange, self = this;
+        self.debug.log("Searching for initialization.");
+        while (type !== "moov" && pos < d.byteLength) {
+            size = d.getUint32(pos);
+            pos += 4;
+            type = "";
+            for (i = 0; i < 4; i += 1) {
+                c = d.getInt8(pos);
+                type += String.fromCharCode(c);
+                pos += 1;
+            }
+            if (type === "ftyp") {
+                ftyp = pos - 8;
+            }
+            if (type === "moov") {
+                moov = pos - 8;
+            }
+            if (type !== "moov") {
+                pos += size - 8;
+            }
+        }
+        bytesAvailable = d.byteLength - pos;
+        if (type !== "moov") {
+            self.debug.log("Loading more bytes to find initialization.");
+            info.range.start = 0;
+            info.range.end = info.bytesLoaded + info.bytesToLoad;
+            request = new XMLHttpRequest();
+            request.onloadend = function() {
+                if (!loaded) {
+                    deferred.reject("Error loading initialization.");
+                }
+            };
+            request.onload = function() {
+                loaded = true;
+                info.bytesLoaded = info.range.end;
+                findInit.call(self, request.response).then(function(segments) {
+                    deferred.resolve(segments);
+                });
+            };
+            request.onerror = function() {
+                deferred.reject("Error loading initialization.");
+            };
+            request.open("GET", self.tokenAuthentication.addTokenAsQueryArg(info.url));
+            request.responseType = "arraybuffer";
+            request.setRequestHeader("Range", "bytes=" + info.range.start + "-" + info.range.end);
+            request = self.tokenAuthentication.setTokenInRequestHeader(request);
+            request.send(null);
+        } else {
+            start = ftyp === undefined ? moov : ftyp;
+            end = moov + size - 1;
+            irange = start + "-" + end;
+            self.debug.log("Found the initialization.  Range: " + irange);
+            deferred.resolve(irange);
+        }
+        return deferred.promise;
+    }, loadInit = function(media) {
+        var deferred = Q.defer(), request = new XMLHttpRequest(), needFailureReport = true, self = this, info = {
+            url: media,
+            range: {},
+            searching: false,
+            bytesLoaded: 0,
+            bytesToLoad: 1500,
+            request: request
+        };
+        self.debug.log("Start searching for initialization.");
+        info.range.start = 0;
+        info.range.end = info.bytesToLoad;
+        request.onload = function() {
+            if (request.status < 200 || request.status > 299) {
+                return;
+            }
+            needFailureReport = false;
+            info.bytesLoaded = info.range.end;
+            findInit.call(self, request.response, info).then(function(range) {
+                deferred.resolve(range);
+            });
+        };
+        request.onloadend = request.onerror = function() {
+            if (!needFailureReport) {
+                return;
+            }
+            needFailureReport = false;
+            var data = {};
+            data.url = info.url;
+            data.request = request;
+            self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_INIT, null, data);
+            deferred.reject(request);
+        };
+        request.open("GET", self.tokenAuthentication.addTokenAsQueryArg(info.url));
+        request.responseType = "arraybuffer";
+        request.setRequestHeader("Range", "bytes=" + info.range.start + "-" + info.range.end);
+        request = self.tokenAuthentication.setTokenInRequestHeader(request);
+        request.send(null);
+        self.debug.log("Perform init search: " + info.url);
+        return deferred.promise;
+    }, findSIDX = function(data, info) {
+        var deferred = Q.defer(), d = new DataView(data), request = new XMLHttpRequest(), pos = 0, type = "", size = 0, bytesAvailable, sidxBytes, sidxSlice, sidxOut, i, c, needFailureReport = true, parsed, ref, loadMultiSidx = false, self = this;
+        self.debug.log("Searching for SIDX box.");
+        self.debug.log(info.bytesLoaded + " bytes loaded.");
+        while (type !== "sidx" && pos < d.byteLength) {
+            size = d.getUint32(pos);
+            pos += 4;
+            type = "";
+            for (i = 0; i < 4; i += 1) {
+                c = d.getInt8(pos);
+                type += String.fromCharCode(c);
+                pos += 1;
+            }
+            if (type !== "sidx") {
+                pos += size - 8;
+            }
+        }
+        bytesAvailable = d.byteLength - pos;
+        if (type !== "sidx") {
+            deferred.reject();
+        } else if (bytesAvailable < size - 8) {
+            self.debug.log("Found SIDX but we don't have all of it.");
+            info.range.start = 0;
+            info.range.end = info.bytesLoaded + (size - bytesAvailable);
+            request.onload = function() {
+                if (request.status < 200 || request.status > 299) {
+                    return;
+                }
+                needFailureReport = false;
+                info.bytesLoaded = info.range.end;
+                findSIDX.call(self, request.response, info).then(function(segments) {
+                    deferred.resolve(segments);
+                });
+            };
+            request.onloadend = request.onerror = function() {
+                if (!needFailureReport) {
+                    return;
+                }
+                needFailureReport = false;
+                var data = {};
+                data.url = info.url;
+                data.request = request;
+                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX, null, data);
+                deferred.reject(request);
+            };
+            request.open("GET", self.tokenAuthentication.addTokenAsQueryArg(info.url));
+            request.responseType = "arraybuffer";
+            request.setRequestHeader("Range", "bytes=" + info.range.start + "-" + info.range.end);
+            request = self.tokenAuthentication.setTokenInRequestHeader(request);
+            request.send(null);
+        } else {
+            info.range.start = pos - 8;
+            info.range.end = info.range.start + size;
+            self.debug.log("Found the SIDX box.  Start: " + info.range.start + " | End: " + info.range.end);
+            sidxBytes = new ArrayBuffer(info.range.end - info.range.start);
+            sidxOut = new Uint8Array(sidxBytes);
+            sidxSlice = new Uint8Array(data, info.range.start, info.range.end - info.range.start);
+            sidxOut.set(sidxSlice);
+            parsed = this.parseSIDX.call(this, sidxBytes, info.range.start);
+            ref = parsed.references;
+            if (ref !== null && ref !== undefined && ref.length > 0) {
+                loadMultiSidx = ref[0].type === 1;
+            }
+            if (loadMultiSidx) {
+                self.debug.log("Initiate multiple SIDX load.");
+                var j, len, ss, se, r, funcs = [], segs;
+                for (j = 0, len = ref.length; j < len; j += 1) {
+                    ss = ref[j].offset;
+                    se = ref[j].offset + ref[j].size - 1;
+                    r = ss + "-" + se;
+                    funcs.push(this.loadSegments.call(self, info.url, r));
+                }
+                Q.all(funcs).then(function(results) {
+                    segs = [];
+                    for (j = 0, len = results.length; j < len; j += 1) {
+                        segs = segs.concat(results[j]);
+                    }
+                    deferred.resolve(segs);
+                }, function(httprequest) {
+                    deferred.reject(httprequest);
+                });
+            } else {
+                self.debug.log("Parsing segments from SIDX.");
+                parseSegments.call(self, sidxBytes, info.url, info.range.start).then(function(segments) {
+                    deferred.resolve(segments);
+                });
+            }
+        }
+        return deferred.promise;
+    }, loadSegments = function(media, theRange) {
+        var deferred = Q.defer(), request = new XMLHttpRequest(), parts, needFailureReport = true, self = this, info = {
+            url: media,
+            range: {},
+            searching: false,
+            bytesLoaded: 0,
+            bytesToLoad: 1500,
+            request: request
+        };
+        if (theRange === null) {
+            self.debug.log("No known range for SIDX request.");
+            info.searching = true;
+            info.range.start = 0;
+            info.range.end = info.bytesToLoad;
+        } else {
+            parts = theRange.split("-");
+            info.range.start = parseFloat(parts[0]);
+            info.range.end = parseFloat(parts[1]);
+        }
+        request.onload = function() {
+            if (request.status < 200 || request.status > 299) {
+                return;
+            }
+            needFailureReport = false;
+            if (info.searching) {
+                info.bytesLoaded = info.range.end;
+                findSIDX.call(self, request.response, info).then(function(segments) {
+                    deferred.resolve(segments);
+                });
+            } else {
+                parseSegments.call(self, request.response, info.url, info.range.start).then(function(segments) {
+                    deferred.resolve(segments);
+                });
+            }
+        };
+        request.onloadend = request.onerror = function() {
+            if (!needFailureReport) {
+                return;
+            }
+            needFailureReport = false;
+            var data = {};
+            data.url = info.url;
+            data.request = request;
+            self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX, null, data);
+            deferred.reject(request);
+        };
+        request.open("GET", self.tokenAuthentication.addTokenAsQueryArg(info.url));
+        request.responseType = "arraybuffer";
+        request.setRequestHeader("Range", "bytes=" + info.range.start + "-" + info.range.end);
+        request = self.tokenAuthentication.setTokenInRequestHeader(request);
+        request.send(null);
+        self.debug.log("Perform SIDX load: " + info.url);
+        return deferred.promise;
+    };
+    return {
+        debug: undefined,
+        errHandler: undefined,
+        tokenAuthentication: undefined,
+        loadSegments: loadSegments,
+        loadInitialization: loadInit,
+        parseSegments: parseSegments,
+        parseSIDX: parseSIDX,
+        findSIDX: findSIDX
+    };
+};
+
+Dash.dependencies.BaseURLExtensions.prototype = {
+    constructor: Dash.dependencies.BaseURLExtensions
+};
+
 Dash.di.DashContext = function() {
     "use strict";
     return {
@@ -14407,354 +14893,6 @@ Dash.di.DashContext = function() {
 Dash.di.DashContext.prototype = new MediaPlayer.di.Context();
 
 Dash.di.DashContext.prototype.constructor = Dash.di.DashContext;
-
-Dash.vo.Mpd = function() {
-    "use strict";
-    this.manifest = null;
-    this.suggestedPresentationDelay = 0;
-    this.availabilityStartTime = null;
-    this.availabilityEndTime = Number.POSITIVE_INFINITY;
-    this.timeShiftBufferDepth = Number.POSITIVE_INFINITY;
-    this.maxSegmentDuration = Number.POSITIVE_INFINITY;
-    this.checkTime = NaN;
-    this.clientServerTimeShift = 0;
-    this.isClientServerTimeSyncCompleted = false;
-};
-
-Dash.vo.Mpd.prototype = {
-    constructor: Dash.vo.Mpd
-};
-
-Dash.vo.Period = function() {
-    "use strict";
-    this.id = null;
-    this.index = -1;
-    this.duration = NaN;
-    this.start = NaN;
-    this.mpd = null;
-    this.liveEdge = NaN;
-};
-
-Dash.vo.Period.prototype = {
-    constructor: Dash.vo.Period
-};
-
-Dash.vo.AdaptationSet = function() {
-    "use strict";
-    this.period = null;
-    this.index = -1;
-};
-
-Dash.vo.AdaptationSet.prototype = {
-    constructor: Dash.vo.AdaptationSet
-};
-
-Dash.vo.Representation = function() {
-    "use strict";
-    this.id = null;
-    this.index = -1;
-    this.adaptation = null;
-    this.segmentInfoType = null;
-    this.initialization = null;
-    this.segmentDuration = NaN;
-    this.timescale = 1;
-    this.startNumber = 1;
-    this.indexRange = null;
-    this.range = null;
-    this.presentationTimeOffset = 0;
-    this.MSETimeOffset = NaN;
-    this.segmentAvailabilityRange = null;
-    this.availableSegmentsNumber = 0;
-};
-
-Dash.vo.Representation.prototype = {
-    constructor: Dash.vo.Representation
-};
-
-Dash.vo.Segment = function() {
-    "use strict";
-    this.indexRange = null;
-    this.index = null;
-    this.mediaRange = null;
-    this.media = null;
-    this.duration = NaN;
-    this.replacementTime = null;
-    this.replacementNumber = NaN;
-    this.mediaStartTime = NaN;
-    this.presentationStartTime = NaN;
-    this.availabilityStartTime = NaN;
-    this.availabilityEndTime = NaN;
-    this.availabilityIdx = NaN;
-    this.wallStartTime = NaN;
-    this.representation = null;
-};
-
-Dash.vo.Segment.prototype = {
-    constructor: Dash.vo.Segment
-};
-
-Dash.vo.Event = function() {
-    "use strict";
-    this.duration = NaN;
-    this.presentationTime = NaN;
-    this.id = NaN;
-    this.messageData = "";
-    this.eventStream = null;
-    this.presentationTimeDelta = NaN;
-};
-
-Dash.vo.Event.prototype = {
-    constructor: Dash.vo.Event
-};
-
-Dash.vo.EventStream = function() {
-    "use strict";
-    this.adaptionSet = null;
-    this.representation = null;
-    this.period = null;
-    this.timescale = 1;
-    this.value = "";
-    this.schemeIdUri = "";
-};
-
-Dash.vo.EventStream.prototype = {
-    constructor: Dash.vo.EventStream
-};
-
-Dash.dependencies.DashParser = function() {
-    "use strict";
-    var SECONDS_IN_YEAR = 365 * 24 * 60 * 60, SECONDS_IN_MONTH = 30 * 24 * 60 * 60, SECONDS_IN_DAY = 24 * 60 * 60, SECONDS_IN_HOUR = 60 * 60, SECONDS_IN_MIN = 60, MINUTES_IN_HOUR = 60, MILLISECONDS_IN_SECONDS = 1e3, durationRegex = /^P(([\d.]*)Y)?(([\d.]*)M)?(([\d.]*)D)?T?(([\d.]*)H)?(([\d.]*)M)?(([\d.]*)S)?/, datetimeRegex = /^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2})(?::([0-9]*)(\.[0-9]*)?)?(?:([+-])([0-9]{2})([0-9]{2}))?/, numericRegex = /^[-+]?[0-9]+[.]?[0-9]*([eE][-+]?[0-9]+)?$/, matchers = [ {
-        type: "duration",
-        test: function(str) {
-            return durationRegex.test(str);
-        },
-        converter: function(str) {
-            var match = durationRegex.exec(str);
-            return parseFloat(match[2] || 0) * SECONDS_IN_YEAR + parseFloat(match[4] || 0) * SECONDS_IN_MONTH + parseFloat(match[6] || 0) * SECONDS_IN_DAY + parseFloat(match[8] || 0) * SECONDS_IN_HOUR + parseFloat(match[10] || 0) * SECONDS_IN_MIN + parseFloat(match[12] || 0);
-        }
-    }, {
-        type: "datetime",
-        test: function(str) {
-            return datetimeRegex.test(str);
-        },
-        converter: function(str) {
-            var match = datetimeRegex.exec(str), utcDate;
-            utcDate = Date.UTC(parseInt(match[1], 10), parseInt(match[2], 10) - 1, parseInt(match[3], 10), parseInt(match[4], 10), parseInt(match[5], 10), match[6] && parseInt(match[6], 10) || 0, match[7] && parseFloat(match[7]) * MILLISECONDS_IN_SECONDS || 0);
-            if (match[9] && match[10]) {
-                var timezoneOffset = parseInt(match[9], 10) * MINUTES_IN_HOUR + parseInt(match[10], 10);
-                utcDate += (match[8] === "+" ? -1 : +1) * timezoneOffset * SECONDS_IN_MIN * MILLISECONDS_IN_SECONDS;
-            }
-            return new Date(utcDate);
-        }
-    }, {
-        type: "numeric",
-        test: function(str) {
-            return numericRegex.test(str);
-        },
-        converter: function(str) {
-            return parseFloat(str);
-        }
-    } ], getCommonValuesMap = function() {
-        var adaptationSet, representation, subRepresentation, common;
-        common = [ {
-            name: "profiles",
-            merge: false
-        }, {
-            name: "width",
-            merge: false
-        }, {
-            name: "height",
-            merge: false
-        }, {
-            name: "sar",
-            merge: false
-        }, {
-            name: "frameRate",
-            merge: false
-        }, {
-            name: "audioSamplingRate",
-            merge: false
-        }, {
-            name: "mimeType",
-            merge: false
-        }, {
-            name: "segmentProfiles",
-            merge: false
-        }, {
-            name: "codecs",
-            merge: false
-        }, {
-            name: "maximumSAPPeriod",
-            merge: false
-        }, {
-            name: "startsWithSap",
-            merge: false
-        }, {
-            name: "maxPlayoutRate",
-            merge: false
-        }, {
-            name: "codingDependency",
-            merge: false
-        }, {
-            name: "scanType",
-            merge: false
-        }, {
-            name: "FramePacking",
-            merge: true
-        }, {
-            name: "AudioChannelConfiguration",
-            merge: true
-        }, {
-            name: "ContentProtection",
-            merge: true
-        } ];
-        adaptationSet = {};
-        adaptationSet.name = "AdaptationSet";
-        adaptationSet.isRoot = false;
-        adaptationSet.isArray = true;
-        adaptationSet.parent = null;
-        adaptationSet.children = [];
-        adaptationSet.properties = common;
-        representation = {};
-        representation.name = "Representation";
-        representation.isRoot = false;
-        representation.isArray = true;
-        representation.parent = adaptationSet;
-        representation.children = [];
-        representation.properties = common;
-        adaptationSet.children.push(representation);
-        subRepresentation = {};
-        subRepresentation.name = "SubRepresentation";
-        subRepresentation.isRoot = false;
-        subRepresentation.isArray = true;
-        subRepresentation.parent = representation;
-        subRepresentation.children = [];
-        subRepresentation.properties = common;
-        representation.children.push(subRepresentation);
-        return adaptationSet;
-    }, getSegmentValuesMap = function() {
-        var period, adaptationSet, representation, common;
-        common = [ {
-            name: "SegmentBase",
-            merge: true
-        }, {
-            name: "SegmentTemplate",
-            merge: true
-        }, {
-            name: "SegmentList",
-            merge: true
-        } ];
-        period = {};
-        period.name = "Period";
-        period.isRoot = false;
-        period.isArray = true;
-        period.parent = null;
-        period.children = [];
-        period.properties = common;
-        adaptationSet = {};
-        adaptationSet.name = "AdaptationSet";
-        adaptationSet.isRoot = false;
-        adaptationSet.isArray = true;
-        adaptationSet.parent = period;
-        adaptationSet.children = [];
-        adaptationSet.properties = common;
-        period.children.push(adaptationSet);
-        representation = {};
-        representation.name = "Representation";
-        representation.isRoot = false;
-        representation.isArray = true;
-        representation.parent = adaptationSet;
-        representation.children = [];
-        representation.properties = common;
-        adaptationSet.children.push(representation);
-        return period;
-    }, getBaseUrlValuesMap = function() {
-        var mpd, period, adaptationSet, representation, common;
-        common = [ {
-            name: "BaseURL",
-            merge: true,
-            mergeFunction: function(parentValue, childValue) {
-                var mergedValue;
-                if (childValue.indexOf("http://") === 0) {
-                    mergedValue = childValue;
-                } else {
-                    mergedValue = parentValue + childValue;
-                }
-                return mergedValue;
-            }
-        } ];
-        mpd = {};
-        mpd.name = "mpd";
-        mpd.isRoot = true;
-        mpd.isArray = true;
-        mpd.parent = null;
-        mpd.children = [];
-        mpd.properties = common;
-        period = {};
-        period.name = "Period";
-        period.isRoot = false;
-        period.isArray = true;
-        period.parent = null;
-        period.children = [];
-        period.properties = common;
-        mpd.children.push(period);
-        adaptationSet = {};
-        adaptationSet.name = "AdaptationSet";
-        adaptationSet.isRoot = false;
-        adaptationSet.isArray = true;
-        adaptationSet.parent = period;
-        adaptationSet.children = [];
-        adaptationSet.properties = common;
-        period.children.push(adaptationSet);
-        representation = {};
-        representation.name = "Representation";
-        representation.isRoot = false;
-        representation.isArray = true;
-        representation.parent = adaptationSet;
-        representation.children = [];
-        representation.properties = common;
-        adaptationSet.children.push(representation);
-        return mpd;
-    }, getDashMap = function() {
-        var result = [];
-        result.push(getCommonValuesMap());
-        result.push(getSegmentValuesMap());
-        result.push(getBaseUrlValuesMap());
-        return result;
-    }, internalParse = function(data, baseUrl) {
-        var manifest, converter = new X2JS(matchers, "", true), iron = new ObjectIron(getDashMap()), start = new Date(), json = null, ironed = null;
-        try {
-            manifest = converter.xml_str2json(data);
-            json = new Date();
-            if (!manifest.hasOwnProperty("BaseURL")) {
-                manifest.BaseURL = baseUrl;
-            } else {
-                manifest.BaseURL = manifest.BaseURL_asArray[0];
-                if (manifest.BaseURL.toString().indexOf("http") !== 0) {
-                    manifest.BaseURL = baseUrl + manifest.BaseURL;
-                }
-            }
-            iron.run(manifest);
-            ironed = new Date();
-            this.debug.log("Parsing complete: ( xml2json: " + (json.getTime() - start.getTime()) + "ms, objectiron: " + (ironed.getTime() - json.getTime()) + "ms, total: " + (ironed.getTime() - start.getTime()) / 1e3 + "s)");
-        } catch (err) {
-            var dataError = {};
-            dataError.mpdUrl = baseUrl;
-            this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE, "parsing the manifest failed", dataError);
-            return Q.reject(err);
-        }
-        return Q.when(manifest);
-    };
-    return {
-        debug: undefined,
-        errHandler: undefined,
-        parse: internalParse
-    };
-};
-
-Dash.dependencies.DashParser.prototype = {
-    constructor: Dash.dependencies.DashParser
-};
 
 Dash.dependencies.DashHandler = function() {
     "use strict";
@@ -15413,441 +15551,6 @@ Dash.dependencies.DashHandler.prototype = {
     constructor: Dash.dependencies.DashHandler
 };
 
-Dash.dependencies.BaseURLExtensions = function() {
-    "use strict";
-    var parseSIDX = function(ab, ab_first_byte_offset) {
-        var d = new DataView(ab), sidx = {}, pos = 0, offset, time, sidxEnd, i, ref_type, ref_size, ref_dur, type, size, charCode;
-        while (type !== "sidx" && pos < d.byteLength) {
-            size = d.getUint32(pos);
-            pos += 4;
-            type = "";
-            for (i = 0; i < 4; i += 1) {
-                charCode = d.getInt8(pos);
-                type += String.fromCharCode(charCode);
-                pos += 1;
-            }
-            if (type !== "moof" && type !== "traf" && type !== "sidx") {
-                pos += size - 8;
-            } else if (type === "sidx") {
-                pos -= 8;
-            }
-        }
-        sidxEnd = d.getUint32(pos, false) + pos;
-        if (sidxEnd > ab.byteLength) {
-            throw "sidx terminates after array buffer";
-        }
-        sidx.version = d.getUint8(pos + 8);
-        pos += 12;
-        sidx.timescale = d.getUint32(pos + 4, false);
-        pos += 8;
-        if (sidx.version === 0) {
-            sidx.earliest_presentation_time = d.getUint32(pos, false);
-            sidx.first_offset = d.getUint32(pos + 4, false);
-            pos += 8;
-        } else {
-            sidx.earliest_presentation_time = utils.Math.to64BitNumber(d.getUint32(pos + 4, false), d.getUint32(pos, false));
-            sidx.first_offset = (d.getUint32(pos + 8, false) << 32) + d.getUint32(pos + 12, false);
-            pos += 16;
-        }
-        sidx.first_offset += sidxEnd + (ab_first_byte_offset || 0);
-        sidx.reference_count = d.getUint16(pos + 2, false);
-        pos += 4;
-        sidx.references = [];
-        offset = sidx.first_offset;
-        time = sidx.earliest_presentation_time;
-        for (i = 0; i < sidx.reference_count; i += 1) {
-            ref_size = d.getUint32(pos, false);
-            ref_type = ref_size >>> 31;
-            ref_size = ref_size & 2147483647;
-            ref_dur = d.getUint32(pos + 4, false);
-            pos += 12;
-            sidx.references.push({
-                size: ref_size,
-                type: ref_type,
-                offset: offset,
-                duration: ref_dur,
-                time: time,
-                timescale: sidx.timescale
-            });
-            offset += ref_size;
-            time += ref_dur;
-        }
-        if (pos !== sidxEnd) {
-            throw "Error: final pos " + pos + " differs from SIDX end " + sidxEnd;
-        }
-        return sidx;
-    }, parseSegments = function(data, media, offset) {
-        var parsed, ref, segments, segment, i, len, start, end;
-        parsed = parseSIDX.call(this, data, offset);
-        ref = parsed.references;
-        segments = [];
-        for (i = 0, len = ref.length; i < len; i += 1) {
-            segment = new Dash.vo.Segment();
-            segment.duration = ref[i].duration;
-            segment.media = media;
-            segment.startTime = ref[i].time;
-            segment.timescale = ref[i].timescale;
-            start = ref[i].offset;
-            end = ref[i].offset + ref[i].size - 1;
-            segment.mediaRange = start + "-" + end;
-            segments.push(segment);
-        }
-        this.debug.log("Parsed SIDX box: " + segments.length + " segments.");
-        return Q.when(segments);
-    }, findInit = function(data, info) {
-        var deferred = Q.defer(), ftyp, moov, start, end, d = new DataView(data), pos = 0, type = "", size = 0, bytesAvailable, i, c, request, loaded = false, irange, self = this;
-        self.debug.log("Searching for initialization.");
-        while (type !== "moov" && pos < d.byteLength) {
-            size = d.getUint32(pos);
-            pos += 4;
-            type = "";
-            for (i = 0; i < 4; i += 1) {
-                c = d.getInt8(pos);
-                type += String.fromCharCode(c);
-                pos += 1;
-            }
-            if (type === "ftyp") {
-                ftyp = pos - 8;
-            }
-            if (type === "moov") {
-                moov = pos - 8;
-            }
-            if (type !== "moov") {
-                pos += size - 8;
-            }
-        }
-        bytesAvailable = d.byteLength - pos;
-        if (type !== "moov") {
-            self.debug.log("Loading more bytes to find initialization.");
-            info.range.start = 0;
-            info.range.end = info.bytesLoaded + info.bytesToLoad;
-            request = new XMLHttpRequest();
-            request.onloadend = function() {
-                if (!loaded) {
-                    deferred.reject("Error loading initialization.");
-                }
-            };
-            request.onload = function() {
-                loaded = true;
-                info.bytesLoaded = info.range.end;
-                findInit.call(self, request.response).then(function(segments) {
-                    deferred.resolve(segments);
-                });
-            };
-            request.onerror = function() {
-                deferred.reject("Error loading initialization.");
-            };
-            request.open("GET", self.tokenAuthentication.addTokenAsQueryArg(info.url));
-            request.responseType = "arraybuffer";
-            request.setRequestHeader("Range", "bytes=" + info.range.start + "-" + info.range.end);
-            request = self.tokenAuthentication.setTokenInRequestHeader(request);
-            request.send(null);
-        } else {
-            start = ftyp === undefined ? moov : ftyp;
-            end = moov + size - 1;
-            irange = start + "-" + end;
-            self.debug.log("Found the initialization.  Range: " + irange);
-            deferred.resolve(irange);
-        }
-        return deferred.promise;
-    }, loadInit = function(media) {
-        var deferred = Q.defer(), request = new XMLHttpRequest(), needFailureReport = true, self = this, info = {
-            url: media,
-            range: {},
-            searching: false,
-            bytesLoaded: 0,
-            bytesToLoad: 1500,
-            request: request
-        };
-        self.debug.log("Start searching for initialization.");
-        info.range.start = 0;
-        info.range.end = info.bytesToLoad;
-        request.onload = function() {
-            if (request.status < 200 || request.status > 299) {
-                return;
-            }
-            needFailureReport = false;
-            info.bytesLoaded = info.range.end;
-            findInit.call(self, request.response, info).then(function(range) {
-                deferred.resolve(range);
-            });
-        };
-        request.onloadend = request.onerror = function() {
-            if (!needFailureReport) {
-                return;
-            }
-            needFailureReport = false;
-            var data = {};
-            data.url = info.url;
-            data.request = request;
-            self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_INIT, null, data);
-            deferred.reject(request);
-        };
-        request.open("GET", self.tokenAuthentication.addTokenAsQueryArg(info.url));
-        request.responseType = "arraybuffer";
-        request.setRequestHeader("Range", "bytes=" + info.range.start + "-" + info.range.end);
-        request = self.tokenAuthentication.setTokenInRequestHeader(request);
-        request.send(null);
-        self.debug.log("Perform init search: " + info.url);
-        return deferred.promise;
-    }, findSIDX = function(data, info) {
-        var deferred = Q.defer(), d = new DataView(data), request = new XMLHttpRequest(), pos = 0, type = "", size = 0, bytesAvailable, sidxBytes, sidxSlice, sidxOut, i, c, needFailureReport = true, parsed, ref, loadMultiSidx = false, self = this;
-        self.debug.log("Searching for SIDX box.");
-        self.debug.log(info.bytesLoaded + " bytes loaded.");
-        while (type !== "sidx" && pos < d.byteLength) {
-            size = d.getUint32(pos);
-            pos += 4;
-            type = "";
-            for (i = 0; i < 4; i += 1) {
-                c = d.getInt8(pos);
-                type += String.fromCharCode(c);
-                pos += 1;
-            }
-            if (type !== "sidx") {
-                pos += size - 8;
-            }
-        }
-        bytesAvailable = d.byteLength - pos;
-        if (type !== "sidx") {
-            deferred.reject();
-        } else if (bytesAvailable < size - 8) {
-            self.debug.log("Found SIDX but we don't have all of it.");
-            info.range.start = 0;
-            info.range.end = info.bytesLoaded + (size - bytesAvailable);
-            request.onload = function() {
-                if (request.status < 200 || request.status > 299) {
-                    return;
-                }
-                needFailureReport = false;
-                info.bytesLoaded = info.range.end;
-                findSIDX.call(self, request.response, info).then(function(segments) {
-                    deferred.resolve(segments);
-                });
-            };
-            request.onloadend = request.onerror = function() {
-                if (!needFailureReport) {
-                    return;
-                }
-                needFailureReport = false;
-                var data = {};
-                data.url = info.url;
-                data.request = request;
-                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX, null, data);
-                deferred.reject(request);
-            };
-            request.open("GET", self.tokenAuthentication.addTokenAsQueryArg(info.url));
-            request.responseType = "arraybuffer";
-            request.setRequestHeader("Range", "bytes=" + info.range.start + "-" + info.range.end);
-            request = self.tokenAuthentication.setTokenInRequestHeader(request);
-            request.send(null);
-        } else {
-            info.range.start = pos - 8;
-            info.range.end = info.range.start + size;
-            self.debug.log("Found the SIDX box.  Start: " + info.range.start + " | End: " + info.range.end);
-            sidxBytes = new ArrayBuffer(info.range.end - info.range.start);
-            sidxOut = new Uint8Array(sidxBytes);
-            sidxSlice = new Uint8Array(data, info.range.start, info.range.end - info.range.start);
-            sidxOut.set(sidxSlice);
-            parsed = this.parseSIDX.call(this, sidxBytes, info.range.start);
-            ref = parsed.references;
-            if (ref !== null && ref !== undefined && ref.length > 0) {
-                loadMultiSidx = ref[0].type === 1;
-            }
-            if (loadMultiSidx) {
-                self.debug.log("Initiate multiple SIDX load.");
-                var j, len, ss, se, r, funcs = [], segs;
-                for (j = 0, len = ref.length; j < len; j += 1) {
-                    ss = ref[j].offset;
-                    se = ref[j].offset + ref[j].size - 1;
-                    r = ss + "-" + se;
-                    funcs.push(this.loadSegments.call(self, info.url, r));
-                }
-                Q.all(funcs).then(function(results) {
-                    segs = [];
-                    for (j = 0, len = results.length; j < len; j += 1) {
-                        segs = segs.concat(results[j]);
-                    }
-                    deferred.resolve(segs);
-                }, function(httprequest) {
-                    deferred.reject(httprequest);
-                });
-            } else {
-                self.debug.log("Parsing segments from SIDX.");
-                parseSegments.call(self, sidxBytes, info.url, info.range.start).then(function(segments) {
-                    deferred.resolve(segments);
-                });
-            }
-        }
-        return deferred.promise;
-    }, loadSegments = function(media, theRange) {
-        var deferred = Q.defer(), request = new XMLHttpRequest(), parts, needFailureReport = true, self = this, info = {
-            url: media,
-            range: {},
-            searching: false,
-            bytesLoaded: 0,
-            bytesToLoad: 1500,
-            request: request
-        };
-        if (theRange === null) {
-            self.debug.log("No known range for SIDX request.");
-            info.searching = true;
-            info.range.start = 0;
-            info.range.end = info.bytesToLoad;
-        } else {
-            parts = theRange.split("-");
-            info.range.start = parseFloat(parts[0]);
-            info.range.end = parseFloat(parts[1]);
-        }
-        request.onload = function() {
-            if (request.status < 200 || request.status > 299) {
-                return;
-            }
-            needFailureReport = false;
-            if (info.searching) {
-                info.bytesLoaded = info.range.end;
-                findSIDX.call(self, request.response, info).then(function(segments) {
-                    deferred.resolve(segments);
-                });
-            } else {
-                parseSegments.call(self, request.response, info.url, info.range.start).then(function(segments) {
-                    deferred.resolve(segments);
-                });
-            }
-        };
-        request.onloadend = request.onerror = function() {
-            if (!needFailureReport) {
-                return;
-            }
-            needFailureReport = false;
-            var data = {};
-            data.url = info.url;
-            data.request = request;
-            self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX, null, data);
-            deferred.reject(request);
-        };
-        request.open("GET", self.tokenAuthentication.addTokenAsQueryArg(info.url));
-        request.responseType = "arraybuffer";
-        request.setRequestHeader("Range", "bytes=" + info.range.start + "-" + info.range.end);
-        request = self.tokenAuthentication.setTokenInRequestHeader(request);
-        request.send(null);
-        self.debug.log("Perform SIDX load: " + info.url);
-        return deferred.promise;
-    };
-    return {
-        debug: undefined,
-        errHandler: undefined,
-        tokenAuthentication: undefined,
-        loadSegments: loadSegments,
-        loadInitialization: loadInit,
-        parseSegments: parseSegments,
-        parseSIDX: parseSIDX,
-        findSIDX: findSIDX
-    };
-};
-
-Dash.dependencies.BaseURLExtensions.prototype = {
-    constructor: Dash.dependencies.BaseURLExtensions
-};
-
-Dash.dependencies.FragmentExtensions = function() {
-    "use strict";
-    var parseTFDT = function(ab) {
-        var deferred = Q.defer(), d = new DataView(ab), pos = 0, base_media_decode_time, version, size, type, i, c;
-        while (type !== "tfdt" && pos < d.byteLength) {
-            size = d.getUint32(pos);
-            pos += 4;
-            type = "";
-            for (i = 0; i < 4; i += 1) {
-                c = d.getInt8(pos);
-                type += String.fromCharCode(c);
-                pos += 1;
-            }
-            if (type !== "moof" && type !== "traf" && type !== "tfdt") {
-                pos += size - 8;
-            }
-        }
-        if (pos === d.byteLength) {
-            throw "Error finding live offset.";
-        }
-        version = d.getUint8(pos);
-        this.debug.log("position: " + pos);
-        if (version === 0) {
-            pos += 4;
-            base_media_decode_time = d.getUint32(pos, false);
-        } else {
-            pos += size - 16;
-            base_media_decode_time = utils.Math.to64BitNumber(d.getUint32(pos + 4, false), d.getUint32(pos, false));
-        }
-        deferred.resolve({
-            version: version,
-            base_media_decode_time: base_media_decode_time
-        });
-        return deferred.promise;
-    }, parseSIDX = function(ab) {
-        var d = new DataView(ab), pos = 0, version, timescale, earliest_presentation_time, i, type, size, charCode;
-        while (type !== "sidx" && pos < d.byteLength) {
-            size = d.getUint32(pos);
-            pos += 4;
-            type = "";
-            for (i = 0; i < 4; i += 1) {
-                charCode = d.getInt8(pos);
-                type += String.fromCharCode(charCode);
-                pos += 1;
-            }
-            if (type !== "moof" && type !== "traf" && type !== "sidx") {
-                pos += size - 8;
-            } else if (type === "sidx") {
-                pos -= 8;
-            }
-        }
-        version = d.getUint8(pos + 8);
-        pos += 12;
-        timescale = d.getUint32(pos + 4, false);
-        pos += 8;
-        if (version === 0) {
-            earliest_presentation_time = d.getUint32(pos, false);
-        } else {
-            earliest_presentation_time = utils.Math.to64BitNumber(d.getUint32(pos + 4, false), d.getUint32(pos, false));
-        }
-        return Q.when({
-            earliestPresentationTime: earliest_presentation_time,
-            timescale: timescale
-        });
-    }, loadFragment = function(media) {
-        var deferred = Q.defer(), request = new XMLHttpRequest(), url, loaded = false, errorStr, parsed;
-        url = media;
-        request.onloadend = function() {
-            if (!loaded) {
-                errorStr = "Error loading fragment: " + url;
-                deferred.reject(errorStr);
-            }
-        };
-        request.onload = function() {
-            loaded = true;
-            parsed = parseTFDT(request.response);
-            deferred.resolve(parsed);
-        };
-        request.onerror = function() {
-            errorStr = "Error loading fragment: " + url;
-            deferred.reject(errorStr);
-        };
-        request.responseType = "arraybuffer";
-        request.open("GET", url);
-        request.send(null);
-        return deferred.promise;
-    };
-    return {
-        debug: undefined,
-        loadFragment: loadFragment,
-        parseTFDT: parseTFDT,
-        parseSIDX: parseSIDX
-    };
-};
-
-Dash.dependencies.FragmentExtensions.prototype = {
-    constructor: Dash.dependencies.FragmentExtensions
-};
-
 Dash.dependencies.DashManifestExtensions = function() {
     "use strict";
     this.timelineConverter = undefined;
@@ -15979,6 +15682,11 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         var adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
         return Q.when(adaptations[index]);
     },
+    getDataForIndex_: function(index, manifest, periodIndex) {
+        "use strict";
+        var adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+        return adaptations[index];
+    },
     getDataIndex: function(data, manifest, periodIndex) {
         "use strict";
         var adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray, i, len;
@@ -16054,6 +15762,25 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         });
         return deferred.promise;
     },
+    getSpecificAudioData: function(manifest, periodIndex, language) {
+        "use strict";
+        var i, len, deferred = Q.defer(), found = false, self = this;
+        this.getAudioDatas(manifest, periodIndex).then(function(datas) {
+            if (!datas || datas.length === 0) {
+                deferred.resolve(null);
+            }
+            for (i = 0, len = datas.length; i < len && found !== true; i += 1) {
+                if (datas[i].lang === language) {
+                    found = true;
+                    deferred.resolve(self.processAdaptation(datas[i]));
+                }
+            }
+            if (!found) {
+                deferred.resolve(datas[0]);
+            }
+        });
+        return deferred.promise;
+    },
     getPrimaryAudioData: function(manifest, periodIndex) {
         "use strict";
         var i, len, deferred = Q.defer(), funcs = [], self = this;
@@ -16101,6 +15828,25 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                     deferred.resolve(datas[0]);
                 }
             });
+        });
+        return deferred.promise;
+    },
+    getSpecificTextData: function(manifest, periodIndex, language) {
+        "use strict";
+        var i, len, deferred = Q.defer(), found = false, self = this;
+        this.getTextDatas(manifest, periodIndex).then(function(datas) {
+            if (!datas || datas.length === 0) {
+                deferred.resolve(null);
+            }
+            for (i = 0, len = datas.length; i < len && found !== true; i += 1) {
+                if (datas[i].lang === language) {
+                    found = true;
+                    deferred.resolve(self.processAdaptation(datas[i]));
+                }
+            }
+            if (!found) {
+                deferred.resolve(datas[0]);
+            }
         });
         return deferred.promise;
     },
@@ -16528,9 +16274,13 @@ Dash.dependencies.DashMetricsExtensions = function() {
         representationIndex = findRepresentationIndexInPeriodArray.call(self, periodArray, representationId);
         return representationIndex;
     }, getMaxIndexForBufferType = function(bufferType) {
-        var self = this, manifest = self.manifestModel.getValue(), maxIndex, periodArray = manifest.Period_asArray;
-        maxIndex = findMaxBufferIndex.call(this, periodArray, bufferType);
-        return maxIndex;
+        var self = this, manifest = self.manifestModel.getValue(), maxIndex, periodArray = manifest === null ? null : manifest.Period_asArray;
+        if (periodArray) {
+            maxIndex = findMaxBufferIndex.call(this, periodArray, bufferType);
+            return maxIndex;
+        } else {
+            return null;
+        }
     }, getCurrentRepresentationSwitch = function(metrics) {
         if (metrics === null) {
             return null;
@@ -16632,12 +16382,346 @@ Dash.dependencies.DashMetricsExtensions.prototype = {
     constructor: Dash.dependencies.DashMetricsExtensions
 };
 
+Dash.dependencies.DashParser = function() {
+    "use strict";
+    var SECONDS_IN_YEAR = 365 * 24 * 60 * 60, SECONDS_IN_MONTH = 30 * 24 * 60 * 60, SECONDS_IN_DAY = 24 * 60 * 60, SECONDS_IN_HOUR = 60 * 60, SECONDS_IN_MIN = 60, MINUTES_IN_HOUR = 60, MILLISECONDS_IN_SECONDS = 1e3, durationRegex = /^P(([\d.]*)Y)?(([\d.]*)M)?(([\d.]*)D)?T?(([\d.]*)H)?(([\d.]*)M)?(([\d.]*)S)?/, datetimeRegex = /^([0-9]{4})-([0-9]{2})-([0-9]{2})T([0-9]{2}):([0-9]{2})(?::([0-9]*)(\.[0-9]*)?)?(?:([+-])([0-9]{2})([0-9]{2}))?/, numericRegex = /^[-+]?[0-9]+[.]?[0-9]*([eE][-+]?[0-9]+)?$/, matchers = [ {
+        type: "duration",
+        test: function(str) {
+            return durationRegex.test(str);
+        },
+        converter: function(str) {
+            var match = durationRegex.exec(str);
+            return parseFloat(match[2] || 0) * SECONDS_IN_YEAR + parseFloat(match[4] || 0) * SECONDS_IN_MONTH + parseFloat(match[6] || 0) * SECONDS_IN_DAY + parseFloat(match[8] || 0) * SECONDS_IN_HOUR + parseFloat(match[10] || 0) * SECONDS_IN_MIN + parseFloat(match[12] || 0);
+        }
+    }, {
+        type: "datetime",
+        test: function(str) {
+            return datetimeRegex.test(str);
+        },
+        converter: function(str) {
+            var match = datetimeRegex.exec(str), utcDate;
+            utcDate = Date.UTC(parseInt(match[1], 10), parseInt(match[2], 10) - 1, parseInt(match[3], 10), parseInt(match[4], 10), parseInt(match[5], 10), match[6] && parseInt(match[6], 10) || 0, match[7] && parseFloat(match[7]) * MILLISECONDS_IN_SECONDS || 0);
+            if (match[9] && match[10]) {
+                var timezoneOffset = parseInt(match[9], 10) * MINUTES_IN_HOUR + parseInt(match[10], 10);
+                utcDate += (match[8] === "+" ? -1 : +1) * timezoneOffset * SECONDS_IN_MIN * MILLISECONDS_IN_SECONDS;
+            }
+            return new Date(utcDate);
+        }
+    }, {
+        type: "numeric",
+        test: function(str) {
+            return numericRegex.test(str);
+        },
+        converter: function(str) {
+            return parseFloat(str);
+        }
+    } ], getCommonValuesMap = function() {
+        var adaptationSet, representation, subRepresentation, common;
+        common = [ {
+            name: "profiles",
+            merge: false
+        }, {
+            name: "width",
+            merge: false
+        }, {
+            name: "height",
+            merge: false
+        }, {
+            name: "sar",
+            merge: false
+        }, {
+            name: "frameRate",
+            merge: false
+        }, {
+            name: "audioSamplingRate",
+            merge: false
+        }, {
+            name: "mimeType",
+            merge: false
+        }, {
+            name: "segmentProfiles",
+            merge: false
+        }, {
+            name: "codecs",
+            merge: false
+        }, {
+            name: "maximumSAPPeriod",
+            merge: false
+        }, {
+            name: "startsWithSap",
+            merge: false
+        }, {
+            name: "maxPlayoutRate",
+            merge: false
+        }, {
+            name: "codingDependency",
+            merge: false
+        }, {
+            name: "scanType",
+            merge: false
+        }, {
+            name: "FramePacking",
+            merge: true
+        }, {
+            name: "AudioChannelConfiguration",
+            merge: true
+        }, {
+            name: "ContentProtection",
+            merge: true
+        } ];
+        adaptationSet = {};
+        adaptationSet.name = "AdaptationSet";
+        adaptationSet.isRoot = false;
+        adaptationSet.isArray = true;
+        adaptationSet.parent = null;
+        adaptationSet.children = [];
+        adaptationSet.properties = common;
+        representation = {};
+        representation.name = "Representation";
+        representation.isRoot = false;
+        representation.isArray = true;
+        representation.parent = adaptationSet;
+        representation.children = [];
+        representation.properties = common;
+        adaptationSet.children.push(representation);
+        subRepresentation = {};
+        subRepresentation.name = "SubRepresentation";
+        subRepresentation.isRoot = false;
+        subRepresentation.isArray = true;
+        subRepresentation.parent = representation;
+        subRepresentation.children = [];
+        subRepresentation.properties = common;
+        representation.children.push(subRepresentation);
+        return adaptationSet;
+    }, getSegmentValuesMap = function() {
+        var period, adaptationSet, representation, common;
+        common = [ {
+            name: "SegmentBase",
+            merge: true
+        }, {
+            name: "SegmentTemplate",
+            merge: true
+        }, {
+            name: "SegmentList",
+            merge: true
+        } ];
+        period = {};
+        period.name = "Period";
+        period.isRoot = false;
+        period.isArray = true;
+        period.parent = null;
+        period.children = [];
+        period.properties = common;
+        adaptationSet = {};
+        adaptationSet.name = "AdaptationSet";
+        adaptationSet.isRoot = false;
+        adaptationSet.isArray = true;
+        adaptationSet.parent = period;
+        adaptationSet.children = [];
+        adaptationSet.properties = common;
+        period.children.push(adaptationSet);
+        representation = {};
+        representation.name = "Representation";
+        representation.isRoot = false;
+        representation.isArray = true;
+        representation.parent = adaptationSet;
+        representation.children = [];
+        representation.properties = common;
+        adaptationSet.children.push(representation);
+        return period;
+    }, getBaseUrlValuesMap = function() {
+        var mpd, period, adaptationSet, representation, common;
+        common = [ {
+            name: "BaseURL",
+            merge: true,
+            mergeFunction: function(parentValue, childValue) {
+                var mergedValue;
+                if (childValue.indexOf("http://") === 0) {
+                    mergedValue = childValue;
+                } else {
+                    mergedValue = parentValue + childValue;
+                }
+                return mergedValue;
+            }
+        } ];
+        mpd = {};
+        mpd.name = "mpd";
+        mpd.isRoot = true;
+        mpd.isArray = true;
+        mpd.parent = null;
+        mpd.children = [];
+        mpd.properties = common;
+        period = {};
+        period.name = "Period";
+        period.isRoot = false;
+        period.isArray = true;
+        period.parent = null;
+        period.children = [];
+        period.properties = common;
+        mpd.children.push(period);
+        adaptationSet = {};
+        adaptationSet.name = "AdaptationSet";
+        adaptationSet.isRoot = false;
+        adaptationSet.isArray = true;
+        adaptationSet.parent = period;
+        adaptationSet.children = [];
+        adaptationSet.properties = common;
+        period.children.push(adaptationSet);
+        representation = {};
+        representation.name = "Representation";
+        representation.isRoot = false;
+        representation.isArray = true;
+        representation.parent = adaptationSet;
+        representation.children = [];
+        representation.properties = common;
+        adaptationSet.children.push(representation);
+        return mpd;
+    }, getDashMap = function() {
+        var result = [];
+        result.push(getCommonValuesMap());
+        result.push(getSegmentValuesMap());
+        result.push(getBaseUrlValuesMap());
+        return result;
+    }, internalParse = function(data, baseUrl) {
+        var manifest, converter = new X2JS(matchers, "", true), iron = new ObjectIron(getDashMap()), start = new Date(), json = null, ironed = null;
+        try {
+            manifest = converter.xml_str2json(data);
+            json = new Date();
+            if (!manifest.hasOwnProperty("BaseURL")) {
+                manifest.BaseURL = baseUrl;
+            } else {
+                manifest.BaseURL = manifest.BaseURL_asArray[0];
+                if (manifest.BaseURL.toString().indexOf("http") !== 0) {
+                    manifest.BaseURL = baseUrl + manifest.BaseURL;
+                }
+            }
+            iron.run(manifest);
+            ironed = new Date();
+            this.debug.log("Parsing complete: ( xml2json: " + (json.getTime() - start.getTime()) + "ms, objectiron: " + (ironed.getTime() - json.getTime()) + "ms, total: " + (ironed.getTime() - start.getTime()) / 1e3 + "s)");
+        } catch (err) {
+            var dataError = {};
+            dataError.mpdUrl = baseUrl;
+            this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE, "parsing the manifest failed", dataError);
+            return Q.reject(err);
+        }
+        return Q.when(manifest);
+    };
+    return {
+        debug: undefined,
+        errHandler: undefined,
+        parse: internalParse
+    };
+};
+
+Dash.dependencies.DashParser.prototype = {
+    constructor: Dash.dependencies.DashParser
+};
+
+Dash.dependencies.FragmentExtensions = function() {
+    "use strict";
+    var parseTFDT = function(ab) {
+        var deferred = Q.defer(), d = new DataView(ab), pos = 0, base_media_decode_time, version, size, type, i, c;
+        while (type !== "tfdt" && pos < d.byteLength) {
+            size = d.getUint32(pos);
+            pos += 4;
+            type = "";
+            for (i = 0; i < 4; i += 1) {
+                c = d.getInt8(pos);
+                type += String.fromCharCode(c);
+                pos += 1;
+            }
+            if (type !== "moof" && type !== "traf" && type !== "tfdt") {
+                pos += size - 8;
+            }
+        }
+        if (pos === d.byteLength) {
+            throw "Error finding live offset.";
+        }
+        version = d.getUint8(pos);
+        this.debug.log("position: " + pos);
+        if (version === 0) {
+            pos += 4;
+            base_media_decode_time = d.getUint32(pos, false);
+        } else {
+            pos += size - 16;
+            base_media_decode_time = utils.Math.to64BitNumber(d.getUint32(pos + 4, false), d.getUint32(pos, false));
+        }
+        deferred.resolve({
+            version: version,
+            base_media_decode_time: base_media_decode_time
+        });
+        return deferred.promise;
+    }, parseSIDX = function(ab) {
+        var d = new DataView(ab), pos = 0, version, timescale, earliest_presentation_time, i, type, size, charCode;
+        while (type !== "sidx" && pos < d.byteLength) {
+            size = d.getUint32(pos);
+            pos += 4;
+            type = "";
+            for (i = 0; i < 4; i += 1) {
+                charCode = d.getInt8(pos);
+                type += String.fromCharCode(charCode);
+                pos += 1;
+            }
+            if (type !== "moof" && type !== "traf" && type !== "sidx") {
+                pos += size - 8;
+            } else if (type === "sidx") {
+                pos -= 8;
+            }
+        }
+        version = d.getUint8(pos + 8);
+        pos += 12;
+        timescale = d.getUint32(pos + 4, false);
+        pos += 8;
+        if (version === 0) {
+            earliest_presentation_time = d.getUint32(pos, false);
+        } else {
+            earliest_presentation_time = utils.Math.to64BitNumber(d.getUint32(pos + 4, false), d.getUint32(pos, false));
+        }
+        return Q.when({
+            earliestPresentationTime: earliest_presentation_time,
+            timescale: timescale
+        });
+    }, loadFragment = function(media) {
+        var deferred = Q.defer(), request = new XMLHttpRequest(), url, loaded = false, errorStr, parsed;
+        url = media;
+        request.onloadend = function() {
+            if (!loaded) {
+                errorStr = "Error loading fragment: " + url;
+                deferred.reject(errorStr);
+            }
+        };
+        request.onload = function() {
+            loaded = true;
+            parsed = parseTFDT(request.response);
+            deferred.resolve(parsed);
+        };
+        request.onerror = function() {
+            errorStr = "Error loading fragment: " + url;
+            deferred.reject(errorStr);
+        };
+        request.responseType = "arraybuffer";
+        request.open("GET", url);
+        request.send(null);
+        return deferred.promise;
+    };
+    return {
+        debug: undefined,
+        loadFragment: loadFragment,
+        parseTFDT: parseTFDT,
+        parseSIDX: parseSIDX
+    };
+};
+
+Dash.dependencies.FragmentExtensions.prototype = {
+    constructor: Dash.dependencies.FragmentExtensions
+};
+
 Dash.dependencies.TimelineConverter = function() {
     "use strict";
     var clientServerTimeShift = 0, calcAvailabilityTimeFromPresentationTime = function(presentationTime, mpd, isDynamic, calculateEnd) {
         var availabilityTime = NaN;
         if (calculateEnd) {
-            if (isDynamic && mpd.timeShiftBufferDepth != Number.POSITIVE_INFINITY) {
+            if (isDynamic && mpd.timeShiftBufferDepth !== Number.POSITIVE_INFINITY) {
                 availabilityTime = new Date(mpd.availabilityStartTime.getTime() + (presentationTime + mpd.timeShiftBufferDepth) * 1e3);
             } else {
                 availabilityTime = mpd.availabilityEndTime;
@@ -16740,588 +16824,117 @@ Dash.dependencies.TimelineConverter.prototype = {
     constructor: Dash.dependencies.TimelineConverter
 };
 
-Mss = function() {
+Dash.vo.AdaptationSet = function() {
     "use strict";
-    return {
-        dependencies: {}
-    };
-}();
+    this.period = null;
+    this.index = -1;
+};
 
-Mss.dependencies.MssParser = function() {
+Dash.vo.AdaptationSet.prototype = {
+    constructor: Dash.vo.AdaptationSet
+};
+
+Dash.vo.Event = function() {
     "use strict";
-    var TIME_SCALE_100_NANOSECOND_UNIT = 1e7;
-    var numericRegex = /^[-+]?[0-9]+[.]?[0-9]*([eE][-+]?[0-9]+)?$/;
-    var hexadecimalRegex = /^0[xX][A-Fa-f0-9]+$/;
-    var samplingFrequencyIndex = {
-        96e3: 0,
-        88200: 1,
-        64e3: 2,
-        48e3: 3,
-        44100: 4,
-        32e3: 5,
-        24e3: 6,
-        22050: 7,
-        16e3: 8,
-        12e3: 9,
-        11025: 10,
-        8e3: 11,
-        7350: 12
-    };
-    var matchers = [ {
-        type: "numeric",
-        test: function(str) {
-            return numericRegex.test(str);
-        },
-        converter: function(str) {
-            return parseFloat(str);
-        }
-    }, {
-        type: "hexadecimal",
-        test: function(str) {
-            return hexadecimalRegex.test(str);
-        },
-        converter: function(str) {
-            return str.substr(2);
-        }
-    } ];
-    var mimeTypeMap = {
-        video: "video/mp4",
-        audio: "audio/mp4",
-        text: "application/ttml+xml+mp4"
-    };
-    var mapPeriod = function(manifest) {
-        var period = {}, adaptations = [], i;
-        period.duration = manifest.Duration === 0 ? Infinity : parseFloat(manifest.Duration) / TIME_SCALE_100_NANOSECOND_UNIT;
-        period.BaseURL = manifest.BaseURL;
-        for (i = 0; i < manifest.StreamIndex_asArray.length; i++) {
-            manifest.StreamIndex_asArray[i].BaseURL = period.BaseURL;
-            adaptations.push(mapAdaptationSet(manifest.StreamIndex_asArray[i]));
-        }
-        period.AdaptationSet = adaptations.length > 1 ? adaptations : adaptations[0];
-        period.AdaptationSet_asArray = adaptations;
-        return period;
-    };
-    var mapAdaptationSet = function(streamIndex) {
-        var adaptationSet = {}, representations = [], representation, segmentTemplate = {}, i;
-        adaptationSet.id = streamIndex.Name;
-        adaptationSet.lang = streamIndex.Language;
-        adaptationSet.contentType = streamIndex.Type;
-        adaptationSet.mimeType = mimeTypeMap[streamIndex.Type];
-        adaptationSet.maxWidth = streamIndex.MaxWidth;
-        adaptationSet.maxHeight = streamIndex.MaxHeight;
-        adaptationSet.BaseURL = streamIndex.BaseURL;
-        segmentTemplate = mapSegmentTemplate(streamIndex);
-        for (i = 0; i < streamIndex.QualityLevel_asArray.length; i++) {
-            streamIndex.QualityLevel_asArray[i].BaseURL = adaptationSet.BaseURL;
-            streamIndex.QualityLevel_asArray[i].mimeType = adaptationSet.mimeType;
-            streamIndex.QualityLevel_asArray[i].Id = adaptationSet.id + "_" + streamIndex.QualityLevel_asArray[i].Index;
-            representation = mapRepresentation(streamIndex.QualityLevel_asArray[i]);
-            representation.SegmentTemplate = segmentTemplate;
-            representations.push(representation);
-        }
-        adaptationSet.Representation = representations.length > 1 ? representations : representations[0];
-        adaptationSet.Representation_asArray = representations;
-        adaptationSet.SegmentTemplate = segmentTemplate;
-        return adaptationSet;
-    };
-    var mapRepresentation = function(qualityLevel) {
-        var representation = {};
-        representation.id = qualityLevel.Id;
-        representation.bandwidth = qualityLevel.Bitrate;
-        representation.mimeType = qualityLevel.mimeType;
-        representation.width = qualityLevel.MaxWidth;
-        representation.height = qualityLevel.MaxHeight;
-        if (qualityLevel.FourCC === "H264" || qualityLevel.FourCC === "AVC1") {
-            representation.codecs = getH264Codec(qualityLevel);
-        } else if (qualityLevel.FourCC.indexOf("AAC") >= 0) {
-            representation.codecs = getAACCodec(qualityLevel);
-        }
-        representation.audioSamplingRate = qualityLevel.SamplingRate;
-        representation.audioChannels = qualityLevel.Channels;
-        representation.codecPrivateData = "" + qualityLevel.CodecPrivateData;
-        representation.BaseURL = qualityLevel.BaseURL;
-        return representation;
-    };
-    var getH264Codec = function(qualityLevel) {
-        var codecPrivateData = qualityLevel.CodecPrivateData.toString(), nalHeader, avcoti;
-        nalHeader = /00000001[0-9]7/.exec(codecPrivateData);
-        avcoti = nalHeader && nalHeader[0] ? codecPrivateData.substr(codecPrivateData.indexOf(nalHeader[0]) + 10, 6) : undefined;
-        return "avc1." + avcoti;
-    };
-    var getAACCodec = function(qualityLevel) {
-        var objectType = 0, codecPrivateData = qualityLevel.CodecPrivateData.toString(), codecPrivateDataHex, arr16;
-        if (qualityLevel.FourCC === "AACH") {
-            objectType = 5;
-        }
-        if (codecPrivateData === undefined || codecPrivateData === "") {
-            objectType = 2;
-            var indexFreq = samplingFrequencyIndex[qualityLevel.SamplingRate];
-            if (qualityLevel.FourCC === "AACH") {
-                objectType = 5;
-                codecPrivateData = new Uint8Array(4);
-                var extensionSamplingFrequencyIndex = samplingFrequencyIndex[qualityLevel.SamplingRate * 2];
-                codecPrivateData[0] = objectType << 3 | indexFreq >> 1;
-                codecPrivateData[1] = indexFreq << 7 | qualityLevel.Channels << 3 | extensionSamplingFrequencyIndex >> 1;
-                codecPrivateData[2] = extensionSamplingFrequencyIndex << 7 | 2 << 2;
-                codecPrivateData[3] = 0;
-                arr16 = new Uint16Array(2);
-                arr16[0] = (codecPrivateData[0] << 8) + codecPrivateData[1];
-                arr16[1] = (codecPrivateData[2] << 8) + codecPrivateData[3];
-                codecPrivateDataHex = arr16[0].toString(16);
-                codecPrivateDataHex = arr16[0].toString(16) + arr16[1].toString(16);
-            } else {
-                codecPrivateData = new Uint8Array(2);
-                codecPrivateData[0] = objectType << 3 | indexFreq >> 1;
-                codecPrivateData[1] = indexFreq << 7 | qualityLevel.Channels << 3;
-                arr16 = new Uint16Array(1);
-                arr16[0] = (codecPrivateData[0] << 8) + codecPrivateData[1];
-                codecPrivateDataHex = arr16[0].toString(16);
-            }
-            codecPrivateData = "" + codecPrivateDataHex;
-            codecPrivateData = codecPrivateData.toUpperCase();
-            qualityLevel.CodecPrivateData = codecPrivateData;
-        } else if (objectType === 0) objectType = (parseInt(codecPrivateData.substr(0, 2), 16) & 248) >> 3;
-        return "mp4a.40." + objectType;
-    };
-    var mapSegmentTemplate = function(streamIndex) {
-        var segmentTemplate = {}, mediaUrl;
-        mediaUrl = streamIndex.Url.replace("{bitrate}", "$Bandwidth$");
-        mediaUrl = mediaUrl.replace("{start time}", "$Time$");
-        segmentTemplate.media = mediaUrl;
-        segmentTemplate.timescale = TIME_SCALE_100_NANOSECOND_UNIT;
-        segmentTemplate.SegmentTimeline = mapSegmentTimeline(streamIndex);
-        return segmentTemplate;
-    };
-    var mapSegmentTimeline = function(streamIndex) {
-        var segmentTimeline = {}, chunks = streamIndex.c_asArray, segments = [], i = 0;
-        if (chunks && chunks.length > 1) {
-            chunks[0].t = chunks[0].t || 0;
-            for (i = 1; i < chunks.length; i++) {
-                chunks[i - 1].d = chunks[i - 1].d || chunks[i].t - chunks[i - 1].t;
-                chunks[i].t = chunks[i].t || chunks[i - 1].t + chunks[i - 1].d;
-            }
-            segments.push({
-                d: chunks[0].d,
-                r: 0,
-                t: chunks[0].t
-            });
-            for (i = 1; i < chunks.length; i++) {
-                if (chunks[i].d === chunks[i - 1].d) {
-                    ++segments[segments.length - 1].r;
-                } else {
-                    segments.push({
-                        d: chunks[i].d,
-                        r: 0,
-                        t: chunks[i].t
-                    });
-                }
-            }
-        }
-        segmentTimeline.S = segments;
-        segmentTimeline.S_asArray = segments;
-        return segmentTimeline;
-    };
-    var getKIDFromProtectionHeader = function(protectionHeader) {
-        var prHeader, wrmHeader, xmlReader, KID;
-        prHeader = BASE64.decodeArray(protectionHeader.__text);
-        wrmHeader = getWRMHeaderFromPRHeader(prHeader);
-        wrmHeader = new Uint16Array(wrmHeader.buffer);
-        wrmHeader = String.fromCharCode.apply(null, wrmHeader);
-        xmlReader = new DOMParser().parseFromString(wrmHeader, "application/xml");
-        KID = xmlReader.querySelector("KID").textContent;
-        KID = BASE64.decodeArray(KID);
-        convertUuidEndianness(KID);
-        return KID;
-    };
-    var getWRMHeaderFromPRHeader = function(prHeader) {
-        var length, recordCount, recordType, recordLength, recordValue, i = 0;
-        length = (prHeader[i + 3] << 24) + (prHeader[i + 2] << 16) + (prHeader[i + 1] << 8) + prHeader[i];
-        i += 4;
-        recordCount = (prHeader[i + 1] << 8) + prHeader[i];
-        i += 2;
-        while (i < prHeader.length) {
-            recordType = (prHeader[i + 1] << 8) + prHeader[i];
-            i += 2;
-            if (recordType === 1) {
-                recordLength = (prHeader[i + 1] << 8) + prHeader[i];
-                i += 2;
-                recordValue = new Uint8Array(recordLength);
-                recordValue.set(prHeader.subarray(i, i + recordLength));
-                return recordValue;
-            }
-        }
-        return null;
-    };
-    var convertUuidEndianness = function(uuid) {
-        swapBytes(uuid, 0, 3);
-        swapBytes(uuid, 1, 2);
-        swapBytes(uuid, 4, 5);
-        swapBytes(uuid, 6, 7);
-    };
-    var swapBytes = function(bytes, pos1, pos2) {
-        var temp = bytes[pos1];
-        bytes[pos1] = bytes[pos2];
-        bytes[pos2] = temp;
-    };
-    var createPRContentProtection = function(protectionHeader) {
-        var contentProtection = {}, keySystem = this.system.getObject("ksPlayReady"), pro, systemID = protectionHeader.SystemID;
-        pro = {
-            __text: protectionHeader.__text,
-            __prefix: "mspr"
-        };
-        contentProtection.schemeIdUri = keySystem.schemeIdURI;
-        contentProtection.value = 2;
-        contentProtection.pro = pro;
-        contentProtection.pro_asArray = pro;
-        return contentProtection;
-    };
-    var createWidevineContentProtection = function(protectionHeader) {
-        var contentProtection = {}, keySystem = this.system.getObject("ksWidevine");
-        contentProtection.schemeIdUri = keySystem.schemeIdURI;
-        contentProtection.value = keySystem.systemString;
-        return contentProtection;
-    };
-    var processManifest = function(manifest, manifestLoadedTime) {
-        var mpd = {}, period, adaptations, contentProtection, contentProtections = [], KID, i;
-        mpd.profiles = "urn:mpeg:dash:profile:isoff-live:2011";
-        mpd.type = manifest.IsLive ? "dynamic" : "static";
-        mpd.timeShiftBufferDepth = parseFloat(manifest.DVRWindowLength) / TIME_SCALE_100_NANOSECOND_UNIT;
-        mpd.mediaPresentationDuration = manifest.Duration === 0 ? Infinity : parseFloat(manifest.Duration) / TIME_SCALE_100_NANOSECOND_UNIT;
-        mpd.BaseURL = manifest.BaseURL;
-        mpd.minBufferTime = MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
-        if (mpd.type === "dynamic") {
-            mpd.availabilityStartTime = new Date(manifestLoadedTime.getTime() - mpd.timeShiftBufferDepth * 1e3);
-        }
-        mpd.Period = mapPeriod(manifest);
-        mpd.Period_asArray = [ mpd.Period ];
-        period = mpd.Period;
-        period.start = 0;
-        if (manifest.Protection !== undefined) {
-            KID = getKIDFromProtectionHeader(manifest.Protection.ProtectionHeader);
-            contentProtection = createPRContentProtection.call(this, manifest.Protection.ProtectionHeader);
-            contentProtection["cenc:default_KID"] = KID;
-            contentProtections.push(contentProtection);
-            if (navigator.userAgent.indexOf("Chrome") >= 0) {
-                contentProtection = createWidevineContentProtection.call(this, manifest.Protection.ProtectionHeader);
-                contentProtection["cenc:default_KID"] = KID;
-                contentProtections.push(contentProtection);
-            }
-            mpd.ContentProtection = contentProtections.length > 1 ? contentProtections : contentProtections[0];
-            mpd.ContentProtection_asArray = contentProtections;
-        }
-        adaptations = period.AdaptationSet_asArray;
-        for (i = 0; i < adaptations.length; i += 1) {
-            if (mpd.type === "static") {
-                var fistSegment = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray[0];
-                var adaptationTimeOffset = parseFloat(fistSegment.t) / TIME_SCALE_100_NANOSECOND_UNIT;
-                period.start = period.start === 0 ? adaptationTimeOffset : Math.max(period.start, adaptationTimeOffset);
-            }
-            if (mpd.ContentProtection !== undefined) {
-                adaptations[i].ContentProtection = mpd.ContentProtection;
-                adaptations[i].ContentProtection_asArray = mpd.ContentProtection_asArray;
-            }
-        }
-        delete mpd.ContentProtection;
-        delete mpd.ContentProtection_asArray;
-        return mpd;
-    };
-    var internalParse = function(data, baseUrl) {
-        this.debug.info("[MssParser]", "Doing parse.");
-        var manifest = null, converter = new X2JS(matchers, "", true), start = new Date(), json = null, mss2dash = null;
-        manifest = converter.xml_str2json(data);
-        json = new Date();
-        if (manifest === null) {
-            this.debug.error("[MssParser]", "Failed to parse manifest!!");
-            return Q.reject("[MssParser] Failed to parse manifest!!");
-        }
-        if (!manifest.hasOwnProperty("BaseURL")) {
-            this.debug.log("[MssParser]", "Setting baseURL: " + baseUrl);
-            manifest.BaseURL = baseUrl;
-        } else {
-            manifest.BaseURL = manifest.BaseURL_asArray && manifest.BaseURL_asArray[0] || manifest.BaseURL;
-            if (manifest.BaseURL.indexOf("http") !== 0) {
-                manifest.BaseURL = baseUrl + manifest.BaseURL;
-            }
-        }
-        manifest = processManifest.call(this, manifest, start);
-        mss2dash = new Date();
-        this.debug.info("[MssParser]", "Parsing complete (xml2json: " + (json.getTime() - start.getTime()) + "ms, mss2dash: " + (mss2dash.getTime() - json.getTime()) + "ms, total: " + (new Date().getTime() - start.getTime()) / 1e3 + "s)");
-        return Q.when(manifest);
-    };
-    return {
-        debug: undefined,
-        system: undefined,
-        errHandler: undefined,
-        parse: internalParse
-    };
+    this.duration = NaN;
+    this.presentationTime = NaN;
+    this.id = NaN;
+    this.messageData = "";
+    this.eventStream = null;
+    this.presentationTimeDelta = NaN;
 };
 
-Mss.dependencies.MssParser.prototype = {
-    constructor: Mss.dependencies.MssParser
+Dash.vo.Event.prototype = {
+    constructor: Dash.vo.Event
 };
 
-Mss.dependencies.MssHandler = function() {
-    var isDynamic = false, getAudioChannels = function(adaptation, representation) {
-        var channels = 1;
-        if (adaptation.audioChannels) {
-            channels = adaptation.audioChannels;
-        } else if (representation.audioChannels) {
-            channels = representation.audioChannels;
-        }
-        return channels;
-    }, getAudioSamplingRate = function(adaptation, representation) {
-        var samplingRate = 1;
-        if (adaptation.audioSamplingRate) {
-            samplingRate = adaptation.audioSamplingRate;
-        } else {
-            samplingRate = representation.audioSamplingRate;
-        }
-        return samplingRate;
-    }, getInitData = function(representation) {
-        if (representation) {
-            if (!representation.initData) {
-                var manifest = rslt.manifestModel.getValue();
-                var adaptation = representation.adaptation;
-                var realAdaptation = manifest.Period_asArray[adaptation.period.index].AdaptationSet_asArray[adaptation.index];
-                var realRepresentation = realAdaptation.Representation_asArray[representation.index];
-                var track = new MediaPlayer.vo.Mp4Track();
-                track.type = rslt.getType() || "und";
-                track.trackId = adaptation.index + 1;
-                track.timescale = representation.timescale;
-                track.duration = representation.adaptation.period.duration;
-                track.codecs = realRepresentation.codecs;
-                track.codecPrivateData = realRepresentation.codecPrivateData;
-                track.bandwidth = realRepresentation.bandwidth;
-                if (realAdaptation.ContentProtection_asArray && realAdaptation.ContentProtection_asArray.length > 0) {
-                    track.contentProtection = realAdaptation.ContentProtection_asArray;
-                }
-                track.width = realRepresentation.width || realAdaptation.maxWidth;
-                track.height = realRepresentation.height || realAdaptation.maxHeight;
-                track.language = realAdaptation.lang ? realAdaptation.lang : "und";
-                track.channels = getAudioChannels(realAdaptation, realRepresentation);
-                track.samplingRate = getAudioSamplingRate(realAdaptation, realRepresentation);
-                representation.initData = rslt.mp4Processor.generateInitSegment([ track ]);
-            }
-            return representation.initData;
-        } else {
-            return null;
-        }
-    };
-    var rslt = MediaPlayer.utils.copyMethods(Dash.dependencies.DashHandler);
-    rslt.mp4Processor = undefined;
-    rslt.getInitRequest = function(representation) {
-        var period = null;
-        var self = this;
-        var presentationStartTime = null;
-        var deferred = Q.defer();
-        period = representation.adaptation.period;
-        presentationStartTime = period.start;
-        var manifest = rslt.manifestModel.getValue();
-        isDynamic = rslt.manifestExt.getIsDynamic(manifest);
-        var request = new MediaPlayer.vo.SegmentRequest();
-        request.streamType = rslt.getType();
-        request.type = "Initialization Segment";
-        request.url = null;
-        try {
-            request.data = getInitData(representation);
-        } catch (e) {
-            deferred.reject(e);
-            return deferred.promise;
-        }
-        request.range = representation.range;
-        request.availabilityStartTime = self.timelineConverter.calcAvailabilityStartTimeFromPresentationTime(presentationStartTime, representation.adaptation.period.mpd, isDynamic);
-        request.availabilityEndTime = self.timelineConverter.calcAvailabilityEndTimeFromPresentationTime(presentationStartTime + period.duration, period.mpd, isDynamic);
-        request.quality = representation.index;
-        deferred.resolve(request);
-        return deferred.promise;
-    };
-    return rslt;
-};
-
-Mss.dependencies.MssHandler.prototype = {
-    constructor: Mss.dependencies.MssHandler
-};
-
-Mss.dependencies.MssFragmentController = function() {
+Dash.vo.EventStream = function() {
     "use strict";
-    var getIndex = function(adaptation, manifest) {
-        var periods = manifest.Period_asArray, i, j;
-        for (i = 0; i < periods.length; i += 1) {
-            var adaptations = periods[i].AdaptationSet_asArray;
-            for (j = 0; j < adaptations.length; j += 1) {
-                if (adaptations[j] === adaptation) {
-                    return j;
-                }
-            }
-        }
-        return -1;
-    }, processTfrf = function(tfrf, adaptation) {
-        var manifest = rslt.manifestModel.getValue(), segmentsUpdated = false, segments = adaptation.SegmentTemplate.SegmentTimeline.S, entries = tfrf.entry, fragment_absolute_time = 0, fragment_duration = 0, segment = null, r = 0, t = 0, i = 0, availabilityStartTime = null;
-        while (i < entries.length) {
-            fragment_absolute_time = entries[i].fragment_absolute_time;
-            fragment_duration = entries[i].fragment_duration;
-            segment = segments[segments.length - 1];
-            r = segment.r === undefined ? 0 : segment.r;
-            t = segment.t + segment.d * r;
-            if (fragment_absolute_time > t) {
-                rslt.debug.log("[MssFragmentController] Add new segment - t = " + fragment_absolute_time / 1e7);
-                if (fragment_duration === segment.d) {
-                    segment.r = r + 1;
-                } else {
-                    segments.push({
-                        t: fragment_absolute_time,
-                        d: fragment_duration
-                    });
-                }
-                segmentsUpdated = true;
-            }
-            i += 1;
-        }
-        if (segmentsUpdated) {
-            segment = segments[segments.length - 1];
-            r = segment.r === undefined ? 0 : segment.r;
-            t = segment.t + segment.d * r;
-            availabilityStartTime = t - manifest.timeShiftBufferDepth * 1e7;
-            segment = segments[0];
-            while (segment.t < availabilityStartTime) {
-                rslt.debug.log("[MssFragmentController] Remove segment  - t = " + segment.t / 1e7);
-                if (segment.r !== undefined && segment.r > 0) {
-                    segment.t += segment.d;
-                    segment.r -= 1;
-                } else {
-                    segments.splice(0, 1);
-                }
-                segment = segments[0];
-            }
-        }
-    }, convertFragment = function(data, request, adaptation) {
-        var i = 0;
-        var manifest = rslt.manifestModel.getValue();
-        var trackId = getIndex(adaptation, manifest) + 1;
-        var fragment = mp4lib.deserialize(data);
-        if (!fragment) {
-            return null;
-        }
-        var moof = fragment.getBoxByType("moof");
-        var mdat = fragment.getBoxByType("mdat");
-        var traf = moof.getBoxByType("traf");
-        var trun = traf.getBoxByType("trun");
-        var tfhd = traf.getBoxByType("tfhd");
-        var saio;
-        var sepiff = traf.getBoxByType("sepiff");
-        if (sepiff !== null) {
-            sepiff.boxtype = "senc";
-            sepiff.extended_type = undefined;
-            saio = new mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox();
-            saio.version = 0;
-            saio.flags = 0;
-            saio.entry_count = 1;
-            saio.offset = [];
-            var saiz = new mp4lib.boxes.SampleAuxiliaryInformationSizesBox();
-            saiz.version = 0;
-            saiz.flags = 0;
-            saiz.sample_count = sepiff.sample_count;
-            saiz.default_sample_info_size = 0;
-            saiz.sample_info_size = [];
-            var sizedifferent = false;
-            if (sepiff.flags & 2) {
-                for (i = 0; i < sepiff.sample_count; i++) {
-                    saiz.sample_info_size[i] = 8 + sepiff.entry[i].NumberOfEntries * 6 + 2;
-                    if (i > 0) {
-                        if (saiz.sample_info_size[i] != saiz.sample_info_size[i - 1]) {
-                            sizedifferent = true;
-                        }
-                    }
-                }
-                if (sizedifferent === false) {
-                    saiz.default_sample_info_size = saiz.sample_info_size[0];
-                    saiz.sample_info_size = [];
-                }
-            } else {
-                saiz.default_sample_info_size = 8;
-            }
-            traf.boxes.push(saiz);
-            traf.boxes.push(saio);
-        }
-        tfhd.track_ID = trackId;
-        traf.removeBoxByType("tfxd");
-        var tfdt = traf.getBoxByType("tfdt");
-        if (tfdt === null) {
-            tfdt = new mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox();
-            tfdt.version = 1;
-            tfdt.flags = 0;
-            tfdt.baseMediaDecodeTime = Math.floor(request.startTime * request.timescale);
-            var pos = traf.getBoxIndexByType("tfhd");
-            traf.boxes.splice(pos + 1, 0, tfdt);
-        }
-        var tfrf = traf.getBoxesByType("tfrf");
-        if (tfrf.length !== 0) {
-            for (i = 0; i < tfrf.length; i++) {
-                processTfrf(tfrf[i], adaptation);
-                traf.removeBoxByType("tfrf");
-            }
-        }
-        tfhd.flags &= 16777214;
-        tfhd.flags |= 131072;
-        trun.flags |= 1;
-        trun.data_offset = 0;
-        var fragment_size = fragment.getLength();
-        trun.data_offset = fragment_size - mdat.size + 8;
-        if (sepiff !== null) {
-            var moofPosInFragment = fragment.getBoxOffsetByType("moof");
-            var trafPosInMoof = moof.getBoxOffsetByType("traf");
-            var sencPosInTraf = traf.getBoxOffsetByType("senc");
-            saio.offset[0] = moofPosInFragment + trafPosInMoof + sencPosInTraf + 16;
-        }
-        if (navigator.userAgent.indexOf("Chrome") >= 0 && manifest.type === "dynamic") {
-            tfdt.baseMediaDecodeTime /= 1e3;
-            for (i = 0; i < trun.samples_table.length; i++) {
-                if (trun.samples_table[i].sample_composition_time_offset > 0) {
-                    trun.samples_table[i].sample_composition_time_offset /= 1e3;
-                }
-                if (trun.samples_table[i].sample_duration > 0) {
-                    trun.samples_table[i].sample_duration /= 1e3;
-                }
-            }
-        }
-        var new_data = mp4lib.serialize(fragment);
-        return new_data;
-    };
-    var rslt = MediaPlayer.utils.copyMethods(MediaPlayer.dependencies.FragmentController);
-    rslt.manifestModel = undefined;
-    rslt.mp4Processor = undefined;
-    rslt.process = function(bytes, request, representations) {
-        var result = null, manifest = this.manifestModel.getValue();
-        if (bytes !== null && bytes !== undefined && bytes.byteLength > 0) {
-            result = new Uint8Array(bytes);
-        } else {
-            return Q.when(null);
-        }
-        if (request && request.type === "Media Segment" && representations && representations.length > 0) {
-            var adaptation = manifest.Period_asArray[representations[0].adaptation.period.index].AdaptationSet_asArray[representations[0].adaptation.index];
-            result = convertFragment(result, request, adaptation);
-            if (!result) {
-                return Q.when(null);
-            }
-        }
-        if (request === undefined && navigator.userAgent.indexOf("Chrome") >= 0 && manifest.type === "dynamic") {
-            var init_segment = mp4lib.deserialize(result);
-            var moov = init_segment.getBoxByType("moov");
-            var mvhd = moov.getBoxByType("mvhd");
-            var trak = moov.getBoxByType("trak");
-            var mdia = trak.getBoxByType("mdia");
-            var mdhd = mdia.getBoxByType("mdhd");
-            mvhd.timescale /= 1e3;
-            mdhd.timescale /= 1e3;
-            result = mp4lib.serialize(init_segment);
-        }
-        return Q.when(result);
-    };
-    return rslt;
+    this.adaptionSet = null;
+    this.representation = null;
+    this.period = null;
+    this.timescale = 1;
+    this.value = "";
+    this.schemeIdUri = "";
 };
 
-Mss.dependencies.MssFragmentController.prototype = {
-    constructor: Mss.dependencies.MssFragmentController
+Dash.vo.EventStream.prototype = {
+    constructor: Dash.vo.EventStream
+};
+
+Dash.vo.Mpd = function() {
+    "use strict";
+    this.manifest = null;
+    this.suggestedPresentationDelay = 0;
+    this.availabilityStartTime = null;
+    this.availabilityEndTime = Number.POSITIVE_INFINITY;
+    this.timeShiftBufferDepth = Number.POSITIVE_INFINITY;
+    this.maxSegmentDuration = Number.POSITIVE_INFINITY;
+    this.checkTime = NaN;
+    this.clientServerTimeShift = 0;
+    this.isClientServerTimeSyncCompleted = false;
+};
+
+Dash.vo.Mpd.prototype = {
+    constructor: Dash.vo.Mpd
+};
+
+Dash.vo.Period = function() {
+    "use strict";
+    this.id = null;
+    this.index = -1;
+    this.duration = NaN;
+    this.start = NaN;
+    this.mpd = null;
+    this.liveEdge = NaN;
+};
+
+Dash.vo.Period.prototype = {
+    constructor: Dash.vo.Period
+};
+
+Dash.vo.Representation = function() {
+    "use strict";
+    this.id = null;
+    this.index = -1;
+    this.adaptation = null;
+    this.segmentInfoType = null;
+    this.initialization = null;
+    this.segmentDuration = NaN;
+    this.timescale = 1;
+    this.startNumber = 1;
+    this.indexRange = null;
+    this.range = null;
+    this.presentationTimeOffset = 0;
+    this.MSETimeOffset = NaN;
+    this.segmentAvailabilityRange = null;
+    this.availableSegmentsNumber = 0;
+};
+
+Dash.vo.Representation.prototype = {
+    constructor: Dash.vo.Representation
+};
+
+Dash.vo.Segment = function() {
+    "use strict";
+    this.indexRange = null;
+    this.index = null;
+    this.mediaRange = null;
+    this.media = null;
+    this.duration = NaN;
+    this.replacementTime = null;
+    this.replacementNumber = NaN;
+    this.mediaStartTime = NaN;
+    this.presentationStartTime = NaN;
+    this.availabilityStartTime = NaN;
+    this.availabilityEndTime = NaN;
+    this.availabilityIdx = NaN;
+    this.wallStartTime = NaN;
+    this.representation = null;
+};
+
+Dash.vo.Segment.prototype = {
+    constructor: Dash.vo.Segment
 };
 
 Hls = function() {
@@ -17981,6 +17594,586 @@ Hls.dependencies.HlsFragmentController.prototype = {
     constructor: Hls.dependencies.HlsFragmentController
 };
 
+Mss = function() {
+    "use strict";
+    return {
+        dependencies: {}
+    };
+}();
+
+Mss.dependencies.MssParser = function() {
+    "use strict";
+    var TIME_SCALE_100_NANOSECOND_UNIT = 1e7;
+    var numericRegex = /^[-+]?[0-9]+[.]?[0-9]*([eE][-+]?[0-9]+)?$/;
+    var hexadecimalRegex = /^0[xX][A-Fa-f0-9]+$/;
+    var samplingFrequencyIndex = {
+        96e3: 0,
+        88200: 1,
+        64e3: 2,
+        48e3: 3,
+        44100: 4,
+        32e3: 5,
+        24e3: 6,
+        22050: 7,
+        16e3: 8,
+        12e3: 9,
+        11025: 10,
+        8e3: 11,
+        7350: 12
+    };
+    var matchers = [ {
+        type: "numeric",
+        test: function(str) {
+            return numericRegex.test(str);
+        },
+        converter: function(str) {
+            return parseFloat(str);
+        }
+    }, {
+        type: "hexadecimal",
+        test: function(str) {
+            return hexadecimalRegex.test(str);
+        },
+        converter: function(str) {
+            return str.substr(2);
+        }
+    } ];
+    var mimeTypeMap = {
+        video: "video/mp4",
+        audio: "audio/mp4",
+        text: "application/ttml+xml+mp4"
+    };
+    var mapPeriod = function(manifest) {
+        var period = {}, adaptations = [], i;
+        period.duration = manifest.Duration === 0 ? Infinity : parseFloat(manifest.Duration) / TIME_SCALE_100_NANOSECOND_UNIT;
+        period.BaseURL = manifest.BaseURL;
+        for (i = 0; i < manifest.StreamIndex_asArray.length; i++) {
+            manifest.StreamIndex_asArray[i].BaseURL = period.BaseURL;
+            adaptations.push(mapAdaptationSet(manifest.StreamIndex_asArray[i]));
+        }
+        period.AdaptationSet = adaptations.length > 1 ? adaptations : adaptations[0];
+        period.AdaptationSet_asArray = adaptations;
+        return period;
+    };
+    var mapAdaptationSet = function(streamIndex) {
+        var adaptationSet = {}, representations = [], representation, segmentTemplate = {}, i;
+        adaptationSet.id = streamIndex.Name;
+        adaptationSet.lang = streamIndex.Language;
+        adaptationSet.contentType = streamIndex.Type;
+        adaptationSet.mimeType = mimeTypeMap[streamIndex.Type];
+        adaptationSet.maxWidth = streamIndex.MaxWidth;
+        adaptationSet.maxHeight = streamIndex.MaxHeight;
+        adaptationSet.BaseURL = streamIndex.BaseURL;
+        segmentTemplate = mapSegmentTemplate(streamIndex);
+        for (i = 0; i < streamIndex.QualityLevel_asArray.length; i++) {
+            streamIndex.QualityLevel_asArray[i].BaseURL = adaptationSet.BaseURL;
+            streamIndex.QualityLevel_asArray[i].mimeType = adaptationSet.mimeType;
+            streamIndex.QualityLevel_asArray[i].Id = adaptationSet.id + "_" + streamIndex.QualityLevel_asArray[i].Index;
+            representation = mapRepresentation(streamIndex.QualityLevel_asArray[i]);
+            representation.SegmentTemplate = segmentTemplate;
+            representations.push(representation);
+        }
+        adaptationSet.Representation = representations.length > 1 ? representations : representations[0];
+        adaptationSet.Representation_asArray = representations;
+        adaptationSet.SegmentTemplate = segmentTemplate;
+        return adaptationSet;
+    };
+    var mapRepresentation = function(qualityLevel) {
+        var representation = {};
+        representation.id = qualityLevel.Id;
+        representation.bandwidth = qualityLevel.Bitrate;
+        representation.mimeType = qualityLevel.mimeType;
+        representation.width = qualityLevel.MaxWidth;
+        representation.height = qualityLevel.MaxHeight;
+        if (qualityLevel.FourCC === "H264" || qualityLevel.FourCC === "AVC1") {
+            representation.codecs = getH264Codec(qualityLevel);
+        } else if (qualityLevel.FourCC.indexOf("AAC") >= 0) {
+            representation.codecs = getAACCodec(qualityLevel);
+        }
+        representation.audioSamplingRate = qualityLevel.SamplingRate;
+        representation.audioChannels = qualityLevel.Channels;
+        representation.codecPrivateData = "" + qualityLevel.CodecPrivateData;
+        representation.BaseURL = qualityLevel.BaseURL;
+        return representation;
+    };
+    var getH264Codec = function(qualityLevel) {
+        var codecPrivateData = qualityLevel.CodecPrivateData.toString(), nalHeader, avcoti;
+        nalHeader = /00000001[0-9]7/.exec(codecPrivateData);
+        avcoti = nalHeader && nalHeader[0] ? codecPrivateData.substr(codecPrivateData.indexOf(nalHeader[0]) + 10, 6) : undefined;
+        return "avc1." + avcoti;
+    };
+    var getAACCodec = function(qualityLevel) {
+        var objectType = 0, codecPrivateData = qualityLevel.CodecPrivateData.toString(), codecPrivateDataHex, arr16;
+        if (qualityLevel.FourCC === "AACH") {
+            objectType = 5;
+        }
+        if (codecPrivateData === undefined || codecPrivateData === "") {
+            objectType = 2;
+            var indexFreq = samplingFrequencyIndex[qualityLevel.SamplingRate];
+            if (qualityLevel.FourCC === "AACH") {
+                objectType = 5;
+                codecPrivateData = new Uint8Array(4);
+                var extensionSamplingFrequencyIndex = samplingFrequencyIndex[qualityLevel.SamplingRate * 2];
+                codecPrivateData[0] = objectType << 3 | indexFreq >> 1;
+                codecPrivateData[1] = indexFreq << 7 | qualityLevel.Channels << 3 | extensionSamplingFrequencyIndex >> 1;
+                codecPrivateData[2] = extensionSamplingFrequencyIndex << 7 | 2 << 2;
+                codecPrivateData[3] = 0;
+                arr16 = new Uint16Array(2);
+                arr16[0] = (codecPrivateData[0] << 8) + codecPrivateData[1];
+                arr16[1] = (codecPrivateData[2] << 8) + codecPrivateData[3];
+                codecPrivateDataHex = arr16[0].toString(16);
+                codecPrivateDataHex = arr16[0].toString(16) + arr16[1].toString(16);
+            } else {
+                codecPrivateData = new Uint8Array(2);
+                codecPrivateData[0] = objectType << 3 | indexFreq >> 1;
+                codecPrivateData[1] = indexFreq << 7 | qualityLevel.Channels << 3;
+                arr16 = new Uint16Array(1);
+                arr16[0] = (codecPrivateData[0] << 8) + codecPrivateData[1];
+                codecPrivateDataHex = arr16[0].toString(16);
+            }
+            codecPrivateData = "" + codecPrivateDataHex;
+            codecPrivateData = codecPrivateData.toUpperCase();
+            qualityLevel.CodecPrivateData = codecPrivateData;
+        } else if (objectType === 0) objectType = (parseInt(codecPrivateData.substr(0, 2), 16) & 248) >> 3;
+        return "mp4a.40." + objectType;
+    };
+    var mapSegmentTemplate = function(streamIndex) {
+        var segmentTemplate = {}, mediaUrl;
+        mediaUrl = streamIndex.Url.replace("{bitrate}", "$Bandwidth$");
+        mediaUrl = mediaUrl.replace("{start time}", "$Time$");
+        segmentTemplate.media = mediaUrl;
+        segmentTemplate.timescale = TIME_SCALE_100_NANOSECOND_UNIT;
+        segmentTemplate.SegmentTimeline = mapSegmentTimeline(streamIndex);
+        return segmentTemplate;
+    };
+    var mapSegmentTimeline = function(streamIndex) {
+        var segmentTimeline = {}, chunks = streamIndex.c_asArray, segments = [], i = 0;
+        if (chunks && chunks.length > 1) {
+            chunks[0].t = chunks[0].t || 0;
+            for (i = 1; i < chunks.length; i++) {
+                chunks[i - 1].d = chunks[i - 1].d || chunks[i].t - chunks[i - 1].t;
+                chunks[i].t = chunks[i].t || chunks[i - 1].t + chunks[i - 1].d;
+            }
+            segments.push({
+                d: chunks[0].d,
+                r: 0,
+                t: chunks[0].t
+            });
+            for (i = 1; i < chunks.length; i++) {
+                if (chunks[i].d === chunks[i - 1].d) {
+                    ++segments[segments.length - 1].r;
+                } else {
+                    segments.push({
+                        d: chunks[i].d,
+                        r: 0,
+                        t: chunks[i].t
+                    });
+                }
+            }
+        }
+        segmentTimeline.S = segments;
+        segmentTimeline.S_asArray = segments;
+        return segmentTimeline;
+    };
+    var getKIDFromProtectionHeader = function(protectionHeader) {
+        var prHeader, wrmHeader, xmlReader, KID;
+        prHeader = BASE64.decodeArray(protectionHeader.__text);
+        wrmHeader = getWRMHeaderFromPRHeader(prHeader);
+        wrmHeader = new Uint16Array(wrmHeader.buffer);
+        wrmHeader = String.fromCharCode.apply(null, wrmHeader);
+        xmlReader = new DOMParser().parseFromString(wrmHeader, "application/xml");
+        KID = xmlReader.querySelector("KID").textContent;
+        KID = BASE64.decodeArray(KID);
+        convertUuidEndianness(KID);
+        return KID;
+    };
+    var getWRMHeaderFromPRHeader = function(prHeader) {
+        var length, recordCount, recordType, recordLength, recordValue, i = 0;
+        length = (prHeader[i + 3] << 24) + (prHeader[i + 2] << 16) + (prHeader[i + 1] << 8) + prHeader[i];
+        i += 4;
+        recordCount = (prHeader[i + 1] << 8) + prHeader[i];
+        i += 2;
+        while (i < prHeader.length) {
+            recordType = (prHeader[i + 1] << 8) + prHeader[i];
+            i += 2;
+            if (recordType === 1) {
+                recordLength = (prHeader[i + 1] << 8) + prHeader[i];
+                i += 2;
+                recordValue = new Uint8Array(recordLength);
+                recordValue.set(prHeader.subarray(i, i + recordLength));
+                return recordValue;
+            }
+        }
+        return null;
+    };
+    var convertUuidEndianness = function(uuid) {
+        swapBytes(uuid, 0, 3);
+        swapBytes(uuid, 1, 2);
+        swapBytes(uuid, 4, 5);
+        swapBytes(uuid, 6, 7);
+    };
+    var swapBytes = function(bytes, pos1, pos2) {
+        var temp = bytes[pos1];
+        bytes[pos1] = bytes[pos2];
+        bytes[pos2] = temp;
+    };
+    var createPRContentProtection = function(protectionHeader) {
+        var contentProtection = {}, keySystem = this.system.getObject("ksPlayReady"), pro, systemID = protectionHeader.SystemID;
+        pro = {
+            __text: protectionHeader.__text,
+            __prefix: "mspr"
+        };
+        contentProtection.schemeIdUri = keySystem.schemeIdURI;
+        contentProtection.value = 2;
+        contentProtection.pro = pro;
+        contentProtection.pro_asArray = pro;
+        return contentProtection;
+    };
+    var createWidevineContentProtection = function(protectionHeader) {
+        var contentProtection = {}, keySystem = this.system.getObject("ksWidevine");
+        contentProtection.schemeIdUri = keySystem.schemeIdURI;
+        contentProtection.value = keySystem.systemString;
+        return contentProtection;
+    };
+    var processManifest = function(manifest, manifestLoadedTime) {
+        var mpd = {}, period, adaptations, contentProtection, contentProtections = [], KID, i;
+        mpd.profiles = "urn:mpeg:dash:profile:isoff-live:2011";
+        mpd.type = manifest.IsLive ? "dynamic" : "static";
+        mpd.timeShiftBufferDepth = parseFloat(manifest.DVRWindowLength) / TIME_SCALE_100_NANOSECOND_UNIT;
+        mpd.mediaPresentationDuration = manifest.Duration === 0 ? Infinity : parseFloat(manifest.Duration) / TIME_SCALE_100_NANOSECOND_UNIT;
+        mpd.BaseURL = manifest.BaseURL;
+        mpd.minBufferTime = MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
+        if (mpd.type === "dynamic") {
+            mpd.availabilityStartTime = new Date(manifestLoadedTime.getTime() - mpd.timeShiftBufferDepth * 1e3);
+        }
+        mpd.Period = mapPeriod(manifest);
+        mpd.Period_asArray = [ mpd.Period ];
+        period = mpd.Period;
+        period.start = 0;
+        if (manifest.Protection !== undefined) {
+            KID = getKIDFromProtectionHeader(manifest.Protection.ProtectionHeader);
+            contentProtection = createPRContentProtection.call(this, manifest.Protection.ProtectionHeader);
+            contentProtection["cenc:default_KID"] = KID;
+            contentProtections.push(contentProtection);
+            if (navigator.userAgent.indexOf("Chrome") >= 0) {
+                contentProtection = createWidevineContentProtection.call(this, manifest.Protection.ProtectionHeader);
+                contentProtection["cenc:default_KID"] = KID;
+                contentProtections.push(contentProtection);
+            }
+            mpd.ContentProtection = contentProtections.length > 1 ? contentProtections : contentProtections[0];
+            mpd.ContentProtection_asArray = contentProtections;
+        }
+        adaptations = period.AdaptationSet_asArray;
+        for (i = 0; i < adaptations.length; i += 1) {
+            if (mpd.type === "static") {
+                var fistSegment = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray[0];
+                var adaptationTimeOffset = parseFloat(fistSegment.t) / TIME_SCALE_100_NANOSECOND_UNIT;
+                period.start = period.start === 0 ? adaptationTimeOffset : Math.max(period.start, adaptationTimeOffset);
+            }
+            if (mpd.ContentProtection !== undefined) {
+                adaptations[i].ContentProtection = mpd.ContentProtection;
+                adaptations[i].ContentProtection_asArray = mpd.ContentProtection_asArray;
+            }
+        }
+        delete mpd.ContentProtection;
+        delete mpd.ContentProtection_asArray;
+        return mpd;
+    };
+    var internalParse = function(data, baseUrl) {
+        this.debug.info("[MssParser]", "Doing parse.");
+        var manifest = null, converter = new X2JS(matchers, "", true), start = new Date(), json = null, mss2dash = null;
+        manifest = converter.xml_str2json(data);
+        json = new Date();
+        if (manifest === null) {
+            this.debug.error("[MssParser]", "Failed to parse manifest!!");
+            return Q.reject("[MssParser] Failed to parse manifest!!");
+        }
+        if (!manifest.hasOwnProperty("BaseURL")) {
+            this.debug.log("[MssParser]", "Setting baseURL: " + baseUrl);
+            manifest.BaseURL = baseUrl;
+        } else {
+            manifest.BaseURL = manifest.BaseURL_asArray && manifest.BaseURL_asArray[0] || manifest.BaseURL;
+            if (manifest.BaseURL.indexOf("http") !== 0) {
+                manifest.BaseURL = baseUrl + manifest.BaseURL;
+            }
+        }
+        manifest = processManifest.call(this, manifest, start);
+        mss2dash = new Date();
+        this.debug.info("[MssParser]", "Parsing complete (xml2json: " + (json.getTime() - start.getTime()) + "ms, mss2dash: " + (mss2dash.getTime() - json.getTime()) + "ms, total: " + (new Date().getTime() - start.getTime()) / 1e3 + "s)");
+        return Q.when(manifest);
+    };
+    return {
+        debug: undefined,
+        system: undefined,
+        errHandler: undefined,
+        parse: internalParse
+    };
+};
+
+Mss.dependencies.MssParser.prototype = {
+    constructor: Mss.dependencies.MssParser
+};
+
+Mss.dependencies.MssHandler = function() {
+    var isDynamic = false, getAudioChannels = function(adaptation, representation) {
+        var channels = 1;
+        if (adaptation.audioChannels) {
+            channels = adaptation.audioChannels;
+        } else if (representation.audioChannels) {
+            channels = representation.audioChannels;
+        }
+        return channels;
+    }, getAudioSamplingRate = function(adaptation, representation) {
+        var samplingRate = 1;
+        if (adaptation.audioSamplingRate) {
+            samplingRate = adaptation.audioSamplingRate;
+        } else {
+            samplingRate = representation.audioSamplingRate;
+        }
+        return samplingRate;
+    }, getInitData = function(representation) {
+        if (representation) {
+            if (!representation.initData) {
+                var manifest = rslt.manifestModel.getValue();
+                var adaptation = representation.adaptation;
+                var realAdaptation = manifest.Period_asArray[adaptation.period.index].AdaptationSet_asArray[adaptation.index];
+                var realRepresentation = realAdaptation.Representation_asArray[representation.index];
+                var track = new MediaPlayer.vo.Mp4Track();
+                track.type = rslt.getType() || "und";
+                track.trackId = adaptation.index + 1;
+                track.timescale = representation.timescale;
+                track.duration = representation.adaptation.period.duration;
+                track.codecs = realRepresentation.codecs;
+                track.codecPrivateData = realRepresentation.codecPrivateData;
+                track.bandwidth = realRepresentation.bandwidth;
+                if (realAdaptation.ContentProtection_asArray && realAdaptation.ContentProtection_asArray.length > 0) {
+                    track.contentProtection = realAdaptation.ContentProtection_asArray;
+                }
+                track.width = realRepresentation.width || realAdaptation.maxWidth;
+                track.height = realRepresentation.height || realAdaptation.maxHeight;
+                track.language = realAdaptation.lang ? realAdaptation.lang : "und";
+                track.channels = getAudioChannels(realAdaptation, realRepresentation);
+                track.samplingRate = getAudioSamplingRate(realAdaptation, realRepresentation);
+                representation.initData = rslt.mp4Processor.generateInitSegment([ track ]);
+            }
+            return representation.initData;
+        } else {
+            return null;
+        }
+    };
+    var rslt = MediaPlayer.utils.copyMethods(Dash.dependencies.DashHandler);
+    rslt.mp4Processor = undefined;
+    rslt.getInitRequest = function(representation) {
+        var period = null;
+        var self = this;
+        var presentationStartTime = null;
+        var deferred = Q.defer();
+        period = representation.adaptation.period;
+        presentationStartTime = period.start;
+        var manifest = rslt.manifestModel.getValue();
+        isDynamic = rslt.manifestExt.getIsDynamic(manifest);
+        var request = new MediaPlayer.vo.SegmentRequest();
+        request.streamType = rslt.getType();
+        request.type = "Initialization Segment";
+        request.url = null;
+        try {
+            request.data = getInitData(representation);
+        } catch (e) {
+            deferred.reject(e);
+            return deferred.promise;
+        }
+        request.range = representation.range;
+        request.availabilityStartTime = self.timelineConverter.calcAvailabilityStartTimeFromPresentationTime(presentationStartTime, representation.adaptation.period.mpd, isDynamic);
+        request.availabilityEndTime = self.timelineConverter.calcAvailabilityEndTimeFromPresentationTime(presentationStartTime + period.duration, period.mpd, isDynamic);
+        request.quality = representation.index;
+        deferred.resolve(request);
+        return deferred.promise;
+    };
+    return rslt;
+};
+
+Mss.dependencies.MssHandler.prototype = {
+    constructor: Mss.dependencies.MssHandler
+};
+
+Mss.dependencies.MssFragmentController = function() {
+    "use strict";
+    var getIndex = function(adaptation, manifest) {
+        var periods = manifest.Period_asArray, i, j;
+        for (i = 0; i < periods.length; i += 1) {
+            var adaptations = periods[i].AdaptationSet_asArray;
+            for (j = 0; j < adaptations.length; j += 1) {
+                if (adaptations[j] === adaptation) {
+                    return j;
+                }
+            }
+        }
+        return -1;
+    }, processTfrf = function(tfrf, adaptation) {
+        var manifest = rslt.manifestModel.getValue(), segmentsUpdated = false, segments = adaptation.SegmentTemplate.SegmentTimeline.S, entries = tfrf.entry, fragment_absolute_time = 0, fragment_duration = 0, segment = null, r = 0, t = 0, i = 0, availabilityStartTime = null;
+        while (i < entries.length) {
+            fragment_absolute_time = entries[i].fragment_absolute_time;
+            fragment_duration = entries[i].fragment_duration;
+            segment = segments[segments.length - 1];
+            r = segment.r === undefined ? 0 : segment.r;
+            t = segment.t + segment.d * r;
+            if (fragment_absolute_time > t) {
+                rslt.debug.log("[MssFragmentController] Add new segment - t = " + fragment_absolute_time / 1e7);
+                if (fragment_duration === segment.d) {
+                    segment.r = r + 1;
+                } else {
+                    segments.push({
+                        t: fragment_absolute_time,
+                        d: fragment_duration
+                    });
+                }
+                segmentsUpdated = true;
+            }
+            i += 1;
+        }
+        if (segmentsUpdated) {
+            segment = segments[segments.length - 1];
+            r = segment.r === undefined ? 0 : segment.r;
+            t = segment.t + segment.d * r;
+            availabilityStartTime = t - manifest.timeShiftBufferDepth * 1e7;
+            segment = segments[0];
+            while (segment.t < availabilityStartTime) {
+                rslt.debug.log("[MssFragmentController] Remove segment  - t = " + segment.t / 1e7);
+                if (segment.r !== undefined && segment.r > 0) {
+                    segment.t += segment.d;
+                    segment.r -= 1;
+                } else {
+                    segments.splice(0, 1);
+                }
+                segment = segments[0];
+            }
+        }
+    }, convertFragment = function(data, request, adaptation) {
+        var i = 0;
+        var manifest = rslt.manifestModel.getValue();
+        var trackId = getIndex(adaptation, manifest) + 1;
+        var fragment = mp4lib.deserialize(data);
+        if (!fragment) {
+            return null;
+        }
+        var moof = fragment.getBoxByType("moof");
+        var mdat = fragment.getBoxByType("mdat");
+        var traf = moof.getBoxByType("traf");
+        var trun = traf.getBoxByType("trun");
+        var tfhd = traf.getBoxByType("tfhd");
+        var saio;
+        var sepiff = traf.getBoxByType("sepiff");
+        if (sepiff !== null) {
+            sepiff.boxtype = "senc";
+            sepiff.extended_type = undefined;
+            saio = new mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox();
+            saio.version = 0;
+            saio.flags = 0;
+            saio.entry_count = 1;
+            saio.offset = [];
+            var saiz = new mp4lib.boxes.SampleAuxiliaryInformationSizesBox();
+            saiz.version = 0;
+            saiz.flags = 0;
+            saiz.sample_count = sepiff.sample_count;
+            saiz.default_sample_info_size = 0;
+            saiz.sample_info_size = [];
+            var sizedifferent = false;
+            if (sepiff.flags & 2) {
+                for (i = 0; i < sepiff.sample_count; i++) {
+                    saiz.sample_info_size[i] = 8 + sepiff.entry[i].NumberOfEntries * 6 + 2;
+                    if (i > 0) {
+                        if (saiz.sample_info_size[i] !== saiz.sample_info_size[i - 1]) {
+                            sizedifferent = true;
+                        }
+                    }
+                }
+                if (sizedifferent === false) {
+                    saiz.default_sample_info_size = saiz.sample_info_size[0];
+                    saiz.sample_info_size = [];
+                }
+            } else {
+                saiz.default_sample_info_size = 8;
+            }
+            traf.boxes.push(saiz);
+            traf.boxes.push(saio);
+        }
+        tfhd.track_ID = trackId;
+        traf.removeBoxByType("tfxd");
+        var tfdt = traf.getBoxByType("tfdt");
+        if (tfdt === null) {
+            tfdt = new mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox();
+            tfdt.version = 1;
+            tfdt.flags = 0;
+            tfdt.baseMediaDecodeTime = Math.floor(request.startTime * request.timescale);
+            var pos = traf.getBoxIndexByType("tfhd");
+            traf.boxes.splice(pos + 1, 0, tfdt);
+        }
+        var tfrf = traf.getBoxesByType("tfrf");
+        if (tfrf.length !== 0) {
+            for (i = 0; i < tfrf.length; i++) {
+                processTfrf(tfrf[i], adaptation);
+                traf.removeBoxByType("tfrf");
+            }
+        }
+        tfhd.flags &= 16777214;
+        tfhd.flags |= 131072;
+        trun.flags |= 1;
+        trun.data_offset = 0;
+        var fragment_size = fragment.getLength();
+        trun.data_offset = fragment_size - mdat.size + 8;
+        if (sepiff !== null) {
+            var moofPosInFragment = fragment.getBoxOffsetByType("moof");
+            var trafPosInMoof = moof.getBoxOffsetByType("traf");
+            var sencPosInTraf = traf.getBoxOffsetByType("senc");
+            saio.offset[0] = moofPosInFragment + trafPosInMoof + sencPosInTraf + 16;
+        }
+        var new_data = mp4lib.serialize(fragment);
+        return new_data;
+    };
+    var rslt = MediaPlayer.utils.copyMethods(MediaPlayer.dependencies.FragmentController);
+    rslt.manifestModel = undefined;
+    rslt.mp4Processor = undefined;
+    rslt.process = function(bytes, request, representations) {
+        var result = null, manifest = this.manifestModel.getValue();
+        if (bytes !== null && bytes !== undefined && bytes.byteLength > 0) {
+            result = new Uint8Array(bytes);
+        } else {
+            return Q.when(null);
+        }
+        if (request && request.type === "Media Segment" && representations && representations.length > 0) {
+            var adaptation = manifest.Period_asArray[representations[0].adaptation.period.index].AdaptationSet_asArray[representations[0].adaptation.index];
+            result = convertFragment(result, request, adaptation);
+            if (!result) {
+                return Q.when(null);
+            }
+        }
+        return Q.when(result);
+    };
+    return rslt;
+};
+
+Mss.dependencies.MssFragmentController.prototype = {
+    constructor: Mss.dependencies.MssFragmentController
+};
+
+var _paq = _paq || [];
+
+_paq.push([ "trackPageView" ]);
+
+_paq.push([ "enableLinkTracking" ]);
+
+(function() {
+    var u = "//tv-has.orange-labs.fr/piwik/";
+    _paq.push([ "setTrackerUrl", u + "piwik.php" ]);
+    _paq.push([ "setSiteId", 1 ]);
+    var d = document, g = d.createElement("script"), s = d.getElementsByTagName("script")[0];
+    g.type = "text/javascript";
+    g.async = true;
+    g.defer = true;
+    g.src = u + "piwik.js";
+    s.parentNode.insertBefore(g, s);
+})();
+
 MediaPlayer.utils.copyMethods = function(clazz) {
     var rslt = new clazz();
     rslt.parent = {};
@@ -18150,21 +18343,4 @@ MediaPlayer.utils.doRequestWithPromise = function(url, callback, argumentsToForw
     xhr.send(null);
     return deferred.promise;
 };
-
-var _paq = _paq || [];
-
-_paq.push([ "trackPageView" ]);
-
-_paq.push([ "enableLinkTracking" ]);
-
-(function() {
-    var u = "//tv-has.orange-labs.fr/piwik/";
-    _paq.push([ "setTrackerUrl", u + "piwik.php" ]);
-    _paq.push([ "setSiteId", 1 ]);
-    var d = document, g = d.createElement("script"), s = d.getElementsByTagName("script")[0];
-    g.type = "text/javascript";
-    g.async = true;
-    g.defer = true;
-    g.src = u + "piwik.js";
-    s.parentNode.insertBefore(g, s);
-})();
+/* jshint ignore:end */
