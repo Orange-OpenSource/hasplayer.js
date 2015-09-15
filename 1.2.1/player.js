@@ -1,4 +1,5 @@
-/* Last build : 20.7.2015_10:27:50 / git revision : 2082efe */
+/* Last build : 10.9.2015_21:43:46 / git revision : 0dc204c */
+ /* jshint ignore:start */
 var cast = window.cast || {};
 
 (function() {
@@ -699,6 +700,7 @@ function onLoad() {
     if (hideMetricsAtStart) {
         hideMetrics();
     }
+    launchPlayer();
 }
 
 function onUnload() {
@@ -6289,3 +6291,4 @@ $.widget("ui.labeledslider", $.ui.slider, {
 $(document).ready(onLoad);
 
 $(window).unload(onUnload);
+/* jshint ignore:end */
