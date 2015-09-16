@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 15.9.2015_9:13:32 / git revision : 864059d */
+/* Last build : 16.9.2015_21:43:44 / git revision : c235738 */
  /* jshint ignore:start */
 var UTF8 = {};
 
@@ -5931,7 +5931,7 @@ mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
 
 MediaPlayer = function(aContext) {
     "use strict";
-    var VERSION = "1.2.0", VERSION_HAS = "1.2.2_dev", GIT_TAG = "864059d", BUILD_DATE = "15.9.2015_9:13:32", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
+    var VERSION = "1.2.0", VERSION_HAS = "1.2.2_dev", GIT_TAG = "c235738", BUILD_DATE = "16.9.2015_21:43:44", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
         return !!element && !!source;
     }, play = function() {
         if (!initialized) {
@@ -17604,8 +17604,6 @@ Mss = function() {
 Mss.dependencies.MssParser = function() {
     "use strict";
     var TIME_SCALE_100_NANOSECOND_UNIT = 1e7;
-    var numericRegex = /^[-+]?[0-9]+[.]?[0-9]*([eE][-+]?[0-9]+)?$/;
-    var hexadecimalRegex = /^0[xX][A-Fa-f0-9]+$/;
     var samplingFrequencyIndex = {
         96e3: 0,
         88200: 1,
@@ -17621,55 +17619,93 @@ Mss.dependencies.MssParser = function() {
         8e3: 11,
         7350: 12
     };
-    var matchers = [ {
-        type: "numeric",
-        test: function(str) {
-            return numericRegex.test(str);
-        },
-        converter: function(str) {
-            return parseFloat(str);
-        }
-    }, {
-        type: "hexadecimal",
-        test: function(str) {
-            return hexadecimalRegex.test(str);
-        },
-        converter: function(str) {
-            return str.substr(2);
-        }
-    } ];
     var mimeTypeMap = {
         video: "video/mp4",
         audio: "audio/mp4",
         text: "application/ttml+xml+mp4"
     };
-    var mapPeriod = function(manifest) {
-        var period = {}, adaptations = [], i;
-        period.duration = manifest.Duration === 0 ? Infinity : parseFloat(manifest.Duration) / TIME_SCALE_100_NANOSECOND_UNIT;
-        period.BaseURL = manifest.BaseURL;
-        for (i = 0; i < manifest.StreamIndex_asArray.length; i++) {
-            manifest.StreamIndex_asArray[i].BaseURL = period.BaseURL;
-            adaptations.push(mapAdaptationSet(manifest.StreamIndex_asArray[i]));
+    var xmlDoc = null;
+    var baseURL = null;
+    var getAttributeValue = function(node, attrName) {
+        var returnValue = null, domElem = null, attribList = null;
+        attribList = node.attributes;
+        if (attribList) {
+            domElem = attribList.getNamedItem(attrName);
+            if (domElem) {
+                returnValue = domElem.value;
+                return returnValue;
+            }
+        }
+        return returnValue;
+    };
+    var getChildNode = function(nodeParent, childName) {
+        var i = 0, element = undefined;
+        if (nodeParent.childNodes) {
+            for (i = 0; i < nodeParent.childNodes.length; i++) {
+                element = nodeParent.childNodes[i];
+                if (element.nodeName === childName) {
+                    return element;
+                } else {
+                    element = undefined;
+                }
+            }
+        }
+        return element;
+    };
+    var getChildNodes = function(nodeParent, childName) {
+        var i = 0, element = [];
+        if (nodeParent.childNodes) {
+            for (i = 0; i < nodeParent.childNodes.length; i++) {
+                if (nodeParent.childNodes[i].nodeName === childName) {
+                    element.push(nodeParent.childNodes[i]);
+                }
+            }
+        }
+        return element;
+    };
+    var createXmlTree = function(xmlDocStr) {
+        if (window.DOMParser) {
+            try {
+                var parser = new window.DOMParser();
+                xmlDoc = parser.parseFromString(xmlDocStr, "text/xml");
+                if (xmlDoc.getElementsByTagName("parsererror").length > 0) {
+                    throw new Error("Error parsing XML");
+                }
+            } catch (e) {
+                return null;
+            }
+        }
+        return this;
+    };
+    var mapPeriod = function() {
+        var period = {}, adaptations = [], streamIndex = null, smoothNode = getChildNode(xmlDoc, "SmoothStreamingMedia"), i;
+        period.duration = getAttributeValue(smoothNode, "Duration") ? Infinity : parseFloat(getAttributeValue(smoothNode, "Duration")) / TIME_SCALE_100_NANOSECOND_UNIT;
+        period.BaseURL = baseURL;
+        for (i = 0; i < smoothNode.childNodes.length; i++) {
+            if (smoothNode.childNodes[i].nodeName === "StreamIndex") {
+                adaptations.push(mapAdaptationSet(smoothNode.childNodes[i]));
+            }
         }
         period.AdaptationSet = adaptations.length > 1 ? adaptations : adaptations[0];
         period.AdaptationSet_asArray = adaptations;
         return period;
     };
     var mapAdaptationSet = function(streamIndex) {
-        var adaptationSet = {}, representations = [], representation, segmentTemplate = {}, i;
-        adaptationSet.id = streamIndex.Name;
-        adaptationSet.lang = streamIndex.Language;
-        adaptationSet.contentType = streamIndex.Type;
-        adaptationSet.mimeType = mimeTypeMap[streamIndex.Type];
-        adaptationSet.maxWidth = streamIndex.MaxWidth;
-        adaptationSet.maxHeight = streamIndex.MaxHeight;
-        adaptationSet.BaseURL = streamIndex.BaseURL;
+        var adaptationSet = {}, representations = [], representation, segmentTemplate = {}, qualityLevels = null, i;
+        adaptationSet.id = getAttributeValue(streamIndex, "Name");
+        adaptationSet.lang = getAttributeValue(streamIndex, "Language");
+        adaptationSet.contentType = getAttributeValue(streamIndex, "Type");
+        adaptationSet.mimeType = mimeTypeMap[adaptationSet.contentType];
+        adaptationSet.maxWidth = getAttributeValue(streamIndex, "MaxWidth");
+        adaptationSet.maxHeight = getAttributeValue(streamIndex, "MaxHeight");
+        adaptationSet.BaseURL = baseURL;
         segmentTemplate = mapSegmentTemplate(streamIndex);
-        for (i = 0; i < streamIndex.QualityLevel_asArray.length; i++) {
-            streamIndex.QualityLevel_asArray[i].BaseURL = adaptationSet.BaseURL;
-            streamIndex.QualityLevel_asArray[i].mimeType = adaptationSet.mimeType;
-            streamIndex.QualityLevel_asArray[i].Id = adaptationSet.id + "_" + streamIndex.QualityLevel_asArray[i].Index;
-            representation = mapRepresentation(streamIndex.QualityLevel_asArray[i]);
+        qualityLevels = getChildNodes(streamIndex, "QualityLevel");
+        for (i = 0; i < qualityLevels.length; i++) {
+            qualityLevels[i].BaseURL = adaptationSet.BaseURL;
+            qualityLevels[i].mimeType = adaptationSet.mimeType;
+            qualityLevels[i].Id = adaptationSet.id + "_" + getAttributeValue(qualityLevels[i], "Index");
+            representation = mapRepresentation(qualityLevels[i]);
             representation.SegmentTemplate = segmentTemplate;
             representations.push(representation);
         }
@@ -17681,39 +17717,40 @@ Mss.dependencies.MssParser = function() {
     var mapRepresentation = function(qualityLevel) {
         var representation = {};
         representation.id = qualityLevel.Id;
-        representation.bandwidth = qualityLevel.Bitrate;
+        representation.bandwidth = parseInt(getAttributeValue(qualityLevel, "Bitrate"));
         representation.mimeType = qualityLevel.mimeType;
-        representation.width = qualityLevel.MaxWidth;
-        representation.height = qualityLevel.MaxHeight;
-        if (qualityLevel.FourCC === "H264" || qualityLevel.FourCC === "AVC1") {
+        representation.width = parseInt(getAttributeValue(qualityLevel, "MaxWidth"));
+        representation.height = parseInt(getAttributeValue(qualityLevel, "MaxHeight"));
+        var fourCCValue = getAttributeValue(qualityLevel, "FourCC");
+        if (fourCCValue === "H264" || fourCCValue === "AVC1") {
             representation.codecs = getH264Codec(qualityLevel);
-        } else if (qualityLevel.FourCC.indexOf("AAC") >= 0) {
+        } else if (fourCCValue.indexOf("AAC") >= 0) {
             representation.codecs = getAACCodec(qualityLevel);
         }
-        representation.audioSamplingRate = qualityLevel.SamplingRate;
-        representation.audioChannels = qualityLevel.Channels;
-        representation.codecPrivateData = "" + qualityLevel.CodecPrivateData;
+        representation.audioSamplingRate = parseInt(getAttributeValue(qualityLevel, "SamplingRate"));
+        representation.audioChannels = parseInt(getAttributeValue(qualityLevel, "Channels"));
+        representation.codecPrivateData = "" + getAttributeValue(qualityLevel, "CodecPrivateData");
         representation.BaseURL = qualityLevel.BaseURL;
         return representation;
     };
     var getH264Codec = function(qualityLevel) {
-        var codecPrivateData = qualityLevel.CodecPrivateData.toString(), nalHeader, avcoti;
+        var codecPrivateData = getAttributeValue(qualityLevel, "CodecPrivateData").toString(), nalHeader, avcoti;
         nalHeader = /00000001[0-9]7/.exec(codecPrivateData);
         avcoti = nalHeader && nalHeader[0] ? codecPrivateData.substr(codecPrivateData.indexOf(nalHeader[0]) + 10, 6) : undefined;
         return "avc1." + avcoti;
     };
     var getAACCodec = function(qualityLevel) {
-        var objectType = 0, codecPrivateData = qualityLevel.CodecPrivateData.toString(), codecPrivateDataHex, arr16;
-        if (qualityLevel.FourCC === "AACH") {
+        var objectType = 0, codecPrivateData = getAttributeValue(qualityLevel, "CodecPrivateData").toString(), codecPrivateDataHex, fourCCValue = getAttributeValue(qualityLevel, "FourCC"), samplingRate = parseInt(getAttributeValue(qualityLevel, "SamplingRate")), arr16;
+        if (fourCCValue === "AACH") {
             objectType = 5;
         }
         if (codecPrivateData === undefined || codecPrivateData === "") {
             objectType = 2;
-            var indexFreq = samplingFrequencyIndex[qualityLevel.SamplingRate];
-            if (qualityLevel.FourCC === "AACH") {
+            var indexFreq = samplingFrequencyIndex[samplingRate];
+            if (fourCCValue === "AACH") {
                 objectType = 5;
                 codecPrivateData = new Uint8Array(4);
-                var extensionSamplingFrequencyIndex = samplingFrequencyIndex[qualityLevel.SamplingRate * 2];
+                var extensionSamplingFrequencyIndex = samplingFrequencyIndex[samplingRate * 2];
                 codecPrivateData[0] = objectType << 3 | indexFreq >> 1;
                 codecPrivateData[1] = indexFreq << 7 | qualityLevel.Channels << 3 | extensionSamplingFrequencyIndex >> 1;
                 codecPrivateData[2] = extensionSamplingFrequencyIndex << 7 | 2 << 2;
@@ -17726,20 +17763,22 @@ Mss.dependencies.MssParser = function() {
             } else {
                 codecPrivateData = new Uint8Array(2);
                 codecPrivateData[0] = objectType << 3 | indexFreq >> 1;
-                codecPrivateData[1] = indexFreq << 7 | qualityLevel.Channels << 3;
+                codecPrivateData[1] = indexFreq << 7 | parseInt(getAttributeValue(qualityLevel, "Channels")) << 3;
                 arr16 = new Uint16Array(1);
                 arr16[0] = (codecPrivateData[0] << 8) + codecPrivateData[1];
                 codecPrivateDataHex = arr16[0].toString(16);
             }
             codecPrivateData = "" + codecPrivateDataHex;
             codecPrivateData = codecPrivateData.toUpperCase();
-            qualityLevel.CodecPrivateData = codecPrivateData;
-        } else if (objectType === 0) objectType = (parseInt(codecPrivateData.substr(0, 2), 16) & 248) >> 3;
+            qualityLevel.setAttribute("CodecPrivateData", codecPrivateData);
+        } else if (objectType === 0) {
+            objectType = (parseInt(codecPrivateData.substr(0, 2), 16) & 248) >> 3;
+        }
         return "mp4a.40." + objectType;
     };
     var mapSegmentTemplate = function(streamIndex) {
         var segmentTemplate = {}, mediaUrl;
-        mediaUrl = streamIndex.Url.replace("{bitrate}", "$Bandwidth$");
+        mediaUrl = getAttributeValue(streamIndex, "Url").replace("{bitrate}", "$Bandwidth$");
         mediaUrl = mediaUrl.replace("{start time}", "$Time$");
         segmentTemplate.media = mediaUrl;
         segmentTemplate.timescale = TIME_SCALE_100_NANOSECOND_UNIT;
@@ -17747,26 +17786,26 @@ Mss.dependencies.MssParser = function() {
         return segmentTemplate;
     };
     var mapSegmentTimeline = function(streamIndex) {
-        var segmentTimeline = {}, chunks = streamIndex.c_asArray, segments = [], i = 0;
+        var segmentTimeline = {}, chunks = getChildNodes(streamIndex, "c"), segments = [], i = 0;
         if (chunks && chunks.length > 1) {
-            chunks[0].t = chunks[0].t || 0;
+            chunks[0].setAttribute("t", parseFloat(getAttributeValue(chunks[0], "t")) || 0);
             for (i = 1; i < chunks.length; i++) {
-                chunks[i - 1].d = chunks[i - 1].d || chunks[i].t - chunks[i - 1].t;
-                chunks[i].t = chunks[i].t || chunks[i - 1].t + chunks[i - 1].d;
+                chunks[i - 1].setAttribute("d", parseFloat(getAttributeValue(chunks[i - 1], "d")) || parseFloat(getAttributeValue(chunks[i], "t")) - parseFloat(getAttributeValue(chunks[i - 1], "t")));
+                chunks[i].setAttribute("t", parseFloat(getAttributeValue(chunks[i], "t")) || parseFloat(getAttributeValue(chunks[i - 1], "t")) + parseFloat(getAttributeValue(chunks[i - 1], "d")));
             }
             segments.push({
-                d: chunks[0].d,
+                d: parseFloat(getAttributeValue(chunks[0], "d")),
                 r: 0,
-                t: chunks[0].t
+                t: parseFloat(getAttributeValue(chunks[0], "t"))
             });
             for (i = 1; i < chunks.length; i++) {
-                if (chunks[i].d === chunks[i - 1].d) {
+                if (parseFloat(getAttributeValue(chunks[i], "d")) === parseFloat(getAttributeValue(chunks[i - 1], "d"))) {
                     ++segments[segments.length - 1].r;
                 } else {
                     segments.push({
-                        d: chunks[i].d,
+                        d: parseFloat(getAttributeValue(chunks[i], "d")),
                         r: 0,
-                        t: chunks[i].t
+                        t: parseFloat(getAttributeValue(chunks[i], "t"))
                     });
                 }
             }
@@ -17777,7 +17816,7 @@ Mss.dependencies.MssParser = function() {
     };
     var getKIDFromProtectionHeader = function(protectionHeader) {
         var prHeader, wrmHeader, xmlReader, KID;
-        prHeader = BASE64.decodeArray(protectionHeader.__text);
+        prHeader = BASE64.decodeArray(protectionHeader.firstChild.data);
         wrmHeader = getWRMHeaderFromPRHeader(prHeader);
         wrmHeader = new Uint16Array(wrmHeader.buffer);
         wrmHeader = String.fromCharCode.apply(null, wrmHeader);
@@ -17818,9 +17857,9 @@ Mss.dependencies.MssParser = function() {
         bytes[pos2] = temp;
     };
     var createPRContentProtection = function(protectionHeader) {
-        var contentProtection = {}, keySystem = this.system.getObject("ksPlayReady"), pro, systemID = protectionHeader.SystemID;
+        var contentProtection = {}, keySystem = this.system.getObject("ksPlayReady"), pro, systemID = getAttributeValue(protectionHeader, "SystemID");
         pro = {
-            __text: protectionHeader.__text,
+            __text: protectionHeader.firstChild.data,
             __prefix: "mspr"
         };
         contentProtection.schemeIdUri = keySystem.schemeIdURI;
@@ -17835,28 +17874,29 @@ Mss.dependencies.MssParser = function() {
         contentProtection.value = keySystem.systemString;
         return contentProtection;
     };
-    var processManifest = function(manifest, manifestLoadedTime) {
-        var mpd = {}, period, adaptations, contentProtection, contentProtections = [], KID, i;
+    var processManifest = function(manifestLoadedTime) {
+        var mpd = {}, period, adaptations, contentProtection, contentProtections = [], smoothNode = getChildNode(xmlDoc, "SmoothStreamingMedia"), protection = getChildNode(smoothNode, "Protection"), protectionHeader = null, KID, i;
         mpd.profiles = "urn:mpeg:dash:profile:isoff-live:2011";
-        mpd.type = manifest.IsLive ? "dynamic" : "static";
-        mpd.timeShiftBufferDepth = parseFloat(manifest.DVRWindowLength) / TIME_SCALE_100_NANOSECOND_UNIT;
-        mpd.mediaPresentationDuration = manifest.Duration === 0 ? Infinity : parseFloat(manifest.Duration) / TIME_SCALE_100_NANOSECOND_UNIT;
-        mpd.BaseURL = manifest.BaseURL;
+        mpd.type = Boolean(getAttributeValue(smoothNode, "IsLive")) ? "dynamic" : "static";
+        mpd.timeShiftBufferDepth = parseFloat(getAttributeValue(smoothNode, "DVRWindowLength")) / TIME_SCALE_100_NANOSECOND_UNIT;
+        mpd.mediaPresentationDuration = parseFloat(getAttributeValue(smoothNode, "Duration")) === 0 ? Infinity : parseFloat(getAttributeValue(smoothNode, "Duration")) / TIME_SCALE_100_NANOSECOND_UNIT;
+        mpd.BaseURL = baseURL;
         mpd.minBufferTime = MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
         if (mpd.type === "dynamic") {
             mpd.availabilityStartTime = new Date(manifestLoadedTime.getTime() - mpd.timeShiftBufferDepth * 1e3);
         }
-        mpd.Period = mapPeriod(manifest);
+        mpd.Period = mapPeriod();
         mpd.Period_asArray = [ mpd.Period ];
         period = mpd.Period;
         period.start = 0;
-        if (manifest.Protection !== undefined) {
-            KID = getKIDFromProtectionHeader(manifest.Protection.ProtectionHeader);
-            contentProtection = createPRContentProtection.call(this, manifest.Protection.ProtectionHeader);
+        if (protection !== undefined) {
+            protectionHeader = getChildNode(protection, "ProtectionHeader");
+            KID = getKIDFromProtectionHeader(protectionHeader);
+            contentProtection = createPRContentProtection.call(this, protectionHeader);
             contentProtection["cenc:default_KID"] = KID;
             contentProtections.push(contentProtection);
             if (navigator.userAgent.indexOf("Chrome") >= 0) {
-                contentProtection = createWidevineContentProtection.call(this, manifest.Protection.ProtectionHeader);
+                contentProtection = createWidevineContentProtection.call(this, protectionHeader);
                 contentProtection["cenc:default_KID"] = KID;
                 contentProtections.push(contentProtection);
             }
@@ -17881,25 +17921,17 @@ Mss.dependencies.MssParser = function() {
     };
     var internalParse = function(data, baseUrl) {
         this.debug.info("[MssParser]", "Doing parse.");
-        var manifest = null, converter = new X2JS(matchers, "", true), start = new Date(), json = null, mss2dash = null;
-        manifest = converter.xml_str2json(data);
-        json = new Date();
-        if (manifest === null) {
+        var start = new Date(), xml = null, manifest = null, mss2dash = null;
+        createXmlTree(data);
+        xml = new Date();
+        if (xmlDoc === null) {
             this.debug.error("[MssParser]", "Failed to parse manifest!!");
             return Q.reject("[MssParser] Failed to parse manifest!!");
         }
-        if (!manifest.hasOwnProperty("BaseURL")) {
-            this.debug.log("[MssParser]", "Setting baseURL: " + baseUrl);
-            manifest.BaseURL = baseUrl;
-        } else {
-            manifest.BaseURL = manifest.BaseURL_asArray && manifest.BaseURL_asArray[0] || manifest.BaseURL;
-            if (manifest.BaseURL.indexOf("http") !== 0) {
-                manifest.BaseURL = baseUrl + manifest.BaseURL;
-            }
-        }
-        manifest = processManifest.call(this, manifest, start);
+        baseURL = baseUrl;
+        manifest = processManifest.call(this, start);
         mss2dash = new Date();
-        this.debug.info("[MssParser]", "Parsing complete (xml2json: " + (json.getTime() - start.getTime()) + "ms, mss2dash: " + (mss2dash.getTime() - json.getTime()) + "ms, total: " + (new Date().getTime() - start.getTime()) / 1e3 + "s)");
+        this.debug.info("[MssParser]", "Parsing complete (xmlParser: " + (xml.getTime() - start.getTime()) + "ms, mss2dash: " + (mss2dash.getTime() - xml.getTime()) + "ms, total: " + (new Date().getTime() - start.getTime()) / 1e3 + "s)");
         return Q.when(manifest);
     };
     return {
