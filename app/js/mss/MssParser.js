@@ -512,7 +512,9 @@ Mss.dependencies.MssParser = function () {
             /* @if PROTECTION=true */
             protectionHeader = getChildNode(protection, 'ProtectionHeader');
             // Get KID (in CENC format) from protection header
+
             KID = getKIDFromProtectionHeader(protectionHeader);
+            this.debug.log("[MssParser] KID = " + MediaPlayer.utils.arrayToHexString(KID));
 
             // Create ContentProtection for PR
             contentProtection = createPRContentProtection.call(this, protectionHeader);

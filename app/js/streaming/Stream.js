@@ -64,13 +64,16 @@ MediaPlayer.dependencies.Stream = function() {
         checkStartTimeIntervalId,
 
         eventController = null,
-        protectionController = undefined,
+        protectionController,
+        boundProtectionErrorHandler,
 
         // Encrypted Media Extensions
         onProtectionError = function(event) {
-            this.errHandler.sendError(event.data.code, event.data.message, event.data.data);
-            this.debug.error("[Stream] protection error: " + event.data.code + " - " + event.data.message);
-            this.reset();
+            if (event.error) {
+                //this.errHandler.sendError(event.data.code, event.data.message, event.data.data);
+                this.debug.error("[Stream] protection error: type = " + event.type + " - error = " + event.error);
+                this.reset();
+            }
         },
 
         play = function() {
@@ -182,6 +185,10 @@ MediaPlayer.dependencies.Stream = function() {
                     deferred.reject();
                 } else {
                     //this.debug.log("MediaSource initialized!");
+
+                    // Initialize protection controller
+                    protectionController.init(contentProtection, audioCodec, videoCodec);
+
                     deferred.resolve(true);
                 }
             }
@@ -218,15 +225,22 @@ MediaPlayer.dependencies.Stream = function() {
                                         self.debug.info("[Stream] Video codec: " + codec);
                                         videoCodec = codec;
 
+                                        if (!self.capabilities.supportsCodec(self.videoModel.getElement(), codec)) {
+                                            var msg = "Video Codec (" + codec + ") is not supported.";
+                                            self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC, msg, manifest);
+                                            return Q.when(null);
+                                            //self.debug.error("[Stream] ", msg);
+                                        }
+
                                         return self.manifestExt.getContentProtectionData(videoData).then(
                                             function(contentProtectionData) {
-                                                self.debug.log("[Stream] video contentProtection");
+                                                /*self.debug.log("[Stream] video contentProtection");
 
                                                 if (!!contentProtectionData && !self.capabilities.supportsMediaKeys()) {
                                                     self.debug.error("[Stream] mediakeys not supported!");
                                                     self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS);
                                                     return Q.when(null);
-                                                }
+                                                }*/
 
                                                 contentProtection = contentProtectionData;
 
@@ -292,7 +306,16 @@ MediaPlayer.dependencies.Stream = function() {
                                                 self.debug.info("[Stream] Audio codec: " + codec);
                                                 audioCodec = codec;
 
-                                                return self.manifestExt.getContentProtectionData(specificAudioData).then(
+                                                if (!self.capabilities.supportsCodec(self.videoModel.getElement(), codec)) {
+                                                    var msg = "Audio Codec (" + codec + ") is not supported.";
+                                                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC, msg, manifest);
+                                                    self.debug.error("[Stream] ", msg);
+                                                    return Q.when(null);
+                                                }
+
+                                                return self.sourceBufferExt.createSourceBuffer(mediaSource, codec);
+
+                                                /*return self.manifestExt.getContentProtectionData(specificAudioData).then(
                                                     function(contentProtectionData) {
                                                         self.debug.log("[Stream] Audio contentProtection");
 
@@ -316,7 +339,7 @@ MediaPlayer.dependencies.Stream = function() {
 
                                                         return self.sourceBufferExt.createSourceBuffer(mediaSource, codec);
                                                     }
-                                                );
+                                                );*/
                                             }
                                         ).then(
                                             function(buffer) {
@@ -402,6 +425,7 @@ MediaPlayer.dependencies.Stream = function() {
                                 textTrackReady = true;
                                 checkIfInitialized.call(self, videoReady, audioReady, textTrackReady, initialize);
                             }
+                       
                             return self.manifestExt.getEventsForPeriod(manifest, periodInfo);
                         }
                     ).then(
@@ -801,6 +825,9 @@ MediaPlayer.dependencies.Stream = function() {
                 if (audioRange.end < startTime) {
                     return;
                 }
+                if (audioRange.start > startTime) {
+                    startTime = audioRange.start;
+                }
             }
 
             self.debug.info("[Stream] Check start time: OK");
@@ -1102,18 +1129,19 @@ MediaPlayer.dependencies.Stream = function() {
             return undefined;
         },
 
-        initProtection: function(protectionData) {
-            if (this.capabilities.supportsEncryptedMedia()) {
-                if (!this.protectionController) {
-                    this.protectionController = this.system.getObject("protectionController");
-                }
-                this.protectionController.subscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
-                this.protectionController.setMediaElement(this.videoModel.getElement());
-                this.protectionController.init(this.manifestModel.getValue());
-                if (protectionData) {
-                    this.protectionController.setProtectionData(protectionData);
-                }
-            }
+        initProtection: function(protectionCtrl) {
+
+            protectionController = protectionCtrl;
+
+            // Protection error handler
+            boundProtectionErrorHandler = onProtectionError.bind(this);
+            protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
+            protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.SERVER_CERTIFICATE_UPDATED, boundProtectionErrorHandler);
+            protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_ADDED, boundProtectionErrorHandler);
+            protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SESSION_CREATED, boundProtectionErrorHandler);
+            protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
+            protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
+            protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.LICENSE_REQUEST_COMPLETE, boundProtectionErrorHandler);
         },
 
         getVideoModel: function() {
@@ -1175,11 +1203,16 @@ MediaPlayer.dependencies.Stream = function() {
             this.system.unmapHandler("segmentLoadingFailed");
 
             tearDownMediaSource.call(this);
-            if (this.protectionController) {
-                this.protectionController.unsubscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
-                this.protectionController.teardown();
-            }
-            this.protectionController = undefined;
+
+            protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
+            protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.SERVER_CERTIFICATE_UPDATED, boundProtectionErrorHandler);
+            protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_ADDED, boundProtectionErrorHandler);
+            protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SESSION_CREATED, boundProtectionErrorHandler);
+            protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
+            protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
+            protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.LICENSE_REQUEST_COMPLETE, boundProtectionErrorHandler);
+
+            protectionController = undefined;
             this.fragmentController = undefined;
             this.requestScheduler = undefined;
 

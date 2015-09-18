@@ -829,8 +829,8 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
     $scope.setStream = function (item) {
         $scope.selectedItem = item;
-        $scope.laURL = (item.protData && item.protData['com.microsoft.playready']) ? item.protData['com.microsoft.playready'].laURL : "";
-        $scope.customData = (item.protData && item.protData['com.microsoft.playready']) ? item.protData['com.microsoft.playready'].customData : "";
+        $scope.laURL = (item.protData && item.protData['com.widevine.alpha']) ? item.protData['com.widevine.alpha'].laURL : "";
+        $scope.customData = (item.protData && item.protData['com.widevine.alpha']) ? item.protData['com.widevine.alpha'].customData : "";
     };
 
     function resetBitratesSlider () {
@@ -863,11 +863,11 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
             if (!$scope.selectedItem.protData) {
                 $scope.selectedItem.protData = {};
             }
-            if (!$scope.selectedItem.protData['com.microsoft.playready']) {
-                $scope.selectedItem.protData['com.microsoft.playready'] = {};
+            if (!$scope.selectedItem.protData['com.widevine.alpha']) {
+                $scope.selectedItem.protData['com.widevine.alpha'] = {};
             }
-            $scope.selectedItem.protData['com.microsoft.playready'].laURL = $scope.laURL;
-            $scope.selectedItem.protData['com.microsoft.playready'].customData = $scope.customData;
+            $scope.selectedItem.protData['com.widevine.alpha'].laURL = $scope.laURL;
+            $scope.selectedItem.protData['com.widevine.alpha'].customData = $scope.customData;
         }
 
         resetBitratesSlider();

@@ -29,15 +29,110 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * Microsoft PlayReady DRM
+ *
+ * @class
+ * @implements MediaPlayer.dependencies.protection.KeySystem
+ */
 MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
     "use strict";
 
     var keySystemStr = "com.microsoft.playready",
         keySystemUUID = "9a04f079-9840-4286-ab92-e65be0885f95",
+        messageFormat = "utf16",
         PRCDMData = '<PlayReadyCDMData type="LicenseAcquisition"><LicenseAcquisition version="1.0" Proactive="true"><CustomData encoding="base64encoded">%CUSTOMDATA%</CustomData></LicenseAcquisition></PlayReadyCDMData>',
         protData,
 
-        requestLicense = function(message, laURL, requestData) {
+        getRequestHeaders = function(message) {
+            var msg,
+                xmlDoc,
+                headers = {},
+                parser = new DOMParser(),
+                dataview = (messageFormat === "utf16") ? new Uint16Array(message) : new Uint8Array(message);
+
+            msg = String.fromCharCode.apply(null, dataview);
+            xmlDoc = parser.parseFromString(msg, "application/xml");
+
+            var headerNameList = xmlDoc.getElementsByTagName("name");
+            var headerValueList = xmlDoc.getElementsByTagName("value");
+            for (var i = 0; i < headerNameList.length; i++) {
+                headers[headerNameList[i].childNodes[0].nodeValue] = headerValueList[i].childNodes[0].nodeValue;
+            }
+            // some versions of the PlayReady CDM return 'Content' instead of 'Content-Type'.
+            // this is NOT w3c conform and license servers may reject the request!
+            // -> rename it to proper w3c definition!
+            if (headers.hasOwnProperty('Content')) {
+                headers['Content-Type'] = headers.Content;
+                delete headers.Content;
+            }
+            return headers;
+        },
+
+        getLicenseRequest = function(message) {
+            var msg,
+                xmlDoc,
+                parser = new DOMParser(),
+                licenseRequest = null,
+                dataview = (messageFormat === "utf16") ? new Uint16Array(message) : new Uint8Array(message);
+
+            msg = String.fromCharCode.apply(null, dataview);
+            xmlDoc = parser.parseFromString(msg, "application/xml");
+
+            if (xmlDoc.getElementsByTagName("Challenge")[0]) {
+                var Challenge = xmlDoc.getElementsByTagName("Challenge")[0].childNodes[0].nodeValue;
+                if (Challenge) {
+                    licenseRequest = BASE64.decode(Challenge);
+                }
+            }
+            return licenseRequest;
+        },
+
+        getLicenseServerURL = function(initData) {
+            if (initData) {
+                var data = new DataView(initData),
+                        numRecords = data.getUint16(4, true),
+                        offset = 6,
+                        parser = new DOMParser();
+
+                for (var i = 0; i < numRecords; i++) {
+                    // Parse the PlayReady Record header
+                    var recordType = data.getUint16(offset, true);
+                    offset += 2;
+                    var recordLength = data.getUint16(offset, true);
+                    offset += 2;
+                    if (recordType !== 0x0001) {
+                        offset += recordLength;
+                        continue;
+                    }
+
+                    var recordData = initData.slice(offset, offset+recordLength),
+                            record = String.fromCharCode.apply(null, new Uint16Array(recordData)),
+                            xmlDoc = parser.parseFromString(record, "application/xml");
+
+                    // First try <LA_URL>
+                    if (xmlDoc.getElementsByTagName("LA_URL")[0]) {
+                        var laurl = xmlDoc.getElementsByTagName("LA_URL")[0].childNodes[0].nodeValue;
+                        if (laurl) {
+                            return laurl;
+                        }
+                    }
+
+                    // Optionally, try <LUI_URL>
+                    if (xmlDoc.getElementsByTagName("LUI_URL")[0]) {
+                        var luiurl = xmlDoc.getElementsByTagName("LUI_URL")[0].childNodes[0].nodeValue;
+                        if (luiurl) {
+                            return luiurl;
+                        }
+                    }
+                }
+            }
+
+            return null;
+
+        },
+
+        /*requestLicense = function(message, laURL, requestData) {
             var decodedChallenge = null,
                 headers = {},
                 key,
@@ -125,7 +220,7 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
             if (protData && protData.withCredentials) xhr.withCredentials = true;
 
             xhr.send(decodedChallenge);
-        },
+        },*/
 
         parseInitDataFromContentProtection = function(cpData) {
             // * desc@ getInitData
@@ -146,6 +241,11 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
                 PSSHBox,
                 PSSHData;
 
+            // Handle common encryption PSSH
+            if ("pssh" in cpData) {
+                return MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection(cpData);
+            }
+            // Handle native MS PlayReady ContentProtection elements
             if ("pro" in cpData) {
                 uint8arraydecodedPROHeader = BASE64.decodeArray(cpData.pro.__text);
             }
@@ -180,11 +280,6 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
             byteCursor += PROSize;
 
             return PSSHBox.buffer;
-        },
-
-        /* TODO: Implement me */
-        isInitDataEqual = function(/*initData1, initData2*/) {
-            return false;
         },
 
         doGetCDMData = function () {
@@ -232,23 +327,31 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
         subscribe: undefined,
         unsubscribe: undefined,
 
-        /**
-         * Initialize this key system
-         *
-         * @param protectionData {ProtectionData} data providing overrides for
-         * default or CDM-provided values
-         */
-        init: function(protectionData) {
-            protData = protectionData;
-        },
-
-        doLicenseRequest: requestLicense,
 
         getInitData: parseInitDataFromContentProtection,
 
-        initDataEquals: isInitDataEqual,
+        getRequestHeadersFromMessage: getRequestHeaders,
 
-        getCDMData: doGetCDMData
+        getLicenseRequestFromMessage: getLicenseRequest,
+
+        getLicenseServerURLFromInitData: getLicenseServerURL,
+
+        getCDMData: doGetCDMData,
+
+        /**
+         * It seems that some PlayReady implementations return their XML-based CDM
+         * messages using UTF16, while others return them as UTF8.  Use this function
+         * to modify the message format to expect when parsing CDM messages.
+         *
+         * @param {string} format the expected message format.  Either "utf8" or "utf16".
+         * @throws {Error} Specified message format is not one of "utf8" or "utf16"
+         */
+        setPlayReadyMessageFormat: function(format) {
+            if (format !== "utf8" && format !== "utf16") {
+                throw new Error("Illegal PlayReady message format! -- " + format);
+            }
+            messageFormat = format;
+        }
     };
 };
 

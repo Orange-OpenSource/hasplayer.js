@@ -30,47 +30,54 @@
  */
 
 /**
- * Google Widevine DRM
+ * CableLabs ClearKey license server implementation
  *
+ * For testing purposes and evaluating potential uses for ClearKey, we have developed
+ * a dirt-simple API for requesting ClearKey licenses from a remote server.
+ *
+ * @implements MediaPlayer.dependencies.protection.servers.LicenseServer
  * @class
- * @implements MediaPlayer.dependencies.protection.KeySystem
  */
-MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
+MediaPlayer.dependencies.protection.servers.ClearKey = function() {
     "use strict";
-
-    var keySystemStr = "com.widevine.alpha",
-        keySystemUUID = "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed",
-
-        doGetInitData = function (cpData) {
-
-            return BASE64.decodeArray("AAAAW3Bzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAADsIARIQh7LJSxP0WBaU0gg8/ekcrhoNd2lkZXZpbmVfdGVzdCIQMzMzMzMzMzMzMzMzMzMzMyoCU0QyAA==").buffer;
-            // Check if protection data contains the pssh
-            /*if (protData && protData.pssh) {
-                return BASE64.decodeArray(protData.pssh).buffer;
-            }
-
-            // Else get initData from content protection
-            return MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection(cpData);*/
-        };
 
     return {
 
-        schemeIdURI: "urn:uuid:" + keySystemUUID,
-        systemString: keySystemStr,
-        uuid: keySystemUUID,
+        getServerURLFromMessage: function(url, message/*, messageType*/) {
+            // Build ClearKey server query string
+            var jsonMsg = JSON.parse(String.fromCharCode.apply(null, new Uint8Array(message)));
+            url += "/?";
+            for (var i = 0; i < jsonMsg.kids.length; i++) {
+                url += jsonMsg.kids[i] + "&";
+            }
+            url = url.substring(0, url.length-1);
+            return url;
+        },
 
-        //getInitData: MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection,
-        getInitData: doGetInitData,
+        getHTTPMethod: function(/*messageType*/) { return 'GET'; },
 
-        getRequestHeadersFromMessage: function(/*message*/) { return null; },
+        getResponseType: function(/*keySystemStr*/) { return 'json'; },
 
-        getLicenseRequestFromMessage: function(message) { return new Uint8Array(message); },
+        getLicenseMessage: function(serverResponse/*, keySystemStr, messageType*/) {
+            if (!serverResponse.hasOwnProperty("keys")) {
+                return null;
+            }
+            var i, keyPairs = [];
+            for (i = 0; i < serverResponse.keys.length; i++) {
+                var keypair = serverResponse.keys[i],
+                    keyid = keypair.kid.replace(/=/g, ""),
+                    key = keypair.k.replace(/=/g, "");
+                keyPairs.push(new MediaPlayer.vo.protection.KeyPair(keyid, key));
+            }
+            return new MediaPlayer.vo.protection.ClearKeyKeySet(keyPairs);
+        },
 
-        getCDMData: function () {return null;}
-
+        getErrorResponse: function(serverResponse/*, keySystemStr, messageType*/) {
+            return String.fromCharCode.apply(null, new Uint8Array(serverResponse));
+        }
     };
 };
 
-MediaPlayer.dependencies.protection.KeySystem_Widevine.prototype = {
-    constructor: MediaPlayer.dependencies.protection.KeySystem_Widevine
+MediaPlayer.dependencies.protection.servers.ClearKey.prototype = {
+    constructor: MediaPlayer.dependencies.protection.servers.ClearKey
 };

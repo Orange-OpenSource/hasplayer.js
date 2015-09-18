@@ -30,47 +30,20 @@
  */
 
 /**
- * Google Widevine DRM
+ * EME-independent KeyError
  *
+ * @param sessionToken the key session to which this error is associated
+ * @param errorString an informational error message
  * @class
- * @implements MediaPlayer.dependencies.protection.KeySystem
+ * @deprecated Newest versions of EME APIs will not use this error object
  */
-MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
+MediaPlayer.vo.protection.KeyError = function(sessionToken, errorString) {
     "use strict";
-
-    var keySystemStr = "com.widevine.alpha",
-        keySystemUUID = "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed",
-
-        doGetInitData = function (cpData) {
-
-            return BASE64.decodeArray("AAAAW3Bzc2gAAAAA7e+LqXnWSs6jyCfc1R0h7QAAADsIARIQh7LJSxP0WBaU0gg8/ekcrhoNd2lkZXZpbmVfdGVzdCIQMzMzMzMzMzMzMzMzMzMzMyoCU0QyAA==").buffer;
-            // Check if protection data contains the pssh
-            /*if (protData && protData.pssh) {
-                return BASE64.decodeArray(protData.pssh).buffer;
-            }
-
-            // Else get initData from content protection
-            return MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection(cpData);*/
-        };
-
-    return {
-
-        schemeIdURI: "urn:uuid:" + keySystemUUID,
-        systemString: keySystemStr,
-        uuid: keySystemUUID,
-
-        //getInitData: MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection,
-        getInitData: doGetInitData,
-
-        getRequestHeadersFromMessage: function(/*message*/) { return null; },
-
-        getLicenseRequestFromMessage: function(message) { return new Uint8Array(message); },
-
-        getCDMData: function () {return null;}
-
-    };
+    this.sessionToken = sessionToken;
+    this.error = errorString;
 };
 
-MediaPlayer.dependencies.protection.KeySystem_Widevine.prototype = {
-    constructor: MediaPlayer.dependencies.protection.KeySystem_Widevine
+MediaPlayer.vo.protection.KeyError.prototype = {
+    constructor: MediaPlayer.vo.protection.KeyError
 };
+

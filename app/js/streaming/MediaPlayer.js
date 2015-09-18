@@ -60,6 +60,7 @@ MediaPlayer = function(aContext) {
         streamController,
         videoModel,
         initialized = false,
+        resetting = false,
         playing = false,
         autoPlay = true,
         scheduleWhilePaused = false,
@@ -73,7 +74,7 @@ MediaPlayer = function(aContext) {
          * @access public
          */
         isReady = function() {
-            return (!!element && !!source);
+            return (!!element && !!source && !resetting);
         },
 
         /**
@@ -120,6 +121,34 @@ MediaPlayer = function(aContext) {
         doAutoPlay = function() {
             if (isReady()) {
                 play.call(this);
+            }
+        },
+
+        resetAndPlay = function() {
+            if (playing && streamController) {
+                if (!resetting) {
+                    resetting = true;
+
+                    var teardownComplete = {},
+                            self = this;
+                    teardownComplete[MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE] = function () {
+
+                        // Finish rest of shutdown process
+                        streamController = null;
+                        playing = false;
+
+                        resetting = false;
+                        if (isReady.call(self)) {
+                            doAutoPlay.call(self);
+                        }
+                    };
+                    streamController.subscribe(MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE, teardownComplete, undefined, true);
+                    streamController.reset();
+                }
+            } else {
+                if (isReady.call(this)) {
+                    doAutoPlay.call(this);
+                }
             }
         },
 
@@ -658,14 +687,16 @@ MediaPlayer = function(aContext) {
 
             protectionData = protData;
 
-            if (playing && streamController) {
+            resetAndPlay.call(this);
+
+            /*if (playing && streamController) {
                 streamController.reset();
                 playing = false;
             }
 
             if (isReady.call(this)) {
                 doAutoPlay.call(this);
-            }
+            }*/
         },
 
         /**
@@ -713,6 +744,7 @@ MediaPlayer.prototype = {
 
 MediaPlayer.dependencies = {};
 MediaPlayer.dependencies.protection = {};
+MediaPlayer.dependencies.protection.servers = {};
 MediaPlayer.utils = {};
 MediaPlayer.models = {};
 MediaPlayer.modules = {};
