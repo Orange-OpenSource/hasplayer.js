@@ -42,6 +42,14 @@
  * called.  Applications might want more control over this process and want to go through
  * each step manually (key system selection, session creation, session maintenance).
  */
+
+// Define ArrayBuffer.isView method in case it is not defined (like in IE11 for example)
+if (!ArrayBuffer.isView) {
+    ArrayBuffer.isView = function(data) {
+        return data instanceof ArrayBuffer;
+    }
+}
+
 MediaPlayer.dependencies.ProtectionController = function () {
     "use strict";
 
@@ -599,39 +607,6 @@ MediaPlayer.dependencies.ProtectionController = function () {
          * to select different adaptation sets for playback.  Right now it is clunky for
          * applications to create {@link MediaPlayer.vo.StreamInfo} with the right information,
          */
-        /*init: function (manifest, aInfo, vInfo) {
-
-            // TODO: We really need to do much more here... We need to be smarter about knowing
-            // which adaptation sets for which we have initialized, including the default key ID
-            // value from the ContentProtection elements so we know whether or not we still need to
-            // select key systems and acquire keys.
-            if (!initialized) {
-                var adapter,
-                        streamInfo;
-
-                if (!aInfo && !vInfo) {
-                    // Look for ContentProtection elements.  InitData can be provided by either the
-                    // dash264drm:Pssh ContentProtection format or a DRM-specific format.
-                    adapter = this.system.getObject("adapter");
-                    streamInfo = adapter.getStreamsInfo(manifest)[0]; // TODO: Single period only for now. See TODO above
-                }
-
-                audioInfo = aInfo || (streamInfo ? adapter.getMediaInfoForType(manifest, streamInfo, "audio") : null);
-                videoInfo = vInfo || (streamInfo ? adapter.getMediaInfoForType(manifest, streamInfo, "video") : null);
-
-                var mediaInfo = (videoInfo) ? videoInfo : audioInfo; // We could have audio or video only
-
-                // ContentProtection elements are specified at the AdaptationSet level, so the CP for audio
-                // and video will be the same.  Just use one valid MediaInfo object
-                var supportedKS = this.protectionExt.getSupportedKeySystemsFromContentProtection(mediaInfo.contentProtection);
-                if (supportedKS && supportedKS.length > 0) {
-                    selectKeySystem.call(this, supportedKS, true);
-                }
-
-                initialized = true;
-            }
-        },*/
-
         init: function (contentProtection, aCodec, vCodec) {
 
             // TODO: We really need to do much more here... We need to be smarter about knowing
@@ -699,7 +674,6 @@ MediaPlayer.dependencies.ProtectionController = function () {
          * @instance
          */
         teardown: function() {
-            this.setMediaElement(null);
             this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE, this);
             /*this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED, this);
             if (this.protectionModel.keySystem) {
@@ -717,6 +691,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
             this.keySystem = undefined;
 
             this.protectionModel.teardown();
+            this.setMediaElement(null);
             this.protectionModel = undefined;
         },
 
