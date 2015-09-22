@@ -282,7 +282,7 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
 
             // Only if we are not detaching from the existing element
             if (videoElement) {
-                videoElement.addEventListener(api.needkey, eventHandler);
+                //videoElement.addEventListener(api.needkey, eventHandler);
                 if (mediaKeys) {
                     setMediaKeys.call(this);
                 }
