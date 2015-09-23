@@ -816,6 +816,12 @@ MediaPlayer.dependencies.BufferController = function () {
 
             time = this.videoModel.getCurrentTime();
 
+            // PATCH: in case of live stream, if live edge has not already been found
+            // then working time is the live edge (= seek target)
+            if (isDynamic && time === 0) {
+                time = seekTarget;
+            }
+
             this.debug.log("Working time is video time: " + time);
 
             return time;
