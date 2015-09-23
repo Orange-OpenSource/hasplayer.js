@@ -49,6 +49,9 @@
         errHandler: undefined,
         debug: undefined,
         tokenAuthentication: undefined,
+        notify: undefined,
+        subscribe: undefined,
+        unsubscribe: undefined,
 
         doLoad: function (request, bytesRange) {
             var d = Q.defer();
@@ -100,18 +103,21 @@
                         httpRequestMetrics.tresponse = currentTime;
                     }
                 }
+
+                if (event.lengthComputable) {
+                    request.bytesLoaded = event.loaded;
+                    request.bytesTotal = event.total;
+                }
+
                 self.metricsModel.appendHttpTrace(httpRequestMetrics,
                   currentTime,
                   currentTime.getTime() - lastTraceTime.getTime(),
                   [req.response ? req.response.byteLength : 0]);
 
-                if ((lastTraceTime.getTime() - request.requestStartDate.getTime())/1000 > (httpRequestMetrics.mediaduration*2)) {
-                    self.debug.log("[FragmentLoader]["+request.streamType+"] Load onprogress: it's too long!!!!!!");
-                }
-
                 lastTraceTime = currentTime;
 
-                //self.debug.log("[FragmentLoader]["+request.streamType+"] Load onprogress: " + request.url);
+                self.notify(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, {request: request});
+
             };
 
             req.onload = function () {
@@ -351,4 +357,8 @@
 
 MediaPlayer.dependencies.FragmentLoader.prototype = {
     constructor: MediaPlayer.dependencies.FragmentLoader
+};
+
+MediaPlayer.dependencies.FragmentLoader.eventList = {
+    ENAME_LOADING_PROGRESS: "loadingProgress",
 };

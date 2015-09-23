@@ -64,13 +64,9 @@ MediaPlayer.rules.AbandonRequestsRule = function () {
         execute: function(request, abrController, callback) {
             var now = new Date().getTime(),
                 mediaType = request.streamType,
-               /* mediaInfo = context.getMediaInfo(),
-                
-                progressEvent = context.getCurrentValue(),
-                representationInfo = context.getTrackInfo(),
-                req = progressEvent.data.request,*/
                 fragmentInfo,
                 switchRequest = new MediaPlayer.rules.SwitchRequest(MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE, MediaPlayer.rules.SwitchRequest.prototype.WEAK);
+
             if (!isNaN(request.index)) {
                 setFragmentRequestDict(mediaType, request.index);
                 fragmentInfo = fragmentDict[mediaType][request.index];
@@ -86,18 +82,20 @@ MediaPlayer.rules.AbandonRequestsRule = function () {
                     fragmentInfo.segmentDuration = request.duration;
                     fragmentInfo.bytesTotal = request.bytesTotal;
                     fragmentInfo.id = request.index;
+                    fragmentInfo.nb = 1;
                    //this.log("XXX FRAG ID : " ,fragmentInfo.id, " *****************");
                 }
+               
                 //update info base on subsequent progress events until completed.
                 fragmentInfo.bytesLoaded = request.bytesLoaded;
-                fragmentInfo.elapsedTime = now - fragmentInfo.firstByteTime;
+                fragmentInfo.elapsedTime = (now - fragmentInfo.firstByteTime);
 
                 if (fragmentInfo.bytesLoaded < fragmentInfo.bytesTotal &&
                     fragmentInfo.elapsedTime >= GRACE_TIME_THRESHOLD) {
 
                     fragmentInfo.measuredBandwidthInKbps = Math.round(fragmentInfo.bytesLoaded*8/fragmentInfo.elapsedTime);
                     //fragmentInfo.measuredBandwidthInKbps = (concurrentCount > 1) ? getAggragateBandwidth.call(this, mediaType, concurrentCount) :  Math.round(fragmentInfo.bytesLoaded*8/fragmentInfo.elapsedTime);
-                    fragmentInfo.estimatedTimeOfDownload = (fragmentInfo.bytesTotal*8*0.001/fragmentInfo.measuredBandwidthInKbps).toFixed(2);
+                    fragmentInfo.estimatedTimeOfDownload = +(fragmentInfo.bytesTotal*8*0.001/fragmentInfo.measuredBandwidthInKbps).toFixed(2);
                     //this.log("XXX","id: ",fragmentInfo.id,  "kbps: ", fragmentInfo.measuredBandwidthInKbps, "etd: ",fragmentInfo.estimatedTimeOfDownload, "et: ", fragmentInfo.elapsedTime/1000);
 
                     if (fragmentInfo.estimatedTimeOfDownload < (fragmentInfo.segmentDuration * ABANDON_MULTIPLIER) || abrController.getQualityFor(mediaType) === 0) {

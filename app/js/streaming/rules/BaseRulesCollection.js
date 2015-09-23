@@ -14,29 +14,35 @@
 MediaPlayer.rules.BaseRulesCollection = function () {
     "use strict";
 
-    var rules = [];
+    var rules = [],
+        adandonFragmentRules = [];
 
     return {
         downloadRatioRule: undefined,
         insufficientBufferRule: undefined,
-
-        getRules: function () {
-            return Q.when(rules);
+        abandonRequestRule:undefined,
+ 
+        getRules: function (type) {
+            switch (type) {
+                case MediaPlayer.rules.BaseRulesCollection.prototype.QUALITY_SWITCH_RULES:
+                    return Q.when(rules);
+                case MediaPlayer.rules.BaseRulesCollection.prototype.ABANDON_FRAGMENT_RULES:
+                    return Q.when(adandonFragmentRules);
+                default:
+                    return null;
+            }
         },
 
         setup: function () {
-            var self = this;
-
-            self.getRules().then(
-                function (r) {
-                    r.push(self.downloadRatioRule);
-                    r.push(self.insufficientBufferRule);
-                }
-            );
+            rules.push(this.downloadRatioRule);
+            rules.push(this.insufficientBufferRule);
+            adandonFragmentRules.push(this.abandonRequestRule);
         }
     };
 };
 
 MediaPlayer.rules.BaseRulesCollection.prototype = {
-    constructor: MediaPlayer.rules.BaseRulesCollection
+    constructor: MediaPlayer.rules.BaseRulesCollection,
+    QUALITY_SWITCH_RULES: "qualitySwitchRules",
+    ABANDON_FRAGMENT_RULES: "abandonFragmentRules"
 };
