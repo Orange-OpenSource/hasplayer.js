@@ -156,6 +156,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
                 };
                 ksSelected[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED] = function(event) {
                     if (!event.error) {
+                        self.debug.log("[DRM] KeySystem selected => create key session");
                         self.keySystem = self.protectionModel.keySystem;
                         self.eventBus.dispatchEvent({
                             type: MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED,
@@ -614,6 +615,8 @@ MediaPlayer.dependencies.ProtectionController = function () {
             // value from the ContentProtection elements so we know whether or not we still need to
             // select key systems and acquire keys.
             if (!initialized) {
+
+                this.debug.log("[DRM] Initialize ProtectionController (" + vCodec + ", " + aCodec + ")");
 
                 audioCodec = aCodec;
                 videoCodec = vCodec;

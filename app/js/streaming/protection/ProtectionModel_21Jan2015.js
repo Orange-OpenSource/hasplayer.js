@@ -222,7 +222,11 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
             self.debug.log("[DRM][PM_21Jan2015] Teardown");
 
-            if (numSessions !== 0) {
+            // Do not close and remove sessions to keep licences persistence
+            self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
+            return;
+
+            /*if (numSessions !== 0) {
                 // Called when we are done closing a session.  Success or fail
                 var done = function(session) {
                     removeSession(session);
@@ -254,7 +258,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 }
             } else {
                 this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
-            }
+            }*/
         },
 
         getAllInitData: function() {
@@ -273,7 +277,13 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
             var self = this;
 
-            self.debug.log("[DRM][PM_21Jan2015] Select key system");
+            self.debug.log("[DRM][PM_21Jan2015] Select key system, create new MediaKeys");
+
+            if (mediaKeys !== null) {
+                self.debug.log("[DRM][PM_21Jan2015] MediaKeys already created");
+                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED);
+                return;                
+            }
 
             keySystemAccess.mksa.createMediaKeys().then(function(mkeys) {
                 self.keySystem = keySystemAccess.keySystem;

@@ -21,7 +21,7 @@ MediaPlayer.di.Context = function () {
         /* @if PROTECTION=true */
         // Detect EME APIs.  Look for newest API versions first
         if (MediaPlayer.models.ProtectionModel_21Jan2015.detect(videoElement)) {
-            this.system.mapClass('protectionModel', MediaPlayer.models.ProtectionModel_21Jan2015);
+            this.system.mapSingleton('protectionModel', MediaPlayer.models.ProtectionModel_21Jan2015);
             debug.log("Load ProtectionModel 21Jan2015");
         } else if (MediaPlayer.models.ProtectionModel_3Feb2014.detect(videoElement)) {
             this.system.mapClass('protectionModel', MediaPlayer.models.ProtectionModel_3Feb2014);
