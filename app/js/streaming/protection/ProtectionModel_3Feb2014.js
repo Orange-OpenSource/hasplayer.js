@@ -303,8 +303,6 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
             var session = mediaKeys.createSession(contentType, new Uint8Array(initData), /*cdmData ? new Uint8Array(cdmData) :*/ null);
             var sessionToken = createSessionToken.call(this, session, initData);
 
-            sessionToken.handleEvent({type: api.error});
-
             // Add all event listeners
             session.addEventListener(api.error, sessionToken);
             session.addEventListener(api.message, sessionToken);
