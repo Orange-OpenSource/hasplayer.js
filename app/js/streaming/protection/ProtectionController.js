@@ -47,7 +47,29 @@
 if (!ArrayBuffer.isView) {
     ArrayBuffer.isView = function(data) {
         return data instanceof ArrayBuffer;
-    }
+    };
+}
+
+if (!ArrayBuffer.prototype.slice) {
+    ArrayBuffer.prototype.slice = function (begin, end) {
+        var len = this.byteLength;
+        begin = (begin|0) || 0;
+        end = end === (void 0) ? len : (end|0);
+
+        // Handle negative values.
+        if (begin < 0) begin = Math.max(begin + len, 0);
+        if (end < 0) end = Math.max(end + len, 0);
+
+        if (len === 0 || begin >= len || begin >= end) {
+            return new ArrayBuffer(0);
+        }
+
+        var length = Math.min(len - begin, end - begin);
+        var target = new ArrayBuffer(length);
+        var targetArray = new Uint8Array(target);
+        targetArray.set(new Uint8Array(this, begin, length));
+        return target;
+    };
 }
 
 MediaPlayer.dependencies.ProtectionController = function () {
