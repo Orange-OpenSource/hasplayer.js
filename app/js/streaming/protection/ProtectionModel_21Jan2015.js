@@ -372,7 +372,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             }
             session.update(message).catch(function (error) {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR,
-                    new MediaPlayer.vo.protection.KeyError(sessionToken, "Error sending update() message! " + error.name));
+                    new MediaPlayer.vo.protection.KeyError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR, sessionToken, "Error sending update() message! " + error.name));
             });
         },
 
