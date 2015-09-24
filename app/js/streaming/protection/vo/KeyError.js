@@ -37,8 +37,9 @@
  * @class
  * @deprecated Newest versions of EME APIs will not use this error object
  */
-MediaPlayer.vo.protection.KeyError = function(sessionToken, errorString) {
+MediaPlayer.vo.protection.KeyError = function(type, sessionToken, errorString) {
     "use strict";
+    this.type = type;
     this.sessionToken = sessionToken;
     this.error = errorString;
 };

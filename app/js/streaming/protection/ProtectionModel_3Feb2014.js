@@ -107,7 +107,7 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
                         case api.error:
                             var errorStr = "KeyError"; // TODO: Make better string from event
                             self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR,
-                                    new MediaPlayer.vo.protection.KeyError(this, errorStr));
+                                    new MediaPlayer.vo.protection.KeyError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR, this, errorStr));
                             break;
 
                         case api.message:
@@ -302,6 +302,8 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
             var contentType = keySystemAccess.ksConfiguration.videoCapabilities[0].contentType;
             var session = mediaKeys.createSession(contentType, new Uint8Array(initData), /*cdmData ? new Uint8Array(cdmData) :*/ null);
             var sessionToken = createSessionToken.call(this, session, initData);
+
+            sessionToken.handleEvent({type: api.error});
 
             // Add all event listeners
             session.addEventListener(api.error, sessionToken);

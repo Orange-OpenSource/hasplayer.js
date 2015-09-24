@@ -270,6 +270,14 @@ MediaPlayer.models.ProtectionModel.eventList = {
      * @constant
      */
     ENAME_TEARDOWN_COMPLETE: "protectionTeardownComplete",
+
+    /**
+     * Event ID for events delivered when the process of license request
+     * has completed
+     *
+     * @constant
+     */
+    ENAME_LICENSE_REQUEST_COMPLETE: "licenseRequestComplete",
 };
 
 /**

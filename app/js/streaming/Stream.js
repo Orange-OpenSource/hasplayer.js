@@ -69,11 +69,9 @@ MediaPlayer.dependencies.Stream = function() {
 
         // Encrypted Media Extensions
         onProtectionError = function(event) {
-            if (event.error) {
-                //this.errHandler.sendError(event.data.code, event.data.message, event.data.data);
-                this.debug.error("[Stream] protection error: type = " + event.type + " - error = " + event.error);
-                this.reset();
-            }
+            this.errHandler.sendError(event.data.code, event.data.message, event.data.data);
+            this.debug.error("[Stream] protection error: " + event.data.code + " - " + event.data.message);
+            this.reset();
         },
 
         play = function() {
@@ -1134,14 +1132,15 @@ MediaPlayer.dependencies.Stream = function() {
             protectionController = protectionCtrl;
 
             // Protection error handler
-            boundProtectionErrorHandler = onProtectionError.bind(this);
+            protectionController.subscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
+            /*boundProtectionErrorHandler = onProtectionError.bind(this);
             protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
             protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.SERVER_CERTIFICATE_UPDATED, boundProtectionErrorHandler);
             protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_ADDED, boundProtectionErrorHandler);
             protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SESSION_CREATED, boundProtectionErrorHandler);
             protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
             protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
-            protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.LICENSE_REQUEST_COMPLETE, boundProtectionErrorHandler);
+            protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.LICENSE_REQUEST_COMPLETE, boundProtectionErrorHandler);*/
         },
 
         getVideoModel: function() {
@@ -1205,13 +1204,14 @@ MediaPlayer.dependencies.Stream = function() {
             tearDownMediaSource.call(this);
 
             if (protectionController) {
-                protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
+                protectionController.unsubscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
+                /*protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
                 protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.SERVER_CERTIFICATE_UPDATED, boundProtectionErrorHandler);
                 protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_ADDED, boundProtectionErrorHandler);
                 protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SESSION_CREATED, boundProtectionErrorHandler);
                 protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
                 protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
-                protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.LICENSE_REQUEST_COMPLETE, boundProtectionErrorHandler);
+                protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.LICENSE_REQUEST_COMPLETE, boundProtectionErrorHandler);*/
             }
 
             protectionController = undefined;
