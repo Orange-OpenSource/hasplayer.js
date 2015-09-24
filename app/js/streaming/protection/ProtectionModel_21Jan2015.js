@@ -304,6 +304,12 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             if (videoElement === mediaElement)
                 return;
 
+            // Since this model is a singleton for media key sessions persistance,
+            // we ignore reseting video element.
+            if (mediaElement === null) {
+                return;
+            }
+
             // Replacing the previous element
             if (videoElement) {
                 videoElement.removeEventListener("encrypted", eventHandler);
