@@ -53,6 +53,8 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
 
         getLicenseRequestFromMessage: function(message) { return new Uint8Array(message); },
 
+        getLicenseServerURLFromInitData: function(/*initData*/) { return null; },
+
         getCDMData: function () {return null;}
 
     };
