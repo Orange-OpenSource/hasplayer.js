@@ -310,7 +310,7 @@ Mss.dependencies.MssParser = function () {
             i = 0;
 
 
-        if (chunks && chunks.length > 1) {
+        if (chunks && chunks.length > 0) {
             // First pass on segments to update timestamp ('t') and duration ('d') fields
             chunks[0].setAttribute('t', parseFloat(getAttributeValue(chunks[0], "t")) || 0);
             for (i = 1; i < chunks.length; i++) {
