@@ -277,7 +277,7 @@ MediaPlayer.models.ProtectionModel.eventList = {
      *
      * @constant
      */
-    ENAME_LICENSE_REQUEST_COMPLETE: "licenseRequestComplete",
+    ENAME_LICENSE_REQUEST_COMPLETE: "licenseRequestComplete"
 };
 
 /**

@@ -69,8 +69,13 @@ MediaPlayer.dependencies.Stream = function() {
 
         // Encrypted Media Extensions
         onProtectionError = function(event) {
+            if(protectionController && event && event.data && event.data.data && event.data.data.sessionToken){
+                var sessionToken = event.data.data.sessionToken;
+                protectionController.closeKeySession(sessionToken);
+            }
             this.errHandler.sendError(event.data.code, event.data.message, event.data.data);
             this.debug.error("[Stream] protection error: " + event.data.code + " - " + event.data.message);
+            // if the errors give the session token in params we close the current session
             this.reset();
         },
 
@@ -1128,7 +1133,6 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         initProtection: function(protectionCtrl) {
-
             protectionController = protectionCtrl;
 
             // Protection error handler
