@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 22.9.2015_10:41:58 / git revision : c235738 */
+/* Last build : 28.9.2015_21:58:22 / git revision : c4fe23e */
  /* jshint ignore:start */
 var UTF8 = {};
 
@@ -5931,7 +5931,7 @@ mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
 
 MediaPlayer = function(aContext) {
     "use strict";
-    var VERSION = "1.2.0", VERSION_HAS = "1.2.2_dev", GIT_TAG = "c235738", BUILD_DATE = "22.9.2015_10:41:58", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
+    var VERSION = "1.2.0", VERSION_HAS = "1.2.2_dev", GIT_TAG = "c4fe23e", BUILD_DATE = "28.9.2015_21:58:22", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
         return !!element && !!source;
     }, play = function() {
         if (!initialized) {
@@ -17787,7 +17787,7 @@ Mss.dependencies.MssParser = function() {
     };
     var mapSegmentTimeline = function(streamIndex) {
         var segmentTimeline = {}, chunks = getChildNodes(streamIndex, "c"), segments = [], i = 0;
-        if (chunks && chunks.length > 1) {
+        if (chunks && chunks.length > 0) {
             chunks[0].setAttribute("t", parseFloat(getAttributeValue(chunks[0], "t")) || 0);
             for (i = 1; i < chunks.length; i++) {
                 chunks[i - 1].setAttribute("d", parseFloat(getAttributeValue(chunks[i - 1], "d")) || parseFloat(getAttributeValue(chunks[i], "t")) - parseFloat(getAttributeValue(chunks[i - 1], "t")));
