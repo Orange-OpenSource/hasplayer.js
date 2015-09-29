@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 10.9.2015_21:43:46 / git revision : 0dc204c */
+/* Last build : 15.9.2015_8:53:25 / git revision : 09b0b41 */
  /* jshint ignore:start */
 var UTF8 = {};
 
@@ -5931,7 +5931,7 @@ mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
 
 MediaPlayer = function(aContext) {
     "use strict";
-    var VERSION = "1.2.0", VERSION_HAS = "1.2.1_dev", GIT_TAG = "0dc204c", BUILD_DATE = "10.9.2015_21:43:46", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
+    var VERSION = "1.2.0", VERSION_HAS = "1.2.1", GIT_TAG = "09b0b41", BUILD_DATE = "15.9.2015_8:53:25", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
         return !!element && !!source;
     }, play = function() {
         if (!initialized) {
@@ -8842,6 +8842,35 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
         }
         return bitrateArray;
     };
+    rslt.getBitratesWithResolutionForType = function(type) {
+        var self = this, manifest = self.manifestModel.getValue(), periodArray, period, periodArrayIndex, adaptationSet, adaptationSetArray, representation, representationArray, adaptationSetArrayIndex, representationArrayIndex, bitrateArray = [];
+        if (manifest === null || manifest === undefined) {
+            return null;
+        }
+        periodArray = manifest.Period_asArray;
+        for (periodArrayIndex = 0; periodArrayIndex < periodArray.length; periodArrayIndex = periodArrayIndex + 1) {
+            period = periodArray[periodArrayIndex];
+            adaptationSetArray = period.AdaptationSet_asArray;
+            for (adaptationSetArrayIndex = 0; adaptationSetArrayIndex < adaptationSetArray.length; adaptationSetArrayIndex = adaptationSetArrayIndex + 1) {
+                adaptationSet = adaptationSetArray[adaptationSetArrayIndex];
+                if (adaptationIsType.call(self, adaptationSet, type)) {
+                    adaptationSet = self.manifestExt.processAdaptation(adaptationSet);
+                    representationArray = adaptationSet.Representation_asArray;
+                    for (representationArrayIndex = 0; representationArrayIndex < representationArray.length; representationArrayIndex = representationArrayIndex + 1) {
+                        representation = representationArray[representationArrayIndex];
+                        var reso = {
+                            bitrate: representation.bandwidth,
+                            width: representation.width,
+                            height: representation.height
+                        };
+                        bitrateArray.push(reso);
+                    }
+                    return bitrateArray;
+                }
+            }
+        }
+        return bitrateArray;
+    };
     rslt.getCurrentRepresentationBoundaries = function(metrics) {
         if (metrics === null) {
             return null;
@@ -10462,6 +10491,7 @@ MediaPlayer.dependencies.Stream = function() {
         if (isPaused && !isSeeked) {
             startBuffering();
         }
+        this.metricsModel.addPlayList("video", new Date().getTime(), this.videoModel.getCurrentTime(), "play");
         isPaused = false;
         isSeeked = false;
     }, onFullScreenChange = function() {
@@ -10476,6 +10506,7 @@ MediaPlayer.dependencies.Stream = function() {
     }, onPause = function() {
         this.debug.info("<video> pause event");
         isPaused = true;
+        this.metricsModel.addPlayList("video", new Date().getTime(), this.videoModel.getCurrentTime(), "pause");
         suspend.call(this);
     }, onError = function(event) {
         var error = event.srcElement.error, code, msgError = "<video> error event";
