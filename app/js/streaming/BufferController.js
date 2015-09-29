@@ -102,9 +102,13 @@ MediaPlayer.dependencies.BufferController = function () {
         setStalled = function (value) {
             var self = this;
 
-            self.debug.info("[BufferController]["+type+"] stalled = ", value);
+            self.debug.info("[BufferController]["+type+"] stalled = " + value);
             stalled = value;
             self.videoModel.stallStream(type, stalled);
+
+            // Notify ABR controller we start buffering or playing in order to adapt ABR rules
+            self.abrController.setPlayerState(stalled ? "buffering" : "playing");
+
         },
 
         startPlayback = function () {
@@ -128,9 +132,6 @@ MediaPlayer.dependencies.BufferController = function () {
             if (started === true) {
                 return;
             }
-
-            // Notify ABR controller we start the buffering in order to adapt ABR rules
-            self.abrController.setPlayerState("buffering");
 
             if (seeking === false) {
                 currentTime = new Date();
@@ -669,10 +670,6 @@ MediaPlayer.dependencies.BufferController = function () {
 
             self.debug.log("[BufferController]["+type+"] Stream is complete.");
 
-            /*if (stalled) {
-                setStalled.call(self, false);
-            }*/
-
             isBufferingCompleted = true;
             clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.END_OF_CONTENT_STOP_REASON);
 
@@ -876,12 +873,10 @@ MediaPlayer.dependencies.BufferController = function () {
 
             updateBufferLevel.call(self);
 
-            // videoModel in stalled mode
+            // Check stalled mode of video model
             if (stalled) {
                 if (bufferLevel > minBufferTimeAtStartup) {
                     setStalled.call(self, false);
-                    // Notify ABR controller we are no more buffering before playing
-                    this.abrController.setPlayerState("playing");
                 }
             }
 
@@ -1114,7 +1109,7 @@ MediaPlayer.dependencies.BufferController = function () {
             self.setEventController(eventController);
 
             minBufferTime = self.config.getParamFor(type, "BufferController.minBufferTime", "number", -1);
-            minBufferTimeAtStartup = self.config.getParamFor(type, "BufferController.minBufferTimeForPlaying", "number", 2);
+            minBufferTimeAtStartup = self.config.getParamFor(type, "BufferController.minBufferTimeForPlaying", "number", 0);
 
             data = newData;
             periodInfo = newPeriodInfo;
