@@ -45,7 +45,9 @@
         },
 
         pause = function () {
-            activeStream.pause();
+            if (activeStream) {
+                activeStream.pause();
+            }
         },
 
         seek = function (time) {
