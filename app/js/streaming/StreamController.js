@@ -549,23 +549,13 @@
                 detachVideoEvents.call(this, activeStream.getVideoModel());
             }
 
-            for (var i = 0, ln = streams.length; i < ln; i++) {
-                var stream = streams[i];
-                stream.reset();
-                // we should not remove the video element for the active stream since it is the element users see at the page
-                if (stream !== activeStream) {
-                    removeVideoElement(stream.getVideoModel().getElement());
-                }
-                delete streams[i];
-            }
+            // Pause the active stream, but reset only once protection controller and media key sessions have been resetted
+            this.pause();
 
-            streams = [];
             this.manifestUpdater.stop();
             this.manifestModel.setValue(null);
             this.metricsModel.clearAllCurrentMetrics();
             isPeriodSwitchingInProgress = false;
-            activeStream = null;
-            protectionData = null;
 
             // Teardown the protection system, if necessary
             if (!protectionController) {
@@ -581,12 +571,18 @@
                     protectionController = null;
                     protectionData = null;
 
-                    /*if (manifestUrl) {
-                        self.eventBus.dispatchEvent({
-                            type: MediaPlayer.events.PROTECTION_DESTROYED,
-                            data: manifestUrl
-                        });
-                    }*/
+                    // Reset the streams
+                    for (var i = 0, ln = streams.length; i < ln; i++) {
+                        var stream = streams[i];
+                        stream.reset();
+                        // we should not remove the video element for the active stream since it is the element users see at the page
+                        if (stream !== activeStream) {
+                            removeVideoElement(stream.getVideoModel().getElement());
+                        }
+                        delete streams[i];
+                    }
+                    streams = [];
+                    activeStream = null;
 
                     self.notify(MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE);
                 };
