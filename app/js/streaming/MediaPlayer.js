@@ -598,7 +598,11 @@ MediaPlayer = function(aContext) {
          * @return audio tracks array.
          */
         getAudioTracks: function() {
-            return streamController.getAudioTracks();
+            if (streamController) {
+                return streamController.getAudioTracks();
+            }else{
+                return null;
+            }
         },
 
         /**
@@ -608,7 +612,11 @@ MediaPlayer = function(aContext) {
          * @param subtitleTrack - The selected subtitle track.
          */
         setSubtitleTrack: function(subtitleTrack) {
-            streamController.setSubtitleTrack(subtitleTrack);
+            if (streamController) {
+                streamController.setSubtitleTrack(subtitleTrack);
+            }else{
+                return null;
+            }
         },
 
         /**
