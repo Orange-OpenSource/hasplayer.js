@@ -267,8 +267,8 @@ MediaPlayer.dependencies.BufferController = function () {
 
             self.debug.log("[BufferController]["+type+"] ### Media loaded ", request.url);
 
-            if (self.ChunkMissingState !== false) {
-                self.ChunkMissingState = true;
+            if (self.ChunkMissingState === true) {
+                self.ChunkMissingState = false;
             }
 
             if (!fragmentDuration && !isNaN(request.duration)) {
@@ -648,17 +648,14 @@ MediaPlayer.dependencies.BufferController = function () {
             //if it's the first download error, try to load the same segment for a the lowest quality...
             if(this.ChunkMissingState === false)
             {
+                this.ChunkMissingState = true;
                 if (e.quality !== 0) {
-                    currentRepresentation = getRepresentationForQuality.call(this, 0);
-                    if (currentRepresentation !== undefined || currentRepresentation !== null) {
-                       return loadNextFragment.call(this);
-                    }
+                    return bufferFragment.call(this);
                 }
             }
 
             this.debug.log(msgError);
             this.stallTime = e.startTime;
-            this.ChunkMissingState = true;
 
             data.url = e.url;
             data.request = e;
@@ -917,7 +914,8 @@ MediaPlayer.dependencies.BufferController = function () {
                 currentVideoTime = self.videoModel.getCurrentTime(),
                 manifest = self.manifestModel.getValue(),
                 quality,
-                playlistUpdated = null;
+                playlistUpdated = null,
+                defer = null;
 
             deferredFragmentBuffered = Q.defer();
 
@@ -928,7 +926,14 @@ MediaPlayer.dependencies.BufferController = function () {
                     var loadInit = dataUpdated;
 
                     // Get current quality
-                    self.abrController.getPlaybackQuality(type, data).then(
+                    if(self.ChunkMissingState){
+                        defer = Q.when({quality:0});
+                    }
+                    else{
+                        defer = self.abrController.getPlaybackQuality(type, data);
+                    }
+                    defer.then(
+
                         function (result) {
 
                             quality = result.quality;
