@@ -818,7 +818,7 @@ MediaPlayer.dependencies.BufferController = function () {
 
             // PATCH: in case of live stream, if live edge has not already been found
             // then working time is the live edge (= seek target)
-            if (isDynamic && time === 0) {
+            if (isDynamic && this.videoModel.isPaused()) {
                 time = seekTarget;
             }
 
