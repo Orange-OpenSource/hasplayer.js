@@ -59,7 +59,7 @@ Mss.dependencies.MssParser = function () {
 
     var getChildNode = function(nodeParent, childName) {
         var i = 0,
-            element = undefined;
+            element;
 
         if(nodeParent.childNodes){
             for(i=0;i<nodeParent.childNodes.length;i++){
@@ -112,7 +112,6 @@ Mss.dependencies.MssParser = function () {
     var mapPeriod = function () {
         var period = {},
             adaptations = [],
-            streamIndex = null,
             smoothNode = getChildNode(xmlDoc, "SmoothStreamingMedia"),
             i;
 
@@ -185,10 +184,10 @@ Mss.dependencies.MssParser = function () {
         var representation = {};
 
         representation.id = qualityLevel.Id;
-        representation.bandwidth = parseInt(getAttributeValue(qualityLevel, "Bitrate"));
+        representation.bandwidth = parseInt(getAttributeValue(qualityLevel, "Bitrate"), 10);
         representation.mimeType = qualityLevel.mimeType;
-        representation.width = parseInt(getAttributeValue(qualityLevel, "MaxWidth"));
-        representation.height = parseInt(getAttributeValue(qualityLevel, "MaxHeight"));
+        representation.width = parseInt(getAttributeValue(qualityLevel, "MaxWidth"), 10);
+        representation.height = parseInt(getAttributeValue(qualityLevel, "MaxHeight"), 10);
 
         var fourCCValue = getAttributeValue(qualityLevel, "FourCC");
         
@@ -198,8 +197,8 @@ Mss.dependencies.MssParser = function () {
             representation.codecs = getAACCodec(qualityLevel);
         }
 
-        representation.audioSamplingRate =  parseInt(getAttributeValue(qualityLevel, "SamplingRate"));
-        representation.audioChannels =  parseInt(getAttributeValue(qualityLevel, "Channels"));
+        representation.audioSamplingRate =  parseInt(getAttributeValue(qualityLevel, "SamplingRate"), 10);
+        representation.audioChannels =  parseInt(getAttributeValue(qualityLevel, "Channels"), 10);
         representation.codecPrivateData = "" + getAttributeValue(qualityLevel, "CodecPrivateData");
         representation.BaseURL = qualityLevel.BaseURL;
 
@@ -227,7 +226,7 @@ Mss.dependencies.MssParser = function () {
             codecPrivateData = getAttributeValue(qualityLevel, "CodecPrivateData").toString(),
             codecPrivateDataHex,
             fourCCValue = getAttributeValue(qualityLevel, "FourCC"),
-            samplingRate = parseInt(getAttributeValue(qualityLevel, "SamplingRate")),
+            samplingRate = parseInt(getAttributeValue(qualityLevel, "SamplingRate"), 10),
             arr16;
 
         //chrome problem, in implicit AAC HE definition, so when AACH is detected in FourCC
@@ -266,7 +265,7 @@ Mss.dependencies.MssParser = function () {
                 codecPrivateData = new Uint8Array(2);
                 //Freq Index is present for 3 bits in the first byte, last bit is in the second
                 codecPrivateData[0] = (objectType << 3) | (indexFreq >> 1);
-                codecPrivateData[1] = (indexFreq << 7) | (parseInt(getAttributeValue(qualityLevel, "Channels")) << 3);
+                codecPrivateData[1] = (indexFreq << 7) | (parseInt(getAttributeValue(qualityLevel, "Channels"), 10) << 3);
                 // put the 2 bytes in an 16 bits array
                 arr16 = new Uint16Array(1);
                 arr16[0] = (codecPrivateData[0] << 8) + codecPrivateData[1];
@@ -436,8 +435,7 @@ Mss.dependencies.MssParser = function () {
 
         var contentProtection = {},
             keySystem = this.system.getObject("ksPlayReady"),
-            pro,
-            systemID = getAttributeValue(protectionHeader, "SystemID");
+            pro;
 
         pro = {
             __text : protectionHeader.firstChild.data,
