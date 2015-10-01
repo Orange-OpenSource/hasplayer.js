@@ -21,14 +21,11 @@ MediaPlayer.di.Context = function () {
         /* @if PROTECTION=true */
         // Detect EME APIs.  Look for newest API versions first
         if (MediaPlayer.models.ProtectionModel_21Jan2015.detect(videoElement)) {
-            this.system.mapClass('protectionModel', MediaPlayer.models.ProtectionModel_21Jan2015);
-            debug.log("Load ProtectionModel 21Jan2015");
+            this.system.mapSingleton('protectionModel', MediaPlayer.models.ProtectionModel_21Jan2015);
         } else if (MediaPlayer.models.ProtectionModel_3Feb2014.detect(videoElement)) {
             this.system.mapClass('protectionModel', MediaPlayer.models.ProtectionModel_3Feb2014);
-            debug.log("Load ProtectionModel 3Feb2014");
         } else if (MediaPlayer.models.ProtectionModel_01b.detect(videoElement)) {
             this.system.mapClass('protectionModel', MediaPlayer.models.ProtectionModel_01b);
-            debug.log("Load ProtectionModel 01b");
         } else {
             debug.log("No supported version of EME detected on this user agent!");
             debug.log("Attempts to play encrypted content will fail!");
@@ -59,6 +56,10 @@ MediaPlayer.di.Context = function () {
             this.system.mapSingleton('ksPlayReady', MediaPlayer.dependencies.protection.KeySystem_PlayReady);
             this.system.mapSingleton('ksWidevine', MediaPlayer.dependencies.protection.KeySystem_Widevine);
             this.system.mapSingleton('ksClearKey', MediaPlayer.dependencies.protection.KeySystem_ClearKey);
+            this.system.mapSingleton('serverPlayReady', MediaPlayer.dependencies.protection.servers.PlayReady);
+            this.system.mapSingleton('serverWidevine', MediaPlayer.dependencies.protection.servers.Widevine);
+            this.system.mapSingleton('serverClearKey', MediaPlayer.dependencies.protection.servers.ClearKey);
+            this.system.mapSingleton('serverDRMToday', MediaPlayer.dependencies.protection.servers.DRMToday);
             /* @endif */
 
             this.system.mapSingleton('textSourceBuffer', MediaPlayer.dependencies.TextSourceBuffer);

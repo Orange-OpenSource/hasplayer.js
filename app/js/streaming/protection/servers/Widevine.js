@@ -29,37 +29,27 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-/**
- * Google Widevine DRM
- *
- * @class
- * @implements MediaPlayer.dependencies.protection.KeySystem
- */
-MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
+MediaPlayer.dependencies.protection.servers.Widevine = function() {
     "use strict";
-
-    var keySystemStr = "com.widevine.alpha",
-        keySystemUUID = "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed";
 
     return {
 
-        schemeIdURI: "urn:uuid:" + keySystemUUID,
-        systemString: keySystemStr,
-        uuid: keySystemUUID,
+        getServerURLFromMessage: function(url /*, message, messageType*/) { return url; },
 
-        getInitData: MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection,
+        getHTTPMethod: function(/*messageType*/) { return 'POST'; },
 
-        getRequestHeadersFromMessage: function(/*message*/) { return null; },
+        getResponseType: function(/*keySystemStr, messageType*/) { return 'arraybuffer'; },
 
-        getLicenseRequestFromMessage: function(message) { return new Uint8Array(message); },
+        getLicenseMessage: function(serverResponse/*, keySystemStr, messageType*/) {
+            return serverResponse;
+        },
 
-        getLicenseServerURLFromInitData: function(/*initData*/) { return null; },
-
-        getCDMData: function () {return null;}
-
+        getErrorResponse: function(serverResponse/*, keySystemStr, messageType*/) {
+            return String.fromCharCode.apply(null, new Uint8Array(serverResponse));
+        }
     };
 };
 
-MediaPlayer.dependencies.protection.KeySystem_Widevine.prototype = {
-    constructor: MediaPlayer.dependencies.protection.KeySystem_Widevine
+MediaPlayer.dependencies.protection.servers.Widevine.prototype = {
+    constructor: MediaPlayer.dependencies.protection.servers.Widevine
 };

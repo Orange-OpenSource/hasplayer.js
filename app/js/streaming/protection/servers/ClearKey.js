@@ -30,36 +30,54 @@
  */
 
 /**
- * Google Widevine DRM
+ * CableLabs ClearKey license server implementation
  *
+ * For testing purposes and evaluating potential uses for ClearKey, we have developed
+ * a dirt-simple API for requesting ClearKey licenses from a remote server.
+ *
+ * @implements MediaPlayer.dependencies.protection.servers.LicenseServer
  * @class
- * @implements MediaPlayer.dependencies.protection.KeySystem
  */
-MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
+MediaPlayer.dependencies.protection.servers.ClearKey = function() {
     "use strict";
-
-    var keySystemStr = "com.widevine.alpha",
-        keySystemUUID = "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed";
 
     return {
 
-        schemeIdURI: "urn:uuid:" + keySystemUUID,
-        systemString: keySystemStr,
-        uuid: keySystemUUID,
+        getServerURLFromMessage: function(url, message/*, messageType*/) {
+            // Build ClearKey server query string
+            var jsonMsg = JSON.parse(String.fromCharCode.apply(null, new Uint8Array(message)));
+            url += "/?";
+            for (var i = 0; i < jsonMsg.kids.length; i++) {
+                url += jsonMsg.kids[i] + "&";
+            }
+            url = url.substring(0, url.length-1);
+            return url;
+        },
 
-        getInitData: MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection,
+        getHTTPMethod: function(/*messageType*/) { return 'GET'; },
 
-        getRequestHeadersFromMessage: function(/*message*/) { return null; },
+        getResponseType: function(/*keySystemStr*/) { return 'json'; },
 
-        getLicenseRequestFromMessage: function(message) { return new Uint8Array(message); },
+        getLicenseMessage: function(serverResponse/*, keySystemStr, messageType*/) {
+            if (!serverResponse.hasOwnProperty("keys")) {
+                return null;
+            }
+            var i, keyPairs = [];
+            for (i = 0; i < serverResponse.keys.length; i++) {
+                var keypair = serverResponse.keys[i],
+                    keyid = keypair.kid.replace(/=/g, ""),
+                    key = keypair.k.replace(/=/g, "");
+                keyPairs.push(new MediaPlayer.vo.protection.KeyPair(keyid, key));
+            }
+            return new MediaPlayer.vo.protection.ClearKeyKeySet(keyPairs);
+        },
 
-        getLicenseServerURLFromInitData: function(/*initData*/) { return null; },
-
-        getCDMData: function () {return null;}
-
+        getErrorResponse: function(serverResponse/*, keySystemStr, messageType*/) {
+            return String.fromCharCode.apply(null, new Uint8Array(serverResponse));
+        }
     };
 };
 
-MediaPlayer.dependencies.protection.KeySystem_Widevine.prototype = {
-    constructor: MediaPlayer.dependencies.protection.KeySystem_Widevine
+MediaPlayer.dependencies.protection.servers.ClearKey.prototype = {
+    constructor: MediaPlayer.dependencies.protection.servers.ClearKey
 };
