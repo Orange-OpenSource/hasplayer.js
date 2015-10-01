@@ -30,7 +30,8 @@ MediaPlayer.utils.TextTrackExtensions = function () {
         },
 
         addTextTrack: function(video, captionData,  label, scrlang, isDefaultTrack) {
-            var track = null;
+            var track = null,
+                i;
 
             //no function removeTextTrack is defined
             //add one, only if it's necessary
@@ -48,8 +49,8 @@ MediaPlayer.utils.TextTrackExtensions = function () {
             track.default = isDefaultTrack;
             track.mode = "showing";
 
-            for(var item in captionData) {
-                var currentItem = captionData[item];
+            for(i = 0; i < captionData.length; i++) {
+                var currentItem = captionData[i];
                 track.addCue(new Cue(currentItem.start, currentItem.end, currentItem.data));
             }
 
@@ -65,16 +66,16 @@ MediaPlayer.utils.TextTrackExtensions = function () {
 
         addCues: function(track, captionData) {
 
-            for(var item in captionData) {
-                var currentItem = captionData[item];
+            for(var i = 0; i < captionData.length; i++) {
+                var currentItem = captionData[i];
                 var newCue = new Cue(currentItem.start, currentItem.end, currentItem.data);
 
                 newCue.onenter = this.onCueEnter.bind(this);
 
                 newCue.snapToLines = false;
 
-                if (item > 0 && currentItem.start <= captionData[item-1].end) {
-                    newCue.line = captionData[item-1].line + parseFloat(currentItem.style.fontSize.substr(0, currentItem.style.fontSize.length-1))+3;
+                if (i > 0 && currentItem.start <= captionData[i-1].end) {
+                    newCue.line = captionData[i-1].line + parseFloat(currentItem.style.fontSize.substr(0, currentItem.style.fontSize.length-1))+3;
                 }else {
                     newCue.line = currentItem.line;
                 }
