@@ -1,4 +1,4 @@
-/* Last build : 29.9.2015_17:29:0 / git revision : c4fe23e */
+/* Last build : 1.10.2015_21:43:45 / git revision : bee50b6 */
  /* jshint ignore:start */
 (function() {
     var b = void 0, f = !0, j = null, l = !1;
@@ -28726,8 +28726,8 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     };
     $scope.setStream = function(item) {
         $scope.selectedItem = item;
-        $scope.laURL = item.protData && item.protData["com.microsoft.playready"] ? item.protData["com.microsoft.playready"].laURL : "";
-        $scope.customData = item.protData && item.protData["com.microsoft.playready"] ? item.protData["com.microsoft.playready"].customData : "";
+        $scope.laURL = item.protData && item.protData["com.widevine.alpha"] ? item.protData["com.widevine.alpha"].laURL : "";
+        $scope.customData = item.protData && item.protData["com.widevine.alpha"] ? item.protData["com.widevine.alpha"].customData : "";
     };
     function resetBitratesSlider() {
         $("#sliderBitrate").labeledslider({
@@ -28756,11 +28756,11 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
             if (!$scope.selectedItem.protData) {
                 $scope.selectedItem.protData = {};
             }
-            if (!$scope.selectedItem.protData["com.microsoft.playready"]) {
-                $scope.selectedItem.protData["com.microsoft.playready"] = {};
+            if (!$scope.selectedItem.protData["com.widevine.alpha"]) {
+                $scope.selectedItem.protData["com.widevine.alpha"] = {};
             }
-            $scope.selectedItem.protData["com.microsoft.playready"].laURL = $scope.laURL;
-            $scope.selectedItem.protData["com.microsoft.playready"].customData = $scope.customData;
+            $scope.selectedItem.protData["com.widevine.alpha"].laURL = $scope.laURL;
+            $scope.selectedItem.protData["com.widevine.alpha"].customData = $scope.customData;
         }
         resetBitratesSlider();
         $scope.textTracks = null;
