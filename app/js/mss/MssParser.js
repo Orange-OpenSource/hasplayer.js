@@ -307,36 +307,36 @@ Mss.dependencies.MssParser = function () {
         var segmentTimeline = {},
             chunks = getChildNodes(streamIndex, "c"),
             segments = [],
-            i = 0;
+            i,
+            t, d;
 
+        for (i = 0; i < chunks.length; i++) {
+            // Get time and duration attributes
+            t = parseFloat(getAttributeValue(chunks[i], "t"));
+            d = parseFloat(getAttributeValue(chunks[i], "d"));
 
-        if (chunks && chunks.length > 0) {
-            // First pass on segments to update timestamp ('t') and duration ('d') fields
-            chunks[0].setAttribute('t', parseFloat(getAttributeValue(chunks[0], "t")) || 0);
-            for (i = 1; i < chunks.length; i++) {
-                chunks[i-1].setAttribute('d', parseFloat(getAttributeValue(chunks[i-1], "d")) || ( parseFloat(getAttributeValue(chunks[i], "t")) -  parseFloat(getAttributeValue(chunks[i-1], "t"))));
-                chunks[i].setAttribute('t', parseFloat(getAttributeValue(chunks[i], "t")) || ( parseFloat(getAttributeValue(chunks[i-1], "t")) +  parseFloat(getAttributeValue(chunks[i-1], "d"))));
+            if ((i === 0) && !t) {
+                t = 0;
             }
 
-            // Second pass to set SegmentTimeline template
-            segments.push({
-                d : parseFloat(getAttributeValue(chunks[0], "d")),
-                r: 0,
-                t: parseFloat(getAttributeValue(chunks[0], "t"))
-            });
-
-            for (i = 1; i < chunks.length; i++) {
-                if (parseFloat(getAttributeValue(chunks[i], "d")) === parseFloat(getAttributeValue(chunks[i-1], "d"))) {
-                    // incrementation of the 'r' attributes
-                    ++segments[segments.length -1].r;
-                } else {
-                    segments.push({
-                        d : parseFloat(getAttributeValue(chunks[i], "d")),
-                        r: 0,
-                        t: parseFloat(getAttributeValue(chunks[i], "t"))
-                    });
+            if (i > 0) {
+                // Update previous segment duration if not defined
+                if (!segments[segments.length - 1].d) {
+                    segments[segments.length - 1].d = t - segments[segments.length - 1].t;
+                }
+                // Set segment absolute timestamp if not set 
+                if (!t) {
+                    t = segments[segments.length - 1].t + segments[segments.length - 1].d;
                 }
             }
+
+            // Create new segment 
+            segments.push({
+                d: d,
+                r: 0,
+                t: t
+            });
+
         }
 
         segmentTimeline.S = segments;
@@ -512,9 +512,7 @@ Mss.dependencies.MssParser = function () {
             /* @if PROTECTION=true */
             protectionHeader = getChildNode(protection, 'ProtectionHeader');
             // Get KID (in CENC format) from protection header
-
             KID = getKIDFromProtectionHeader(protectionHeader);
-            this.debug.log("[MssParser] KID = " + MediaPlayer.utils.arrayToHexString(KID));
 
             // Create ContentProtection for PR
             contentProtection = createPRContentProtection.call(this, protectionHeader);
