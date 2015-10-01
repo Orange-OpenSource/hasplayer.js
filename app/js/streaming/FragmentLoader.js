@@ -154,6 +154,10 @@
                 });
             };
 
+            req.onabort = function(){
+                req.aborted = true;
+            };
+            
             req.onloadend = req.onerror = function () {
                 if (xhrs.indexOf(req) === -1) {
                     return;
@@ -256,7 +260,7 @@
                   d.resolve(result);
                 },function (reqerror){
                     //if status = 0, request has been aborted, do not retry....
-                    if (reqerror.status !== 0) {
+                    if (!reqerror.aborted) {
                         that.retry(req,d,that);
                     }else{
                         req.status = 0;
