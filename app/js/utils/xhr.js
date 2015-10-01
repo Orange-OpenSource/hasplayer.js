@@ -49,3 +49,21 @@ MediaPlayer.utils.doRequestWithPromise = function (url, callback, argumentsToFor
     xhr.send(null);
     return deferred.promise;
 };
+
+
+MediaPlayer.utils.arrayToHexString = function (array) {
+
+    var str = "[",
+        i;
+
+    for (i = 0; i < array.length; i++) {
+        str += "0x" + array[i].toString(16);
+        if (i < (array.length - 1)) {
+            str += ",";
+        }
+    }
+
+    str += "]";
+
+    return str;
+};

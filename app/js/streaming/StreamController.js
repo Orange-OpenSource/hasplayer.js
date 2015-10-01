@@ -21,6 +21,8 @@
 
     var streams = [],
         activeStream,
+        protectionController,
+        ownProtectionController = false,
         //TODO set correct value for threshold
         STREAM_BUFFER_END_THRESHOLD = 6,
         STREAM_END_THRESHOLD = 0.2,
@@ -43,7 +45,9 @@
         },
 
         pause = function () {
-            activeStream.pause();
+            if (activeStream) {
+                activeStream.pause();
+            }
         },
 
         seek = function (time) {
@@ -289,6 +293,25 @@
                 return Q.when(false);
             }
 
+
+            if (self.capabilities.supportsEncryptedMedia()) {
+                if (!protectionController) {
+                    protectionController = self.system.getObject("protectionController");
+                    /*self.eventBus.dispatchEvent({
+                        type: MediaPlayer.events.PROTECTION_CREATED,
+                        data: {
+                            controller: protectionController,
+                            manifest: manifest
+                        }
+                    });*/
+                    ownProtectionController = true;
+                }
+                protectionController.setMediaElement(self.videoModel.getElement());
+                if (protectionData) {
+                    protectionController.setProtectionData(protectionData);
+                }
+            }
+
             self.manifestExt.getMpd(manifest).then(
                 function(mpd) {
                     if (activeStream) {
@@ -322,7 +345,7 @@
                                 if (!stream) {
                                     stream = self.system.getObject("stream");
                                     stream.setVideoModel(pIdx === 0 ? self.videoModel : createVideoModel.call(self));
-                                    stream.initProtection(self.protectionData);
+                                    stream.initProtection(protectionController);
                                     stream.setAutoPlay(autoPlay);
                                     stream.setDefaultAudioLang(defaultAudioLang);
                                     stream.setDefaultSubtitleLang(defaultSubtitleLang);
@@ -413,6 +436,9 @@
         metricsExt: undefined,
         videoExt: undefined,
         errHandler: undefined,
+        notify: undefined,
+        subscribe: undefined,
+        unsubscribe: undefined,
         // ORANGE: set updateTime date
         startTime : undefined,
         startPlayingTime : undefined,
@@ -497,7 +523,7 @@
 
             self.currentURL = url;
             if (protData) {
-                self.protectionData = protData;
+                protectionData = protData;
             }
 
             self.debug.info("[StreamController] load url: " + url);
@@ -525,23 +551,51 @@
                 detachVideoEvents.call(this, activeStream.getVideoModel());
             }
 
-            for (var i = 0, ln = streams.length; i < ln; i++) {
-                var stream = streams[i];
-                stream.reset();
-                // we should not remove the video element for the active stream since it is the element users see at the page
-                if (stream !== activeStream) {
-                    removeVideoElement(stream.getVideoModel().getElement());
-                }
-                delete streams[i];
-            }
+            // Pause the active stream, but reset only once protection controller and media key sessions have been resetted
+            this.pause();
 
-            streams = [];
             this.manifestUpdater.stop();
             this.manifestModel.setValue(null);
             this.metricsModel.clearAllCurrentMetrics();
             isPeriodSwitchingInProgress = false;
-            activeStream = null;
-            protectionData = null;
+
+            // Teardown the protection system, if necessary
+            if (!protectionController) {
+                this.notify(MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE);
+            }
+            else if (ownProtectionController) {
+                var teardownComplete = {},
+                        self = this;
+                teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE] = function () {
+
+                    // Complete teardown process
+                    ownProtectionController = false;
+                    protectionController = null;
+                    protectionData = null;
+
+                    // Reset the streams
+                    for (var i = 0, ln = streams.length; i < ln; i++) {
+                        var stream = streams[i];
+                        stream.reset();
+                        // we should not remove the video element for the active stream since it is the element users see at the page
+                        if (stream !== activeStream) {
+                            removeVideoElement(stream.getVideoModel().getElement());
+                        }
+                        delete streams[i];
+                    }
+                    streams = [];
+                    activeStream = null;
+
+                    self.notify(MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE);
+                };
+                protectionController.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE, teardownComplete, undefined, true);
+                protectionController.teardown();
+            } else {
+                protectionController.setMediaElement(null);
+                protectionController = null;
+                protectionData = null;
+                this.notify(MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE);
+            }
         },
 
         setDefaultAudioLang: function(language) {
@@ -560,4 +614,9 @@
 
 MediaPlayer.dependencies.StreamController.prototype = {
     constructor: MediaPlayer.dependencies.StreamController
+};
+
+MediaPlayer.dependencies.StreamController.eventList = {
+    ENAME_STREAMS_COMPOSED: "streamsComposed",
+    ENAME_TEARDOWN_COMPLETE: "streamTeardownComplete"
 };

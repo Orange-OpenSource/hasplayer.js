@@ -30,36 +30,21 @@
  */
 
 /**
- * Google Widevine DRM
+ * EME-independent KeyError
  *
+ * @param sessionToken the key session to which this error is associated
+ * @param errorString an informational error message
  * @class
- * @implements MediaPlayer.dependencies.protection.KeySystem
+ * @deprecated Newest versions of EME APIs will not use this error object
  */
-MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
+MediaPlayer.vo.protection.KeyError = function(type, sessionToken, errorString) {
     "use strict";
-
-    var keySystemStr = "com.widevine.alpha",
-        keySystemUUID = "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed";
-
-    return {
-
-        schemeIdURI: "urn:uuid:" + keySystemUUID,
-        systemString: keySystemStr,
-        uuid: keySystemUUID,
-
-        getInitData: MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection,
-
-        getRequestHeadersFromMessage: function(/*message*/) { return null; },
-
-        getLicenseRequestFromMessage: function(message) { return new Uint8Array(message); },
-
-        getLicenseServerURLFromInitData: function(/*initData*/) { return null; },
-
-        getCDMData: function () {return null;}
-
-    };
+    this.type = type;
+    this.sessionToken = sessionToken;
+    this.error = errorString;
 };
 
-MediaPlayer.dependencies.protection.KeySystem_Widevine.prototype = {
-    constructor: MediaPlayer.dependencies.protection.KeySystem_Widevine
+MediaPlayer.vo.protection.KeyError.prototype = {
+    constructor: MediaPlayer.vo.protection.KeyError
 };
+

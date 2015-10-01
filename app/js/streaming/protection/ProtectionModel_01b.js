@@ -29,6 +29,14 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * Initial implementation of EME
+ *
+ * Implemented by Google Chrome prior to v36
+ *
+ * @implements MediaPlayer.models.ProtectionModel
+ * @class
+ */
 MediaPlayer.models.ProtectionModel_01b = function () {
 
     var videoElement = null,
@@ -66,8 +74,9 @@ MediaPlayer.models.ProtectionModel_01b = function () {
                     switch (event.type) {
 
                         case api.needkey:
+                            var initData = ArrayBuffer.isView(event.initData) ? event.initData.buffer : event.initData;
                             self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY,
-                                new MediaPlayer.vo.protection.NeedKey(event.initData, "cenc"));
+                                new MediaPlayer.vo.protection.NeedKey(initData, "cenc"));
                             break;
 
                         case api.keyerror:
@@ -78,41 +87,37 @@ MediaPlayer.models.ProtectionModel_01b = function () {
 
                             if (sessionToken) {
                                 var msg = "",
-                                    code = null;
-
+                                    code = "";
                                 switch (event.errorCode.code) {
                                     case 1:
                                         code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
-                                        msg += "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
+                                        msg += "MEDIA_KEYERR_UNKNOWN - An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
                                         break;
                                     case 2:
                                         code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_CLIENT;
-                                        msg += "The Key System could not be installed or updated.";
+                                        msg += "MEDIA_KEYERR_CLIENT - The Key System could not be installed or updated.";
                                         break;
                                     case 3:
                                         code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_SERVICE;
-                                        msg += "The message passed into update indicated an error from the license service.";
+                                        msg += "MEDIA_KEYERR_SERVICE - The message passed into update indicated an error from the license service.";
                                         break;
                                     case 4:
                                         code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT;
-                                        msg += "There is no available output device with the required characteristics for the content protection system.";
+                                        msg += "MEDIA_KEYERR_OUTPUT - There is no available output device with the required characteristics for the content protection system.";
                                         break;
                                     case 5:
                                         code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_HARDWARECHANGE;
-                                        msg += "A hardware configuration change caused a content protection error.";
+                                        msg += "MEDIA_KEYERR_HARDWARECHANGE - A hardware configuration change caused a content protection error.";
                                         break;
                                     case 6:
                                         code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_DOMAIN;
-                                        msg += "An error occurred in a multi-device domain licensing configuration. The most common error is a failure to join the domain.";
+                                        msg += "MEDIA_KEYERR_DOMAIN - An error occurred in a multi-device domain licensing configuration. The most common error is a failure to join the domain.";
                                         break;
                                 }
-                                var data = {};
-
-                                data.sessionToken = sessionToken;
-                                data.systemCode = event.systemCode;
+                                msg += "  System Code = " + event.systemCode;
                                 // TODO: Build error string based on key error
                                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR,
-                                    new MediaPlayer.vo.Error(code, msg, data));
+                                    new MediaPlayer.vo.protection.KeyError(code, sessionToken, msg));
                             } else {
                                 self.log("No session token found for key error");
                             }
@@ -157,32 +162,22 @@ MediaPlayer.models.ProtectionModel_01b = function () {
                                 sessions.push(sessionToken);
 
                                 if (pendingSessions.length !== 0) {
-                                    var data = {};
-
-                                    data.sessionToken = sessionToken;
-                                    data.systemCode = null;
-
-                                    self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE, null,
-                                    new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_MULTIKEYS_UNSUPPORTED, event.message + "Multiple key sessions were creates with a user-agent that does not support sessionIDs!! Unpredictable behavior ahead!", data));
+                                    self.errHandler.mediaKeyMessageError("Multiple key sessions were creates with a user-agent that does not support sessionIDs!! Unpredictable behavior ahead!");
                                 }
                             }
 
                             if (sessionToken) {
+                                var message = ArrayBuffer.isView(event.message) ? event.message.buffer : event.message;
 
                                 // For ClearKey, the spec mandates that you pass this message to the
                                 // addKey method, so we always save it to the token since there is no
                                 // way to tell which key system is in use
-                                sessionToken.keyMessage = event.message;
+                                sessionToken.keyMessage = message;
 
                                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE,
-                                    new MediaPlayer.vo.protection.KeyMessage(sessionToken, event.message, event.defaultURL));
+                                    new MediaPlayer.vo.protection.KeyMessage(sessionToken, message, event.defaultURL));
                             } else {
-                                var msgError = "No session token found for key message";
-
-                                self.log(msgError);
-                                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE, null,
-                                    new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_SESSION,
-                                     msgError, null));
+                                self.log("No session token found for key message");
                             }
                             break;
                     }
@@ -224,6 +219,7 @@ MediaPlayer.models.ProtectionModel_01b = function () {
     return {
         system: undefined,
         log: undefined,
+        errHandler: undefined,
         notify: undefined,
         subscribe: undefined,
         unsubscribe: undefined,
@@ -249,6 +245,18 @@ MediaPlayer.models.ProtectionModel_01b = function () {
             for (var i = 0; i < sessions.length; i++) {
                 this.closeKeySession(sessions[i]);
             }
+            this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
+        },
+
+        getAllInitData: function() {
+            var i, retVal = [];
+            for (i = 0; i < pendingSessions.length; i++) {
+                retVal.push(pendingSessions[i].initData);
+            }
+            for (i = 0; i < sessions.length; i++) {
+                retVal.push(sessions[i].initData);
+            }
+            return retVal;
         },
 
         requestKeySystemAccess: function(ksConfigurations) {
@@ -324,15 +332,25 @@ MediaPlayer.models.ProtectionModel_01b = function () {
         },
 
         setMediaElement: function(mediaElement) {
+            if (videoElement === mediaElement) {
+                return;
+            }
+
+            // Replacing the previous element
             if (videoElement) {
                 removeEventListeners();
             }
+
             videoElement = mediaElement;
-            videoElement.addEventListener(api.keyerror, eventHandler);
-            videoElement.addEventListener(api.needkey, eventHandler);
-            videoElement.addEventListener(api.keymessage, eventHandler);
-            videoElement.addEventListener(api.keyadded, eventHandler);
-            this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_VIDEO_ELEMENT_SELECTED);
+
+            // Only if we are not detaching from the existing element
+            if (videoElement) {
+                videoElement.addEventListener(api.keyerror, eventHandler);
+                videoElement.addEventListener(api.needkey, eventHandler);
+                videoElement.addEventListener(api.keymessage, eventHandler);
+                videoElement.addEventListener(api.keyadded, eventHandler);
+                this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_VIDEO_ELEMENT_SELECTED);
+            }
         },
 
         createKeySession: function(initData /*, keySystemType */) {
@@ -341,29 +359,23 @@ MediaPlayer.models.ProtectionModel_01b = function () {
                 throw new Error("Can not create sessions until you have selected a key system");
             }
 
-            // Check for duplicate initData.
-            var i;
-            for (i = 0; i < sessions.length; i++) {
-                if (this.protectionExt.initDataEquals(initData, sessions[i].initData)) {
-                    return;
-                }
-            }
-            for (i = 0; i < pendingSessions.length; i++) {
-                if (this.protectionExt.initDataEquals(initData, pendingSessions[i].initData)) {
-                    return;
-                }
-            }
-
             // Determine if creating a new session is allowed
             if (moreSessionsAllowed || sessions.length === 0) {
 
-                var newSession = {
-                    prototype: (new MediaPlayer.models.SessionToken()).prototype,
+                var newSession = { // Implements MediaPlayer.vo.protection.SessionToken
                     sessionID: null,
                     initData: initData,
 
                     getSessionID: function() {
                         return this.sessionID;
+                    },
+
+                    getExpirationTime: function() {
+                        return NaN;
+                    },
+
+                    getSessionType: function() {
+                        return "temporary";
                     }
                 };
                 pendingSessions.push(newSession);
@@ -384,7 +396,7 @@ MediaPlayer.models.ProtectionModel_01b = function () {
             if (!this.protectionExt.isClearKey(this.keySystem)) {
                 // Send our request to the CDM
                 videoElement[api.addKey](this.keySystem.systemString,
-                        message, sessionToken.initData, sessionID);
+                        new Uint8Array(message), sessionToken.initData, sessionID);
             } else {
                 // For clearkey, message is a MediaPlayer.vo.protection.ClearKeyKeySet
                 for (var i = 0; i < message.keyPairs.length; i++) {
@@ -447,7 +459,7 @@ MediaPlayer.models.ProtectionModel_01b.APIs = [
  * @param videoElement {HTMLMediaElement} the media element that will be
  * used for detecting APIs
  * @returns an API object that is used when initializing the ProtectionModel
- * instance
+ * instance, or null if this EME version is not supported
  */
 MediaPlayer.models.ProtectionModel_01b.detect = function(videoElement) {
     var apis = MediaPlayer.models.ProtectionModel_01b.APIs;

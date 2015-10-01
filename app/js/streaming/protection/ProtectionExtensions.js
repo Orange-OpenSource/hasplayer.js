@@ -28,6 +28,12 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
+
+/**
+ * Media protection functionality that can be modified/overridden by applications
+ *
+ * @class MediaPlayer.dependencies.ProtectionExtensions
+ */
 MediaPlayer.dependencies.ProtectionExtensions = function () {
     "use strict";
 
@@ -101,7 +107,8 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
      *
      * @param {string} systemString the system string
      * @returns {MediaPlayer.dependencies.protection.KeySystem} the key system
-     * or null if no key system is associated with the given key system string
+     * or null if no supported key system is associated with the given key
+     * system string
      */
     getKeySystemBySystemString: function(systemString) {
         for (var i = 0; i < this.keySystems.length; i++) {
@@ -121,6 +128,8 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
      * according to the particular spec version.
      *
      * @param keySystem the key
+     * @returns {boolean} true if this is the ClearKey key system, false
+     * otherwise
      */
     isClearKey: function(keySystem) {
         return (keySystem === this.clearkeyKeySystem);
@@ -129,15 +138,17 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
     /**
      * Check equality of initData array buffers.
      *
-     * @param initData1 first initData
-     * @param initData2 second initData
+     * @param initData1 {ArrayBuffer} first initData
+     * @param initData2 {ArrayBuffer} second initData
      * @returns {boolean} true if the initData arrays are equal in size and
      * contents, false otherwise
      */
     initDataEquals: function(initData1, initData2) {
         if (initData1.byteLength === initData2.byteLength) {
-            for (var j = 0; j < initData1.byteLength; j++) {
-                if (initData1[j] !== initData2[j]) {
+            var data1 = new Uint8Array(initData1),
+                data2 = new Uint8Array(initData2);
+            for (var j = 0; j < data1.length; j++) {
+                if (data1[j] !== data2[j]) {
                     return false;
                 }
             }
@@ -154,10 +165,14 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
      *
      * @param {Object[]} cps array of content protection elements parsed
      * from the manifest
-     * @returns {Object[]} array of objects with ks (KeySystem) and
-     * initData {ArrayBuffer) properties.  Empty array is returned if no
-         * supported key systems were found
-         */
+     * @returns {Object[]} array of objects indicating which supported key
+     * systems were found.  Empty array is returned if no
+     * supported key systems were found
+     * @returns {MediaPlayer.dependencies.protection.KeySystem} Object.ks the key
+     * system identified by the ContentProtection element
+     * @returns {ArrayBuffer} Object.initData the initialization data parsed
+     * from the ContentProtection element
+     */
     getSupportedKeySystemsFromContentProtection: function(cps) {
         var cp, ks, ksIdx, cpIdx, supportedKS = [];
 
@@ -170,15 +185,15 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
                     cp = cps[cpIdx];
                     if (cp.schemeIdUri.toLowerCase() === ks.schemeIdURI) {
 
-                        this.debug.log("[DRM] Supported key systems: " + ks.schemeIdURI);
+                        //this.debug.log("[DRM] Supported key systems: " + ks.systemString + " (" + ks.schemeIdURI + ")");
                         
                         // Look for DRM-specific ContentProtection
                         var initData = ks.getInitData(cp);
                         if (!!initData) {
                             supportedKS.push({
                                 ks: this.keySystems[ksIdx],
-                                initData: initData,
-                                cdmData: ks.getCDMData()
+                                initData: initData/*,
+                                cdmData: ks.getCDMData()*/
                             });
                         }
                     }
@@ -190,15 +205,20 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
 
     /**
      * Returns key systems supported by this player for the given PSSH
-     * initializationData.  Key systems are returned in priority
-     * order (highest priority first)
+     * initializationData. Only key systems supported by this player
+     * will be returned.  Key systems are returned in priority order
+     * (highest priority first)
      *
      * @param {ArrayBuffer} initData Concatenated PSSH data for all DRMs
      * supported by the content
-     * @returns {Object[]} array of objects with ks (KeySystem) and
-     * initData {ArrayBuffer) properties.  Empty array is returned if no
-         * supported key systems were found
-         */
+     * @returns {Object[]} array of objects indicating which supported key
+     * systems were found.  Empty array is returned if no
+     * supported key systems were found
+     * @returns {MediaPlayer.dependencies.protection.KeySystem} Object.ks the key
+     * system
+     * @returns {ArrayBuffer} Object.initData the initialization data
+     * associated with the key system
+     */
     getSupportedKeySystems: function(initData) {
         var ksIdx, supportedKS = [],
                 pssh = MediaPlayer.dependencies.protection.CommonEncryption.parsePSSHList(initData);
@@ -207,7 +227,7 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
 
         for (ksIdx = 0; ksIdx < this.keySystems.length; ++ksIdx) {
             if (this.keySystems[ksIdx].uuid in pssh) {
-                this.debug.log("[DRM] Add supported key system: " + this.keySystems[ksIdx].systemString);
+                //this.debug.log("[DRM] Add supported key system: " + this.keySystems[ksIdx].systemString);
                 supportedKS.push({
                     ks: this.keySystems[ksIdx],
                     initData: pssh[this.keySystems[ksIdx].uuid]
@@ -215,6 +235,61 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
             }
         }
         return supportedKS;
+    },
+
+    /**
+     * Returns the license server implementation data that should be used for this request.
+     *
+     * @param {MediaPlayer.dependencies.protection.KeySystem} keySystem the key system
+     * associated with this license request
+     * @param {MediaPlayer.vo.protection.ProtectionData} protData protection data to use for the
+     * request
+     * @param {String} [messageType="license-request"] the message type associated with this
+     * request.  Supported message types can be found
+     * {@link https://w3c.github.io/encrypted-media/#idl-def-MediaKeyMessageType|here}.
+     * @return {MediaPlayer.dependencies.protection.servers.LicenseServer} the license server
+     * implementation that should be used for this request or null if the player should not
+     * pass messages of the given type to a license server
+     *
+     */
+    getLicenseServer: function(keySystem, protData, messageType) {
+
+        // Our default server implementations do not do anything with "license-release" or
+        // "individualization-request" messages, so we just send a success event
+        if (messageType === "license-release" || messageType == "individualization-request") {
+            return null;
+        }
+
+        var licenseServerData = null;
+        if (protData && protData.hasOwnProperty("drmtoday")) {
+            licenseServerData = this.system.getObject("serverDRMToday");
+        } else if (keySystem.systemString === "com.widevine.alpha") {
+            licenseServerData = this.system.getObject("serverWidevine");
+        } else if (keySystem.systemString === "com.microsoft.playready") {
+            licenseServerData = this.system.getObject("serverPlayReady");
+        } else if (keySystem.systemString === "org.w3.clearkey") {
+            licenseServerData = this.system.getObject("serverClearKey");
+        }
+
+        return licenseServerData;
+    },
+
+    /**
+     * Allows application-specific retrieval of ClearKey keys.
+     *
+     * @param {MediaPlayer.vo.protection.ProtectionData} protData protection data to use for the
+     * request
+     * @param {ArrayBuffer} message the key message from the CDM
+     * @return {MediaPlayer.vo.protection.ClearKeyKeySet} the clear keys associated with
+     * the request or null if no keys can be returned by this function
+     */
+    processClearKeyLicenseRequest: function(protData, message) {
+        try {
+            return MediaPlayer.dependencies.protection.KeySystem_ClearKey.getClearKeysFromProtectionData(protData, message);
+        } catch (error) {
+            this.log("Failed to retrieve clearkeys from ProtectionData");
+            return null;
+        }
     },
 
     /**
