@@ -569,7 +569,6 @@ MediaPlayer = function(aContext) {
             if (this.config && params) {
                 this.debug.log("[MediaPlayer] set config: " + JSON.stringify(params, null, '\t'));
                 this.config.setParams(params);
-                this.debug.setLevel(this.config.getParam("Debug.level", "number", this.debug.ALL));
             }
         },
 

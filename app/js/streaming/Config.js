@@ -118,6 +118,12 @@ MediaPlayer.utils.Config = function () {
 
         setParams: function (newParams) {
             doSetParams(newParams);
+
+            // Update debugger level if set in config
+            var level = this.getParam("Debug.level", "number", -1);
+            if (level !== -1) {
+                this.debug.setLevel(level);
+            }
         },
 
         getParam: function (name, type, def) {
