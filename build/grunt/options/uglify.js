@@ -8,6 +8,7 @@ module.exports = function() {
         debugFuncs.push("self.debug." + logLevels[i]);
         debugFuncs.push("this.debug." + logLevels[i]);
         debugFuncs.push("rslt.debug." + logLevels[i]);
+        debugFuncs.push("debug." + logLevels[i]);
     }
 
     return {
