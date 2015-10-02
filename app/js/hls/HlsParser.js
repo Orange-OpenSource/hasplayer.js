@@ -211,7 +211,7 @@ Hls.dependencies.HlsParser = function () {
         data = _splitLines(data);
 
         // Check playlist header
-        if (data && data.length && data[0].trim() !== TAG_EXTM3U) {
+        if (!data || (data && data.length < 0) || (data && data.length > 0 && data[0].trim() !== TAG_EXTM3U)) {
             deferred.resolve();
             return;
         }
