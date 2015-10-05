@@ -43,6 +43,8 @@ MediaPlayer.utils.doRequestWithPromise = function (url, callback, argumentsToFor
     xhr.onreadystatechange = function() {
         if (xhr.readyState === 4 && (xhr.status === 200 || xhr.status === 0)) {
             callback.call(self, deferred,xhr.response,argumentsToForward);
+        }else if((xhr.readyState === 4 ) && (xhr.status != 200 || xhr.status !== 0)){
+            deferred.reject(url);    
         }
     };
     xhr.open("GET", url, true);
