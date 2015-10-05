@@ -207,7 +207,7 @@ Hls.dependencies.HlsParser = function () {
             self = this;
         
         // Check playlist header
-        if (!data || (data && data.length < 0) || (data && data.length > 0 && data[0].trim() !== TAG_EXTM3U)) {
+        if (!data || (data && data.length < 0)){
             deferred.reject();
             return;
         }
@@ -216,7 +216,10 @@ Hls.dependencies.HlsParser = function () {
 
         data = _splitLines(data);
 
-      
+        if (data[0].trim() !== TAG_EXTM3U){
+            deferred.reject();
+            return;
+        }      
 
         // Intitilaize SegmentList
         segmentList = {
