@@ -789,6 +789,9 @@ MediaPlayer.dependencies.BufferController = function () {
                         function () {
                             currentRepresentation = getRepresentationForQuality.call(self, currentQuality);
                             updateCheckBufferTimeout.call(self,0);
+                        }, function(){
+                            self.debug.log("[BufferController]["+type+"] loadNextFragment Error occurs in hls parsing");
+                            self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, type + ": Failed to update hls playlist", null);
                         }
                     );
                 }
@@ -962,6 +965,10 @@ MediaPlayer.dependencies.BufferController = function () {
                                         function () {
                                             currentRepresentation = getRepresentationForQuality.call(self, quality);
                                             playlistUpdated.resolve();
+                                        },
+                                        function(){
+                                            self.debug.log("[BufferController]["+type+"] loadNextFragment Error occurs in hls parsing");
+                                            playlistUpdated.reject();
                                         }
                                     );
                                 }
@@ -1016,6 +1023,9 @@ MediaPlayer.dependencies.BufferController = function () {
                                     deferred.resolve();
                                 }
                             );
+                        },
+                        function (){
+                            deferred.reject();
                         }
                     );
                 }
