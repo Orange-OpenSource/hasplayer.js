@@ -206,15 +206,17 @@ Hls.dependencies.HlsParser = function () {
             i,
             self = this;
 
+        // Check playlist header
+        if (!data || (data && data.length < 0) || (data && data.length > 0 && data[0].trim() !== TAG_EXTM3U)) {
+            deferred.reject();
+            return;
+        }
+
         self.debug.log(data);
 
         data = _splitLines(data);
 
-        // Check playlist header
-        if (!data || (data && data.length < 0) || (data && data.length > 0 && data[0].trim() !== TAG_EXTM3U)) {
-            deferred.resolve();
-            return;
-        }
+      
 
         // Intitilaize SegmentList
         segmentList = {
