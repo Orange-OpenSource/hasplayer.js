@@ -196,6 +196,19 @@
             return vo;
         },
 
+        addBufferedSwitch: function (streamType, mt, to, lto) {
+            var vo = new MediaPlayer.vo.metrics.BufferedSwitch();
+
+            vo.mt = mt;
+            vo.to = to;
+            vo.lto = lto;
+
+            this.getMetricsFor(streamType).BufferedSwitchList.push(vo);
+
+            this.metricAdded(streamType, "BufferedSwitch", vo);
+            return vo;
+        },
+
         addState: function (streamType, currentState, position, reason) {
             var vo = new MediaPlayer.vo.metrics.State();
 
