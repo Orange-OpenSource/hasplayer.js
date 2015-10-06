@@ -180,30 +180,34 @@ Mss.dependencies.MssHandler = function() {
             var deferred = Q.defer();
             //Mss.dependencies.MssHandler.prototype.getInitRequest.call(this,quality,data).then(onGetInitRequestSuccess);
             // get the period and startTime
-            period = representation.adaptation.period;
-            presentationStartTime = period.start;
+            if (representation) {
+                period = representation.adaptation.period;
+                presentationStartTime = period.start;
 
-            var manifest = rslt.manifestModel.getValue();
-            isDynamic = rslt.manifestExt.getIsDynamic(manifest);
+                var manifest = rslt.manifestModel.getValue();
+                isDynamic = rslt.manifestExt.getIsDynamic(manifest);
 
-            var request = new MediaPlayer.vo.SegmentRequest();
+                var request = new MediaPlayer.vo.SegmentRequest();
 
-            request.streamType = rslt.getType();
-            request.type = "Initialization Segment";
-            request.url = null;
-            try{
-                request.data = getInitData(representation);
-            }catch(e){
-                deferred.reject(e);
-                return deferred.promise;
+                request.streamType = rslt.getType();
+                request.type = "Initialization Segment";
+                request.url = null;
+                try{
+                    request.data = getInitData(representation);
+                }catch(e){
+                    deferred.reject(e);
+                    return deferred.promise;
+                }
+                request.range =  representation.range;
+                request.availabilityStartTime = self.timelineConverter.calcAvailabilityStartTimeFromPresentationTime(presentationStartTime, representation.adaptation.period.mpd, isDynamic);
+                request.availabilityEndTime = self.timelineConverter.calcAvailabilityEndTimeFromPresentationTime(presentationStartTime + period.duration, period.mpd, isDynamic);
+
+                //request.action = "complete"; //needed to avoid to execute request
+                request.quality = representation.index;
+                deferred.resolve(request);
+            }else{
+                deferred.reject({message : "representation is undefined or null"});
             }
-            request.range =  representation.range;
-            request.availabilityStartTime = self.timelineConverter.calcAvailabilityStartTimeFromPresentationTime(presentationStartTime, representation.adaptation.period.mpd, isDynamic);
-            request.availabilityEndTime = self.timelineConverter.calcAvailabilityEndTimeFromPresentationTime(presentationStartTime + period.duration, period.mpd, isDynamic);
-
-            //request.action = "complete"; //needed to avoid to execute request
-            request.quality = representation.index;
-            deferred.resolve(request);
             return deferred.promise;
         };
     return rslt;
