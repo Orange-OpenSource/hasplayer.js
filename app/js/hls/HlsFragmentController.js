@@ -36,6 +36,11 @@ Hls.dependencies.HlsFragmentController = function () {
             //var tracks = rslt.hlsDemux.getTracks(new Uint8Array(data));
             var tracks = rslt.hlsDemux.demux(new Uint8Array(data));
 
+            for(var i = 0; i<tracks.length; i++){
+                if (tracks[i].type === "video") {
+                    rslt.startTime = tracks[i].samples[0].cts/tracks[i].timescale;
+                }
+            }
             // Generate media segment (moov)
             return rslt.mp4Processor.generateMediaSegment(tracks, rslt.sequenceNumber);
         };
@@ -47,6 +52,8 @@ Hls.dependencies.HlsFragmentController = function () {
     rslt.mp4Processor = undefined;
 
     rslt.sequenceNumber = 1;
+
+    rslt.segmentStartTime = null;
 
     rslt.process = function (bytes, request, representations) {
         var result = null,
@@ -79,6 +86,10 @@ Hls.dependencies.HlsFragmentController = function () {
         }
 
         return Q.when(result);
+    };
+
+    rslt.getStartTime = function (){
+        return rslt.startTime;
     };
 
     return rslt;
