@@ -46,7 +46,6 @@ MediaPlayer.dependencies.BufferController = function () {
         fragmentDuration = 0,
         appendingRejectedData = false,
         mediaSource,
-
         type,
         data = null,
         buffer = null,
@@ -64,6 +63,7 @@ MediaPlayer.dependencies.BufferController = function () {
         htmlVideoState = -1,
         lastBufferLevel = -1,
         deferredFragmentBuffered = null,
+        isFirstMediaSegment = false,
         //ORANGE : used to test Live chunk download failure
         //testTimeLostChunk = 0,
 
@@ -239,17 +239,15 @@ MediaPlayer.dependencies.BufferController = function () {
                         initializationData[quality] = data;
 
                         // if this is the initialization data for current quality we need to push it to the buffer
-                        if (quality === currentQuality) {
-                            self.debug.info("[BufferController]["+type+"] ### Buffer initialization segment ", (request.url !== null)?request.url:request.quality);
-                            //console.saveBinArray(data, type + "_init_" + request.quality + ".mp4");
-                            appendToBuffer.call(self, data, request.quality).then(
-                                function() {
-                                    self.debug.log("[BufferController]["+type+"] ### Initialization segment buffered");
-                                    // Load next media segment
-                                    loadNextFragment.call(self);
-                                }
-                            );
-                        }
+                        self.debug.info("[BufferController]["+type+"] ### Buffer initialization segment ", (request.url !== null)?request.url:request.quality);
+                        //console.saveBinArray(data, type + "_init_" + request.quality + ".mp4");
+                        appendToBuffer.call(self, data, request.quality).then(
+                            function() {                             
+                                self.debug.log("[BufferController]["+type+"] ### Initialization segment buffered");
+                                // Load next media segment
+                                loadNextFragment.call(self);
+                            }
+                        );
                     } else {
                         self.debug.log("No " + type + " bytes to push.");
                         // ORANGE : For HLS Stream, init segment are pushed with media (@see HlsFragmentController)
@@ -263,7 +261,8 @@ MediaPlayer.dependencies.BufferController = function () {
             var self = this,
                 currentRepresentation = getRepresentationForQuality.call(self, request.quality),
                 eventStreamAdaption = this.manifestExt.getEventStreamForAdaptationSet(self.getData()),
-                eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(self.getData(),currentRepresentation);
+                eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(self.getData(),currentRepresentation),
+                segmentStartTime = null;
 
             self.debug.log("[BufferController]["+type+"] ### Media loaded ", request.url);
 
@@ -293,6 +292,17 @@ MediaPlayer.dependencies.BufferController = function () {
                             function(data) {
                                 appendToBuffer.call(self, data, request.quality, request.index).then(
                                     function() {
+                                        if (isFirstMediaSegment) {
+                                            isFirstMediaSegment = false;
+                                            if (self.fragmentController.hasOwnProperty('getStartTime')) {
+                                                segmentStartTime = self.fragmentController.getStartTime();
+                                            }
+                                            if (segmentStartTime) {
+                                                self.metricsModel.addBufferedSwitch(type, segmentStartTime, currentRepresentation.id, request.quality);
+                                            }else{
+                                                self.metricsModel.addBufferedSwitch(type, request.startTime, currentRepresentation.id, request.quality);
+                                            }
+                                        }
                                         self.debug.log("[BufferController]["+type+"] ### Media segment buffered");
                                         // Signal end of buffering process
                                         signalSegmentBuffered.call(self);
@@ -316,7 +326,6 @@ MediaPlayer.dependencies.BufferController = function () {
         appendToBuffer = function(data, quality, index) {
             var self = this,
                 deferred = Q.defer(),
-                isInit = index === undefined,
                 currentVideoTime = self.videoModel.getCurrentTime(),
                 currentTime = new Date();
 
@@ -339,18 +348,11 @@ MediaPlayer.dependencies.BufferController = function () {
                                     function (/*appended*/) {
                                         self.debug.info("[BufferController]["+type+"] Segment buffered");
                                         //self.debug.log("[BufferController]["+type+"] Data has been appended for quality = "+quality+" index = "+index);
-
-                                        /*if (isAppendingRejectedData) {
-                                            deferredRejectedDataAppend = null;
-                                            rejectedBytes = null;
-                                        }*/
-
-                                        // index can be undefined only for init segments. In this case
-                                        // change currentQuality to a quality of a new appended init segment.
-                                        if (isInit) {
+                                        if (currentQuality != quality) {
+                                            isFirstMediaSegment = true;
                                             currentQuality = quality;
                                         }
-
+                                        
                                         isQuotaExceeded = false;
 
                                         // In case of live streams, remove outdated buffer parts and requests
@@ -678,14 +680,14 @@ MediaPlayer.dependencies.BufferController = function () {
             //deferredStreamComplete.resolve(request);
         },
 
-        loadInitialization = function () {
+        loadInitialization = function (quality) {
             var deferred = Q.defer(),
                 self = this;
 
             // Check if initialization segment for current quality has not already been stored
-            if (initializationData[currentQuality]) {
-                self.debug.info("[BufferController]["+type+"] ### Buffer initialization segment, quality = ", currentQuality);
-                appendToBuffer.call(this, initializationData[currentQuality], currentQuality).then(
+            if (initializationData[quality]) {
+                self.debug.info("[BufferController]["+type+"] ### Buffer initialization segment, quality = ", quality);
+                appendToBuffer.call(this, initializationData[quality], quality).then(
                     function() {
                         self.debug.log("[BufferController]["+type+"] ### Initialization segment buffered");
                         // Load next media segment
@@ -695,7 +697,7 @@ MediaPlayer.dependencies.BufferController = function () {
                 deferred.resolve(null);
             } else {
                 // if we have not loaded the init segment for the current quality, do it
-                this.indexHandler.getInitRequest(availableRepresentations[currentQuality]).then(
+                this.indexHandler.getInitRequest(availableRepresentations[quality]).then(
                     function (request) {
                         deferred.resolve(request);
                     }, function(e){
@@ -947,7 +949,6 @@ MediaPlayer.dependencies.BufferController = function () {
                             // Quality changed?
                             if (quality !== currentQuality) {
                                 self.debug.log("[BufferController]["+type+"] Quality changed: " + quality);
-                                currentQuality = quality;
 
                                 // Load initialization segment
                                 loadInit = true;
@@ -956,12 +957,12 @@ MediaPlayer.dependencies.BufferController = function () {
                                 currentRepresentation.segments = null;
 
                                 clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.REPRESENTATION_SWITCH_STOP_REASON);
-                                self.metricsModel.addRepresentationSwitch(type, now, currentVideoTime, currentRepresentation.id);
+                                self.metricsModel.addRepresentationSwitch(type, now, currentVideoTime, currentRepresentation.id, quality);
 
                                 // HLS use case => download playlist for new representation
-                                if ((manifest.name === "M3U") && (isDynamic || availableRepresentations[currentQuality].initialization === null)) {
+                                if ((manifest.name === "M3U") && (isDynamic || availableRepresentations[quality].initialization === null)) {
                                     playlistUpdated = Q.defer();
-                                    updatePlayListForRepresentation.call(self, currentQuality).then(
+                                    updatePlayListForRepresentation.call(self, quality).then(
                                         function () {
                                             currentRepresentation = getRepresentationForQuality.call(self, quality);
                                             playlistUpdated.resolve();
@@ -978,7 +979,7 @@ MediaPlayer.dependencies.BufferController = function () {
                                 function () {
                                     if (loadInit === true) {
                                         // Load initialization segment request
-                                        loadInitialization.call(self).then(
+                                        loadInitialization.call(self, quality).then(
                                             function (request) {
                                                 if (request !== null) {
                                                     self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null/*signalStreamComplete*/).then(
