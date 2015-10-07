@@ -94,19 +94,18 @@ Mss.dependencies.MssParser = function () {
         if (window.DOMParser) {
             // ORANGE: XML parsing management
             try
-        {
+            {
                 var parser=new window.DOMParser();
                 xmlDoc = parser.parseFromString( xmlDocStr, "text/xml" );
                 if(xmlDoc.getElementsByTagName('parsererror').length > 0) {
                       throw new Error('Error parsing XML');
-            }
+                }
             }
             catch (e)
-        {
-                return null;
+            {
+                xmlDoc = null;
             }
         }
-        return this;
     };
 
     var mapPeriod = function () {
