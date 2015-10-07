@@ -932,6 +932,7 @@ MediaPlayer.dependencies.BufferController = function () {
 
                     // Get current quality
                     if(self.ChunkMissingState){
+                        self.abrController.setPlaybackQuality(type, 0);
                         defer = Q.when({quality:0});
                     }
                     else{
@@ -1092,7 +1093,9 @@ MediaPlayer.dependencies.BufferController = function () {
                 i = 0,
                 len = 0;
                 type = evt.data.request.streamType,
-                rules = null;
+                rules = null,
+                metrics = self.metricsModel.getMetricsFor(type);
+
 
                 self.debug.log("[BufferController]["+type+"] Download request "+evt.data.request.url+" is in progress");
 
@@ -1112,7 +1115,7 @@ MediaPlayer.dependencies.BufferController = function () {
                     };
 
                     for (i = 0, len = rules.length; i < len; i += 1) {
-                        rules[i].execute(evt.data.request, self.abrController, callback);
+                        rules[i].execute(evt.data.request, self.abrController, metrics, callback);
                     }
                 });
         };

@@ -41,37 +41,30 @@ MediaPlayer.rules.AbandonRequestsRule = function () {
             fragmentDict[type][id] = fragmentDict[type][id] || {};
         };
 
-        //getAggragateBandwidth = function(mediaType, concurrentCount){
-        //    var tbl = 0,
-        //        tet = 0;
-        //    for (var key in fragmentDict[mediaType]) {
-        //        var obj = fragmentDict[mediaType][key];
-        //        if (obj.bytesLoaded < obj.bytesTotal && obj.elapsedTime >= GRACE_TIME_THRESHOLD) { //check if obj is complete or not
-        //            tbl += obj.bytesLoaded;
-        //            tet += obj.elapsedTime;
-        //        }else{
-        //            delete fragmentDict[mediaType][key];//delete entries that are complete.
-        //        }
-        //    }
-        //    var measuredBandwidthInKbps = Math.round((tbl*8/tet) * concurrentCount);
-        //    return measuredBandwidthInKbps;
-        //};
-
     return {
         metricsExt: undefined,
-        log:undefined,
+        debug:undefined,
 
-        execute: function(request, abrController, callback) {
+        execute: function(request, abrController, metrics, callback) {
             var now = new Date().getTime(),
                 mediaType = request.streamType,
                 fragmentInfo,
-                switchRequest = new MediaPlayer.rules.SwitchRequest(MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE, MediaPlayer.rules.SwitchRequest.prototype.WEAK);
+                switchRequest = new MediaPlayer.rules.SwitchRequest(MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE, MediaPlayer.rules.SwitchRequest.prototype.WEAK),
+                index,
+                bufferLevel = this.metricsExt.getCurrentBufferLevel(metrics);
 
-            if (!isNaN(request.index)) {
-                setFragmentRequestDict(mediaType, request.index);
-                fragmentInfo = fragmentDict[mediaType][request.index];
+            if (request.sequenceNumber) {
+                index = request.sequenceNumber;
+            }else{
+                index = request.index;  
+            } 
 
-                if (fragmentInfo === null || request.firstByteDate === null || abandonDict.hasOwnProperty(fragmentInfo.id)) {
+            if (!isNaN(index)) {
+                setFragmentRequestDict(mediaType, index);
+                fragmentInfo = fragmentDict[mediaType][index];
+
+                if (fragmentInfo === null || request.firstByteDate === null || (abandonDict.hasOwnProperty(fragmentInfo.id)&&(abandonDict[fragmentInfo.id].url === request.url))) {
+                    this.debug.log("[AbandonRequestsRule]["+mediaType+"] No change fragmentInfo, request.firstByteDate may be null or abandonDict.hasOwnProperty(fragmentInfo.id)===true");
                     callback(switchRequest);
                     return;
                 }
@@ -81,9 +74,10 @@ MediaPlayer.rules.AbandonRequestsRule = function () {
                     fragmentInfo.firstByteTime = request.firstByteDate.getTime();
                     fragmentInfo.segmentDuration = request.duration;
                     fragmentInfo.bytesTotal = request.bytesTotal;
-                    fragmentInfo.id = request.index;
+                    fragmentInfo.id = index;
                     fragmentInfo.nb = 1;
-                   //this.log("XXX FRAG ID : " ,fragmentInfo.id, " *****************");
+                    fragmentInfo.url = request.url;
+                    this.debug.log("[AbandonRequestsRule]["+mediaType+"] FRAG ID : " +fragmentInfo.id+ " *****************");
                 }
                
                 //update info base on subsequent progress events until completed.
@@ -96,19 +90,14 @@ MediaPlayer.rules.AbandonRequestsRule = function () {
                     fragmentInfo.measuredBandwidthInKbps = Math.round(fragmentInfo.bytesLoaded*8/fragmentInfo.elapsedTime);
                     //fragmentInfo.measuredBandwidthInKbps = (concurrentCount > 1) ? getAggragateBandwidth.call(this, mediaType, concurrentCount) :  Math.round(fragmentInfo.bytesLoaded*8/fragmentInfo.elapsedTime);
                     fragmentInfo.estimatedTimeOfDownload = +(fragmentInfo.bytesTotal*8*0.001/fragmentInfo.measuredBandwidthInKbps).toFixed(2);
-                    //this.log("XXX","id: ",fragmentInfo.id,  "kbps: ", fragmentInfo.measuredBandwidthInKbps, "etd: ",fragmentInfo.estimatedTimeOfDownload, "et: ", fragmentInfo.elapsedTime/1000);
+                    this.debug.log("[AbandonRequestsRule]["+mediaType+"] id: "+fragmentInfo.id+" Bytes Loaded = "+(fragmentInfo.bytesLoaded)+", Measured bandwidth : "+fragmentInfo.measuredBandwidthInKbps+" kbps estimated Time of download : "+fragmentInfo.estimatedTimeOfDownload+" secondes, elapsed time : "+fragmentInfo.elapsedTime/1000+" secondes.");
 
-                    if (fragmentInfo.estimatedTimeOfDownload < (fragmentInfo.segmentDuration * ABANDON_MULTIPLIER) || abrController.getQualityFor(mediaType) === 0) {
-                        callback(switchRequest);
-                        return;
-                    }else if (!abandonDict.hasOwnProperty(fragmentInfo.id)) {
-                        //var newQuality = abrController.getQualityForBitrate(mediaInfo, fragmentInfo.measuredBandwidthInKbps * MediaPlayer.dependencies.AbrController.BANDWIDTH_SAFETY);
-                        //If download is too long, restart to the first quality
+                     if ((fragmentInfo.elapsedTime)/1000 > (fragmentInfo.segmentDuration*1.5) || (bufferLevel.level < (fragmentInfo.segmentDuration/2))) {
                         switchRequest = new MediaPlayer.rules.SwitchRequest(0, MediaPlayer.rules.SwitchRequest.prototype.STRONG);
                         abandonDict[fragmentInfo.id] = fragmentInfo;
-                        console.log("[AbandonRequestsRule] [", mediaType, "] frag id",fragmentInfo.id,") is asking to abandon and switch to initial quality measured bandwidth was", fragmentInfo.measuredBandwidthInKbps);
+                        this.debug.log("[AbandonRequestsRule]["+mediaType+"] frag id"+fragmentInfo.id+" is asking to abandon and switch to initial quality measured bandwidth was"+fragmentInfo.measuredBandwidthInKbps);
                         delete fragmentDict[mediaType][fragmentInfo.id];
-                    }
+                     }
                 }else if (fragmentInfo.bytesLoaded === fragmentInfo.bytesTotal) {
                     delete fragmentDict[mediaType][fragmentInfo.id];
                 }

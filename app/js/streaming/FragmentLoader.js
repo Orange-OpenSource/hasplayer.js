@@ -112,7 +112,7 @@
                 self.metricsModel.appendHttpTrace(httpRequestMetrics,
                   currentTime,
                   currentTime.getTime() - lastTraceTime.getTime(),
-                  [req.response ? req.response.byteLength : 0]);
+                  [request.bytesLoaded ? request.bytesLoaded : 0]);
 
                 lastTraceTime = currentTime;
 
