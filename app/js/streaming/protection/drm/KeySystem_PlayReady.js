@@ -239,7 +239,10 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
         subscribe: undefined,
         unsubscribe: undefined,
 
-
+        init: function(protectionData){
+            protData = protectionData;
+        },
+        
         getInitData: parseInitDataFromContentProtection,
 
         getRequestHeadersFromMessage: getRequestHeaders,

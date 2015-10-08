@@ -39,7 +39,17 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
     "use strict";
 
     var keySystemStr = "com.widevine.alpha",
-        keySystemUUID = "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed";
+        keySystemUUID = "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed",
+        protData = null,
+
+        doGetInitData = function(cpData){
+            if(protData && protData.pssh){
+                return BASE64.decodeArray(protData.pssh).buffer;
+            }
+            
+            return MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection(cpData);
+            
+        };
 
     return {
 
@@ -47,7 +57,13 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
         systemString: keySystemStr,
         uuid: keySystemUUID,
 
-        getInitData: MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection,
+        init:function(protectionData){
+            if(protectionData){
+                protData = protectionData;
+            }
+        },
+
+        getInitData: doGetInitData,
 
         getRequestHeadersFromMessage: function(/*message*/) { return null; },
 

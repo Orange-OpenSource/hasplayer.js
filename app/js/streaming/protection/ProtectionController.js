@@ -789,6 +789,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
          */
         setProtectionData: function(data) {
             protDataSet = data;
+            this.protectionExt.init(data);
         }
     };
 };
