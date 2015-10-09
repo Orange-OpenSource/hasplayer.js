@@ -1186,6 +1186,7 @@ MediaPlayer.dependencies.BufferController = function () {
 
                             currentRepresentation = getRepresentationForQuality.call(self, result.quality);
 
+                            if (currentRepresentation) {
                             fragmentDuration = currentRepresentation.segmentDuration;
 
                             self.indexHandler.setIsDynamic(isDynamic);
