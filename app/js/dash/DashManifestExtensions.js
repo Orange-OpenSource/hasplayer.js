@@ -25,46 +25,50 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         "use strict";
         var i,
             len,
-            col = adaptation.ContentComponent_asArray,
+            col,
             representation,
             result = false,
             found = false;
 
-        if (col) {
-            for (i = 0, len = col.length; i < len; i += 1) {
-                if (col[i].contentType === "audio") {
-                    result = true;
-                    found = true;
+        if (adaptation) {
+            col = adaptation.ContentComponent_asArray;
+
+            if (col) {
+                for (i = 0, len = col.length; i < len; i += 1) {
+                    if (col[i].contentType === "audio") {
+                        result = true;
+                        found = true;
+                    }
                 }
             }
-        }
 
-        if (adaptation.hasOwnProperty("mimeType")) {
-            result = adaptation.mimeType.indexOf("audio") !== -1;
-            found = true;
-        }
-
-        // couldn't find on adaptationset, so check a representation
-        if (!found) {
-            i = 0;
-            len = adaptation.Representation_asArray.length;
-            while (!found && i < len) {
-                representation = adaptation.Representation_asArray[i];
-
-                if (representation.hasOwnProperty("mimeType")) {
-                    result = representation.mimeType.indexOf("audio") !== -1;
-                    found = true;
-                }
-
-                i += 1;
+            if (adaptation.hasOwnProperty("mimeType")) {
+                result = adaptation.mimeType.indexOf("audio") !== -1;
+                found = true;
             }
-        }
 
-        // TODO : Add the type here so that somebody who has access to the adapatation set can check it.
-        // THIS IS A HACK for a bug in DashMetricsExtensions.
-        // See the note in DashMetricsExtensions.adaptationIsType().
-        if (result) {
-            adaptation.type = "audio";
+            // couldn't find on adaptationset, so check a representation
+            if (!found) {
+                i = 0;
+                len = adaptation.Representation_asArray.length;
+                while (!found && i < len) {
+                    representation = adaptation.Representation_asArray[i];
+
+                    if (representation.hasOwnProperty("mimeType")) {
+                        result = representation.mimeType.indexOf("audio") !== -1;
+                        found = true;
+                    }
+
+                    i += 1;
+                }
+            }
+
+            // TODO : Add the type here so that somebody who has access to the adapatation set can check it.
+            // THIS IS A HACK for a bug in DashMetricsExtensions.
+            // See the note in DashMetricsExtensions.adaptationIsType().
+            if (result) {
+                adaptation.type = "audio";
+            }
         }
 
         return Q.when(result);
@@ -74,46 +78,50 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         "use strict";
         var i,
             len,
-            col = adaptation.ContentComponent_asArray,
+            col,
             representation,
             result = false,
             found = false;
+            
+        if (adaptation) {
+            col = adaptation.ContentComponent_asArray;
 
-        if (col) {
-            for (i = 0, len = col.length; i < len; i += 1) {
-                if (col[i].contentType === "video") {
-                    result = true;
-                    found = true;
+            if (col) {
+                for (i = 0, len = col.length; i < len; i += 1) {
+                    if (col[i].contentType === "video") {
+                        result = true;
+                        found = true;
+                    }
                 }
             }
-        }
 
-        if (adaptation.hasOwnProperty("mimeType")) {
-            result = adaptation.mimeType.indexOf("video") !== -1;
-            found = true;
-        }
-
-        // couldn't find on adaptationset, so check a representation
-        if (!found) {
-            i = 0;
-            len = adaptation.Representation_asArray.length;
-            while (!found && i < len) {
-                representation = adaptation.Representation_asArray[i];
-
-                if (representation.hasOwnProperty("mimeType")) {
-                    result = representation.mimeType.indexOf("video") !== -1;
-                    found = true;
-                }
-
-                i += 1;
+            if (adaptation.hasOwnProperty("mimeType")) {
+                result = adaptation.mimeType.indexOf("video") !== -1;
+                found = true;
             }
-        }
 
-        // TODO : Add the type here so that somebody who has access to the adapatation set can check it.
-        // THIS IS A HACK for a bug in DashMetricsExtensions.
-        // See the note in DashMetricsExtensions.adaptationIsType().
-        if (result) {
-            adaptation.type = "video";
+            // couldn't find on adaptationset, so check a representation
+            if (!found) {
+                i = 0;
+                len = adaptation.Representation_asArray.length;
+                while (!found && i < len) {
+                    representation = adaptation.Representation_asArray[i];
+
+                    if (representation.hasOwnProperty("mimeType")) {
+                        result = representation.mimeType.indexOf("video") !== -1;
+                        found = true;
+                    }
+
+                    i += 1;
+                }
+            }
+
+            // TODO : Add the type here so that somebody who has access to the adapatation set can check it.
+            // THIS IS A HACK for a bug in DashMetricsExtensions.
+            // See the note in DashMetricsExtensions.adaptationIsType().
+            if (result) {
+                adaptation.type = "video";
+            }
         }
 
         return Q.when(result);
@@ -208,31 +216,44 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
     getDataForIndex_: function (index, manifest, periodIndex) {
         "use strict";
-        var adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+        var adaptations;
 
-        return adaptations[index];
+        if (manifest && (periodIndex !== null || periodIndex !== undefined)) {
+            adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+            
+            if (adaptations && adaptations.length > 0 && !isNaN(index)) {
+                return adaptations[index];
+            }
+        }
+
+        return [];
     },
 
     getDataIndex: function (data, manifest, periodIndex) {
         "use strict";
 
-        var adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray,
+        var adaptations,
             i,
             len;
-        // ORANGE : compare data with id or string representation to avoid reference error due to manifest refresh
-        if (data.id) {
-            for (i = 0, len = adaptations.length; i < len; i += 1) {
-                if (adaptations[i].id  && adaptations[i].id === data.id) {
-                    return Q.when(i);
+
+        if (manifest && (periodIndex !== null || periodIndex !== undefined)) {
+            adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+
+            // ORANGE : compare data with id or string representation to avoid reference error due to manifest refresh
+            if (data.id) {
+                for (i = 0, len = adaptations.length; i < len; i += 1) {
+                    if (adaptations[i].id  && adaptations[i].id === data.id) {
+                        return Q.when(i);
+                    }
                 }
-            }
-        } else {
-            var strData = JSON.stringify(data);
-            var strAdapt;
-            for (i = 0, len = adaptations.length; i < len; i += 1) {
-                strAdapt = JSON.stringify(adaptations[i]);
-                if (strAdapt === strData) {
-                    return Q.when(i);
+            } else {
+                var strData = JSON.stringify(data);
+                var strAdapt;
+                for (i = 0, len = adaptations.length; i < len; i += 1) {
+                    strAdapt = JSON.stringify(adaptations[i]);
+                    if (strAdapt === strData) {
+                        return Q.when(i);
+                    }
                 }
             }
         }
@@ -281,26 +302,31 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         "use strict";
         //return Q.when(null);
         //------------------------------------
-        var adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray,
+        var adaptations,
             i,
             len,
             deferred = Q.defer(),
             funcs = [];
-
-        for (i = 0, len = adaptations.length; i < len; i += 1) {
-            funcs.push(this.getIsText(adaptations[i]));
-        }
-        Q.all(funcs).then(
-            function (results) {
-                var datas = [];
-                for (i = 0, len = results.length; i < len; i += 1) {
-                    if (results[i] === true) {
-                        datas.push(adaptations[i]);
-                }
-                    deferred.resolve(datas);
-                }
+        
+        if (manifest && (periodIndex !== null || periodIndex !== undefined)) {
+            adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+            for (i = 0, len = adaptations.length; i < len; i += 1) {
+                funcs.push(this.getIsText(adaptations[i]));
             }
-        );
+            Q.all(funcs).then(
+                function (results) {
+                    var datas = [];
+                    for (i = 0, len = results.length; i < len; i += 1) {
+                        if (results[i] === true) {
+                            datas.push(adaptations[i]);
+                    }
+                        deferred.resolve(datas);
+                    }
+                }
+            );
+        }else{
+            deferred.reject();
+        }
 
         return deferred.promise;
     },
@@ -309,27 +335,32 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         "use strict";
         //return Q.when(null);
         //------------------------------------
-        var adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray,
+        var adaptations,
             i,
             len,
             deferred = Q.defer(),
             funcs = [];
-
-        for (i = 0, len = adaptations.length; i < len; i += 1) {
-            funcs.push(this.getIsAudio(adaptations[i]));
-        }
-
-        Q.all(funcs).then(
-            function (results) {
-                var datas = [];
-                for (i = 0, len = results.length; i < len; i += 1) {
-                    if (results[i] === true) {
-                        datas.push(adaptations[i]);
-                    }
-                }
-                deferred.resolve(datas);
+        
+        if (manifest && (periodIndex !== null || periodIndex !== undefined)) {
+            adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+            for (i = 0, len = adaptations.length; i < len; i += 1) {
+                funcs.push(this.getIsAudio(adaptations[i]));
             }
-        );
+
+            Q.all(funcs).then(
+                function (results) {
+                    var datas = [];
+                    for (i = 0, len = results.length; i < len; i += 1) {
+                        if (results[i] === true) {
+                            datas.push(adaptations[i]);
+                        }
+                    }
+                    deferred.resolve(datas);
+                }
+            );
+        }else{
+            deferred.reject();
+        }
 
         return deferred.promise;
     },
@@ -547,7 +578,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
         //@mediaPresentationDuration specifies the duration of the entire Media Presentation.
         //If the attribute is not present, the duration of the Media Presentation is unknown.
-        if (manifest.hasOwnProperty("mediaPresentationDuration")) {
+        if (manifest && manifest.hasOwnProperty("mediaPresentationDuration")) {
             mpdDuration = manifest.mediaPresentationDuration;
         } else {
             mpdDuration = Number.POSITIVE_INFINITY;
@@ -575,7 +606,11 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
     getRepresentationCount: function (adaptation) {
         "use strict";
-        return Q.when(adaptation.Representation_asArray.length);
+        if (adaptation) {
+            return Q.when(adaptation.Representation_asArray.length);
+        }
+
+        return Q.when(null);
     },
 
     getRepresentationFor: function (index, data) {

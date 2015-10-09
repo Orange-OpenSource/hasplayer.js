@@ -27,7 +27,11 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
             self = this;
 
         try {
-            deferred.resolve(mediaSource.addSourceBuffer(codec));
+            if (mediaSource) {
+                deferred.resolve(mediaSource.addSourceBuffer(codec));
+            }else{
+                deferred.reject();
+            }
         } catch(ex) {
             if (!self.manifestExt.getIsTextTrack(codec)) {
                 deferred.reject(ex.description);

@@ -11,7 +11,7 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-Dash.dependencies.DashHandler = function () {
+Dash.dependencies.DashHandler = function() {
     "use strict";
 
     var index = -1,
@@ -20,7 +20,7 @@ Dash.dependencies.DashHandler = function () {
         type,
         offset = null,
 
-        zeroPadToLength = function (numStr, minStrLength) {
+        zeroPadToLength = function(numStr, minStrLength) {
             while (numStr.length < minStrLength) {
                 numStr = "0" + numStr;
             }
@@ -28,7 +28,7 @@ Dash.dependencies.DashHandler = function () {
             return numStr;
         },
 
-        replaceTokenForTemplate = function (url, token, value) {
+        replaceTokenForTemplate = function(url, token, value) {
 
             var startPos = 0,
                 endPos = 0,
@@ -48,62 +48,64 @@ Dash.dependencies.DashHandler = function () {
                 // check if there is a valid $<token>...$ identifier
                 // if not, return the url as is.
                 startPos = url.indexOf("$" + token);
-            if (startPos < 0) {
-                return url;
-            }
-
-            // the next '$' must be the end of the identifer
-                // if there isn't one, return the url as is.
-                endPos = url.indexOf("$", startPos + tokenLen);
-            if (endPos < 0) {
-                return url;
-            }
-
-            // now see if there is an additional format tag suffixed to
-            // the identifier within the enclosing '$' characters
-                formatTagPos = url.indexOf(formatTag, startPos + tokenLen);
-            if (formatTagPos > startPos && formatTagPos < endPos) {
-
-                specifier = url.charAt(endPos - 1);
-                    width = parseInt(url.substring(formatTagPos + formatTagLen, endPos - 1), 10);
-
-                // support the minimum specifiers required by IEEE 1003.1
-                // (d, i , o, u, x, and X) for completeness
-                switch (specifier) {
-                // treat all int types as uint,
-                // hence deliberate fallthrough
-                case 'd':
-                case 'i':
-                case 'u':
-                        paddedValue = zeroPadToLength(value.toString(), width);
-                    break;
-                case 'x':
-                        paddedValue = zeroPadToLength(value.toString(16), width);
-                    break;
-                case 'X':
-                        paddedValue = zeroPadToLength(value.toString(16), width).toUpperCase();
-                    break;
-                case 'o':
-                        paddedValue = zeroPadToLength(value.toString(8), width);
-                    break;
-                default:
-                    this.debug.log("Unsupported/invalid IEEE 1003.1 format identifier string in URL");
+                if (startPos < 0) {
                     return url;
                 }
+
+                // the next '$' must be the end of the identifer
+                // if there isn't one, return the url as is.
+                endPos = url.indexOf("$", startPos + tokenLen);
+                if (endPos < 0) {
+                    return url;
+                }
+
+                // now see if there is an additional format tag suffixed to
+                // the identifier within the enclosing '$' characters
+                formatTagPos = url.indexOf(formatTag, startPos + tokenLen);
+                if (formatTagPos > startPos && formatTagPos < endPos) {
+
+                    specifier = url.charAt(endPos - 1);
+                    width = parseInt(url.substring(formatTagPos + formatTagLen, endPos - 1), 10);
+
+                    // support the minimum specifiers required by IEEE 1003.1
+                    // (d, i , o, u, x, and X) for completeness
+                    switch (specifier) {
+                        // treat all int types as uint,
+                        // hence deliberate fallthrough
+                        case 'd':
+                        case 'i':
+                        case 'u':
+                            paddedValue = zeroPadToLength(value.toString(), width);
+                            break;
+                        case 'x':
+                            paddedValue = zeroPadToLength(value.toString(16), width);
+                            break;
+                        case 'X':
+                            paddedValue = zeroPadToLength(value.toString(16), width).toUpperCase();
+                            break;
+                        case 'o':
+                            paddedValue = zeroPadToLength(value.toString(8), width);
+                            break;
+                        default:
+                            this.debug.log("Unsupported/invalid IEEE 1003.1 format identifier string in URL");
+                            return url;
+                    }
                 } else {
                     paddedValue = value;
-            }
+                }
 
                 url = url.substring(0, startPos) + paddedValue + url.substring(endPos + 1);
             }
         },
 
-        unescapeDollarsInTemplate = function (url) {
+        unescapeDollarsInTemplate = function(url) {
             return url.split("$$").join("$");
         },
 
-        replaceIDForTemplate = function (url, value) {
-            if (value === null || url.indexOf("$RepresentationID$") === -1) { return url; }
+        replaceIDForTemplate = function(url, value) {
+            if (value === null || url.indexOf("$RepresentationID$") === -1) {
+                return url;
+            }
             var v = value.toString();
             return url.split("$RepresentationID$").join(v);
         },
@@ -112,10 +114,10 @@ Dash.dependencies.DashHandler = function () {
             return segment.representation.startNumber + segmentIndex;
         },
 
-        getRequestUrl = function (destination, representation) {
+        getRequestUrl = function(destination, representation) {
             var baseURL = representation.adaptation.period.mpd.manifest.Period_asArray[representation.adaptation.period.index].
-                    AdaptationSet_asArray[representation.adaptation.index].Representation_asArray[representation.index].BaseURL,
-                url;
+            AdaptationSet_asArray[representation.adaptation.index].Representation_asArray[representation.index].BaseURL,
+            url;
 
             if (destination === baseURL) {
                 url = destination;
@@ -148,7 +150,7 @@ Dash.dependencies.DashHandler = function () {
             return request;
         },
 
-        getInit = function (representation) {
+        getInit = function(representation) {
             var deferred = Q.defer(),
                 request = null,
                 url = null,
@@ -167,16 +169,16 @@ Dash.dependencies.DashHandler = function () {
             } else {
                 // Go out and find the initialization.
                 url = representation.adaptation.period.mpd.manifest.Period_asArray[representation.adaptation.period.index].
-                    AdaptationSet_asArray[representation.adaptation.index].Representation_asArray[representation.index].BaseURL;
+                AdaptationSet_asArray[representation.adaptation.index].Representation_asArray[representation.index].BaseURL;
                 self.baseURLExt.loadInitialization(url).then(
-                    function (theRange) {
+                    function(theRange) {
                         //self.debug.log("Got an initialization.");
                         representation.range = theRange;
                         representation.initialization = url;
                         request = generateInitRequest.call(self, representation, type);
                         deferred.resolve(request);
                     },
-                    function (httprequest) {
+                    function(httprequest) {
                         deferred.reject(httprequest);
                     }
                 );
@@ -185,14 +187,15 @@ Dash.dependencies.DashHandler = function () {
             return deferred.promise;
         },
 
-        isMediaFinished = function (representation) { // TODO
+        isMediaFinished = function(representation) { // TODO
             var sDuration,
                 period = representation.adaptation.period,
                 isFinished = false,
                 seg,
                 fTime;
 
-            if(offset === null || offset > representation.segments[0].availabilityIdx) {
+            if (representation && representation.segments.length > 0 &&
+                (offset === null || offset > representation.segments[0].availabilityIdx)) {
                 offset = representation.segments[0].availabilityIdx;
             }
 
@@ -208,10 +211,10 @@ Dash.dependencies.DashHandler = function () {
                     seg = getSegmentByIndex(index, representation);
 
                     if (seg) {
-                    fTime = seg.presentationStartTime - period.start;
-                    sDuration = representation.adaptation.period.duration;
-                    //this.debug.log(representation.segmentInfoType + ": " + fTime + " / " + sDuration);
-                    isFinished = (fTime >= sDuration);
+                        fTime = seg.presentationStartTime - period.start;
+                        sDuration = representation.adaptation.period.duration;
+                        //this.debug.log(representation.segmentInfoType + ": " + fTime + " / " + sDuration);
+                        isFinished = (fTime >= sDuration);
                     }
                 } else {
                     isFinished = true;
@@ -221,7 +224,7 @@ Dash.dependencies.DashHandler = function () {
             return Q.when(isFinished);
         },
 
-        getIndexBasedSegment = function (representation, index) {
+        getIndexBasedSegment = function(representation, index) {
             var self = this,
                 seg,
                 duration,
@@ -254,41 +257,41 @@ Dash.dependencies.DashHandler = function () {
             return seg;
         },
 
-        getSegmentsFromTimeline = function (representation) {
+        getSegmentsFromTimeline = function(representation) {
             var self = this,
                 template = representation.adaptation.period.mpd.manifest.Period_asArray[representation.adaptation.period.index].
-                    AdaptationSet_asArray[representation.adaptation.index].Representation_asArray[representation.index].SegmentTemplate,
-                timeline = template.SegmentTimeline,
-                isAvailableSegmentNumberCalculated = representation.availableSegmentsNumber > 0,
-                maxSegmentsAhead = 10,
-                segments = [],
-                fragments,
-                frag,
-                i,
-                len,
-                j,
-                repeat,
-                repeatEndTime,
-                nextFrag,
-                time = 0,
-                availabilityIdx = -1,
-                calculatedRange,
-                hasEnoughSegments,
-                requiredMediaTime,
-                startIdx,
-                endIdx,
-                fTimescale,
-                createSegment = function(s) {
-                    return getTimeBasedSegment.call(
-                        self,
-                        representation,
-                        time,
-                        s.d,
-                        fTimescale,
-                        template.media,
-                        s.mediaRange,
-                        availabilityIdx);
-                };
+            AdaptationSet_asArray[representation.adaptation.index].Representation_asArray[representation.index].SegmentTemplate,
+            timeline = template.SegmentTimeline,
+            isAvailableSegmentNumberCalculated = representation.availableSegmentsNumber > 0,
+            maxSegmentsAhead = 10,
+            segments = [],
+            fragments,
+            frag,
+            i,
+            len,
+            j,
+            repeat,
+            repeatEndTime,
+            nextFrag,
+            time = 0,
+            availabilityIdx = -1,
+            calculatedRange,
+            hasEnoughSegments,
+            requiredMediaTime,
+            startIdx,
+            endIdx,
+            fTimescale,
+            createSegment = function(s) {
+                return getTimeBasedSegment.call(
+                    self,
+                    representation,
+                    time,
+                    s.d,
+                    fTimescale,
+                    template.media,
+                    s.mediaRange,
+                    availabilityIdx);
+            };
 
             fTimescale = representation.timescale;
 
@@ -320,9 +323,9 @@ Dash.dependencies.DashHandler = function () {
                 //This is a special case: "A negative value of the @r attribute of the S element indicates that the duration indicated in @d attribute repeats until the start of the next S element, the end of the Period or until the 
                 // next MPD update."
                 if (repeat < 0) {
-                    nextFrag = fragments[i+1];
+                    nextFrag = fragments[i + 1];
                     repeatEndTime = (nextFrag && nextFrag.hasOwnProperty("t")) ? (nextFrag.t / fTimescale) : representation.adaptation.period.duration;
-                    repeat = Math.ceil((repeatEndTime - time/fTimescale)/(frag.d/fTimescale)) - 1;
+                    repeat = Math.ceil((repeatEndTime - time / fTimescale) / (frag.d / fTimescale)) - 1;
                 }
 
                 // if we have enough segments in the list, but we have not calculated the total number of the segments yet we
@@ -353,7 +356,7 @@ Dash.dependencies.DashHandler = function () {
                             continue;
                         }
 
-                        if (time/fTimescale >= (requiredMediaTime - (frag.d / fTimescale))) {
+                        if (time / fTimescale >= (requiredMediaTime - (frag.d / fTimescale))) {
                             segments.push(createSegment.call(self, frag));
                         }
                     }
@@ -369,28 +372,31 @@ Dash.dependencies.DashHandler = function () {
 
                 availabilityStartTime = (f.t === undefined) ? 0 : self.timelineConverter.calcPresentationTimeFromMediaTime(f.t / fTimescale, representation);
                 availabilityEndTime = self.timelineConverter.calcPresentationTimeFromMediaTime((time - frag.d) / fTimescale, representation);
-                representation.segmentAvailabilityRange = {start: availabilityStartTime, end: availabilityEndTime};
+                representation.segmentAvailabilityRange = {
+                    start: availabilityStartTime,
+                    end: availabilityEndTime
+                };
                 representation.availableSegmentsNumber = availabilityIdx + 1;
             }
 
             return Q.when(segments);
         },
 
-        getSegmentsFromTemplate = function (representation) {
+        getSegmentsFromTemplate = function(representation) {
             var segments = [],
                 self = this,
                 deferred = Q.defer(),
                 template = representation.adaptation.period.mpd.manifest.Period_asArray[representation.adaptation.period.index].
-                    AdaptationSet_asArray[representation.adaptation.index].Representation_asArray[representation.index].SegmentTemplate,
-                duration = representation.segmentDuration,
-                segmentRange = null,
-                periodStartIdx = Math.floor(representation.adaptation.period.start / duration),
-                i,
-                startIdx,
-                endIdx,
-                seg = null,
-                start,
-                url = null;
+            AdaptationSet_asArray[representation.adaptation.index].Representation_asArray[representation.index].SegmentTemplate,
+            duration = representation.segmentDuration,
+            segmentRange = null,
+            periodStartIdx = Math.floor(representation.adaptation.period.start / duration),
+            i,
+            startIdx,
+            endIdx,
+            seg = null,
+            start,
+            url = null;
 
             start = representation.startNumber;
 
@@ -402,10 +408,10 @@ Dash.dependencies.DashHandler = function () {
                     startIdx = segmentRange.start;
                     endIdx = segmentRange.end;
 
-                    for (i = startIdx;i <= endIdx; i += 1) {
+                    for (i = startIdx; i <= endIdx; i += 1) {
 
                         seg = getIndexBasedSegment.call(
-                                    self,
+                            self,
                             representation,
                             i - (isDynamic ? periodStartIdx : 0));
 
@@ -450,7 +456,10 @@ Dash.dependencies.DashHandler = function () {
             if (isDynamic && !representation.adaptation.period.mpd.isClientServerTimeSyncCompleted) {
                 start = Math.floor(availabilityWindow.start / duration);
                 end = Math.floor(availabilityWindow.end / duration);
-                range = {start: start, end: end};
+                range = {
+                    start: start,
+                    end: end
+                };
                 return range;
             }
 
@@ -470,7 +479,10 @@ Dash.dependencies.DashHandler = function () {
             start = Math.floor(Math.max(originAvailabilityTime - availabilityLowerLimit, availabilityWindow.start) / duration);
             end = Math.floor(Math.min(start + availabilityUpperLimit / duration, availabilityWindow.end / duration));
 
-            range = {start: start, end: end};
+            range = {
+                start: start,
+                end: end
+            };
 
             return range;
         },
@@ -487,11 +499,14 @@ Dash.dependencies.DashHandler = function () {
                 range;
 
             if (isDynamic && !representation.adaptation.period.mpd.isClientServerTimeSyncCompleted) {
-                range = {start: firstIdx, end: lastIdx};
+                range = {
+                    start: firstIdx,
+                    end: lastIdx
+                };
                 return range;
             }
 
-            if(!isDynamic && requestedTime) return null;
+            if (!isDynamic && requestedTime) return null;
 
             // if segments exist use the current index as an origin index for a new range
             if (currentSegmentList) {
@@ -509,7 +524,10 @@ Dash.dependencies.DashHandler = function () {
             start = Math.max(originAvailabilityIdx - availabilityLowerLimit, firstIdx);
             end = Math.min(originAvailabilityIdx + availabilityUpperLimit, lastIdx);
 
-            range = {start: start, end: end};
+            range = {
+                start: start,
+                end: end
+            };
 
             return range;
         },
@@ -547,7 +565,7 @@ Dash.dependencies.DashHandler = function () {
 
             presentationStartTime = self.timelineConverter.calcPresentationTimeFromMediaTime(scaledTime, representation);
             // ORANGE: presentationStartTime is the media time of the segment as provided in the SegmentTimeline
-            presentationStartTime = scaledTime;//self.timelineConverter.calcPresentationTimeFromMediaTime(scaledTime, representation);
+            presentationStartTime = scaledTime; //self.timelineConverter.calcPresentationTimeFromMediaTime(scaledTime, representation);
             presentationEndTime = presentationStartTime + scaledDuration;
 
             seg = new Dash.vo.Segment();
@@ -580,29 +598,29 @@ Dash.dependencies.DashHandler = function () {
             return seg;
         },
 
-        getSegmentsFromList = function (representation) {
+        getSegmentsFromList = function(representation) {
             var self = this,
                 segments = [],
                 deferred = Q.defer(),
                 list = representation.adaptation.period.mpd.manifest.Period_asArray[representation.adaptation.period.index].
-                    AdaptationSet_asArray[representation.adaptation.index].Representation_asArray[representation.index].SegmentList,
-                len = list.SegmentURL_asArray.length,
-                i,
-                seg,
-                s,
-                range,
-                startIdx = 0,
-                endIdx = list.SegmentURL_asArray.length,
-                start;
+            AdaptationSet_asArray[representation.adaptation.index].Representation_asArray[representation.index].SegmentList,
+            len = list.SegmentURL_asArray.length,
+            i,
+            seg,
+            s,
+            range,
+            startIdx = 0,
+            endIdx = list.SegmentURL_asArray.length,
+            start;
 
             start = representation.startNumber;
 
             waitForAvailabilityWindow.call(self, representation).then(
                 function(availabilityWindow) {
                     if (!isDynamic) {
-                    range = decideSegmentListRangeForTemplate.call(self, representation);
-                    startIdx = range.start;
-                    endIdx = range.end;
+                        range = decideSegmentListRangeForTemplate.call(self, representation);
+                        startIdx = range.start;
+                        endIdx = range.end;
                     }
 
                     for (i = startIdx; i < endIdx; i += 1) {
@@ -632,23 +650,23 @@ Dash.dependencies.DashHandler = function () {
                     representation.segmentAvailabilityRange = availabilityWindow;
                     representation.availableSegmentsNumber = len;
                     deferred.resolve(segments);
-            });
+                });
 
             return deferred.promise;
         },
 
-        getSegmentsFromSource = function (representation) {
+        getSegmentsFromSource = function(representation) {
             var self = this,
                 baseURL = representation.adaptation.period.mpd.manifest.Period_asArray[representation.adaptation.period.index].
-                    AdaptationSet_asArray[representation.adaptation.index].Representation_asArray[representation.index].BaseURL,
-                deferred = Q.defer(),
-                segments = [],
-                count = 0,
-                range = null,
-                s,
-                i,
-                len,
-                seg;
+            AdaptationSet_asArray[representation.adaptation.index].Representation_asArray[representation.index].BaseURL,
+            deferred = Q.defer(),
+            segments = [],
+            count = 0,
+            range = null,
+            s,
+            i,
+            len,
+            seg;
 
             if (representation.indexRange) {
                 range = representation.indexRange;
@@ -656,7 +674,7 @@ Dash.dependencies.DashHandler = function () {
 
             this.baseURLExt.loadSegments(baseURL, range).then(
                 function(fragments) {
-                    for (i = 0, len = fragments.length; i < len; i+=1) {
+                    for (i = 0, len = fragments.length; i < len; i += 1) {
                         s = fragments[i];
 
                         seg = getTimeBasedSegment.call(
@@ -674,7 +692,10 @@ Dash.dependencies.DashHandler = function () {
                         count += 1;
                     }
 
-                    representation.segmentAvailabilityRange = {start: segments[0].presentationStartTime, end: segments[len - 1].presentationStartTime};
+                    representation.segmentAvailabilityRange = {
+                        start: segments[0].presentationStartTime,
+                        end: segments[len - 1].presentationStartTime
+                    };
                     representation.availableSegmentsNumber = len;
                     deferred.resolve(segments);
                 }
@@ -683,7 +704,7 @@ Dash.dependencies.DashHandler = function () {
             return deferred.promise;
         },
 
-        getSegments = function (representation) {
+        getSegments = function(representation) {
             var segmentPromise,
                 deferred = Q.defer(),
                 self = this,
@@ -705,7 +726,7 @@ Dash.dependencies.DashHandler = function () {
                 }
 
                 Q.when(segmentPromise).then(
-                    function (segments) {
+                    function(segments) {
                         representation.segments = segments;
                         lastIdx = segments.length - 1;
                         if (isDynamic && isNaN(representation.adaptation.period.liveEdge)) {
@@ -713,7 +734,9 @@ Dash.dependencies.DashHandler = function () {
                                 liveEdge = segments[lastIdx].presentationStartTime;
                             // the last segment is supposed to be a live edge
                             representation.adaptation.period.liveEdge = liveEdge;
-                            self.metricsModel.updateManifestUpdateInfo(self.metricsExt.getCurrentManifestUpdate(metrics), {presentationStartTime: liveEdge});
+                            self.metricsModel.updateManifestUpdateInfo(self.metricsExt.getCurrentManifestUpdate(metrics), {
+                                presentationStartTime: liveEdge
+                            });
                         }
 
                         deferred.resolve(segments);
@@ -730,7 +753,7 @@ Dash.dependencies.DashHandler = function () {
 
             representation.segments = null;
 
-            self.debug.log("[DashHandler]["+type+"] updateSegmentList for representation ", representation.id);
+            self.debug.log("[DashHandler][" + type + "] updateSegmentList for representation ", representation.id);
 
             getSegments.call(self, representation).then(
                 function(segments) {
@@ -742,7 +765,7 @@ Dash.dependencies.DashHandler = function () {
             return deferred.promise;
         },
 
-        getIndexForSegments = function (time, representation) {
+        getIndexForSegments = function(time, representation) {
             var segments = representation.segments,
                 segmentLastIdx = segments.length - 1,
                 idx = -1,
@@ -752,7 +775,7 @@ Dash.dependencies.DashHandler = function () {
                 i,
                 self = this;
 
-            self.debug.log("[DashHandler]["+type+"] getIndexForSegments for time ", time);
+            self.debug.log("[DashHandler][" + type + "] getIndexForSegments for time ", time);
 
             if (segments && segments.length > 0) {
                 for (i = segmentLastIdx; i >= 0; i--) {
@@ -763,12 +786,12 @@ Dash.dependencies.DashHandler = function () {
                     if ((time + Dash.dependencies.DashHandler.EPSILON) >= ft &&
                         (time - Dash.dependencies.DashHandler.EPSILON) <= (ft + fd)) {
                         idx = frag.availabilityIdx;
-                        self.debug.log("[DashHandler]["+type+"] getIndexForSegments, idx =  ", idx);
+                        self.debug.log("[DashHandler][" + type + "] getIndexForSegments, idx =  ", idx);
                         break;
                     } else if (idx === -1 && (time - Dash.dependencies.DashHandler.EPSILON) > (ft + fd)) {
                         // time is past the end
-                        self.debug.log("[DashHandler]["+type+"] getIndexForSegments, (past the end) idx =  ", idx);
-                        idx  = isNaN(representation.segmentDuration) ? (frag.availabilityIdx + 1) : Math.floor((time - representation.adaptation.period.start) / representation.segmentDuration);
+                        self.debug.log("[DashHandler][" + type + "] getIndexForSegments, (past the end) idx =  ", idx);
+                        idx = isNaN(representation.segmentDuration) ? (frag.availabilityIdx + 1) : Math.floor((time - representation.adaptation.period.start) / representation.segmentDuration);
                         //ORANGE : we have past the end, don't iterate for nothing
                         break;
                     }
@@ -777,13 +800,13 @@ Dash.dependencies.DashHandler = function () {
 
             if (idx === -1) {
                 if (!isNaN(representation.segmentDuration)) {
-                    self.debug.log("[DashHandler]["+type+"] getIndexForSegments, (segment duration) idx =  ", idx);
+                    self.debug.log("[DashHandler][" + type + "] getIndexForSegments, (segment duration) idx =  ", idx);
                     idx = Math.floor((time - representation.adaptation.period.start) / representation.segmentDuration);
                 } else {
                     self.debug.log("Couldn't figure out a time!");
                     self.debug.log("Time: " + time);
                     self.debug.log(segments);
-            }
+                }
             }
 
             // TODO : This is horrible.
@@ -841,7 +864,7 @@ Dash.dependencies.DashHandler = function () {
 
                 if (seg.sequenceNumber && (seg.sequenceNumber === sn)) {
                     if (i < (ln - 1)) {
-                        return representation.segments[i+1];
+                        return representation.segments[i + 1];
                     }
                     return null;
                 }
@@ -858,21 +881,21 @@ Dash.dependencies.DashHandler = function () {
                 upperTime;
 
 
-            if (!segments) {
+            if (!segments || segments.length === 0) {
                 updateRequired = true;
             } else {
                 lowerIdx = segments[0].availabilityIdx;
-                upperIdx = segments[segments.length -1].availabilityIdx;
+                upperIdx = segments[segments.length - 1].availabilityIdx;
                 // ORANGE: check also regarding requested time (@see getForTime()), required for live use case
                 // to avoid already loaded fragments to be returned
-                upperTime = segments[segments.length -1].presentationStartTime;
+                upperTime = segments[segments.length - 1].presentationStartTime;
                 updateRequired = (index < lowerIdx) || (index > upperIdx) || (requestedTime > upperTime);
             }
 
             return updateRequired;
         },
 
-        getRequestForSegment = function (segment) {
+        getRequestForSegment = function(segment) {
             if (segment === null || segment === undefined) {
                 return Q.when(null);
             }
@@ -880,8 +903,8 @@ Dash.dependencies.DashHandler = function () {
             var request = new MediaPlayer.vo.SegmentRequest(),
                 representation = segment.representation,
                 bandwidth = representation.adaptation.period.mpd.manifest.Period_asArray[representation.adaptation.period.index].
-                    AdaptationSet_asArray[representation.adaptation.index].Representation_asArray[representation.index].bandwidth,
-                url;
+            AdaptationSet_asArray[representation.adaptation.index].Representation_asArray[representation.index].bandwidth,
+            url;
 
             url = getRequestUrl(segment.media, representation);
             url = replaceTokenForTemplate(url, "Number", segment.replacementNumber);
@@ -910,7 +933,7 @@ Dash.dependencies.DashHandler = function () {
             return Q.when(request);
         },
 
-        getForTime = function (representation, time) {
+        getForTime = function(representation, time) {
             var deferred,
                 request,
                 segment,
@@ -922,12 +945,12 @@ Dash.dependencies.DashHandler = function () {
 
             requestedTime = time;
 
-            self.debug.log("[DashHandler]["+type+"] Getting the request for time: " + time);
+            self.debug.log("[DashHandler][" + type + "] Getting the request for time: " + time);
 
             deferred = Q.defer();
 
             getSegments.call(self, representation).then(
-                function (/*segments*/) {
+                function( /*segments*/ ) {
                     var segmentsPromise;
 
                     //self.debug.log("Got segments.");
@@ -937,14 +960,14 @@ Dash.dependencies.DashHandler = function () {
                     return segmentsPromise;
                 }
             ).then(
-                function (newIndex) {
-                    self.debug.log("[DashHandler]["+type+"] Index for time " + time + " is " + newIndex);
+                function(newIndex) {
+                    self.debug.log("[DashHandler][" + type + "] Index for time " + time + " is " + newIndex);
                     index = newIndex;
 
                     return isMediaFinished.call(self, representation);
                 }
             ).then(
-                function (finished) {
+                function(finished) {
                     var requestPromise = null;
 
                     //self.debug.log("Stream finished? " + finished);
@@ -952,7 +975,7 @@ Dash.dependencies.DashHandler = function () {
                         request = new MediaPlayer.vo.SegmentRequest();
                         request.action = request.ACTION_COMPLETE;
                         request.index = index;
-                        self.debug.log("[DashHandler]["+type+"] Signal complete.");
+                        self.debug.log("[DashHandler][" + type + "] Signal complete.");
                         self.debug.log(request);
                         deferred.resolve(request);
                     } else {
@@ -963,7 +986,7 @@ Dash.dependencies.DashHandler = function () {
                     return requestPromise;
                 }
             ).then(
-                function (request) {
+                function(request) {
                     //self.debug.log("Got a request.");
                     //self.debug.log(request);
                     deferred.resolve(request);
@@ -973,7 +996,7 @@ Dash.dependencies.DashHandler = function () {
             return deferred.promise;
         },
 
-        getNext = function (representation) {
+        getNext = function(representation) {
             var deferred,
                 request,
                 segment,
@@ -995,21 +1018,21 @@ Dash.dependencies.DashHandler = function () {
 
             deferred = Q.defer();
 
-            self.debug.log("[DashHandler]["+type+"] Getting the next request => index = " + index);
+            self.debug.log("[DashHandler][" + type + "] Getting the next request => index = " + index);
 
             isMediaFinished.call(self, representation).then(
-                function (finished) {
+                function(finished) {
                     //self.debug.log("Stream finished? " + finished);
                     if (finished) {
                         request = new MediaPlayer.vo.SegmentRequest();
                         request.action = request.ACTION_COMPLETE;
                         request.index = index;
-                        self.debug.log("[DashHandler]["+type+"] Signal complete.");
+                        self.debug.log("[DashHandler][" + type + "] Signal complete.");
                         //self.debug.log(request);
                         deferred.resolve(request);
                     } else {
                         getSegments.call(self, representation).then(
-                            function (/*segments*/) {
+                            function( /*segments*/ ) {
                                 var segmentsPromise;
 
                                 //self.debug.log("Got segments.");
@@ -1019,7 +1042,7 @@ Dash.dependencies.DashHandler = function () {
                                 return segmentsPromise;
                             }
                         ).then(
-                            function (request) {
+                            function(request) {
                                 //self.debug.log("Got a request.");
                                 //self.debug.log(request);
                                 deferred.resolve(request);
@@ -1033,7 +1056,7 @@ Dash.dependencies.DashHandler = function () {
         },
 
         // ORANGE: HLS use case, get next request from sequence number
-        getNextFromSN = function (representation, sn) {
+        getNextFromSN = function(representation, sn) {
             var deferred,
                 request,
                 segment,
@@ -1051,18 +1074,18 @@ Dash.dependencies.DashHandler = function () {
 
             deferred = Q.defer();
 
-            self.debug.log("[DashHandler]["+type+"] Getting the next request => sn = " + sn);
+            self.debug.log("[DashHandler][" + type + "] Getting the next request => sn = " + sn);
 
             getSegments.call(self, representation).then(
-                function (/*segments*/) {
+                function( /*segments*/ ) {
                     isMediaFinished.call(self, representation).then(
-                        function (finished) {
+                        function(finished) {
                             //self.debug.log("Stream finished? " + finished);
                             if (finished) {
                                 request = new MediaPlayer.vo.SegmentRequest();
                                 request.action = request.ACTION_COMPLETE;
                                 request.index = index;
-                                self.debug.log("[DashHandler]["+type+"] Signal complete.");
+                                self.debug.log("[DashHandler][" + type + "] Signal complete.");
                                 //self.debug.log(request);
                                 deferred.resolve(request);
                             } else {
@@ -1072,7 +1095,7 @@ Dash.dependencies.DashHandler = function () {
                                 } else {
                                     index = segment.availabilityIdx;
                                     getRequestForSegment.call(self, segment).then(
-                                        function (request) {
+                                        function(request) {
                                             //self.debug.log("Got a request.");
                                             //self.debug.log(request);
                                             deferred.resolve(request);
@@ -1088,7 +1111,7 @@ Dash.dependencies.DashHandler = function () {
             return deferred.promise;
         },
 
-        getSegmentCountForDuration = function (representation, requiredDuration, bufferedDuration) {
+        getSegmentCountForDuration = function(representation, requiredDuration, bufferedDuration) {
             var self = this,
                 remainingDuration = Math.max(requiredDuration - bufferedDuration, 0),
                 deferred = Q.defer(),
@@ -1099,15 +1122,15 @@ Dash.dependencies.DashHandler = function () {
                 return Q.reject("no represenation");
             }
 
-            self.debug.log("[DashHandler]["+type+"] getSegmentCountForDuration");
+            self.debug.log("[DashHandler][" + type + "] getSegmentCountForDuration");
 
             getSegments.call(self, representation).then(
-                function (segments) {
+                function(segments) {
                     segmentDuration = segments[0].duration;
-                    segmentCount = Math.ceil(remainingDuration/segmentDuration);
+                    segmentCount = Math.ceil(remainingDuration / segmentDuration);
                     deferred.resolve(segmentCount);
                 },
-                function () {
+                function() {
                     deferred.resolve(0);
                 }
             );
@@ -1115,7 +1138,7 @@ Dash.dependencies.DashHandler = function () {
             return deferred.promise;
         },
 
-        getCurrentTime = function (representation) {
+        getCurrentTime = function(representation) {
             var self = this,
                 time,
                 bufferedIndex,
@@ -1128,19 +1151,19 @@ Dash.dependencies.DashHandler = function () {
             bufferedIndex = index;
 
             getSegments.call(self, representation).then(
-                function (segments) {
+                function(segments) {
                     if (bufferedIndex < 0) {
                         time = self.timelineConverter.calcPresentationStartTime(representation.adaptation.period);
                     } else {
                         bufferedIndex = bufferedIndex < segments[0].availabilityIdx ? segments[0].availabilityIdx : Math.min(segments[segments.length - 1].availabilityIdx, bufferedIndex);
                         time = getSegmentByIndex(bufferedIndex, representation).presentationStartTime;
-                        self.debug.log("[DashHandler]["+type+"] getSegmentByIndex, index = " + bufferedIndex + " => time = " + time);
+                        self.debug.log("[DashHandler][" + type + "] getSegmentByIndex, index = " + bufferedIndex + " => time = " + time);
                     }
 
-                    self.debug.log("[DashHandler]["+type+"] getCurrentTime => ", time);
+                    self.debug.log("[DashHandler][" + type + "] getCurrentTime => ", time);
                     deferred.resolve(time);
                 },
-                function () {
+                function() {
                     deferred.reject();
                 }
             );
@@ -1154,21 +1177,21 @@ Dash.dependencies.DashHandler = function () {
         metricsModel: undefined,
         metricsExt: undefined,
         manifestModel: undefined,
-        manifestExt:undefined,
+        manifestExt: undefined,
         timelineConverter: undefined,
 
-        getType: function () {
+        getType: function() {
             return type;
         },
 
-        setType : function (value) {
+        setType: function(value) {
             type = value;
         },
 
-        getIsDynamic: function () {
+        getIsDynamic: function() {
             return isDynamic;
         },
-        setIsDynamic: function (value) {
+        setIsDynamic: function(value) {
             isDynamic = value;
         },
 
