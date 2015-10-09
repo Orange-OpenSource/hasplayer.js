@@ -132,30 +132,42 @@
         var self = this,
             manifest = self.manifestModel.getValue(),
             representation,
+            periodArray;
+
+        if (manifest) {
             periodArray = manifest.Period_asArray;
 
-        representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
+            representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
 
-        if (representation === null) {
+            if (representation === null) {
+                return null;
+            }
+
+            return representation.width;
+        }else {
             return null;
         }
-
-        return representation.width;
     };
 
     rslt.getVideoHeightForRepresentation = function (representationId) {
         var self = this,
             manifest = self.manifestModel.getValue(),
             representation,
+            periodArray;
+
+        if (manifest) {
             periodArray = manifest.Period_asArray;
 
-        representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
+            representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
 
-        if (representation === null) {
+            if (representation === null) {
+                return null;
+            }
+
+            return representation.height;
+        }else{
             return null;
         }
-
-        return representation.height;
     };
 
 

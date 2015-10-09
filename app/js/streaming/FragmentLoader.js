@@ -103,7 +103,7 @@
                         httpRequestMetrics.tresponse = currentTime;
                     }
                 }
-
+                
                 if (event.lengthComputable) {
                     request.bytesLoaded = event.loaded;
                     request.bytesTotal = event.total;

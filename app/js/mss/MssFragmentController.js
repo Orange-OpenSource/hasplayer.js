@@ -260,7 +260,7 @@ Mss.dependencies.MssFragmentController = function () {
             return Q.when(null);
         }
 
-        if (request && (request.type === "Media Segment") && representations && (representations.length > 0)){
+        if (request && (request.type === "Media Segment") && manifest && representations && (representations.length > 0)){
             // Get adaptation containing provided representations
             // (Note: here representations is of type Dash.vo.Representation)
             var adaptation = manifest.Period_asArray[representations[0].adaptation.period.index].AdaptationSet_asArray[representations[0].adaptation.index];

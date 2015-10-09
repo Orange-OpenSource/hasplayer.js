@@ -244,29 +244,35 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         "use strict";
         //return Q.when(null);
         //------------------------------------
-        var adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray,
+        var adaptations,
             i,
             len,
             deferred = Q.defer(),
             funcs = [];
 
-        for (i = 0, len = adaptations.length; i < len; i += 1) {
-            funcs.push(this.getIsVideo(adaptations[i]));
-        }
-        Q.all(funcs).then(
-            function (results) {
-                var found = false;
-                for (i = 0, len = results.length; i < len; i += 1) {
-                    if (results[i] === true) {
-                        found = true;
-                        deferred.resolve(adaptations[i]);
+        if (manifest && (periodIndex !== null || periodIndex !== undefined)) {
+            adaptations  = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+
+            for (i = 0, len = adaptations.length; i < len; i += 1) {
+                funcs.push(this.getIsVideo(adaptations[i]));
+            }
+            Q.all(funcs).then(
+                function (results) {
+                    var found = false;
+                    for (i = 0, len = results.length; i < len; i += 1) {
+                        if (results[i] === true) {
+                            found = true;
+                            deferred.resolve(adaptations[i]);
+                        }
+                    }
+                    if (!found) {
+                        deferred.resolve(null);
                     }
                 }
-                if (!found) {
-                    deferred.resolve(null);
-                }
-            }
-        );
+            );
+        }else{
+            deferred.reject();
+        }
 
         return deferred.promise;
     },
@@ -908,55 +914,66 @@ Dash.dependencies.DashManifestExtensions.prototype = {
     getEventStreamForAdaptationSet : function (data) {
 
         var eventStreams = [],
+            inbandStreams;
+        
+        if (data) {
             inbandStreams = data.InbandEventStream_asArray;
+    
+            if(inbandStreams) {
+                for(var i = 0; i < inbandStreams.length ; i += 1 ) {
+                    var eventStream = new Dash.vo.EventStream();
+                    eventStream.timescale = 1;
 
-        if(inbandStreams) {
-            for(var i = 0; i < inbandStreams.length ; i += 1 ) {
-                var eventStream = new Dash.vo.EventStream();
-                eventStream.timescale = 1;
-
-                if(inbandStreams[i].hasOwnProperty("schemeIdUri")) {
-                    eventStream.schemeIdUri = inbandStreams[i].schemeIdUri;
-                } else {
-                    throw "Invalid EventStream. SchemeIdUri has to be set";
+                    if(inbandStreams[i].hasOwnProperty("schemeIdUri")) {
+                        eventStream.schemeIdUri = inbandStreams[i].schemeIdUri;
+                    } else {
+                        throw "Invalid EventStream. SchemeIdUri has to be set";
+                    }
+                    if(inbandStreams[i].hasOwnProperty("timescale")) {
+                        eventStream.timescale = inbandStreams[i].timescale;
+                    }
+                    if(inbandStreams[i].hasOwnProperty("value")) {
+                        eventStream.value = inbandStreams[i].value;
+                    }
+                    eventStreams.push(eventStream);
                 }
-                if(inbandStreams[i].hasOwnProperty("timescale")) {
-                    eventStream.timescale = inbandStreams[i].timescale;
-                }
-                if(inbandStreams[i].hasOwnProperty("value")) {
-                    eventStream.value = inbandStreams[i].value;
-                }
-                eventStreams.push(eventStream);
             }
         }
+        
         return eventStreams;
     },
 
     getEventStreamForRepresentation : function (data,representation) {
 
         var eventStreams = [],
+            inbandStreams;
+
+        if (data && representation) {
+
             inbandStreams = data.Representation_asArray[representation.index].InbandEventStream_asArray;
 
-        if(inbandStreams) {
-            for(var i = 0; i < inbandStreams.length ; i++ ) {
-                var eventStream = new Dash.vo.EventStream();
-                eventStream.timescale = 1;
-                eventStream.representation = representation;
+            if(inbandStreams) {
+                for(var i = 0; i < inbandStreams.length ; i++ ) {
+                    var eventStream = new Dash.vo.EventStream();
+                    eventStream.timescale = 1;
+                    eventStream.representation = representation;
 
-                if(inbandStreams[i].hasOwnProperty("schemeIdUri")) {
-                    eventStream.schemeIdUri = inbandStreams[i].schemeIdUri;
-                } else {
-                    throw "Invalid EventStream. SchemeIdUri has to be set";
+                    if(inbandStreams[i].hasOwnProperty("schemeIdUri")) {
+                        eventStream.schemeIdUri = inbandStreams[i].schemeIdUri;
+                    } else {
+                        throw "Invalid EventStream. SchemeIdUri has to be set";
+                    }
+                    if(inbandStreams[i].hasOwnProperty("timescale")) {
+                        eventStream.timescale = inbandStreams[i].timescale;
+                    }
+                    if(inbandStreams[i].hasOwnProperty("value")) {
+                        eventStream.value = inbandStreams[i].value;
+                    }
+                    eventStreams.push(eventStream);
                 }
-                if(inbandStreams[i].hasOwnProperty("timescale")) {
-                    eventStream.timescale = inbandStreams[i].timescale;
-                }
-                if(inbandStreams[i].hasOwnProperty("value")) {
-                    eventStream.value = inbandStreams[i].value;
-                }
-                eventStreams.push(eventStream);
             }
         }
+
         return eventStreams;
 
     },

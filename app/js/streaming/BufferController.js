@@ -405,12 +405,14 @@ MediaPlayer.dependencies.BufferController = function () {
                 len;
 
             if (this.debug.getLogToBrowserConsole()) {
-                ranges = this.sourceBufferExt.getAllRanges(buffer);
-                if ((ranges === null) || (ranges.length === 0)) {
-                    return;
-                }
-                for (i = 0, len = ranges.length; i < len; i += 1) {
-                    this.debug.info("[BufferController]["+type+"] ### Buffered " + type + " range [" + i + "]: " + ranges.start(i) + " - " + ranges.end(i) + " (" + this.getVideoModel().getCurrentTime() + ")");
+                if (buffer) {
+                    ranges = this.sourceBufferExt.getAllRanges(buffer);
+                    if ((ranges === null) || (ranges.length === 0)) {
+                        return;
+                    }
+                    for (i = 0, len = ranges.length; i < len; i += 1) {
+                        this.debug.info("[BufferController]["+type+"] ### Buffered " + type + " range [" + i + "]: " + ranges.start(i) + " - " + ranges.end(i) + " (" + this.getVideoModel().getCurrentTime() + ")");
+                    }
                 }
             }
         },
