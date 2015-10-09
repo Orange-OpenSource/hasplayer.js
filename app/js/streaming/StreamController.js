@@ -565,7 +565,9 @@
             }
             else if (ownProtectionController) {
                 var teardownComplete = {},
-                        self = this;
+                    funcs = [],
+                    self = this;
+
                 teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE] = function () {
 
                     // Complete teardown process
@@ -576,17 +578,20 @@
                     // Reset the streams
                     for (var i = 0, ln = streams.length; i < ln; i++) {
                         var stream = streams[i];
-                        stream.reset();
+                        funcs.push(stream.reset());
                         // we should not remove the video element for the active stream since it is the element users see at the page
                         if (stream !== activeStream) {
                             removeVideoElement(stream.getVideoModel().getElement());
                         }
                         delete streams[i];
                     }
-                    streams = [];
-                    activeStream = null;
 
-                    self.notify(MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE);
+                    Q.all(funcs).then(
+                        function(){
+                            streams = [];
+                            activeStream = null;
+                            self.notify(MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE);
+                        });
                 };
                 protectionController.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE, teardownComplete, undefined, true);
                 protectionController.teardown();

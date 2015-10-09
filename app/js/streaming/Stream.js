@@ -139,44 +139,55 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         tearDownMediaSource = function() {
-            var self = this;
+            var self = this,
+                funcs = [],
+                deferred = Q.defer();
 
             if (!!videoController) {
-                videoController.reset(errored);
-                videoController = undefined;
+                funcs.push(videoController.reset(errored));
             }
             if (!!audioController) {
-                audioController.reset(errored);
-                audioController = undefined;
-            }
-            if (!!textController) {
-                textController.reset(errored);
-                textController = undefined;
-            }
-            if (!!eventController) {
-                eventController.reset();
-                eventController = undefined;
+                funcs.push(audioController.reset(errored));
             }
 
-            if (!!mediaSource) {
-                self.mediaSourceExt.detachMediaSource(self.videoModel);
-            }
+            Q.all(funcs).then(
+                function(){
+                    videoController = undefined;
+                    audioController = undefined;
 
-            initialized = false;
+                    if (!!textController) {
+                        textController.reset(errored);
+                        textController = undefined;
+                    }
+                    if (!!eventController) {
+                        eventController.reset();
+                        eventController = undefined;
+                    }
 
-            kid = null;
-            initData = [];
-            contentProtection = null;
+                    if (!!mediaSource) {
+                        self.mediaSourceExt.detachMediaSource(self.videoModel);
+                    }
 
-            videoController = null;
-            audioController = null;
-            textController = null;
+                    initialized = false;
 
-            videoCodec = null;
-            audioCodec = null;
+                    kid = null;
+                    initData = [];
+                    contentProtection = null;
 
-            mediaSource = null;
-            manifest = null;
+                    videoController = null;
+                    audioController = null;
+                    textController = null;
+
+                    videoCodec = null;
+                    audioCodec = null;
+
+                    mediaSource = null;
+                    manifest = null;
+
+                    deferred.resolve();
+            });
+
+            return deferred.promise;
         },
 
         checkIfInitialized = function(videoReady, audioReady, textTrackReady, deferred) {
@@ -1179,6 +1190,8 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         reset: function() {
+            var deferred = Q.defer()
+                self = this;
 
             this.debug.info("[Stream] Reset");
 
@@ -1211,27 +1224,21 @@ MediaPlayer.dependencies.Stream = function() {
             this.system.unmapHandler("bufferingCompleted");
             this.system.unmapHandler("segmentLoadingFailed");
 
-            tearDownMediaSource.call(this);
+            tearDownMediaSource.call(this).then(
+                function(){
+                    if (protectionController) {
+                        protectionController.unsubscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, self);
+                    }
 
-            if (protectionController) {
-                protectionController.unsubscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
-                /*protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
-                protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.SERVER_CERTIFICATE_UPDATED, boundProtectionErrorHandler);
-                protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_ADDED, boundProtectionErrorHandler);
-                protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SESSION_CREATED, boundProtectionErrorHandler);
-                protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
-                protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
-                protectionController.removeEventListener(MediaPlayer.dependencies.ProtectionController.events.LICENSE_REQUEST_COMPLETE, boundProtectionErrorHandler);*/
-            }
+                    protectionController = undefined;
+                    self.fragmentController = undefined;
+                    self.requestScheduler = undefined;
 
-            protectionController = undefined;
-            this.fragmentController = undefined;
-            this.requestScheduler = undefined;
+                    load = Q.defer();
+                    deferred.resolve();
+            });
 
-            // streamcontroller expects this to be valid
-            //this.videoModel = null;
-
-            load = Q.defer();
+            return deferred.promise;
         },
 
         getDuration: function() {

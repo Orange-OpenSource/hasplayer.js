@@ -661,6 +661,10 @@ MediaPlayer.dependencies.BufferController = function () {
             this.debug.log(msgError);
             this.stallTime = e.startTime;
 
+            if (deferredFragmentBuffered) {
+                deferredFragmentBuffered.resolve();
+            }
+            
             data.url = e.url;
             data.request = e;
             this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, type + ": Failed to load a request at startTime = "+e.startTime, data);
@@ -1187,36 +1191,37 @@ MediaPlayer.dependencies.BufferController = function () {
                             currentRepresentation = getRepresentationForQuality.call(self, result.quality);
 
                             if (currentRepresentation) {
-                            fragmentDuration = currentRepresentation.segmentDuration;
+                                fragmentDuration = currentRepresentation.segmentDuration;
 
-                            self.indexHandler.setIsDynamic(isDynamic);
-                            self.bufferExt.decideBufferLength(manifest.minBufferTime, periodInfo.duration, waitingForBuffer).then(
-                                function (time) {
-                                    minBufferTime = (minBufferTime === -1) ? time : minBufferTime;
-                                }
-                            );
+                                self.indexHandler.setIsDynamic(isDynamic);
+                                self.bufferExt.decideBufferLength(manifest.minBufferTime, periodInfo.duration, waitingForBuffer).then(
+                                    function (time) {
+                                        minBufferTime = (minBufferTime === -1) ? time : minBufferTime;
+                                    }
+                                );
 
-                            if (isDynamic) {
-                                if (type === "video") {
-                                    self.indexHandler.updateSegmentList(currentRepresentation).then(
-                                        function() {
-                                            getLiveEdgeTime.call(self).then(
-                                                function(time) {
-                                                    //self.seek(time);
-                                                    self.system.notify("liveEdgeFound", time);
-                                                    //ORANGE : used to test Live chunk download failure
-                                                    //testTimeLostChunk = time+20;
-                                                }
-                                            );
+                                if (isDynamic) {
+                                    if (type === "video") {
+                                        self.indexHandler.updateSegmentList(currentRepresentation).then(
+                                            function() {
+                                                getLiveEdgeTime.call(self).then(
+                                                    function(time) {
+                                                        //self.seek(time);
+                                                        self.system.notify("liveEdgeFound", time);
+                                                        //ORANGE : used to test Live chunk download failure
+                                                        //testTimeLostChunk = time+20;
+                                                    }
+                                                );
+                                            }
+                                        );
+                                    }
+                                } else {
+                                    self.indexHandler.getCurrentTime(currentRepresentation).then(
+                                        function(time) {
+                                            self.seek(time);
                                         }
                                     );
                                 }
-                            } else {
-                                self.indexHandler.getCurrentTime(currentRepresentation).then(
-                                    function(time) {
-                                        self.seek(time);
-                                    }
-                                );
                             }
                         }
                     );
@@ -1428,34 +1433,45 @@ MediaPlayer.dependencies.BufferController = function () {
                         d.reject();
                         d = null;
                     }
-                };
+                },
+                deferred = Q.defer();
 
             doStop.call(self);
+            // Wait for current buffering process to be completed before restarting
+            Q.when(deferredFragmentBuffered ? deferredFragmentBuffered.promise : true).then(
+                function () {
+                    cancel(deferredRejectedDataAppend);
+                    cancel(deferredBuffersFlatten);
+                    cancel(deferredFragmentBuffered);
+                    cancel(deferredStreamComplete);
+                    deferredStreamComplete = Q.defer();
 
-            cancel(deferredRejectedDataAppend);
-            cancel(deferredBuffersFlatten);
-            cancel(deferredFragmentBuffered);
-            cancel(deferredStreamComplete);
-            deferredStreamComplete = Q.defer();
+                    fragmentModel.fragmentLoader.unsubscribe(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, self.abrController);
 
-            fragmentModel.fragmentLoader.unsubscribe(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, this.abrController);
+                    self.clearMetrics();
+                    self.fragmentController.abortRequestsForModel(fragmentModel);
+                    self.fragmentController.detachBufferController(fragmentModel);
+                    fragmentModel = null;
+                    initializationData = [];
+                    initialPlayback = true;
+                    isQuotaExceeded = false;
+                    rejectedBytes = null;
+                    appendingRejectedData = false;
 
-            self.clearMetrics();
-            self.fragmentController.abortRequestsForModel(fragmentModel);
-            self.fragmentController.detachBufferController(fragmentModel);
-            fragmentModel = null;
-            initializationData = [];
-            initialPlayback = true;
-            isQuotaExceeded = false;
-            rejectedBytes = null;
-            appendingRejectedData = false;
+                    if (!errored) {
+                        self.sourceBufferExt.abort(mediaSource, buffer);
+                        self.sourceBufferExt.removeSourceBuffer(mediaSource, buffer);
+                    }
+                    data = null;
+                    buffer = null;
 
-            if (!errored) {
-                self.sourceBufferExt.abort(mediaSource, buffer);
-                self.sourceBufferExt.removeSourceBuffer(mediaSource, buffer);
-            }
-            data = null;
-            buffer = null;
+                    deferred.resolve();
+                },function(){
+                    deferred.reject();
+                }
+            );
+
+            return deferred.promise;
         },
 
         start: doStart,
