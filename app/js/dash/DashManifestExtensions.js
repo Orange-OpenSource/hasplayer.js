@@ -822,31 +822,35 @@ Dash.dependencies.DashManifestExtensions.prototype = {
     getMpd: function(manifest) {
         var mpd = new Dash.vo.Mpd();
 
-        mpd.manifest = manifest;
+        if (manifest) {
+            mpd.manifest = manifest;
 
-        if (manifest.hasOwnProperty("availabilityStartTime")) {
-            mpd.availabilityStartTime = new Date(manifest.availabilityStartTime.getTime());
-        } else {
-            mpd.availabilityStartTime = new Date(manifest.mpdLoadedTime.getTime());
+            if (manifest.hasOwnProperty("availabilityStartTime")) {
+                mpd.availabilityStartTime = new Date(manifest.availabilityStartTime.getTime());
+            } else {
+                mpd.availabilityStartTime = new Date(manifest.mpdLoadedTime.getTime());
+            }
+
+            if (manifest.hasOwnProperty("availabilityEndTime")) {
+                mpd.availabilityEndTime = new Date(manifest.availabilityEndTime.getTime());
+            }
+
+            if (manifest.hasOwnProperty("suggestedPresentationDelay")) {
+                mpd.suggestedPresentationDelay = manifest.suggestedPresentationDelay;
+            }
+
+            if (manifest.hasOwnProperty("timeShiftBufferDepth")) {
+                mpd.timeShiftBufferDepth = manifest.timeShiftBufferDepth;
+            }
+
+            if (manifest.hasOwnProperty("maxSegmentDuration")) {
+                mpd.maxSegmentDuration = manifest.maxSegmentDuration;
+            }
+
+            return Q.when(mpd);
         }
 
-        if (manifest.hasOwnProperty("availabilityEndTime")) {
-            mpd.availabilityEndTime = new Date(manifest.availabilityEndTime.getTime());
-        }
-
-        if (manifest.hasOwnProperty("suggestedPresentationDelay")) {
-            mpd.suggestedPresentationDelay = manifest.suggestedPresentationDelay;
-        }
-
-        if (manifest.hasOwnProperty("timeShiftBufferDepth")) {
-            mpd.timeShiftBufferDepth = manifest.timeShiftBufferDepth;
-        }
-
-        if (manifest.hasOwnProperty("maxSegmentDuration")) {
-            mpd.maxSegmentDuration = manifest.maxSegmentDuration;
-        }
-
-        return Q.when(mpd);
+        return Q.when(null);
     },
 
     getFetchTime: function(manifest, period) {
