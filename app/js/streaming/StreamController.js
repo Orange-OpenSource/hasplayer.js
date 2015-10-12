@@ -555,6 +555,7 @@
             this.pause();
 
             this.manifestUpdater.stop();
+            this.manifestLoader.abort();
             this.manifestModel.setValue(null);
             this.metricsModel.clearAllCurrentMetrics();
             isPeriodSwitchingInProgress = false;

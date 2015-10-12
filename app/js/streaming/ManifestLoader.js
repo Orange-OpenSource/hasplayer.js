@@ -18,6 +18,7 @@ MediaPlayer.dependencies.ManifestLoader = function () {
     var RETRY_ATTEMPTS = 3,
         RETRY_INTERVAL = 500,
         deferred = null,
+        request = null,
 
         getDecodedResponseText = function (text) {
             // Some content is not always successfully decoded by every browser.
@@ -57,9 +58,16 @@ MediaPlayer.dependencies.ManifestLoader = function () {
             return base;
         },
 
+        abort = function() {          
+            if (request) {
+                this.debug.log("[ManifestLoader] Manifest download abort.");
+                request.abort();
+            }
+            request = null;
+        },
+
         doLoad = function (url, remainingAttempts) {
             var baseUrl = parseBaseUrl(url),
-                request = new XMLHttpRequest(),
                 requestTime = new Date(),
                 mpdLoadedTime = null,
                 needFailureReport = true,
@@ -67,6 +75,11 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                 report = null,
                 self = this;
 
+            request = new XMLHttpRequest();
+
+            onabort = function(){
+                request.aborted = true;
+            };
 
             onload = function () {
                 if (request.status < 200 || request.status > 299) {
@@ -103,6 +116,7 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                         manifest.mpdLoadedTime = mpdLoadedTime;
                         self.metricsModel.addManifestUpdate("stream", manifest.type, requestTime, mpdLoadedTime, manifest.availabilityStartTime);
                         deferred.resolve(manifest);
+                        request = null;
                     },
                     function (error) {
                         self.debug.error("[ManifestLoader] Manifest parsing error.");
@@ -110,6 +124,7 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                         data.mpdUrl = url;
                         self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE, "parsing the manifest failed : "+error, data);
                         deferred.reject(request);
+                        request = null;
                     }
                 );
             };
@@ -132,13 +147,13 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                                                  request.status,
                                                  null,
                                                  null);
-                if (remainingAttempts > 0) {
+                if (remainingAttempts > 0 && !request.aborted) {
                     self.debug.log("Failed loading manifest: " + url + ", retry in " + RETRY_INTERVAL + "ms" + " attempts: " + remainingAttempts);
                     remainingAttempts--;
                     setTimeout(function() {
                         doLoad.call(self, url, remainingAttempts);
                     }, RETRY_INTERVAL);
-                } else {
+                } else if (!request.aborted){
                     var data = {},
                         msgError = "Failed loading manifest: " + url + " no retry attempts left";
 
@@ -148,6 +163,7 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                     data.request = request;
                     self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST, msgError, data);
                     deferred.reject(request);
+                    request = null;
                 }
             };
 
@@ -156,6 +172,7 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                 request.onload = onload;
                 request.onloadend = report;
                 request.onerror = report;
+                request.onabort = onabort;
                 request.open("GET", url, true);
                 request.send();
             } catch(e) {
@@ -174,7 +191,8 @@ MediaPlayer.dependencies.ManifestLoader = function () {
             doLoad.call(this, url, RETRY_ATTEMPTS);
 
             return deferred.promise;
-        }
+        },
+        abort : abort
     };
 };
 
