@@ -870,7 +870,7 @@ MediaPlayer.dependencies.BufferController = function () {
             return deferred.promise;
         },
 
-        updateBufferLevel = function() {
+        updateBufferLevel = function(sendMetric) {
             if (!hasData()) return;
 
             var self = this,
@@ -878,7 +878,9 @@ MediaPlayer.dependencies.BufferController = function () {
 
             bufferLevel = self.sourceBufferExt.getBufferLength(buffer, currentTime);
             self.debug.log("[BufferController]["+type+"] Buffer level = " + bufferLevel + " (time:" + currentTime + ")");
-            self.metricsModel.addBufferLevel(type, new Date(), bufferLevel);
+            if (sendMetric) {
+                self.metricsModel.addBufferLevel(type, new Date(), bufferLevel);
+            }
         },
 
         checkIfSufficientBuffer = function () {
@@ -891,7 +893,7 @@ MediaPlayer.dependencies.BufferController = function () {
 
             self.debug.log("[BufferController]["+type+"] Check buffer...");
 
-            updateBufferLevel.call(self);
+            updateBufferLevel.call(self, false);
 
             // Check stalled mode of video model
             if (stalled) {
@@ -1426,14 +1428,11 @@ MediaPlayer.dependencies.BufferController = function () {
                         appendingRejectedData = false;
                     }
                 );
-            } else {
-                updateBufferLevel.call(this);
             }
         },
 
         updateStalledState: function() {
             stalled = this.videoModel.isStalled();
-            //checkIfSufficientBuffer.call(this);
         },
 
         reset: function(errored) {
@@ -1486,7 +1485,8 @@ MediaPlayer.dependencies.BufferController = function () {
 
         start: doStart,
         seek: doSeek,
-        stop: doStop
+        stop: doStop,
+        updateBufferLevel: updateBufferLevel
     };
 };
 

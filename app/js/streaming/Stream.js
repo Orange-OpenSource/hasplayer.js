@@ -643,15 +643,15 @@ MediaPlayer.dependencies.Stream = function() {
         updateBuffer = function() {
 
             if (videoController) {
-                videoController.updateBufferState();
+                videoController.updateBufferLevel(true);
             }
 
             if (audioController) {
-                audioController.updateBufferState();
+                audioController.updateBufferLevel(true);
             }
 
             if (textController) {
-                textController.updateBufferState();
+                textController.updateBufferLevel(true);
             }
         },
 
