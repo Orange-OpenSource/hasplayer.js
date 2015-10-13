@@ -114,12 +114,9 @@
                   currentTime.getTime() - lastTraceTime.getTime(),
                   [request.bytesLoaded ? request.bytesLoaded : 0]);
 
-                httpRequestMetrics.tfinish = currentTime.getTime();
-                httpRequestMetrics.bytesLength = request.bytesLoaded;
-
                 lastTraceTime = currentTime;
 
-                self.notify(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, {request: request});
+                self.notify(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, {request: request, httpRequestMetrics: httpRequestMetrics, lastTraceTime: lastTraceTime});
 
             };
 
