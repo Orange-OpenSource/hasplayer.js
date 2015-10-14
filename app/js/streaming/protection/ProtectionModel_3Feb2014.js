@@ -90,6 +90,37 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
 
         },
 
+        getErrorDetailled = function(errorCode, sessionToken){
+            var code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR, msg = "keyError";
+            switch (errorCode) {
+                case 1:
+                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
+                    msg = "MEDIA_KEYERR_UNKNOWN - An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
+                    break;
+                case 2:
+                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_CLIENT;
+                    msg = "MEDIA_KEYERR_CLIENT - The Key System could not be installed or updated.";
+                    break;
+                case 3:
+                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_SERVICE;
+                    msg = "MEDIA_KEYERR_SERVICE - The message passed into update indicated an error from the license service.";
+                    break;
+                case 4:
+                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT;
+                    msg = "MEDIA_KEYERR_OUTPUT - There is no available output device with the required characteristics for the content protection system.";
+                    break;
+                case 5:
+                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_HARDWARECHANGE;
+                    msg += "MEDIA_KEYERR_HARDWARECHANGE - A hardware configuration change caused a content protection error.";
+                    break;
+                case 6:
+                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_DOMAIN;
+                    msg = "MEDIA_KEYERR_DOMAIN - An error occurred in a multi-device domain licensing configuration. The most common error is a failure to join the domain.";
+                    break;
+            }
+            return new MediaPlayer.vo.protection.KeyError(code, sessionToken, msg);
+        },
+
         // Function to create our session token objects which manage the EME
         // MediaKeySession and session-specific event handler
         createSessionToken = function(keySession, initData) {
@@ -105,9 +136,9 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
                     switch (event.type) {
 
                         case api.error:
-                            var errorStr = "KeyError"; // TODO: Make better string from event
+                            var keyError = getErrorDetailled(event.target.error.code, this); // TODO: Make better string from event
                             self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR,
-                                    new MediaPlayer.vo.protection.KeyError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR, this, errorStr));
+                                    keyError);
                             break;
 
                         case api.message:
