@@ -616,6 +616,7 @@ MediaPlayer.dependencies.Stream = function() {
 
         onProgress = function() {
             this.debug.info("<video> progress event");
+            updateBuffer.call(this);
         },
 
         onTimeupdate = function() {

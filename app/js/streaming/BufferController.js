@@ -71,6 +71,7 @@ MediaPlayer.dependencies.BufferController = function () {
         appendSync = false,
 
         currentSequenceNumber = -1,
+        errorObject = null,
 
         sendRequest = function() {
 
@@ -266,8 +267,8 @@ MediaPlayer.dependencies.BufferController = function () {
 
             self.debug.log("[BufferController]["+type+"] ### Media loaded ", request.url);
 
-            if (self.ChunkMissingState === true) {
-                self.ChunkMissingState = false;
+            if (self.chunkMissingState === "DOWNLOAD_LOW_BITRATE") {
+                self.chunkMissingState = false;
             }
 
             if (!fragmentDuration && !isNaN(request.duration)) {
@@ -641,7 +642,7 @@ MediaPlayer.dependencies.BufferController = function () {
 
         onBytesError = function (e) {
             var msgError = type + ": Failed to load a request at startTime = "+e.startTime,
-                data = {};
+                manifest = this.manifestModel.getValue();
 
             if (deferredFragmentBuffered) {
                 deferredFragmentBuffered.resolve();
@@ -655,21 +656,26 @@ MediaPlayer.dependencies.BufferController = function () {
             }
 
             //if it's the first download error, try to load the same segment for a the lowest quality...
-            if(this.ChunkMissingState === false)
+            if(this.chunkMissingState === false)
             {
-                this.ChunkMissingState = true;
+                this.chunkMissingState = "AUTO_RECOVER";
+                this.stallTime = e.startTime;
+
                 if (e.quality !== 0) {
+                    this.chunkMissingState = "DOWNLOAD_LOW_BITRATE";
+                    this.debug.log("[BufferController]["+type+"][onBytesError] load Fragment at the first resolution");
+                    if (manifest.name === "M3U"){
+                        currentSequenceNumber -= 1;
+                    }
                     return bufferFragment.call(this);
                 }
+            }else {
+                errorObject = {};
+                errorObject.msg = msgError;
+                errorObject.data = {};
+                errorObject.data.url = e.url;
+                errorObject.data.request = e;
             }
-
-            this.debug.log(msgError);
-            this.stallTime = e.startTime;
-
-            
-            data.url = e.url;
-            data.request = e;
-            this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, type + ": Failed to load a request at startTime = "+e.startTime, data);
         },
 
         signalStreamComplete = function (/*request*/) {
@@ -790,7 +796,7 @@ MediaPlayer.dependencies.BufferController = function () {
             }
             else {
                 //impossible to find a request for the loadNextFragment call
-                //the end of the createdSegment list has been reached, recall checkIfSufficientBuffer to update the list and get the next segment
+                //the end of the createdSegment list has been reached, recall updateCheckBufferTimeout to update the list and get the next segment
                 self.debug.log("[BufferController]["+type+"] loadNextFragment failed");
 
                 if (deferredFragmentBuffered) {
@@ -883,6 +889,7 @@ MediaPlayer.dependencies.BufferController = function () {
             if (sendMetric) {
                 self.metricsModel.addBufferLevel(type, new Date(), bufferLevel);
             }
+            self.updateBufferState();
         },
 
         checkIfSufficientBuffer = function () {
@@ -951,7 +958,7 @@ MediaPlayer.dependencies.BufferController = function () {
                     var loadInit = dataUpdated;
 
                     // Get current quality
-                    if(self.ChunkMissingState){
+                    if(self.chunkMissingState === "DOWNLOAD_LOW_BITRATE"){
                         self.abrController.setPlaybackQuality(type, 0);
                         defer = Q.when({quality:0});
                     }
@@ -1173,7 +1180,7 @@ MediaPlayer.dependencies.BufferController = function () {
         BUFFERING : 0,
         PLAYING : 1,
         stallTime : null,
-        ChunkMissingState : false,
+        chunkMissingState : false,        
         abrRulesCollection: undefined,
 
         initialize: function (type, newPeriodInfo, newData, buffer, videoModel, scheduler, fragmentController, source, eventController) {
@@ -1403,17 +1410,20 @@ MediaPlayer.dependencies.BufferController = function () {
         },
 
         updateBufferState: function() {
+            var level = Math.round(bufferLevel);
+            this.debug.log("[BufferController]["+type+"] updateBufferState buffer Level = " + level+"  htmlVideoState = "+ htmlVideoState);
+
             //test to detect stalled state, be sure to not to be in seeking state
-            if (bufferLevel <= 0 && htmlVideoState !== this.BUFFERING && this.videoModel.isSeeking()!== true) {
+            if (level<= 0 && htmlVideoState !== this.BUFFERING && this.videoModel.isSeeking()!== true) {
                 htmlVideoState = this.BUFFERING;
                 this.debug.log("[BufferController]["+type+"] BUFFERING - " + this.videoModel.getCurrentTime());
                 this.metricsModel.addState(type, "buffering", this.videoModel.getCurrentTime());
-                if (this.stallTime !== null && this.ChunkMissingState === true) {
-                    if (isDynamic) {
+                if (this.stallTime !== null && this.chunkMissingState === "AUTO_RECOVER") {
+                   /* if (isDynamic) {
                         this.stallTime = null;
                         setTimeout(this.updateManifest.bind(this),currentRepresentation.segments[currentRepresentation.segments.length-1].duration*1000);
                     }
-                    else {
+                    else {*/
                         //the stall state comes from a chunk download failure
                         //seek to the next fragment
                         doStop.call(this);
@@ -1421,10 +1431,14 @@ MediaPlayer.dependencies.BufferController = function () {
                         doSeek.call(this, seekValue);
                         this.videoModel.setCurrentTime(seekValue);
                         this.stallTime = null;
+                   // }
+                }else{
+                    if (errorObject) {
+                        this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, type+errorObject.msg, errorObject.data);
                     }
                 }
             }
-            else  if(bufferLevel > 0 && htmlVideoState !== this.PLAYING){
+            else  if(level > 0 && htmlVideoState !== this.PLAYING){
                 htmlVideoState = this.PLAYING;
                 this.debug.log("[BufferController]["+type+"] PLAYING - " + this.videoModel.getCurrentTime());
                 this.metricsModel.addState(type, "playing", this.videoModel.getCurrentTime());
@@ -1433,7 +1447,7 @@ MediaPlayer.dependencies.BufferController = function () {
             // if the buffer controller is stopped and the buffer is full we should try to clear the buffer
             // before that we should make sure that we will have enough space to append the data, so we wait
             // until the video time moves forward for a value greater than rejected data duration since the last reject event or since the last seek.
-            if (isQuotaExceeded && rejectedBytes && !appendingRejectedData) {
+            /*if (isQuotaExceeded && rejectedBytes && !appendingRejectedData) {
                 appendingRejectedData = true;
                 //try to append the data that was previosly rejected
                 appendToBuffer.call(this, rejectedBytes.data, rejectedBytes.quality, rejectedBytes.index).then(
@@ -1441,7 +1455,7 @@ MediaPlayer.dependencies.BufferController = function () {
                         appendingRejectedData = false;
                     }
                 );
-            }
+            }*/
         },
 
         updateStalledState: function() {
@@ -1479,6 +1493,7 @@ MediaPlayer.dependencies.BufferController = function () {
                     isQuotaExceeded = false;
                     rejectedBytes = null;
                     appendingRejectedData = false;
+                    errorObject = null;
 
                     if (!errored) {
                         self.sourceBufferExt.abort(mediaSource, buffer);
