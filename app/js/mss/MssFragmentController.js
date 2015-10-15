@@ -131,56 +131,62 @@ Mss.dependencies.MssFragmentController = function () {
             var traf = moof.getBoxByType("traf");
             var trun = traf.getBoxByType("trun");
             var tfhd = traf.getBoxByType("tfhd");
-            var saio;
+            var saio = null;
 
-            //if protected content
+            // If protected content (sepiff box)
+            // => convert it into a senc box
+            // => create saio and saiz boxes (if not already present)
             var sepiff = traf.getBoxByType("sepiff");
-            if(sepiff !== null) {
+            if (sepiff !== null) {
                 sepiff.boxtype = "senc";
                 sepiff.extended_type = undefined;
-                // Create Sample Auxiliary Information Offsets Box box (saio)
-                saio = new mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox();
-                saio.version = 0;
-                saio.flags = 0;
-                saio.entry_count = 1;
-                saio.offset = [];
 
-                var saiz = new mp4lib.boxes.SampleAuxiliaryInformationSizesBox();
-                saiz.version = 0;
-                saiz.flags = 0;
-                saiz.sample_count = sepiff.sample_count;
-                saiz.default_sample_info_size = 0;
+                saio = traf.getBoxByType("saio");
+                if (saio === null) {
+                    // Create Sample Auxiliary Information Offsets Box box (saio)
+                    saio = new mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox();
+                    saio.version = 0;
+                    saio.flags = 0;
+                    saio.entry_count = 1;
+                    saio.offset = [];
 
-                saiz.sample_info_size = [];
+                    var saiz = new mp4lib.boxes.SampleAuxiliaryInformationSizesBox();
+                    saiz.version = 0;
+                    saiz.flags = 0;
+                    saiz.sample_count = sepiff.sample_count;
+                    saiz.default_sample_info_size = 0;
 
-                var sizedifferent = false;
-                // get for each sample_info the size
-                if (sepiff.flags & 2) {
-                    for (i = 0; i < sepiff.sample_count; i++) {
-                        saiz.sample_info_size[i] = 8+(sepiff.entry[i].NumberOfEntries*6)+2;
-                        //8 (Init vector size) + NumberOfEntries*(clear (2) +crypted (4))+ 2 (numberofEntries size (2))
-                        if(i>0) {
-                            if (saiz.sample_info_size[i] !== saiz.sample_info_size[i-1]) {
-                                sizedifferent = true;
+                    saiz.sample_info_size = [];
+
+                    var sizedifferent = false;
+                    // get for each sample_info the size
+                    if (sepiff.flags & 2) {
+                        for (i = 0; i < sepiff.sample_count; i++) {
+                            saiz.sample_info_size[i] = 8+(sepiff.entry[i].NumberOfEntries*6)+2;
+                            //8 (Init vector size) + NumberOfEntries*(clear (2) +crypted (4))+ 2 (numberofEntries size (2))
+                            if(i>0) {
+                                if (saiz.sample_info_size[i] !== saiz.sample_info_size[i-1]) {
+                                    sizedifferent = true;
+                                }
                             }
                         }
+
+                        //all the samples have the same size
+                        //set default size and remove the table.
+                        if (sizedifferent === false) {
+                            saiz.default_sample_info_size = saiz.sample_info_size[0];
+                            saiz.sample_info_size = [];
+                        }
+                    }
+                    else{
+                        //if flags === 0 (ex: audio data), default sample size = Init Vector size (8)
+                        saiz.default_sample_info_size = 8;
                     }
 
-                    //all the samples have the same size
-                    //set default size and remove the table.
-                    if (sizedifferent === false) {
-                        saiz.default_sample_info_size = saiz.sample_info_size[0];
-                        saiz.sample_info_size = [];
-                    }
+                    //add saio and saiz box
+                    traf.boxes.push(saiz);
+                    traf.boxes.push(saio);
                 }
-                else{
-                    //if flags === 0 (ex: audio data), default sample size = Init Vector size (8)
-                    saiz.default_sample_info_size = 8;
-                }
-
-                //add saio and saiz box
-                traf.boxes.push(saiz);
-                traf.boxes.push(saio);
             }
 
             // Update tfhd.track_ID field
