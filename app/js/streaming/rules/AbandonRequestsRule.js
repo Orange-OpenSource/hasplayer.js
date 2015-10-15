@@ -62,36 +62,60 @@ MediaPlayer.rules.AbandonRequestsRule = function () {
                 index = request.index;  
             } 
 
-            this.manifestExt.getMpd(this.manifestModel.getValue()).then(
-                function(mpd) {
-                    var bufferLevel = self.metricsExt.getCurrentBufferLevel(metrics),
-                        minBufferTime,
-                        switchLowerBufferRatio,
-                        switchLowerBufferTime;
+            if (manifest) {
+                this.manifestExt.getMpd(manifest).then(
+                    function(mpd) {
+                        var bufferLevel = self.metricsExt.getCurrentBufferLevel(metrics),
+                            minBufferTime,
+                            switchLowerBufferRatio,
+                            switchLowerBufferTime;
 
-                    minBufferTime = self.config.getParamFor(mediaType, "BufferController.minBufferTime", "number", mpd.manifest.minBufferTime);
-                    switchLowerBufferRatio = self.config.getParamFor(mediaType, "ABR.switchLowerBufferRatio", "number", 0.25);
-                    switchLowerBufferTime = self.config.getParamFor(mediaType, "ABR.switchLowerBufferTime", "number", switchLowerBufferRatio * minBufferTime);
-                    
-                    if (!isNaN(index)) {
-                        setFragmentRequestDict(mediaType, index);
-                        fragmentInfo = fragmentDict[mediaType][index];
+                        minBufferTime = self.config.getParamFor(mediaType, "BufferController.minBufferTime", "number", mpd.manifest.minBufferTime);
+                        switchLowerBufferRatio = self.config.getParamFor(mediaType, "ABR.switchLowerBufferRatio", "number", 0.25);
+                        switchLowerBufferTime = self.config.getParamFor(mediaType, "ABR.switchLowerBufferTime", "number", switchLowerBufferRatio * minBufferTime);
+                        
+                        if (!isNaN(index)) {
+                            setFragmentRequestDict(mediaType, index);
+                            fragmentInfo = fragmentDict[mediaType][index];
 
-                        if (fragmentInfo === null || request.firstByteDate === null || (abandonDict.hasOwnProperty(fragmentInfo.id)&&(abandonDict[fragmentInfo.id].url === request.url))) {
-                            self.debug.log("[AbandonRequestsRule]["+mediaType+"] No change fragmentInfo, request.firstByteDate may be null or abandonDict.hasOwnProperty(fragmentInfo.id)===true");
-                            callback(switchRequest);
-                            return;
-                        }
+                            if (fragmentInfo === null || request.firstByteDate === null || (abandonDict.hasOwnProperty(fragmentInfo.id)&&(abandonDict[fragmentInfo.id].url === request.url))) {
+                                self.debug.log("[AbandonRequestsRule]["+mediaType+"] No change fragmentInfo, request.firstByteDate may be null or abandonDict.hasOwnProperty(fragmentInfo.id)===true");
+                                callback(switchRequest);
+                                return;
+                            }
 
-                        //setup some init info based on first progress event
-                        if (fragmentInfo.firstByteTime === undefined) {
-                            fragmentInfo.firstByteTime = request.firstByteDate.getTime();
-                            fragmentInfo.segmentDuration = request.duration;
-                            fragmentInfo.bytesTotal = request.bytesTotal;
-                            fragmentInfo.id = index;
-                            fragmentInfo.nb = 1;
-                            fragmentInfo.url = request.url;
-                            self.debug.log("[AbandonRequestsRule]["+mediaType+"] FRAG ID : " +fragmentInfo.id+ " *****************");
+                            //setup some init info based on first progress event
+                            if (fragmentInfo.firstByteTime === undefined) {
+                                fragmentInfo.firstByteTime = request.firstByteDate.getTime();
+                                fragmentInfo.segmentDuration = request.duration;
+                                fragmentInfo.bytesTotal = request.bytesTotal;
+                                fragmentInfo.id = index;
+                                fragmentInfo.nb = 1;
+                                fragmentInfo.url = request.url;
+                                self.debug.log("[AbandonRequestsRule]["+mediaType+"] FRAG ID : " +fragmentInfo.id+ " *****************");
+                            }
+                           
+                            //update info base on subsequent progress events until completed.
+                            fragmentInfo.bytesLoaded = request.bytesLoaded;
+                            fragmentInfo.elapsedTime = (now - fragmentInfo.firstByteTime);
+
+                            if (fragmentInfo.bytesLoaded < fragmentInfo.bytesTotal &&
+                                fragmentInfo.elapsedTime >= GRACE_TIME_THRESHOLD) {
+
+                                fragmentInfo.measuredBandwidthInKbps = Math.round(fragmentInfo.bytesLoaded*8/fragmentInfo.elapsedTime);
+                                //fragmentInfo.measuredBandwidthInKbps = (concurrentCount > 1) ? getAggragateBandwidth.call(this, mediaType, concurrentCount) :  Math.round(fragmentInfo.bytesLoaded*8/fragmentInfo.elapsedTime);
+                                fragmentInfo.estimatedTimeOfDownload = +(fragmentInfo.bytesTotal*8*0.001/fragmentInfo.measuredBandwidthInKbps).toFixed(2);
+                                self.debug.log("[AbandonRequestsRule]["+mediaType+"] id: "+fragmentInfo.id+" Bytes Loaded = "+(fragmentInfo.bytesLoaded)+", Measured bandwidth : "+fragmentInfo.measuredBandwidthInKbps+" kbps estimated Time of download : "+fragmentInfo.estimatedTimeOfDownload+" secondes, elapsed time : "+fragmentInfo.elapsedTime/1000+" secondes.");
+
+                                 if ((fragmentInfo.elapsedTime)/1000 > (fragmentInfo.segmentDuration*ABANDON_MULTIPLIER) || (bufferLevel && bufferLevel.level < switchLowerBufferTime)) {
+                                    switchRequest = new MediaPlayer.rules.SwitchRequest(0, MediaPlayer.rules.SwitchRequest.prototype.STRONG);
+                                    abandonDict[fragmentInfo.id] = fragmentInfo;
+                                    self.debug.log("[AbandonRequestsRule]["+mediaType+"] frag id"+fragmentInfo.id+" is asking to abandon and switch to initial quality measured bandwidth was"+fragmentInfo.measuredBandwidthInKbps);
+                                    delete fragmentDict[mediaType][fragmentInfo.id];
+                                 }
+                            }else if (fragmentInfo.bytesLoaded === fragmentInfo.bytesTotal) {
+                                delete fragmentDict[mediaType][fragmentInfo.id];
+                            }
                         }
                        
                         //update info base on subsequent progress events until completed.
