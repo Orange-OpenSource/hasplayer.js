@@ -127,25 +127,33 @@ Dash.dependencies.DashMetricsExtensions = function () {
             var self = this,
                 manifest = self.manifestModel.getValue(),
                 representation,
-                periodArray = manifest.Period_asArray;
+                periodArray = manifest === null ? null : manifest.Period_asArray;
+            
+            if (periodArray) {
+                representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
 
-            representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
+                if (representation === null) {
+                    return null;
+                }
 
-            if (representation === null) {
-                return null;
+                return representation.bandwidth;
             }
 
-            return representation.bandwidth;
+            return null;
         },
 
         getIndexForRepresentation = function (representationId) {
             var self = this,
                 manifest = self.manifestModel.getValue(),
                 representationIndex,
-                periodArray = manifest.Period_asArray;
+                periodArray = manifest === null ? null : manifest.Period_asArray;
 
-            representationIndex = findRepresentationIndexInPeriodArray.call(self, periodArray, representationId);
-            return representationIndex;
+                if (periodArray) {
+                    representationIndex = findRepresentationIndexInPeriodArray.call(self, periodArray, representationId);
+                    return representationIndex;
+                }
+
+                return null;
         },
 
         getMaxIndexForBufferType = function (bufferType) {
@@ -157,9 +165,9 @@ Dash.dependencies.DashMetricsExtensions = function () {
             if (periodArray) {
                 maxIndex = findMaxBufferIndex.call(this, periodArray, bufferType);
                 return maxIndex;
-            } else {
-                return null;
-            }
+            } 
+            
+            return null;
         },
 
         getCurrentRepresentationSwitch = function (metrics) {
