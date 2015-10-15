@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 1.10.2015_21:43:45 / git revision : bee50b6 */
+/* Last build : 15.10.2015_10:26:15 / git revision : b9ef40b */
  /* jshint ignore:start */
 var UTF8 = {};
 
@@ -5931,7 +5931,7 @@ mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
 
 MediaPlayer = function(aContext) {
     "use strict";
-    var VERSION = "1.2.0", VERSION_HAS = "1.2.2_dev", GIT_TAG = "bee50b6", BUILD_DATE = "1.10.2015_21:43:45", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
+    var VERSION = "1.2.0", VERSION_HAS = "1.2.2_dev", GIT_TAG = "b9ef40b", BUILD_DATE = "15.10.2015_10:26:15", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
         return !!element && !!source && !resetting;
     }, play = function() {
         if (!initialized) {
@@ -18546,41 +18546,44 @@ Mss.dependencies.MssFragmentController = function() {
         var traf = moof.getBoxByType("traf");
         var trun = traf.getBoxByType("trun");
         var tfhd = traf.getBoxByType("tfhd");
-        var saio;
+        var saio = null;
         var sepiff = traf.getBoxByType("sepiff");
         if (sepiff !== null) {
             sepiff.boxtype = "senc";
             sepiff.extended_type = undefined;
-            saio = new mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox();
-            saio.version = 0;
-            saio.flags = 0;
-            saio.entry_count = 1;
-            saio.offset = [];
-            var saiz = new mp4lib.boxes.SampleAuxiliaryInformationSizesBox();
-            saiz.version = 0;
-            saiz.flags = 0;
-            saiz.sample_count = sepiff.sample_count;
-            saiz.default_sample_info_size = 0;
-            saiz.sample_info_size = [];
-            var sizedifferent = false;
-            if (sepiff.flags & 2) {
-                for (i = 0; i < sepiff.sample_count; i++) {
-                    saiz.sample_info_size[i] = 8 + sepiff.entry[i].NumberOfEntries * 6 + 2;
-                    if (i > 0) {
-                        if (saiz.sample_info_size[i] !== saiz.sample_info_size[i - 1]) {
-                            sizedifferent = true;
+            saio = traf.getBoxByType("saio");
+            if (saio === null) {
+                saio = new mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox();
+                saio.version = 0;
+                saio.flags = 0;
+                saio.entry_count = 1;
+                saio.offset = [];
+                var saiz = new mp4lib.boxes.SampleAuxiliaryInformationSizesBox();
+                saiz.version = 0;
+                saiz.flags = 0;
+                saiz.sample_count = sepiff.sample_count;
+                saiz.default_sample_info_size = 0;
+                saiz.sample_info_size = [];
+                var sizedifferent = false;
+                if (sepiff.flags & 2) {
+                    for (i = 0; i < sepiff.sample_count; i++) {
+                        saiz.sample_info_size[i] = 8 + sepiff.entry[i].NumberOfEntries * 6 + 2;
+                        if (i > 0) {
+                            if (saiz.sample_info_size[i] !== saiz.sample_info_size[i - 1]) {
+                                sizedifferent = true;
+                            }
                         }
                     }
+                    if (sizedifferent === false) {
+                        saiz.default_sample_info_size = saiz.sample_info_size[0];
+                        saiz.sample_info_size = [];
+                    }
+                } else {
+                    saiz.default_sample_info_size = 8;
                 }
-                if (sizedifferent === false) {
-                    saiz.default_sample_info_size = saiz.sample_info_size[0];
-                    saiz.sample_info_size = [];
-                }
-            } else {
-                saiz.default_sample_info_size = 8;
+                traf.boxes.push(saiz);
+                traf.boxes.push(saio);
             }
-            traf.boxes.push(saiz);
-            traf.boxes.push(saio);
         }
         tfhd.track_ID = trackId;
         traf.removeBoxByType("tfxd");
