@@ -712,9 +712,9 @@ MediaPlayer = function(aContext) {
          * @memberof MediaPlayer#
          */
         reset: function(reason) {
+            this.metricsModel.addState("video", "stopped", this.getVideoModel().getCurrentTime(), reason);
             this.attachSource(null);
             protectionData = null;
-            this.metricsModel.addState("video", "stopped", this.getVideoModel().getCurrentTime(), reason);
         },
 
         setDefaultAudioLang: function(language) {
