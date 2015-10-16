@@ -37,6 +37,11 @@ MediaPlayer.rules.o.InsufficientBufferRule = function () {    "use strict";
                 q = current,
                 p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
 
+            // Check if we start buffering the stream. In this case we ignore the rule
+            if (playerState === 'buffering') {
+                self.isStartBuffering[data.type] = true;
+            }
+
             if (bufferLevel === null) {
                 return Q.when(new MediaPlayer.rules.SwitchRequest());
             }
@@ -54,11 +59,6 @@ MediaPlayer.rules.o.InsufficientBufferRule = function () {    "use strict";
                     switchDownBufferTime = self.config.getParamFor(data.type, "ABR.switchDownBufferTime", "number", switchDownBufferRatio * minBufferTime);
                     switchUpBufferRatio = self.config.getParamFor(data.type, "ABR.switchUpBufferRatio", "number", 0.75);
                     switchUpBufferTime = self.config.getParamFor(data.type, "ABR.switchUpBufferTime", "number", switchUpBufferRatio * minBufferTime);
-
-                    // Check if we start buffering the stream. In this case we ignore the rule
-                    if (playerState === 'buffering') {
-                        self.isStartBuffering[data.type] = true;
-                    }
 
                     if ((bufferLevel.level < switchDownBufferTime) && (self.isStartBuffering[data.type])) {
                         deferred.resolve(new MediaPlayer.rules.SwitchRequest());
