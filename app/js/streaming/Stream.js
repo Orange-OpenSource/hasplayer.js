@@ -1045,8 +1045,7 @@ MediaPlayer.dependencies.Stream = function() {
 
         // ORANGE: add the capability to set audioTrack
         setAudioTrack: function(audioTrack) {
-            var deferredAudioUpdate = Q.defer(),
-                manifest = this.manifestModel.getValue(),
+            var manifest = this.manifestModel.getValue(),
                 url,
                 self = this;
 
@@ -1072,19 +1071,11 @@ MediaPlayer.dependencies.Stream = function() {
                                 function(manifestResult) {
                                     self.manifestModel.setValue(manifestResult);
                                     self.debug.log("### Manifest has been refreshed.");
-                                    deferredAudioUpdate.resolve();
                                 }
                             );
-                        }else{
-                            // we are on the same index so do nothing
-                            deferredAudioUpdate.resolve();
                         }
                 });
-            } else {
-                deferredAudioUpdate.reject();
             }
-
-            return deferredAudioUpdate.promise;
         },
 
         getSelectedAudioTrack: function() {
