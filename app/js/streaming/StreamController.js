@@ -568,7 +568,6 @@
 
             this.manifestUpdater.stop();
             this.manifestLoader.abort();
-            this.manifestModel.setValue(null);
             this.metricsModel.clearAllCurrentMetrics();
             isPeriodSwitchingInProgress = false;
 
@@ -605,6 +604,8 @@
                             activeStream = null;
                             self.notify(MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE);
                         });
+
+                    self.manifestModel.setValue(null);
                 };
                 protectionController.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE, teardownComplete, undefined, true);
                 protectionController.teardown();
