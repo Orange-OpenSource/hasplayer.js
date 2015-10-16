@@ -130,8 +130,20 @@
 
         onReloadManifest = function() {
             this.debug.log("[StreamController] ### reloadManifest ####");
-            this.reset.call(this);
-            this.load.call(this, this.currentURL);
+            
+            var manifest = this.manifestModel.getValue(),
+                url = manifest.mpdUrl,
+                self = this;
+
+            if (manifest.hasOwnProperty("Location")) {
+                url = manifest.Location;
+            }
+
+            self.manifestLoader.load(url).then(
+                function(manifestResult) {
+                    self.manifestModel.setValue(manifestResult);
+                    self.debug.log("### Manifest has been refreshed.");
+            });
         },
 
         /*

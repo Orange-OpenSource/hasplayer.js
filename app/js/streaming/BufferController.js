@@ -267,8 +267,12 @@ MediaPlayer.dependencies.BufferController = function () {
 
             self.debug.log("[BufferController]["+type+"] ### Media loaded ", request.url);
 
-            if (self.chunkMissingState === "DOWNLOAD_LOW_BITRATE") {
-                self.chunkMissingState = false;
+            if (self.chunkAborted === true) {
+                self.chunkAborted = false;
+            }
+
+            if (self.chunkMissingCount === 1) {
+                self.chunkMissingCount = 0;
             }
 
             if (!fragmentDuration && !isNaN(request.duration)) {
@@ -653,28 +657,34 @@ MediaPlayer.dependencies.BufferController = function () {
             // error.
             if (e.status !== undefined && e.status === 0 && !isRunning.call(this)) {
                 return;
+            }else{
+                if (e.status !== undefined && e.status === 0 ) {
+                    this.chunkAborted = true;
+                    this.debug.log("[BufferController]["+type+"][onBytesError] Requests have been aborted!!!!!!!!!!!!");
+                }
             }
 
             //if it's the first download error, try to load the same segment for a the lowest quality...
-            if(this.chunkMissingState === false)
+            if(this.chunkAborted === true)
             {
-                this.chunkMissingState = "AUTO_RECOVER";
-                this.stallTime = e.startTime;
-
                 if (e.quality !== 0) {
-                    this.chunkMissingState = "DOWNLOAD_LOW_BITRATE";
                     this.debug.log("[BufferController]["+type+"][onBytesError] load Fragment at the first resolution");
                     if (manifest.name === "M3U"){
                         currentSequenceNumber -= 1;
                     }
                     return bufferFragment.call(this);
                 }
-            }else {
+            }else if (this.chunkMissingCount === 0) {
+                this.stallTime = e.startTime;
+                this.chunkMissingCount += 1;
+            }else{
+                this.chunkMissingCount = 0;
                 errorObject = {};
                 errorObject.msg = msgError;
                 errorObject.data = {};
                 errorObject.data.url = e.url;
                 errorObject.data.request = e;
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, type+errorObject.msg, errorObject.data);
             }
         },
 
@@ -958,7 +968,7 @@ MediaPlayer.dependencies.BufferController = function () {
                     var loadInit = dataUpdated;
 
                     // Get current quality
-                    if(self.chunkMissingState === "DOWNLOAD_LOW_BITRATE"){
+                    if(self.chunkAborted === true){
                         self.abrController.setPlaybackQuality(type, 0);
                         defer = Q.when({quality:0});
                     }
@@ -1180,7 +1190,8 @@ MediaPlayer.dependencies.BufferController = function () {
         BUFFERING : 0,
         PLAYING : 1,
         stallTime : null,
-        chunkMissingState : false,        
+        chunkAborted : false,
+        chunkMissingCount : 0,
         abrRulesCollection: undefined,
 
         initialize: function (type, newPeriodInfo, newData, buffer, videoModel, scheduler, fragmentController, source, eventController) {
@@ -1418,23 +1429,20 @@ MediaPlayer.dependencies.BufferController = function () {
                 htmlVideoState = this.BUFFERING;
                 this.debug.log("[BufferController]["+type+"] BUFFERING - " + this.videoModel.getCurrentTime());
                 this.metricsModel.addState(type, "buffering", this.videoModel.getCurrentTime());
-                if (this.stallTime !== null && this.chunkMissingState === "AUTO_RECOVER") {
-                   /* if (isDynamic) {
+                if (this.stallTime !== null && this.chunkMissingCount === 1) {
+                    if (isDynamic) {
                         this.stallTime = null;
                         setTimeout(this.updateManifest.bind(this),currentRepresentation.segments[currentRepresentation.segments.length-1].duration*1000);
                     }
-                    else {*/
+                    else {
                         //the stall state comes from a chunk download failure
                         //seek to the next fragment
                         doStop.call(this);
+                        this.debug.log("[BufferController]["+type+"] stallTime = " + this.stallTime);
                         var seekValue = this.stallTime+currentRepresentation.segments[currentRepresentation.segments.length-1].duration;
-                        doSeek.call(this, seekValue);
+                        this.debug.log("[BufferController]["+type+"] auto recover to " + seekValue);
                         this.videoModel.setCurrentTime(seekValue);
                         this.stallTime = null;
-                   // }
-                }else{
-                    if (errorObject) {
-                        this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, type+errorObject.msg, errorObject.data);
                     }
                 }
             }
