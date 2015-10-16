@@ -65,7 +65,6 @@ MediaPlayer.dependencies.Stream = function() {
 
         eventController = null,
         protectionController,
-        boundProtectionErrorHandler,
 
         // Encrypted Media Extensions
         onProtectionError = function(event) {
@@ -198,7 +197,9 @@ MediaPlayer.dependencies.Stream = function() {
                     //this.debug.log("MediaSource initialized!");
 
                     // Initialize protection controller
-                    protectionController.init(contentProtection, audioCodec, videoCodec);
+                    if (protectionController) {
+                        protectionController.init(contentProtection, audioCodec, videoCodec);
+                    }
 
                     deferred.resolve(true);
                 }
@@ -245,18 +246,7 @@ MediaPlayer.dependencies.Stream = function() {
 
                                         return self.manifestExt.getContentProtectionData(videoData).then(
                                             function(contentProtectionData) {
-                                                /*self.debug.log("[Stream] video contentProtection");
-
-                                                if (!!contentProtectionData && !self.capabilities.supportsMediaKeys()) {
-                                                    self.debug.error("[Stream] mediakeys not supported!");
-                                                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS);
-                                                    return Q.when(null);
-                                                }*/
-
                                                 contentProtection = contentProtectionData;
-
-                                                //kid = self.protectionController.selectKeySystem(videoCodec, contentProtection);
-                                                //self.protectionController.ensureKeySession(kid, videoCodec, null);
 
                                                 if (!self.capabilities.supportsCodec(self.videoModel.getElement(), codec)) {
                                                     var msg = "Video Codec (" + codec + ") is not supported.";
@@ -1142,15 +1132,9 @@ MediaPlayer.dependencies.Stream = function() {
             protectionController = protectionCtrl;
 
             // Protection error handler
-            protectionController.subscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
-            /*boundProtectionErrorHandler = onProtectionError.bind(this);
-            protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
-            protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.SERVER_CERTIFICATE_UPDATED, boundProtectionErrorHandler);
-            protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_ADDED, boundProtectionErrorHandler);
-            protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SESSION_CREATED, boundProtectionErrorHandler);
-            protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
-            protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED, boundProtectionErrorHandler);
-            protectionController.addEventListener(MediaPlayer.dependencies.ProtectionController.events.LICENSE_REQUEST_COMPLETE, boundProtectionErrorHandler);*/
+            if (protectionController) {
+                protectionController.subscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
+            }
         },
 
         getVideoModel: function() {
