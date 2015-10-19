@@ -37,13 +37,13 @@ MediaPlayer.rules.o.InsufficientBufferRule = function () {    "use strict";
                 q = current,
                 p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
 
+            if (bufferLevel === null || data === null) {
+                return Q.when(new MediaPlayer.rules.SwitchRequest());
+            }
+
             // Check if we start buffering the stream. In this case we ignore the rule
             if (playerState === 'buffering') {
                 self.isStartBuffering[data.type] = true;
-            }
-
-            if (bufferLevel === null) {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
             }
 
             self.debug.log("[InsufficientBufferRule]["+data.type+"] Checking buffer level ... (current = " + current + ", buffer level = " + bufferLevel.level + ")");

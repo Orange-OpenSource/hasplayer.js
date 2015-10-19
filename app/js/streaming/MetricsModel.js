@@ -326,13 +326,15 @@
         },
 
         updateManifestUpdateInfo: function(manifestUpdate, updatedFields) {
-            for (var field in updatedFields) {
-                if (updatedFields.hasOwnProperty(field)) {
-                    manifestUpdate[field] = updatedFields[field];
+            if (manifestUpdate && updatedFields) {
+                for (var field in updatedFields) {
+                    if (updatedFields.hasOwnProperty(field)) {
+                        manifestUpdate[field] = updatedFields[field];
+                    }
                 }
-            }
 
-            this.metricUpdated(manifestUpdate.streamType, "ManifestUpdate", manifestUpdate);
+                this.metricUpdated(manifestUpdate.streamType, "ManifestUpdate", manifestUpdate);
+            }
         },
 
         addManifestUpdatePeriodInfo: function(manifestUpdate, id, index, start, duration) {

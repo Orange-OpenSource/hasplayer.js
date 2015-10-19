@@ -543,7 +543,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         var isDynamic = false,
             LIVE_TYPE = "dynamic";
 
-        if (manifest.hasOwnProperty("type")) {
+        if (manifest && manifest.hasOwnProperty("type")) {
             isDynamic = (manifest.type === LIVE_TYPE);
         }
 
@@ -620,7 +620,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
     getRepresentationsForAdaptation: function(manifest, adaptation) {
         var self = this,
-            a = self.processAdaptation(manifest.Period_asArray[adaptation.period.index].AdaptationSet_asArray[adaptation.index]),
+            a,
             representations = [],
             deferred = Q.defer(),
             representation,
@@ -628,79 +628,83 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             segmentInfo,
             r;
 
-        for (var i = 0; i < a.Representation_asArray.length; i += 1) {
-            r = a.Representation_asArray[i];
-            representation = new Dash.vo.Representation();
-            representation.index = i;
-            representation.adaptation = adaptation;
+        if (manifest && adaptation) {        
+            a = self.processAdaptation(manifest.Period_asArray[adaptation.period.index].AdaptationSet_asArray[adaptation.index]);
 
-            if (r.hasOwnProperty("id")) {
-                representation.id = r.id;
-            }
+            for (var i = 0; i < a.Representation_asArray.length; i += 1) {
+                r = a.Representation_asArray[i];
+                representation = new Dash.vo.Representation();
+                representation.index = i;
+                representation.adaptation = adaptation;
 
-            if (r.hasOwnProperty("SegmentBase")) {
-                segmentInfo = r.SegmentBase;
-                representation.segmentInfoType = "SegmentBase";
-            }
-            else if (r.hasOwnProperty("SegmentList")) {
-                segmentInfo = r.SegmentList;
-                representation.segmentInfoType = "SegmentList";
-                representation.useCalculatedLiveEdgeTime = true;
-            }
-            else if (r.hasOwnProperty("SegmentTemplate")) {
-                segmentInfo = r.SegmentTemplate;
+                if (r.hasOwnProperty("id")) {
+                    representation.id = r.id;
+                }
 
-                if (segmentInfo.hasOwnProperty("SegmentTimeline")) {
-                    representation.segmentInfoType = "SegmentTimeline";
+                if (r.hasOwnProperty("SegmentBase")) {
+                    segmentInfo = r.SegmentBase;
+                    representation.segmentInfoType = "SegmentBase";
+                }
+                else if (r.hasOwnProperty("SegmentList")) {
+                    segmentInfo = r.SegmentList;
+                    representation.segmentInfoType = "SegmentList";
+                    representation.useCalculatedLiveEdgeTime = true;
+                }
+                else if (r.hasOwnProperty("SegmentTemplate")) {
+                    segmentInfo = r.SegmentTemplate;
+
+                    if (segmentInfo.hasOwnProperty("SegmentTimeline")) {
+                        representation.segmentInfoType = "SegmentTimeline";
+                    } else {
+                        representation.segmentInfoType = "SegmentTemplate";
+                    }
+
+                    if (segmentInfo.hasOwnProperty("initialization")) {
+                        representation.initialization = segmentInfo.initialization.split("$Bandwidth$")
+                            .join(r.bandwidth).split("$RepresentationID$").join(r.id);
+                    }
                 } else {
-                    representation.segmentInfoType = "SegmentTemplate";
+                    segmentInfo = r.BaseURL;
+                    representation.segmentInfoType = "BaseURL";
                 }
 
-                if (segmentInfo.hasOwnProperty("initialization")) {
-                    representation.initialization = segmentInfo.initialization.split("$Bandwidth$")
-                        .join(r.bandwidth).split("$RepresentationID$").join(r.id);
-                }
-            } else {
-                segmentInfo = r.BaseURL;
-                representation.segmentInfoType = "BaseURL";
-            }
-
-            if (segmentInfo.hasOwnProperty("Initialization")) {
-                initialization = segmentInfo.Initialization;
-                if (initialization.hasOwnProperty("sourceURL")) {
-                    representation.initialization = initialization.sourceURL;
-                } else if (initialization.hasOwnProperty("range")) {
+                if (segmentInfo.hasOwnProperty("Initialization")) {
+                    initialization = segmentInfo.Initialization;
+                    if (initialization.hasOwnProperty("sourceURL")) {
+                        representation.initialization = initialization.sourceURL;
+                    } else if (initialization.hasOwnProperty("range")) {
+                        representation.initialization = r.BaseURL;
+                        representation.range = initialization.range;
+                    }
+                } else if (r.hasOwnProperty("mimeType") && self.getIsTextTrack(r.mimeType)) {
                     representation.initialization = r.BaseURL;
-                    representation.range = initialization.range;
+                    representation.range = 0;
                 }
-            } else if (r.hasOwnProperty("mimeType") && self.getIsTextTrack(r.mimeType)) {
-                representation.initialization = r.BaseURL;
-                representation.range = 0;
-            }
 
-            if (segmentInfo.hasOwnProperty("timescale")) {
-                representation.timescale = segmentInfo.timescale;
-            }
-            if (segmentInfo.hasOwnProperty("duration")) {
-                // TODO according to the spec @maxSegmentDuration specifies the maximum duration of any Segment in any Representation in the Media Presentation
-                // It is also said that for a SegmentTimeline any @d value shall not exceed the value of MPD@maxSegmentDuration, but nothing is said about
-                // SegmentTemplate @duration attribute. We need to find out if @maxSegmentDuration should be used instead of calculated duration if the the duration
-                // exceeds @maxSegmentDuration
-                //representation.segmentDuration = Math.min(segmentInfo.duration / representation.timescale, adaptation.period.mpd.maxSegmentDuration);
-                representation.segmentDuration = segmentInfo.duration / representation.timescale;
-            }
-            if (segmentInfo.hasOwnProperty("startNumber")) {
-                representation.startNumber = segmentInfo.startNumber;
-            }
-            if (segmentInfo.hasOwnProperty("indexRange")) {
-                representation.indexRange = segmentInfo.indexRange;
-            }
-            if (segmentInfo.hasOwnProperty("presentationTimeOffset")) {
-                representation.presentationTimeOffset = segmentInfo.presentationTimeOffset / representation.timescale;
-            }
+                if (segmentInfo.hasOwnProperty("timescale")) {
+                    representation.timescale = segmentInfo.timescale;
+                }
+                if (segmentInfo.hasOwnProperty("duration")) {
+                    // TODO according to the spec @maxSegmentDuration specifies the maximum duration of any Segment in any Representation in the Media Presentation
+                    // It is also said that for a SegmentTimeline any @d value shall not exceed the value of MPD@maxSegmentDuration, but nothing is said about
+                    // SegmentTemplate @duration attribute. We need to find out if @maxSegmentDuration should be used instead of calculated duration if the the duration
+                    // exceeds @maxSegmentDuration
+                    //representation.segmentDuration = Math.min(segmentInfo.duration / representation.timescale, adaptation.period.mpd.maxSegmentDuration);
+                    representation.segmentDuration = segmentInfo.duration / representation.timescale;
+                }
+                if (segmentInfo.hasOwnProperty("startNumber")) {
+                    representation.startNumber = segmentInfo.startNumber;
+                }
+                if (segmentInfo.hasOwnProperty("indexRange")) {
+                    representation.indexRange = segmentInfo.indexRange;
+                }
+                if (segmentInfo.hasOwnProperty("presentationTimeOffset")) {
+                    representation.presentationTimeOffset = segmentInfo.presentationTimeOffset / representation.timescale;
+                }
 
-            representation.MSETimeOffset = self.timelineConverter.calcMSETimeOffset(representation);
-            representations.push(representation);
+                representation.MSETimeOffset = self.timelineConverter.calcMSETimeOffset(representation);
+                representations.push(representation);
+            }
         }
 
         deferred.resolve(representations);
@@ -709,15 +713,16 @@ Dash.dependencies.DashManifestExtensions.prototype = {
     },
 
     getAdaptationsForPeriod: function(manifest, period) {
-        var p = manifest.Period_asArray[period.index],
+        var p = manifest === null ? null : manifest.Period_asArray[period.index],
             adaptations = [],
             adaptationSet;
-
-        for (var i = 0; i < p.AdaptationSet_asArray.length; i += 1) {
-            adaptationSet = new Dash.vo.AdaptationSet();
-            adaptationSet.index = i;
-            adaptationSet.period = period;
-            adaptations.push(adaptationSet);
+        if (p) {
+            for (var i = 0; i < p.AdaptationSet_asArray.length; i += 1) {
+                adaptationSet = new Dash.vo.AdaptationSet();
+                adaptationSet.index = i;
+                adaptationSet.period = period;
+                adaptations.push(adaptationSet);
+            }
         }
 
         return Q.when(adaptations);
