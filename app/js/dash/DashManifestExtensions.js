@@ -911,9 +911,8 @@ Dash.dependencies.DashManifestExtensions.prototype = {
     },
 
     getEventsForPeriod: function(manifest,period) {
-
-        var periodArray = manifest.Period_asArray,
-            eventStreams = periodArray[period.index].EventStream_asArray,
+        var periodArray = manifest === null ? null : manifest.Period_asArray,
+            eventStreams = periodArray === null ? null : periodArray[period.index].EventStream_asArray,
             events = [];
 
         if(eventStreams) {

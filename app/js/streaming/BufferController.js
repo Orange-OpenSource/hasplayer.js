@@ -1311,9 +1311,11 @@ MediaPlayer.dependencies.BufferController = function () {
         },
 
         setFragmentController: function (value) {
-            this.fragmentController = value;
-            fragmentModel = this.fragmentController.attachBufferController(this);
-            fragmentModel.fragmentLoader.subscribe(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, this);
+            if (value) {
+                this.fragmentController = value;
+                fragmentModel = this.fragmentController.attachBufferController(this);
+                fragmentModel.fragmentLoader.subscribe(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, this);
+            }
         },
 
         setEventController: function(value) {
