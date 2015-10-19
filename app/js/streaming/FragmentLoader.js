@@ -28,7 +28,7 @@
         req.open("HEAD", request.url, true);
 
         req.onload = function () {
-            if (req.status < 200 || req.status > 299) return;
+            if (req.status < 200 || req.status > 399) return;
 
             isSuccessful = true;
 
@@ -121,7 +121,7 @@
             };
 
             req.onload = function () {
-                if (req.status < 200 || req.status > 299)
+                if (req.status < 200 || req.status > 399)
                 {
                     return;
                 }
