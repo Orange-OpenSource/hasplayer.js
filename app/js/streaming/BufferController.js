@@ -1494,12 +1494,12 @@ MediaPlayer.dependencies.BufferController = function () {
 
                     if (fragmentModel) {
                         fragmentModel.fragmentLoader.unsubscribe(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, self.abrController);
+                        self.fragmentController.abortRequestsForModel(fragmentModel);
+                        self.fragmentController.detachBufferController(fragmentModel);
+                        fragmentModel = null;
                     }
 
                     self.clearMetrics();
-                    self.fragmentController.abortRequestsForModel(fragmentModel);
-                    self.fragmentController.detachBufferController(fragmentModel);
-                    fragmentModel = null;
                     initializationData = [];
                     initialPlayback = true;
                     isQuotaExceeded = false;
