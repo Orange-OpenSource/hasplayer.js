@@ -674,7 +674,7 @@ MediaPlayer.dependencies.BufferController = function () {
                     }
                     return bufferFragment.call(this);
                 }
-            }else if (this.chunkMissingCount === 0) {
+            }else if (this.chunkMissingCount === 0 && bufferLevel != 0) {
                 this.stallTime = e.startTime;
                 this.chunkMissingCount += 1;
             }else{
@@ -684,7 +684,7 @@ MediaPlayer.dependencies.BufferController = function () {
                 errorObject.data = {};
                 errorObject.data.url = e.url;
                 errorObject.data.request = e;
-                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, type+errorObject.msg, errorObject.data);
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, errorObject.msg, errorObject.data);
             }
         },
 
@@ -1492,7 +1492,9 @@ MediaPlayer.dependencies.BufferController = function () {
                     cancel(deferredStreamComplete);
                     deferredStreamComplete = Q.defer();
 
-                    fragmentModel.fragmentLoader.unsubscribe(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, self.abrController);
+                    if (fragmentModel) {
+                        fragmentModel.fragmentLoader.unsubscribe(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, self.abrController);
+                    }
 
                     self.clearMetrics();
                     self.fragmentController.abortRequestsForModel(fragmentModel);
