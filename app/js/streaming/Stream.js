@@ -195,14 +195,14 @@ MediaPlayer.dependencies.Stream = function() {
             return deferred.promise;
         },
 
-        checkIfInitialized = function(videoState, audioState, textTrackState, deferred) {
+        checkIfInitialized = function(videoState, audioState, textTrackState) {
             this.debug.info("[Stream] checkIfInitialized videoState="+videoState+" audioState="+audioState+" textTrackState="+textTrackState);
             if (videoState === "ready" && audioState === "ready" && textTrackState === "ready") {
                 if (videoController === null && audioController === null && textController === null) {
                     var msg = "No streams to play.";
                     this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM, msg, manifest);
                     this.debug.log(msg);
-                    deferred.reject();
+                    initializedeferred.reject();
                 } else {
                     //this.debug.log("MediaSource initialized!");
                     // Initialize protection controller
@@ -210,10 +210,10 @@ MediaPlayer.dependencies.Stream = function() {
                         protectionController.init(contentProtection, audioCodec, videoCodec);
                     }
 
-                    deferred.resolve(true);
+                    initializedeferred.resolve(true);
                 }
             } else if (videoState === "error" || audioState === "error" || textTrackState === "error") {
-                deferred.reject();
+                initializedeferred.reject();
             }
         },
 
@@ -286,12 +286,12 @@ MediaPlayer.dependencies.Stream = function() {
                                         }
 
                                         videoState = "ready";
-                                        checkIfInitialized.call(self, videoState, audioState, textTrackState, initializedeferred);
+                                        checkIfInitialized.call(self, videoState, audioState, textTrackState);
                                     },
                                     function( /*error*/ ) {
                                         self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Error creating video source buffer.");
                                         videoState = "error";
-                                        checkIfInitialized.call(self, videoState, audioState, textTrackState, initializedeferred);
+                                        checkIfInitialized.call(self, videoState, audioState, textTrackState);
                                     }
                                 );
                             } else {
@@ -299,7 +299,7 @@ MediaPlayer.dependencies.Stream = function() {
                                 self.debug.error("[Stream]" + msg);
                                 self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC, msg, manifest);
                                 videoState = "error";
-                                checkIfInitialized.call(self, videoState, audioState, textTrackState, initializedeferred);
+                                checkIfInitialized.call(self, videoState, audioState, textTrackState);
                             }
                             return self.manifestExt.getAudioDatas(manifest, periodInfo.index);
                         }
@@ -345,12 +345,12 @@ MediaPlayer.dependencies.Stream = function() {
                                                 }
 
                                                 audioState = "ready";
-                                                checkIfInitialized.call(self, videoState, audioState, textTrackState, initializedeferred);
+                                                checkIfInitialized.call(self, videoState, audioState, textTrackState);
                                             },
                                             function() {
                                                 self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Error creating audio source buffer.");
                                                 audioState = "error";
-                                                checkIfInitialized.call(self, videoState, audioState, textTrackState, initializedeferred);
+                                                checkIfInitialized.call(self, videoState, audioState, textTrackState);
                                             }
                                         );
                                     }
@@ -358,7 +358,7 @@ MediaPlayer.dependencies.Stream = function() {
                             } else {
                                 self.debug.log("[Stream] No audio streams.");
                                 audioState = "ready";
-                                checkIfInitialized.call(self, videoState, audioState, textTrackState, initializedeferred);
+                                checkIfInitialized.call(self, videoState, audioState, textTrackState);
                             }
 
                             return self.manifestExt.getTextDatas(manifest, periodInfo.index);
@@ -399,7 +399,7 @@ MediaPlayer.dependencies.Stream = function() {
                                                     }
                                                     //self.debug.log("Text is ready!");
                                                     textTrackState = "ready";
-                                                    checkIfInitialized.call(self, videoState, audioState, textTrackState, initializedeferred);
+                                                    checkIfInitialized.call(self, videoState, audioState, textTrackState);
                                                 }
                                             },
                                             function(error) {
@@ -407,7 +407,7 @@ MediaPlayer.dependencies.Stream = function() {
                                                 self.debug.log(error);
                                                 self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Error creating text source buffer.");
                                                 textTrackState = "error";
-                                                checkIfInitialized.call(self, videoState, audioState, textTrackState, initializedeferred);
+                                                checkIfInitialized.call(self, videoState, audioState, textTrackState);
                                             }
                                         );
                                     }
@@ -415,7 +415,7 @@ MediaPlayer.dependencies.Stream = function() {
                             } else {
                                 self.debug.log("[Stream] No text tracks.");
                                 textTrackState = "ready";
-                                checkIfInitialized.call(self, videoState, audioState, textTrackState, initializedeferred);
+                                checkIfInitialized.call(self, videoState, audioState, textTrackState);
                             }
                        
                             return self.manifestExt.getEventsForPeriod(manifest, periodInfo);
