@@ -54,14 +54,16 @@ MediaPlayer.dependencies.BufferExtensions = function () {
         bufferMax: undefined,
 
         updateData: function(data, type) {
-            var topIndex = data.Representation_asArray.length - 1;
+            if (data) {
+                var topIndex = data.Representation_asArray.length - 1;
 
-            if (type === "audio") {
-                topAudioQualityIndex = topIndex;
-                audioData = data;
-            } else if (type === "video") {
-                topVideoQualityIndex = topIndex;
-                videoData = data;
+                if (type === "audio") {
+                    topAudioQualityIndex = topIndex;
+                    audioData = data;
+                } else if (type === "video") {
+                    topVideoQualityIndex = topIndex;
+                    videoData = data;
+                }
             }
         },
 
