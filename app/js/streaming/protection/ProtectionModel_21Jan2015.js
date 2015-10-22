@@ -134,6 +134,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             var token = { // Implements MediaPlayer.vo.protection.SessionToken
                 session: session,
                 initData: initData,
+                licenseStored: false,
 
                 // This is our main event handler for all desired MediaKeySession events
                 // These events are translated into our API-independent versions of the
@@ -233,9 +234,22 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
             self.debug.log("[DRM][PM_21Jan2015] Teardown");
 
+            // remove session without license
+            if(numSessions !== 0){
+                for (var i = 0; i < numSessions; i++) {
+                    session = sessions[i];
+                    if(!session.licenseStored){
+                       removeSession(session);
+                    }
+                }
+            }
+
+
             // Do not close and remove sessions to keep licences persistence
             self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
             return;
+
+
 
             /*if (numSessions !== 0) {
                 // Called when we are done closing a session.  Success or fail
@@ -389,6 +403,8 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             }
             session.update(message)
             .then(function(){
+                // track license has been stored in order to not retry request
+                sessionToken.licenseStored = true;
                 // used to monitor wrong key added to the CDM
                 videoElement.addEventListener("waitingforkey", eventHandler);
             })
