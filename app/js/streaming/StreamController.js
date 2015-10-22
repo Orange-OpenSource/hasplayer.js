@@ -556,7 +556,10 @@
         },
 
         reset: function () {
-
+            var teardownComplete = {}, 
+                funcs = [],
+                self = this;
+             
             this.debug.info("[StreamController] Reset");
 
             if (!!activeStream) {
@@ -571,16 +574,7 @@
             this.metricsModel.clearAllCurrentMetrics();
             isPeriodSwitchingInProgress = false;
 
-            // Teardown the protection system, if necessary
-            if (!protectionController) {
-                this.notify(MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE);
-            }
-            else if (ownProtectionController) {
-                var teardownComplete = {},
-                    funcs = [],
-                    self = this;
-
-                teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE] = function () {
+            teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE] = function () {
 
                     // Complete teardown process
                     ownProtectionController = false;
@@ -607,13 +601,17 @@
 
                     self.manifestModel.setValue(null);
                 };
+
+            // Teardown the protection system, if necessary
+            if (!protectionController) {
+                teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE]();
+            }
+            else if (ownProtectionController) {
                 protectionController.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE, teardownComplete, undefined, true);
                 protectionController.teardown();
             } else {
                 protectionController.setMediaElement(null);
-                protectionController = null;
-                protectionData = null;
-                this.notify(MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE);
+                teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE]();
             }
         },
 
