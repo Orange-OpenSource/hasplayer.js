@@ -348,57 +348,52 @@ MediaPlayer.dependencies.Stream = function() {
                                 checkIfInitialized.call(self, videoState, audioState, textTrackState);
                             }
 
-                            return self.manifestExt.getTextDatas(manifest, periodInfo.index);
+                            return self.manifestExt.getSpecificTextData(manifest, periodInfo.index, defaultSubtitleLang);
                         }
                     ).then(
 
                         // ORANGE: added Support for fragmented subtitles
                         //         which are downloaded and handled just like Audio/Video - by a regular bufferController, fragmentController etc
                         //         (fragmented subtitles are used by MSS and live streams)
-                        function(textDatas) {
+                        function(specificSubtitleData) {
                             var mimeType;
-                            if (textDatas !== null && textDatas.length > 0) {
-                                self.debug.log("Have subtitles streams: " + textDatas.length);
-                                self.manifestExt.getSpecificTextData(manifest, periodInfo.index, defaultSubtitleLang).then(
-                                    function(specificSubtitleData) {
-                                        self.manifestExt.getDataIndex(specificSubtitleData, manifest, periodInfo.index).then(
-                                            function(index) {
-                                                textTrackIndex = index;
-                                                self.debug.log("Save text track: " + textTrackIndex);
-                                            });
+                            if (specificSubtitleData !== null) {
+                                self.manifestExt.getDataIndex(specificSubtitleData, manifest, periodInfo.index).then(
+                                    function(index) {
+                                        textTrackIndex = index;
+                                        self.debug.log("Save text track: " + textTrackIndex);
+                                    });
 
-                                        self.manifestExt.getMimeType(specificSubtitleData).then(
-                                            function(type) {
-                                                mimeType = type;
-                                                if (mediaSource) {
-                                                    return self.sourceBufferExt.createSourceBuffer(mediaSource, mimeType);
-                                                } else {
-                                                    return;
-                                                }
-                                            }).then(
-                                            function(buffer) {
-                                                if (buffer === null) {
-                                                    self.debug.log("Source buffer was not created for text track");
-                                                } else {
-                                                    textController = self.system.getObject("bufferController");
-                                                    textController.initialize("text", periodInfo, specificSubtitleData, buffer, self.videoModel, self.requestScheduler, self.fragmentController, mediaSource);
+                                self.manifestExt.getMimeType(specificSubtitleData).then(
+                                    function(type) {
+                                        mimeType = type;
+                                        if (mediaSource) {
+                                            return self.sourceBufferExt.createSourceBuffer(mediaSource, mimeType);
+                                        } else {
+                                            return;
+                                        }
+                                    }).then(
+                                    function(buffer) {
+                                        if (buffer === null) {
+                                            self.debug.log("Source buffer was not created for text track");
+                                        } else {
+                                            textController = self.system.getObject("bufferController");
+                                            textController.initialize("text", periodInfo, specificSubtitleData, buffer, self.videoModel, self.requestScheduler, self.fragmentController, mediaSource);
 
-                                                    if (buffer.hasOwnProperty('initialize')) {
-                                                        buffer.initialize(mimeType, textController, specificSubtitleData);
-                                                    }
-                                                    //self.debug.log("Text is ready!");
-                                                    textTrackState = "ready";
-                                                    checkIfInitialized.call(self, videoState, audioState, textTrackState);
-                                                }
-                                            },
-                                            function(error) {
-                                                self.debug.log("Error creating text source buffer:");
-                                                self.debug.log(error);
-                                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Error creating text source buffer.");
-                                                textTrackState = "error";
-                                                checkIfInitialized.call(self, videoState, audioState, textTrackState);
+                                            if (buffer.hasOwnProperty('initialize')) {
+                                                buffer.initialize(mimeType, textController, specificSubtitleData);
                                             }
-                                        );
+                                            //self.debug.log("Text is ready!");
+                                            textTrackState = "ready";
+                                            checkIfInitialized.call(self, videoState, audioState, textTrackState);
+                                        }
+                                    },
+                                    function(error) {
+                                        self.debug.log("Error creating text source buffer:");
+                                        self.debug.log(error);
+                                        self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Error creating text source buffer.");
+                                        textTrackState = "error";
+                                        checkIfInitialized.call(self, videoState, audioState, textTrackState);
                                     }
                                 );
                             } else {
