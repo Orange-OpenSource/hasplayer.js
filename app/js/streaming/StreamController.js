@@ -440,7 +440,6 @@
         bufferExt: undefined,
         manifestExt: undefined,
         fragmentController: undefined,
-        abrController: undefined,
         fragmentExt: undefined,
         capabilities: undefined,
         debug: undefined,
