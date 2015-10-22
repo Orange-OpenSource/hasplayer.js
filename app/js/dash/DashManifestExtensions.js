@@ -13,7 +13,7 @@
  */
 
 
-Dash.dependencies.DashManifestExtensions = function () {
+Dash.dependencies.DashManifestExtensions = function() {
     "use strict";
     this.timelineConverter = undefined;
 };
@@ -21,7 +21,7 @@ Dash.dependencies.DashManifestExtensions = function () {
 Dash.dependencies.DashManifestExtensions.prototype = {
     constructor: Dash.dependencies.DashManifestExtensions,
 
-    getIsAudio: function (adaptation) {
+    getIsAudio: function(adaptation) {
         "use strict";
         var i,
             len,
@@ -74,7 +74,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(result);
     },
 
-    getIsVideo: function (adaptation) {
+    getIsVideo: function(adaptation) {
         "use strict";
         var i,
             len,
@@ -127,7 +127,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(result);
     },
 
-    getIsText: function (adaptation) {
+    getIsText: function(adaptation) {
         "use strict";
         var i,
             len,
@@ -174,14 +174,14 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return (type === "text/vtt" || type === "application/ttml+xml" || type === "application/ttml+xml+mp4");
     },
 
-    getIsMain: function (/*adaptation*/) {
+    getIsMain: function( /*adaptation*/ ) {
         "use strict";
         // TODO : Check "Role" node.
         // TODO : Use this somewhere.
         return Q.when(false);
     },
 
-    processAdaptation: function (adaptation) {
+    processAdaptation: function(adaptation) {
         "use strict";
         if (adaptation.Representation_asArray !== undefined && adaptation.Representation_asArray !== null) {
             adaptation.Representation_asArray.sort(function(a, b) {
@@ -192,7 +192,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return adaptation;
     },
 
-    getDataForId: function (id, manifest, periodIndex) {
+    getDataForId: function(id, manifest, periodIndex) {
         "use strict";
         var adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray,
             i,
@@ -207,18 +207,18 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(null);
     },
 
-    getDataForIndex: function (index, manifest, periodIndex) {
+    getDataForIndex: function(index, manifest, periodIndex) {
         "use strict";
         var adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
 
         return Q.when(adaptations[index]);
     },
 
-    getDataForIndex_: function (index, manifest, periodIndex) {
+    getDataForIndex_: function(index, manifest, periodIndex) {
         "use strict";
         var adaptations;
 
-        if (manifest && (periodIndex !== null || periodIndex !== undefined)) {
+        if (manifest && periodIndex >= 0) {
             adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
             
             if (adaptations && adaptations.length > 0 && !isNaN(index)) {
@@ -229,20 +229,20 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return [];
     },
 
-    getDataIndex: function (data, manifest, periodIndex) {
+    getDataIndex: function(data, manifest, periodIndex) {
         "use strict";
 
         var adaptations,
             i,
             len;
 
-        if (manifest && (periodIndex !== null || periodIndex !== undefined)) {
+        if (manifest && periodIndex >= 0) {
             adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
 
             // ORANGE : compare data with id or string representation to avoid reference error due to manifest refresh
             if (data.id) {
                 for (i = 0, len = adaptations.length; i < len; i += 1) {
-                    if (adaptations[i].id  && adaptations[i].id === data.id) {
+                    if (adaptations[i].id && adaptations[i].id === data.id) {
                         return Q.when(i);
                     }
                 }
@@ -261,7 +261,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(-1);
     },
 
-    getVideoData: function (manifest, periodIndex) {
+    getVideoData: function(manifest, periodIndex) {
         "use strict";
         //return Q.when(null);
         //------------------------------------
@@ -271,14 +271,14 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             deferred = Q.defer(),
             funcs = [];
 
-        if (manifest && (periodIndex !== null || periodIndex !== undefined)) {
-            adaptations  = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+        if (manifest && periodIndex >= 0) {
+            adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
 
             for (i = 0, len = adaptations.length; i < len; i += 1) {
                 funcs.push(this.getIsVideo(adaptations[i]));
             }
             Q.all(funcs).then(
-                function (results) {
+                function(results) {
                     var found = false;
                     for (i = 0, len = results.length; i < len; i += 1) {
                         if (results[i] === true) {
@@ -287,18 +287,18 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                         }
                     }
                     if (!found) {
-                        deferred.resolve(null);
+                        deferred.reject();
                     }
                 }
             );
-        }else{
+        } else {
             deferred.reject();
         }
 
         return deferred.promise;
     },
 
-    getTextDatas: function (manifest, periodIndex) {
+    getTextDatas: function(manifest, periodIndex) {
         "use strict";
         //return Q.when(null);
         //------------------------------------
@@ -308,30 +308,30 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             deferred = Q.defer(),
             funcs = [];
         
-        if (manifest && (periodIndex !== null || periodIndex !== undefined)) {
+        if (manifest && periodIndex >= 0) {
             adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
             for (i = 0, len = adaptations.length; i < len; i += 1) {
                 funcs.push(this.getIsText(adaptations[i]));
             }
             Q.all(funcs).then(
-                function (results) {
+                function(results) {
                     var datas = [];
                     for (i = 0, len = results.length; i < len; i += 1) {
                         if (results[i] === true) {
                             datas.push(adaptations[i]);
-                    }
+                        }
                         deferred.resolve(datas);
                     }
                 }
             );
-        }else{
+        } else {
             deferred.reject();
         }
 
         return deferred.promise;
     },
 
-    getAudioDatas: function (manifest, periodIndex) {
+    getAudioDatas: function(manifest, periodIndex) {
         "use strict";
         //return Q.when(null);
         //------------------------------------
@@ -341,14 +341,14 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             deferred = Q.defer(),
             funcs = [];
         
-        if (manifest && (periodIndex !== null || periodIndex !== undefined)) {
+        if (manifest && periodIndex >= 0) {
             adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
             for (i = 0, len = adaptations.length; i < len; i += 1) {
                 funcs.push(this.getIsAudio(adaptations[i]));
             }
 
             Q.all(funcs).then(
-                function (results) {
+                function(results) {
                     var datas = [];
                     for (i = 0, len = results.length; i < len; i += 1) {
                         if (results[i] === true) {
@@ -358,14 +358,14 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                     deferred.resolve(datas);
                 }
             );
-        }else{
+        } else {
             deferred.reject();
         }
 
         return deferred.promise;
     },
     
-    getSpecificAudioData: function (manifest, periodIndex, language) {
+    getSpecificAudioData: function(manifest, periodIndex, language) {
         "use strict";
         var i,
             len,
@@ -373,30 +373,35 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             found = false,
             self = this;
 
-        this.getAudioDatas(manifest, periodIndex).then(
-            function (datas) {
-                if (!datas || datas.length === 0) {
-                    deferred.resolve(null);
-                }
+        if (manifest && periodIndex >= 0) {
+            this.getAudioDatas(manifest, periodIndex).then(
+                function(datas) {
+                    if (!datas || datas.length === 0) {
+                        deferred.reject();
+                        return;
+                    }
 
-                for (i = 0, len = datas.length; i < len && found !== true; i += 1) {
-                    if (datas[i].lang === language) {
-                        found = true;
-                        deferred.resolve(self.processAdaptation(datas[i]));
+                    for (i = 0, len = datas.length; i < len && found !== true; i += 1) {
+                        if (datas[i].lang === language) {
+                            found = true;
+                            deferred.resolve(self.processAdaptation(datas[i]));
+                        }
+                    }
+
+                    if (!found) {
+                        //if the specific language has not been found, return the first one.
+                        deferred.resolve(datas[0]);
                     }
                 }
-
-                if (!found) {
-                    //if the specific language has not been found, return the first one.
-                    deferred.resolve(datas[0]);
-                }
-            }
-        );
+            );
+        } else {
+            deferred.reject();
+        }
 
         return deferred.promise;
     },
 
-    getPrimaryAudioData: function (manifest, periodIndex) {
+    getPrimaryAudioData: function(manifest, periodIndex) {
         "use strict";
         var i,
             len,
@@ -404,38 +409,43 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             funcs = [],
             self = this;
 
-        this.getAudioDatas(manifest, periodIndex).then(
-            function (datas) {
-                if (!datas || datas.length === 0) {
-                    deferred.resolve(null);
-                }
+        if (manifest && periodIndex >= 0) {
+            this.getAudioDatas(manifest, periodIndex).then(
+                function(datas) {
+                    if (!datas || datas.length === 0) {
+                        deferred.reject();
+                        return;
+                    }
 
-                for (i = 0, len = datas.length; i < len; i += 1) {
-                    funcs.push(self.getIsMain(datas[i]));
-                }
+                    for (i = 0, len = datas.length; i < len; i += 1) {
+                        funcs.push(self.getIsMain(datas[i]));
+                    }
 
-                Q.all(funcs).then(
-                    function (results) {
-                        var found = false;
-                        for (i = 0, len = results.length; i < len; i += 1) {
-                            if (results[i] === true) {
-                                found = true;
-                                deferred.resolve(self.processAdaptation(datas[i]));
+                    Q.all(funcs).then(
+                        function(results) {
+                            var found = false;
+                            for (i = 0, len = results.length; i < len; i += 1) {
+                                if (results[i] === true) {
+                                    found = true;
+                                    deferred.resolve(self.processAdaptation(datas[i]));
+                                }
+                            }
+                            if (!found) {
+                                //if the specific language has not been found, return the first one.
+                                deferred.resolve(datas[0]);
                             }
                         }
-                        if (!found) {
-                            //if the specific language has not been found, return the first one.
-                            deferred.resolve(datas[0]);
-                        }
-                    }
-                );
-            }
-        );
+                    );
+                }
+            );
+        } else {
+            deferred.reject();
+        }
 
         return deferred.promise;
     },
 
-    getPrimaryTextData: function (manifest, periodIndex) {
+    getPrimaryTextData: function(manifest, periodIndex) {
         "use strict";
         var i,
             len,
@@ -443,85 +453,94 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             funcs = [],
             self = this;
 
-        this.getTextDatas(manifest, periodIndex).then(
-            function (datas) {
-                if (!datas || datas.length === 0) {
-                    deferred.resolve(null);
-                }
+        if (manifest && periodIndex >= 0) {
+            this.getTextDatas(manifest, periodIndex).then(
+                function(datas) {
+                    if (!datas || datas.length === 0) {
+                        deferred.reject();
+                        return;
+                    }
 
-                for (i = 0, len = datas.length; i < len; i += 1) {
-                    funcs.push(self.getIsMain(datas[i]));
-                }
+                    for (i = 0, len = datas.length; i < len; i += 1) {
+                        funcs.push(self.getIsMain(datas[i]));
+                    }
 
-                Q.all(funcs).then(
-                    function (results) {
-                        var found = false;
-                        for (i = 0, len = results.length; i < len; i += 1) {
-                            if (results[i] === true) {
-                                found = true;
-                                deferred.resolve(self.processAdaptation(datas[i]));
+                    Q.all(funcs).then(
+                        function(results) {
+                            var found = false;
+                            for (i = 0, len = results.length; i < len; i += 1) {
+                                if (results[i] === true) {
+                                    found = true;
+                                    deferred.resolve(self.processAdaptation(datas[i]));
+                                }
+                            }
+                            if (!found) {
+                                deferred.resolve(datas[0]);
                             }
                         }
-                        if (!found) {
-                            deferred.resolve(datas[0]);
-                        }
-                    }
-                );
-            }
-        );
+                    );
+                }
+            );
+        } else {
+            deferred.reject();
+        }
 
         return deferred.promise;
     },
 
-    getSpecificTextData: function (manifest, periodIndex, language) {
+    getSpecificTextData: function(manifest, periodIndex, language) {
         "use strict";
         var i,
             len,
             deferred = Q.defer(),
             found = false,
             self = this;
-
-        this.getTextDatas(manifest, periodIndex).then(
-            function (datas) {
-                if (!datas || datas.length === 0) {
-                    deferred.resolve(null);
-                }
-
-                for (i = 0, len = datas.length; i < len && found !== true; i += 1) {
-                    if (datas[i].lang === language) {
-                        found = true;
-                        deferred.resolve(self.processAdaptation(datas[i]));
+        if (manifest && periodIndex >= 0) {
+            this.getTextDatas(manifest, periodIndex).then(
+                function(datas) {
+                    if (!datas || datas.length === 0) {
+                        deferred.reject();
+                        return;
                     }
-                }
+
+                    for (i = 0, len = datas.length; i < len && found !== true; i += 1) {
+                        if (datas[i].lang === language) {
+                            found = true;
+                            deferred.resolve(self.processAdaptation(datas[i]));
+                        }
+                    }
         
-                if (!found) {
-                    deferred.resolve(datas[0]);
-                }
-            });
+                    if (!found) {
+                        deferred.resolve(datas[0]);
+                    }
+                });
+        } else {
+            deferred.reject();
+        }
 
         return deferred.promise;
     },
 
-    getCodec: function (data) {
+    getCodec: function(data) {
         "use strict";
         var representation = data.Representation_asArray[0],
             codec = (representation.mimeType + ';codecs="' + representation.codecs + '"');
         return Q.when(codec);
     },
 
-    getCodec_: function (data) {
+    getCodec_: function(data) {
         "use strict";
         var representation = data.Representation_asArray[0],
             codec = (representation.mimeType + ';codecs="' + representation.codecs + '"');
         return codec;
     },
 
-    getMimeType: function (data) {
+    getMimeType: function(data) {
         "use strict";
         return Q.when(data.Representation_asArray[0].mimeType);
     },
 
-    getKID: function (data) {
+    getKID: function(data) {
         "use strict";
 
         if (!data || !data.hasOwnProperty("cenc:default_KID")) {
@@ -530,7 +549,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return data["cenc:default_KID"];
     },
 
-    getContentProtectionData: function (data) {
+    getContentProtectionData: function(data) {
         "use strict";
         if (!data || !data.hasOwnProperty("ContentProtection_asArray") || data.ContentProtection_asArray.length === 0) {
             return Q.when(null);
@@ -538,7 +557,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(data.ContentProtection_asArray);
     },
 
-    getIsDynamic: function (manifest) {
+    getIsDynamic: function(manifest) {
         "use strict";
         var isDynamic = false,
             LIVE_TYPE = "dynamic";
@@ -550,7 +569,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return isDynamic;
     },
 
-    getIsDVR: function (manifest) {
+    getIsDVR: function(manifest) {
         "use strict";
         var isDynamic = this.getIsDynamic(manifest),
             containsDVR,
@@ -562,7 +581,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(isDVR);
     },
 
-    getIsOnDemand: function (manifest) {
+    getIsOnDemand: function(manifest) {
         "use strict";
         var isOnDemand = false;
 
@@ -573,7 +592,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(isOnDemand);
     },
 
-    getDuration: function (manifest) {
+    getDuration: function(manifest) {
         var mpdDuration;
 
         //@mediaPresentationDuration specifies the duration of the entire Media Presentation.
@@ -587,12 +606,12 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(mpdDuration);
     },
 
-    getBandwidth: function (representation) {
+    getBandwidth: function(representation) {
         "use strict";
         return Q.when(representation.bandwidth);
     },
 
-    getRefreshDelay: function (manifest) {
+    getRefreshDelay: function(manifest) {
         "use strict";
         var delay = NaN,
             minDelay = 2;
@@ -604,7 +623,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(delay);
     },
 
-    getRepresentationCount: function (adaptation) {
+    getRepresentationCount: function(adaptation) {
         "use strict";
         if (adaptation) {
             return Q.when(adaptation.Representation_asArray.length);
@@ -613,7 +632,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(null);
     },
 
-    getRepresentationFor: function (index, data) {
+    getRepresentationFor: function(index, data) {
         "use strict";
         return Q.when(data.Representation_asArray[index]);
     },
@@ -644,13 +663,11 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                 if (r.hasOwnProperty("SegmentBase")) {
                     segmentInfo = r.SegmentBase;
                     representation.segmentInfoType = "SegmentBase";
-                }
-                else if (r.hasOwnProperty("SegmentList")) {
+                } else if (r.hasOwnProperty("SegmentList")) {
                     segmentInfo = r.SegmentList;
                     representation.segmentInfoType = "SegmentList";
                     representation.useCalculatedLiveEdgeTime = true;
-                }
-                else if (r.hasOwnProperty("SegmentTemplate")) {
+                } else if (r.hasOwnProperty("SegmentTemplate")) {
                     segmentInfo = r.SegmentTemplate;
 
                     if (segmentInfo.hasOwnProperty("SegmentTimeline")) {
@@ -728,7 +745,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(adaptations);
     },
 
-    getRegularPeriods: function (manifest, mpd) {
+    getRegularPeriods: function(manifest, mpd) {
         var self = this,
             deferred = Q.defer(),
             periods = [],
@@ -746,7 +763,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             // If the attribute @start is present in the Period, then the
             // Period is a regular Period and the PeriodStart is equal
             // to the value of this attribute.
-            if (p.hasOwnProperty("start")){
+            if (p.hasOwnProperty("start")) {
                 vo = new Dash.vo.Period();
                 vo.start = p.start;
             }
@@ -756,7 +773,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             // Period PeriodStart is the sum of the start time of the previous
             // Period PeriodStart and the value of the attribute @duration
             // of the previous Period.
-            else if (p1 !== null && p.hasOwnProperty("duration")){
+            else if (p1 !== null && p.hasOwnProperty("duration")) {
                 vo = new Dash.vo.Period();
                 vo.start = vo1.start + vo1.duration;
                 vo.duration = p.duration;
@@ -772,20 +789,19 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             // The Period extends until the PeriodStart of the next Period.
             // The difference between the PeriodStart time of a Period and
             // the PeriodStart time of the following Period.
-            if (vo1 !== null && isNaN(vo1.duration))
-            {
+            if (vo1 !== null && isNaN(vo1.duration)) {
                 vo1.duration = vo.start - vo1.start;
             }
 
-            if (vo !== null && p.hasOwnProperty("id")){
+            if (vo !== null && p.hasOwnProperty("id")) {
                 vo.id = p.id;
             }
 
-            if (vo !== null && p.hasOwnProperty("duration")){
+            if (vo !== null && p.hasOwnProperty("duration")) {
                 vo.duration = p.duration;
             }
 
-            if (vo !== null){
+            if (vo !== null) {
                 vo.index = i;
                 vo.mpd = mpd;
                 periods.push(vo);
@@ -878,7 +894,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         // i.e. CheckTime = FetchTime + MPD@minimumUpdatePeriod.
         if (manifest.hasOwnProperty("minimumUpdatePeriod")) {
             self.getFetchTime(manifest, period).then(
-                function (fetchTime) {
+                function(fetchTime) {
                     checkTime = fetchTime + manifest.minimumUpdatePeriod;
                     deferred.resolve(checkTime);
                 }
@@ -910,40 +926,40 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(periodEnd);
     },
 
-    getEventsForPeriod: function(manifest,period) {
+    getEventsForPeriod: function(manifest, period) {
         var periodArray = manifest === null ? null : manifest.Period_asArray,
             eventStreams = periodArray === null ? null : periodArray[period.index].EventStream_asArray,
             events = [];
 
-        if(eventStreams) {
-            for(var i = 0; i < eventStreams.length; i += 1) {
+        if (eventStreams) {
+            for (var i = 0; i < eventStreams.length; i += 1) {
                 var eventStream = new Dash.vo.EventStream();
                 eventStream.period = period;
                 eventStream.timescale = 1;
 
-                if(eventStreams[i].hasOwnProperty("schemeIdUri")) {
+                if (eventStreams[i].hasOwnProperty("schemeIdUri")) {
                     eventStream.schemeIdUri = eventStreams[i].schemeIdUri;
                 } else {
                     throw "Invalid EventStream. SchemeIdUri has to be set";
                 }
-                if(eventStreams[i].hasOwnProperty("timescale")) {
+                if (eventStreams[i].hasOwnProperty("timescale")) {
                     eventStream.timescale = eventStreams[i].timescale;
                 }
-                if(eventStreams[i].hasOwnProperty("value")) {
+                if (eventStreams[i].hasOwnProperty("value")) {
                     eventStream.value = eventStreams[i].value;
                 }
-                for(var j = 0; j < eventStreams[i].Event_asArray.length; j += 1) {
+                for (var j = 0; j < eventStreams[i].Event_asArray.length; j += 1) {
                     var event = new Dash.vo.Event();
                     event.presentationTime = 0;
                     event.eventStream = eventStream;
 
-                    if(eventStreams[i].Event_asArray[j].hasOwnProperty("presentationTime")) {
+                    if (eventStreams[i].Event_asArray[j].hasOwnProperty("presentationTime")) {
                         event.presentationTime = eventStreams[i].Event_asArray[j].presentationTime;
                     }
-                    if(eventStreams[i].Event_asArray[j].hasOwnProperty("duration")) {
+                    if (eventStreams[i].Event_asArray[j].hasOwnProperty("duration")) {
                         event.duration = eventStreams[i].Event_asArray[j].duration;
                     }
-                    if(eventStreams[i].Event_asArray[j].hasOwnProperty("id")) {
+                    if (eventStreams[i].Event_asArray[j].hasOwnProperty("id")) {
                         event.id = eventStreams[i].Event_asArray[j].id;
                     }
                     events.push(event);
@@ -954,7 +970,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(events);
     },
 
-    getEventStreamForAdaptationSet : function (data) {
+    getEventStreamForAdaptationSet: function(data) {
 
         var eventStreams = [],
             inbandStreams;
@@ -962,20 +978,20 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         if (data) {
             inbandStreams = data.InbandEventStream_asArray;
     
-            if(inbandStreams) {
-                for(var i = 0; i < inbandStreams.length ; i += 1 ) {
+            if (inbandStreams) {
+                for (var i = 0; i < inbandStreams.length; i += 1) {
                     var eventStream = new Dash.vo.EventStream();
                     eventStream.timescale = 1;
 
-                    if(inbandStreams[i].hasOwnProperty("schemeIdUri")) {
+                    if (inbandStreams[i].hasOwnProperty("schemeIdUri")) {
                         eventStream.schemeIdUri = inbandStreams[i].schemeIdUri;
                     } else {
                         throw "Invalid EventStream. SchemeIdUri has to be set";
                     }
-                    if(inbandStreams[i].hasOwnProperty("timescale")) {
+                    if (inbandStreams[i].hasOwnProperty("timescale")) {
                         eventStream.timescale = inbandStreams[i].timescale;
                     }
-                    if(inbandStreams[i].hasOwnProperty("value")) {
+                    if (inbandStreams[i].hasOwnProperty("value")) {
                         eventStream.value = inbandStreams[i].value;
                     }
                     eventStreams.push(eventStream);
@@ -986,7 +1002,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return eventStreams;
     },
 
-    getEventStreamForRepresentation : function (data,representation) {
+    getEventStreamForRepresentation: function(data, representation) {
 
         var eventStreams = [],
             inbandStreams;
@@ -995,21 +1011,21 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
             inbandStreams = data.Representation_asArray[representation.index].InbandEventStream_asArray;
 
-            if(inbandStreams) {
-                for(var i = 0; i < inbandStreams.length ; i++ ) {
+            if (inbandStreams) {
+                for (var i = 0; i < inbandStreams.length; i++) {
                     var eventStream = new Dash.vo.EventStream();
                     eventStream.timescale = 1;
                     eventStream.representation = representation;
 
-                    if(inbandStreams[i].hasOwnProperty("schemeIdUri")) {
+                    if (inbandStreams[i].hasOwnProperty("schemeIdUri")) {
                         eventStream.schemeIdUri = inbandStreams[i].schemeIdUri;
                     } else {
                         throw "Invalid EventStream. SchemeIdUri has to be set";
                     }
-                    if(inbandStreams[i].hasOwnProperty("timescale")) {
+                    if (inbandStreams[i].hasOwnProperty("timescale")) {
                         eventStream.timescale = inbandStreams[i].timescale;
                     }
-                    if(inbandStreams[i].hasOwnProperty("value")) {
+                    if (inbandStreams[i].hasOwnProperty("value")) {
                         eventStream.value = inbandStreams[i].value;
                     }
                     eventStreams.push(eventStream);
@@ -1021,14 +1037,14 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
     },
 
-    getRepresentationBandwidth : function (adaptation, index) {
+    getRepresentationBandwidth: function(adaptation, index) {
         var self = this,
             deferred = Q.defer();
 
         self.getRepresentationFor(index, adaptation).then(
             function(rep) {
                 self.getBandwidth(rep).then(
-                    function (bandwidth) {
+                    function(bandwidth) {
                         deferred.resolve(bandwidth);
                     }
                 );
