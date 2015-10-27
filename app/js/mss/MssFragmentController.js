@@ -81,7 +81,7 @@ Mss.dependencies.MssFragmentController = function () {
 
             // In case we have added some segments, we also check if some out of date segments
             // may not been removed
-            if (segmentsUpdated) {
+            if (segmentsUpdated && manifest.timeShiftBufferDepth && (manifest.timeShiftBufferDepth > 0)) {
 
                 // Get timestamp of the last segment
                 segment = segments[segments.length-1];
