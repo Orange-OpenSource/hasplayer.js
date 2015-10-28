@@ -66,8 +66,8 @@ MediaPlayer.rules.AbandonRequestsRule = function() {
                 setFragmentRequestDict(type, index);
                 fragmentInfo = fragmentDict[type][index];
 
-                if (fragmentInfo === null || request.firstByteDate === null || (abandonDict.hasOwnProperty(fragmentInfo.id) && (abandonDict[fragmentInfo.id].url === request.url))) {
-                    self.debug.log("[AbandonRequestsRule][" + type + "] No change fragmentInfo, request.firstByteDate may be null or abandonDict.hasOwnProperty(fragmentInfo.id)===true");
+                if (fragmentInfo === null || request.firstByteDate === null || (abandonDict.hasOwnProperty(index) && (abandonDict[index].url === request.url))) {
+                    self.debug.log("[AbandonRequestsRule][" + type + "] No change fragmentInfo, request.firstByteDate may be null or abandonDict.hasOwnProperty(index)===true");
                     callback(switchRequest);
                     return;
                 }
@@ -98,7 +98,7 @@ MediaPlayer.rules.AbandonRequestsRule = function() {
                     if ((fragmentInfo.estimatedTimeOfDownload) > (fragmentInfo.segmentDuration * ABANDON_MULTIPLIER)) {
                         switchRequest = new MediaPlayer.rules.SwitchRequest(0, MediaPlayer.rules.SwitchRequest.prototype.STRONG);
                         abandonDict[fragmentInfo.id] = fragmentInfo;
-                        self.debug.info("[AbandonRequestsRule][" + type + "] bw = " + fragmentInfo.measuredBandwidth + " kb/s => switch to lowest quality");
+                        self.debug.info("[AbandonRequestsRule][" + type + "] bw = " + fragmentInfo.measuredBandwidth + " kb/s => switch to lowest quality for "+fragmentInfo.url);
                         delete fragmentDict[type][fragmentInfo.id];
                     }
                 } else if (fragmentInfo.bytesLoaded === fragmentInfo.bytesTotal) {
