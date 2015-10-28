@@ -46,7 +46,7 @@ MediaPlayer.rules.o.InsufficientBufferRule = function () {    "use strict";
                 return Q.when(new MediaPlayer.rules.SwitchRequest());
             }
 
-            self.debug.info("[InsufficientBufferRule]["+data.type+"] Checking buffer level ... (current = " + current + ", buffer level = " + bufferLevel.level + ")");
+            self.debug.info("[InsufficientBufferRule]["+data.type+"] Checking buffer level ... (current = " + current + ", buffer level = " + (Math.round(bufferLevel.level * 100) / 100) + ")");
 
             deferred = Q.defer();
 

@@ -89,7 +89,7 @@ MediaPlayer.rules.o.DownloadRatioRule = function() {
 
                 calculatedBandwidth = latencyInBandwidth ? (totalBytesLength / totalTime) : (totalBytesLength / downloadTime);
 
-                self.debug.info("[DownloadRatioRule][" + data.type + "] DL: " + downloadTime + "s, Total: " + totalTime + "s => bw = " + calculatedBandwidth);
+                self.debug.info("[DownloadRatioRule][" + data.type + "] DL: " + (Math.round(downloadTime * 1000) / 1000) + "s, Total: " + (Math.round(totalTime * 1000) / 1000) + "s => bw = " + Math.round(calculatedBandwidth / 1000) + " kb/s");
 
                 if (isNaN(calculatedBandwidth)) {
                     return Q.when(new MediaPlayer.rules.SwitchRequest());
