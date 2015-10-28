@@ -561,7 +561,7 @@ MediaPlayer.dependencies.BufferController = function () {
             var self = this;
 
             if (deferredFragmentBuffered) {
-                self.debug.log("[BufferController]["+type+"] signalSegmentBuffered (resolve deferredFragmentBuffered)");
+                self.debug.log("[BufferController]["+type+"] End of buffering process");
                 deferredFragmentBuffered.resolve();
                 deferredFragmentBuffered = null;
             }
@@ -652,31 +652,29 @@ MediaPlayer.dependencies.BufferController = function () {
                 deferredFragmentBuffered = null;
             }
 
-            //if request.status = 0, it's an aborted request : do not load chunk from another bitrate, do not send
-            // error.
+            // request.status = 0 (aborted request) => do not load chunk from another bitrate, do not send error.
             if (e.status !== undefined && e.status === 0 && !isRunning.call(this)) {
                 return;
-            }else{
+            } else {
                 if (e.status !== undefined && e.status === 0 ) {
                     this.chunkAborted = true;
-                    this.debug.log("[BufferController]["+type+"][onBytesError] Requests have been aborted!!!!!!!!!!!!");
+                    this.debug.info("[BufferController]["+type+"] Segment download aborted");
                 }
             }
 
-            //if it's the first download error, try to load the same segment for a the lowest quality...
-            if(this.chunkAborted === true)
-            {
+            // First download error => try to load the same segment at lowest quality
+            if (this.chunkAborted === true) {
                 if (e.quality !== 0) {
-                    this.debug.log("[BufferController]["+type+"][onBytesError] load Fragment at the first resolution");
+                    this.debug.info("[BufferController]["+type+"] Retry segment download at lowest quality");
                     if (manifest.name === "M3U"){
                         currentSequenceNumber -= 1;
                     }
                     return bufferFragment.call(this);
                 }
-            }else if (this.chunkMissingCount === 0 && bufferLevel != 0) {
+            } else if ((this.chunkMissingCount === 0) && (bufferLevel !== 0)) {
                 this.stallTime = e.startTime;
                 this.chunkMissingCount += 1;
-            }else{
+            } else {
                 this.chunkMissingCount = 0;
                 errorObject = {};
                 errorObject.msg = msgError;
@@ -959,6 +957,8 @@ MediaPlayer.dependencies.BufferController = function () {
 
             deferredFragmentBuffered = Q.defer();
 
+            self.debug.log("[BufferController]["+type+"] Start buffering process...");
+
             // Check if data has changed
             doUpdateData.call(self).then(
                 function (dataUpdated) {
@@ -1135,7 +1135,7 @@ MediaPlayer.dependencies.BufferController = function () {
                 currentTime,
                 metrics = self.metricsModel.getMetricsFor(type);
 
-                self.debug.log("[BufferController]["+type+"] Download request "+evt.data.request.url+" is in progress");
+                //self.debug.log("[BufferController]["+type+"] Download request " + evt.data.request.url + " is in progress");
 
                 self.abrRulesCollection.getRules(MediaPlayer.rules.BaseRulesCollection.prototype.ABANDON_FRAGMENT_RULES).then(
                     function(rules){
@@ -1144,8 +1144,8 @@ MediaPlayer.dependencies.BufferController = function () {
                         var newQuality = switchRequest.quality,
                             currentQuality = self.abrController.getQualityFor(type);
                 
-                        if (newQuality < currentQuality){
-                            self.debug.log("[BufferController]["+type+"] NEED TO ABANDON ************************** for "+evt.data.request.url);
+                        if (newQuality < currentQuality) {
+                            self.debug.info("[BufferController]["+type+"] Abandon current fragment : " + evt.data.request.url);
                             
                             currentTime = new Date();
 
@@ -1158,8 +1158,6 @@ MediaPlayer.dependencies.BufferController = function () {
                                 [evt.data.request.bytesLoaded ? evt.data.request.bytesLoaded : 0]);
                 
                             self.fragmentController.abortRequestsForModel(fragmentModel);
-                        }else{
-                            self.debug.log("[BufferController]["+type+"] No need to abandon");
                         }
                     };
 
@@ -1423,7 +1421,6 @@ MediaPlayer.dependencies.BufferController = function () {
 
         updateBufferState: function() {
             var level = Math.round(bufferLevel);
-            this.debug.log("[BufferController]["+type+"] updateBufferState buffer Level = " + level+"  htmlVideoState = "+ htmlVideoState);
 
             //test to detect stalled state, be sure to not to be in seeking state
             if (level<= 0 && htmlVideoState !== this.BUFFERING && this.videoModel.isSeeking()!== true) {

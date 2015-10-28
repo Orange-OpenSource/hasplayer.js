@@ -329,10 +329,10 @@
                 req,
                 ln = xhrs.length;
 
-            this.debug.log("[FragmentLoader] "+ln+" xhr requests to Abort.");
+            //this.debug.log("[FragmentLoader] " + ln + " XHR requests to abort.");
             for (i = 0; i < ln; i +=1) {
                 req = xhrs[i];
-                this.debug.log("[FragmentLoader] ### Abort XHR");
+                this.debug.log("[FragmentLoader] Abort XHR " + (req.responseURL ? req.responseURL : ""));
                 req.abort();
                 req = null;
             }
