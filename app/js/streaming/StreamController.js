@@ -128,24 +128,6 @@
             }
         },
 
-        onReloadManifest = function() {
-            this.debug.log("[StreamController] ### reloadManifest ####");
-            
-            var manifest = this.manifestModel.getValue(),
-                url = manifest.mpdUrl,
-                self = this;
-
-            if (manifest.hasOwnProperty("Location")) {
-                url = manifest.Location;
-            }
-
-            self.manifestLoader.load(url).then(
-                function(manifestResult) {
-                    self.manifestModel.setValue(manifestResult);
-                    self.debug.log("### Manifest has been refreshed.");
-            });
-        },
-
         /*
          * Called when current playback positon is changed.
          * Used to determine the time current stream is finished and we should switch to the next stream.
@@ -412,6 +394,18 @@
             }
         },
 
+        manifestUpdate = function(){
+            var manifest = this.manifestModel.getValue(),
+                url = manifest.mpdUrl;
+
+            if (manifest.hasOwnProperty("Location")) {
+                url = manifest.Location;
+            } 
+
+            this.debug.log("### Refresh manifest @ " + url);
+            this.refreshManifest(url, true);
+        },
+
         manifestHasUpdated = function() {
             var self = this;
             composeStreams.call(self).then(
@@ -447,6 +441,7 @@
         metricsExt: undefined,
         videoExt: undefined,
         errHandler: undefined,
+        eventBus: undefined,
         notify: undefined,
         subscribe: undefined,
         unsubscribe: undefined,
@@ -456,15 +451,13 @@
         currentURL: undefined,
 
         setup: function() {
+            this.system.mapHandler("manifestUpdate",undefined, manifestUpdate.bind(this));
             this.system.mapHandler("manifestUpdated", undefined, manifestHasUpdated.bind(this));
             timeupdateListener = onTimeupdate.bind(this);
             progressListener = onProgress.bind(this);
             seekingListener = onSeeking.bind(this);
             pauseListener = onPause.bind(this);
             playListener = onPlay.bind(this);
-
-            //ORANGE
-            this.system.mapHandler("reloadManifest", undefined, onReloadManifest.bind(this));
         },
 
         getManifestExt: function () {
@@ -550,6 +543,28 @@
                 },
                 function () {
                     self.debug.error("[StreamController] Manifest loading error.");
+                }
+            );
+        },
+
+        refreshManifest: function(url, isIntern){
+            var self = this;
+            this.manifestLoader.load(url,true).then(
+                function(manifestResult) {
+                    self.manifestModel.setValue(manifestResult);
+                    self.debug.log("### Manifest has been refreshed.");
+                },
+                function(){
+                    // here notfiy webapp to refresh url
+                    if(isIntern){
+                        self.eventBus.dispatchEvent({
+                                type: "manifestUrlUpdate",
+                                data: url
+                        });
+                    }else{
+                        debugger;
+                        self.debug.warn("[StreamController] refreshManifest url : ", url , " is invalid !");
+                    }
                 }
             );
         },
