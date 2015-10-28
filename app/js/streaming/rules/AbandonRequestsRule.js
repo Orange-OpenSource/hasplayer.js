@@ -28,7 +28,7 @@
  *  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  *  POSSIBILITY OF SUCH DAMAGE.
  */
-MediaPlayer.rules.AbandonRequestsRule = function () {
+MediaPlayer.rules.AbandonRequestsRule = function() {
     "use strict";
 
     var GRACE_TIME_THRESHOLD = 500,
@@ -36,14 +36,14 @@ MediaPlayer.rules.AbandonRequestsRule = function () {
         fragmentDict = {},
         abandonDict = {},
 
-        setFragmentRequestDict = function (type, id) {
+        setFragmentRequestDict = function(type, id) {
             fragmentDict[type] = fragmentDict[type] || {};
             fragmentDict[type][id] = fragmentDict[type][id] || {};
         };
 
     return {
         metricsExt: undefined,
-        debug:undefined,
+        debug: undefined,
         config: undefined,
         manifestExt: undefined,
         manifestModel: undefined,
@@ -67,7 +67,7 @@ MediaPlayer.rules.AbandonRequestsRule = function () {
                 fragmentInfo = fragmentDict[type][index];
 
                 if (fragmentInfo === null || request.firstByteDate === null || (abandonDict.hasOwnProperty(fragmentInfo.id) && (abandonDict[fragmentInfo.id].url === request.url))) {
-                    self.debug.log("[AbandonRequestsRule]["+type+"] No change fragmentInfo, request.firstByteDate may be null or abandonDict.hasOwnProperty(fragmentInfo.id)===true");
+                    self.debug.log("[AbandonRequestsRule][" + type + "] No change fragmentInfo, request.firstByteDate may be null or abandonDict.hasOwnProperty(fragmentInfo.id)===true");
                     callback(switchRequest);
                     return;
                 }
@@ -90,17 +90,17 @@ MediaPlayer.rules.AbandonRequestsRule = function () {
                 if (fragmentInfo.bytesLoaded < fragmentInfo.bytesTotal &&
                     fragmentInfo.elapsedTime >= GRACE_TIME_THRESHOLD) {
 
-                    fragmentInfo.measuredBandwidthInKbps = Math.round(fragmentInfo.bytesLoaded * 8 / fragmentInfo.elapsedTime);
+                    fragmentInfo.measuredBandwidth = fragmentInfo.bytesLoaded / fragmentInfo.elapsedTime/1000;
                     //fragmentInfo.measuredBandwidthInKbps = (concurrentCount > 1) ? getAggragateBandwidth.call(this, type, concurrentCount) :  Math.round(fragmentInfo.bytesLoaded*8/fragmentInfo.elapsedTime);
-                    fragmentInfo.estimatedTimeOfDownload = +(fragmentInfo.bytesTotal * 8 * 0.001 / fragmentInfo.measuredBandwidthInKbps).toFixed(2);
+                    fragmentInfo.estimatedTimeOfDownload = fragmentInfo.bytesTotal / fragmentInfo.measuredBandwidth;
                     //self.debug.log("[AbandonRequestsRule]["+type+"] id: "+fragmentInfo.id+" Bytes Loaded = "+(fragmentInfo.bytesLoaded)+", Measured bandwidth : "+fragmentInfo.measuredBandwidthInKbps+" kbps estimated Time of download : "+fragmentInfo.estimatedTimeOfDownload+" secondes, elapsed time : "+fragmentInfo.elapsedTime/1000+" secondes.");
 
-                     if ((fragmentInfo.elapsedTime) / 1000 > (fragmentInfo.segmentDuration * ABANDON_MULTIPLIER)) {
+                    if ((fragmentInfo.estimatedTimeOfDownload) > (fragmentInfo.segmentDuration * ABANDON_MULTIPLIER)) {
                         switchRequest = new MediaPlayer.rules.SwitchRequest(0, MediaPlayer.rules.SwitchRequest.prototype.STRONG);
                         abandonDict[fragmentInfo.id] = fragmentInfo;
-                        self.debug.info("[AbandonRequestsRule]["+type+"] bw = " + fragmentInfo.measuredBandwidthInKbps + " kb/s => switch to lowest quality");
+                        self.debug.info("[AbandonRequestsRule][" + type + "] bw = " + fragmentInfo.measuredBandwidth + " kb/s => switch to lowest quality");
                         delete fragmentDict[type][fragmentInfo.id];
-                     }
+                    }
                 } else if (fragmentInfo.bytesLoaded === fragmentInfo.bytesTotal) {
                     delete fragmentDict[type][fragmentInfo.id];
                 }
@@ -119,7 +119,3 @@ MediaPlayer.rules.AbandonRequestsRule = function () {
 MediaPlayer.rules.AbandonRequestsRule.prototype = {
     constructor: MediaPlayer.rules.AbandonRequestsRule
 };
-
-
-
-
