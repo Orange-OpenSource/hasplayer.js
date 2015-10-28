@@ -90,7 +90,7 @@ MediaPlayer.rules.AbandonRequestsRule = function() {
                 if (fragmentInfo.bytesLoaded < fragmentInfo.bytesTotal &&
                     fragmentInfo.elapsedTime >= GRACE_TIME_THRESHOLD) {
 
-                    fragmentInfo.measuredBandwidth = fragmentInfo.bytesLoaded / fragmentInfo.elapsedTime/1000;
+                    fragmentInfo.measuredBandwidth = fragmentInfo.bytesLoaded / (fragmentInfo.elapsedTime/1000);
                     //fragmentInfo.measuredBandwidthInKbps = (concurrentCount > 1) ? getAggragateBandwidth.call(this, type, concurrentCount) :  Math.round(fragmentInfo.bytesLoaded*8/fragmentInfo.elapsedTime);
                     fragmentInfo.estimatedTimeOfDownload = fragmentInfo.bytesTotal / fragmentInfo.measuredBandwidth;
                     //self.debug.log("[AbandonRequestsRule]["+type+"] id: "+fragmentInfo.id+" Bytes Loaded = "+(fragmentInfo.bytesLoaded)+", Measured bandwidth : "+fragmentInfo.measuredBandwidthInKbps+" kbps estimated Time of download : "+fragmentInfo.estimatedTimeOfDownload+" secondes, elapsed time : "+fragmentInfo.elapsedTime/1000+" secondes.");
