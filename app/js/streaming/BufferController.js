@@ -29,8 +29,8 @@ MediaPlayer.dependencies.BufferController = function () {
         dataChanged = true,
         availableRepresentations,
         currentRepresentation,
-        currentQuality = -1,
-        initialQuality = -1,
+        currentBufferedQuality = -1,
+        currentDownloadQuality = -1,
         stalled = false,
         isDynamic = false,
         isBufferingCompleted = false,
@@ -353,9 +353,10 @@ MediaPlayer.dependencies.BufferController = function () {
                                     function (/*appended*/) {
                                         self.debug.log("[BufferController]["+type+"] Segment buffered");
                                         //self.debug.log("[BufferController]["+type+"] Data has been appended for quality = "+quality+" index = "+index);
-                                        if (currentQuality != quality) {
+                                        if (currentBufferedQuality != quality) {
                                             isFirstMediaSegment = true;
-                                            currentQuality = quality;
+                                            self.debug.log("[BufferController]["+type+"] set currentBufferedQuality to "+quality);
+                                            currentBufferedQuality = quality;
                                         }
                                         
                                         isQuotaExceeded = false;
@@ -814,9 +815,9 @@ MediaPlayer.dependencies.BufferController = function () {
 
                 // HLS use case => download playlist for new representation
                 if ((manifest.name === "M3U") && isDynamic) {
-                    updatePlayListForRepresentation.call(self, currentQuality).then(
+                    updatePlayListForRepresentation.call(self, currentDownloadQuality).then(
                         function () {
-                            currentRepresentation = getRepresentationForQuality.call(self, currentQuality);
+                            currentRepresentation = getRepresentationForQuality.call(self, currentDownloadQuality);
                             updateCheckBufferTimeout.call(self,0);
                         }, function(){
                             self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, type + ": Failed to update hls playlist", null);
@@ -967,6 +968,7 @@ MediaPlayer.dependencies.BufferController = function () {
 
                     // Get current quality
                     if(self.chunkAborted === true){
+                        self.debug.log("[BufferController]["+type+"] chunkAborted = true, set set abrController PlaybackQuality to 0 ");
                         self.abrController.setPlaybackQuality(type, 0);
                         defer = Q.when({quality:0});
                     }
@@ -983,9 +985,9 @@ MediaPlayer.dependencies.BufferController = function () {
                             currentRepresentation = getRepresentationForQuality.call(self, quality);
 
                             // Quality changed?
-                            if (quality !== currentQuality) {
-                                self.debug.log("[BufferController]["+type+"] Quality changed: " + quality);
-
+                            if (quality !== currentDownloadQuality) {
+                                self.debug.log("[BufferController]["+type+"] currentDownloadQuality changed : " + quality);
+                                currentDownloadQuality = quality;
                                 // Load initialization segment
                                 loadInit = true;
 
@@ -993,6 +995,7 @@ MediaPlayer.dependencies.BufferController = function () {
                                 currentRepresentation.segments = null;
 
                                 clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.REPRESENTATION_SWITCH_STOP_REASON);
+                                self.debug.log("[BufferController]["+type+"] Send RepresentationSwitch with quality = " + quality);
                                 self.metricsModel.addRepresentationSwitch(type, now, currentVideoTime, currentRepresentation.id, quality);
 
                                 // HLS use case => download playlist for new representation
@@ -1142,9 +1145,9 @@ MediaPlayer.dependencies.BufferController = function () {
                         var callback = function (switchRequest) {
                        
                         var newQuality = switchRequest.quality,
-                            currentQuality = self.abrController.getQualityFor(type);
+                            abrCurrentQuality = self.abrController.getQualityFor(type);
                 
-                        if (newQuality < currentQuality) {
+                        if (newQuality < abrCurrentQuality) {
                             self.debug.info("[BufferController]["+type+"] Abandon current fragment : " + evt.data.request.url);
                             
                             currentTime = new Date();
@@ -1226,8 +1229,6 @@ MediaPlayer.dependencies.BufferController = function () {
                     // (@see getLiveEdgeTime() for example)
                     self.abrController.getPlaybackQuality(type, data).then(
                         function (result) {
-                            initialQuality = result.quality;
-
                             currentRepresentation = getRepresentationForQuality.call(self, result.quality);
 
                             if (currentRepresentation) {
