@@ -1095,7 +1095,9 @@ MediaPlayer.dependencies.BufferController = function () {
                 type = evt.data.request.streamType,
                 rules = null,
                 metrics = self.metricsModel.getMetricsFor(type);
-
+                metricsHttp = evt.data.httpRequestMetrics,
+                lastTraceTime = evt.data.lastTraceTime,
+                currentTime;
 
                 self.debug.log("[BufferController]["+type+"] Download request "+evt.data.request.url+" is in progress");
 
@@ -1115,7 +1117,7 @@ MediaPlayer.dependencies.BufferController = function () {
                     };
 
                     for (i = 0, len = rules.length; i < len; i += 1) {
-                        rules[i].execute(evt.data.request, self.abrController, metrics, callback);
+                        rules[i].execute(evt.data.request, callback);
                     }
                 });
         };
