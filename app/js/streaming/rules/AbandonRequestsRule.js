@@ -32,87 +32,41 @@ MediaPlayer.rules.AbandonRequestsRule = function() {
     "use strict";
 
     var GRACE_TIME_THRESHOLD = 500,
-        ABANDON_MULTIPLIER = 2,
-        fragmentDict = {},
-        abandonDict = {},
-
-        setFragmentRequestDict = function(type, id) {
-            fragmentDict[type] = fragmentDict[type] || {};
-            fragmentDict[type][id] = fragmentDict[type][id] || {};
-        };
+        ABANDON_MULTIPLIER = 2;
 
     return {
-        metricsExt: undefined,
         debug: undefined,
-        config: undefined,
-        manifestExt: undefined,
-        manifestModel: undefined,
 
         execute: function(request, abrController, metrics, callback) {
             var now = new Date().getTime(),
                 type = request.streamType,
-                fragmentInfo,
-                switchRequest = new MediaPlayer.rules.SwitchRequest(MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE, MediaPlayer.rules.SwitchRequest.prototype.WEAK),
-                index,
-                self = this;
+                elapsedTime,
+                measuredBandwidth,
+                estimatedTimeOfDownload,
+                switchRequest = new MediaPlayer.rules.SwitchRequest(MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE, MediaPlayer.rules.SwitchRequest.prototype.WEAK);
 
-            if (request.sequenceNumber) {
-                index = request.sequenceNumber;
-            } else {
-                index = request.index;  
-            } 
-                       
-            if (!isNaN(index)) {
-                setFragmentRequestDict(type, index);
-                fragmentInfo = fragmentDict[type][index];
-
-                if (fragmentInfo === null || request.firstByteDate === null || (abandonDict.hasOwnProperty(index) && (abandonDict[index].url === request.url))) {
-                    self.debug.log("[AbandonRequestsRule][" + type + "] No change fragmentInfo, request.firstByteDate may be null or abandonDict.hasOwnProperty(index)===true");
+                if ( request.firstByteDate === null || request.status === 0) {
+                    this.debug.log("[AbandonRequestsRule][" + type + "] Request has already been aborted.");
                     callback(switchRequest);
                     return;
                 }
 
-                //setup some init info based on first progress event
-                if (fragmentInfo.firstByteTime === undefined) {
-                    fragmentInfo.firstByteTime = request.firstByteDate.getTime();
-                    fragmentInfo.segmentDuration = request.duration;
-                    fragmentInfo.bytesTotal = request.bytesTotal;
-                    fragmentInfo.id = index;
-                    fragmentInfo.nb = 1;
-                    fragmentInfo.url = request.url;
-                    //self.debug.log("[AbandonRequestsRule]["+type+"] FRAG ID : " +fragmentInfo.id+ " *****************");
-                }
-               
-                //update info base on subsequent progress events until completed.
-                fragmentInfo.bytesLoaded = request.bytesLoaded;
-                fragmentInfo.elapsedTime = (now - fragmentInfo.firstByteTime);
+                elapsedTime = (now - request.firstByteDate.getTime());
 
-                if (fragmentInfo.bytesLoaded < fragmentInfo.bytesTotal &&
-                    fragmentInfo.elapsedTime >= GRACE_TIME_THRESHOLD) {
+                if (request.bytesLoaded < request.bytesTotal &&
+                    elapsedTime >= GRACE_TIME_THRESHOLD) {
 
-                    fragmentInfo.measuredBandwidth = fragmentInfo.bytesLoaded / (fragmentInfo.elapsedTime/1000);
-                    //fragmentInfo.measuredBandwidthInKbps = (concurrentCount > 1) ? getAggragateBandwidth.call(this, type, concurrentCount) :  Math.round(fragmentInfo.bytesLoaded*8/fragmentInfo.elapsedTime);
-                    fragmentInfo.estimatedTimeOfDownload = fragmentInfo.bytesTotal / fragmentInfo.measuredBandwidth;
-                    //self.debug.log("[AbandonRequestsRule]["+type+"] id: "+fragmentInfo.id+" Bytes Loaded = "+(fragmentInfo.bytesLoaded)+", Measured bandwidth : "+fragmentInfo.measuredBandwidthInKbps+" kbps estimated Time of download : "+fragmentInfo.estimatedTimeOfDownload+" secondes, elapsed time : "+fragmentInfo.elapsedTime/1000+" secondes.");
+                    measuredBandwidth = request.bytesLoaded / (elapsedTime/1000);
+                    estimatedTimeOfDownload = request.bytesTotal / measuredBandwidth;
 
-                    if ((fragmentInfo.estimatedTimeOfDownload) > (fragmentInfo.segmentDuration * ABANDON_MULTIPLIER)) {
+                    if ((estimatedTimeOfDownload) > (request.duration * ABANDON_MULTIPLIER)) {
                         switchRequest = new MediaPlayer.rules.SwitchRequest(0, MediaPlayer.rules.SwitchRequest.prototype.STRONG);
-                        abandonDict[fragmentInfo.id] = fragmentInfo;
-                        self.debug.info("[AbandonRequestsRule][" + type + "] bw = " + fragmentInfo.measuredBandwidth + " kb/s => switch to lowest quality for "+fragmentInfo.url);
-                        delete fragmentDict[type][fragmentInfo.id];
+                        this.debug.info("[AbandonRequestsRule][" + type + "] bw = " + measuredBandwidth + " kb/s => switch to lowest quality for "+request.url);
                     }
-                } else if (fragmentInfo.bytesLoaded === fragmentInfo.bytesTotal) {
-                    delete fragmentDict[type][fragmentInfo.id];
                 }
-            }
 
             callback(switchRequest);
         },
-
-        reset: function() {
-            fragmentDict = {};
-            abandonDict = {};
-        }
     };
 };
 
