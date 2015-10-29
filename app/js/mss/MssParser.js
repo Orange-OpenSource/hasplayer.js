@@ -190,9 +190,12 @@ Mss.dependencies.MssParser = function () {
 
         var fourCCValue = getAttributeValue(qualityLevel, "FourCC");
 
+        // Get codecs value according to FourCC field
+        // Note: If empty FourCC (optionnal for audio stream, see https://msdn.microsoft.com/en-us/library/ff728116%28v=vs.95%29.aspx),
+        // then we consider the stream is an audio AAC stream
         if (fourCCValue === "H264" || fourCCValue === "AVC1") {
             representation.codecs = getH264Codec(qualityLevel);
-        } else if (fourCCValue.indexOf("AAC") >= 0){
+        } else if ((fourCCValue.indexOf("AAC") >= 0) || (fourCCValue === "")) {
             representation.codecs = getAACCodec(qualityLevel);
         }
 
