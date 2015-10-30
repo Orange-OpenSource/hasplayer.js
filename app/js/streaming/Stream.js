@@ -221,9 +221,9 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         initializeMediaSource = function() {
-            var videoState = false,
-                audioState = false,
-                textTrackState = false,
+            var videoState = null,
+                audioState = null,
+                textTrackState = null,
                 self = this;
 
             initializedeferred = Q.defer();
