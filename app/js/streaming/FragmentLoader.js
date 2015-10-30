@@ -326,15 +326,14 @@
 
         abort: function() {
             var i,
-                req,
-                ln = xhrs.length;
+                req;
+
 
             //this.debug.log("[FragmentLoader] " + ln + " XHR requests to abort.");
-            for (i = 0; i < ln; i +=1) {
+            for (i = 0; i < xhrs.length; i +=1) {
                 req = xhrs[i];
                 this.debug.log("[FragmentLoader] Abort XHR " + (req.responseURL ? req.responseURL : ""));
                 req.abort();
-                req = null;
             }
 
             xhrs.length = 0; // Clear array

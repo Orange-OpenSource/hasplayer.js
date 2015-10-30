@@ -79,8 +79,10 @@ MediaPlayer.rules.o.DownloadRatioRule = function() {
                 if (requests.length >= 3) {
                     for (i = requests.length - 2; i >= (requests.length - 3); i--) {
                         totalBytesLength += requests[i].bytesLength;
-                        totalTime += (requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1000;
-                        downloadTime += (requests[i].tfinish.getTime() - requests[i].tresponse.getTime()) / 1000;
+                        if (requests[i].tfinish && requests[i].trequest && requests[i].tresponse) {
+                            totalTime += (requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1000;
+                            downloadTime += (requests[i].tfinish.getTime() - requests[i].tresponse.getTime()) / 1000;
+                        }
                     }
                 }
 

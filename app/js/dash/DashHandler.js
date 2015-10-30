@@ -194,7 +194,7 @@ Dash.dependencies.DashHandler = function() {
                 seg,
                 fTime;
 
-            if (representation && representation.segments.length > 0 &&
+            if (representation && representation.segments && representation.segments.length > 0 &&
                 (offset === null || offset > representation.segments[0].availabilityIdx)) {
                 offset = representation.segments[0].availabilityIdx;
             }
@@ -766,8 +766,8 @@ Dash.dependencies.DashHandler = function() {
         },
 
         getIndexForSegments = function(time, representation) {
-            var segments = representation.segments,
-                segmentLastIdx = segments.length - 1,
+            var segments = representation === null ? null : representation.segments,
+                segmentLastIdx = segments === null ? 0 : segments.length - 1,
                 idx = -1,
                 frag,
                 ft,
