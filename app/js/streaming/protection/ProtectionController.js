@@ -681,6 +681,9 @@ MediaPlayer.dependencies.ProtectionController = function () {
                 for (var i = 0; i < currentInitData.length; i++) {
                     if (this.protectionExt.initDataEquals(initDataForKS, currentInitData[i])) {
                         this.debug.log("[DRM] Ignoring initData because we have already seen it!");
+                        // If Key session already exists for this content, we check if the session and stored license key
+                        // correclty decrypt the content
+                        this.protectionModel.checkIfEncrypted();
                         return;
                     }
                 }

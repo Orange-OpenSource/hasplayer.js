@@ -467,6 +467,10 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CLOSED,
                         null, "Error closing session (" + sessionToken.getSessionID() + ") " + error.name);
             });
+        },
+
+        checkIfEncrypted: function() {
+            videoElement.addEventListener("waitingforkey", eventHandler);
         }
     };
 };

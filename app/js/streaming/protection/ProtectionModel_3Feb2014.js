@@ -395,7 +395,10 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
 
         loadKeySession: function(/*sessionID*/) { /* Not supported */ },
 
-        removeKeySession: function(/*sessionToken*/) { /* Not supported */ }
+        removeKeySession: function(/*sessionToken*/) { /* Not supported */ },
+
+        checkIfEncrypted: function() { /* Not supported */ }
+
     };
 };
 
