@@ -648,10 +648,7 @@ MediaPlayer.dependencies.BufferController = function () {
             var msgError = type + ": Failed to load a request at startTime = "+e.startTime,
                 manifest = this.manifestModel.getValue();
 
-            if (deferredFragmentBuffered) {
-                deferredFragmentBuffered.resolve();
-                deferredFragmentBuffered = null;
-            }
+            signalSegmentBuffered.call(this);
 
             // request.status = 0 (aborted request) => do not load chunk from another bitrate, do not send error.
             if (e.status !== undefined && e.status === 0 && !isRunning.call(this)) {
@@ -807,11 +804,7 @@ MediaPlayer.dependencies.BufferController = function () {
                 //the end of the createdSegment list has been reached, recall updateCheckBufferTimeout to update the list and get the next segment
                 self.debug.log("[BufferController]["+type+"] loadNextFragment failed");
 
-                if (deferredFragmentBuffered) {
-                    self.debug.log("[BufferController]["+type+"] deferredFragmentBuffered has to be resolved");
-                    deferredFragmentBuffered.resolve();
-                    deferredFragmentBuffered = null;
-                };
+                signalSegmentBuffered.call(self);
 
                 // HLS use case => download playlist for new representation
                 if ((manifest.name === "M3U") && isDynamic) {
