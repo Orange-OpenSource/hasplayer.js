@@ -562,7 +562,6 @@
                                 data: url
                         });
                     }else{
-                        debugger;
                         self.debug.warn("[StreamController] refreshManifest url : ", url , " is invalid !");
                     }
                 }
