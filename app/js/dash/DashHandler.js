@@ -805,7 +805,6 @@ Dash.dependencies.DashHandler = function() {
                 } else {
                     self.debug.log("Couldn't figure out a time!");
                     self.debug.log("Time: " + time);
-                    self.debug.log(segments);
                 }
             }
 
