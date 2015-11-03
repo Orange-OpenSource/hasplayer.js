@@ -607,7 +607,7 @@ MediaPlayer = function(aContext) {
         getAudioTracks: function() {
             if (streamController) {
                 return streamController.getAudioTracks();
-            }else{
+            } else {
                 return null;
             }
         },
@@ -635,7 +635,7 @@ MediaPlayer = function(aContext) {
         getSubtitleTracks: function() {
             if (streamController) {
                 return streamController.getSubtitleTracks();
-            }else{
+            } else {
                 return null;
             }
         },
