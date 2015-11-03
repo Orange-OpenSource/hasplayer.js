@@ -34,7 +34,6 @@ MediaPlayer.dependencies.BufferController = function () {
         stalled = false,
         isDynamic = false,
         isBufferingCompleted = false,
-        deferredStreamComplete = Q.defer(),
         deferredRejectedDataAppend = null,
         deferredBuffersFlatten = null,
         periodInfo = null,
@@ -696,7 +695,6 @@ MediaPlayer.dependencies.BufferController = function () {
             doStop.call(self);
 
             self.system.notify("bufferingCompleted");
-            //deferredStreamComplete.resolve(request);
         },
 
         loadInitialization = function (quality) {
@@ -1479,8 +1477,6 @@ MediaPlayer.dependencies.BufferController = function () {
                     cancel(deferredRejectedDataAppend);
                     cancel(deferredBuffersFlatten);
                     cancel(deferredFragmentBuffered);
-                    cancel(deferredStreamComplete);
-                    deferredStreamComplete = Q.defer();
 
                     if (fragmentModel) {
                         fragmentModel.fragmentLoader.unsubscribe(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, self.abrController);
