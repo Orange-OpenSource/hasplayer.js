@@ -605,6 +605,9 @@
                         delete streams[i];
                     }
 
+                    // Reset the video model (and controllers stalled states)
+                    self.videoModel.reset();
+
                     Q.all(funcs).then(
                         function(){
                             streams = [];
