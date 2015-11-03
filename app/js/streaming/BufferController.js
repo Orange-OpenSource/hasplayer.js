@@ -551,9 +551,8 @@ MediaPlayer.dependencies.BufferController = function () {
             }
 
             // If buffering process is running, then we interrupt it
-            if (deferredFragmentBuffered !== null) {
                 signalSegmentBuffered.call(self);
-            }
+            
             return false;
         },
 
