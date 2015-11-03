@@ -228,7 +228,6 @@ MediaPlayer.dependencies.Stream = function() {
             initializedeferred = Q.defer();
 
             eventController = self.system.getObject("eventController");
-            eventController.initialize(self.videoModel);
             // Figure out some bits about the stream before building anything.
             //self.debug.log("Gathering information for buffers. (1)");
             self.manifestExt.getVideoData(manifest, periodInfo.index).then(
@@ -269,7 +268,7 @@ MediaPlayer.dependencies.Stream = function() {
                             // TODO : How to tell index handler live/duration?
                             // TODO : Pass to controller and then pass to each method on handler?
                             videoController = self.system.getObject("bufferController");
-                            videoController.initialize("video", periodInfo, videoData, buffer, self.videoModel, self.requestScheduler, self.fragmentController, mediaSource, eventController);
+                            videoController.initialize("video", periodInfo, videoData, buffer, self.requestScheduler, self.fragmentController, mediaSource, eventController);
                             videoState = "ready";
                             checkIfInitialized.call(self, videoState, audioState, textTrackState);
                         },
@@ -321,7 +320,7 @@ MediaPlayer.dependencies.Stream = function() {
                             // TODO : How to tell index handler live/duration?
                             // TODO : Pass to controller and then pass to each method on handler?
                             audioController = self.system.getObject("bufferController");
-                            audioController.initialize("audio", periodInfo, specificAudioData, buffer, self.videoModel, self.requestScheduler, self.fragmentController, mediaSource, eventController);
+                            audioController.initialize("audio", periodInfo, specificAudioData, buffer, self.requestScheduler, self.fragmentController, mediaSource, eventController);
                             //self.debug.log("Audio is ready!");
                             audioState = "ready";
                             checkIfInitialized.call(self, videoState, audioState, textTrackState);
@@ -365,7 +364,7 @@ MediaPlayer.dependencies.Stream = function() {
                         }).then(
                         function(buffer) {
                             textController = self.system.getObject("bufferController");
-                            textController.initialize("text", periodInfo, specificSubtitleData, buffer, self.videoModel, self.requestScheduler, self.fragmentController, mediaSource);
+                            textController.initialize("text", periodInfo, specificSubtitleData, buffer, self.requestScheduler, self.fragmentController, mediaSource);
 
                             if (buffer.hasOwnProperty('initialize')) {
                                 buffer.initialize(mimeType, textController, specificSubtitleData);

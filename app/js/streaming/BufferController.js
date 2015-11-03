@@ -559,7 +559,7 @@ MediaPlayer.dependencies.BufferController = function () {
             }
 
             // If buffering process is running, then we interrupt it
-                signalSegmentBuffered.call(self);
+            signalSegmentBuffered.call(self);
             
             return false;
         },
@@ -1192,7 +1192,7 @@ MediaPlayer.dependencies.BufferController = function () {
         chunkMissingCount : 0,
         abrRulesCollection: undefined,
 
-        initialize: function (type, newPeriodInfo, newData, buffer, videoModel, scheduler, fragmentController, source, eventController) {
+        initialize: function (type, newPeriodInfo, newData, buffer, scheduler, fragmentController, source, eventController) {
             var self = this,
                 manifest = self.manifestModel.getValue();
 
@@ -1207,7 +1207,6 @@ MediaPlayer.dependencies.BufferController = function () {
 
             isDynamic = self.manifestExt.getIsDynamic(manifest);
             self.setMediaSource(source);
-            self.setVideoModel(videoModel);
             self.setType(type);
             self.setBuffer(buffer);
             self.setScheduler(scheduler);

@@ -157,16 +157,7 @@ MediaPlayer.dependencies.EventController = function(){
         addInbandEvents : addInbandEvents,
         reset : reset,
         clear : clear,
-        start: start,
-        getVideoModel: function() {
-            return this.videoModel;
-        },
-        setVideoModel:function(value) {
-            this.videoModel = value;
-        },
-        initialize:function(videoModel) {
-            this.setVideoModel(videoModel);
-        }
+        start: start
     };
 
 };
