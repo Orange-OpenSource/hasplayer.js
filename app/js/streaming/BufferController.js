@@ -102,6 +102,10 @@ MediaPlayer.dependencies.BufferController = function () {
         setStalled = function (value) {
             var self = this;
 
+            if (type === "text") {
+                return;
+            }
+
             self.debug.info("[BufferController]["+type+"] stalled = " + value);
             stalled = value;
             self.videoModel.stallStream(type, stalled);
@@ -263,6 +267,10 @@ MediaPlayer.dependencies.BufferController = function () {
                 eventStreamAdaption = this.manifestExt.getEventStreamForAdaptationSet(self.getData()),
                 eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(self.getData(),currentRepresentation),
                 segmentStartTime = null;
+
+            if (!isRunning()) {
+                return;
+            }
 
             self.debug.log("[BufferController]["+type+"] Media loaded ", request.url);
 
@@ -1254,7 +1262,7 @@ MediaPlayer.dependencies.BufferController = function () {
                                     );
                                 }
                             }
-                        }
+                            }
                     );
                 }
             );
