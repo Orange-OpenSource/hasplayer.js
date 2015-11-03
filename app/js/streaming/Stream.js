@@ -149,13 +149,12 @@ MediaPlayer.dependencies.Stream = function() {
                     if (!!audioController) {
                         funcs.push(audioController.reset(errored));
                     }
+                    if (!!textController) {
+                        funcs.push(textController.reset(errored));
+                    }
 
                     Q.all(funcs).then(
                         function() {
-                            if (!!textController) {
-                                textController.reset(errored);
-                                textController = undefined;
-                            }
                             if (!!eventController) {
                                 eventController.reset();
                                 eventController = undefined;
