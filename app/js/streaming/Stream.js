@@ -374,8 +374,9 @@ MediaPlayer.dependencies.Stream = function() {
                             checkIfInitialized.call(self, videoState, audioState, textTrackState);
                         },
                         function(/*error*/) {
-                            self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Error creating text source buffer");
-                            textTrackState = "error";
+                            self.debug.warn("Error creating text source buffer");
+                            textTrackState = "ready";
+                            textController = null;
                             checkIfInitialized.call(self, videoState, audioState, textTrackState);
                         }
                     );
