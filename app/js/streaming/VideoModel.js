@@ -15,64 +15,37 @@ MediaPlayer.models.VideoModel = function () {
     "use strict";
 
     var element,
-        stalledStreams = [],
-        //_currentTime = 0,
+        stalledStreams = {},
 
         isStalled = function () {
-            return (stalledStreams.length > 0);
+            for (var type in stalledStreams){
+                if(stalledStreams[type]===true) {
+                    return true;
+                }
+            }
+            return false;
         },
 
-        addStalledStream = function (type) {
-            if (type === null) {
-                return;
-            }
+        stallStream = function (type, stalled) {
+            stalledStreams[type] = stalled;
 
-            // Halt playback until nothing is stalled.
-            element.playbackRate = 0;
-
-            if (stalledStreams[type] === true) {
-                return;
-            }
-
-            stalledStreams.push(type);
-            stalledStreams[type] = true;
-        },
-
-        removeStalledStream = function (type) {
-            if (type === null) {
-                return;
-            }
-
-            stalledStreams[type] = false;
-            var index = stalledStreams.indexOf(type);
-            if (index !== -1) {
-                stalledStreams.splice(index, 1);
-            }
-
-            // If nothing is stalled resume playback.
-            if (isStalled() === false) {
+            if (!isStalled()) {
                 element.playbackRate = 1;
-            }
-        },
-
-        stallStream = function (type, isStalled) {
-            if (isStalled) {
-                addStalledStream(type);
+                console.log("stalled playbackRate = 1");
             } else {
-                removeStalledStream(type);
+                element.playbackRate = 0;
+                console.log("stalled playbackRate = 0");
             }
-        }/*,
-        handleSetCurrentTimeNotification = function () {
-            if (element.currentTime !== _currentTime) {
-                element.currentTime = _currentTime;
-            }
-        }*/;
+        };
 
     return {
         system : undefined,
 
         setup : function () {
-            //this.system.mapHandler("setCurrentTime", undefined, handleSetCurrentTimeNotification.bind(this));
+        },
+
+        reset : function () {
+            stalledStreams = [];
         },
 
         play: function () {
