@@ -583,11 +583,19 @@ MediaPlayer = function(aContext) {
         },
 
         getSelectedAudioTrack: function() {
-            return streamController.getSelectedAudioTrack();
+            if (streamController) {
+                return streamController.getSelectedAudioTrack();
+            }else{
+                return null;
+            }
         },
 
         getSelectedSubtitleTrack: function() {
-            return streamController.getSelectedSubtitleTrack();
+            if (streamController) {
+                return streamController.getSelectedSubtitleTrack();
+            }else{
+                return null;
+            }
         },
 
         /**
@@ -625,7 +633,11 @@ MediaPlayer = function(aContext) {
          * @return subtitle tracks array.
          */
         getSubtitleTracks: function() {
-            return streamController.getSubtitleTracks();
+            if (streamController) {
+                return streamController.getSubtitleTracks();
+            }else{
+                return null;
+            }
         },
 
         /**
