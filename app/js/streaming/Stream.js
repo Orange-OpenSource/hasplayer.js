@@ -542,7 +542,6 @@ MediaPlayer.dependencies.Stream = function() {
             errored = true;
 
             this.errHandler.sendError(code, "<video> error event");
-            this.reset();
         },
 
         onSeeking = function() {
