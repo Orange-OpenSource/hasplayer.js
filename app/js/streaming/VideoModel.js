@@ -31,10 +31,8 @@ MediaPlayer.models.VideoModel = function () {
 
             if (!isStalled()) {
                 element.playbackRate = 1;
-                console.log("stalled playbackRate = 1");
             } else {
                 element.playbackRate = 0;
-                console.log("stalled playbackRate = 0");
             }
         };
 
