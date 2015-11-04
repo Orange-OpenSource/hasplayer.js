@@ -59,6 +59,8 @@ MediaPlayer.dependencies.BufferController = function () {
         inbandEventFound = false,
 
         //ORANGE
+        BUFFERING = 0,
+        PLAYING = 1,
         htmlVideoState = -1,
         lastBufferLevel = -1,
         deferredFragmentBuffered = null,
@@ -69,8 +71,12 @@ MediaPlayer.dependencies.BufferController = function () {
         // ORANGE: async. vs async. MSE's SourceBuffer appending/removing algorithm
         appendSync = false,
 
+        // ORANGE: segment downlaod failed recovery
+        segmentDownloadFailed = false,
+        recoveryTime = -1,
+
+        // ORANGE: HLS chunk sequence number
         currentSequenceNumber = -1,
-        errorObject = null,
 
         sendRequest = function() {
 
@@ -222,6 +228,15 @@ MediaPlayer.dependencies.BufferController = function () {
         },
 
         onBytesLoaded = function (request, response) {
+
+            // Reset segment failed status
+            segmentDownloadFailed = false;
+
+            // Store current segment sequence number for next segment request (HLS use case)
+            if (request.sequenceNumber) {
+                currentSequenceNumber = request.sequenceNumber;
+            }
+
             if (this.fragmentController.isInitializationRequest(request)) {
                 onInitializationLoaded.call(this, request, response);
             } else {
@@ -651,42 +666,42 @@ MediaPlayer.dependencies.BufferController = function () {
         },
 
         onBytesError = function (e) {
-            var msgError = type + ": Failed to load a request at startTime = "+e.startTime,
-                manifest = this.manifestModel.getValue();
+
+            if (!isRunning.call(this)) {
+                return;
+            }
 
             signalSegmentBuffered.call(this);
 
-            // request.status = 0 (aborted request) => do not load chunk from another bitrate, do not send error.
-            if (e.status !== undefined && e.status === 0 && !isRunning.call(this)) {
+            // request.status = 0 (abandonned request) => load segment at lowest quality
+            if (e.status !== undefined && e.status === 0 && (e.quality !== 0)) {
+                this.debug.info("[BufferController]["+type+"] Segment download abandonned => Retry segment download at lowest quality");
+                this.abrController.setAutoSwitchBitrate(false);
+                this.abrController.setPlaybackQuality(type, 0);
+                bufferFragment.call(this);
                 return;
-            } else {
-                if (e.status !== undefined && e.status === 0 ) {
-                    this.chunkAborted = true;
-                    this.debug.info("[BufferController]["+type+"] Segment download aborted");
-                }
             }
 
-            // First download error => try to load the same segment at lowest quality
-            if (this.chunkAborted === true) {
-                if (e.quality !== 0) {
-                    this.debug.info("[BufferController]["+type+"] Retry segment download at lowest quality");
-                    if (manifest.name === "M3U"){
-                        currentSequenceNumber -= 1;
-                    }
-                    return bufferFragment.call(this);
-                }
-            } else if ((this.chunkMissingCount === 0) && (bufferLevel !== 0)) {
-                this.stallTime = e.startTime;
-                this.chunkMissingCount += 1;
-            } else {
-                this.chunkMissingCount = 0;
-                errorObject = {};
-                errorObject.msg = msgError;
-                errorObject.data = {};
-                errorObject.data.url = e.url;
-                errorObject.data.request = e;
-                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, errorObject.msg, errorObject.data);
+            // For text track, do not raise an error
+            if (type === "text") {
+                this.debug.warn("[BufferController]["+type+"] Failed to download segment at time = " + e.startTime);
+                // TODO: the buffering process is stopped here.
+                // We could try to internally seek to following segment
+                return;
             }
+
+            // Segment download failed
+            // => If first time, then try to recover missing segment (see updateBufferState())
+            // => Else raise an error
+            /*if (!segmentDownloadFailed && (bufferLevel !== 0)) {
+                segmentDownloadFailed = true;
+                recoveryTime = e.startTime + e.duration;
+                this.videoModel.getElement().duration = e.startTime + 1000;
+            } else {*/
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT,
+                    "Failed to download " + type + " segment at time = " + e.startTime,
+                    {url: e.url, request: e});
+            //}
         },
 
         signalStreamComplete = function (/*request*/) {
@@ -791,11 +806,6 @@ MediaPlayer.dependencies.BufferController = function () {
                 } else {
                     // Store current segment time for next segment request
                     currentSegmentTime = request.startTime;
-
-                    // Store current segment sequence number for next segment request (HLS use case)
-                    if (request.sequenceNumber) {
-                        currentSequenceNumber = request.sequenceNumber;
-                    }
 
                     // Download the segment
                     self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null/*signalStreamComplete*/).then(
@@ -965,17 +975,11 @@ MediaPlayer.dependencies.BufferController = function () {
                     var loadInit = dataUpdated;
 
                     // Get current quality
-                    if(self.chunkAborted === true){
-                        self.debug.log("[BufferController]["+type+"] chunkAborted = true, set set abrController PlaybackQuality to 0 ");
-                        self.abrController.setPlaybackQuality(type, 0);
-                        defer = Q.when({quality:0});
-                    }
-                    else{
-                        defer = self.abrController.getPlaybackQuality(type, data);
-                    }
-                    defer.then(
-
+                    self.abrController.getPlaybackQuality(type, data).then(
                         function (result) {
+
+                            // Re-enable ABR in case it has been previsouly disabled (see onBytesError)
+                            self.abrController.setAutoSwitchBitrate(true);
 
                             quality = result.quality;
 
@@ -1130,7 +1134,6 @@ MediaPlayer.dependencies.BufferController = function () {
                 i = 0,
                 len = 0;
                 type = evt.data.request.streamType,
-                rules = null,
                 metricsHttp = evt.data.httpRequestMetrics,
                 lastTraceTime = evt.data.lastTraceTime,
                 currentTime,
@@ -1139,7 +1142,7 @@ MediaPlayer.dependencies.BufferController = function () {
                 //self.debug.log("[BufferController]["+type+"] Download request " + evt.data.request.url + " is in progress");
 
                 self.abrRulesCollection.getRules(MediaPlayer.rules.BaseRulesCollection.prototype.ABANDON_FRAGMENT_RULES).then(
-                    function(rules){
+                    function(rules) {
                         var callback = function (switchRequest) {
                        
                         var newQuality = switchRequest.quality,
@@ -1185,11 +1188,6 @@ MediaPlayer.dependencies.BufferController = function () {
         scheduleWhilePaused: undefined,
         eventController : undefined,
         config: undefined,
-        BUFFERING : 0,
-        PLAYING : 1,
-        stallTime : null,
-        chunkAborted : false,
-        chunkMissingCount : 0,
         abrRulesCollection: undefined,
 
         initialize: function (type, newPeriodInfo, newData, buffer, scheduler, fragmentController, source, eventController) {
@@ -1366,6 +1364,12 @@ MediaPlayer.dependencies.BufferController = function () {
                         );
                     }
                 );
+            } else if (recoveryTime !== -1 && segmentDownloadFailed) {
+                // TODO: setCurrentTime() does not work since the recovery time is anterior to the current video time,
+                // then it will seek to current time.
+                // The setCurrentTime has to be done once we have buffered some new segments
+                this.videoModel.setCurrentTime(recoveryTime);
+                deferred.resolve();
             } else {
                 deferred.resolve();
             }
@@ -1420,30 +1424,28 @@ MediaPlayer.dependencies.BufferController = function () {
         updateBufferState: function() {
             var level = Math.round(bufferLevel);
 
-            //test to detect stalled state, be sure to not to be in seeking state
-            if (level<= 0 && htmlVideoState !== this.BUFFERING && this.videoModel.isSeeking()!== true) {
-                htmlVideoState = this.BUFFERING;
+            // Detect stalled state (but not in seeking state)
+            if (level<= 0 && htmlVideoState !== BUFFERING && this.videoModel.isSeeking()!== true) {
+                htmlVideoState = BUFFERING;
                 this.debug.log("[BufferController]["+type+"] BUFFERING - " + this.videoModel.getCurrentTime());
                 this.metricsModel.addState(type, "buffering", this.videoModel.getCurrentTime());
-                if (this.stallTime !== null && this.chunkMissingCount === 1) {
+
+                // If buffering since a segment download failed
+                // => if live, then reload manifest
+                // => if VOD, seek to following segment
+                if (recoveryTime !== -1 && segmentDownloadFailed) {
                     if (isDynamic) {
-                        this.stallTime = null;
-                        setTimeout(this.updateManifest.bind(this),currentRepresentation.segments[currentRepresentation.segments.length-1].duration*1000);
-                    }
-                    else {
-                        //the stall state comes from a chunk download failure
-                        //seek to the next fragment
-                        doStop.call(this);
-                        this.debug.log("[BufferController]["+type+"] stallTime = " + this.stallTime);
-                        var seekValue = this.stallTime+currentRepresentation.segments[currentRepresentation.segments.length-1].duration;
-                        this.debug.log("[BufferController]["+type+"] auto recover to " + seekValue);
-                        this.videoModel.setCurrentTime(seekValue);
-                        this.stallTime = null;
+                        this.debug.info("[BufferController]["+type+"] BUFFERING - segment download failed => reload manifest");
+                        this.updateManifest();
+                    } else {
+                        this.debug.info("[BufferController]["+type+"] BUFFERING - segment download failed => seek to following segment at time " + recoveryTime);
+                        this.videoModel.setCurrentTime(recoveryTime);
+                        recoveryTime = -1;
                     }
                 }
             }
-            else  if(level > 0 && htmlVideoState !== this.PLAYING){
-                htmlVideoState = this.PLAYING;
+            else if(level > 0 && htmlVideoState !== PLAYING) {
+                htmlVideoState = PLAYING;
                 this.debug.log("[BufferController]["+type+"] PLAYING - " + this.videoModel.getCurrentTime());
                 this.metricsModel.addState(type, "playing", this.videoModel.getCurrentTime());
             }
@@ -1497,7 +1499,6 @@ MediaPlayer.dependencies.BufferController = function () {
                     isQuotaExceeded = false;
                     rejectedBytes = null;
                     appendingRejectedData = false;
-                    errorObject = null;
 
                     if (!errored) {
                         self.sourceBufferExt.abort(mediaSource, buffer);
