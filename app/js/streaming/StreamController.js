@@ -433,7 +433,6 @@
         sourceBufferExt: undefined,
         bufferExt: undefined,
         manifestExt: undefined,
-        fragmentController: undefined,
         fragmentExt: undefined,
         capabilities: undefined,
         debug: undefined,
