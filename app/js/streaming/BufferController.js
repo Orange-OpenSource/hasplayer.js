@@ -264,7 +264,9 @@ MediaPlayer.dependencies.BufferController = function () {
                             function() {                             
                                 self.debug.log("[BufferController]["+type+"] Initialization segment buffered");
                                 // Load next media segment
-                                loadNextFragment.call(self);
+                                if(isRunning()){
+                                    loadNextFragment.call(self);
+                                }
                             }
                         );
                     } else {
@@ -568,7 +570,6 @@ MediaPlayer.dependencies.BufferController = function () {
 
         isRunning = function () {
             var self = this;
-
             if (started) {
                 return true;
             }
@@ -583,7 +584,7 @@ MediaPlayer.dependencies.BufferController = function () {
             var self = this;
 
             if (deferredFragmentBuffered) {
-                self.debug.log("[BufferController]["+type+"] End of buffering process");
+                //self.debug.log("[BufferController]["+type+"] End of buffering process");
                 deferredFragmentBuffered.resolve();
                 deferredFragmentBuffered = null;
             }
@@ -730,7 +731,9 @@ MediaPlayer.dependencies.BufferController = function () {
                     function() {
                         self.debug.log("[BufferController]["+type+"] Initialization segment buffered");
                         // Load next media segment
-                        loadNextFragment.call(self);
+                        if(isRunning()){
+                            loadNextFragment.call(self);
+                        }
                     }
                 );
                 deferred.resolve(null);
@@ -1480,6 +1483,8 @@ MediaPlayer.dependencies.BufferController = function () {
 
             doStop.call(self);
             // Wait for current buffering process to be completed before restarting
+            self.sourceBufferExt.abort(mediaSource, buffer);
+
             Q.when(deferredFragmentBuffered ? deferredFragmentBuffered.promise : true).then(
                 function () {
                     cancel(deferredRejectedDataAppend);
@@ -1501,7 +1506,6 @@ MediaPlayer.dependencies.BufferController = function () {
                     appendingRejectedData = false;
 
                     if (!errored) {
-                        self.sourceBufferExt.abort(mediaSource, buffer);
                         self.sourceBufferExt.removeSourceBuffer(mediaSource, buffer);
                     }
                     data = null;
