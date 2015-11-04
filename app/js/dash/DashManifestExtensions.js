@@ -42,7 +42,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                 }
             }
 
-            if (adaptation.hasOwnProperty("mimeType")) {
+            if (adaptation.mimeType) {
                 result = adaptation.mimeType.indexOf("audio") !== -1;
                 found = true;
             }
@@ -54,7 +54,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                 while (!found && i < len) {
                     representation = adaptation.Representation_asArray[i];
 
-                    if (representation.hasOwnProperty("mimeType")) {
+                    if (representation.mimeType) {
                         result = representation.mimeType.indexOf("audio") !== -1;
                         found = true;
                     }
@@ -95,7 +95,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                 }
             }
 
-            if (adaptation.hasOwnProperty("mimeType")) {
+            if (adaptation.mimeType) {
                 result = adaptation.mimeType.indexOf("video") !== -1;
                 found = true;
             }
@@ -107,7 +107,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                 while (!found && i < len) {
                     representation = adaptation.Representation_asArray[i];
 
-                    if (representation.hasOwnProperty("mimeType")) {
+                    if (representation.mimeType) {
                         result = representation.mimeType.indexOf("video") !== -1;
                         found = true;
                     }
@@ -145,7 +145,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             }
         }
 
-        if (adaptation.hasOwnProperty("mimeType")) {
+        if (adaptation.mimeType) {
             result = (adaptation.mimeType.indexOf("vtt") !== -1) || (adaptation.mimeType.indexOf("ttml") !== -1);
             found = true;
         }
@@ -157,7 +157,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             while (!found && i < len) {
                 representation = adaptation.Representation_asArray[i];
 
-                if (representation.hasOwnProperty("mimeType")) {
+                if (representation.mimeType) {
                     result = (representation.mimeType.indexOf("vtt") !== -1) || (representation.mimeType.indexOf("ttml") !== -1);
                     found = true;
                 }
