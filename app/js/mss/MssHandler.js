@@ -125,6 +125,7 @@ Mss.dependencies.MssHandler = function() {
         },
 
         getInitData = function(representation) {
+            var self = this;
             // return data in byte format
             // call MP4 lib to generate the init
 
@@ -145,6 +146,10 @@ Mss.dependencies.MssHandler = function() {
                     track.codecs = realRepresentation.codecs;
                     track.codecPrivateData = realRepresentation.codecPrivateData;
                     track.bandwidth = realRepresentation.bandwidth;
+                    
+                    if (track.type !=='text' && !self.capabilities.supportsCodec(self.videoModel.getElement(), realRepresentation.mimeType + ';codecs="' + realRepresentation.codecs + '"')) {
+                        return null;
+                    }
 
                     // DRM Protected Adaptation is detected
                     if (realAdaptation.ContentProtection_asArray && (realAdaptation.ContentProtection_asArray.length > 0)) {
@@ -193,11 +198,17 @@ Mss.dependencies.MssHandler = function() {
                 request.type = "Initialization Segment";
                 request.url = null;
                 try{
-                    request.data = getInitData(representation);
+                    request.data = getInitData.call(this, representation);
                 }catch(e){
                     deferred.reject(e);
                     return deferred.promise;
                 }
+
+                if (!request.data) {
+                    deferred.reject({name: request.streamType, message : "codec is not supported"});
+                    return deferred.promise;
+                }
+
                 request.range =  representation.range;
                 request.availabilityStartTime = self.timelineConverter.calcAvailabilityStartTimeFromPresentationTime(presentationStartTime, representation.adaptation.period.mpd, isDynamic);
                 request.availabilityEndTime = self.timelineConverter.calcAvailabilityEndTimeFromPresentationTime(presentationStartTime + period.duration, period.mpd, isDynamic);

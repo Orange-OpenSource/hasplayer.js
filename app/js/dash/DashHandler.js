@@ -1178,6 +1178,8 @@ Dash.dependencies.DashHandler = function() {
         manifestModel: undefined,
         manifestExt: undefined,
         timelineConverter: undefined,
+        capabilities: undefined,
+        videoModel: undefined,
 
         getType: function() {
             return type;

@@ -1033,6 +1033,7 @@ MediaPlayer.dependencies.BufferController = function () {
                                                     );
                                                 }
                                             }, function(e) {
+                                                signalSegmentBuffered.call(self);
                                                 self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC,
                                                     "Problem during init segment generation (" + e.name + ':' + e.message + ")",
                                                     self.manifestModel.getValue());
