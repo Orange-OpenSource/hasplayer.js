@@ -104,10 +104,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                         // Chrome doesn't raised error if keys don't match
                         // so the unique wy is to track this event and raise an error
                         videoElement.removeEventListener("waitingforkey", eventHandler);
-                        self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR,
-                                    new MediaPlayer.vo.protection.KeyError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN,
-                                        null,
-                                        "MEDIA_KEYERR_UNKNOWN - An unspecified error occurred. This value is used for errors that don't match any of the other codes."));
+                        self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_NO_VALID_KEY);
 
                         break;
                     }
