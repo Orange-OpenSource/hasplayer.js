@@ -127,12 +127,12 @@ MediaPlayer.dependencies.ProtectionController = function () {
                         var ksAccess = {};
                         ksAccess[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE] = function(event) {
                             if (event.error) {
-                                if (!fromManifest) {
+                                //if (!fromManifest) {
                                     self.eventBus.dispatchEvent({
                                         type: MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED,
                                         error: "DRM: KeySystem Access Denied! -- " + event.error
                                     });
-                                }
+                                //}
                             } else {
                                 self.debug.log("[DRM] KeySystem Access Granted");
                                 self.eventBus.dispatchEvent({
@@ -171,6 +171,8 @@ MediaPlayer.dependencies.ProtectionController = function () {
                                 error: "DRM: KeySystem Access Denied! -- " + event.error
                             });
                         }
+                        self.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
+                            new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED, "No KeySystem/CDM available", null));
                     } else {
                         keySystemAccess = event.data;
                         self.debug.log("[DRM] KeySystem Access (" + keySystemAccess.keySystem.systemString + ") Granted!  Selecting key system...");
@@ -201,6 +203,9 @@ MediaPlayer.dependencies.ProtectionController = function () {
                                 error: "DRM: Error selecting key system! -- " + event.error
                             });
                         }
+                        self.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
+                            new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED, "No KeySystem/CDM available", null));
+
                     }
                 };
                 this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED, ksSelected, undefined, true);
