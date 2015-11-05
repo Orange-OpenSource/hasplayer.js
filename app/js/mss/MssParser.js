@@ -114,7 +114,7 @@ Mss.dependencies.MssParser = function () {
             smoothNode = getChildNode(xmlDoc, "SmoothStreamingMedia"),
             i;
 
-        period.duration = (getAttributeValue(smoothNode, 'Duration')) ? Infinity : parseFloat(getAttributeValue(smoothNode, 'Duration')) / TIME_SCALE_100_NANOSECOND_UNIT;
+        period.duration = (parseFloat(getAttributeValue(smoothNode, 'Duration')) === 0) ? Infinity : parseFloat(getAttributeValue(smoothNode, 'Duration')) / TIME_SCALE_100_NANOSECOND_UNIT;
         period.BaseURL = baseURL;
 
         // For each StreamIndex node, create an AdaptationSet element
