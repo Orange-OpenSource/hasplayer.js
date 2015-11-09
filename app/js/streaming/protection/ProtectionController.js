@@ -445,7 +445,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
             this.eventBus.dispatchEvent({
                 type: MediaPlayer.dependencies.ProtectionController.events.KEY_ADDED,
                 data: event.data,
-                error:"DRM: MediaKeyError - sessionId: " + event.data.sessionToken.getSessionID() + ".  " + event.data.error
+                error:"DRM: MediaKeyError - "+ (event.data.sessionToken ? " sessionId: " +event.data.sessionToken.getSessionID() : "") + ".  " + event.data.error
             });
             this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, /*event.data);*/
                         new MediaPlayer.vo.Error(event.data.type, event.data.error, event.data));
