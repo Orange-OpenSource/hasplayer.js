@@ -379,6 +379,9 @@
                     // fire event to notify that audiotracks have changed
 
                     self.system.notify("audioTracksUpdated");
+                },function(){
+                    audioTracks = null;
+                    self.system.notify("audioTracksUpdated");
                 });
             }
         },
@@ -388,6 +391,10 @@
                 var self = this;
                 self.manifestExt.getTextDatas(self.manifestModel.getValue(),activeStream.getPeriodIndex()).then(function(textDatas){
                     subtitleTracks = textDatas;
+                    // fire event to notify that subtitletracks have changed
+                    self.system.notify("subtitleTracksUpdated");
+                },function(){
+                    subtitleTracks = null;
                     // fire event to notify that subtitletracks have changed
                     self.system.notify("subtitleTracksUpdated");
                 });
