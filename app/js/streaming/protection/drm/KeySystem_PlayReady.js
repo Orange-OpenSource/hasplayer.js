@@ -200,12 +200,12 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
                 cdmDataBytes,
                 i;
 
-            if (protData && protData.customData) {
+            if (protData && protData.cdmData) {
 
                 // Convert custom data into multibyte string
                 customData = [];
-                for (i = 0; i < protData.customData.length; ++i) {
-                    customData.push(protData.customData.charCodeAt(i));
+                for (i = 0; i < protData.cdmData.length; ++i) {
+                    customData.push(protData.cdmData.charCodeAt(i));
                     customData.push(0);
                 }
                 customData = String.fromCharCode.apply(null, customData);
@@ -239,6 +239,9 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
         subscribe: undefined,
         unsubscribe: undefined,
 
+        init: function(protectionData){
+            protData = protectionData;
+        },
 
         getInitData: parseInitDataFromContentProtection,
 

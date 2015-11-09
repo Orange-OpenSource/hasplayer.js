@@ -33,7 +33,8 @@ MediaPlayer.dependencies.protection.KeySystem_ClearKey = function() {
     "use strict";
 
     var keySystemStr = "org.w3.clearkey",
-        keySystemUUID = "1077efec-c0b2-4d02-ace3-3c1e52e2fb4b";
+        keySystemUUID = "1077efec-c0b2-4d02-ace3-3c1e52e2fb4b",
+        protData;
 
     return {
 
@@ -41,6 +42,10 @@ MediaPlayer.dependencies.protection.KeySystem_ClearKey = function() {
         schemeIdURI: "urn:uuid:" + keySystemUUID,
         systemString: keySystemStr,
         uuid: keySystemUUID,
+
+        init: function(protectionData){
+            protData = protectionData;
+        },
 
         getInitData: MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection,
 

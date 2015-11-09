@@ -73,7 +73,6 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
         closeKeySessionInternal = function(sessionToken) {
             var session = sessionToken.session;
-
             // Remove event listeners
             session.removeEventListener("keystatuseschange", sessionToken);
             session.removeEventListener("message", sessionToken);
@@ -93,12 +92,21 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
                         case "encrypted":
                             self.debug.log("[DRM][PM_21Jan2015] 'encrypted' event: ", event);
-                            if (event.initData) {
-                                var initData = ArrayBuffer.isView(event.initData) ? event.initData.buffer : event.initData;
-                                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY,
-                                        new MediaPlayer.vo.protection.NeedKey(initData, event.initDataType));
-                            }
-                            break;
+                            // this code is commented as the license retrieval is done on the key initialisation
+                            // if (event.initData) {
+                            //     var initData = ArrayBuffer.isView(event.initData) ? event.initData.buffer : event.initData;
+                            //     self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY,
+                            //             new MediaPlayer.vo.protection.NeedKey(initData, event.initDataType));
+                            // }
+                        break;
+
+                        case "waitingforkey":
+                        // Chrome doesn't raised error if keys don't match
+                        // so the unique wy is to track this event and raise an error
+                        videoElement.removeEventListener("waitingforkey", eventHandler);
+                        self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_NO_VALID_KEY);
+
+                        break;
                     }
                 }
             };
@@ -123,6 +131,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             var token = { // Implements MediaPlayer.vo.protection.SessionToken
                 session: session,
                 initData: initData,
+                licenseStored: false,
 
                 // This is our main event handler for all desired MediaKeySession events
                 // These events are translated into our API-independent versions of the
@@ -222,9 +231,22 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
             self.debug.log("[DRM][PM_21Jan2015] Teardown");
 
+            // remove session without license
+            if(numSessions !== 0){
+                for (var i = 0; i < numSessions; i++) {
+                    session = sessions[i];
+                    if(!session.licenseStored){
+                       removeSession(session);
+                    }
+                }
+            }
+
+
             // Do not close and remove sessions to keep licences persistence
             self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
             return;
+
+
 
             /*if (numSessions !== 0) {
                 // Called when we are done closing a session.  Success or fail
@@ -320,7 +342,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
             // Only if we are not detaching from the existing element
             if (videoElement) {
-                //videoElement.addEventListener("encrypted", eventHandler);
+                videoElement.addEventListener("encrypted", eventHandler);
                 if (mediaKeys) {
                     videoElement.setMediaKeys(mediaKeys);
                 }
@@ -376,7 +398,14 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             if (this.protectionExt.isClearKey(this.keySystem)) {
                 message = message.toJWK();
             }
-            session.update(message).catch(function (error) {
+            session.update(message)
+            .then(function(){
+                // track license has been stored in order to not retry request
+                sessionToken.licenseStored = true;
+                // used to monitor wrong key added to the CDM
+                videoElement.addEventListener("waitingforkey", eventHandler);
+            })
+            .catch(function (error) {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR,
                     new MediaPlayer.vo.protection.KeyError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR, sessionToken, "Error sending update() message! " + error.name));
             });
@@ -435,6 +464,10 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CLOSED,
                         null, "Error closing session (" + sessionToken.getSessionID() + ") " + error.name);
             });
+        },
+
+        checkIfEncrypted: function() {
+            videoElement.addEventListener("waitingforkey", eventHandler);
         }
     };
 };
