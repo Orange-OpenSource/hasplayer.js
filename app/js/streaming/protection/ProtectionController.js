@@ -138,7 +138,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
                                     type: MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED,
                                     data: event.data
                                 });
-                                self.createKeySession(supportedKS[ksIdx].initData);
+                                self.createKeySession(supportedKS[ksIdx].initData, supportedKS[ksIdx].cdmData);
                             }
                         };
                         this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE, ksAccess, undefined, true);
@@ -187,7 +187,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
                         for (var i = 0; i < pendingNeedKeyData.length; i++) {
                             for (ksIdx = 0; ksIdx < pendingNeedKeyData[i].length; ksIdx++) {
                                 if (self.keySystem === pendingNeedKeyData[i][ksIdx].ks) {
-                                    self.createKeySession(pendingNeedKeyData[i][ksIdx].initData);
+                                    self.createKeySession(pendingNeedKeyData[i][ksIdx].initData,pendingNeedKeyData[i][ksIdx].cdmData);
                                     break;
                                 }
                             }
@@ -269,8 +269,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
             }
 
             // All remaining key system scenarios require a request to a remote license server
-            var xhr = new XMLHttpRequest(),
-                self = this;
+            var xhr = new XMLHttpRequest();
 
             // Determine license server URL
             var url = null;
@@ -647,6 +646,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
          * the MPD or from the PSSH box in the media
          *
          * @param {ArrayBuffer} initData the initialization data
+         * @param {Uint8Array} cdmData the custom data to provide to licenser
          * @memberof MediaPlayer.dependencies.ProtectionController
          * @instance
          * @fires MediaPlayer.dependencies.ProtectionController#KeySessionCreated
@@ -655,7 +655,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
          * API will need to modified (and a new "generateRequest(keySession, initData)" API created)
          * to come up to speed with the latest EME standard
          */
-        createKeySession: function(initData) {
+        createKeySession: function(initData, cdmData) {
 
             this.debug.log("[DRM] Create key session");
 
@@ -671,7 +671,7 @@ MediaPlayer.dependencies.ProtectionController = function () {
                     }
                 }
                 try {
-                    this.protectionModel.createKeySession(initDataForKS, this.sessionType);
+                    this.protectionModel.createKeySession(initDataForKS, this.sessionType, cdmData);
                 } catch (error) {
                     this.eventBus.dispatchEvent({
                         type: MediaPlayer.dependencies.ProtectionController.events.KEY_SESSION_CREATED,
