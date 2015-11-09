@@ -196,7 +196,7 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         checkIfInitialized = function(videoState, audioState, textTrackState) {
-            this.debug.info("[Stream] checkIfInitialized videoState=" + videoState + " audioState=" + audioState + " textTrackState=" + textTrackState);
+            this.debug.log("[Stream] checkIfInitialized videoState=" + videoState + " audioState=" + audioState + " textTrackState=" + textTrackState);
             if (videoState !== null && audioState !== null && textTrackState !== null) {
                 if (videoState === "ready" && audioState === "ready" && textTrackState === "ready") {
                     if (videoController === null && audioController === null && textController === null) {

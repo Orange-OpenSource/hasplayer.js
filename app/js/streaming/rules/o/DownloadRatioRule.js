@@ -89,7 +89,7 @@ MediaPlayer.rules.o.DownloadRatioRule = function() {
 
                 calculatedBandwidth = latencyInBandwidth ? (totalBytesLength / totalTime) : (totalBytesLength / downloadTime);
 
-                self.debug.log("[DownloadRatioRule][" + data.type + "] DL: " + downloadTime + "s, Total: " + totalTime + "s => calculatedBandwidth: " + calculatedBandwidth);
+                self.debug.info("[DownloadRatioRule][" + data.type + "] DL: " + downloadTime + "s, Total: " + totalTime + "s => bw = " + calculatedBandwidth);
 
                 if (isNaN(calculatedBandwidth)) {
                     return Q.when(new MediaPlayer.rules.SwitchRequest());
@@ -115,13 +115,13 @@ MediaPlayer.rules.o.DownloadRatioRule = function() {
                                                     q = i;
                                                     p = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
 
-                                                    self.debug.log("[DownloadRatioRule][" + data.type + "] SwitchRequest(" + q + ", " + p + ")");
+                                                    self.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count-1) + " (" + bandwidths[q] + "), p=" + p);
                                                     deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
                                                 } else {
 
                                                     for (i = count - 1; i > current; i -= 1) {
                                                         if (calculatedBandwidth > (bandwidths[i] * switchUpRatioSafetyFactor)) {
-                                                            self.debug.log("[DownloadRatioRule][" + data.type + "] calculatedBandwidth = " + calculatedBandwidth + " results[i] * switchUpRatioSafetyFactor =" + (bandwidths[i] * switchUpRatioSafetyFactor) + " with i=" + i);
+                                                            self.debug.log("[DownloadRatioRule][" + data.type + "] bw = " + calculatedBandwidth + " results[i] * switchUpRatioSafetyFactor =" + (bandwidths[i] * switchUpRatioSafetyFactor) + " with i=" + i);
                                                             break;
                                                         }
                                                     }
@@ -129,7 +129,7 @@ MediaPlayer.rules.o.DownloadRatioRule = function() {
                                                     q = i;
                                                     p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
 
-                                                    self.debug.log("[DownloadRatioRule][" + data.type + "] SwitchRequest(" + q + ", " + p + ")");
+                                                    self.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count-1) + " (" + bandwidths[q] + "), p=" + p);
                                                     deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
                                                 }
                                             }

@@ -37,16 +37,16 @@ MediaPlayer.rules.o.InsufficientBufferRule = function () {    "use strict";
                 q = current,
                 p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
 
-            if (bufferLevel === null || data === null) {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
-            }
-
             // Check if we start buffering the stream. In this case we ignore the rule
             if (playerState === 'buffering') {
                 self.isStartBuffering[data.type] = true;
             }
 
-            self.debug.log("[InsufficientBufferRule]["+data.type+"] Checking buffer level ... (current = " + current + ", buffer level = " + bufferLevel.level + ")");
+            if (bufferLevel === null || data === null) {
+                return Q.when(new MediaPlayer.rules.SwitchRequest());
+            }
+
+            self.debug.info("[InsufficientBufferRule]["+data.type+"] Checking buffer level ... (current = " + current + ", buffer level = " + bufferLevel.level + ")");
 
             deferred = Q.defer();
 
@@ -80,7 +80,7 @@ MediaPlayer.rules.o.InsufficientBufferRule = function () {    "use strict";
                                         p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
                                     }
 
-                                    self.debug.log("[InsufficientBufferRule]["+data.type+"] SwitchRequest(" + q + ", " + p + ")");
+                                    self.debug.info("[InsufficientBufferRule]["+data.type+"] SwitchRequest: q=" + q + ", p=" + p);
                                     deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
                                 }
                             );

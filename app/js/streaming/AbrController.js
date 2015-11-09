@@ -227,7 +227,7 @@ MediaPlayer.dependencies.AbrController = function () {
                                                     confidence = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
                                                 }
 
-                                                self.debug.log("[AbrController]["+type+"] Set quality: " + quality);
+                                                self.debug.info("[AbrController]["+type+"] Set quality: " + quality);
                                                 setInternalQuality(type, quality);
                                                 //self.debug.log("New quality of " + quality);
 
