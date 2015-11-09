@@ -139,6 +139,7 @@
     <script src="../../app/js/streaming/rules/InsufficientBufferRule.js"></script>
     <script src="../../app/js/streaming/rules/LimitSwitchesRule.js"></script>
     <script src="../../app/js/streaming/rules/SwitchRequest.js"></script>
+    <script src="../../app/js/streaming/rules/AbandonRequestsRule.js"></script>
     <!-- /app/js/streaming/rules/o -->
     <script src="../../app/js/streaming/rules/o/DownloadRatioRule.js"></script>
     <script src="../../app/js/streaming/rules/o/InsufficientBufferRule.js"></script>
@@ -156,6 +157,7 @@
     <script src="../../app/js/streaming/vo/metrics/ManifestUpdate.js"></script>
     <script src="../../app/js/streaming/vo/metrics/PlayList.js"></script>
     <script src="../../app/js/streaming/vo/metrics/RepresentationSwitch.js"></script>
+    <script src="../../app/js/streaming/vo/metrics/BufferedSwitch.js"></script>
     <script src="../../app/js/streaming/vo/metrics/TCPConnection.js"></script>
     <script src="../../app/js/streaming/vo/metrics/BandwidthBoundaries.js"></script>
     <script src="../../app/js/streaming/vo/metrics/RepresentationBoundaries.js"></script>
@@ -320,7 +322,7 @@
                 <input type="text" class="form-control" placeholder="PlayReady licenser url" ng-model="laURL">
             </div>
             <div class="input-group col-md-5">
-                <input type="text" class="form-control" placeholder="PlayReady custom data" ng-model="customData">
+                <input type="text" class="form-control" placeholder="PlayReady custom data" ng-model="cdmData">
             </div>
         </div>
 

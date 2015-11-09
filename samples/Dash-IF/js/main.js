@@ -348,13 +348,17 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         }
     }
 
-    function onload(e){
+    function onload(/*e*/) {
         //init audio tracks
         $scope.audioTracks = player.getAudioTracks();
+        if ($scope.audioTracks !== null) {
         $scope.audioData = $scope.audioTracks[0];
+        }
         //init subtitles tracks
         $scope.textTracks = player.getSubtitleTracks();
-        $scope.textData = $scope.textTracks[0];
+        if ($scope.textTracks !== null) {
+            $scope.textTracks = $scope.textTracks[0];
+        }
     }
 
     //if video size change, player has to update subtitles size
@@ -379,6 +383,10 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     function onSubtitlesStyleChanged(style) {
         subtitlesCSSStyle = style;
         setSubtitlesCSSStyle(subtitlesCSSStyle);
+    }
+
+    function onManifestUrlUpdate(){
+        player.refreshManifest($scope.selectedItem.url);
     }
 
     function metricChanged(e) {
@@ -408,7 +416,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
                     $scope.videoRatio = metrics.movingRatio['video'].low.toFixed(3) + " < " + metrics.movingRatio['video'].average.toFixed(3) + " < " + metrics.movingRatio['video'].high.toFixed(3);
                 }
 
-                if ($('#sliderBitrate').labeledslider( "option", "max" ) === 0) {
+                if ($('#sliderBitrate').labeledslider( "option", "max" ) === 0 && metrics.numBitratesValue>0) {
                     var labels = [];
                     for (var i = 0; metrics.bitrateValues!= null && i < metrics.bitrateValues.length; i++) {
                         labels.push(Math.round(metrics.bitrateValues[i] / 1000) + "k");
@@ -547,7 +555,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
                     console.error("message :\""+e.event.message+"\"");
                  }
                  break;
-        };
+        }
 
         if (e.event.code != "HASPLAYER_INIT_ERROR") {
             //stop
@@ -640,12 +648,13 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     $scope.buildDate = player.getBuildDate();
 
     $scope.laURL = "";
-    $scope.customData = "";
+    $scope.cdmData = "";
 
     player.startup();
     player.addEventListener("error", onError.bind(this));
     player.addEventListener("metricChanged", metricChanged.bind(this));
     player.addEventListener("subtitlesStyleChanged",onSubtitlesStyleChanged.bind(this));
+    player.addEventListener("manifestUrlUpdate", onManifestUrlUpdate.bind(this));
     video.addEventListener("loadeddata", onload.bind(this));
     video.addEventListener("fullscreenchange", onFullScreenChange.bind(this));
     video.addEventListener("mozfullscreenchange", onFullScreenChange.bind(this));
@@ -830,7 +839,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     $scope.setStream = function (item) {
         $scope.selectedItem = item;
         $scope.laURL = (item.protData && item.protData['com.widevine.alpha']) ? item.protData['com.widevine.alpha'].laURL : "";
-        $scope.customData = (item.protData && item.protData['com.widevine.alpha']) ? item.protData['com.widevine.alpha'].customData : "";
+        $scope.cmdData = (item.protData && item.protData['com.widevine.alpha']) ? item.protData['com.widevine.alpha'].cdmData : "";
     };
 
     function resetBitratesSlider () {
@@ -855,11 +864,11 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
         function DRMParams() {
             this.backUrl = null;
-            this.customData = null;
+            this.cdmData = null;
         }
 
         // Update PR protection data
-        if (($scope.laURL.length > 0) || (($scope.customData.length > 0))) {
+        if (($scope.laURL.length > 0) || (($scope.cdmData.length > 0))) {
             if (!$scope.selectedItem.protData) {
                 $scope.selectedItem.protData = {};
             }
@@ -867,7 +876,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
                 $scope.selectedItem.protData['com.widevine.alpha'] = {};
             }
             $scope.selectedItem.protData['com.widevine.alpha'].laURL = $scope.laURL;
-            $scope.selectedItem.protData['com.widevine.alpha'].customData = $scope.customData;
+            $scope.selectedItem.protData['com.widevine.alpha'].cdmData = $scope.cdmData;
         }
 
         resetBitratesSlider();
