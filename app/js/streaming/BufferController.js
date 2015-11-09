@@ -198,7 +198,6 @@ MediaPlayer.dependencies.BufferController = function () {
         },
 
         doStop = function () {
-            //if (state === WAITING) return;
             if (!started) {
                 return;
             }
@@ -360,7 +359,7 @@ MediaPlayer.dependencies.BufferController = function () {
 
             //self.debug.log("Push (" + type + ") bytes: " + data.byteLength);
 
-            if (playListTraceMetricsClosed === true /*&& state !== WAITING*/) {
+            if (playListTraceMetricsClosed === true) {
                 playListTraceMetricsClosed = false;
                 playListTraceMetrics = self.metricsModel.appendPlayListTrace(playListMetrics, currentRepresentation.id, null, currentTime, currentVideoTime, null, 1.0, null);
             }
@@ -862,8 +861,6 @@ MediaPlayer.dependencies.BufferController = function () {
                 time = seekTarget;
             }
 
-            this.debug.log("Working time is video time: " + time);
-
             return time;
         },
 
@@ -1136,12 +1133,11 @@ MediaPlayer.dependencies.BufferController = function () {
         onFragmentLoadProgress = function(evt) {
             var self = this,
                 i = 0,
-                len = 0;
+                len = 0,
                 type = evt.data.request.streamType,
                 metricsHttp = evt.data.httpRequestMetrics,
                 lastTraceTime = evt.data.lastTraceTime,
-                currentTime,
-                metrics = self.metricsModel.getMetricsFor(type);
+                currentTime;
 
                 //self.debug.log("[BufferController]["+type+"] Download request " + evt.data.request.url + " is in progress");
 
