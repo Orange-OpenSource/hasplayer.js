@@ -89,7 +89,7 @@ Mss.dependencies.MssParser = function () {
 
         return element;
     };
-    
+
     var createXmlTree = function (xmlDocStr) {
         if (window.DOMParser) {
             // ORANGE: XML parsing management
@@ -190,7 +190,7 @@ Mss.dependencies.MssParser = function () {
         representation.height = parseInt(getAttributeValue(qualityLevel, "MaxHeight"), 10);
 
         var fourCCValue = getAttributeValue(qualityLevel, "FourCC");
-        
+
         if (fourCCValue === "H264" || fourCCValue === "AVC1") {
             representation.codecs = getH264Codec(qualityLevel);
         } else if (fourCCValue.indexOf("AAC") >= 0){
@@ -323,13 +323,13 @@ Mss.dependencies.MssParser = function () {
                 if (!segments[segments.length - 1].d) {
                     segments[segments.length - 1].d = t - segments[segments.length - 1].t;
                 }
-                // Set segment absolute timestamp if not set 
+                // Set segment absolute timestamp if not set
                 if (!t) {
                     t = segments[segments.length - 1].t + segments[segments.length - 1].d;
                 }
             }
 
-            // Create new segment 
+            // Create new segment
             segments.push({
                 d: d,
                 r: 0,
@@ -509,6 +509,11 @@ Mss.dependencies.MssParser = function () {
         if (protection !== undefined) {
             /* @if PROTECTION=true */
             protectionHeader = getChildNode(protection, 'ProtectionHeader');
+
+            // Some packagers put newlines into the ProtectionHeader base64 string, which is not good
+            // because this cannot be correctly parsed. Let's just filter out any newlines found in there.
+            protectionHeader.firstChild.data = protectionHeader.firstChild.data.replace(/\n|\r/g, "");
+
             // Get KID (in CENC format) from protection header
             KID = getKIDFromProtectionHeader(protectionHeader);
 
