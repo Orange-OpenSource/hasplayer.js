@@ -40,42 +40,45 @@ MediaPlayer.utils.Debug = function () {
         return MM + ":" + SS + "." + mmm;
     };
 
-    var logToBrowserConsole = true,
-        // ORANGE: add level
-        NONE  = 0,
+    // MemoryLogger definition
+
+    var MemoryLogger = function(){
+        this.logArray= [];
+    };
+
+    MemoryLogger.prototype.error = 
+    MemoryLogger.prototype.warn =
+    MemoryLogger.prototype.info = 
+    MemoryLogger.prototype.debug  = function(message){
+        this.logArray.push(message);
+    };
+
+    MemoryLogger.prototype.getLogs = function(){
+        return this.logArray;
+    };
+
+
+
+
+
+    // ORANGE: add level
+    var NONE  = 0,
         ERROR = 1,
         WARN  = 2,
         INFO  = 3,
         DEBUG = 4,
         ALL   = 4,
-        level = 4,
+        level = 0,
         showTimestamp = true,
         showElapsedTime = false,
         startTime = new Date(),
+        // default logger set to console
+        _logger = console,
 
         _log = function (logLevel, args) {
-            var self = this;
-            if (getLogToBrowserConsole() && (logLevel <= getLevel())) {
-                var _logger = getLogger(),
-                    message = "",
-                    logTime = null;
+            if (logLevel <= getLevel()) {
 
-                if ((_logger === undefined) || (_logger === null)) {
-                    _logger = console;
-                }
-
-                if (showTimestamp) {
-                    logTime = new Date();
-                    message += "[" + logTime.HHMMSSmmm() + "]";
-                }
-
-                if (showElapsedTime) {
-                    message += "[" + new Date(logTime - startTime).MMSSmmm() + "]";
-                }
-
-                Array.apply(null, args).forEach(function(item) {
-                    message += item + " ";
-                });
+                var message = _prepareLog(args);
 
                 switch (logLevel) {
                     case ERROR:
@@ -91,40 +94,42 @@ MediaPlayer.utils.Debug = function () {
                         _logger.debug(message);
                         break;
                 }
+                
             }
 
-            self.eventBus.dispatchEvent({
-                type: "log",
-                message: arguments[0]
-            });
         },
 
-        getLogToBrowserConsole = function() {
-            return logToBrowserConsole;
+        _prepareLog = function(args){
+            var message = "",
+                logTime = null;
+
+            if (showTimestamp) {
+                logTime = new Date();
+                message += "[" + logTime.HHMMSSmmm() + "]";
+            }
+
+            if (showElapsedTime) {
+                message += "[" + new Date(logTime - startTime).MMSSmmm() + "]";
+            }
+
+            Array.apply(null, args).forEach(function(item) {
+                message += item + " ";
+            });
+
+            return message;
         },
+
 
         getLevel = function() {
             return level;
         },
 
         getLogger = function () {
-            var _logger = null;//('undefined' !== typeof(log4javascript)) ? log4javascript.getLogger() : null;
-            if (_logger) {
-                if(!_logger.initialized) {
-                    var appender = new log4javascript.PopUpAppender();
-                    var layout = new log4javascript.PatternLayout("%d{HH:mm:ss.SSS} %-5p - %m%n");
-                    appender.setLayout(layout);
-                    _logger.addAppender(appender);
-                    _logger.setLevel(log4javascript.Level.ALL);
-                    _logger.initialized = true;
-                }
-            }
             return _logger;
         };
 
     return {
-        eventBus: undefined,
-
+        
         // ORANGE: add level
         NONE:   NONE,
         ERROR:  ERROR,
@@ -134,15 +139,34 @@ MediaPlayer.utils.Debug = function () {
         ALL:    ALL,
 
         getLevel: getLevel,
-        getLogToBrowserConsole: getLogToBrowserConsole,
         getLogger: getLogger,
-
-        setLogToBrowserConsole: function(value) {
-            logToBrowserConsole = value;
-        },
 
         setLevel: function(value) {
             level  = value;
+        },
+
+        setLogger: function(type){
+           switch(type){
+                case 'log4javascript' :
+                    var appender = new log4javascript.PopUpAppender();
+                    var layout = new log4javascript.PatternLayout("%d{HH:mm:ss.SSS} %-5p - %m%n");
+                    appender.setLayout(layout);
+                    _logger.addAppender(appender);
+                    _logger.setLevel(log4javascript.Level.ALL);
+                    _logger.initialized = true;
+                break;
+
+                case 'memory':
+                    _logger = new MemoryLogger();
+                break;
+
+                case 'console':
+                    _logger = console;
+                break;
+
+                default:
+                    _logger = null;
+           }
         },
 
         error: function () {

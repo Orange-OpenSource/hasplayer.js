@@ -409,7 +409,7 @@ MediaPlayer.dependencies.BufferController = function () {
                 i,
                 len;
 
-            if (this.debug.getLogToBrowserConsole()) {
+            if (this.debug.getLevel >= this.debug.DEBUG) {
                 if (buffer) {
                     ranges = this.sourceBufferExt.getAllRanges(buffer);
                     if ((ranges === null) || (ranges.length === 0)) {
