@@ -43,12 +43,16 @@ MediaPlayer.utils.Debug = function () {
     // MemoryLogger definition
 
     var MemoryLogger = function(){
+        // array to store logs
         this.logArray= [];
+        // boolean to set leve in message
+        this.showLevel = true;
     };
 
-    MemoryLogger.prototype.error = 
-    MemoryLogger.prototype.warn =
-    MemoryLogger.prototype.info = 
+
+    MemoryLogger.prototype.error =
+    MemoryLogger.prototype.warn = 
+    MemoryLogger.prototype.info =
     MemoryLogger.prototype.debug  = function(message){
         this.logArray.push(message);
     };
@@ -78,7 +82,7 @@ MediaPlayer.utils.Debug = function () {
         _log = function (logLevel, args) {
             if (logLevel <= getLevel()) {
 
-                var message = _prepareLog(args);
+                var message = _prepareLog(logLevel, args);
 
                 switch (logLevel) {
                     case ERROR:
@@ -99,13 +103,17 @@ MediaPlayer.utils.Debug = function () {
 
         },
 
-        _prepareLog = function(args){
+        _prepareLog = function(logLevel, args){
             var message = "",
                 logTime = null;
 
             if (showTimestamp) {
                 logTime = new Date();
                 message += "[" + logTime.HHMMSSmmm() + "]";
+            }
+
+            if(_logger && _logger.showLevel){
+                 message += "["+_getStringLevel(logLevel)+"]";
             }
 
             if (showElapsedTime) {
@@ -117,6 +125,21 @@ MediaPlayer.utils.Debug = function () {
             });
 
             return message;
+        },
+
+        _getStringLevel = function(level){
+            switch(level){
+                case ERROR:
+                return "ERROR";
+                case WARN:
+                return "WARN";
+                case INFO:
+                return "INFO";
+                case DEBUG:
+                return "DEBUG";
+                default:
+                return "";
+            }
         },
 
 

@@ -380,7 +380,6 @@ MediaPlayer.dependencies.BufferController = function () {
                                         data.currentTime = self.videoModel.getCurrentTime();
 
                                         self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_APPEND_SOURCEBUFFER, result.err.code+':'+result.err.message, data);
-                                        self.debug.log("[BufferController]["+type+"] Buffer failed with quality = "+quality+" index = "+index);
                                         // if the append has failed because the buffer is full we should store the data
                                         // that has not been appended and stop request scheduling. We also need to store
                                         // the promise for this append because the next data can be appended only after
@@ -822,7 +821,6 @@ MediaPlayer.dependencies.BufferController = function () {
                             currentRepresentation = getRepresentationForQuality.call(self, currentQuality);
                             updateCheckBufferTimeout.call(self,0);
                         }, function(){
-                            self.debug.log("[BufferController]["+type+"] loadNextFragment Error occurs in hls parsing");
                             self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, type + ": Failed to update hls playlist", null);
                         }
                     );
@@ -1027,8 +1025,9 @@ MediaPlayer.dependencies.BufferController = function () {
                                                     );
                                                 }
                                             }, function(e) {
-                                                self.debug.error("[BufferController]["+type+"] Problem during init segment generation \"" + e.message+"\"");
-                                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC, e.name+' : '+e.message,self.manifestModel.getValue());
+                                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC,
+                                                    "Problem during init segment generation (" + e.name + ':' + e.message + ")",
+                                                    self.manifestModel.getValue());
                                             }
                                         );
                                     } else {

@@ -17,12 +17,14 @@ MediaPlayer.dependencies.ErrorHandler = function () {
 
     return {
         eventBus: undefined,
+        debug: undefined,
 
         sendError: function (code, message, data) {
             this.eventBus.dispatchEvent({
                 type: "error",
                 event: {code : code, message: message, data: data}
             });
+            this.debug.error("[Error] Code: " + code + ", Message:" + message + ", Data: " + data);
         }
     };
 };
