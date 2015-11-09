@@ -988,7 +988,6 @@ MediaPlayer.dependencies.Stream = function() {
         // ORANGE: add the capability to set audioTrack
         setAudioTrack: function(audioTrack) {
             var manifest = this.manifestModel.getValue(),
-                url,
                 self = this;
 
             if (audioController) {
@@ -1001,20 +1000,7 @@ MediaPlayer.dependencies.Stream = function() {
                             audioTrackIndex = index;
 
                             // Update manifest
-                            url = manifest.mpdUrl;
-
-                            if (manifest.hasOwnProperty("Location")) {
-                                url = manifest.Location;
-                            }
-
-                            self.debug.log("### Refresh manifest @ " + url);
-
-                            self.manifestLoader.load(url).then(
-                                function(manifestResult) {
-                                    self.manifestModel.setValue(manifestResult);
-                                    self.debug.log("### Manifest has been refreshed.");
-                                }
-                            );
+                            self.system.notify("manifestUpdate");
                         }
                     });
             }
@@ -1035,7 +1021,6 @@ MediaPlayer.dependencies.Stream = function() {
         setSubtitleTrack: function(subtitleTrack) {
             var deferredSubtitleUpdate = Q.defer(),
                 manifest = this.manifestModel.getValue(),
-                url,
                 self = this;
 
             if (textController) {
@@ -1044,22 +1029,8 @@ MediaPlayer.dependencies.Stream = function() {
                     function(index) {
                         textTrackIndex = index;
 
-                        // Update manifest
-                        url = manifest.mpdUrl;
-
-                        if (manifest.hasOwnProperty("Location")) {
-                            url = manifest.Location;
-                        }
-
-                        self.debug.log("### Refresh manifest @ " + url);
-
-                        self.manifestLoader.load(url).then(
-                            function(manifestResult) {
-                                self.manifestModel.setValue(manifestResult);
-                                self.debug.log("### Manifest has been refreshed.");
-                                deferredSubtitleUpdate.resolve();
-                            }
-                        );
+                       // Update manifest
+                        self.system.notify("manifestUpdate");
                     }
                 );
             } else {

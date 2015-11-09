@@ -706,6 +706,19 @@ MediaPlayer = function(aContext) {
             }*/
         },
 
+         /**
+         * refresh manifest url
+         * @method refeshManifest
+         * @access public
+         * @memberof OrangeHasPlayer#
+         * param {string} url - the video stream's manifest (MPEG DASH, Smooth Streaming or HLS) url
+         */
+        refreshManifest: function(url){
+            if(streamController){
+                streamController.refreshManifest(url);
+            }
+        },
+
         /**
          * function used to stop video player, set source value to null and reset stream controller.
          * @access public

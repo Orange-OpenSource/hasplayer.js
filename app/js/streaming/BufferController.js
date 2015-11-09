@@ -1416,7 +1416,7 @@ MediaPlayer.dependencies.BufferController = function () {
         },
 
         updateManifest: function (){
-            this.system.notify("reloadManifest");
+            this.system.notify("manifestUpdate");
         },
 
         updateBufferState: function() {
