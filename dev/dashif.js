@@ -1,4 +1,4 @@
-/* Last build : 15.10.2015_10:26:15 / git revision : b9ef40b */
+/* Last build : 9.11.2015_21:43:54 / git revision : 70ca13d */
  /* jshint ignore:start */
 (function() {
     var b = void 0, f = !0, j = null, l = !1;
@@ -28340,11 +28340,15 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
             return null;
         }
     }
-    function onload(e) {
+    function onload() {
         $scope.audioTracks = player.getAudioTracks();
-        $scope.audioData = $scope.audioTracks[0];
+        if ($scope.audioTracks !== null) {
+            $scope.audioData = $scope.audioTracks[0];
+        }
         $scope.textTracks = player.getSubtitleTracks();
-        $scope.textData = $scope.textTracks[0];
+        if ($scope.textTracks !== null) {
+            $scope.textTracks = $scope.textTracks[0];
+        }
     }
     function onFullScreenChange() {
         setSubtitlesCSSStyle(subtitlesCSSStyle);
@@ -28361,6 +28365,9 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     function onSubtitlesStyleChanged(style) {
         subtitlesCSSStyle = style;
         setSubtitlesCSSStyle(subtitlesCSSStyle);
+    }
+    function onManifestUrlUpdate() {
+        player.refreshManifest($scope.selectedItem.url);
     }
     function metricChanged(e) {
         var metrics, point;
@@ -28385,7 +28392,7 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
                     $scope.videoRatioCount = metrics.movingRatio["video"].count;
                     $scope.videoRatio = metrics.movingRatio["video"].low.toFixed(3) + " < " + metrics.movingRatio["video"].average.toFixed(3) + " < " + metrics.movingRatio["video"].high.toFixed(3);
                 }
-                if ($("#sliderBitrate").labeledslider("option", "max") === 0) {
+                if ($("#sliderBitrate").labeledslider("option", "max") === 0 && metrics.numBitratesValue > 0) {
                     var labels = [];
                     for (var i = 0; metrics.bitrateValues != null && i < metrics.bitrateValues.length; i++) {
                         labels.push(Math.round(metrics.bitrateValues[i] / 1e3) + "k");
@@ -28576,11 +28583,12 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     $scope.versionFull = player.getVersionFull();
     $scope.buildDate = player.getBuildDate();
     $scope.laURL = "";
-    $scope.customData = "";
+    $scope.cdmData = "";
     player.startup();
     player.addEventListener("error", onError.bind(this));
     player.addEventListener("metricChanged", metricChanged.bind(this));
     player.addEventListener("subtitlesStyleChanged", onSubtitlesStyleChanged.bind(this));
+    player.addEventListener("manifestUrlUpdate", onManifestUrlUpdate.bind(this));
     video.addEventListener("loadeddata", onload.bind(this));
     video.addEventListener("fullscreenchange", onFullScreenChange.bind(this));
     video.addEventListener("mozfullscreenchange", onFullScreenChange.bind(this));
@@ -28727,7 +28735,7 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     $scope.setStream = function(item) {
         $scope.selectedItem = item;
         $scope.laURL = item.protData && item.protData["com.widevine.alpha"] ? item.protData["com.widevine.alpha"].laURL : "";
-        $scope.customData = item.protData && item.protData["com.widevine.alpha"] ? item.protData["com.widevine.alpha"].customData : "";
+        $scope.cmdData = item.protData && item.protData["com.widevine.alpha"] ? item.protData["com.widevine.alpha"].cdmData : "";
     };
     function resetBitratesSlider() {
         $("#sliderBitrate").labeledslider({
@@ -28750,9 +28758,9 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     function initPlayer() {
         function DRMParams() {
             this.backUrl = null;
-            this.customData = null;
+            this.cdmData = null;
         }
-        if ($scope.laURL.length > 0 || $scope.customData.length > 0) {
+        if ($scope.laURL.length > 0 || $scope.cdmData.length > 0) {
             if (!$scope.selectedItem.protData) {
                 $scope.selectedItem.protData = {};
             }
@@ -28760,7 +28768,7 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
                 $scope.selectedItem.protData["com.widevine.alpha"] = {};
             }
             $scope.selectedItem.protData["com.widevine.alpha"].laURL = $scope.laURL;
-            $scope.selectedItem.protData["com.widevine.alpha"].customData = $scope.customData;
+            $scope.selectedItem.protData["com.widevine.alpha"].cdmData = $scope.cdmData;
         }
         resetBitratesSlider();
         $scope.textTracks = null;
