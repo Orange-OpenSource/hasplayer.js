@@ -167,7 +167,7 @@ MediaPlayer.dependencies.AbrController = function () {
 
                 self.getMetricsFor(data).then(
                     function (metrics) {
-                        self.abrRulesCollection.getRules().then(
+                        self.abrRulesCollection.getRules(MediaPlayer.rules.BaseRulesCollection.prototype.QUALITY_SWITCH_RULES).then(
                             function (rules) {
                                 for (i = 0, len = rules.length; i < len; i += 1) {
                                     funcs.push(rules[i].checkIndex(quality, metrics, data, playerState));
@@ -325,3 +325,5 @@ MediaPlayer.dependencies.AbrController = function () {
 MediaPlayer.dependencies.AbrController.prototype = {
     constructor: MediaPlayer.dependencies.AbrController
 };
+
+MediaPlayer.dependencies.AbrController.BANDWIDTH_SAFETY = 0.9;

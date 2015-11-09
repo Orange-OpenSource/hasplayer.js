@@ -932,6 +932,7 @@ MediaPlayer.dependencies.BufferController = function () {
 
                     // Get current quality
                     if(self.ChunkMissingState){
+                        self.abrController.setPlaybackQuality(type, 0);
                         defer = Q.when({quality:0});
                     }
                     else{
@@ -1085,6 +1086,40 @@ MediaPlayer.dependencies.BufferController = function () {
             );
 
             return deferred.promise;
+        },
+
+        onFragmentLoadProgress = function(evt) {
+            var self = this,
+                i = 0,
+                len = 0;
+                type = evt.data.request.streamType,
+                rules = null,
+                metrics = self.metricsModel.getMetricsFor(type);
+                metricsHttp = evt.data.httpRequestMetrics,
+                lastTraceTime = evt.data.lastTraceTime,
+                currentTime;
+
+                self.debug.log("[BufferController]["+type+"] Download request "+evt.data.request.url+" is in progress");
+
+                self.abrRulesCollection.getRules(MediaPlayer.rules.BaseRulesCollection.prototype.ABANDON_FRAGMENT_RULES).then(
+                    function(rules){
+                        var callback = function (switchRequest) {
+                       
+                        var newQuality = switchRequest.quality,
+                            currentQuality = self.abrController.getQualityFor(type);
+                
+                        if (newQuality < currentQuality){
+                            self.debug.log("[BufferController]["+type+"] need to abandon");
+                            self.fragmentController.abortRequestsForModel(fragmentModel);
+                        }else{
+                            self.debug.log("[BufferController]["+type+"] No need to abandon");
+                        }
+                    };
+
+                    for (i = 0, len = rules.length; i < len; i += 1) {
+                        rules[i].execute(evt.data.request, callback);
+                    }
+                });
         };
 
     return {
@@ -1108,18 +1143,20 @@ MediaPlayer.dependencies.BufferController = function () {
         PLAYING : 1,
         stallTime : null,
         ChunkMissingState : false,
+        abrRulesCollection: undefined,
 
         initialize: function (type, newPeriodInfo, newData, buffer, videoModel, scheduler, fragmentController, source, eventController) {
             var self = this,
                 manifest = self.manifestModel.getValue();
 
             self.debug.log("[BufferController]["+type+"] Initialize");
-
+           
             // PATCH for Espial browser which implements SourceBuffer appending/removing synchronoulsy
             if (navigator.userAgent.indexOf("Espial") !== -1) {
                 self.debug.log("[BufferController]["+type+"] Espial browser = sync append");
                 appendSync = true;
             }
+            self[MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS] = onFragmentLoadProgress;
 
             isDynamic = self.manifestExt.getIsDynamic(manifest);
             self.setMediaSource(source);
@@ -1225,6 +1262,7 @@ MediaPlayer.dependencies.BufferController = function () {
         setFragmentController: function (value) {
             this.fragmentController = value;
             fragmentModel = this.fragmentController.attachBufferController(this);
+            fragmentModel.fragmentLoader.subscribe(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, this);
         },
 
         setEventController: function(value) {
@@ -1396,6 +1434,8 @@ MediaPlayer.dependencies.BufferController = function () {
             cancel(deferredFragmentBuffered);
             cancel(deferredStreamComplete);
             deferredStreamComplete = Q.defer();
+
+            fragmentModel.fragmentLoader.unsubscribe(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, this.abrController);
 
             self.clearMetrics();
             self.fragmentController.abortRequestsForModel(fragmentModel);
