@@ -91,8 +91,14 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
                 var Challenge = xmlDoc.getElementsByTagName("Challenge")[0].childNodes[0].nodeValue;
                 if (Challenge) {
                     licenseRequest = BASE64.decode(Challenge);
+                } else {
+                    // Some versions of the PlayReady CDM do not return the Microsoft-specified XML structure
+                    // but just return the raw license request. If we can't extract the license request, let's
+                    // assume it is the latter and just return the whole message.
+                    return msg;
                 }
             }
+            
             return licenseRequest;
         },
 
