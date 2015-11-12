@@ -67,6 +67,12 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
                 headers['Content-Type'] = headers.Content;
                 delete headers.Content;
             }
+            // Some versions of the PlayReady CDM do not return headers at all, which means the Content-Type
+            // does not get set and most license servers will just refuse the license request. That's no good,
+            // so set it manually if it is missing.
+            if (!headers.hasOwnProperty('Content-Type')) {
+                headers['Content-Type'] = 'text/xml; charset=utf-8';
+            }
             return headers;
         },
 
