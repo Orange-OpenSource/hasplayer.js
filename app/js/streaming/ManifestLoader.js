@@ -41,7 +41,18 @@ MediaPlayer.dependencies.ManifestLoader = function () {
                 fixedCharCodes.push((charCode & 0xFF) << 8 | (charCode & 0xFF00) >> 8);
             }
 
-            return String.fromCharCode.apply(null, fixedCharCodes);
+            // We build the string in small chunks to avoid blowing the stack, as each argument needs
+            // to be given to fromCharCode separately on the stack, for some reason, leading to exceptions with large manfiests.
+            var fixedString = "";
+            var bufferSize = 1024;
+
+            for (i = 0; i < fixedCharCodes.length; i += bufferSize) {
+                var charCodeCount = Math.min(bufferSize, fixedCharCodes.length - i);
+
+                fixedString += String.fromCharCode.apply(null, fixedCharCodes.slice(i, i + charCodeCount));
+            }
+
+            return fixedString;
         },
 
         parseBaseUrl = function (url) {
