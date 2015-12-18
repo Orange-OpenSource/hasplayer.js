@@ -31,8 +31,6 @@ MediaPlayer.dependencies.Stream = function() {
         initialized = false,
         load,
         errored = false,
-        kid = null,
-        initData = [],
         // ORANGE : add FullScreen Listener
         fullScreenListener,
         // ORANGE : add Ended Event listener
@@ -50,7 +48,6 @@ MediaPlayer.dependencies.Stream = function() {
         canplayListener,
         playingListener,
         loadstartListener,
-        waitingListener,
         defaultAudioLang = 'und',
         defaultSubtitleLang = 'und',
 
@@ -167,8 +164,6 @@ MediaPlayer.dependencies.Stream = function() {
 
                             initialized = false;
 
-                            kid = null;
-                            initData = [];
                             contentProtection = null;
 
                             videoController = null;
@@ -346,7 +341,7 @@ MediaPlayer.dependencies.Stream = function() {
                             // TODO : How to tell index handler live/duration?
                             // TODO : Pass to controller and then pass to each method on handler?
                             audioController = self.system.getObject("bufferController");
-                            audioController.initialize("audio", periodInfo, specificAudioData, buffer, self.requestScheduler, self.fragmentController, mediaSource, eventController);
+                            audioController.initialize("audio", periodInfo, specificAudioData, buffer, self.fragmentController, mediaSource, eventController);
                             //self.debug.log("Audio is ready!");
                             audioState = "ready";
                             checkIfInitialized.call(self, videoState, audioState, textTrackState);
@@ -517,10 +512,6 @@ MediaPlayer.dependencies.Stream = function() {
 
         onLoadStart = function() {
             this.debug.info("<video> loadstart event");
-        },
-
-        onWaiting = function() {
-            this.debug.info("<video> waiting event");
         },
 
         onPlay = function() {
@@ -1009,7 +1000,6 @@ MediaPlayer.dependencies.Stream = function() {
         metricsExt: undefined,
         errHandler: undefined,
         timelineConverter: undefined,
-        requestScheduler: undefined,
         scheduleWhilePaused: undefined,
         // ORANGE : add metricsModel
         metricsModel: undefined,
@@ -1043,7 +1033,6 @@ MediaPlayer.dependencies.Stream = function() {
             canplayListener = onCanPlay.bind(this);
             playingListener = onPlaying.bind(this);
             loadstartListener = onLoadStart.bind(this);
-            waitingListener = onWaiting.bind(this);
 
             // ORANGE : add FullScreen Event listener
             fullScreenListener = onFullScreenChange.bind(this);
@@ -1073,7 +1062,6 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.listen("canplay", canplayListener);
             this.videoModel.listen("playing", playingListener);
             this.videoModel.listen("loadstart", loadstartListener);
-            //this.videoModel.listen("waiting", waitingListener);
 
             // ORANGE : add FullScreen Event listener
             this.videoModel.listen("webkitfullscreenchange", fullScreenListener);
@@ -1207,13 +1195,11 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.unlisten("canplay", canplayListener);
             this.videoModel.unlisten("playing", playingListener);
             this.videoModel.unlisten("loadstart", loadstartListener);
-            //this.videoModel.unlisten("waiting", waitingListener);
 
             this.videoModel.unlisten("webkitfullscreenchange", fullScreenListener);
             this.videoModel.unlisten("fullscreenchange", fullScreenListener);
             this.videoModel.unlistenOnParent("fullscreenchange", fullScreenListener);
             this.videoModel.unlistenOnParent("webkitfullscreenchange", fullScreenListener);
-
 
             this.system.unmapHandler("bufferUpdated");
             this.system.unmapHandler("liveEdgeFound");
@@ -1230,7 +1216,6 @@ MediaPlayer.dependencies.Stream = function() {
 
                     protectionController = undefined;
                     self.fragmentController = undefined;
-                    self.requestScheduler = undefined;
 
                     load = Q.defer();
                     deferred.resolve();

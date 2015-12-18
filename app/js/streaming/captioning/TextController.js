@@ -83,8 +83,7 @@ MediaPlayer.dependencies.TextController = function () {
              );
          },
 
-         onBytesError = function (/*request*/) {
-         };
+        onBytesError = function( /*request*/ ) {};
 
     return {
         videoModel: undefined,
@@ -179,4 +178,3 @@ MediaPlayer.dependencies.TextController = function () {
 MediaPlayer.dependencies.TextController.prototype = {
     constructor: MediaPlayer.dependencies.TextController
 };
-
