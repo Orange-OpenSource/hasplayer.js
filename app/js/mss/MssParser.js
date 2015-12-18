@@ -13,155 +13,87 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-Mss.dependencies.MssParser = function () {
+Mss.dependencies.MssParser = function() {
     "use strict";
 
-    var TIME_SCALE_100_NANOSECOND_UNIT = 10000000.0;
-    var samplingFrequencyIndex = {96000:0x0,
-                                  88200:0x1,
-                                  64000:0x2,
-                                  48000:0x3,
-                                  44100:0x4,
-                                  32000:0x5,
-                                  24000:0x6,
-                                  22050:0x7,
-                                  16000:0x8,
-                                  12000:0x9,
-                                  11025:0xA,
-                                   8000:0xB,
-                                   7350:0xC};
+    var TIME_SCALE_100_NANOSECOND_UNIT = 10000000.0,
+        samplingFrequencyIndex = {
+            96000: 0x0,
+            88200: 0x1,
+            64000: 0x2,
+            48000: 0x3,
+            44100: 0x4,
+            32000: 0x5,
+            24000: 0x6,
+            22050: 0x7,
+            16000: 0x8,
+            12000: 0x9,
+            11025: 0xA,
+            8000: 0xB,
+            7350: 0xC
+        },
+        mimeTypeMap = {
+            "video": "video/mp4",
+            "audio": "audio/mp4",
+            "text": "application/ttml+xml+mp4"
+        },
+        xmlDoc = null,
+        baseURL = null,
 
-    var mimeTypeMap = {
-        "video" : "video/mp4",
-        "audio" : "audio/mp4",
-        "text"  : "application/ttml+xml+mp4"
-    };
+        mapPeriod = function() {
+            var period = {},
+                adaptations = [],
+                smoothNode = this.domParser.getChildNode(xmlDoc, "SmoothStreamingMedia"),
+                i;
 
-    var xmlDoc = null;
-    var baseURL = null;
+            period.duration = (parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration')) === 0) ? Infinity : parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration')) / TIME_SCALE_100_NANOSECOND_UNIT;
+            period.BaseURL = baseURL;
 
-    var getAttributeValue = function(node, attrName) {
-        var returnValue = null,
-            domElem = null,
-            attribList = null;
-
-        attribList = node.attributes;
-        if(attribList){
-            domElem = attribList.getNamedItem(attrName);
-            if (domElem) {
-                returnValue = domElem.value;
-                return returnValue;
-            }
-        }
-
-        return returnValue;
-    };
-
-    var getChildNode = function(nodeParent, childName) {
-        var i = 0,
-            element;
-
-        if(nodeParent.childNodes){
-            for(i=0;i<nodeParent.childNodes.length;i++){
-                element = nodeParent.childNodes[i];
-                if (element.nodeName === childName) {
-                    return element;
-                }else{
-                    element = undefined;
+            // For each StreamIndex node, create an AdaptationSet element
+            for (i = 0; i < smoothNode.childNodes.length; i++) {
+                if (smoothNode.childNodes[i].nodeName === "StreamIndex") {
+                    adaptations.push(mapAdaptationSet.call(this, smoothNode.childNodes[i]));
                 }
             }
-        }
 
-        return element;
-    };
+            period.AdaptationSet = (adaptations.length > 1) ? adaptations : adaptations[0];
+            period.AdaptationSet_asArray = adaptations;
 
-    var getChildNodes = function(nodeParent, childName) {
-        var i = 0,
-            element = [];
+            return period;
+        },
 
-        if(nodeParent.childNodes){
-            for(i=0;i<nodeParent.childNodes.length;i++){
-                if (nodeParent.childNodes[i].nodeName === childName) {
-                    element.push(nodeParent.childNodes[i]);
-                }
-            }
-        }
+        mapAdaptationSet = function(streamIndex) {
 
-        return element;
-    };
+            var adaptationSet = {},
+                representations = [],
+                representation,
+                segmentTemplate = {},
+                qualityLevels = null,
+                i;
 
-    var createXmlTree = function (xmlDocStr) {
-        if (window.DOMParser) {
-            // ORANGE: XML parsing management
-            try
-            {
-                var parser=new window.DOMParser();
-                xmlDoc = parser.parseFromString( xmlDocStr, "text/xml" );
-                if(xmlDoc.getElementsByTagName('parsererror').length > 0) {
-                      throw new Error('Error parsing XML');
-                }
-            }
-            catch (e)
-            {
-                xmlDoc = null;
-            }
-        }
-    };
+            adaptationSet.id = this.domParser.getAttributeValue(streamIndex, "Name");
+            adaptationSet.lang = this.domParser.getAttributeValue(streamIndex, "Language");
+            adaptationSet.contentType = this.domParser.getAttributeValue(streamIndex, "Type");
+            adaptationSet.mimeType = mimeTypeMap[adaptationSet.contentType];
+            adaptationSet.maxWidth = this.domParser.getAttributeValue(streamIndex, "MaxWidth");
+            adaptationSet.maxHeight = this.domParser.getAttributeValue(streamIndex, "MaxHeight");
+            adaptationSet.BaseURL = baseURL;
 
-    var mapPeriod = function () {
-        var period = {},
-            adaptations = [],
-            smoothNode = getChildNode(xmlDoc, "SmoothStreamingMedia"),
-            i;
+            // Create a SegmentTemplate with a SegmentTimeline
+            segmentTemplate = mapSegmentTemplate.call(this, streamIndex);
 
-        period.duration = (parseFloat(getAttributeValue(smoothNode, 'Duration')) === 0) ? Infinity : parseFloat(getAttributeValue(smoothNode, 'Duration')) / TIME_SCALE_100_NANOSECOND_UNIT;
-        period.BaseURL = baseURL;
+            qualityLevels = this.domParser.getChildNodes(streamIndex, "QualityLevel");
+            // For each QualityLevel node, create a Representation element
+            for (i = 0; i < qualityLevels.length; i++) {
+                // Propagate BaseURL and mimeType
+                qualityLevels[i].BaseURL = adaptationSet.BaseURL;
+                qualityLevels[i].mimeType = adaptationSet.mimeType;
 
-        // For each StreamIndex node, create an AdaptationSet element
-        for (i = 0; i < smoothNode.childNodes.length; i++) {
-            if (smoothNode.childNodes[i].nodeName === "StreamIndex") {
-                adaptations.push(mapAdaptationSet(smoothNode.childNodes[i]));
-            }
-        }
-
-        period.AdaptationSet = (adaptations.length > 1) ? adaptations : adaptations[0];
-        period.AdaptationSet_asArray = adaptations;
-
-        return period;
-    };
-
-    var mapAdaptationSet = function (streamIndex) {
-
-        var adaptationSet = {},
-            representations = [],
-            representation,
-            segmentTemplate = {},
-            qualityLevels = null,
-            i;
-
-        adaptationSet.id = getAttributeValue(streamIndex, "Name");
-        adaptationSet.lang = getAttributeValue(streamIndex, "Language");
-        adaptationSet.contentType = getAttributeValue(streamIndex, "Type");
-        adaptationSet.mimeType = mimeTypeMap[adaptationSet.contentType];
-        adaptationSet.maxWidth =  getAttributeValue(streamIndex, "MaxWidth");
-        adaptationSet.maxHeight =  getAttributeValue(streamIndex, "MaxHeight");
-        adaptationSet.BaseURL = baseURL;
-
-        // Create a SegmentTemplate with a SegmentTimeline
-        segmentTemplate = mapSegmentTemplate(streamIndex);
-
-        qualityLevels = getChildNodes(streamIndex, "QualityLevel");
-        // For each QualityLevel node, create a Representation element
-        for (i = 0; i < qualityLevels.length; i++) {
-            // Propagate BaseURL and mimeType
-            qualityLevels[i].BaseURL = adaptationSet.BaseURL;
-            qualityLevels[i].mimeType = adaptationSet.mimeType;
-
-            // Set quality level id
-            qualityLevels[i].Id = adaptationSet.id + "_" + getAttributeValue(qualityLevels[i], "Index");
+                // Set quality level id
+                qualityLevels[i].Id = adaptationSet.id + "_" + this.domParser.getAttributeValue(qualityLevels[i], "Index");
 
                 // Map Representation to QualityLevel
-            representation = mapRepresentation(qualityLevels[i]);
+                representation = mapRepresentation.call(this, qualityLevels[i]);
 
                 // Copy SegmentTemplate into Representation
                 representation.SegmentTemplate = segmentTemplate;
@@ -169,290 +101,290 @@ Mss.dependencies.MssParser = function () {
                 representations.push(representation);
             }
 
-        adaptationSet.Representation = (representations.length > 1) ? representations : representations[0];
-        adaptationSet.Representation_asArray = representations;
+            adaptationSet.Representation = (representations.length > 1) ? representations : representations[0];
+            adaptationSet.Representation_asArray = representations;
 
-        // Set SegmentTemplate
-        adaptationSet.SegmentTemplate = segmentTemplate;
+            // Set SegmentTemplate
+            adaptationSet.SegmentTemplate = segmentTemplate;
 
-        return adaptationSet;
-    };
+            return adaptationSet;
+        },
 
-    var mapRepresentation = function (qualityLevel) {
+        mapRepresentation = function(qualityLevel) {
 
-        var representation = {};
+            var representation = {},
+                fourCCValue = null;
 
-        representation.id = qualityLevel.Id;
-        representation.bandwidth = parseInt(getAttributeValue(qualityLevel, "Bitrate"), 10);
-        representation.mimeType = qualityLevel.mimeType;
-        representation.width = parseInt(getAttributeValue(qualityLevel, "MaxWidth"), 10);
-        representation.height = parseInt(getAttributeValue(qualityLevel, "MaxHeight"), 10);
+            representation.id = qualityLevel.Id;
+            representation.bandwidth = parseInt(this.domParser.getAttributeValue(qualityLevel, "Bitrate"), 10);
+            representation.mimeType = qualityLevel.mimeType;
+            representation.width = parseInt(this.domParser.getAttributeValue(qualityLevel, "MaxWidth"), 10);
+            representation.height = parseInt(this.domParser.getAttributeValue(qualityLevel, "MaxHeight"), 10);
 
-        var fourCCValue = getAttributeValue(qualityLevel, "FourCC");
+            fourCCValue = this.domParser.getAttributeValue(qualityLevel, "FourCC");
 
-        // Get codecs value according to FourCC field
-        // Note: If empty FourCC (optionnal for audio stream, see https://msdn.microsoft.com/en-us/library/ff728116%28v=vs.95%29.aspx),
-        // then we consider the stream is an audio AAC stream
-        if (fourCCValue === "H264" || fourCCValue === "AVC1") {
-            representation.codecs = getH264Codec(qualityLevel);
-        } else if ((fourCCValue.indexOf("AAC") >= 0) || (fourCCValue === "")) {
-            representation.codecs = getAACCodec(qualityLevel);
-        }
+            // Get codecs value according to FourCC field
+            // Note: If empty FourCC (optionnal for audio stream, see https://msdn.microsoft.com/en-us/library/ff728116%28v=vs.95%29.aspx),
+            // then we consider the stream is an audio AAC stream
+            if (fourCCValue === "H264" || fourCCValue === "AVC1") {
+                representation.codecs = getH264Codec.call(this, qualityLevel);
+            } else if ((fourCCValue.indexOf("AAC") >= 0) || (fourCCValue === "")) {
+                representation.codecs = getAACCodec.call(this, qualityLevel);
+            }
 
-        representation.audioSamplingRate =  parseInt(getAttributeValue(qualityLevel, "SamplingRate"), 10);
-        representation.audioChannels =  parseInt(getAttributeValue(qualityLevel, "Channels"), 10);
-        representation.codecPrivateData = "" + getAttributeValue(qualityLevel, "CodecPrivateData");
-        representation.BaseURL = qualityLevel.BaseURL;
+            representation.audioSamplingRate = parseInt(this.domParser.getAttributeValue(qualityLevel, "SamplingRate"), 10);
+            representation.audioChannels = parseInt(this.domParser.getAttributeValue(qualityLevel, "Channels"), 10);
+            representation.codecPrivateData = "" + this.domParser.getAttributeValue(qualityLevel, "CodecPrivateData");
+            representation.BaseURL = qualityLevel.BaseURL;
 
-        return representation;
-    };
+            return representation;
+        },
 
-    var getH264Codec = function (qualityLevel) {
-        var codecPrivateData = getAttributeValue(qualityLevel, "CodecPrivateData").toString(),
-            nalHeader,
-            avcoti;
+        getH264Codec = function(qualityLevel) {
+            var codecPrivateData = this.domParser.getAttributeValue(qualityLevel, "CodecPrivateData").toString(),
+                nalHeader,
+                avcoti;
 
 
-        // Extract from the CodecPrivateData field the hexadecimal representation of the following
-        // three bytes in the sequence parameter set NAL unit.
-        // => Find the SPS nal header
-        nalHeader = /00000001[0-9]7/.exec(codecPrivateData);
-        // => Find the 6 characters after the SPS nalHeader (if it exists)
-        avcoti = nalHeader && nalHeader[0] ? (codecPrivateData.substr(codecPrivateData.indexOf(nalHeader[0])+10, 6)) : undefined;
+            // Extract from the CodecPrivateData field the hexadecimal representation of the following
+            // three bytes in the sequence parameter set NAL unit.
+            // => Find the SPS nal header
+            nalHeader = /00000001[0-9]7/.exec(codecPrivateData);
+            // => Find the 6 characters after the SPS nalHeader (if it exists)
+            avcoti = nalHeader && nalHeader[0] ? (codecPrivateData.substr(codecPrivateData.indexOf(nalHeader[0]) + 10, 6)) : undefined;
 
-        return "avc1." + avcoti;
-    };
+            return "avc1." + avcoti;
+        },
 
-    var getAACCodec = function (qualityLevel) {
-        var objectType = 0,
-            codecPrivateData = getAttributeValue(qualityLevel, "CodecPrivateData").toString(),
-            codecPrivateDataHex,
-            fourCCValue = getAttributeValue(qualityLevel, "FourCC"),
-            samplingRate = parseInt(getAttributeValue(qualityLevel, "SamplingRate"), 10),
-            arr16;
+        getAACCodec = function(qualityLevel) {
+            var objectType = 0,
+                codecPrivateData = this.domParser.getAttributeValue(qualityLevel, "CodecPrivateData").toString(),
+                codecPrivateDataHex,
+                fourCCValue = this.domParser.getAttributeValue(qualityLevel, "FourCC"),
+                samplingRate = parseInt(this.domParser.getAttributeValue(qualityLevel, "SamplingRate"), 10),
+                arr16,
+                indexFreq,
+                extensionSamplingFrequencyIndex;
 
-        //chrome problem, in implicit AAC HE definition, so when AACH is detected in FourCC
-        //set objectType to 5 => strange, it should be 2
-        if (fourCCValue === "AACH") {
-            objectType = 0x05;
-        }
-
-        //if codecPrivateData is empty, build it :
-        if (codecPrivateData === undefined || codecPrivateData === "") {
-            objectType = 0x02; //AAC Main Low Complexity => object Type = 2
-            var indexFreq = samplingFrequencyIndex[samplingRate];
+            //chrome problem, in implicit AAC HE definition, so when AACH is detected in FourCC
+            //set objectType to 5 => strange, it should be 2
             if (fourCCValue === "AACH") {
-                // 4 bytes :     XXXXX         XXXX          XXXX             XXXX                  XXXXX      XXX   XXXXXXX
-                //           ' ObjectType' 'Freq Index' 'Channels value'   'Extens Sampl Freq'  'ObjectType'  'GAS' 'alignment = 0'
-                objectType = 0x05; // High Efficiency AAC Profile = object Type = 5 SBR
-                codecPrivateData = new Uint8Array(4);
-                var extensionSamplingFrequencyIndex = samplingFrequencyIndex[samplingRate*2];// in HE AAC Extension Sampling frequence
-                // equals to SamplingRate*2
-                //Freq Index is present for 3 bits in the first byte, last bit is in the second
-                codecPrivateData[0] = (objectType << 3) | (indexFreq >> 1);
-                codecPrivateData[1] = (indexFreq << 7) | (qualityLevel.Channels << 3) | (extensionSamplingFrequencyIndex >> 1);
-                codecPrivateData[2] = (extensionSamplingFrequencyIndex << 7) | (0x02 << 2);// origin object type equals to 2 => AAC Main Low Complexity
-                codecPrivateData[3] = 0x0; //alignment bits
-
-                arr16 = new Uint16Array(2);
-                arr16[0] = (codecPrivateData[0] << 8) + codecPrivateData[1];
-                arr16[1] = (codecPrivateData[2] << 8) + codecPrivateData[3];
-                //convert decimal to hex value
-                codecPrivateDataHex = arr16[0].toString(16);
-                codecPrivateDataHex = arr16[0].toString(16)+arr16[1].toString(16);
-
-            } else {
-                // 2 bytes :     XXXXX         XXXX          XXXX              XXX
-                //           ' ObjectType' 'Freq Index' 'Channels value'   'GAS = 000'
-                codecPrivateData = new Uint8Array(2);
-                //Freq Index is present for 3 bits in the first byte, last bit is in the second
-                codecPrivateData[0] = (objectType << 3) | (indexFreq >> 1);
-                codecPrivateData[1] = (indexFreq << 7) | (parseInt(getAttributeValue(qualityLevel, "Channels"), 10) << 3);
-                // put the 2 bytes in an 16 bits array
-                arr16 = new Uint16Array(1);
-                arr16[0] = (codecPrivateData[0] << 8) + codecPrivateData[1];
-                //convert decimal to hex value
-                codecPrivateDataHex = arr16[0].toString(16);
+                objectType = 0x05;
             }
 
-            codecPrivateData = "" + codecPrivateDataHex;
-            codecPrivateData = codecPrivateData.toUpperCase();
-            qualityLevel.setAttribute("CodecPrivateData", codecPrivateData);
-        }
-        else if (objectType === 0){
-            objectType = (parseInt(codecPrivateData.substr(0, 2), 16) & 0xF8) >> 3;
-        }
+            //if codecPrivateData is empty, build it :
+            if (codecPrivateData === undefined || codecPrivateData === "") {
+                objectType = 0x02; //AAC Main Low Complexity => object Type = 2
+                indexFreq = samplingFrequencyIndex[samplingRate];
+                if (fourCCValue === "AACH") {
+                    // 4 bytes :     XXXXX         XXXX          XXXX             XXXX                  XXXXX      XXX   XXXXXXX
+                    //           ' ObjectType' 'Freq Index' 'Channels value'   'Extens Sampl Freq'  'ObjectType'  'GAS' 'alignment = 0'
+                    objectType = 0x05; // High Efficiency AAC Profile = object Type = 5 SBR
+                    codecPrivateData = new Uint8Array(4);
+                    extensionSamplingFrequencyIndex = samplingFrequencyIndex[samplingRate * 2]; // in HE AAC Extension Sampling frequence
+                    // equals to SamplingRate*2
+                    //Freq Index is present for 3 bits in the first byte, last bit is in the second
+                    codecPrivateData[0] = (objectType << 3) | (indexFreq >> 1);
+                    codecPrivateData[1] = (indexFreq << 7) | (qualityLevel.Channels << 3) | (extensionSamplingFrequencyIndex >> 1);
+                    codecPrivateData[2] = (extensionSamplingFrequencyIndex << 7) | (0x02 << 2); // origin object type equals to 2 => AAC Main Low Complexity
+                    codecPrivateData[3] = 0x0; //alignment bits
 
-        return "mp4a.40." + objectType;
-    };
+                    arr16 = new Uint16Array(2);
+                    arr16[0] = (codecPrivateData[0] << 8) + codecPrivateData[1];
+                    arr16[1] = (codecPrivateData[2] << 8) + codecPrivateData[3];
+                    //convert decimal to hex value
+                    codecPrivateDataHex = arr16[0].toString(16);
+                    codecPrivateDataHex = arr16[0].toString(16) + arr16[1].toString(16);
 
-
-    var mapSegmentTemplate = function (streamIndex) {
-
-        var segmentTemplate = {},
-            mediaUrl;
-
-        mediaUrl = getAttributeValue(streamIndex, "Url").replace('{bitrate}','$Bandwidth$');
-        mediaUrl = mediaUrl.replace('{start time}','$Time$');
-
-        segmentTemplate.media = mediaUrl;
-        segmentTemplate.timescale = TIME_SCALE_100_NANOSECOND_UNIT;
-
-        segmentTemplate.SegmentTimeline = mapSegmentTimeline(streamIndex);
-
-        return segmentTemplate;
-    };
-
-    var mapSegmentTimeline = function (streamIndex) {
-
-        var segmentTimeline = {},
-            chunks = getChildNodes(streamIndex, "c"),
-            segments = [],
-            i,
-            t, d;
-
-        for (i = 0; i < chunks.length; i++) {
-            // Get time and duration attributes
-            t = parseFloat(getAttributeValue(chunks[i], "t"));
-            d = parseFloat(getAttributeValue(chunks[i], "d"));
-
-            if ((i === 0) && !t) {
-                t = 0;
-            }
-
-            if (i > 0) {
-                // Update previous segment duration if not defined
-                if (!segments[segments.length - 1].d) {
-                    segments[segments.length - 1].d = t - segments[segments.length - 1].t;
+                } else {
+                    // 2 bytes :     XXXXX         XXXX          XXXX              XXX
+                    //           ' ObjectType' 'Freq Index' 'Channels value'   'GAS = 000'
+                    codecPrivateData = new Uint8Array(2);
+                    //Freq Index is present for 3 bits in the first byte, last bit is in the second
+                    codecPrivateData[0] = (objectType << 3) | (indexFreq >> 1);
+                    codecPrivateData[1] = (indexFreq << 7) | (parseInt(this.domParser.getAttributeValue(qualityLevel, "Channels"), 10) << 3);
+                    // put the 2 bytes in an 16 bits array
+                    arr16 = new Uint16Array(1);
+                    arr16[0] = (codecPrivateData[0] << 8) + codecPrivateData[1];
+                    //convert decimal to hex value
+                    codecPrivateDataHex = arr16[0].toString(16);
                 }
-                // Set segment absolute timestamp if not set
-                if (!t) {
-                    t = segments[segments.length - 1].t + segments[segments.length - 1].d;
-                }
+
+                codecPrivateData = "" + codecPrivateDataHex;
+                codecPrivateData = codecPrivateData.toUpperCase();
+                qualityLevel.setAttribute("CodecPrivateData", codecPrivateData);
+            } else if (objectType === 0) {
+                objectType = (parseInt(codecPrivateData.substr(0, 2), 16) & 0xF8) >> 3;
             }
 
-            // Create new segment
-            segments.push({
-                d: d,
-                r: 0,
-                t: t
-            });
+            return "mp4a.40." + objectType;
+        },
 
-        }
+        mapSegmentTemplate = function(streamIndex) {
 
-        segmentTimeline.S = segments;
-        segmentTimeline.S_asArray = segments;
+            var segmentTemplate = {},
+                mediaUrl;
 
-        return segmentTimeline;
-    };
+            mediaUrl = this.domParser.getAttributeValue(streamIndex, "Url").replace('{bitrate}', '$Bandwidth$');
+            mediaUrl = mediaUrl.replace('{start time}', '$Time$');
 
-    /* @if PROTECTION=true */
-    var getKIDFromProtectionHeader = function (protectionHeader) {
-        var prHeader,
-            wrmHeader,
-            xmlReader,
-            KID;
+            segmentTemplate.media = mediaUrl;
+            segmentTemplate.timescale = TIME_SCALE_100_NANOSECOND_UNIT;
 
-        // Get PlayReady header as byte array (base64 decoded)
-        prHeader = BASE64.decodeArray(protectionHeader.firstChild.data);
+            segmentTemplate.SegmentTimeline = mapSegmentTimeline.call(this, streamIndex);
 
-        // Get Right Management header (WRMHEADER) from PlayReady header
-        wrmHeader = getWRMHeaderFromPRHeader(prHeader);
+            return segmentTemplate;
+        },
 
-        // Convert from multi-byte to unicode
-        wrmHeader = new Uint16Array(wrmHeader.buffer);
+        mapSegmentTimeline = function(streamIndex) {
 
-        // Convert to string
-        wrmHeader = String.fromCharCode.apply(null, wrmHeader);
+            var segmentTimeline = {},
+                chunks = this.domParser.getChildNodes(streamIndex, "c"),
+                segments = [],
+                i,
+                t, d;
 
-        // Parse <WRMHeader> to get KID field value
-        xmlReader = (new DOMParser()).parseFromString(wrmHeader, "application/xml");
-        KID = xmlReader.querySelector("KID").textContent;
+            for (i = 0; i < chunks.length; i++) {
+                // Get time and duration attributes
+                t = parseFloat(this.domParser.getAttributeValue(chunks[i], "t"));
+                d = parseFloat(this.domParser.getAttributeValue(chunks[i], "d"));
 
-        // Get KID (base64 decoded) as byte array
-        KID = BASE64.decodeArray(KID);
+                if ((i === 0) && !t) {
+                    t = 0;
+                }
 
-        // Convert UUID from little-endian to big-endian
-        convertUuidEndianness(KID);
+                if (i > 0) {
+                    // Update previous segment duration if not defined
+                    if (!segments[segments.length - 1].d) {
+                        segments[segments.length - 1].d = t - segments[segments.length - 1].t;
+                    }
+                    // Set segment absolute timestamp if not set
+                    if (!t) {
+                        t = segments[segments.length - 1].t + segments[segments.length - 1].d;
+                    }
+                }
 
-        return KID;
-    };
+                // Create new segment
+                segments.push({
+                    d: d,
+                    t: t
+                });
 
-    var getWRMHeaderFromPRHeader = function (prHeader) {
-        var length,
-            recordCount,
-            recordType,
-            recordLength,
-            recordValue,
-            i = 0;
+            }
 
-        // Parse PlayReady header
+            segmentTimeline.S = segments;
+            segmentTimeline.S_asArray = segments;
 
-        // Length - 32 bits (LE format)
-        length = (prHeader[i+3] << 24) + (prHeader[i+2] << 16) + (prHeader[i+1] << 8) + prHeader[i];
-        i += 4;
+            return segmentTimeline;
+        },
 
-        // Record count - 16 bits (LE format)
-        recordCount = (prHeader[i+1] << 8) + prHeader[i];
-        i += 2;
+        /* @if PROTECTION=true */
+        getKIDFromProtectionHeader = function(protectionHeader) {
+            var prHeader,
+                wrmHeader,
+                xmlReader,
+                KID;
 
-        // Parse records
-        while (i < prHeader.length) {
-            // Record type - 16 bits (LE format)
-            recordType = (prHeader[i+1] << 8) + prHeader[i];
+            // Get PlayReady header as byte array (base64 decoded)
+            prHeader = BASE64.decodeArray(protectionHeader.firstChild.data);
+
+            // Get Right Management header (WRMHEADER) from PlayReady header
+            wrmHeader = getWRMHeaderFromPRHeader(prHeader);
+
+            // Convert from multi-byte to unicode
+            wrmHeader = new Uint16Array(wrmHeader.buffer);
+
+            // Convert to string
+            wrmHeader = String.fromCharCode.apply(null, wrmHeader);
+
+            // Parse <WRMHeader> to get KID field value
+            xmlReader = (new DOMParser()).parseFromString(wrmHeader, "application/xml");
+            KID = xmlReader.querySelector("KID").textContent;
+
+            // Get KID (base64 decoded) as byte array
+            KID = BASE64.decodeArray(KID);
+
+            // Convert UUID from little-endian to big-endian
+            convertUuidEndianness(KID);
+
+            return KID;
+        },
+
+        getWRMHeaderFromPRHeader = function(prHeader) {
+            var length,
+                recordCount,
+                recordType,
+                recordLength,
+                recordValue,
+                i = 0;
+
+            // Parse PlayReady header
+
+            // Length - 32 bits (LE format)
+            length = (prHeader[i + 3] << 24) + (prHeader[i + 2] << 16) + (prHeader[i + 1] << 8) + prHeader[i];
+            i += 4;
+
+            // Record count - 16 bits (LE format)
+            recordCount = (prHeader[i + 1] << 8) + prHeader[i];
             i += 2;
 
-            // Check if Rights Management header (record type = 0x01)
-            if (recordType === 0x01) {
-
-                // Record length - 16 bits (LE format)
-                recordLength = (prHeader[i+1] << 8) + prHeader[i];
+            // Parse records
+            while (i < prHeader.length) {
+                // Record type - 16 bits (LE format)
+                recordType = (prHeader[i + 1] << 8) + prHeader[i];
                 i += 2;
 
-                // Record value => contains <WRMHEADER>
-                recordValue = new Uint8Array(recordLength);
-                recordValue.set(prHeader.subarray(i, i + recordLength));
-                return recordValue;
+                // Check if Rights Management header (record type = 0x01)
+                if (recordType === 0x01) {
+
+                    // Record length - 16 bits (LE format)
+                    recordLength = (prHeader[i + 1] << 8) + prHeader[i];
+                    i += 2;
+
+                    // Record value => contains <WRMHEADER>
+                    recordValue = new Uint8Array(recordLength);
+                    recordValue.set(prHeader.subarray(i, i + recordLength));
+                    return recordValue;
+                }
             }
-        }
 
-        return null;
-    };
+            return null;
+        },
 
-    var convertUuidEndianness = function (uuid) {
-        swapBytes(uuid, 0, 3);
-        swapBytes(uuid, 1, 2);
-        swapBytes(uuid, 4, 5);
-        swapBytes(uuid, 6, 7);
-    };
+        convertUuidEndianness = function(uuid) {
+            swapBytes(uuid, 0, 3);
+            swapBytes(uuid, 1, 2);
+            swapBytes(uuid, 4, 5);
+            swapBytes(uuid, 6, 7);
+        },
 
-    var swapBytes = function (bytes, pos1, pos2) {
-        var temp = bytes[pos1];
-        bytes[pos1] = bytes[pos2];
-        bytes[pos2] = temp;
-    };
+        swapBytes = function(bytes, pos1, pos2) {
+            var temp = bytes[pos1];
+            bytes[pos1] = bytes[pos2];
+            bytes[pos2] = temp;
+        },
 
 
-    var createPRContentProtection = function (protectionHeader) {
+        createPRContentProtection = function(protectionHeader) {
 
-        var contentProtection = {},
-            keySystem = this.system.getObject("ksPlayReady"),
-            pro;
+            var contentProtection = {},
+                keySystem = this.system.getObject("ksPlayReady"),
+                pro;
 
-        pro = {
-            __text : protectionHeader.firstChild.data,
-            __prefix : "mspr"
-        };
+            pro = {
+                __text: protectionHeader.firstChild.data,
+                __prefix: "mspr"
+            };
 
-        contentProtection.schemeIdUri = keySystem.schemeIdURI;
-        contentProtection.value = 2;//keySystem.systemString;
-        contentProtection.pro = pro;
-        contentProtection.pro_asArray = pro;
+            contentProtection.schemeIdUri = keySystem.schemeIdURI;
+            contentProtection.value = keySystem.systemString;
+            contentProtection.pro = pro;
+            contentProtection.pro_asArray = pro;
 
-        return contentProtection;
-    };
+            return contentProtection;
+        },
 
-    /*var createCENCContentProtection = function (protectionHeader) {
+        /*var createCENCContentProtection = function (protectionHeader) {
 
         var contentProtection = {};
 
@@ -462,150 +394,151 @@ Mss.dependencies.MssParser = function () {
         return contentProtection;
     };*/
 
-    var createWidevineContentProtection = function (protectionHeader) {
+        createWidevineContentProtection = function(protectionHeader) {
 
-        var contentProtection = {},
-            keySystem = this.system.getObject("ksWidevine");
+            var contentProtection = {},
+                keySystem = this.system.getObject("ksWidevine");
 
-        contentProtection.schemeIdUri = keySystem.schemeIdURI;
-        contentProtection.value = keySystem.systemString;
+            contentProtection.schemeIdUri = keySystem.schemeIdURI;
+            contentProtection.value = keySystem.systemString;
 
-        return contentProtection;
-    };
-    /* @endif */
+            return contentProtection;
+        },
+        /* @endif */
 
-    var processManifest = function (manifestLoadedTime) {
-        var mpd = {},
-            period,
-            adaptations,
-            contentProtection,
-            contentProtections = [],
-            smoothNode = getChildNode(xmlDoc, "SmoothStreamingMedia"),
-            protection = getChildNode(smoothNode, 'Protection'),
-            protectionHeader = null,
-            KID,
-            i;
+        processManifest = function(manifestLoadedTime) {
+            var mpd = {},
+                period,
+                adaptations,
+                contentProtection,
+                contentProtections = [],
+                smoothNode = this.domParser.getChildNode(xmlDoc, "SmoothStreamingMedia"),
+                protection = this.domParser.getChildNode(smoothNode, 'Protection'),
+                protectionHeader = null,
+                KID,
+                firstSegment,
+                adaptationTimeOffset,
+                i;
 
-        // Set mpd node properties
-        mpd.profiles = "urn:mpeg:dash:profile:isoff-live:2011";
-        mpd.type = Boolean(getAttributeValue(smoothNode, 'IsLive')) ? "dynamic" : "static";
-        mpd.timeShiftBufferDepth = parseFloat(getAttributeValue(smoothNode, 'DVRWindowLength')) / TIME_SCALE_100_NANOSECOND_UNIT;
-        mpd.mediaPresentationDuration =  (parseFloat(getAttributeValue(smoothNode, 'Duration')) === 0) ? Infinity : parseFloat(getAttributeValue(smoothNode, 'Duration')) / TIME_SCALE_100_NANOSECOND_UNIT;
-        mpd.BaseURL = baseURL;
-        mpd.minBufferTime = MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
+            // Set mpd node properties
+            mpd.profiles = "urn:mpeg:dash:profile:isoff-live:2011";
+            mpd.type = Boolean(this.domParser.getAttributeValue(smoothNode, 'IsLive')) ? "dynamic" : "static";
+            mpd.timeShiftBufferDepth = parseFloat(this.domParser.getAttributeValue(smoothNode, 'DVRWindowLength')) / TIME_SCALE_100_NANOSECOND_UNIT;
+            mpd.mediaPresentationDuration = (parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration')) === 0) ? Infinity : parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration')) / TIME_SCALE_100_NANOSECOND_UNIT;
+            mpd.BaseURL = baseURL;
+            mpd.minBufferTime = MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
 
-        // In case of live streams, set availabilityStartTime property according to DVRWindowLength
-        if (mpd.type === "dynamic") {
-            mpd.availabilityStartTime = new Date(manifestLoadedTime.getTime() - (mpd.timeShiftBufferDepth * 1000));
-        }
+            // In case of live streams, set availabilityStartTime property according to DVRWindowLength
+            if (mpd.type === "dynamic") {
+                mpd.availabilityStartTime = new Date(manifestLoadedTime.getTime() - (mpd.timeShiftBufferDepth * 1000));
+            }
 
-        // Map period node to manifest root node
-        mpd.Period = mapPeriod();
-        mpd.Period_asArray = [mpd.Period];
+            // Map period node to manifest root node
+            mpd.Period = mapPeriod.call(this);
+            mpd.Period_asArray = [mpd.Period];
 
-        // Initialize period start time
-        period = mpd.Period;
-        period.start = 0;
+            // Initialize period start time
+            period = mpd.Period;
+            period.start = 0;
 
-        // ContentProtection node
-        if (protection !== undefined) {
-            /* @if PROTECTION=true */
-            protectionHeader = getChildNode(protection, 'ProtectionHeader');
+            // ContentProtection node
+            if (protection !== undefined) {
+                /* @if PROTECTION=true */
+                protectionHeader = this.domParser.getChildNode(protection, 'ProtectionHeader');
 
-            // Some packagers put newlines into the ProtectionHeader base64 string, which is not good
-            // because this cannot be correctly parsed. Let's just filter out any newlines found in there.
-            protectionHeader.firstChild.data = protectionHeader.firstChild.data.replace(/\n|\r/g, "");
+                // Some packagers put newlines into the ProtectionHeader base64 string, which is not good
+                // because this cannot be correctly parsed. Let's just filter out any newlines found in there.
+                protectionHeader.firstChild.data = protectionHeader.firstChild.data.replace(/\n|\r/g, "");
 
-            // Get KID (in CENC format) from protection header
-            KID = getKIDFromProtectionHeader(protectionHeader);
+                // Get KID (in CENC format) from protection header
+                KID = getKIDFromProtectionHeader(protectionHeader);
 
-            // Create ContentProtection for PR
-            contentProtection = createPRContentProtection.call(this, protectionHeader);
-            contentProtection["cenc:default_KID"] = KID;
-            contentProtections.push(contentProtection);
-
-            // For chrome, create ContentProtection for Widevine as a CENC protection
-            if (navigator.userAgent.indexOf("Chrome") >= 0) {
-                //contentProtections.push(createCENCContentProtection(manifest.Protection.ProtectionHeader));
-                contentProtection = createWidevineContentProtection.call(this, protectionHeader);
+                // Create ContentProtection for PR
+                contentProtection = createPRContentProtection.call(this, protectionHeader);
                 contentProtection["cenc:default_KID"] = KID;
                 contentProtections.push(contentProtection);
+
+                // For chrome, create ContentProtection for Widevine as a CENC protection
+                if (navigator.userAgent.indexOf("Chrome") >= 0) {
+                    //contentProtections.push(createCENCContentProtection(manifest.Protection.ProtectionHeader));
+                    contentProtection = createWidevineContentProtection.call(this, protectionHeader);
+                    contentProtection["cenc:default_KID"] = KID;
+                    contentProtections.push(contentProtection);
+                }
+
+                mpd.ContentProtection = (contentProtections.length > 1) ? contentProtections : contentProtections[0];
+                mpd.ContentProtection_asArray = contentProtections;
+                /* @endif */
+
+                /* @if PROTECTION=false */
+                /* @exec sendError('MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED','"protected content detected but protection module is not included."') */
+                /* @exec reject('"[MssParser] Protected content detected but protection module is not included."') */
+                /* @endif */
             }
 
-            mpd.ContentProtection = (contentProtections.length > 1) ? contentProtections : contentProtections[0];
-            mpd.ContentProtection_asArray = contentProtections;
-            /* @endif */
+            adaptations = period.AdaptationSet_asArray;
+            for (i = 0; i < adaptations.length; i += 1) {
+                // In case of VOD streams, check if start time is greater than 0.
+                // Therefore, set period start time to the higher adaptation start time
+                if (mpd.type === "static" && adaptations[i].contentType !== 'text') {
+                    firstSegment = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray[0];
+                    adaptationTimeOffset = parseFloat(firstSegment.t) / TIME_SCALE_100_NANOSECOND_UNIT;
+                    period.start = (period.start === 0) ? adaptationTimeOffset : Math.max(period.start, adaptationTimeOffset);
+                }
 
-            /* @if PROTECTION=false */
-            /* @exec sendError('MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED','"protected content detected but protection module is not included."') */
-            /* @exec reject('"[MssParser] Protected content detected but protection module is not included."') */
-            /* @endif */
-        }
-
-        adaptations = period.AdaptationSet_asArray;
-        for (i = 0; i < adaptations.length; i += 1)
-        {
-            // In case of VOD streams, check if start time is greater than 0.
-            // Therefore, set period start time to the higher adaptation start time
-            if (mpd.type === "static") {
-                var fistSegment = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray[0];
-                var adaptationTimeOffset = parseFloat(fistSegment.t) / TIME_SCALE_100_NANOSECOND_UNIT;
-                period.start = (period.start === 0)?adaptationTimeOffset:Math.max(period.start, adaptationTimeOffset);
+                // Propagate content protection information into each adaptation
+                if (mpd.ContentProtection !== undefined) {
+                    adaptations[i].ContentProtection = mpd.ContentProtection;
+                    adaptations[i].ContentProtection_asArray = mpd.ContentProtection_asArray;
+                }
             }
 
-            // Propagate content protection information into each adaptation
-            if (mpd.ContentProtection !== undefined) {
-                adaptations[i].ContentProtection = mpd.ContentProtection;
-                adaptations[i].ContentProtection_asArray = mpd.ContentProtection_asArray;
+            // Delete Content Protection under root mpd node
+            delete mpd.ContentProtection;
+            delete mpd.ContentProtection_asArray;
+
+
+            return mpd;
+        },
+
+        internalParse = function(data, baseUrl) {
+            this.debug.info("[MssParser]", "Doing parse.");
+
+            var start = new Date(),
+                xml = null,
+                manifest = null,
+                mss2dash = null;
+
+            //this.debug.log("[MssParser]", "Converting from XML.");
+            xmlDoc = this.domParser.createXmlTree(data);
+            xml = new Date();
+
+            if (xmlDoc === null) {
+                return Q.reject(null);
             }
-        }
 
-        // Delete Content Protection under root mpd node
-        delete mpd.ContentProtection;
-        delete mpd.ContentProtection_asArray;
+            baseURL = baseUrl;
 
+            // Convert MSS manifest into DASH manifest
+            manifest = processManifest.call(this, start);
+            mss2dash = new Date();
+            //this.debug.log("mpd: " + JSON.stringify(manifest, null, '\t'));
 
-        return mpd;
-    };
-
-    var internalParse = function(data, baseUrl) {
-        this.debug.info("[MssParser]", "Doing parse.");
-
-        var start = new Date(),
-            xml = null,
-            manifest = null,
-            mss2dash = null;
-
-        //this.debug.log("[MssParser]", "Converting from XML.");
-        createXmlTree(data);
-        xml = new Date();
-
-        if (xmlDoc === null) {
-            this.debug.error("[MssParser]", "Failed to parse manifest!!");
-            return Q.reject("[MssParser] Failed to parse manifest!!");
-        }
-
-        baseURL = baseUrl;
-
-        // Convert MSS manifest into DASH manifest
-        manifest = processManifest.call(this, start);
-        mss2dash = new Date();
-        //this.debug.log("mpd: " + JSON.stringify(manifest, null, '\t'));
-
-        this.debug.info("[MssParser]", "Parsing complete (xmlParser: " + (xml.getTime() - start.getTime()) + "ms, mss2dash: " + (mss2dash.getTime() - xml.getTime()) + "ms, total: " + ((new Date().getTime() - start.getTime()) / 1000) + "s)");
-        //console.info("manifest",JSON.stringify(manifest) );
-        return Q.when(manifest);
-    };
+            this.debug.info("[MssParser]", "Parsing complete (xmlParser: " + (xml.getTime() - start.getTime()) + "ms, mss2dash: " + (mss2dash.getTime() - xml.getTime()) + "ms, total: " + ((new Date().getTime() - start.getTime()) / 1000) + "s)");
+            //console.info("manifest",JSON.stringify(manifest) );
+            return Q.when(manifest);
+        };
 
     return {
         debug: undefined,
         system: undefined,
         errHandler: undefined,
+        domParser: undefined,
 
         parse: internalParse
     };
 };
 
-Mss.dependencies.MssParser.prototype =  {
+Mss.dependencies.MssParser.prototype = {
     constructor: Mss.dependencies.MssParser
 };
