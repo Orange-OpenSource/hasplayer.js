@@ -27,6 +27,7 @@ MediaPlayer.dependencies.BufferController = function () {
         //mseSetTime = false,
         seekTarget = -1,
         dataChanged = true,
+        languageChanged = false,
         availableRepresentations,
         _currentRepresentation,
         currentBufferedQuality = -1,
@@ -262,6 +263,9 @@ MediaPlayer.dependencies.BufferController = function () {
                         // if this is the initialization data for current quality we need to push it to the buffer
                         self.debug.info("[BufferController]["+type+"] Buffer initialization segment ", (request.url !== null)?request.url:request.quality);
                         //console.saveBinArray(data, type + "_init_" + request.quality + ".mp4");
+                        // Clear the buffer if required (language track switching)
+                        clearBuffer.call(self).then(
+                            function() {
                         appendToBuffer.call(self, data, request.quality).then(
                             function() {                             
                                 self.debug.log("[BufferController]["+type+"] Initialization segment buffered");
@@ -269,6 +273,8 @@ MediaPlayer.dependencies.BufferController = function () {
                                 if(isRunning()){
                                     loadNextFragment.call(self);
                                 }
+                            }
+                        );
                             }
                         );
                     } else {
@@ -641,6 +647,49 @@ MediaPlayer.dependencies.BufferController = function () {
             return deferred.promise;
         },
 
+        clearBuffer = function() {
+            var self = this,
+                deferred = Q.defer(),
+                start,
+                end;
+
+            // Clear buffer only if language has changed
+            if (languageChanged === false) {
+                return Q.when(true);
+            }
+
+            if (buffer.buffered.length === 0) {
+                return Q.when(true);
+            }
+
+            start = buffer.buffered.start(0);
+            end = buffer.buffered.end(buffer.buffered.length - 1);
+            self.debug.log("[BufferController][" + type + "] Language changed => clear buffer");
+            if (type !== "text") {
+                // no need to abort for text buffer. remove call do the same thing
+                self.sourceBufferExt.abort(mediaSource, buffer);
+            }
+            self.sourceBufferExt.remove(buffer, start, end, periodInfo.duration, mediaSource, appendSync).then(
+                function() {
+                    // Remove all requests from the list of the executed requests
+                    self.fragmentController.removeExecutedRequestsBeforeTime(fragmentModel, end);
+                    self.fragmentController.cancelPendingRequestsForModel(fragmentModel);
+                    languageChanged = false;
+                    seeking = true;
+                    seekTarget = self.videoModel.getCurrentTime();
+                    self.debug.log("[BufferController][" + type + "] Seek to " + seekTarget);
+                    deferred.resolve();
+                },
+                function(ex) {
+                    self.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_REMOVE_SOURCEBUFFER, "Failed to remove data from " + type + " source buffer",
+                        new MediaPlayer.vo.Error(ex.code, ex.name, ex.message));
+                    deferred.resolve();
+                }
+            );
+
+            return deferred.promise;
+        },
+
         removeBuffer = function(start, end) {
             var self = this,
                 deferred = Q.defer(),
@@ -815,7 +864,7 @@ MediaPlayer.dependencies.BufferController = function () {
                 onBytesError.call(self,e);
             }
             else{
-                self.indexHandler.getSegmentRequestForTime(currentRepresentation, segmentTime).then(onFragmentRequest.bind(self));
+                self.indexHandler.getSegmentRequestForTime(_currentRepresentation, segmentTime).then(onFragmentRequest.bind(self));
             }*/
         },
 
@@ -938,7 +987,9 @@ MediaPlayer.dependencies.BufferController = function () {
         },
 
         checkIfSufficientBuffer = function () {
-            var self = this;
+            var self = this,
+                timeToEnd,
+                delay;
 
             // Check if running state
             if (!isRunning.call(self)) {
@@ -956,17 +1007,17 @@ MediaPlayer.dependencies.BufferController = function () {
                 }
             }
 
-            var timeToEnd = getTimeToEnd.call(self);
+            timeToEnd = getTimeToEnd.call(self);
             self.debug.log("[BufferController]["+type+"] time to end = " + timeToEnd);
 
-            if ((bufferLevel < minBufferTime) &&
-                ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted))) {
+            if (languageChanged ||
+                ((bufferLevel < minBufferTime) &&
+                    ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted)))) {
                 // Buffer needs to be filled
                 bufferFragment.call(self);
-                lastBufferLevel = bufferLevel;
             } else {
                 // Determine the timeout delay before checking again the buffer
-                var delay = bufferLevel - minBufferTime;
+                delay = bufferLevel - minBufferTime;
                 self.debug.log("[BufferController]["+type+"] Check buffer in " + delay + " seconds");
                 updateCheckBufferTimeout.call(self,delay);
             }
@@ -1385,52 +1436,22 @@ MediaPlayer.dependencies.BufferController = function () {
         },
 
         updateData: function(newData, newPeriodInfo) {
-            var self = this,
-                deferred = Q.defer(),
-                languageChanged = (data && (data.lang !== newData.lang)) ? true : false;
+            var self = this;
 
             self.debug.log("[BufferController]["+type+"] Update data");
 
             // Set the new data
+            languageChanged = (data && (data.lang !== newData.lang)) ? true : false;
             data = newData;
             periodInfo = newPeriodInfo;
             dataChanged = true;
 
-            // If data language changed (audio or text)
+            // If data language changed (audio or text) then seek to current time
+            // in order to switch to new language as soon as possible (see appendToBuffer())
             if (languageChanged) {
                 self.debug.log("[BufferController]["+type+"] Language changed");
-
-                // => Cancel current requests in order to perform the language switch as soon as possible
-                self.fragmentController.cancelPendingRequestsForModel(fragmentModel);
-                self.fragmentController.abortRequestsForModel(fragmentModel);
-
-                // => Remove past buffered from previous language
-                var currentTime = self.getVideoModel().getCurrentTime();
-                var seekTime = currentTime + 3;
-                removeBuffer.call(self, -1, currentTime).then(
-                    function() {
-                        // => Remove some already buffered in order to perform the language switch before waiting minBufferTime
-                        removeBuffer.call(self, seekTime).then(
-                            function() {
-                                debugBufferRange.call(self);
-                                // => restart
-                                doSeek.call(self, seekTime);
-                                deferred.resolve();
-                            }
-                        );
+                cancelCheckBufferTimeout.call(this);
                     }
-                );
-            } else if (recoveryTime !== -1 && segmentDownloadFailed) {
-                // TODO: setCurrentTime() does not work since the recovery time is anterior to the current video time,
-                // then it will seek to current time.
-                // The setCurrentTime has to be done once we have buffered some new segments
-                this.videoModel.setCurrentTime(recoveryTime);
-                deferred.resolve();
-            } else {
-                deferred.resolve();
-            }
-
-            return deferred.promise;
         },
 
         getCurrentRepresentation: function() {
