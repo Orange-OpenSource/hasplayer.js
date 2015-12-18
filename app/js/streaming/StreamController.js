@@ -443,6 +443,7 @@
     return {
         system: undefined,
         videoModel: undefined,
+        parser: undefined,
         manifestLoader: undefined,
         manifestUpdater: undefined,
         manifestModel: undefined,
@@ -600,6 +601,7 @@
 
             this.manifestUpdater.stop();
             this.manifestLoader.abort();
+            this.parser.reset();
             this.metricsModel.clearAllCurrentMetrics();
             isPeriodSwitchingInProgress = false;
 
