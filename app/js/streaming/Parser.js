@@ -13,44 +13,57 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- MediaPlayer.dependencies.Parser = function () {
+MediaPlayer.dependencies.Parser = function() {
     "use strict";
 
-   var customParse = function(data, baseUrl) {
+    var _parser = null,
 
-      var parser = null;
+        parse = function(data, baseUrl) {
 
-      // we parse the response of the request to know the manifest type
-      if (data.indexOf("SmoothStreamingMedia")>-1 && typeof(this.mssParser) !== 'undefined') {
-         this.system.notify('setContext','MSS');
-         //do some business to transform it into a Dash Manifest
-         parser = this.mssParser;
-      } else if (data.indexOf("#EXTM3U")>-1 && typeof(this.hlsParser) !== 'undefined') {
-         this.system.notify('setContext','HLS');
-         parser = this.hlsParser;
-      } else if(data.indexOf("MPD")>-1 && typeof(this.dashParser) !== 'undefined') {
-         this.system.notify('setContext','MPD');
-         parser = this.dashParser;
-      }
-      else {
-         return Q.reject("manifest cannot be parsed, protocol is unsupported!");
-      }
+            if (_parser === null) {
+                // we parse the response of the request to know the manifest type
+                if (data.indexOf("SmoothStreamingMedia") > -1 && typeof(this.mssParser) !== 'undefined') {
+                    this.system.notify('setContext', 'MSS');
+                    //do some business to transform it into a Dash Manifest
+                    _parser = this.mssParser;
+                } else if (data.indexOf("#EXTM3U") > -1 && typeof(this.hlsParser) !== 'undefined') {
+                    this.system.notify('setContext', 'HLS');
+                    _parser = this.hlsParser;
+                } else if (data.indexOf("MPD") > -1 && typeof(this.dashParser) !== 'undefined') {
+                    this.system.notify('setContext', 'MPD');
+                    _parser = this.dashParser;
+                } else {
+                    return Q.reject("manifest cannot be parsed, protocol is unsupported!");
+                }
+            }
 
-      return parser.parse(data,baseUrl);
-   };
+            return _parser.parse(data, baseUrl);
+        },
 
-   return {
-       debug: undefined,
-       system: undefined,
-       dashParser: undefined,
-       mssParser: undefined,
-       hlsParser: undefined,
-       metricsModel: undefined,
+        abort = function() {
+            if ((_parser !== null) && (_parser.abort !== undefined)) {
+                _parser.abort();
+            }
+        },
 
-       parse: customParse
-   };
+        reset = function() {
+            _parser = null;
+        };
+
+    return {
+        debug: undefined,
+        system: undefined,
+        dashParser: undefined,
+        mssParser: undefined,
+        hlsParser: undefined,
+        metricsModel: undefined,
+
+        parse: parse,
+        abort: abort,
+        reset: reset
+    };
 };
 
-MediaPlayer.dependencies.Parser.prototype =  {
+MediaPlayer.dependencies.Parser.prototype = {
     constructor: MediaPlayer.dependencies.Parser
 };
