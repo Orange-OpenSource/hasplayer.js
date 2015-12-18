@@ -90,35 +90,39 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
 
         },
 
-        getErrorDetailled = function(errorCode, sessionToken){
-            var code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR, msg = "keyError";
-            switch (errorCode) {
+        getKeyError = function(event) {
+            var code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR,
+                msg = "MediakeyError";
+            switch (event.errorCode.code) {
                 case 1:
                     code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
-                    msg = "MEDIA_KEYERR_UNKNOWN - An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
+                    msg = "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
                     break;
                 case 2:
                     code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_CLIENT;
-                    msg = "MEDIA_KEYERR_CLIENT - The Key System could not be installed or updated.";
+                    msg = "The Key System could not be installed or updated.";
                     break;
                 case 3:
                     code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_SERVICE;
-                    msg = "MEDIA_KEYERR_SERVICE - The message passed into update indicated an error from the license service.";
+                    msg = "The message passed into update indicated an error from the license service.";
                     break;
                 case 4:
                     code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT;
-                    msg = "MEDIA_KEYERR_OUTPUT - There is no available output device with the required characteristics for the content protection system.";
+                    msg = "There is no available output device with the required characteristics for the content protection system.";
                     break;
                 case 5:
                     code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_HARDWARECHANGE;
-                    msg += "MEDIA_KEYERR_HARDWARECHANGE - A hardware configuration change caused a content protection error.";
+                    msg += "A hardware configuration change caused a content protection error.";
                     break;
                 case 6:
                     code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_DOMAIN;
-                    msg = "MEDIA_KEYERR_DOMAIN - An error occurred in a multi-device domain licensing configuration. The most common error is a failure to join the domain.";
+                    msg = "An error occurred in a multi-device domain licensing configuration. The most common error is a failure to join the domain.";
                     break;
             }
-            return new MediaPlayer.vo.protection.KeyError(code, sessionToken, msg);
+            if (event.systemCode) {
+                msg += "  (System Code = " + event.systemCode + ")";
+            }
+            return new MediaPlayer.vo.protection.KeyError(code, msg);
         },
 
         // Function to create our session token objects which manage the EME
@@ -136,9 +140,7 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
                     switch (event.type) {
 
                         case api.error:
-                            var keyError = getErrorDetailled(event.target.error.code, this); // TODO: Make better string from event
-                            self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR,
-                                    keyError);
+                            self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR, getKeyError(event));
                             break;
 
                         case api.message:
@@ -148,13 +150,11 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
                             break;
 
                         case api.ready:
-                            self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ADDED,
-                                    this);
+                            self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ADDED, this);
                             break;
 
                         case api.close:
-                            self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CLOSED,
-                                    this.getSessionID());
+                            self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_CLOSED, this.getSessionID());
                             break;
                     }
                 },
@@ -404,6 +404,25 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
 
 // Defines the supported 3Feb2014 API variations
 MediaPlayer.models.ProtectionModel_3Feb2014.APIs = [
+    // MS-prefixed (IE11, Windows 8.1)
+    {
+        // Video Element
+        setMediaKeys: "msSetMediaKeys",
+
+        // MediaKeys
+        MediaKeys: "MSMediaKeys",
+
+        // MediaKeySession
+        release: "close",
+
+        // Events
+        needkey: "msneedkey",
+        error: "mskeyerror",
+        message: "mskeymessage",
+        ready: "mskeyadded",
+        close: "mskeyclose"
+    },
+    
     // Un-prefixed as per spec
     // Chrome 38-39 (and some earlier versions) with chrome://flags -- Enable Encrypted Media Extensions
     {
@@ -422,24 +441,6 @@ MediaPlayer.models.ProtectionModel_3Feb2014.APIs = [
         message: "keymessage",
         ready: "keyadded",
         close: "keyclose"
-    },
-    // MS-prefixed (IE11, Windows 8.1)
-    {
-        // Video Element
-        setMediaKeys: "msSetMediaKeys",
-
-        // MediaKeys
-        MediaKeys: "MSMediaKeys",
-
-        // MediaKeySession
-        release: "close",
-
-        // Events
-        needkey: "msneedkey",
-        error: "mskeyerror",
-        message: "mskeymessage",
-        ready: "mskeyadded",
-        close: "mskeyclose"
     }
 ];
 

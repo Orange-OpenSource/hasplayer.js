@@ -236,13 +236,6 @@ MediaPlayer.models.ProtectionModel.eventList = {
      */
     ENAME_KEY_ERROR: "keyError",
     /**
-     * Event ID for events delivered when the CDM cannot decrypt the current content
-     * since it has not received any valid key.
-     *
-     * @constant
-     */
-    ENAME_NO_VALID_KEY: "NoValidKey",
-    /**
      * Event ID for events delivered when a new key sessions creation
      * process has completed
      *
@@ -277,14 +270,6 @@ MediaPlayer.models.ProtectionModel.eventList = {
      * @constant
      */
     ENAME_TEARDOWN_COMPLETE: "protectionTeardownComplete",
-
-    /**
-     * Event ID for events delivered when the process of license request
-     * has completed
-     *
-     * @constant
-     */
-    ENAME_LICENSE_REQUEST_COMPLETE: "licenseRequestComplete"
 };
 
 /**

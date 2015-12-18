@@ -70,6 +70,17 @@ MediaPlayer.dependencies.protection.KeySystem = function() {};
  * @type String
  */
 
+
+/**
+ * The sessionType used for the CDM
+ *
+ * @instance
+ * @name sessionType
+ * @memberof MediaPlayer.dependencies.protection.KeySystem
+ * @readonly
+ * @type String
+ */
+
 /**
  * Parse DRM-specific init data from the ContentProtection
  * element.
@@ -101,6 +112,14 @@ MediaPlayer.dependencies.protection.KeySystem = function() {};
  * license request data.  This method will pull the license request from
  * the CDM message, if necessary.
  *
+ * @function
+ * @name MediaPlayer.dependencies.protection.KeySystem#getKeySystemConfigurations
+ * @param {object} videoInfo contains relevant info about video (mimeType, codec)
+ * @param {object} audioInfo contains relevant info about audio (mimeType, codec)
+ * @param {String} sessionType the session type like "temporary" or "persistent-license"
+ * @returns {Array} list of {MediaPlayer.vo.protection.KeySystemConfiguration}
+ *
+
  * @function
  * @name MediaPlayer.dependencies.protection.KeySystem#getLicenseRequestFromMessage
  * @param message {ArrayBuffer} the CDM message

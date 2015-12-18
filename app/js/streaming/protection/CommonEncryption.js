@@ -40,11 +40,13 @@ MediaPlayer.dependencies.protection.CommonEncryption = {
      * null if one was not found
      */
     findCencContentProtection: function(cpArray) {
-        var retVal = null;
-        for (var i = 0; i < cpArray.length; ++i) {
-            var cp = cpArray[i];
+        var retVal = null,
+            i = 0,
+            cp;
+        for (i = 0; i < cpArray.length; ++i) {
+            cp = cpArray[i];
             if (cp.schemeIdUri.toLowerCase() === "urn:mpeg:dash:mp4protection:2011" &&
-                    cp.value.toLowerCase() === "cenc")
+                cp.value.toLowerCase() === "cenc")
                 retVal = cp;
         }
         return retVal;
@@ -58,10 +60,9 @@ MediaPlayer.dependencies.protection.CommonEncryption = {
      */
     getPSSHData: function(pssh) {
         var offset = 8, // Box size and type fields
-            view = new DataView(pssh);
-
-        // Read version
-        var version = view.getUint8(offset);
+            view = new DataView(pssh),
+            // Read version
+            version = view.getUint8(offset);
 
         offset += 20; // Version (1), flags (3), system ID (16)
 
@@ -106,8 +107,10 @@ MediaPlayer.dependencies.protection.CommonEncryption = {
     },
 
     readBytes: function(buf, pos, nbBytes) {
-        var value = 0;
-        for (var i = 0; i < nbBytes; i++) {
+        var value = 0,
+            i = 0;
+
+        for (i = 0; i < nbBytes; i++) {
             value = value << 8;
             value = value + buf[pos];
             pos++;
@@ -129,23 +132,27 @@ MediaPlayer.dependencies.protection.CommonEncryption = {
         if (data === null)
             return [];
 
-        var buffer = data;
+        var buffer = data,
+            done = false,
+            pssh = {},
+            // TODO: Need to check every data read for end of buffer
+            byteCursor = 0,
+            size,
+            nextBox,
+            version,
+            systemID,
+            psshDataSize,
+            boxStart,
+            i,
+            val;
 
         if (!data.buffer) {
             buffer = new Uint8Array(data);
         }
 
-        //var dv = new DataView(data),
-        //        done = false;
-        var done = false;
-        var pssh = {};
-
-        // TODO: Need to check every data read for end of buffer
-        var byteCursor = 0;
         while (!done) {
 
-            var size, nextBox, version,
-                    systemID, psshDataSize, boxStart = byteCursor;
+            boxStart = byteCursor;
 
             if (byteCursor >= buffer.byteLength)
                 break;
@@ -174,36 +181,36 @@ MediaPlayer.dependencies.protection.CommonEncryption = {
 
             // 16-byte UUID/SystemID
             systemID = "";
-            var i, val;
+
             for (i = 0; i < 4; i++) {
                 val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
                 systemID += (val.length === 1) ? "0" + val : val;
             }
-            byteCursor+=4;
+            byteCursor += 4;
             systemID += "-";
             for (i = 0; i < 2; i++) {
                 val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
                 systemID += (val.length === 1) ? "0" + val : val;
             }
-            byteCursor+=2;
+            byteCursor += 2;
             systemID += "-";
             for (i = 0; i < 2; i++) {
                 val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
                 systemID += (val.length === 1) ? "0" + val : val;
             }
-            byteCursor+=2;
+            byteCursor += 2;
             systemID += "-";
             for (i = 0; i < 2; i++) {
                 val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
                 systemID += (val.length === 1) ? "0" + val : val;
             }
-            byteCursor+=2;
+            byteCursor += 2;
             systemID += "-";
             for (i = 0; i < 6; i++) {
                 val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
                 systemID += (val.length === 1) ? "0" + val : val;
             }
-            byteCursor+=6;
+            byteCursor += 6;
 
             systemID = systemID.toLowerCase();
 
@@ -218,5 +225,28 @@ MediaPlayer.dependencies.protection.CommonEncryption = {
         }
 
         return pssh;
+    },
+
+
+    /**
+     * Returns list of {MediaPlayer.vo.protection.KeySystemConfiguration}
+     * (see: https://w3c.github.io/encrypted-media/#idl-def-MediaKeySystemConfiguration)
+     *
+     * @param {object} videoCodec contains relevant info about video codec
+     * @param {object} audioCodec contains relevant info about audio codec
+     * @param {String} sessionType the session type like "temporary" or "persistent-license"
+     * @returns {Array} list of {MediaPlayer.vo.protection.KeySystemConfiguration}
+     */
+    getKeySystemConfigurations: function(videoCodec, audioCodec, sessionType) {
+        var audioCapabilities = [],
+            videoCapabilities = [];
+        if (videoCodec) {
+            videoCapabilities.push(new MediaPlayer.vo.protection.MediaCapability(videoCodec));
+        }
+        if (audioCodec) {
+            audioCapabilities.push(new MediaPlayer.vo.protection.MediaCapability(audioCodec));
+        }
+        return [new MediaPlayer.vo.protection.KeySystemConfiguration(
+            audioCapabilities, videoCapabilities, "optional", (sessionType === "temporary") ? "optional" : "required", [sessionType])];
     }
 };

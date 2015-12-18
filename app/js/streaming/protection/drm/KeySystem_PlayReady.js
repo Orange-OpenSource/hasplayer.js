@@ -48,16 +48,18 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
             var msg,
                 xmlDoc,
                 headers = {},
-                parser = new DOMParser(),
                 data = (message instanceof ArrayBuffer) ? message : message.buffer,
-                dataview = (messageFormat === "utf16") ? new Uint16Array(data) : new Uint8Array(data);
+                dataview = (messageFormat === "utf16") ? new Uint16Array(data) : new Uint8Array(data),
+                headerNameList,
+                headerValueList,
+                i = 0;
 
             msg = String.fromCharCode.apply(null, dataview);
-            xmlDoc = parser.parseFromString(msg, "application/xml");
+            xmlDoc = this.domParser.createXmlTree(msg);
 
-            var headerNameList = xmlDoc.getElementsByTagName("name");
-            var headerValueList = xmlDoc.getElementsByTagName("value");
-            for (var i = 0; i < headerNameList.length; i++) {
+            headerNameList = xmlDoc.getElementsByTagName("name");
+            headerValueList = xmlDoc.getElementsByTagName("value");
+            for (i = 0; i < headerNameList.length; i += 1) {
                 headers[headerNameList[i].childNodes[0].nodeValue] = headerValueList[i].childNodes[0].nodeValue;
             }
             // some versions of the PlayReady CDM return 'Content' instead of 'Content-Type'.
@@ -73,16 +75,16 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
         getLicenseRequest = function(message) {
             var msg,
                 xmlDoc,
-                parser = new DOMParser(),
                 licenseRequest = null,
                 data = (message instanceof ArrayBuffer) ? message : message.buffer,
-                dataview = (messageFormat === "utf16") ? new Uint16Array(data) : new Uint8Array(data);
+                dataview = (messageFormat === "utf16") ? new Uint16Array(data) : new Uint8Array(data),
+                Challenge;
 
             msg = String.fromCharCode.apply(null, dataview);
-            xmlDoc = parser.parseFromString(msg, "application/xml");
-
+            xmlDoc = this.domParser.createXmlTree(msg);
+            
             if (xmlDoc.getElementsByTagName("Challenge")[0]) {
-                var Challenge = xmlDoc.getElementsByTagName("Challenge")[0].childNodes[0].nodeValue;
+                Challenge = xmlDoc.getElementsByTagName("Challenge")[0].childNodes[0].nodeValue;
                 if (Challenge) {
                     licenseRequest = BASE64.decode(Challenge);
                 }
@@ -95,26 +97,33 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
                 var data = new DataView(initData),
                         numRecords = data.getUint16(4, true),
                         offset = 6,
-                        parser = new DOMParser();
+                        i = 0,
+                        recordType,
+                        recordLength,
+                        recordData,
+                        record,
+                        xmlDoc,
+                        laurl,
+                        luiurl;
 
-                for (var i = 0; i < numRecords; i++) {
+                for (i = 0; i < numRecords; i++) {
                     // Parse the PlayReady Record header
-                    var recordType = data.getUint16(offset, true);
+                    recordType = data.getUint16(offset, true);
                     offset += 2;
-                    var recordLength = data.getUint16(offset, true);
+                    recordLength = data.getUint16(offset, true);
                     offset += 2;
                     if (recordType !== 0x0001) {
                         offset += recordLength;
                         continue;
                     }
 
-                    var recordData = initData.slice(offset, offset+recordLength),
-                            record = String.fromCharCode.apply(null, new Uint16Array(recordData)),
-                            xmlDoc = parser.parseFromString(record, "application/xml");
+                    recordData = initData.slice(offset, offset+recordLength);
+                    record = String.fromCharCode.apply(null, new Uint16Array(recordData));
+                    xmlDoc = this.domParser.createXmlTree(record);
 
                     // First try <LA_URL>
                     if (xmlDoc.getElementsByTagName("LA_URL")[0]) {
-                        var laurl = xmlDoc.getElementsByTagName("LA_URL")[0].childNodes[0].nodeValue;
+                        laurl = xmlDoc.getElementsByTagName("LA_URL")[0].childNodes[0].nodeValue;
                         if (laurl) {
                             return laurl;
                         }
@@ -122,7 +131,7 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
 
                     // Optionally, try <LUI_URL>
                     if (xmlDoc.getElementsByTagName("LUI_URL")[0]) {
-                        var luiurl = xmlDoc.getElementsByTagName("LUI_URL")[0].childNodes[0].nodeValue;
+                        luiurl = xmlDoc.getElementsByTagName("LUI_URL")[0].childNodes[0].nodeValue;
                         if (luiurl) {
                             return luiurl;
                         }
@@ -238,12 +247,17 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
         notify: undefined,
         subscribe: undefined,
         unsubscribe: undefined,
-
+        domParser: undefined,
+        /*sessionType:"persistent-license",*/
+        sessionType:"temporary",
+        
         init: function(protectionData){
             protData = protectionData;
         },
 
         getInitData: parseInitDataFromContentProtection,
+
+        getKeySystemConfigurations: MediaPlayer.dependencies.protection.CommonEncryption.getKeySystemConfigurations,
 
         getRequestHeadersFromMessage: getRequestHeaders,
 
