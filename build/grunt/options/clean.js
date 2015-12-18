@@ -1,13 +1,13 @@
 module.exports = {
 
-    start: {
+    distDir: {
         src: ['<%= path %>'],
         options: {
             force: true
         }
     },
 
-    end: {
+    tmpFiles: {
         src: [
             '<%= path %>/style.css',
             '<%= path %>/json.js',
