@@ -506,12 +506,16 @@ Dash.dependencies.DashHandler = function() {
                 return range;
             }
 
-            if (!isDynamic && requestedTime) return null;
+            if (!isDynamic && requestedTime) {
+                return null;
+            }
 
             // if segments exist use the current index as an origin index for a new range
             if (currentSegmentList) {
                 // if the index is negative we can't calculate the range right now
-                if (index < 0) return null;
+                if (index < 0) {
+                    return null;
+                }
                 originAvailabilityIdx = index;
             } else {
                 // If no segments exist, but index > 0, it means that we switch to the other representation, so
@@ -833,7 +837,9 @@ Dash.dependencies.DashHandler = function() {
         },
 
         getSegmentByIndex = function(index, representation) {
-            if (!representation || !representation.segments) return null;
+            if (!representation || !representation.segments) {
+                return null;
+            }
 
             var ln = representation.segments.length,
                 seg,
@@ -852,7 +858,9 @@ Dash.dependencies.DashHandler = function() {
 
         // ORANGE: HLS use case, get next segment from sequence number
         getNextSegmentBySequenceNumber = function(sn, representation) {
-            if (!representation || !representation.segments) return null;
+            if (!representation || !representation.segments) {
+                return null;
+            }
 
             var ln = representation.segments.length,
                 seg,
@@ -878,7 +886,6 @@ Dash.dependencies.DashHandler = function() {
                 upperIdx,
                 lowerIdx,
                 upperTime;
-
 
             if (!segments || segments.length === 0) {
                 updateRequired = true;

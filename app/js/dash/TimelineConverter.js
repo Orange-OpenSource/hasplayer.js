@@ -11,12 +11,12 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-Dash.dependencies.TimelineConverter = function () {
+Dash.dependencies.TimelineConverter = function() {
     "use strict";
 
     var clientServerTimeShift = 0,
 
-        calcAvailabilityTimeFromPresentationTime = function (presentationTime, mpd, isDynamic, calculateEnd) {
+        calcAvailabilityTimeFromPresentationTime = function(presentationTime, mpd, isDynamic, calculateEnd) {
             var availabilityTime = NaN;
 
             if (calculateEnd) {
@@ -32,7 +32,7 @@ Dash.dependencies.TimelineConverter = function () {
                 if (isDynamic) {
                     availabilityTime = new Date(mpd.availabilityStartTime.getTime() + (presentationTime * 1000));
                 } else {
-                // in static mpd, all segments are available at the same time
+                    // in static mpd, all segments are available at the same time
                     availabilityTime = mpd.availabilityStartTime;
                 }
             }
@@ -44,11 +44,11 @@ Dash.dependencies.TimelineConverter = function () {
             return calcAvailabilityTimeFromPresentationTime.call(this, presentationTime, mpd, isDynamic);
         },
 
-        calcAvailabilityEndTimeFromPresentationTime = function (presentationTime, mpd, isDynamic) {
+        calcAvailabilityEndTimeFromPresentationTime = function(presentationTime, mpd, isDynamic) {
             return calcAvailabilityTimeFromPresentationTime.call(this, presentationTime, mpd, isDynamic, true);
         },
 
-        calcPresentationStartTime = function (period) {
+        calcPresentationStartTime = function(period) {
             var presentationStartTime,
                 isDynamic = period.mpd.manifest.type === "dynamic",
                 //ORANGE: fix bug on not updating URIFragmentDataVO
@@ -58,7 +58,7 @@ Dash.dependencies.TimelineConverter = function () {
 
                 if (!isNaN(startTimeOffset) && startTimeOffset > 1262304000) {
 
-                    presentationStartTime = startTimeOffset - (period.mpd.availabilityStartTime.getTime()/1000);
+                    presentationStartTime = startTimeOffset - (period.mpd.availabilityStartTime.getTime() / 1000);
 
                     if (presentationStartTime > period.liveEdge ||
                         presentationStartTime < (period.liveEdge - period.mpd.timeShiftBufferDepth)) {
@@ -71,31 +71,31 @@ Dash.dependencies.TimelineConverter = function () {
             } else {
                 if (!isNaN(startTimeOffset) && startTimeOffset < period.duration && startTimeOffset >= 0) {
                     presentationStartTime = startTimeOffset;
-            } else {
-                presentationStartTime = period.start;
-            }
+                } else {
+                    presentationStartTime = period.start;
+                }
             }
 
             return presentationStartTime;
         },
 
-        calcPresentationTimeFromWallTime = function (wallTime, period) {
+        calcPresentationTimeFromWallTime = function(wallTime, period) {
             return ((wallTime.getTime() - period.mpd.availabilityStartTime.getTime()) / 1000);
         },
 
-        calcPresentationTimeFromMediaTime = function (mediaTime, representation) {
+        calcPresentationTimeFromMediaTime = function(mediaTime, representation) {
             var presentationOffset = representation.presentationTimeOffset;
 
             return mediaTime - presentationOffset;
         },
 
-        calcMediaTimeFromPresentationTime = function (presentationTime, representation) {
+        calcMediaTimeFromPresentationTime = function(presentationTime, representation) {
             var presentationOffset = representation.presentationTimeOffset;
 
             return (presentationOffset + presentationTime);
         },
 
-        calcWallTimeForSegment = function (segment, isDynamic) {
+        calcWallTimeForSegment = function(segment, isDynamic) {
             var suggestedPresentationDelay,
                 displayStartTime,
                 wallTime;
@@ -131,11 +131,16 @@ Dash.dependencies.TimelineConverter = function () {
             var duration = representation.segmentDuration,
                 start = 0,
                 end = representation.adaptation.period.duration,
-                range = {start: start, end: end},
+                range = {
+                    start: start,
+                    end: end
+                },
                 checkTime,
                 now;
 
-            if (!isDynamic) return range;
+            if (!isDynamic) {
+                return range;
+            }
 
             if ((!representation.adaptation.period.mpd.isClientServerTimeSyncCompleted || isNaN(duration)) && representation.segmentAvailabilityRange) {
                 return representation.segmentAvailabilityRange;
@@ -149,7 +154,10 @@ Dash.dependencies.TimelineConverter = function () {
             start = Math.max((now - representation.adaptation.period.mpd.timeShiftBufferDepth), 0);
             checkTime += (clientServerTimeShift / 1000);
             end = isNaN(checkTime) ? now : Math.min(checkTime, now);
-            range = {start: start, end: end};
+            range = {
+                start: start,
+                end: end
+            };
 
             return range;
         },
@@ -164,7 +172,7 @@ Dash.dependencies.TimelineConverter = function () {
             clientServerTimeShift = period.mpd.clientServerTimeShift * 1000;
         },*/
 
-        calcMSETimeOffset = function (representation) {
+        calcMSETimeOffset = function(representation) {
             var presentationOffset = representation.presentationTimeOffset;
 
             return (-presentationOffset);
@@ -173,7 +181,7 @@ Dash.dependencies.TimelineConverter = function () {
     return {
         system: undefined,
         debug: undefined,
-        uriQueryFragModel:undefined,
+        uriQueryFragModel: undefined,
 
         setup: function() {
             //this.system.mapHandler("liveEdgeFound", undefined, liveEdgeFound.bind(this));

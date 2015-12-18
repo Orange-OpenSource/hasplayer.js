@@ -11,9 +11,9 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-Dash.dependencies.DashMetricsExtensions = function () {
+Dash.dependencies.DashMetricsExtensions = function() {
     "use strict";
-    var findRepresentationIndexInPeriodArray = function (periodArray, representationId) {
+    var findRepresentationIndexInPeriodArray = function(periodArray, representationId) {
             var period,
                 adaptationSet,
                 adaptationSetArray,
@@ -41,7 +41,7 @@ Dash.dependencies.DashMetricsExtensions = function () {
             return -1;
         },
 
-        findRepresentionInPeriodArray = function (periodArray, representationId) {
+        findRepresentionInPeriodArray = function(periodArray, representationId) {
             var period,
                 adaptationSet,
                 adaptationSetArray,
@@ -69,7 +69,7 @@ Dash.dependencies.DashMetricsExtensions = function () {
             return null;
         },
 
-        adaptationIsType = function (adaptation, bufferType) {
+        adaptationIsType = function(adaptation, bufferType) {
             var found = false;
 
             // TODO : HACK ATTACK
@@ -85,22 +85,20 @@ Dash.dependencies.DashMetricsExtensions = function () {
                 if (adaptation.type === "video") {
                     found = true;
                 }
-            }
-            else if (bufferType === "audio") {
+            } else if (bufferType === "audio") {
                 //found = this.manifestExt.getIsAudio(adaptation); // TODO : Have to be sure it's the *active* audio track.
                 this.manifestExt.getIsAudio(adaptation);
                 if (adaptation.type === "audio") {
                     found = true;
                 }
-            }
-            else {
+            } else {
                 found = false;
             }
 
             return found;
         },
 
-        findMaxBufferIndex = function (periodArray, bufferType) {
+        findMaxBufferIndex = function(periodArray, bufferType) {
             var period,
                 adaptationSet,
                 adaptationSetArray,
@@ -123,12 +121,12 @@ Dash.dependencies.DashMetricsExtensions = function () {
             return -1;
         },
 
-        getBandwidthForRepresentation = function (representationId) {
+        getBandwidthForRepresentation = function(representationId) {
             var self = this,
                 manifest = self.manifestModel.getValue(),
                 representation,
                 periodArray = manifest === null ? null : manifest.Period_asArray;
-            
+
             if (periodArray) {
                 representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
 
@@ -142,21 +140,21 @@ Dash.dependencies.DashMetricsExtensions = function () {
             return null;
         },
 
-        getIndexForRepresentation = function (representationId) {
+        getIndexForRepresentation = function(representationId) {
             var self = this,
                 manifest = self.manifestModel.getValue(),
                 representationIndex,
                 periodArray = manifest === null ? null : manifest.Period_asArray;
 
-                if (periodArray) {
-                    representationIndex = findRepresentationIndexInPeriodArray.call(self, periodArray, representationId);
-                    return representationIndex;
-                }
+            if (periodArray) {
+                representationIndex = findRepresentationIndexInPeriodArray.call(self, periodArray, representationId);
+                return representationIndex;
+            }
 
-                return null;
+            return null;
         },
 
-        getMaxIndexForBufferType = function (bufferType) {
+        getMaxIndexForBufferType = function(bufferType) {
             var self = this,
                 manifest = self.manifestModel.getValue(),
                 maxIndex,
@@ -165,12 +163,12 @@ Dash.dependencies.DashMetricsExtensions = function () {
             if (periodArray) {
                 maxIndex = findMaxBufferIndex.call(this, periodArray, bufferType);
                 return maxIndex;
-            } 
-            
+            }
+
             return null;
         },
 
-        getCurrentRepresentationSwitch = function (metrics) {
+        getCurrentRepresentationSwitch = function(metrics) {
             if (metrics === null) {
                 return null;
             }
@@ -191,7 +189,7 @@ Dash.dependencies.DashMetricsExtensions = function () {
             return currentRepSwitch;
         },
 
-        getCurrentBufferLevel = function (metrics) {
+        getCurrentBufferLevel = function(metrics) {
             if (metrics === null) {
                 return null;
             }
@@ -212,7 +210,7 @@ Dash.dependencies.DashMetricsExtensions = function () {
             return currentBufferLevel;
         },
 
-        getCurrentHttpRequest = function (metrics) {
+        getCurrentHttpRequest = function(metrics) {
             if (metrics === null) {
                 return null;
             }
@@ -241,7 +239,7 @@ Dash.dependencies.DashMetricsExtensions = function () {
             return currentHttpList;
         },
 
-        getHttpRequests = function (metrics) {
+        getHttpRequests = function(metrics) {
             if (metrics === null) {
                 return [];
             }
@@ -249,8 +247,10 @@ Dash.dependencies.DashMetricsExtensions = function () {
             return !!metrics.HttpList ? metrics.HttpList : [];
         },
 
-        getCurrentDroppedFrames = function (metrics) {
-            if (metrics === null) { return null; }
+        getCurrentDroppedFrames = function(metrics) {
+            if (metrics === null) {
+                return null;
+            }
 
             var droppedFrames = metrics.DroppedFrames,
                 droppedFramesLength,
@@ -268,7 +268,7 @@ Dash.dependencies.DashMetricsExtensions = function () {
             return currentDroppedFrames;
         },
 
-        getCurrentDVRInfo = function (metrics) {
+        getCurrentDVRInfo = function(metrics) {
 
             if (metrics === null) {
                 return null;
@@ -276,7 +276,7 @@ Dash.dependencies.DashMetricsExtensions = function () {
 
             var dvrInfo = metrics.DVRInfo,
                 dvrInfoLastIndex,
-                curentDVRInfo =  null;
+                curentDVRInfo = null;
 
             if (dvrInfo === null || dvrInfo.length <= 0) {
                 return null;
@@ -289,7 +289,9 @@ Dash.dependencies.DashMetricsExtensions = function () {
         },
 
         getCurrentManifestUpdate = function(metrics) {
-            if (metrics === null) return null;
+            if (metrics === null) {
+                return null;
+            }
 
             var manifestUpdate = metrics.ManifestUpdate,
                 ln,
@@ -311,15 +313,15 @@ Dash.dependencies.DashMetricsExtensions = function () {
     return {
         manifestModel: undefined,
         manifestExt: undefined,
-        getBandwidthForRepresentation : getBandwidthForRepresentation,
-        getIndexForRepresentation : getIndexForRepresentation,
-        getMaxIndexForBufferType : getMaxIndexForBufferType,
-        getCurrentRepresentationSwitch : getCurrentRepresentationSwitch,
-        getCurrentBufferLevel : getCurrentBufferLevel,
-        getCurrentHttpRequest : getCurrentHttpRequest,
-        getHttpRequests : getHttpRequests,
-        getCurrentDroppedFrames : getCurrentDroppedFrames,
-        getCurrentDVRInfo : getCurrentDVRInfo,
+        getBandwidthForRepresentation: getBandwidthForRepresentation,
+        getIndexForRepresentation: getIndexForRepresentation,
+        getMaxIndexForBufferType: getMaxIndexForBufferType,
+        getCurrentRepresentationSwitch: getCurrentRepresentationSwitch,
+        getCurrentBufferLevel: getCurrentBufferLevel,
+        getCurrentHttpRequest: getCurrentHttpRequest,
+        getHttpRequests: getHttpRequests,
+        getCurrentDroppedFrames: getCurrentDroppedFrames,
+        getCurrentDVRInfo: getCurrentDVRInfo,
         getCurrentManifestUpdate: getCurrentManifestUpdate
     };
 };

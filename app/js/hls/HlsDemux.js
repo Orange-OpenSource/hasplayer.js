@@ -1,20 +1,19 @@
-
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2014, Orange
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
+ *
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-Hls.dependencies.HlsDemux = function () {
+Hls.dependencies.HlsDemux = function() {
     "use strict";
 
 
@@ -32,29 +31,30 @@ Hls.dependencies.HlsDemux = function () {
         baseDts = -1,
         dtsOffset = -1,
 
-        getTsPacket = function (data, offset, pid, pusi) {
-            var i = offset;
+        getTsPacket = function(data, offset, pid, pusi) {
+            var i = offset,
+                tsPacket;
 
             while (i < data.length) {
-                var tsPacket = new mpegts.ts.TsPacket();
+                tsPacket = new mpegts.ts.TsPacket();
                 tsPacket.parse(data.subarray(i, i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE));
 
                 //this.debug.log("[HlsDemux] TS packet: pid=" + tsPacket.getPid() + ", pusi = " + tsPacket.getPusi());
-                
+
                 if ((tsPacket.getPid() === pid) && ((pusi === undefined) || (tsPacket.getPusi() === pusi))) {
                     return {
                         offset: i,
                         packet: tsPacket
                     };
                 }
-                
+
                 i += mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE;
             }
 
             return null;
         },
 
-        getPAT = function (data) {
+        getPAT = function(data) {
             var tsPacket = getTsPacket.call(this, data, 0, mpegts.ts.TsPacket.prototype.PAT_PID);
 
             if (tsPacket === null) {
@@ -70,8 +70,13 @@ Hls.dependencies.HlsDemux = function () {
             return pat;
         },
 
-        getPMT = function (data, pid) {
-            var tsPacket = getTsPacket.call(this, data, 0, pid);
+        getPMT = function(data, pid) {
+            var tsPacket = getTsPacket.call(this, data, 0, pid),
+                i = 0,
+                trackIdCounter = 1, // start at 1;
+                elementStream,
+                track,
+                streamTypeDesc;
 
             if (tsPacket === null) {
                 return null;
@@ -82,29 +87,27 @@ Hls.dependencies.HlsDemux = function () {
 
             this.debug.log("[HlsDemux] PMT");
 
-            var trackIdCounter = 1;// start at 1
-            for (var i = 0; i < pmt.m_listOfComponents.length; i++) {
-                var elementStream = pmt.m_listOfComponents[i];
-                var track = new MediaPlayer.vo.Mp4Track();
-                var streamTypeDesc = pmt.gStreamTypes[elementStream.m_stream_type];
+            for (i = 0; i < pmt.m_listOfComponents.length; i++) {
+                elementStream = pmt.m_listOfComponents[i];
+                track = new MediaPlayer.vo.Mp4Track();
+                streamTypeDesc = pmt.gStreamTypes[elementStream.m_stream_type];
                 if (streamTypeDesc !== null) {
                     track.streamType = streamTypeDesc.name;
                     switch (streamTypeDesc.value) {
-                        case 0xE0 :
+                        case 0xE0:
                             track.type = "video";
                             break;
-                        case 0xC0 :
+                        case 0xC0:
                             track.type = "audio";
                             break;
-                        case 0xFC :
+                        case 0xFC:
                             track.type = "data";
                             break;
-                        default :
+                        default:
                             track.type = "und";
                     }
-                }
-                else {
-                    this.debug.log("[HlsDemux] Stream Type "+elementStream.m_stream_type+" unknown!");
+                } else {
+                    this.debug.log("[HlsDemux] Stream Type " + elementStream.m_stream_type + " unknown!");
                 }
 
                 //if (track.type === "video") {
@@ -113,7 +116,7 @@ Hls.dependencies.HlsDemux = function () {
                 track.trackId = trackIdCounter;
                 pidToTrackId[elementStream.m_elementary_PID] = trackIdCounter;
                 tracks.push(track);
-                trackIdCounter ++;
+                trackIdCounter++;
                 //}
             }
 
@@ -126,7 +129,8 @@ Hls.dependencies.HlsDemux = function () {
                 trackId,
                 track,
                 sample = null,
-                sampleData = null;
+                sampleData = null,
+                pesPacket;
 
             tsPacket = new mpegts.ts.TsPacket();
             tsPacket.parse(data);
@@ -144,13 +148,13 @@ Hls.dependencies.HlsDemux = function () {
             }
 
             // Get track from tracks array (trackId start from 1)
-            track = tracks[trackId-1];
+            track = tracks[trackId - 1];
 
             // PUSI => start storing new AU
             if (tsPacket.getPusi()) {
 
                 // Parse PES header
-                var pesPacket = new mpegts.pes.PesPacket();
+                pesPacket = new mpegts.pes.PesPacket();
                 pesPacket.parse(tsPacket.getPayload());
 
                 // Store new access unit
@@ -175,8 +179,7 @@ Hls.dependencies.HlsDemux = function () {
 
                 sample.subSamples.push(sampleData);
                 track.samples.push(sample);
-            }
-            else {
+            } else {
                 // Get currently buffered access unit
                 if (track.samples.length > 0) {
                     sample = track.samples[track.samples.length - 1];
@@ -205,13 +208,13 @@ Hls.dependencies.HlsDemux = function () {
                 }
 
                 if (i > 0) {
-                    track.samples[i-1].duration = track.samples[i].dts - track.samples[i-1].dts;
+                    track.samples[i - 1].duration = track.samples[i].dts - track.samples[i - 1].dts;
                 }
 
                 sample.size = subSamplesLength;
                 length += subSamplesLength;
             }
-            track.samples[track.samples.length-1].duration = track.samples[track.samples.length-2].duration;
+            track.samples[track.samples.length - 1].duration = track.samples[track.samples.length - 2].duration;
 
             // Allocate track data
             track.data = new Uint8Array(length);
@@ -238,7 +241,7 @@ Hls.dependencies.HlsDemux = function () {
 
         },
 
-        demuxADTS = function (track) {
+        demuxADTS = function(track) {
             var aacFrames,
                 aacSamples = [],
                 length,
@@ -290,9 +293,12 @@ Hls.dependencies.HlsDemux = function () {
         },
 
         arrayToHexString = function(array) {
-            var str = "";
-            for(var i = 0; i < array.length; i++) {
-                var h = array[i].toString(16);
+            var str = "",
+                i = 0,
+                h = 0;
+
+            for (i = 0; i < array.length; i++) {
+                h = array[i].toString(16);
                 if (h.length < 2) {
                     h = "0" + h;
                 }
@@ -301,7 +307,7 @@ Hls.dependencies.HlsDemux = function () {
             return str;
         },
 
-        doInit = function (startTime) {
+        doInit = function(startTime) {
             pat = null;
             pmt = null;
             tracks = [];
@@ -311,10 +317,15 @@ Hls.dependencies.HlsDemux = function () {
             }
         },
 
-        getTrackCodecInfo = function (data, track) {
+        getTrackCodecInfo = function(data, track) {
             var tsPacket,
                 pesPacket,
-                esBytes;
+                esBytes,
+                sequenceHeader,
+                nalHeader,
+                codecPrivateData,
+                objectType,
+                samplingFrequencyIndex;
 
             if (track.codecs !== "") {
                 return track;
@@ -335,7 +346,7 @@ Hls.dependencies.HlsDemux = function () {
 
             // H264
             if (track.streamType.search('H.264') !== -1) {
-                var sequenceHeader = mpegts.h264.getSequenceHeader(esBytes);
+                sequenceHeader = mpegts.h264.getSequenceHeader(esBytes);
 
                 while (sequenceHeader === null) {
                     tsPacket = getTsPacket.call(this, data, (tsPacket.offset + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE), track.pid, false);
@@ -349,10 +360,10 @@ Hls.dependencies.HlsDemux = function () {
                 // Extract from the CodecPrivateData field the hexadecimal representation of the following
                 // three bytes in the sequence parameter set NAL unit.
                 // => Find the SPS nal header
-                var nalHeader = /00000001[0-9]7/.exec(track.codecPrivateData);
+                nalHeader = /00000001[0-9]7/.exec(track.codecPrivateData);
                 if (nalHeader && nalHeader[0]) {
                     // => Take the 6 characters after the SPS nalHeader (if it exists)
-                    track.codecs += track.codecPrivateData.substr(track.codecPrivateData.indexOf(nalHeader[0])+10, 6);
+                    track.codecs += track.codecPrivateData.substr(track.codecPrivateData.indexOf(nalHeader[0]) + 10, 6);
                 }
 
                 // Extract width and height from SPS
@@ -362,12 +373,12 @@ Hls.dependencies.HlsDemux = function () {
 
             // AAC
             if (track.streamType.search('AAC') !== -1) {
-                var codecPrivateData = mpegts.aac.getAudioSpecificConfig(esBytes);
-                var objectType = (codecPrivateData[0] & 0xF8) >> 3;
+                codecPrivateData = mpegts.aac.getAudioSpecificConfig(esBytes);
+                objectType = (codecPrivateData[0] & 0xF8) >> 3;
                 track.codecPrivateData = arrayToHexString(codecPrivateData);
                 track.codecs = "mp4a.40." + objectType;
 
-                var samplingFrequencyIndex = (codecPrivateData[0] & 0x07) << 1 | (codecPrivateData[1] & 0x80) >> 7;
+                samplingFrequencyIndex = (codecPrivateData[0] & 0x07) << 1 | (codecPrivateData[1] & 0x80) >> 7;
                 track.samplingRate = mpegts.aac.SAMPLING_FREQUENCY[samplingFrequencyIndex];
                 track.channels = (codecPrivateData[1] & 0x78) >> 3;
                 track.bandwidth = 0;
@@ -380,13 +391,14 @@ Hls.dependencies.HlsDemux = function () {
                 track.codecPrivateData = codecPrivateDataHex.toUpperCase();*/
             }
 
-            this.debug.log("[HlsDemux]["+track.trackId+"] track codecPrivateData = " + track.codecPrivateData);
-            this.debug.log("[HlsDemux]["+track.trackId+"] track codecs = " + track.codecs);
+            this.debug.log("[HlsDemux][" + track.trackId + "] track codecPrivateData = " + track.codecPrivateData);
+            this.debug.log("[HlsDemux][" + track.trackId + "] track codecs = " + track.codecs);
 
             return track;
         },
 
-        doGetTracks = function (data) {
+        doGetTracks = function(data) {
+            var i = 0;
             // Parse PSI (PAT, PMT) if not yet received
             if (pat === null) {
                 pat = getPAT.call(this, data);
@@ -403,7 +415,7 @@ Hls.dependencies.HlsDemux = function () {
             }
 
             // Get track information and remove tracks for which we did not manage to get codec information (no packet ?!)
-            for(var i = tracks.length - 1; i >= 0; i--) {
+            for (i = tracks.length - 1; i >= 0; i--) {
                 getTrackCodecInfo.call(this, data, tracks[i]);
                 if (tracks[i].codecs === "") {
                     tracks.splice(i, 1);
@@ -413,7 +425,7 @@ Hls.dependencies.HlsDemux = function () {
             return tracks;
         },
 
-        doDemux = function (data) {
+        doDemux = function(data) {
             var nbPackets = data.length / mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE,
                 i = 0;
 
@@ -446,7 +458,7 @@ Hls.dependencies.HlsDemux = function () {
             this.debug.log("[HlsDemux] Demux: baseDts = " + baseDts + ", dtsOffset = " + dtsOffset);
             for (i = 0; i < tracks.length; i++) {
                 postProcess.call(this, tracks[i]);
-                this.debug.log("[HlsDemux]["+tracks[i].trackId+"] Demux: 1st PTS = " + tracks[i].samples[0].dts + " (" + (tracks[i].samples[0].dts / 90000) + ")");
+                this.debug.log("[HlsDemux][" + tracks[i].trackId + "] Demux: 1st PTS = " + tracks[i].samples[0].dts + " (" + (tracks[i].samples[0].dts / 90000) + ")");
             }
 
             return tracks;
@@ -454,7 +466,7 @@ Hls.dependencies.HlsDemux = function () {
 
     return {
         debug: undefined,
-        reset:doInit,
+        reset: doInit,
         getTracks: doGetTracks,
         demux: doDemux
     };

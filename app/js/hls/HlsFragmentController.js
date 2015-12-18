@@ -13,18 +13,18 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-Hls.dependencies.HlsFragmentController = function () {
+Hls.dependencies.HlsFragmentController = function() {
     "use strict";
     var lastRequestQuality = null;
 
     var generateInitSegment = function(data) {
-            var manifest = rslt.manifestModel.getValue();
-
-            // Process the HLS chunk to get media tracks description
-            var tracks = rslt.hlsDemux.getTracks(new Uint8Array(data));
+            var i = 0,
+                manifest = rslt.manifestModel.getValue(),
+                // Process the HLS chunk to get media tracks description
+                tracks = rslt.hlsDemux.getTracks(new Uint8Array(data));
 
             // Add track duration
-            for (var i = 0; i < tracks.length; i++) {
+            for (i = 0; i < tracks.length; i++) {
                 tracks[i].duration = manifest.mediaPresentationDuration;
             }
             // Generate init segment (moov)
@@ -34,11 +34,12 @@ Hls.dependencies.HlsFragmentController = function () {
         generateMediaSegment = function(data) {
             // Process the HLS chunk to get media tracks description
             //var tracks = rslt.hlsDemux.getTracks(new Uint8Array(data));
-            var tracks = rslt.hlsDemux.demux(new Uint8Array(data));
+            var i = 0,
+                tracks = rslt.hlsDemux.demux(new Uint8Array(data));
 
-            for(var i = 0; i<tracks.length; i++){
+            for (i = 0; i < tracks.length; i++) {
                 if (tracks[i].type === "video") {
-                    rslt.startTime = tracks[i].samples[0].cts/tracks[i].timescale;
+                    rslt.startTime = tracks[i].samples[0].cts / tracks[i].timescale;
                 }
             }
             // Generate media segment (moov)
@@ -55,9 +56,10 @@ Hls.dependencies.HlsFragmentController = function () {
 
     rslt.segmentStartTime = null;
 
-    rslt.process = function (bytes, request, representations) {
+    rslt.process = function(bytes, request, representations) {
         var result = null,
-            InitSegmentData = null;
+            InitSegmentData = null,
+            catArray = null;
 
         if ((bytes === null) || (bytes === undefined) || (bytes.byteLength === 0)) {
             return Q.when(bytes);
@@ -76,8 +78,8 @@ Hls.dependencies.HlsFragmentController = function () {
 
             //new quality => append init segment + media segment in Buffer
             if (InitSegmentData !== null) {
-                var catArray = new Uint8Array(InitSegmentData.length+result.length);
-                catArray.set(InitSegmentData,0);
+                catArray = new Uint8Array(InitSegmentData.length + result.length);
+                catArray.set(InitSegmentData, 0);
                 catArray.set(result, InitSegmentData.length);
                 result = catArray;
             }
@@ -88,7 +90,7 @@ Hls.dependencies.HlsFragmentController = function () {
         return Q.when(result);
     };
 
-    rslt.getStartTime = function (){
+    rslt.getStartTime = function() {
         return rslt.startTime;
     };
 

@@ -148,11 +148,15 @@
             //self.metricsModel.addDroppedFrames("video", playBackQuality);
             self.metricsModel.addCondition(null, null, videoElement.videoWidth, videoElement.videoHeight,playBackQuality.droppedVideoFrames,playBackQuality.totalVideoFrames/elapsedTime);
 
-            if (!getNextStream()) return;
+            if (!getNextStream()) {
+                return;
+            }
 
             // Sometimes after seeking timeUpdateHandler is called before seekingHandler and a new period starts
             // from beginning instead of from a chosen position. So we do nothing if the player is in the seeking state
-            if (activeStream.getVideoModel().getElement().seeking) return;
+            if (activeStream.getVideoModel().getElement().seeking) {
+                return;
+            }
 
             // check if stream end is reached
             if (streamEndTime - currentTime < STREAM_END_THRESHOLD) {
@@ -212,13 +216,14 @@
         getStreamForTime = function(time) {
             var duration = 0,
                 stream = null,
-                ln = streams.length;
+                ln = streams.length,
+                i = 0;
 
             if (ln > 0) {
                 duration += streams[0].getStartTime();
             }
 
-            for (var i = 0; i < ln; i++) {
+            for (i = 0; i < ln; i += 1) {
                 stream = streams[i];
                 duration += stream.getDuration();
 
@@ -244,7 +249,9 @@
 
         switchStream = function(from, to, seekTo) {
 
-            if(isPeriodSwitchingInProgress || !from || !to || from === to) return;
+            if (isPeriodSwitchingInProgress || !from || !to || from === to) {
+                return;
+            }
 
             isPeriodSwitchingInProgress = true;
 
@@ -318,12 +325,15 @@
                         function(periods) {
 
                             if (periods.length === 0) {
-                                return deferred.reject("There are no regular periods");
+                                return deferred.reject();
                             }
 
-                            self.metricsModel.updateManifestUpdateInfo(manifestUpdateInfo, {currentTime: self.videoModel.getCurrentTime(),
-                                buffered: self.videoModel.getElement().buffered, presentationStartTime: periods[0].start,
-                                clientTimeOffset: mpd.clientServerTimeShift});
+                            self.metricsModel.updateManifestUpdateInfo(manifestUpdateInfo, {
+                                currentTime: self.videoModel.getCurrentTime(),
+                                buffered: self.videoModel.getElement().buffered,
+                                presentationStartTime: periods[0].start,
+                                clientTimeOffset: mpd.clientServerTimeShift
+                            });
 
                             for (pIdx = 0, pLen = periods.length; pIdx < pLen; pIdx += 1) {
                                 period = periods[pIdx];
@@ -594,6 +604,9 @@
             isPeriodSwitchingInProgress = false;
 
             teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE] = function () {
+                var i = 0,
+                    ln,
+                    stream;
 
                     // Complete teardown process
                     ownProtectionController = false;
@@ -601,8 +614,8 @@
                     protectionData = null;
 
                     // Reset the streams
-                    for (var i = 0, ln = streams.length; i < ln; i++) {
-                        var stream = streams[i];
+                for (i = 0, ln = streams.length; i < ln; i++) {
+                    stream = streams[i];
                         funcs.push(stream.reset());
                         // we should not remove the video element for the active stream since it is the element users see at the page
                         if (stream !== activeStream) {
@@ -627,8 +640,7 @@
             // Teardown the protection system, if necessary
             if (!protectionController) {
                 teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE]();
-            }
-            else if (ownProtectionController) {
+            } else if (ownProtectionController) {
                 protectionController.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE, teardownComplete, undefined, true);
                 protectionController.teardown();
             } else {

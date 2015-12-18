@@ -15,20 +15,23 @@
  */
 Hls.dependencies.HlsHandler = function() {
     var getInit = function (representation) {
-            var period = null;
-            var self = this;
-            var presentationStartTime = null;
-            var deferred = Q.defer();
+            var period = null,
+                self = this,
+                presentationStartTime = null,
+                deferred = Q.defer(),
+                manifest,
+                isDynamic,
+                request;
 
             //Mss.dependencies.MssHandler.prototype.getInitRequest.call(this,quality,data).then(onGetInitRequestSuccess);
             // get the period and startTime
             period = representation.adaptation.period;
             presentationStartTime = period.start;
 
-            var manifest = rslt.manifestModel.getValue();
-            var isDynamic = rslt.manifestExt.getIsDynamic(manifest);
+            manifest = rslt.manifestModel.getValue();
+            isDynamic = rslt.manifestExt.getIsDynamic(manifest);
 
-            var request = new MediaPlayer.vo.SegmentRequest();
+            request = new MediaPlayer.vo.SegmentRequest();
 
             request.streamType = rslt.getType();
             request.type = "Initialization Segment";

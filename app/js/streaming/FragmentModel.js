@@ -53,8 +53,12 @@ MediaPlayer.dependencies.FragmentModel = function () {
 
         sortRequestsByProperty = function(requestsArray, sortProp) {
             var compare = function (req1, req2){
-                if (req1[sortProp] < req2[sortProp]) return -1;
-                if (req1[sortProp] > req2[sortProp]) return 1;
+                if (req1[sortProp] < req2[sortProp]) {
+                    return -1;
+                }
+                if (req1[sortProp] > req2[sortProp]){
+                    return 1;
+                }
                 return 0;
             };
 
@@ -85,7 +89,9 @@ MediaPlayer.dependencies.FragmentModel = function () {
 
         addRequest: function(value) {
             if (value) {
-                if (this.isFragmentLoadedOrPending(value)) return;
+                if (this.isFragmentLoadedOrPending(value)) {
+                    return;
+                }
 
                 pendingRequests.push(value);
                 sortRequestsByProperty.call(this, pendingRequests, "index");
@@ -102,10 +108,11 @@ MediaPlayer.dependencies.FragmentModel = function () {
         isFragmentLoadedOrPending: function(request) {
             var isLoaded = false,
                 ln = executedRequests.length,
+                i = 0,
                 req;
 
             // First, check if the fragment has already been loaded
-            for (var i = 0; i < ln; i++) {
+            for (i = 0; i < ln; i++) {
                 req = executedRequests[i];
                 if (request.startTime === req.startTime || ((req.action === "complete") && request.action === req.action)) {
                     //self.debug.log(request.streamType + " Fragment already loaded for time: " + request.startTime);
@@ -241,7 +248,9 @@ MediaPlayer.dependencies.FragmentModel = function () {
             var self = this,
                 currentRequest;
 
-            if (pendingRequests.length === 0) return;
+            if (pendingRequests.length === 0) {
+                return;
+            }
 
             if (loadingRequests.length >= LOADING_REQUEST_THRESHOLD) {
                 // too many requests have been loading, do nothing until some of them are loaded or aborted

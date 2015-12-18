@@ -17,10 +17,11 @@ MediaPlayer.dependencies.FragmentController = function () {
     var fragmentModels = [],
 
         findModel = function(bufferController) {
-            var ln = fragmentModels.length;
+            var ln = fragmentModels.length,
+                i = 0;
             // We expect one-to-one relation between FragmentModel and BufferController,
             // so just compare the given BufferController object with the one that stored in the model to find the model for it
-            for (var i = 0; i < ln; i++) {
+            for (i = 0; i < ln; i++) {
                 if (fragmentModels[i].getContext() === bufferController) {
                     return fragmentModels[i];
                 }
@@ -31,9 +32,10 @@ MediaPlayer.dependencies.FragmentController = function () {
 
         isReadyToLoadNextFragment = function() {
             var isReady = true,
-                ln = fragmentModels.length;
+                ln = fragmentModels.length,
+                i = 0;
             // Loop through the models and check if all of them are in the ready state
-            for (var i = 0; i < ln; i++) {
+            for (i = 0; i < ln; i++) {
                 if (!fragmentModels[i].isReady()) {
                     isReady = false;
                     break;
@@ -44,7 +46,9 @@ MediaPlayer.dependencies.FragmentController = function () {
         },
 
         executeRequests = function() {
-            for (var i = 0; i < fragmentModels.length; i++) {
+            var i = 0;
+
+            for (i = 0; i < fragmentModels.length; i++) {
                 fragmentModels[i].executeCurrentRequest();
             }
         };
@@ -65,9 +69,13 @@ MediaPlayer.dependencies.FragmentController = function () {
         },
 
         attachBufferController: function(bufferController) {
-            if (!bufferController) return null;
+            var model;
+
+            if (!bufferController) {
+                return null;
+            }
             // Wrap the buffer controller into model and store it to track the loading state and execute the requests
-            var model = findModel(bufferController);
+            model = findModel(bufferController);
 
             if (!model){
                 model = this.system.getObject("fragmentModel");

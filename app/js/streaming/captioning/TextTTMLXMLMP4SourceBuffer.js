@@ -52,7 +52,8 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function () {
             },
 
             removeRange: function(start, end) {
-                for (var i = this.ranges.length - 1; i >= 0; i--) {
+                var i = 0;
+                for (i = this.ranges.length - 1; i >= 0; i--) {
                     if(this.ranges[i].start >= start && this.ranges[i].end <= end)
                         this.ranges.splice(i,1);
                 }
@@ -73,6 +74,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function () {
         buffered: buffered,
         textTrackExtensions:undefined,
         ttmlParser:undefined,
+        debug: undefined,
 
         initialize: function (type, bufferController, subtitleData) {
             mimeType = type;
@@ -106,17 +108,25 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function () {
         },
 
         append: function (bytes) {
-            var self = this;
-            var file = mp4lib.deserialize( bytes );
-                    
-            var moov = file.getBoxByType('moov');
-            if (moov) {
+            var self = this,
+                file = mp4lib.deserialize( bytes ),
+                moov = file.getBoxByType('moov'),
+                mvhd,
+                moof,
+                mdat,
+                traf,
+                tfhd,
+                tfdt,
+                trun,
+                fragmentStart,
+                fragmentDuration = 0;
 
+            if (moov) {
                 // This must be an init segment, if it has a moov box.
                 // We need it to read the timescale, as it will be 
                 // used to compute fragments time ranges.
 
-                var mvhd = moov.getBoxByType('mvhd');
+                mvhd = moov.getBoxByType('mvhd');
                 self.timescale = mvhd.timescale;
 
                 // Also, it is a good moment to set up a text track on videoElement
@@ -130,24 +140,22 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function () {
                 return;
             }
 
-            var moof = file.getBoxByType('moof');
+            moof = file.getBoxByType('moof');
             if (moof) {
 
                 // This is a subtitles track fragment
                 // let's decode the data and add captions to video element
-
-                var mdat = file.getBoxByType('mdat');
+                mdat = file.getBoxByType('mdat');
 
                 // We need to update TimeRanges.                            
                 // assume that there is a single text sample in fragment
+                traf = moof.getBoxByType('traf');
+                tfhd = traf.getBoxByType('tfhd');
+                tfdt = traf.getBoxByType('tfdt');
+                trun = traf.getBoxByType('trun');
 
-                var traf = moof.getBoxByType('traf');
-                var tfhd = traf.getBoxByType('tfhd');
-                var tfdt = traf.getBoxByType('tfdt');
-                var trun = traf.getBoxByType('trun');
-
-                var fragmentStart = tfdt.baseMediaDecodeTime/self.timescale;
-                var fragmentDuration = 0;
+                fragmentStart = tfdt.baseMediaDecodeTime/self.timescale;
+                fragmentDuration = 0;
                 if (trun.flags & 0x000100) {
                     fragmentDuration = trun.samples_table[0].sample_duration/self.timescale;
                 }
@@ -173,6 +181,8 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function () {
                                
                                 self.eventBus.dispatchEvent({type:"updateend"});
                             }
+                        }, function(error){
+                            //self.debug.error("[TextTTMLXMLMP4SourceBuffer] error parsing TTML "+error);
                         });
                     }
                 );
@@ -181,9 +191,9 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function () {
         },
 
         convertUTF8ToString: function( buf ) {
-            var deferred = Q.defer();
-            var blob = new Blob([buf],{type:"text/xml"});
-            var f = new FileReader();
+            var deferred = Q.defer(),
+                blob = new Blob([buf],{type:"text/xml"}),
+                f = new FileReader();
 
             f.onload = function(e) {
                 deferred.resolve(e.target.result);

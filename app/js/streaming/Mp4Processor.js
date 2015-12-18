@@ -165,18 +165,17 @@ MediaPlayer.dependencies.Mp4Processor = function () {
             hdlr.version = 0; // default value version = 0 
             hdlr.pre_defined = 0; //default value.
             switch (track.type) {
-                case "video" :
+                case 'video':
                     hdlr.handler_type = stringToCharCode(hdlr.HANDLERTYPEVIDEO);
                     hdlr.name = hdlr.HANDLERVIDEONAME;
                     break;
-                case "audio" :
+                case 'audio':
                     hdlr.handler_type = stringToCharCode(hdlr.HANDLERTYPEAUDIO);
                     hdlr.name = hdlr.HANDLERAUDIONAME;
                     break;
                 default :
                     hdlr.handler_type = stringToCharCode(hdlr.HANDLERTYPETEXT);
                     hdlr.name = hdlr.HANDLERTEXTNAME;
-                    break;
             }
             hdlr.name += '\0';
             hdlr.reserved = [0x0, 0x0, 0x0]; //default value
@@ -192,15 +191,14 @@ MediaPlayer.dependencies.Mp4Processor = function () {
             
             //Create and add the adapted media header box (vmhd, smhd or nmhd) for audio, video or text.
             switch(track.type) {
-                case "video" :
+                case 'video':
                     minf.boxes.push(createVideoMediaHeaderBox(track));
                     break;
-                case "audio" :
+                case 'audio':
                     minf.boxes.push(createSoundMediaHeaderBox(track));
                     break;
                 default :
                     //minf.boxes.push(createNullMediaHeaderBox(track));
-                    break;
             }
 
             //Create and add Data Information Box (dinf)
@@ -359,14 +357,20 @@ MediaPlayer.dependencies.Mp4Processor = function () {
                 NALBuffer = _hexstringtoBuffer(NALArray[i]);
 
                 if (NALArray[i].match(regexpSPS)) {
-                    avcC.SPS_NAL[SPS_index++] = { "NAL_length":NALBuffer.length, "NAL":NALBuffer };
+                    avcC.SPS_NAL[SPS_index++] = {
+                        "NAL_length": NALBuffer.length,
+                        "NAL": NALBuffer
+                    };
                     avcC.AVCProfileIndication = parseInt(NALArray[i].substr(2,2),16); //contains the profile code as defined in ISO/IEC 14496-10.
                     avcC.profile_compatibility = parseInt(NALArray[i].substr(4,2),16); //is a byte defined exactly the same as the byte which occurs between the
                                                                                        //profile_IDC and level_IDC in a sequence parameter set (SPS), as defined in ISO/IEC 14496-10.
                     avcC.AVCLevelIndication = parseInt(NALArray[i].substr(6,2),16); //contains the level code as defined in ISO/IEC 14496-10.
                 }
                 if (NALArray[i].match(regexpPPS)) {
-                    avcC.PPS_NAL[PPS_index++] = { "NAL_length":NALBuffer.length, "NAL":NALBuffer };
+                    avcC.PPS_NAL[PPS_index++] = {
+                        "NAL_length": NALBuffer.length,
+                        "NAL": NALBuffer
+                    };
                 }
 
                 tempBuffer = new Uint8Array(NALBuffer.length+4);
@@ -764,7 +768,6 @@ MediaPlayer.dependencies.Mp4Processor = function () {
             var psshs = [],
                 pssh_bytes,
                 pssh,
-                ks,
                 i;
 
             for (i = 0; i < keySystems.length; i++) {
@@ -912,7 +915,8 @@ MediaPlayer.dependencies.Mp4Processor = function () {
             var trun = new mp4lib.boxes.TrackFragmentRunBox(),
                 i,
                 cts_base,
-                sample_duration_present_flag;
+                sample_duration_present_flag,
+                sample;
 
             cts_base = track.samples[0].cts;
             sample_duration_present_flag = (track.samples[0].duration > 0) ? 0x000100 : 0x000000;
@@ -928,7 +932,7 @@ MediaPlayer.dependencies.Mp4Processor = function () {
             trun.sample_count = track.samples.length;
 
             for (i = 0; i < track.samples.length; i++) {
-                var sample = {
+                sample = {
                     sample_duration: track.samples[i].duration,
                     sample_size: track.samples[i].size,
                     sample_composition_time_offset: track.samples[i].cts - track.samples[i].dts
@@ -1026,7 +1030,7 @@ MediaPlayer.dependencies.Mp4Processor = function () {
         protectionExt: undefined,
 
         generateInitSegment: doGenerateInitSegment,
-        generateMediaSegment: doGenerateMediaSegment,
+        generateMediaSegment: doGenerateMediaSegment
     };
 };
 

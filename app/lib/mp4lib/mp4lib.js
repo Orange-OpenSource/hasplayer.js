@@ -150,8 +150,8 @@ var mp4lib = (function() {
     serialize box (or mp4lib.File) into binary data (uint8array)
     */
     mp4lib.serialize = function(f) {
-        var file_size = f.getLength();
-        var uint8array = new Uint8Array(file_size);
+        var file_size = f.getLength(),
+            uint8array = new Uint8Array(file_size);
         f.write(uint8array);
         return uint8array;
     };
