@@ -68,6 +68,12 @@ MediaPlayer.dependencies.Stream = function() {
         protectionController,
         initializedeferred = null,
 
+        isReloading = false,
+
+        startClockTime = -1,
+        startStreamTime = -1,
+        visibilitychangeListener,
+
         // Encrypted Media Extensions
         onProtectionError = function(event) {
             if (protectionController && event && event.data && event.data.data && event.data.data.sessionToken) {
@@ -104,12 +110,12 @@ MediaPlayer.dependencies.Stream = function() {
 
             this.debug.info("[Stream] Do seek: " + time);
 
-            this.system.notify("setCurrentTime");
-            this.videoModel.setCurrentTime(time);
-
-            updateBuffer.call(this).then(function() {
-                startBuffering(time);
-            });
+            // Performs a programmatical seek:
+            // 1- seeks the buffer controllers at the desired time
+            // 2- once data is present in the buffers, then we can set the current time to the <video> component (see onBufferUpdated()) 
+            initialSeekTime = time;
+            this.system.mapHandler("bufferUpdated", undefined, onBufferUpdated.bind(this));
+            startBuffering(initialSeekTime);
         },
 
         // Media Source
@@ -437,11 +443,12 @@ MediaPlayer.dependencies.Stream = function() {
             isPaused = this.videoModel.isPaused();
             if (initialSeekTime !== this.videoModel.getCurrentTime()) {
                 // ORANGE: we start the <video> element at the real start time got from the video buffer
-                // once the first fragment has been appended (see onBufferUpdated)
+                // once the first fragment has been appended (see onBufferUpdated())
                 this.system.mapHandler("bufferUpdated", undefined, onBufferUpdated.bind(self));
 
-            } else {
+            } else if (load !== null) {
                 load.resolve(null);
+                load = null;
             }
         },
 
@@ -453,6 +460,10 @@ MediaPlayer.dependencies.Stream = function() {
         onPlaying = function() {
             this.debug.info("<video> playing event");
             this.debug.log("[Stream] Got playing event.");
+
+            // Store start time (clock and stream time) for resynchronization purpose
+            startClockTime = new Date().getTime() / 1000;
+            startStreamTime = this.getVideoModel().getCurrentTime();
         },
 
         onLoadStart = function() {
@@ -468,7 +479,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.debug.log("[Stream] Got play event.");
 
             // set the currentTime here to be sure that videoTag is ready to accept the seek (cause IE fail on set currentTime on BufferUpdate)
-            if ((currentTimeToSet !== 0) && (this.videoModel.getCurrentTime() === 0)) {
+            if (currentTimeToSet !== 0) {
                 this.system.notify("setCurrentTime");
                 this.videoModel.setCurrentTime(currentTimeToSet);
                 currentTimeToSet = 0;
@@ -509,6 +520,8 @@ MediaPlayer.dependencies.Stream = function() {
             this.debug.info("<video> pause event");
             //this.debug.log("[Stream] ################################# Got pause event.");
             isPaused = true;
+            startClockTime = -1;
+            startStreamTime = -1;
             this.metricsModel.addPlayList("video", new Date().getTime(), this.videoModel.getCurrentTime(), "pause");
             suspend.call(this);
         },
@@ -548,6 +561,13 @@ MediaPlayer.dependencies.Stream = function() {
         onSeeking = function() {
             var time = this.videoModel.getCurrentTime();
             this.debug.info("<video> seeking event: " + time);
+            //test if seek time is less than range start, never seek before range start.
+            var start = this.getStartTime();
+
+            if (time < start) {
+                time = start;
+            }
+
             isSeeked = true;
             startBuffering(time);
         },
@@ -558,6 +578,9 @@ MediaPlayer.dependencies.Stream = function() {
 
             this.videoModel.listen("seeking", seekingListener);
             this.videoModel.unlisten("seeked", seekedListener);
+
+            startClockTime = -1;
+            startStreamTime = -1;
         },
 
         onProgress = function() {
@@ -585,6 +608,15 @@ MediaPlayer.dependencies.Stream = function() {
             if (textController) {
                 textController.updateStalledState();
             }
+        },
+
+        onReload = function() {
+
+            // Ask for manifest refresh
+            // Then, once manifest has been refresh and data updated, we reload session (see updateData())
+            pause.call(this);
+            isReloading = true;
+            this.system.notify("manifestUpdate");
         },
 
         updateBuffer = function() {
@@ -646,23 +678,6 @@ MediaPlayer.dependencies.Stream = function() {
 
             clearInterval(checkStartTimeIntervalId);
         },
-
-        /*updateCurrentTime = function() {
-            if (this.videoModel.isPaused()) return;
-
-            var currentTime = this.videoModel.getCurrentTime(),
-                representation = videoController ? videoController.getCurrentRepresentation() : audioController.getCurrentRepresentation(),
-                actualTime = this.timelineConverter.calcActualPresentationTime(representation, currentTime, this.manifestExt.getIsDynamic(manifest)),
-                timeChanged = (!isNaN(actualTime) && actualTime !== currentTime);
-
-            // ORANGE: unuseful?? and generate some bug since we cannot get availability window of current representation (@see TimelineConverter)
-            // if (timeChanged) {
-            //     this.videoModel.setCurrentTime(actualTime);
-            //     startBuffering(actualTime);
-            // } else {
-            //    startBuffering();
-            // }
-        },*/
 
         doLoad = function(manifestResult) {
 
@@ -733,21 +748,24 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
 
-        // ORANGE: 'liveEdgeFound' event raised when live edge has been found on video stream
-        // => then seek every BufferController at the found live edge time
-        onLiveEdgeFound = function(liveEdgeTime) {
+        // 'startTimeFound' event raised by video controller when start time has been found
+        // startTime = video live edge for live streams
+        // startTime = first video segment time for static streams
+        // => then seek every BufferController at the found start time
+        onStartTimeFound = function(startTime) {
 
-            //var liveEdgeTime = this.timelineConverter.calcPresentationStartTime(periodInfo);
-            this.debug.info("[Stream] ### LiveEdge = " + liveEdgeTime);
+            this.debug.info("[Stream] ### Start time = " + startTime);
+
+            initialSeekTime = startTime;
 
             if (videoController) {
-                videoController.seek(liveEdgeTime);
+                videoController.seek(startTime);
             }
             if (audioController) {
-                audioController.seek(liveEdgeTime);
+                audioController.seek(startTime);
             }
             if (textController && subtitlesEnabled) {
-                textController.seek(liveEdgeTime);
+                textController.seek(startTime);
             }
         },
 
@@ -787,7 +805,7 @@ MediaPlayer.dependencies.Stream = function() {
                 }
             }
 
-            self.debug.info("[Stream] Check start time: OK");
+            self.debug.info("[Stream] Check start time: OK => " + startTime);
 
             // Align audio and video buffers
             //self.sourceBufferExt.remove(audioController.getBuffer(), audioRange.start, videoRange.start, Infinity, mediaSource, false);
@@ -804,8 +822,14 @@ MediaPlayer.dependencies.Stream = function() {
                 currentTimeToSet = startTime;
             }
 
-            // Resolve load promise in order to start playing (see doLoad)
+            // Resolve load promise in order to start playing (see doLoad())
+            if (load !== null) {
             load.resolve(null);
+                load = null;
+            } else {
+                // Else start playing (reload use case)
+                play.call(self);
+            }
         },
 
         updateData = function(updatedPeriodInfo) {
@@ -887,13 +911,39 @@ MediaPlayer.dependencies.Stream = function() {
 
             Q.when(deferredVideoUpdate.promise, deferredAudioUpdate.promise, deferredTextUpdate.promise).then(
                 function() {
-                    // ORANGE: unnecessary since seek is performed into each BufferController
-                    //updateCurrentTime.call(self);
+                    if (isReloading && videoController) {
+                        isReloading = false;
+                        self.system.unmapHandler("bufferUpdated");
+                        self.system.mapHandler("bufferUpdated", undefined, onBufferUpdated.bind(self));
+                        // Call load on video controller in order to get new stream start time (=live edge for live streams)
+                        videoController.load();
+                    }
+
                     deferred.resolve();
                 }
             );
 
             return deferred.promise;
+        },
+
+        onVisibilitychange = function() {
+
+            if (document.hidden === true || startClockTime === -1) {
+                return;
+            }
+
+            // If current document get focus back, then check if resynchronization is required
+            var clockTime = new Date().getTime() / 1000,
+                streamTime = this.getVideoModel().getCurrentTime(),
+                elapsedClockTime = clockTime - startClockTime,
+                elapsedStreamTime = streamTime - startStreamTime;
+
+            this.debug.log("[Stream] VisibilityChange: elapsedClockTime = " + elapsedClockTime + ", elapsedStreamTime = " + elapsedStreamTime + " (" + (elapsedClockTime - elapsedStreamTime) + ")");
+
+            if ((elapsedClockTime - elapsedStreamTime) > 1) {
+                onReload.call(this);
+            }
+
         };
 
     return {
@@ -924,8 +974,8 @@ MediaPlayer.dependencies.Stream = function() {
             this.system.mapHandler("setCurrentTime", undefined, currentTimeChanged.bind(this));
             this.system.mapHandler("bufferingCompleted", undefined, bufferingCompleted.bind(this));
             this.system.mapHandler("segmentLoadingFailed", undefined, segmentLoadingFailed.bind(this));
-            // ORANGE: add event handler "liveEdgeFound"
-            this.system.mapHandler("liveEdgeFound", undefined, onLiveEdgeFound.bind(this));
+            this.system.mapHandler("startTimeFound", undefined, onStartTimeFound.bind(this));
+            this.system.mapHandler("needForReload", undefined, onReload.bind(this));
 
             /* @if PROTECTION=true */
             // Protection event handlers
@@ -954,6 +1004,7 @@ MediaPlayer.dependencies.Stream = function() {
             // ORANGE : add Ended Event listener
             endedListener = onEnded.bind(this);
 
+            visibilitychangeListener = onVisibilitychange.bind(this);
         },
 
         load: function(manifest, periodInfoValue) {
@@ -984,7 +1035,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.listenOnParent("fullscreenchange", fullScreenListener);
             this.videoModel.listenOnParent("webkitfullscreenchange", fullScreenListener);
 
-            this.requestScheduler.videoModel = value;
+            //document.addEventListener("visibilitychange", visibilitychangeListener);
         },
 
         // ORANGE: add the capability to set audioTrack
@@ -1095,6 +1146,8 @@ MediaPlayer.dependencies.Stream = function() {
 
             pause.call(this);
 
+            //document.removeEventListener("visibilityChange");
+
             this.videoModel.unlisten("play", playListener);
             this.videoModel.unlisten("pause", pauseListener);
             this.videoModel.unlisten("error", errorListener);
@@ -1121,6 +1174,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.system.unmapHandler("setCurrentTime");
             this.system.unmapHandler("bufferingCompleted");
             this.system.unmapHandler("segmentLoadingFailed");
+            this.system.unmapHandler("needForReload");
 
             tearDownMediaSource.call(this).then(
                 function() {
