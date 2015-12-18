@@ -37,12 +37,13 @@
  * @param {string} [persistentState]
  * @constructor
  */
-MediaPlayer.vo.protection.KeySystemConfiguration = function(audioCapabilities, videoCapabilities, distinctiveIdentifier, persistentState) {
+MediaPlayer.vo.protection.KeySystemConfiguration = function(audioCapabilities, videoCapabilities, distinctiveIdentifier, persistentState, sessionTypes) {
     this.initDataTypes = [ "cenc" ];
     this.audioCapabilities = audioCapabilities;
     this.videoCapabilities = videoCapabilities;
     this.distinctiveIdentifier = distinctiveIdentifier;
     this.persistentState = persistentState;
+    this.sessionTypes = sessionTypes;
 };
 
 MediaPlayer.vo.protection.KeySystemConfiguration.prototype = {

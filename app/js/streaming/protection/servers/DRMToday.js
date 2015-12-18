@@ -74,7 +74,11 @@ MediaPlayer.dependencies.protection.servers.DRMToday = function() {
         },
 
         getErrorResponse: function(serverResponse, keySystemStr/*, messageType*/) {
-            return keySystems[keySystemStr].getErrorResponse(serverResponse);
+            return {
+                code: 0,
+                name: "UnknownError",
+                message: keySystems[keySystemStr].getErrorResponse(serverResponse)
+            };
         }
     };
 };

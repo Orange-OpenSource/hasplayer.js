@@ -86,38 +86,38 @@ MediaPlayer.models.ProtectionModel_01b = function () {
                             }
 
                             if (sessionToken) {
-                                var msg = "",
-                                    code = "";
+                                var code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR,
+                                    msg = "MediakeyError";
                                 switch (event.errorCode.code) {
                                     case 1:
                                         code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
-                                        msg += "MEDIA_KEYERR_UNKNOWN - An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
+                                        msg += "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
                                         break;
                                     case 2:
                                         code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_CLIENT;
-                                        msg += "MEDIA_KEYERR_CLIENT - The Key System could not be installed or updated.";
+                                        msg += "The Key System could not be installed or updated.";
                                         break;
                                     case 3:
                                         code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_SERVICE;
-                                        msg += "MEDIA_KEYERR_SERVICE - The message passed into update indicated an error from the license service.";
+                                        msg += "The message passed into update indicated an error from the license service.";
                                         break;
                                     case 4:
                                         code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT;
-                                        msg += "MEDIA_KEYERR_OUTPUT - There is no available output device with the required characteristics for the content protection system.";
+                                        msg += "There is no available output device with the required characteristics for the content protection system.";
                                         break;
                                     case 5:
                                         code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_HARDWARECHANGE;
-                                        msg += "MEDIA_KEYERR_HARDWARECHANGE - A hardware configuration change caused a content protection error.";
+                                        msg += "A hardware configuration change caused a content protection error.";
                                         break;
                                     case 6:
                                         code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_DOMAIN;
-                                        msg += "MEDIA_KEYERR_DOMAIN - An error occurred in a multi-device domain licensing configuration. The most common error is a failure to join the domain.";
+                                        msg += "An error occurred in a multi-device domain licensing configuration. The most common error is a failure to join the domain.";
                                         break;
                                 }
-                                msg += "  System Code = " + event.systemCode;
-                                // TODO: Build error string based on key error
-                                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR,
-                                    new MediaPlayer.vo.protection.KeyError(code, sessionToken, msg));
+                                if (event.systemCode) {
+                                    msg += "  (System Code = " + event.systemCode + ")";
+                                }
+                                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR, new MediaPlayer.vo.protection.KeyError(code, msg));
                             } else {
                                 self.log("No session token found for key error");
                             }
@@ -130,8 +130,7 @@ MediaPlayer.models.ProtectionModel_01b = function () {
                             }
 
                             if (sessionToken) {
-                                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ADDED,
-                                    sessionToken);
+                                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ADDED, sessionToken);
                             } else {
                                 self.log("No session token found for key added");
                             }

@@ -56,6 +56,7 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
         schemeIdURI: "urn:uuid:" + keySystemUUID,
         systemString: keySystemStr,
         uuid: keySystemUUID,
+        sessionType:"temporary",
 
         init:function(protectionData){
             if(protectionData){
@@ -64,6 +65,8 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
         },
 
         getInitData: doGetInitData,
+        
+        getKeySystemConfigurations: MediaPlayer.dependencies.protection.CommonEncryption.getKeySystemConfigurations,
 
         getRequestHeadersFromMessage: function(/*message*/) { return null; },
 
