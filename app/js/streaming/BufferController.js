@@ -28,7 +28,7 @@ MediaPlayer.dependencies.BufferController = function () {
         seekTarget = -1,
         dataChanged = true,
         availableRepresentations,
-        currentRepresentation,
+        _currentRepresentation,
         currentBufferedQuality = -1,
         currentDownloadQuality = -1,
         stalled = false,
@@ -196,7 +196,7 @@ MediaPlayer.dependencies.BufferController = function () {
             Q.when(deferredFragmentBuffered ? deferredFragmentBuffered.promise : true).then(
                 function () {
                     // Reset segment list to avoid DashHandler dysfunctionning
-                    currentRepresentation.segments = null;
+                    _currentRepresentation.segments = null;
                     //self.debug.log("[BufferController]["+type+"] SEEK: deferredFragmentBuffered = "+deferredFragmentBuffered+" Call start!");
                     doStart.call(self);
                 }
@@ -282,9 +282,8 @@ MediaPlayer.dependencies.BufferController = function () {
 
         onMediaLoaded = function (request, response) {
             var self = this,
-                currentRepresentation = getRepresentationForQuality.call(self, request.quality),
                 eventStreamAdaption = this.manifestExt.getEventStreamForAdaptationSet(self.getData()),
-                eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(self.getData(),currentRepresentation),
+                eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(self.getData(), _currentRepresentation),
                 segmentStartTime = null;
 
             if (!isRunning()) {
@@ -333,11 +332,14 @@ MediaPlayer.dependencies.BufferController = function () {
                                                 segmentStartTime = self.fragmentController.getStartTime();
                                             }
                                             if (segmentStartTime) {
-                                                self.metricsModel.addBufferedSwitch(type, segmentStartTime, currentRepresentation.id, request.quality);
+                                                self.metricsModel.addBufferedSwitch(type, segmentStartTime, _currentRepresentation.id, request.quality);
                                             }else{
-                                                self.metricsModel.addBufferedSwitch(type, request.startTime, currentRepresentation.id, request.quality);
+                                                self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
                                             }
                                         }
+
+                                        _currentRepresentation.segments = null;
+
                                         self.debug.log("[BufferController]["+type+"] Media segment buffered");
                                         // Signal end of buffering process
                                         signalSegmentBuffered.call(self);
@@ -368,16 +370,20 @@ MediaPlayer.dependencies.BufferController = function () {
 
             if (playListTraceMetricsClosed === true) {
                 playListTraceMetricsClosed = false;
-                playListTraceMetrics = self.metricsModel.appendPlayListTrace(playListMetrics, currentRepresentation.id, null, currentTime, currentVideoTime, null, 1.0, null);
+                playListTraceMetrics = self.metricsModel.appendPlayListTrace(playListMetrics, _currentRepresentation.id, null, currentTime, currentVideoTime, null, 1.0, null);
             }
 
-            if (!hasData()) return;
+            if (!hasData()) {
+                return;
+            }
 
             hasEnoughSpaceToAppend.call(self).then(
                 function() {
                     Q.when(deferredBuffersFlatten ? deferredBuffersFlatten.promise : true).then(
                         function() {
-                            if (!hasData()) return;
+                            if (!hasData()) {
+                                return;
+                            }
                             self.debug.log("[BufferController]["+type+"] Buffering segment");
                             self.sourceBufferExt.append(buffer, data, appendSync).then(
                                     function (/*appended*/) {
@@ -531,6 +537,7 @@ MediaPlayer.dependencies.BufferController = function () {
             var length = data.length,
                 i = 0,
                 j = 0,
+                l = 0,
                 identifier,
                 size,
                 expTwo = Math.pow(256,2),
@@ -545,7 +552,7 @@ MediaPlayer.dependencies.BufferController = function () {
 
 
                 if(identifier !== "emsg" ) {
-                    for(var l = i ; l < i + size; l++) {
+                    for (l = i; l < i + size; l++) {
                         modData[j] = data[l];
                         j += 1;
                     }
@@ -587,8 +594,6 @@ MediaPlayer.dependencies.BufferController = function () {
         },
 
         signalSegmentBuffered = function () {
-            var self = this;
-
             if (deferredFragmentBuffered) {
                 //self.debug.log("[BufferController]["+type+"] End of buffering process");
                 deferredFragmentBuffered.resolve();
@@ -772,7 +777,10 @@ MediaPlayer.dependencies.BufferController = function () {
         },
 
         loadNextFragment = function () {
-            var self = this;
+            var self = this,
+                range,
+                time,
+                segmentTime;
 
             // Check if running state
             if (!isRunning.call(self)) {
@@ -780,17 +788,17 @@ MediaPlayer.dependencies.BufferController = function () {
             }
 
             // Get next segment time and check if already in buffer
-            var time = seeking ? seekTarget : currentSegmentTime;
-            var range = self.sourceBufferExt.getBufferRange(buffer, time);
+            time = seeking ? seekTarget : currentSegmentTime;
+            range = self.sourceBufferExt.getBufferRange(buffer, time);
 
-            var segmentTime = range ? range.end : time;
+            segmentTime = range ? range.end : time;
 
             if ((currentSequenceNumber !== -1) && !seeking) {
                 self.debug.log("[BufferController]["+type+"] loadNextFragment for sequence number: " + currentSequenceNumber);
-                self.indexHandler.getNextSegmentRequestFromSN(currentRepresentation, currentSequenceNumber).then(onFragmentRequest.bind(self));
+                self.indexHandler.getNextSegmentRequestFromSN(_currentRepresentation, currentSequenceNumber).then(onFragmentRequest.bind(self));
             } else {
                 self.debug.log("[BufferController]["+type+"] loadNextFragment for time: " + segmentTime);
-                self.indexHandler.getSegmentRequestForTime(currentRepresentation, segmentTime).then(onFragmentRequest.bind(self));
+                self.indexHandler.getSegmentRequestForTime(_currentRepresentation, segmentTime).then(onFragmentRequest.bind(self));
             }
 
             // Reset seeking state
@@ -825,7 +833,7 @@ MediaPlayer.dependencies.BufferController = function () {
                 // If we have already loaded the given fragment ask for the next one. Otherwise prepare it to get loaded
                 if (self.fragmentController.isFragmentLoadedOrPending(self, request)) {
                     self.debug.log("[BufferController]["+type+"] new fragment request => already loaded or pending");
-                    self.indexHandler.getNextSegmentRequest(currentRepresentation).then(onFragmentRequest.bind(self));
+                    self.indexHandler.getNextSegmentRequest(_currentRepresentation).then(onFragmentRequest.bind(self));
                 } else {
                     // Store current segment time for next segment request
                     currentSegmentTime = request.startTime;
@@ -848,7 +856,7 @@ MediaPlayer.dependencies.BufferController = function () {
                 if ((manifest.name === "M3U") && isDynamic) {
                     updatePlayListForRepresentation.call(self, currentDownloadQuality).then(
                         function () {
-                            currentRepresentation = getRepresentationForQuality.call(self, currentDownloadQuality);
+                                _currentRepresentation = getRepresentationForQuality.call(self, currentDownloadQuality);
                             updateCheckBufferTimeout.call(self,0);
                         }, function(){
                             self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, type + ": Failed to update hls playlist", null);
@@ -914,7 +922,9 @@ MediaPlayer.dependencies.BufferController = function () {
         },
 
         updateBufferLevel = function(sendMetric) {
-            if (!hasData()) return;
+            if (!hasData()) {
+                return;
+            }
 
             var self = this,
                 currentTime = getWorkingTime.call(self);
@@ -986,8 +996,7 @@ MediaPlayer.dependencies.BufferController = function () {
                 currentVideoTime = self.videoModel.getCurrentTime(),
                 manifest = self.manifestModel.getValue(),
                 quality,
-                playlistUpdated = null,
-                defer = null;
+                playlistUpdated = null;
 
             if (deferredFragmentBuffered !== null) {
                 self.debug.error("[BufferController]["+type+"] deferredFragmentBuffered has not been resolved, create a new one is not correct.");
@@ -1013,7 +1022,7 @@ MediaPlayer.dependencies.BufferController = function () {
                             quality = result.quality;
 
                             // Get corresponding representation
-                            currentRepresentation = getRepresentationForQuality.call(self, quality);
+                            _currentRepresentation = getRepresentationForQuality.call(self, quality);
 
                             // Quality changed?
                             if (quality !== currentDownloadQuality) {
@@ -1023,23 +1032,22 @@ MediaPlayer.dependencies.BufferController = function () {
                                 loadInit = true;
 
                                 // Reset segment list
-                                currentRepresentation.segments = null;
+                                _currentRepresentation.segments = null;
 
                                 clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.REPRESENTATION_SWITCH_STOP_REASON);
                                 self.debug.log("[BufferController]["+type+"] Send RepresentationSwitch with quality = " + quality);
-                                self.metricsModel.addRepresentationSwitch(type, now, currentVideoTime, currentRepresentation.id, quality);
+                                self.metricsModel.addRepresentationSwitch(type, now, currentVideoTime, _currentRepresentation.id, quality);
 
                                 // HLS use case => download playlist for new representation
                                 if ((manifest.name === "M3U") && (isDynamic || availableRepresentations[quality].initialization === null)) {
                                     playlistUpdated = Q.defer();
                                     updatePlayListForRepresentation.call(self, quality).then(
                                         function () {
-                                            currentRepresentation = getRepresentationForQuality.call(self, quality);
+                                            _currentRepresentation = getRepresentationForQuality.call(self, quality);
                                             playlistUpdated.resolve();
                                         },
-                                        function(){
-                                            self.debug.log("[BufferController]["+type+"] loadNextFragment Error occurs in hls parsing");
-                                            playlistUpdated.reject();
+                                        function(err) {
+                                            playlistUpdated.reject(err);
                                         }
                                     );
                                 }
@@ -1147,7 +1155,7 @@ MediaPlayer.dependencies.BufferController = function () {
                     availableRepresentations = representations;
 
                     // Retrieve the current representation according to the current quality
-                    //currentRepresentation = getRepresentationForQuality.call(self, result.quality);
+                    //_currentRepresentation = getRepresentationForQuality.call(self, result.quality);
 
                     self.bufferExt.updateData(data, type);
                     dataChanged = false;
@@ -1187,8 +1195,7 @@ MediaPlayer.dependencies.BufferController = function () {
 
                             self.metricsModel.appendHttpTrace(metricsHttp,
                                 currentTime,
-                                currentTime.getTime() - lastTraceTime.getTime(),
-                                [evt.data.request.bytesLoaded ? evt.data.request.bytesLoaded : 0]);
+                                currentTime.getTime() - lastTraceTime.getTime(), [evt.data.request.bytesLoaded ? evt.data.request.bytesLoaded : 0]);
                 
                             self.fragmentController.abortRequestsForModel(fragmentModel);
                         }
