@@ -11,7 +11,7 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-MediaPlayer.utils.TextTrackExtensions = function () {
+MediaPlayer.utils.TextTrackExtensions = function() {
     "use strict";
     var Cue;
 
@@ -22,42 +22,43 @@ MediaPlayer.utils.TextTrackExtensions = function () {
             Cue = window.VTTCue || window.TextTrackCue;
         },
 
-        subtitlesStyleChanged : function (style) {
+        subtitlesStyleChanged: function(style) {
             this.eventBus.dispatchEvent({
                 type: "subtitlesStyleChanged",
                 data: style
             });
         },
 
-        addTextTrack: function(video, captionData,  label, scrlang, isDefaultTrack) {
+        addTextTrack: function(video, captionData, label, scrlang, isDefaultTrack) {
             var track = null,
+                currentItem = null,
                 i;
 
             //no function removeTextTrack is defined
             //add one, only if it's necessary
             //deleteCues will be very efficient in this case
             if (video.textTracks.length === 0) {
-            //TODO: Ability to define the KIND in the MPD - ie subtitle vs caption....
+                //TODO: Ability to define the KIND in the MPD - ie subtitle vs caption....
                 track = video.addTextTrack("subtitles", label, scrlang);
-            }else {
+                // track.default is an object property identifier that is a reserved word
+                // The following jshint directive is used to suppressed the warning "Expected an identifier and instead saw 'default' (a reserved word)"
+                /*jshint -W024 */
+                track.default = isDefaultTrack;
+                track.mode = "showing";
+            } else {
                 //this.deleteCues(video);
                 track = video.textTracks[0];
             }
-            // track.default is an object property identifier that is a reserved word
-            // The following jshint directive is used to suppressed the warning "Expected an identifier and instead saw 'default' (a reserved word)"
-            /*jshint -W024 */
-            track.default = isDefaultTrack;
-            track.mode = "showing";
 
-            for(i = 0; i < captionData.length; i++) {
-                var currentItem = captionData[i];
+            for (i = 0; i < captionData.length; i += 1) {
+                currentItem = captionData[i];
                 track.addCue(new Cue(currentItem.start, currentItem.end, currentItem.data));
             }
 
             return Q.when(track);
         },
 
-        onCueEnter: function(e){
+        onCueEnter: function(e) {
             this.subtitlesStyleChanged(e.currentTarget.style);
         },
 
@@ -65,39 +66,45 @@ MediaPlayer.utils.TextTrackExtensions = function () {
         //         not only during track initialization
 
         addCues: function(track, captionData) {
+            var i = 0,
+                currentItem = null,
+                newCue = null;
 
-            for(var i = 0; i < captionData.length; i++) {
-                var currentItem = captionData[i];
-                var newCue = new Cue(currentItem.start, currentItem.end, currentItem.data);
+            for (i = 0; i < captionData.length; i += 1) {
+                currentItem = captionData[i];
+                if (currentItem.start < currentItem.end) {
+                    newCue = new Cue(currentItem.start, currentItem.end, currentItem.data);
 
-                newCue.onenter = this.onCueEnter.bind(this);
+                    newCue.onenter = this.onCueEnter.bind(this);
 
-                newCue.snapToLines = false;
+                    newCue.snapToLines = false;
 
-                if (i > 0 && currentItem.start <= captionData[i-1].end) {
-                    newCue.line = captionData[i-1].line + parseFloat(currentItem.style.fontSize.substr(0, currentItem.style.fontSize.length-1))+3;
-                }else {
                     newCue.line = currentItem.line;
-                }
 
-                if (currentItem.style) {
-                    newCue.style = currentItem.style;
-                }
+                    if (currentItem.style) {
+                        newCue.style = currentItem.style;
+                    }
 
-                track.addCue(newCue);
+                    track.addCue(newCue);
+                }
             }
         },
 
         deleteCues: function(video, disabled) {
+            var track = null,
+                cues = null,
+                lastIdx = null,
+                i = 0;
+
             //when multiple tracks are supported - iterate through and delete all cues from all tracks.
             if (video) {
-                var track = video.textTracks[0];
+                track = video.textTracks[0];
                 if (track) {
-                    var cues = track.cues;
+                    cues = track.cues;
                     if (cues) {
-                        var lastIdx = cues.length - 1;
+                        lastIdx = cues.length - 1;
 
-                        for (var i = lastIdx; i >= 0 ; i -= 1) {
+                        for (i = lastIdx; i >= 0; i -= 1) {
                             track.removeCue(cues[i]);
                         }
                     }
