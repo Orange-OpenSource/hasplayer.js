@@ -25,6 +25,7 @@ MediaPlayer.dependencies.Stream = function() {
         audioController = null,
         audioTrackIndex = -1,
         textController = null,
+        subtitlesEnabled = false,
         textTrackIndex = -1,
         autoPlay = true,
         initialized = false,
@@ -617,8 +618,7 @@ MediaPlayer.dependencies.Stream = function() {
                     audioController.seek(time);
                 }
             }
-
-            if (textController) {
+            if (textController && subtitlesEnabled) {
                 if (time === undefined) {
                     textController.start();
                 } else {
@@ -746,7 +746,7 @@ MediaPlayer.dependencies.Stream = function() {
             if (audioController) {
                 audioController.seek(liveEdgeTime);
             }
-            if (textController) {
+            if (textController && subtitlesEnabled) {
                 textController.seek(liveEdgeTime);
             }
         },
@@ -1163,6 +1163,22 @@ MediaPlayer.dependencies.Stream = function() {
         },
         resetEventController: function() {
             eventController.reset();
+        },
+
+        enableSubtitles: function(enabled) {
+            var time;
+
+            if (enabled !== subtitlesEnabled) {
+                subtitlesEnabled = enabled;
+                if (textController) {
+                    if (enabled) {
+                        time = this.videoModel.getCurrentTime();
+                        textController.seek(time);
+                    } else {
+                        textController.stop();
+                    }
+                }
+            }
         },
 
         updateData: updateData,
