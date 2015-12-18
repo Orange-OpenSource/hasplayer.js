@@ -198,22 +198,15 @@ MediaPlayer.dependencies.Stream = function() {
             this.debug.log("[Stream] checkIfInitialized videoState=" + videoState + " audioState=" + audioState + " textTrackState=" + textTrackState);
             if (videoState !== null && audioState !== null && textTrackState !== null) {
                 if (videoState === "ready" && audioState === "ready" && textTrackState === "ready") {
-                    if (videoController === null && audioController === null && textController === null) {
-                        this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM, "No streams to play (" + msg + ")", manifest);
-                        initializedeferred.reject();
-                    } else {
-                        //this.debug.log("MediaSource initialized!");
                         // Initialize protection controller
                         if (protectionController) {
                             protectionController.init(contentProtection, audioCodec, videoCodec);
                         } else if (contentProtection && !this.capabilities.supportsEncryptedMedia()) {
                             // No protectionController (MediaKeys not supported/enabled) but content is protected => error
-                            this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS, "Content is signalized protected but EME is not supported/enabled", manifest);
+                        this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS, "EME is not supported/enabled", null);
                             initializedeferred.reject();
                         }
-
                         initializedeferred.resolve(true);
-                    }
                 } else if (videoState === "error" || audioState === "error" || textTrackState === "error") {
                     initializedeferred.reject();
                 }
@@ -229,74 +222,93 @@ MediaPlayer.dependencies.Stream = function() {
             initializedeferred = Q.defer();
 
             eventController = self.system.getObject("eventController");
-            // Figure out some bits about the stream before building anything.
-            //self.debug.log("Gathering information for buffers. (1)");
+
             self.manifestExt.getVideoData(manifest, periodInfo.index).then(
+                // self.manifestExt.getVideoData() succeeded
                 function(videoData) {
                     //self.debug.log("Create video buffer.");
                     self.manifestExt.getDataIndex(videoData, manifest, periodInfo.index).then(
                         function(index) {
                             videoTrackIndex = index;
-                            //self.debug.log("Save video track: " + videoTrackIndex);
                         }
                     );
 
+                    // Get codec of first representation
                     self.manifestExt.getCodec(videoData).then(
                         function(codec) {
                             self.debug.info("[Stream] Video codec: " + codec);
                             videoCodec = codec;
 
                             if (!self.capabilities.supportsCodec(self.videoModel.getElement(), codec)) {
-                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC, "Video Codec (" + codec + ") is not supported", manifest);
-                                videoState = "error";
-                                return Q.reject();
+                                // If codec is not supported by the <video> element, then raise DOMException 'NotSupportedError'
+                                // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer) 
+                                return Q.reject({
+                                    code: MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_SUPPORTED,
+                                    name: "NotSupportedError",
+                                    message: "Codec not supported"
+                                });
                             }
 
+                            // Get and store ContentProtection data
                             return self.manifestExt.getContentProtectionData(videoData).then(
                                 function(contentProtectionData) {
                                     contentProtection = contentProtectionData;
 
+                                    // Create and add the SourceBuffer
                                     if (mediaSource) {
                                         return self.sourceBufferExt.createSourceBuffer(mediaSource, codec);
                                     } else {
-                                        return Q.reject();
+                                        // If MediaSource is not defined then raise DOMException 'InvalidAccessError'
+                                        // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer)
+                                        return Q.reject({
+                                            code: MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS,
+                                            name: "InvalidAccessError",
+                                            message: "MediaSource undefined"
+                                        });
                                     }
                                 }
                             );
                         }
                     ).then(
+                        // self.sourceBufferExt.createSourceBuffer() succeeded
                         function(buffer) {
                             // TODO : How to tell index handler live/duration?
                             // TODO : Pass to controller and then pass to each method on handler?
                             videoController = self.system.getObject("bufferController");
-                            videoController.initialize("video", periodInfo, videoData, buffer, self.requestScheduler, self.fragmentController, mediaSource, eventController);
+                            videoController.initialize("video", periodInfo, videoData, buffer, self.fragmentController, mediaSource, eventController);
                             videoState = "ready";
                             checkIfInitialized.call(self, videoState, audioState, textTrackState);
                         },
-                        function(/*error*/) {
-                            if (videoState !== "error") {
-                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Error creating video source buffer");
+                        // self.sourceBufferExt.createSourceBuffer() failed
+                        function(ex) {
                                 videoState = "error";
-                            }
                             checkIfInitialized.call(self, videoState, audioState, textTrackState);
+                            if (ex.code && ex.code === MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_SUPPORTED) {
+                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Video codec is not supported", {
+                                    codec: videoCodec
+                                });
+                            } else {
+                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create video source buffer",
+                                    new MediaPlayer.vo.Error(ex.code, ex.name, ex.message));
+                            }
                         }
                     );
                     return self.manifestExt.getSpecificAudioData(manifest, periodInfo.index, defaultAudioLang);
-                }, function() {
-                    if (videoState !== "error") {
-                        self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC, "No Video Data in manifest", manifest);
+                },
+                // self.manifestExt.getVideoData() failed
+                function() {
                         videoState = "error";
-                    }
                     checkIfInitialized.call(self, videoState, audioState, textTrackState);
-                    //no video, so don't analyse audio datas....
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO, "No Video data in manifest");
+                    // Video is required, cancel any other track initialization
                     return Q.reject();
                 }
             ).then(
+                // self.manifestExt.getSpecificAudioData() succeeded
                 function(specificAudioData) {
                     self.manifestExt.getDataIndex(specificAudioData, manifest, periodInfo.index).then(
                         function(index) {
                             audioTrackIndex = index;
-                            //self.debug.log("Save audio track: " + audioTrackIndex);
                         }
                     );
 
@@ -304,19 +316,32 @@ MediaPlayer.dependencies.Stream = function() {
                         function(codec) {
                             self.debug.info("[Stream] Audio codec: " + codec);
                             audioCodec = codec;
+
                             if (!self.capabilities.supportsCodec(self.videoModel.getElement(), codec)) {
-                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_CODEC, "Audio Codec (" + codec + ") is not supported", manifest);
-                                audioState = "error";
-                                return Q.reject();
+                                // If codec is not supported by the <video> element, then raise DOMException 'NotSupportedError'
+                                // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer) 
+                                return Q.reject({
+                                    code: MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_SUPPORTED,
+                                    name: "NotSupportedError",
+                                    message: "Codec not supported"
+                                });
                             }
 
+                            // Create and add the SourceBuffer
                             if (mediaSource) {
                                 return self.sourceBufferExt.createSourceBuffer(mediaSource, codec);
                             } else {
-                                return Q.reject();
+                                return Q.reject({
+                                    // If MediaSource is not defined then raise DOMException 'InvalidAccessError'
+                                    // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer)
+                                    code: MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS,
+                                    name: "InvalidAccessError",
+                                    message: "MediaSource undefined"
+                                });
                             }
                         }
                     ).then(
+                        // self.sourceBufferExt.createSourceBuffer() succeeded
                         function(buffer) {
                             // TODO : How to tell index handler live/duration?
                             // TODO : Pass to controller and then pass to each method on handler?
@@ -326,32 +351,44 @@ MediaPlayer.dependencies.Stream = function() {
                             audioState = "ready";
                             checkIfInitialized.call(self, videoState, audioState, textTrackState);
                         },
-                        function(/*error*/) {
-                            if (audioState !== "error") {
-                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Error creating audio source buffer");
+                        // self.sourceBufferExt.createSourceBuffer() failed
+                        function(ex) {
                                 audioState = "error";
+                            if (ex.code && ex.code === MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_SUPPORTED) {
+                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Audio codec is not supported", {
+                                    codec: videoCodec
+                                });
+                            } else {
+                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create audio source buffer",
+                                    new MediaPlayer.vo.Error(ex.code, ex.name, ex.message));
                             }
                             checkIfInitialized.call(self, videoState, audioState, textTrackState);
                         }
                     );
                     return self.manifestExt.getSpecificTextData(manifest, periodInfo.index, defaultSubtitleLang);
-                }, function() {
-                    self.debug.log("[Stream] No audio streams.");
+                },
+                // self.manifestExt.getSpecificAudioData() failed or no video track
+                function() {
                     audioState = "ready";
                     checkIfInitialized.call(self, videoState, audioState, textTrackState);
-
+                    if (videoState === "error") {
+                        return Q.reject();
+                    }
+                    self.debug.log("[Stream] No audio streams.");
+                    self.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "No audio data in manifest");
                     return self.manifestExt.getSpecificTextData(manifest, periodInfo.index, defaultSubtitleLang);
                 }
             ).then(
                 // ORANGE: added Support for fragmented subtitles
                 //         which are downloaded and handled just like Audio/Video - by a regular bufferController, fragmentController etc
                 //         (fragmented subtitles are used by MSS and live streams)
+
+                // self.manifestExt.getSpecificTextData() succeeded
                 function(specificSubtitleData) {
                     var mimeType;
                     self.manifestExt.getDataIndex(specificSubtitleData, manifest, periodInfo.index).then(
                         function(index) {
                             textTrackIndex = index;
-                            self.debug.log("Save text track: " + textTrackIndex);
                         });
 
                     self.manifestExt.getMimeType(specificSubtitleData).then(
@@ -360,12 +397,19 @@ MediaPlayer.dependencies.Stream = function() {
                             if (mediaSource) {
                                 return self.sourceBufferExt.createSourceBuffer(mediaSource, mimeType);
                             } else {
-                                return Q.reject();
+                                return Q.reject({
+                                    // If MediaSource is not defined then raise DOMException 'InvalidAccessError'
+                                    // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer)
+                                    code: MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS,
+                                    name: "InvalidAccessError",
+                                    message: "MediaSource undefined"
+                                });
                             }
-                        }).then(
+                            }
+                    ).then(
                         function(buffer) {
                             textController = self.system.getObject("bufferController");
-                            textController.initialize("text", periodInfo, specificSubtitleData, buffer, self.requestScheduler, self.fragmentController, mediaSource);
+                            textController.initialize("text", periodInfo, specificSubtitleData, buffer, self.fragmentController, mediaSource);
 
                             if (buffer.hasOwnProperty('initialize')) {
                                 buffer.initialize(mimeType, textController, specificSubtitleData);
@@ -374,20 +418,31 @@ MediaPlayer.dependencies.Stream = function() {
                             textTrackState = "ready";
                             checkIfInitialized.call(self, videoState, audioState, textTrackState);
                         },
-                        function(/*error*/) {
-                            self.debug.warn("Error creating text source buffer");
+                        function(ex) {
                             textTrackState = "ready";
                             textController = null;
                             checkIfInitialized.call(self, videoState, audioState, textTrackState);
+                            if (ex.code && ex.code === MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_SUPPORTED) {
+                                self.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Text codec is not supported", {
+                                    codec: videoCodec
+                                });
+                            } else {
+                                self.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create text source buffer",
+                                    new MediaPlayer.vo.Error(ex.code, ex.name, ex.message));
+                            }
                         }
                     );
 
                     return self.manifestExt.getEventsForPeriod(manifest, periodInfo);
-                }, function() {
-                    self.debug.log("[Stream] No text tracks.");
+                },
+                // self.manifestExt.getSpecificTextData() failed or no video track
+                function() {
                     textTrackState = "ready";
                     checkIfInitialized.call(self, videoState, audioState, textTrackState);
-
+                    if (videoState === "error") {
+                        return Q.reject();
+                    }
+                    self.debug.log("[Stream] No text tracks.");
                     return self.manifestExt.getEventsForPeriod(manifest, periodInfo);
                 }
             ).then(
@@ -859,13 +914,10 @@ MediaPlayer.dependencies.Stream = function() {
 
                 deferredVideoData.then(
                     function(data) {
-                        videoController.updateData(data, periodInfo).then(
-                            function() {
+                        videoController.updateData(data, periodInfo);
                                 deferredVideoUpdate.resolve();
                             }
                         );
-                    }
-                );
             } else {
                 deferredVideoUpdate.resolve();
             }
@@ -875,13 +927,10 @@ MediaPlayer.dependencies.Stream = function() {
 
                 deferredAudioData.then(
                     function(data) {
-                        audioController.updateData(data, periodInfo).then(
-                            function() {
+                        audioController.updateData(data, periodInfo);
                                 deferredAudioUpdate.resolve();
                             }
                         );
-                    }
-                );
             } else {
                 deferredAudioUpdate.resolve();
             }
@@ -891,14 +940,11 @@ MediaPlayer.dependencies.Stream = function() {
 
                 deferredTextData.then(
                     function(data) {
-                        textController.updateData(data, periodInfo).then(
-                            function() {
+                        textController.updateData(data, periodInfo);
                                 deferredTextUpdate.resolve();
                             }
                         );
                     }
-                );
-            }
 
             if (eventController) {
                 self.manifestExt.getEventsForPeriod(manifest, periodInfo).then(
