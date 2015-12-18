@@ -13,16 +13,17 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-Mss.dependencies.MssFragmentController = function () {
+Mss.dependencies.MssFragmentController = function() {
     "use strict";
 
-    var getIndex = function (adaptation, manifest) {
-
+    var getIndex = function(adaptation, manifest) {
             var periods = manifest.Period_asArray,
-                i, j;
+                adaptations,
+                i,
+                j;
 
             for (i = 0; i < periods.length; i += 1) {
-                var adaptations = periods[i].AdaptationSet_asArray;
+                adaptations = periods[i].AdaptationSet_asArray;
                 for (j = 0; j < adaptations.length; j += 1) {
                     if (adaptations[j] === adaptation) {
                         return j;
@@ -33,8 +34,7 @@ Mss.dependencies.MssFragmentController = function () {
             return -1;
         },
 
-        processTfrf = function(tfrf, adaptation) {
-
+        processTfrf = function(tfrf, tfdt, adaptation) {
             var manifest = rslt.manifestModel.getValue(),
                 segmentsUpdated = false,
                 // Get adaptation's segment timeline (always a SegmentTimeline in Smooth Streaming use case)
@@ -43,40 +43,52 @@ Mss.dependencies.MssFragmentController = function () {
                 fragment_absolute_time = 0,
                 fragment_duration = 0,
                 segment = null,
-                r = 0,
                 t = 0,
                 i = 0,
+                j = 0,
+                segmentId = -1,
                 availabilityStartTime = null;
 
             // Go through tfrf entries
-            while (i < entries.length)
-            {
+            while (i < entries.length) {
                 fragment_absolute_time = entries[i].fragment_absolute_time;
                 fragment_duration = entries[i].fragment_duration;
 
                 // Get timestamp of the last segment
-                segment = segments[segments.length-1];
-                r = (segment.r === undefined)?0:segment.r;
-                t = segment.t + (segment.d * r);
+                segment = segments[segments.length - 1];
+                t = segment.t;
 
-                if (fragment_absolute_time > t)
-                {
+                if (fragment_absolute_time > t) {
                     rslt.debug.log("[MssFragmentController] Add new segment - t = " + (fragment_absolute_time / 10000000.0));
-                    if (fragment_duration === segment.d)
-                    {
-                        segment.r = r + 1;
-                    }
-                    else
-                    {
-                        segments.push({
-                            't': fragment_absolute_time,
-                            'd': fragment_duration
-                        });
-                    }
+                    segments.push({
+                        t: fragment_absolute_time,
+                        d: fragment_duration
+                    });
                     segmentsUpdated = true;
                 }
 
                 i += 1;
+            }
+
+            for (j = segments.length - 1; j >= 0; j -= 1) {
+                if (segments[j].t === tfdt.baseMediaDecodeTime) {
+                    segmentId = j;
+                    break;
+                }
+            }
+
+            if (segmentId >= 0) {
+                for (i = 0; i < entries.length; i += 1) {
+                    if (segmentId + i < segments.length) {
+                        t = segments[segmentId + i].t;
+                        if ((t + segments[segmentId + i].d) != entries[i].fragment_absolute_time) {
+                            segments[segmentId + i].t = entries[i].fragment_absolute_time;
+                            segments[segmentId + i].d = entries[i].fragment_duration;
+                            rslt.debug.log("[MssFragmentController] Correct tfrf time  = " + entries[i].fragment_absolute_time + "and duration = " + entries[i].fragment_duration + "! ********");
+                            segmentsUpdated = true;
+                        }
+                    }
+                }
             }
 
             // In case we have added some segments, we also check if some out of date segments
@@ -84,59 +96,62 @@ Mss.dependencies.MssFragmentController = function () {
             if (segmentsUpdated && manifest.timeShiftBufferDepth && (manifest.timeShiftBufferDepth > 0)) {
 
                 // Get timestamp of the last segment
-                segment = segments[segments.length-1];
-                r = (segment.r === undefined)?0:segment.r;
-                t = segment.t + (segment.d * r);
+                segment = segments[segments.length - 1];
+                t = segment.t;
 
                 // Determine the segments' availability start time
                 availabilityStartTime = t - (manifest.timeShiftBufferDepth * 10000000);
 
                 // Remove segments prior to availability start time
                 segment = segments[0];
-                while (segment.t < availabilityStartTime)
-                {
+                while (segment.t < availabilityStartTime) {
                     rslt.debug.log("[MssFragmentController] Remove segment  - t = " + (segment.t / 10000000.0));
-                    if ((segment.r !== undefined) && (segment.r > 0))
-                    {
-                        segment.t += segment.d;
-                        segment.r -= 1;
-                    }
-                    else
-                    {
-                        segments.splice(0, 1);
-                    }
+                    segments.splice(0, 1);
                     segment = segments[0];
                 }
             }
         },
 
-        convertFragment = function (data, request, adaptation) {
-
-            var i = 0;
-
-            // Get track id corresponding to adaptation set
-            var manifest = rslt.manifestModel.getValue();
-            var trackId = getIndex(adaptation, manifest) + 1; // +1 since track_id shall start from '1'
-
-            // Create new fragment
-            var fragment = mp4lib.deserialize(data);
+        convertFragment = function(data, request, adaptation) {
+            var i = 0,
+                // Get track id corresponding to adaptation set
+                manifest = rslt.manifestModel.getValue(),
+                trackId = manifest ? getIndex(adaptation, manifest) + 1 : -1, // +1 since track_id shall start from '1'
+                // Create new fragment
+                fragment = mp4lib.deserialize(data),
+                moof = null,
+                mdat = null,
+                traf = null,
+                trun = null,
+                tfhd = null,
+                saio = null,
+                sepiff = null,
+                saiz = null,
+                tfdt = null,
+                tfrf = null,
+                sizedifferent = false,
+                pos = -1,
+                fragment_size = 0,
+                moofPosInFragment = 0,
+                trafPosInMoof = 0,
+                sencPosInTraf = 0,
+                new_data = null;
 
             if (!fragment) {
                 return null;
             }
 
             // Get references en boxes
-            var moof = fragment.getBoxByType("moof");
-            var mdat = fragment.getBoxByType("mdat");
-            var traf = moof.getBoxByType("traf");
-            var trun = traf.getBoxByType("trun");
-            var tfhd = traf.getBoxByType("tfhd");
-            var saio = null;
+            moof = fragment.getBoxByType("moof");
+            mdat = fragment.getBoxByType("mdat");
+            traf = moof.getBoxByType("traf");
+            trun = traf.getBoxByType("trun");
+            tfhd = traf.getBoxByType("tfhd");
 
             // If protected content (sepiff box)
             // => convert it into a senc box
             // => create saio and saiz boxes (if not already present)
-            var sepiff = traf.getBoxByType("sepiff");
+            sepiff = traf.getBoxByType("sepiff");
             if (sepiff !== null) {
                 sepiff.boxtype = "senc";
                 sepiff.extended_type = undefined;
@@ -150,7 +165,7 @@ Mss.dependencies.MssFragmentController = function () {
                     saio.entry_count = 1;
                     saio.offset = [];
 
-                    var saiz = new mp4lib.boxes.SampleAuxiliaryInformationSizesBox();
+                    saiz = new mp4lib.boxes.SampleAuxiliaryInformationSizesBox();
                     saiz.version = 0;
                     saiz.flags = 0;
                     saiz.sample_count = sepiff.sample_count;
@@ -158,14 +173,13 @@ Mss.dependencies.MssFragmentController = function () {
 
                     saiz.sample_info_size = [];
 
-                    var sizedifferent = false;
                     // get for each sample_info the size
                     if (sepiff.flags & 2) {
-                        for (i = 0; i < sepiff.sample_count; i++) {
-                            saiz.sample_info_size[i] = 8+(sepiff.entry[i].NumberOfEntries*6)+2;
+                        for (i = 0; i < sepiff.sample_count; i += 1) {
+                            saiz.sample_info_size[i] = 8 + (sepiff.entry[i].NumberOfEntries * 6) + 2;
                             //8 (Init vector size) + NumberOfEntries*(clear (2) +crypted (4))+ 2 (numberofEntries size (2))
-                            if(i>0) {
-                                if (saiz.sample_info_size[i] !== saiz.sample_info_size[i-1]) {
+                            if (i > 0) {
+                                if (saiz.sample_info_size[i] !== saiz.sample_info_size[i - 1]) {
                                     sizedifferent = true;
                                 }
                             }
@@ -177,8 +191,7 @@ Mss.dependencies.MssFragmentController = function () {
                             saiz.default_sample_info_size = saiz.sample_info_size[0];
                             saiz.sample_info_size = [];
                         }
-                    }
-                    else{
+                    } else {
                         //if flags === 0 (ex: audio data), default sample size = Init Vector size (8)
                         saiz.default_sample_info_size = 8;
                     }
@@ -197,22 +210,22 @@ Mss.dependencies.MssFragmentController = function () {
             traf.removeBoxByType("tfxd");
 
             // Create and add tfdt box
-            var tfdt = traf.getBoxByType("tfdt");
+            tfdt = traf.getBoxByType("tfdt");
             if (tfdt === null) {
                 tfdt = new mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox();
                 tfdt.version = 1;
                 tfdt.flags = 0;
                 tfdt.baseMediaDecodeTime = Math.floor(request.startTime * request.timescale);
                 // Insert tfdt box just after the tfhd box (therefore before the trun box)
-                var pos = traf.getBoxIndexByType("tfhd");
+                pos = traf.getBoxIndexByType("tfhd");
                 traf.boxes.splice(pos + 1, 0, tfdt);
             }
 
             // Process tfrf box
-            var tfrf = traf.getBoxesByType("tfrf");
+            tfrf = traf.getBoxesByType("tfrf");
             if (tfrf.length !== 0) {
-                for (i = 0; i < tfrf.length; i++) {
-                    processTfrf(tfrf[i], adaptation);
+                for (i = 0; i < tfrf.length; i += 1) {
+                    processTfrf(tfrf[i], tfdt, adaptation);
                     traf.removeBoxByType("tfrf");
                 }
             }
@@ -221,25 +234,25 @@ Mss.dependencies.MssFragmentController = function () {
             tfhd.flags &= 0xFFFFFE; // set tfhd.base-data-offset-present to false
             tfhd.flags |= 0x020000; // set tfhd.default-base-is-moof to true
             trun.flags |= 0x000001; // set trun.data-offset-present to true
-            trun.data_offset = 0;   // Set a default value for trun.data_offset
+            trun.data_offset = 0; // Set a default value for trun.data_offset
 
             // Determine new size of the converted fragment
             // and allocate new data buffer
-            var fragment_size = fragment.getLength();
+            fragment_size = fragment.getLength();
 
             // updata trun.data_offset field = offset of first data byte (inside mdat box)
             trun.data_offset = fragment_size - mdat.size + 8; // 8 = 'size' + 'type' mdat fields length
 
             // Update saio box offset field according to new senc box offset
             if (sepiff !== null) {
-                var moofPosInFragment = fragment.getBoxOffsetByType("moof");
-                var trafPosInMoof = moof.getBoxOffsetByType("traf");
-                var sencPosInTraf = traf.getBoxOffsetByType("senc");
+                moofPosInFragment = fragment.getBoxOffsetByType("moof");
+                trafPosInMoof = moof.getBoxOffsetByType("traf");
+                sencPosInTraf = traf.getBoxOffsetByType("senc");
                 // set offset from begin fragment to the first IV in senc box
                 saio.offset[0] = moofPosInFragment + trafPosInMoof + sencPosInTraf + 16; // box header (12) + sampleCount (4)
             }
 
-            var new_data = mp4lib.serialize(fragment);
+            new_data = mp4lib.serialize(fragment);
 
             return new_data;
         };
@@ -249,10 +262,10 @@ Mss.dependencies.MssFragmentController = function () {
     rslt.manifestModel = undefined;
     rslt.mp4Processor = undefined;
 
-    rslt.process = function (bytes, request, representations) {
-
+    rslt.process = function(bytes, request, representations) {
         var result = null,
-            manifest = this.manifestModel.getValue();
+            manifest = this.manifestModel.getValue(),
+            adaptation = null;
 
         if (bytes !== null && bytes !== undefined && bytes.byteLength > 0) {
             result = new Uint8Array(bytes);
@@ -260,10 +273,10 @@ Mss.dependencies.MssFragmentController = function () {
             return Q.when(null);
         }
 
-        if (request && (request.type === "Media Segment") && manifest && representations && (representations.length > 0)){
+        if (request && (request.type === "Media Segment") && manifest && representations && (representations.length > 0)) {
             // Get adaptation containing provided representations
             // (Note: here representations is of type Dash.vo.Representation)
-            var adaptation = manifest.Period_asArray[representations[0].adaptation.period.index].AdaptationSet_asArray[representations[0].adaptation.index];
+            adaptation = manifest.Period_asArray[representations[0].adaptation.period.index].AdaptationSet_asArray[representations[0].adaptation.index];
             result = convertFragment(result, request, adaptation);
 
             if (!result) {

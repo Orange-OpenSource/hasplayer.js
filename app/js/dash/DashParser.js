@@ -322,32 +322,31 @@ Dash.dependencies.DashParser = function () {
 
             try {
                 //this.debug.log("Converting from XML.");
-            manifest = converter.xml_str2json(data);
+                manifest = converter.xml_str2json(data);
                 json = new Date();
 
-            if (!manifest.hasOwnProperty("BaseURL")) {
+                if (!manifest.hasOwnProperty("BaseURL")) {
                     //this.debug.log("Setting baseURL: " + baseUrl);
-                manifest.BaseURL = baseUrl;
-            } else {
-                // Setting manifest's BaseURL to the first BaseURL
-                manifest.BaseURL = manifest.BaseURL_asArray[0];
+                    manifest.BaseURL = baseUrl;
+                } else {
+                    // Setting manifest's BaseURL to the first BaseURL
+                    manifest.BaseURL = manifest.BaseURL_asArray[0];
 
                     if (manifest.BaseURL.toString().indexOf("http") !== 0) {
-                    manifest.BaseURL = baseUrl + manifest.BaseURL;
+                        manifest.BaseURL = baseUrl + manifest.BaseURL;
+                    }
                 }
-            }
 
                 //this.debug.log("Flatten manifest properties.");
-            iron.run(manifest);
+                iron.run(manifest);
                 ironed = new Date();
 
                 this.debug.log("Parsing complete: ( xml2json: " + (json.getTime() - start.getTime()) + "ms, objectiron: " + (ironed.getTime() - json.getTime()) + "ms, total: " + ((ironed.getTime() - start.getTime()) / 1000) + "s)");
-            } catch (err) {
-                var dataError = {};
-                dataError.mpdUrl = baseUrl;
-                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE, "parsing the manifest failed", dataError);
-                return Q.reject(err);
+ 
+            } catch (e) {
+                return Q.reject(null);
             }
+
             return Q.when(manifest);
         };
 

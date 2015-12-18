@@ -14,93 +14,9 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 Mss.dependencies.MssHandler = function() {
+    "use strict";
 
-    var isDynamic=false,
-
-        /*getIndex = function (adaptation, manifest) {
-
-            var periods = manifest.Period_asArray,
-                i, j;
-
-            for (i = 0; i < periods.length; i += 1) {
-                var adaptations = periods[i].AdaptationSet_asArray;
-                for (j = 0; j < adaptations.length; j += 1) {
-                    if (adaptations[j] === adaptation) {
-                        return j;
-                    }
-                }
-            }
-
-            return -1;
-        },
-
-        /*getType = function (adaptation) {
-
-            var type = (adaptation.mimeType !== undefined) ? adaptation.mimeType : adaptation.contentType;
-
-            if (type.indexOf("video") != -1)
-            {
-                return "video";
-            }
-            else if (type.indexOf("audio") != -1)
-            {
-                return "audio";
-            }
-            else if (type.indexOf("text") != -1)
-            {
-                return "text";
-            }
-
-            return "und";
-        },
-
-        getRepresentationForQuality = function (quality, adaptation) {
-            var representation = null;
-            if (adaptation && adaptation.Representation_asArray && adaptation.Representation_asArray.length > 0) {
-                representation = adaptation.Representation_asArray[quality];
-            }
-            return representation;
-        },
-
-
-        getTimescale = function (adaptation) {
-            var timescale = 1,
-                segmentInfo;
-
-            // Check for segment information at adaptation level
-            segmentInfo = rslt.manifestExt.getSegmentInfoFor(adaptation);
-
-            // Else get segment information of the first representation
-            if (segmentInfo === null)
-            {
-                segmentInfo = rslt.manifestExt.getSegmentInfoFor(adaptation.Representation_asArray[0]);
-            }
-
-            if (segmentInfo !== null && segmentInfo !== undefined && segmentInfo.hasOwnProperty("timescale"))
-            {
-                timescale = segmentInfo.timescale;
-            }
-
-            return timescale;
-        },
-
-        getDuration = function (manifest, isDynamic) {
-            var duration = NaN;
-
-            if (isDynamic) {
-                duration = Number.POSITIVE_INFINITY;
-            } else {
-                if (manifest.mediaPresentationDuration) {
-                    duration = manifest.mediaPresentationDuration;
-                } else if (manifest.availabilityEndTime && manifest.availabilityStartTime) {
-                    duration = (manifest.availabilityEndTime.getTime() - manifest.availabilityStartTime.getTime());
-                }
-            }
-
-            return duration;
-        },*/
-
-        getAudioChannels = function (adaptation, representation) {
+    var getAudioChannels = function(adaptation, representation) {
             var channels = 1;
 
             if (adaptation.audioChannels) {
@@ -112,7 +28,7 @@ Mss.dependencies.MssHandler = function() {
             return channels;
         },
 
-        getAudioSamplingRate = function (adaptation, representation) {
+        getAudioSamplingRate = function(adaptation, representation) {
             var samplingRate = 1;
 
             if (adaptation.audioSamplingRate) {
@@ -124,106 +40,111 @@ Mss.dependencies.MssHandler = function() {
             return samplingRate;
         },
 
+        // Generates initialization segment data from representation information
+        // by using mp4lib library
         getInitData = function(representation) {
-            var self = this;
-            // return data in byte format
-            // call MP4 lib to generate the init
+            var manifest = rslt.manifestModel.getValue(),
+                adaptation,
+                realAdaptation,
+                realRepresentation,
+                track,
+                codec;
 
-            // Get required media information from manifest  to generate initialisation segment
-            //var representation = getRepresentationForQuality(quality, adaptation);
-            if(representation){
-                if(!representation.initData){
-                    var manifest = rslt.manifestModel.getValue();
-                    var adaptation = representation.adaptation;
-                    var realAdaptation = manifest.Period_asArray[adaptation.period.index].AdaptationSet_asArray[adaptation.index];
-                    var realRepresentation = realAdaptation.Representation_asArray[representation.index];
-
-                    var track = new MediaPlayer.vo.Mp4Track();
-                    track.type = rslt.getType() || 'und';
-                    track.trackId = adaptation.index + 1; // +1 since track_id shall start from '1'
-                    track.timescale = representation.timescale;
-                    track.duration = representation.adaptation.period.duration;
-                    track.codecs = realRepresentation.codecs;
-                    track.codecPrivateData = realRepresentation.codecPrivateData;
-                    track.bandwidth = realRepresentation.bandwidth;
-                    
-                    if (track.type !=='text' && !self.capabilities.supportsCodec(self.videoModel.getElement(), realRepresentation.mimeType + ';codecs="' + realRepresentation.codecs + '"')) {
-                        return null;
-                    }
-
-                    // DRM Protected Adaptation is detected
-                    if (realAdaptation.ContentProtection_asArray && (realAdaptation.ContentProtection_asArray.length > 0)) {
-                        track.contentProtection = realAdaptation.ContentProtection_asArray;
-                    }
-
-                    // Video related informations
-                    track.width = realRepresentation.width || realAdaptation.maxWidth;
-                    track.height = realRepresentation.height || realAdaptation.maxHeight;
-
-                    // Audio related informations
-                    track.language = realAdaptation.lang ? realAdaptation.lang : 'und';
-
-                    track.channels = getAudioChannels(realAdaptation, realRepresentation);
-                    track.samplingRate = getAudioSamplingRate(realAdaptation, realRepresentation);
-
-                    representation.initData =  rslt.mp4Processor.generateInitSegment([track]);
-                }
+            if (representation.initData) {
                 return representation.initData;
-            }else{
-                return null;
             }
 
-    };
+            // Get required media information from manifest  to generate initialisation segment
+            adaptation = representation.adaptation;
+            realAdaptation = manifest.Period_asArray[adaptation.period.index].AdaptationSet_asArray[adaptation.index];
+            realRepresentation = realAdaptation.Representation_asArray[representation.index];
+
+            track = new MediaPlayer.vo.Mp4Track();
+            track.type = rslt.getType() || 'und';
+            track.trackId = adaptation.index + 1; // +1 since track_id shall start from '1'
+            track.timescale = representation.timescale;
+            track.duration = representation.adaptation.period.duration;
+            track.codecs = realRepresentation.codecs;
+            track.codecPrivateData = realRepresentation.codecPrivateData;
+            track.bandwidth = realRepresentation.bandwidth;
+
+            if (track.type !== 'text') {
+                codec = realRepresentation.mimeType + ';codecs="' + realRepresentation.codecs + '"';
+                if (!this.capabilities.supportsCodec(this.videoModel.getElement(), codec)) {
+                    throw {
+                        name: MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED,
+                        message: "Codec is not supported",
+                        data: {
+                            codec: codec
+                        }
+                    };
+                }
+            }
+
+            // DRM Protected Adaptation is detected
+            if (realAdaptation.ContentProtection_asArray && (realAdaptation.ContentProtection_asArray.length > 0)) {
+                track.contentProtection = realAdaptation.ContentProtection_asArray;
+            }
+
+            // Video related informations
+            track.width = realRepresentation.width || realAdaptation.maxWidth;
+            track.height = realRepresentation.height || realAdaptation.maxHeight;
+
+            // Audio related informations
+            track.language = realAdaptation.lang ? realAdaptation.lang : 'und';
+
+            track.channels = getAudioChannels(realAdaptation, realRepresentation);
+            track.samplingRate = getAudioSamplingRate(realAdaptation, realRepresentation);
+
+            representation.initData = rslt.mp4Processor.generateInitSegment([track]);
+            
+            return representation.initData;
+
+        };
 
     var rslt = MediaPlayer.utils.copyMethods(Dash.dependencies.DashHandler);
     rslt.mp4Processor = undefined;
 
-    rslt.getInitRequest = function (representation) {
-            var period = null;
-            var self = this;
-            var presentationStartTime = null;
-            var deferred = Q.defer();
-            //Mss.dependencies.MssHandler.prototype.getInitRequest.call(this,quality,data).then(onGetInitRequestSuccess);
-            // get the period and startTime
-            if (representation) {
-                period = representation.adaptation.period;
-                presentationStartTime = period.start;
+    rslt.getInitRequest = function(representation) {
+        var period = null,
+            self = this,
+            presentationStartTime = null,
+            request = null,
+            deferred = Q.defer();
 
-                var manifest = rslt.manifestModel.getValue();
-                isDynamic = rslt.manifestExt.getIsDynamic(manifest);
+        if (!representation) {
+            throw new Error("MssHandler.getInitRequest(): representation is undefined");
+        }
 
-                var request = new MediaPlayer.vo.SegmentRequest();
+        period = representation.adaptation.period;
+        presentationStartTime = period.start;
 
-                request.streamType = rslt.getType();
-                request.type = "Initialization Segment";
-                request.url = null;
-                try{
-                    request.data = getInitData.call(this, representation);
-                }catch(e){
-                    deferred.reject(e);
-                    return deferred.promise;
-                }
+        request = new MediaPlayer.vo.SegmentRequest();
 
-                if (!request.data) {
-                    deferred.reject({name: request.streamType, message : "codec is not supported"});
-                    return deferred.promise;
-                }
+        request.streamType = rslt.getType();
+        request.type = "Initialization Segment";
+        request.url = null;
 
-                request.range =  representation.range;
-                request.availabilityStartTime = self.timelineConverter.calcAvailabilityStartTimeFromPresentationTime(presentationStartTime, representation.adaptation.period.mpd, isDynamic);
-                request.availabilityEndTime = self.timelineConverter.calcAvailabilityEndTimeFromPresentationTime(presentationStartTime + period.duration, period.mpd, isDynamic);
-
-                //request.action = "complete"; //needed to avoid to execute request
-                request.quality = representation.index;
-                deferred.resolve(request);
-            }else{
-                deferred.reject({message : "representation is undefined or null"});
-            }
+        try {
+            request.data = getInitData.call(this, representation);
+        } catch (e) {
+            deferred.reject(e);
             return deferred.promise;
-        };
+        }
+
+        request.range = representation.range;
+        request.availabilityStartTime = self.timelineConverter.calcAvailabilityStartTimeFromPresentationTime(presentationStartTime, representation.adaptation.period.mpd, rslt.getIsDynamic());
+        request.availabilityEndTime = self.timelineConverter.calcAvailabilityEndTimeFromPresentationTime(presentationStartTime + period.duration, period.mpd, rslt.getIsDynamic());
+
+        //request.action = "complete"; //needed to avoid to execute request
+        request.quality = representation.index;
+        deferred.resolve(request);
+
+        return deferred.promise;
+    };
     return rslt;
 };
 
-Mss.dependencies.MssHandler.prototype =  {
-    constructor : Mss.dependencies.MssHandler
+Mss.dependencies.MssHandler.prototype = {
+    constructor: Mss.dependencies.MssHandler
 };

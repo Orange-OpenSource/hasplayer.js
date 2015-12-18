@@ -88,7 +88,7 @@ MediaPlayer.dependencies.BufferExtensions = function () {
                 minBufferTarget = Math.min(duration, minBufferTime);
             }
 
-            return Q.when(minBufferTarget);
+            return minBufferTarget;
         },
 
         getLeastBufferLevel: function() {

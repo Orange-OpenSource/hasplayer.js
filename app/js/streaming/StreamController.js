@@ -433,8 +433,8 @@
                     updateSubtitleTracks.call(self);
                     self.system.notify("streamsComposed");
                 },
-                function(errMsg) {
-                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM, errMsg, self.manifestModel.getValue());
+                function() {
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM, "No stream/period is provided in the manifest");
                     self.reset();
                 }
             );
@@ -558,8 +558,11 @@
                     //self.debug.log(self.manifestModel.getValue());
                     self.manifestUpdater.start();
                 },
-                function () {
-                    self.debug.error("[StreamController] Manifest loading error.");
+                function(err) {
+                    // err is undefined in the case the request has been aborted
+                    if (err) {
+                        self.errHandler.sendError(err.name, err.message, err.data);
+                    }
                 }
             );
         },
@@ -572,15 +575,18 @@
                     self.manifestModel.setValue(manifestResult);
                     self.debug.log("### Manifest has been refreshed.");
                 },
-                function(){
-                    // here notfiy webapp to refresh url
-                    if(isIntern){
+                function(err) {
+                    // err is undefined in the case the request has been aborted
+                    if (err) {
+                        self.errHandler.sendWarning(err.name, err.message, err.data);
+
+                        // Notify webapp to refresh url if failed to dowload manifest (for example if manifest url expired)
+                        if (isIntern && err.name === MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST) {
                         self.eventBus.dispatchEvent({
                                 type: "manifestUrlUpdate",
                                 data: url
                         });
-                    }else{
-                        self.debug.warn("[StreamController] refreshManifest url : ", url , " is invalid !");
+                        }
                     }
                 }
             );
