@@ -79,9 +79,7 @@ MediaPlayer.di.Context = function () {
             mapProtectionModel.call(this); // Determines EME API support and version
 
             this.system.mapClass('metrics', MediaPlayer.models.MetricsList);
-            this.system.mapClass('downloadRatioRule', MediaPlayer.rules.DownloadRatioRule);
             this.system.mapClass('abandonRequestRule', MediaPlayer.rules.AbandonRequestsRule);
-            this.system.mapClass('insufficientBufferRule', MediaPlayer.rules.InsufficientBufferRule);
             this.system.mapClass('limitSwitchesRule', MediaPlayer.rules.LimitSwitchesRule);
             this.system.mapClass('abrRulesCollection', MediaPlayer.rules.BaseRulesCollection);
 
@@ -105,7 +103,7 @@ MediaPlayer.di.Context = function () {
             //this.system.mapSingleton('metricsExt', Dash.dependencies.DashMetricsExtensions);
             this.system.mapSingleton('timelineConverter', Dash.dependencies.TimelineConverter);
 
-            this.system.mapClass('parser', MediaPlayer.dependencies.Parser);
+            this.system.mapSingleton('parser', MediaPlayer.dependencies.Parser);
 
             // Then, our parser will choose which parser call between Dash, Mss and Hls. To do that, it need references
             this.system.mapClass('dashParser', Dash.dependencies.DashParser);
