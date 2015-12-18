@@ -399,7 +399,7 @@ MediaPlayer.dependencies.BufferController = function () {
 
                                         // In case of live streams, remove outdated buffer parts and requests
                                         if (isDynamic) {
-                                            removeBuffer.call(self, -1, self.videoModel.getCurrentTime() - minBufferTime).then(
+                                        removeBuffer.call(self, -1, getWorkingTime.call(self) - 2).then(
                                                 function() {
                                                     debugBufferRange.call(self);
                                                     deferred.resolve();
@@ -893,19 +893,19 @@ MediaPlayer.dependencies.BufferController = function () {
         },
 
         getLiveEdgeTime = function() {
-
             var self = this,
-                deferred = Q.defer();
+                deferred = Q.defer(),
+                startTime,
+                // Get live edge time from manifest as the last segment time
+                liveEdgeTime = _currentRepresentation.segmentAvailabilityRange.end;
 
-            // Get live edge time from manifest as the last segment time
-            var liveEdgeTime = currentRepresentation.segmentAvailabilityRange.end;
             self.debug.log("[BufferController]["+type+"] Manifest live edge = " + liveEdgeTime);
 
             // Step back from a found live edge time to be able to buffer some data
-            var startTime = Math.max((liveEdgeTime - minBufferTime), currentRepresentation.segmentAvailabilityRange.start);
+            startTime = Math.max((liveEdgeTime - minBufferTime), _currentRepresentation.segmentAvailabilityRange.start);
 
             // Get the request corresponding to the start time
-            this.indexHandler.getSegmentRequestForTime(currentRepresentation, startTime).then(
+            this.indexHandler.getSegmentRequestForTime(_currentRepresentation, startTime).then(
                 function(request) {
                     // Set live edge to be the start time of the founded segment
                     periodInfo.liveEdge = request.startTime;
@@ -1270,53 +1270,57 @@ MediaPlayer.dependencies.BufferController = function () {
             periodInfo = newPeriodInfo;
             dataChanged = true;
 
+            self.load();
+
+            ready = true;
+        },
+
+        load: function() {
+            var self = this,
+                manifest = self.manifestModel.getValue();
+
             doUpdateData.call(this).then(
                 function () {
                     // Retreive the representation of initial quality to enable some parameters initialization
                     // (@see getLiveEdgeTime() for example)
                     self.abrController.getPlaybackQuality(type, data).then(
                         function (result) {
-                            currentRepresentation = getRepresentationForQuality.call(self, result.quality);
+                            _currentRepresentation = getRepresentationForQuality.call(self, result.quality);
 
-                            if (currentRepresentation) {
-                                fragmentDuration = currentRepresentation.segmentDuration;
+                            if (_currentRepresentation) {
+                                fragmentDuration = _currentRepresentation.segmentDuration;
 
                                 self.indexHandler.setIsDynamic(isDynamic);
-                                self.bufferExt.decideBufferLength(manifest.minBufferTime, periodInfo.duration, waitingForBuffer).then(
-                                    function (time) {
-                                        minBufferTime = (minBufferTime === -1) ? time : minBufferTime;
+                                if (minBufferTime === -1) {
+                                    minBufferTime = self.bufferExt.decideBufferLength(manifest.minBufferTime, periodInfo.duration, waitingForBuffer);
                                     }
-                                );
-
+                                if (type === "video") {
                                 if (isDynamic) {
-                                    if (type === "video") {
-                                        self.indexHandler.updateSegmentList(currentRepresentation).then(
+                                        self.indexHandler.updateSegmentList(_currentRepresentation).then(
                                             function() {
                                                 getLiveEdgeTime.call(self).then(
                                                     function(time) {
-                                                        //self.seek(time);
-                                                        self.system.notify("liveEdgeFound", time);
-                                                        //ORANGE : used to test Live chunk download failure
-                                                        //testTimeLostChunk = time+20;
+                                                        self.system.notify("startTimeFound", time);
                                                     }
                                                 );
                                             }
                                         );
-                                    }
                                 } else {
-                                    self.indexHandler.getCurrentTime(currentRepresentation).then(
+                                        self.indexHandler.getCurrentTime(_currentRepresentation).then(
                                         function(time) {
-                                            self.seek(time);
+                                                if (time < _currentRepresentation.segmentAvailabilityRange.start) {
+                                                    time = _currentRepresentation.segmentAvailabilityRange.start;
+                                                }
+                                                self.system.notify("startTimeFound", time);
                                         }
                                     );
                                 }
                             }
                             }
+                        }
                     );
                 }
             );
-
-            ready = true;
         },
 
         getType: function () {
@@ -1430,7 +1434,7 @@ MediaPlayer.dependencies.BufferController = function () {
         },
 
         getCurrentRepresentation: function() {
-            return currentRepresentation;
+            return _currentRepresentation;
         },
 
         getBuffer: function () {
