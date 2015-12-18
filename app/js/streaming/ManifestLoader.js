@@ -11,32 +11,33 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-MediaPlayer.dependencies.ManifestLoader = function () {
+MediaPlayer.dependencies.ManifestLoader = function() {
     "use strict";
 
+    var deferred = null,
+        request = new XMLHttpRequest(),
 
-    var RETRY_ATTEMPTS = 3,
-        RETRY_INTERVAL = 500,
-        deferred = null,
-        request = null,
+        getDecodedResponseText = function(text) {
+            var fixedCharCodes = [],
+                i = 0,
+                charCode;
 
-        getDecodedResponseText = function (text) {
             // Some content is not always successfully decoded by every browser.
             // Known problem case: UTF-16 BE manifests on Internet Explorer 11.
             // This function decodes any text that the browser failed to decode.
-            if (text.length < 1)
+            if (text.length < 1) {
                 return text;
+            }
 
             // The troublesome bit here is that IE still strips off the BOM, despite incorrectly decoding the file.
             // So we will simply assume that the first character is < (0x3C) and detect its invalid decoding (0x3C00).
-            if (text.charCodeAt(0) !== 0x3C00)
+            if (text.charCodeAt(0) !== 0x3C00) {
                 return text;
+            }
 
             // We have a problem!
-            var fixedCharCodes = [];
-
-            for (var i = 0; i < text.length; i++) {
-                var charCode = text.charCodeAt(i);
+            for (i = 0; i < text.length; i++) {
+                charCode = text.charCodeAt(i);
 
                 // Swap around the two bytes that make up the character code.
                 fixedCharCodes.push((charCode & 0xFF) << 8 | (charCode & 0xFF00) >> 8);
@@ -45,7 +46,7 @@ MediaPlayer.dependencies.ManifestLoader = function () {
             return String.fromCharCode.apply(null, fixedCharCodes);
         },
 
-        parseBaseUrl = function (url) {
+        parseBaseUrl = function(url) {
             var base = null;
 
             if (url.indexOf("/") !== -1) {
@@ -58,136 +59,120 @@ MediaPlayer.dependencies.ManifestLoader = function () {
             return base;
         },
 
-        abort = function() {          
-            if (request) {
+        abort = function() {
+            if (request !== null && request.readyState > 0 && request.readyState < 4) {
                 this.debug.log("[ManifestLoader] Manifest download abort.");
                 request.abort();
             }
-            request = null;
+
+            this.parser.abort();
         },
 
-        doLoad = function (url, remainingAttempts, noRetry) {
+        doLoad = function(url) {
             var baseUrl = parseBaseUrl(url),
                 requestTime = new Date(),
                 mpdLoadedTime = null,
                 needFailureReport = true,
                 onload = null,
                 report = null,
-                rejectWithoutRetry=null,
                 onabort = null,
                 self = this;
 
-            
-
-            request = new XMLHttpRequest();
-
-            onabort = function(){
+            onabort = function() {
                 request.aborted = true;
             };
 
-            onload = function () {
+            onload = function() {
                 if (request.status < 200 || request.status > 299) {
-                  return;
+                    return;
                 }
 
-                self.debug.log("[ManifestLoader] Manifest downloaded");
+                if (request.status === 200 && request.readyState === 4) {
+                    self.debug.log("[ManifestLoader] Manifest downloaded");
 
-                //ORANGE : Get the redirection URL and use it as base URL
-                if (request.responseURL) {
-                  self.debug.log("[ManifestLoader] Redirect URL: " + request.responseURL);
-                  baseUrl = parseBaseUrl(request.responseURL);
-                }
-
-                needFailureReport = false;
-                mpdLoadedTime = new Date();
-
-                self.tokenAuthentication.checkRequestHeaderForToken(request);
-                self.metricsModel.addHttpRequest("stream",
-                                                 null,
-                                                 "MPD",
-                                                 url,
-                                                 null,
-                                                 null,
-                                                 requestTime,
-                                                 mpdLoadedTime,
-                                                 request.status,
-                                                 null,
-                                                 null);
-
-                self.parser.parse(getDecodedResponseText(request.responseText), baseUrl).then(
-                    function (manifest) {
-                        manifest.mpdUrl = url;
-                        manifest.mpdLoadedTime = mpdLoadedTime;
-                        self.metricsModel.addManifestUpdate("stream", manifest.type, requestTime, mpdLoadedTime, manifest.availabilityStartTime);
-                        deferred.resolve(manifest);
-                        request = null;
-                    },
-                    function (error) {
-                        self.debug.error("[ManifestLoader] Manifest parsing error.");
-                        var data = {};
-                        data.mpdUrl = url;
-                        self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE, "parsing the manifest failed : "+error, data);
-                        deferred.reject(request);
-                        request = null;
+                    // Get the redirection URL and use it as base URL
+                    if (request.responseURL) {
+                        self.debug.log("[ManifestLoader] Redirect URL: " + request.responseURL);
+                        baseUrl = parseBaseUrl(request.responseURL);
                     }
-                );
+
+                    needFailureReport = false;
+                    mpdLoadedTime = new Date();
+
+                    self.tokenAuthentication.checkRequestHeaderForToken(request);
+                    self.metricsModel.addHttpRequest("stream",
+                        null,
+                        "MPD",
+                        url,
+                        null,
+                        null,
+                        requestTime,
+                        mpdLoadedTime,
+                        request.status,
+                        null,
+                        null);
+
+                    self.parser.parse(getDecodedResponseText(request.responseText), baseUrl).then(
+                        function(manifest) {
+                            manifest.mpdUrl = url;
+                            manifest.mpdLoadedTime = mpdLoadedTime;
+                            self.metricsModel.addManifestUpdate("stream", manifest.type, requestTime, mpdLoadedTime, manifest.availabilityStartTime);
+                            deferred.resolve(manifest);
+                        },
+                        function() {
+                            self.debug.error("[ManifestLoader] Manifest parsing error");
+                            deferred.reject({
+                                name: MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE,
+                                message: "Failed to parse manifest",
+                                data: {
+                                    url: url
+                                }
+                            });
+                        }
+                    );
+                }
             };
 
-            report = function () {
+            report = function() {
                 if (!needFailureReport) {
-                  return;
+                    return;
                 }
                 needFailureReport = false;
 
                 self.metricsModel.addHttpRequest("stream",
-                                                 null,
-                                                 "MPD",
-                                                 url,
-                                                 null,
-                                                 null,
-                                                 requestTime,
-                                                 new Date(),
-                                                 request.status,
-                                                 null,
-                                                 null);
-                if (remainingAttempts > 0 && !request.aborted) {
-                    self.debug.log("Failed loading manifest: " + url + ", retry in " + RETRY_INTERVAL + "ms" + " attempts: " + remainingAttempts);
-                    remainingAttempts--;
-                    setTimeout(function() {
-                        doLoad.call(self, url, remainingAttempts);
-                    }, RETRY_INTERVAL);
-                } else if (!request.aborted){
-                    var data = {},
-                        msgError = "Failed loading manifest: " + url + " no retry attempts left";
+                    null,
+                    "MPD",
+                    url,
+                    null,
+                    null,
+                    requestTime,
+                    new Date(),
+                    request.status,
+                    null,
+                    null);
 
-                    self.debug.log(msgError);
-
-                    data.url = url;
-                    data.request = request;
-                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST, msgError, data);
-                    deferred.reject(request);
-                    request = null;
+                if (request.aborted) {
+                    deferred.reject();
+                } else {
+                    deferred.reject({
+                        name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
+                        message: "Failed to download manifest",
+                        data : {
+                            url: url,
+                            status: request.status
+                        }
+                    });
                 }
-            };
-
-            rejectWithoutRetry = function(){
-                if (!needFailureReport) {
-                  return;
-                }
-                needFailureReport = false;
-                deferred.reject();
-                request = null;
             };
 
             try {
-                //this.debug.log("Start loading manifest: " + url);
                 request.onload = onload;
-                request.onloadend = noRetry ? rejectWithoutRetry : report;
-                request.onerror = noRetry ? rejectWithoutRetry : report;
+                request.onloadend = report;
+                request.onerror = report;
                 request.onabort = onabort;
                 request.open("GET", url, true);
                 request.send();
-            } catch(e) {
+            } catch (e) {
                 request.onerror();
             }
         };
@@ -197,20 +182,16 @@ MediaPlayer.dependencies.ManifestLoader = function () {
         parser: undefined,
         errHandler: undefined,
         metricsModel: undefined,
-        tokenAuthentication:undefined,
-        load: function(url, noRetry) {
+        tokenAuthentication: undefined,
+        load: function(url) {
             deferred = Q.defer();
-
-            doLoad.call(this, url, RETRY_ATTEMPTS, noRetry);
-
+            doLoad.call(this, url);
             return deferred.promise;
         },
-        abort : abort
+        abort: abort
     };
 };
 
 MediaPlayer.dependencies.ManifestLoader.prototype = {
     constructor: MediaPlayer.dependencies.ManifestLoader
 };
-
-
