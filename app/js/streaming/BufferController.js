@@ -1292,7 +1292,7 @@ MediaPlayer.dependencies.BufferController = function () {
         config: undefined,
         abrRulesCollection: undefined,
 
-        initialize: function (type, newPeriodInfo, newData, buffer, scheduler, fragmentController, source, eventController) {
+        initialize: function(type, newPeriodInfo, newData, buffer, fragmentController, source, eventController) {
             var self = this,
                 manifest = self.manifestModel.getValue();
 
@@ -1309,10 +1309,8 @@ MediaPlayer.dependencies.BufferController = function () {
             self.setMediaSource(source);
             self.setType(type);
             self.setBuffer(buffer);
-            self.setScheduler(scheduler);
             self.setFragmentController(fragmentController);
             self.setEventController(eventController);
-
             minBufferTime = self.config.getParamFor(type, "BufferController.minBufferTime", "number", -1);
             minBufferTimeAtStartup = self.config.getParamFor(type, "BufferController.minBufferTimeForPlaying", "number", 0);
 
@@ -1395,14 +1393,6 @@ MediaPlayer.dependencies.BufferController = function () {
 
         setVideoModel: function (value) {
             this.videoModel = value;
-        },
-
-        getScheduler: function () {
-            return this.requestScheduler;
-        },
-
-        setScheduler: function (value) {
-            this.requestScheduler = value;
         },
 
         getFragmentController: function () {
