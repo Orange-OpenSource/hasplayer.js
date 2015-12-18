@@ -1,16 +1,5 @@
 module.exports = function() {
 
-    var debugFuncs = [],
-        logLevels = ["error", "warn", "info", "debug", "log"];
-        
-
-    for (var i = 0; i < logLevels.length; i++) {
-        debugFuncs.push("self.debug." + logLevels[i]);
-        debugFuncs.push("this.debug." + logLevels[i]);
-        debugFuncs.push("rslt.debug." + logLevels[i]);
-        debugFuncs.push("debug." + logLevels[i]);
-    }
-
     return {
         generated: {
             options: {
@@ -25,8 +14,7 @@ module.exports = function() {
         min: {
             options: {
                 compress:{
-                    pure_funcs: debugFuncs,
-                    drop_console : true,
+                    drop_console : false,
                     drop_debugger: true,
                     warnings: false
                 },

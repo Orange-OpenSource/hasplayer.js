@@ -1,6 +1,6 @@
 module.exports = {
 
-    html: {
+    dashif: {
         files: [
             {src: '<%= samples %>/index.html',              dest: '<%= path %>/index.html'},
             {src: '<%= appDashif %>/index.html',            dest: '<%= path %>/dashif.html'},

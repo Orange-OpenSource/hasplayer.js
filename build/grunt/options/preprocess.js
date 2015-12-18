@@ -2,6 +2,7 @@ module.exports = function(grunt) {
 
     var protocols  = grunt.option('protocol'),
         protection = grunt.option('protection'),
+        analytics = grunt.option('analytics'),
         hls = true,
         mss = true;
 
@@ -27,6 +28,11 @@ module.exports = function(grunt) {
         protection = true;
     }
 
+    if (typeof(analytics) !== 'boolean') {
+        // analytics is always included unless boolean is set to false
+        analytics = true;
+    }
+
     var sendError = function(params) {
         return  'this.errHandler.sendError(' + params[0] + ', ' + params[1] + ');';
     };
@@ -41,6 +47,7 @@ module.exports = function(grunt) {
                 HLS: hls,
                 MSS: mss,
                 PROTECTION: protection,
+                ANALYTICS:analytics,
                 sendError: sendError,
                 reject: reject
             }

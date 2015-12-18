@@ -1,13 +1,17 @@
 module.exports = {
 
-	src: [
-        '<%= appDashif %>/index.html',
-        '<%= appDemoPlayer %>/index.html',
-        '<%= path %>/source/playerSrc.html'
-    ],
+    hasplayer: {
+        src: '<%= path %>/source/playerSrc.html'
+    },
 
-	options: {
-		dest: '<%= path %>'
-	}
+    dashif: {
+        src: [
+            '<%= appDashif %>/index.html',
+            '<%= appDemoPlayer %>/index.html'
+        ]
+    },
 
+    options: {
+        dest: '<%= path %>'
+    }
 };
