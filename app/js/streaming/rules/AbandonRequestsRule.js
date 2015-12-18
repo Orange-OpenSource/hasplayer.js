@@ -31,7 +31,7 @@
 MediaPlayer.rules.AbandonRequestsRule = function() {
     "use strict";
 
-    var GRACE_TIME_THRESHOLD = 500,
+    var GRACE_TIME_THRESHOLD = 0.5,
         ABANDON_MULTIPLIER = 2;
 
     return {
@@ -51,13 +51,16 @@ MediaPlayer.rules.AbandonRequestsRule = function() {
                     return;
                 }
 
-                elapsedTime = (now - request.firstByteDate.getTime());
+                elapsedTime = (now - request.firstByteDate.getTime()) / 1000;
+                //this.debug.log("[AbandonRequestsRule][" + type + "] elapsedTime = " + elapsedTime + " s (" + request.bytesLoaded + "/" + request.bytesTotal + ")");
 
                 if (request.bytesLoaded < request.bytesTotal &&
-                    elapsedTime >= GRACE_TIME_THRESHOLD) {
+                    elapsedTime >= (request.duration * GRACE_TIME_THRESHOLD)) {
 
-                    measuredBandwidth = request.bytesLoaded / (elapsedTime/1000);
+                    measuredBandwidth = request.bytesLoaded / elapsedTime;
                     estimatedTimeOfDownload = request.bytesTotal / measuredBandwidth;
+
+                    //this.debug.log("[AbandonRequestsRule][" + type + "] bw = " + measuredBandwidth + " kb/s (" + estimatedTimeOfDownload + " s)");
 
                     if ((estimatedTimeOfDownload) > (request.duration * ABANDON_MULTIPLIER)) {
                         switchRequest = new MediaPlayer.rules.SwitchRequest(0, MediaPlayer.rules.SwitchRequest.prototype.STRONG);
