@@ -3,7 +3,7 @@ angular.module("DashPlayer").controller("ChromecastController", ["$scope", "$win
     if(window.chrome){
 
         // information about protocol and app ID and sender version
-        var PROTOCOL =  "urn:x-cast:com.google.cast.video.hasplayer";
+        var PROTOCOL =  "urn:x-cast:com.orange.cast.video.hasplayer";
         // ChromeCastAPP_ID
         var APP_ID = "7E99FD26";
         // End ChromeCastAPP_ID
@@ -62,7 +62,7 @@ angular.module("DashPlayer").controller("ChromecastController", ["$scope", "$win
             var p = new Promise(function(resolve, reject){
                         console.log("init Sesssion");
                         if(!currentSession){
-                            var sessionRequest = new chrome.cast.SessionRequest(APP_ID);
+                            var sessionRequest = new chrome.cast.SessionRequest(APP_ID, ["VIDEO_OUT","AUDIO_OUT"], 60000);
                             var apiConfig = new chrome.cast.ApiConfig(sessionRequest,sessionListener,receiverListener);
                             chrome.cast.initialize(apiConfig, function(){
                                     resolve();}, function(err){reject(err);});
@@ -77,7 +77,11 @@ angular.module("DashPlayer").controller("ChromecastController", ["$scope", "$win
         var onInitSuccess = function(){
             var p = new Promise(function(resolve,reject){
                 if(!currentSession){
-                    chrome.cast.requestSession(function(e){resolve(e);},function(err){reject(err);});
+                    console.info("requesting session");
+                    chrome.cast.requestSession(function(e){
+                        console.info("requesting sesdsion ok");
+                        resolve(e);},function(err){
+                            reject(err);});
                 }else{
                     resolve(currentSession);
                 }
@@ -105,6 +109,7 @@ angular.module("DashPlayer").controller("ChromecastController", ["$scope", "$win
         
         // called once the session created
         var sessionListener = function(e){
+            console.info("session created");
             currentSession = e;
             e.addUpdateListener(sessionUpdateListener);
             e.addMessageListener(PROTOCOL,onReceiverMessage);
@@ -123,7 +128,7 @@ angular.module("DashPlayer").controller("ChromecastController", ["$scope", "$win
                 $scope.doLoad();
                 $scope.$apply();
             }
-        }
+        };
 
         var onReceiverMessage = function(protocol, messageString){
             console.log("got a message",protocol, messageString);
@@ -190,7 +195,7 @@ angular.module("DashPlayer").controller("ChromecastController", ["$scope", "$win
                 var params = {};
                 params.url = $scope.selectedItem.url;
                 params.backUrl = $scope.selectedItem.backUrl || null;
-                params.customData = $scope.selectedItem.customData || null;
+                params.cdmData = $scope.selectedItem.cdmData || null;
                 if($scope.player.isReady()){
                     var isLive = $scope.player.metricsExt.manifestExt.getIsDynamic($scope.player.metricsExt.manifestModel.getValue());
                     $scope.player.getVideoModel().pause();
