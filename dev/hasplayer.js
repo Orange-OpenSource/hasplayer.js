@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 21.12.2015_11:4:54 / git revision : b66b984 */
+/* Last build : 21.12.2015_21:44:9 / git revision : db16a37 */
  /* jshint ignore:start */
 (function(root, factory) {
     if (typeof define === "function" && define.amd) {
@@ -5349,7 +5349,7 @@
     mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
     MediaPlayer = function(aContext) {
         "use strict";
-        var VERSION = "1.2.0", VERSION_HAS = "1.2.6_dev", GIT_TAG = "b66b984", BUILD_DATE = "21.12.2015_11:4:54", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
+        var VERSION = "1.2.0", VERSION_HAS = "1.2.6_dev", GIT_TAG = "db16a37", BUILD_DATE = "21.12.2015_21:44:9", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
             return !!element && !!source && !resetting;
         }, play = function() {
             if (!initialized) {
@@ -5376,7 +5376,6 @@
             streamController.load(source, protectionData);
             system.mapValue("scheduleWhilePaused", scheduleWhilePaused);
             system.mapOutlet("scheduleWhilePaused", "stream");
-            system.mapOutlet("scheduleWhilePaused", "bufferController");
             system.mapValue("bufferMax", bufferMax);
             system.injectInto(this.bufferExt, "bufferMax");
         }, doAutoPlay = function() {
@@ -6576,7 +6575,6 @@
             debug: undefined,
             system: undefined,
             errHandler: undefined,
-            scheduleWhilePaused: undefined,
             config: undefined,
             abrRulesCollection: undefined,
             initialize: function(type, newPeriodInfo, newData, buffer, fragmentController, source, eventController) {
@@ -6820,7 +6818,6 @@
         return {
             system: undefined,
             videoModel: undefined,
-            manifestExt: undefined,
             metricsExt: undefined,
             metricsModel: undefined,
             abrController: undefined,
@@ -7461,7 +7458,6 @@
         };
         return {
             manifestModel: undefined,
-            manifestExt: undefined,
             manifestLoader: undefined,
             debug: undefined,
             system: undefined,
@@ -7480,7 +7476,7 @@
         "use strict";
         var fragmentModels = [], findModel = function(bufferController) {
             var ln = fragmentModels.length, i = 0;
-            for (i = 0; i < ln; i++) {
+            for (i = 0; i < ln; i += 1) {
                 if (fragmentModels[i].getContext() === bufferController) {
                     return fragmentModels[i];
                 }
@@ -7488,7 +7484,7 @@
             return null;
         }, isReadyToLoadNextFragment = function() {
             var isReady = true, ln = fragmentModels.length, i = 0;
-            for (i = 0; i < ln; i++) {
+            for (i = 0; i < ln; i += 1) {
                 if (!fragmentModels[i].isReady()) {
                     isReady = false;
                     break;
@@ -7497,7 +7493,7 @@
             return isReady;
         }, executeRequests = function() {
             var i = 0;
-            for (i = 0; i < fragmentModels.length; i++) {
+            for (i = 0; i < fragmentModels.length; i += 1) {
                 fragmentModels[i].executeCurrentRequest();
             }
         };
@@ -7623,12 +7619,16 @@
             var req = new XMLHttpRequest(), isSuccessful = false;
             req.open("HEAD", request.url, true);
             req.onload = function() {
-                if (req.status < 200 || req.status > 399) return;
+                if (req.status < 200 || req.status > 399) {
+                    return;
+                }
                 isSuccessful = true;
                 request.deferred.resolve(request);
             };
             req.onloadend = req.onerror = function() {
-                if (isSuccessful) return;
+                if (isSuccessful) {
+                    return;
+                }
                 request.deferred.reject(req);
             };
             req.send();
@@ -7989,7 +7989,7 @@
             if (text.charCodeAt(0) !== 15360) {
                 return text;
             }
-            for (i = 0; i < text.length; i++) {
+            for (i = 0; i < text.length; i += 1) {
                 charCode = text.charCodeAt(i);
                 fixedCharCodes.push((charCode & 255) << 8 | (charCode & 65280) >> 8);
             }
@@ -8078,7 +8078,6 @@
         return {
             debug: undefined,
             parser: undefined,
-            errHandler: undefined,
             metricsModel: undefined,
             tokenAuthentication: undefined,
             load: function(url) {
@@ -8783,7 +8782,7 @@
             return mdhd;
         }, stringToCharCode = function(str) {
             var code = 0, i;
-            for (i = 0; i < str.length; i++) {
+            for (i = 0; i < str.length; i += 1) {
                 code |= str.charCodeAt(i) << (str.length - i - 1) * 8;
             }
             return code;
@@ -8869,7 +8868,7 @@
             return stsz;
         }, _hexstringtoBuffer = function(a) {
             var res = new Uint8Array(a.length / 2), i;
-            for (i = 0; i < a.length / 2; i++) {
+            for (i = 0; i < a.length / 2; i += 1) {
                 res[i] = parseInt("" + a[i * 2] + a[i * 2 + 1], 16);
             }
             return res;
@@ -8892,7 +8891,7 @@
             NALArray.splice(0, 1);
             SPS_index = 0;
             PPS_index = 0;
-            for (i = 0; i < NALArray.length; i++) {
+            for (i = 0; i < NALArray.length; i += 1) {
                 NALBuffer = _hexstringtoBuffer(NALArray[i]);
                 if (NALArray[i].match(regexpSPS)) {
                     avcC.SPS_NAL[SPS_index++] = {
@@ -9125,7 +9124,7 @@
         }, createMovieExtendsBox = function(tracks) {
             var mvex, trex, track = tracks[tracks.length - 1], i;
             mvex = new mp4lib.boxes.MovieExtendsBox();
-            for (i = 0; i < tracks.length; i++) {
+            for (i = 0; i < tracks.length; i += 1) {
                 track = tracks[i];
                 trex = new mp4lib.boxes.TrackExtendsBox();
                 trex.version = 0;
@@ -9140,7 +9139,7 @@
             return mvex;
         }, createProtectionSystemSpecificHeaderBox = function(keySystems) {
             var psshs = [], pssh_bytes, pssh, i;
-            for (i = 0; i < keySystems.length; i++) {
+            for (i = 0; i < keySystems.length; i += 1) {
                 pssh_bytes = new Uint8Array(keySystems[i].initData);
                 pssh = new mp4lib.boxes.ProtectionSystemSpecificHeaderBox();
                 pssh.read(pssh_bytes, 8, pssh_bytes.length);
@@ -9152,7 +9151,7 @@
             moov_file = new mp4lib.boxes.File();
             moov = new mp4lib.boxes.MovieBox();
             moov.boxes.push(createMovieHeaderBox(tracks));
-            for (i = 0; i < tracks.length; i++) {
+            for (i = 0; i < tracks.length; i += 1) {
                 moov.boxes.push(createTrackBox(tracks[i]));
             }
             moov.boxes.push(createMovieExtendsBox(tracks));
@@ -9221,7 +9220,7 @@
             moof_file = new mp4lib.boxes.File();
             moof = new mp4lib.boxes.MovieFragmentBox();
             moof.boxes.push(createMovieFragmentHeaderBox(sequenceNumber));
-            for (i = 0; i < tracks.length; i++) {
+            for (i = 0; i < tracks.length; i += 1) {
                 moof.boxes.push(createTrackFragmentBox(tracks[i]));
             }
             moof_file.boxes.push(moof);
@@ -9229,7 +9228,7 @@
             trafs = moof.getBoxesByType("traf");
             length += 8;
             mdatTracksTab = [ tracks.length ];
-            for (i = 0; i < tracks.length; i++) {
+            for (i = 0; i < tracks.length; i += 1) {
                 trafs[i].getBoxByType("trun").data_offset = length;
                 length += tracks[i].data.length;
                 mdatTracksTab[i] = tracks[i].data;
@@ -10106,7 +10105,6 @@
             manifestModel: undefined,
             mediaSourceExt: undefined,
             sourceBufferExt: undefined,
-            bufferExt: undefined,
             manifestExt: undefined,
             fragmentController: undefined,
             fragmentExt: undefined,
@@ -10543,9 +10541,6 @@
             manifestLoader: undefined,
             manifestUpdater: undefined,
             manifestModel: undefined,
-            mediaSourceExt: undefined,
-            sourceBufferExt: undefined,
-            bufferExt: undefined,
             manifestExt: undefined,
             fragmentExt: undefined,
             capabilities: undefined,
@@ -10666,7 +10661,7 @@
                     ownProtectionController = false;
                     protectionController = null;
                     protectionData = null;
-                    for (i = 0, ln = streams.length; i < ln; i++) {
+                    for (i = 0, ln = streams.length; i < ln; i += 1) {
                         stream = streams[i];
                         funcs.push(stream.reset());
                         if (stream !== activeStream) {
@@ -10850,7 +10845,9 @@
                 return element.currentTime;
             },
             setCurrentTime: function(currentTime) {
-                if (element.currentTime === currentTime) return;
+                if (element.currentTime === currentTime) {
+                    return;
+                }
                 element.currentTime = currentTime;
             },
             listen: function(type, callback) {
@@ -11147,7 +11144,7 @@
             },
             removeRange: function(start, end) {
                 var i = 0;
-                for (i = this.ranges.length - 1; i >= 0; i--) {
+                for (i = this.ranges.length - 1; i >= 0; i -= 1) {
                     if (this.ranges[i].start >= start && this.ranges[i].end <= end) this.ranges.splice(i, 1);
                 }
                 this.length = this.ranges.length;
@@ -11211,7 +11208,7 @@
                         self.ttmlParser.parse(result).then(function(cues) {
                             var i;
                             if (cues) {
-                                for (i = 0; i < cues.length; i++) {
+                                for (i = 0; i < cues.length; i += 1) {
                                     cues[i].start = cues[i].start + fragmentStart;
                                     cues[i].end = cues[i].end + fragmentStart;
                                 }
@@ -11972,7 +11969,6 @@
             unsubscribe: undefined,
             protectionExt: undefined,
             keySystem: undefined,
-            manifestExt: undefined,
             setup: function() {
                 this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE] = onKeyMessage.bind(this);
                 this[MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY] = onNeedKey.bind(this);
@@ -15593,6 +15589,18 @@
             }
             return [];
         },
+        getIndex: function(adaptation, manifest) {
+            var periods = manifest.Period_asArray, adaptations, i, j;
+            for (i = 0; i < periods.length; i += 1) {
+                adaptations = periods[i].AdaptationSet_asArray;
+                for (j = 0; j < adaptations.length; j += 1) {
+                    if (adaptations[j] === adaptation) {
+                        return j;
+                    }
+                }
+            }
+            return -1;
+        },
         getDataIndex: function(data, manifest, periodIndex) {
             "use strict";
             var adaptations, i, len;
@@ -16570,7 +16578,6 @@
         };
         return {
             debug: undefined,
-            errHandler: undefined,
             parse: internalParse
         };
     };
@@ -17168,7 +17175,7 @@
         var _splitLines = function(oData) {
             var i = 0;
             oData = oData.split("\n");
-            for (i = 0; i < oData.length; i++) {
+            for (i = 0; i < oData.length; i += 1) {
                 if (oData[i] === "" || oData[i] === " ") {
                     oData.splice(i, 1);
                     i--;
@@ -17195,7 +17202,7 @@
                 resolution: "0x0",
                 codecs: ""
             }, name = "", value = "", i, streamParams = _getTagParams(streamInfArray[0]);
-            for (i = streamParams.length - 1; i >= 0; i--) {
+            for (i = streamParams.length - 1; i >= 0; i -= 1) {
                 if (streamParams[i].indexOf("=") === -1 && i > 0) {
                     streamParams[i - 1] += "," + streamParams[i];
                 } else {
@@ -17243,7 +17250,7 @@
         };
         var _getVariantStreams = function(data) {
             var streamsArray = [], i = 0;
-            for (i = 0; i < data.length; i++) {
+            for (i = 0; i < data.length; i += 1) {
                 if (_containsTag(data[i], TAG_EXTXSTREAMINF)) {
                     streamsArray.push(_parseStreamInf([ data[i], data[i + 1] ]));
                 }
@@ -17448,7 +17455,7 @@
                 Representation: representations,
                 Representation_asArray: representations
             };
-            for (i = 0; i < streams.length; i++) {
+            for (i = 0; i < streams.length; i += 1) {
                 stream = streams[i];
                 if (stream.bandwidth > 64e3) {
                     representation = {
@@ -17512,6 +17519,7 @@
         constructor: Hls.dependencies.HlsParser
     };
     Hls.dependencies.HlsHandler = function() {
+        "use strict";
         var getInit = function(representation) {
             var period = null, self = this, presentationStartTime = null, deferred = Q.defer(), manifest, isDynamic, request;
             period = representation.adaptation.period;
@@ -17542,13 +17550,13 @@
         var lastRequestQuality = null;
         var generateInitSegment = function(data) {
             var i = 0, manifest = rslt.manifestModel.getValue(), tracks = rslt.hlsDemux.getTracks(new Uint8Array(data));
-            for (i = 0; i < tracks.length; i++) {
+            for (i = 0; i < tracks.length; i += 1) {
                 tracks[i].duration = manifest.mediaPresentationDuration;
             }
             return rslt.mp4Processor.generateInitSegment(tracks);
         }, generateMediaSegment = function(data) {
             var i = 0, tracks = rslt.hlsDemux.demux(new Uint8Array(data));
-            for (i = 0; i < tracks.length; i++) {
+            for (i = 0; i < tracks.length; i += 1) {
                 if (tracks[i].type === "video") {
                     rslt.startTime = tracks[i].samples[0].cts / tracks[i].timescale;
                 }
@@ -17958,26 +17966,15 @@
     };
     Mss.dependencies.MssFragmentController = function() {
         "use strict";
-        var getIndex = function(adaptation, manifest) {
-            var periods = manifest.Period_asArray, adaptations, i, j;
-            for (i = 0; i < periods.length; i += 1) {
-                adaptations = periods[i].AdaptationSet_asArray;
-                for (j = 0; j < adaptations.length; j += 1) {
-                    if (adaptations[j] === adaptation) {
-                        return j;
-                    }
-                }
-            }
-            return -1;
-        }, processTfrf = function(tfrf, tfdt, adaptation) {
-            var manifest = rslt.manifestModel.getValue(), segmentsUpdated = false, segments = adaptation.SegmentTemplate.SegmentTimeline.S, entries = tfrf.entry, fragment_absolute_time = 0, fragment_duration = 0, segment = null, t = 0, i = 0, j = 0, segmentId = -1, availabilityStartTime = null;
+        var processTfrf = function(tfrf, tfdt, adaptation) {
+            var manifest = this.manifestModel.getValue(), segmentsUpdated = false, segments = adaptation.SegmentTemplate.SegmentTimeline.S, entries = tfrf.entry, fragment_absolute_time = 0, fragment_duration = 0, segment = null, t = 0, i = 0, j = 0, segmentId = -1, availabilityStartTime = null;
             while (i < entries.length) {
                 fragment_absolute_time = entries[i].fragment_absolute_time;
                 fragment_duration = entries[i].fragment_duration;
                 segment = segments[segments.length - 1];
                 t = segment.t;
                 if (fragment_absolute_time > t) {
-                    rslt.debug.log("[MssFragmentController] Add new segment - t = " + fragment_absolute_time / 1e7);
+                    this.debug.log("[MssFragmentController] Add new segment - t = " + fragment_absolute_time / 1e7);
                     segments.push({
                         t: fragment_absolute_time,
                         d: fragment_duration
@@ -17999,7 +17996,7 @@
                         if (t + segments[segmentId + i].d != entries[i].fragment_absolute_time) {
                             segments[segmentId + i].t = entries[i].fragment_absolute_time;
                             segments[segmentId + i].d = entries[i].fragment_duration;
-                            rslt.debug.log("[MssFragmentController] Correct tfrf time  = " + entries[i].fragment_absolute_time + "and duration = " + entries[i].fragment_duration + "! ********");
+                            this.debug.log("[MssFragmentController] Correct tfrf time  = " + entries[i].fragment_absolute_time + "and duration = " + entries[i].fragment_duration + "! ********");
                             segmentsUpdated = true;
                         }
                     }
@@ -18011,13 +18008,13 @@
                 availabilityStartTime = t - manifest.timeShiftBufferDepth * 1e7;
                 segment = segments[0];
                 while (segment.t < availabilityStartTime) {
-                    rslt.debug.log("[MssFragmentController] Remove segment  - t = " + segment.t / 1e7);
+                    this.debug.log("[MssFragmentController] Remove segment  - t = " + segment.t / 1e7);
                     segments.splice(0, 1);
                     segment = segments[0];
                 }
             }
         }, convertFragment = function(data, request, adaptation) {
-            var i = 0, manifest = rslt.manifestModel.getValue(), trackId = manifest ? getIndex(adaptation, manifest) + 1 : -1, fragment = mp4lib.deserialize(data), moof = null, mdat = null, traf = null, trun = null, tfhd = null, saio = null, sepiff = null, saiz = null, tfdt = null, tfrf = null, sizedifferent = false, pos = -1, fragment_size = 0, moofPosInFragment = 0, trafPosInMoof = 0, sencPosInTraf = 0, new_data = null;
+            var i = 0, manifest = this.manifestModel.getValue(), trackId = manifest ? this.manifestExt.getIndex(adaptation, manifest) + 1 : -1, fragment = mp4lib.deserialize(data), moof = null, mdat = null, traf = null, trun = null, tfhd = null, saio = null, sepiff = null, saiz = null, tfdt = null, tfrf = null, sizedifferent = false, pos = -1, fragment_size = 0, moofPosInFragment = 0, trafPosInMoof = 0, sencPosInTraf = 0, new_data = null;
             if (!fragment) {
                 return null;
             }
@@ -18077,7 +18074,7 @@
             tfrf = traf.getBoxesByType("tfrf");
             if (tfrf.length !== 0) {
                 for (i = 0; i < tfrf.length; i += 1) {
-                    processTfrf(tfrf[i], tfdt, adaptation);
+                    processTfrf.call(this, tfrf[i], tfdt, adaptation);
                     traf.removeBoxByType("tfrf");
                 }
             }
@@ -18098,7 +18095,7 @@
         };
         var rslt = MediaPlayer.utils.copyMethods(MediaPlayer.dependencies.FragmentController);
         rslt.manifestModel = undefined;
-        rslt.mp4Processor = undefined;
+        rslt.manifestExt = undefined;
         rslt.process = function(bytes, request, representations) {
             var result = null, manifest = this.manifestModel.getValue(), adaptation = null;
             if (bytes !== null && bytes !== undefined && bytes.byteLength > 0) {
@@ -18108,7 +18105,7 @@
             }
             if (request && request.type === "Media Segment" && manifest && representations && representations.length > 0) {
                 adaptation = manifest.Period_asArray[representations[0].adaptation.period.index].AdaptationSet_asArray[representations[0].adaptation.index];
-                result = convertFragment(result, request, adaptation);
+                result = convertFragment.call(this, result, request, adaptation);
                 if (!result) {
                     return Q.when(null);
                 }
