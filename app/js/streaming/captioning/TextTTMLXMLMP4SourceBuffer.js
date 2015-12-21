@@ -15,7 +15,7 @@
 // Orange: This Source Buffer processes TTML+XML subtitles encapsulated in the mp4
 //         This format is used by smoothstreaming headends
 
-MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function () {
+MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
 
     var video,
         mimeType,
@@ -28,62 +28,64 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function () {
         // as player checks the buffer level using these
 
         buffered = {
-            length:0,
-            ranges:[],
+            length: 0,
+            ranges: [],
 
-            start: function( index ) {
+            start: function(index) {
                 return this.ranges[index].start;
             },
 
-            end: function( index ) {
+            end: function(index) {
                 return this.ranges[index].end;
             },
 
-            addRange: function( start, end ) {
+            addRange: function(start, end) {
                 this.ranges.push({
                     start: start,
                     end: end
                 });
-                this.length=this.length+1;
+                this.length = this.length + 1;
 
                 // TimeRanges must be normalized
 
-                this.ranges.sort(function(a,b){return a.start-b.start;});
+                this.ranges.sort(function(a, b) {
+                    return a.start - b.start;
+                });
             },
 
             removeRange: function(start, end) {
                 var i = 0;
-                for (i = this.ranges.length - 1; i >= 0; i--) {
-                    if(this.ranges[i].start >= start && this.ranges[i].end <= end)
-                        this.ranges.splice(i,1);
+                for (i = this.ranges.length - 1; i >= 0; i -= 1) {
+                    if (this.ranges[i].start >= start && this.ranges[i].end <= end)
+                        this.ranges.splice(i, 1);
                 }
 
                 this.length = this.ranges.length;
             },
 
-            reset: function () {
+            reset: function() {
                 this.length = 0;
                 this.ranges = [];
             }
         };
 
     return {
-        updating:false,
-        system:undefined,
-        eventBus:undefined,
+        updating: false,
+        system: undefined,
+        eventBus: undefined,
         buffered: buffered,
-        textTrackExtensions:undefined,
-        ttmlParser:undefined,
+        textTrackExtensions: undefined,
+        ttmlParser: undefined,
         debug: undefined,
 
-        initialize: function (type, bufferController, subtitleData) {
+        initialize: function(type, bufferController, subtitleData) {
             mimeType = type;
             video = bufferController.getVideoModel().getElement();
             buffered.reset();
             currentLang = subtitleData.lang;
             currentId = subtitleData.id;
         },
-        remove:function (start,end) {
+        remove: function(start, end) {
             /*If start is negative or greater than duration, then throw an INVALID_ACCESS_ERR exception and abort these steps.
             If end is less than or equal to start, then throw an INVALID_ACCESS_ERR exception and abort these steps.
             If this object has been removed from the sourceBuffers attribute of the parent media source then throw an INVALID_STATE_ERR exception and abort these steps.
@@ -102,14 +104,14 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function () {
             if (start < 0 || start >= end) {
                 throw "INVALID_ACCESS_ERR";
             }
-            
+
             this.getTextTrackExtensions().deleteCues(video, false);
             this.buffered.removeRange(start, end);
         },
 
-        append: function (bytes) {
+        append: function(bytes) {
             var self = this,
-                file = mp4lib.deserialize( bytes ),
+                file = mp4lib.deserialize(bytes),
                 moov = file.getBoxByType('moov'),
                 mvhd,
                 moof,
@@ -132,11 +134,12 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function () {
                 // Also, it is a good moment to set up a text track on videoElement
                 // TODO: set up name and language 
                 self.textTrackExtensions.addTextTrack(video, [], currentId, currentLang, true)
-                .then(  function(track) {
-                            self.track = track;
-                            self.eventBus.dispatchEvent({type:"updateend"});
-                        }
-                    );
+                    .then(function(track) {
+                        self.track = track;
+                        self.eventBus.dispatchEvent({
+                            type: "updateend"
+                        });
+                    });
                 return;
             }
 
@@ -154,70 +157,74 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function () {
                 tfdt = traf.getBoxByType('tfdt');
                 trun = traf.getBoxByType('trun');
 
-                fragmentStart = tfdt.baseMediaDecodeTime/self.timescale;
+                fragmentStart = tfdt.baseMediaDecodeTime / self.timescale;
                 fragmentDuration = 0;
                 if (trun.flags & 0x000100) {
-                    fragmentDuration = trun.samples_table[0].sample_duration/self.timescale;
-                }
-                else {
-                    fragmentDuration = tfhd.default_sample_duration/self.timescale;
+                    fragmentDuration = trun.samples_table[0].sample_duration / self.timescale;
+                } else {
+                    fragmentDuration = tfhd.default_sample_duration / self.timescale;
                 }
 
-                self.buffered.addRange( fragmentStart, fragmentStart+fragmentDuration );
+                self.buffered.addRange(fragmentStart, fragmentStart + fragmentDuration);
 
                 // parse data and add to cues
 
                 self.convertUTF8ToString(mdat.data)
-                .then ( function(result) {
-                        self.ttmlParser.parse(result).then( function(cues) {
+                    .then(function(result) {
+                        self.ttmlParser.parse(result).then(function(cues) {
                             var i;
                             if (cues) {
-                                for (i=0;i<cues.length;i++) {
-                                    cues[i].start = cues[i].start+fragmentStart;
-                                    cues[i].end = cues[i].end+fragmentStart;
+                                for (i = 0; i < cues.length; i += 1) {
+                                    cues[i].start = cues[i].start + fragmentStart;
+                                    cues[i].end = cues[i].end + fragmentStart;
                                 }
 
-                                self.textTrackExtensions.addCues( self.track, cues );
-                               
-                                self.eventBus.dispatchEvent({type:"updateend"});
+                                self.textTrackExtensions.addCues(self.track, cues);
+
+                                self.eventBus.dispatchEvent({
+                                    type: "updateend"
+                                });
                             }
-                        }, function(error){
+                        }, function(error) {
                             //self.debug.error("[TextTTMLXMLMP4SourceBuffer] error parsing TTML "+error);
                         });
-                    }
-                );
+                    });
             }
             return;
         },
 
-        convertUTF8ToString: function( buf ) {
+        convertUTF8ToString: function(buf) {
             var deferred = Q.defer(),
-                blob = new Blob([buf],{type:"text/xml"}),
+                blob = new Blob([buf], {
+                    type: "text/xml"
+                }),
                 f = new FileReader();
 
             f.onload = function(e) {
                 deferred.resolve(e.target.result);
             };
             f.readAsText(blob);
-                        
+
             return deferred.promise;
         },
 
-        abort:function() {
+        abort: function() {
             this.getTextTrackExtensions().deleteCues(video, true);
         },
 
-        getTextTrackExtensions:function() {
+        getTextTrackExtensions: function() {
             return this.textTrackExtensions;
         },
 
-        addEventListener: function (type, listener, useCapture) {
+        addEventListener: function(type, listener, useCapture) {
             this.eventBus.addEventListener(type, listener, useCapture);
             if (!this.updating)
-                this.eventBus.dispatchEvent({type:"updateend"});
+                this.eventBus.dispatchEvent({
+                    type: "updateend"
+                });
         },
 
-        removeEventListener: function (type, listener, useCapture) {
+        removeEventListener: function(type, listener, useCapture) {
             this.eventBus.removeEventListener(type, listener, useCapture);
         }
     };

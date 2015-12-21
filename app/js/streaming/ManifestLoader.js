@@ -36,7 +36,7 @@ MediaPlayer.dependencies.ManifestLoader = function() {
             }
 
             // We have a problem!
-            for (i = 0; i < text.length; i++) {
+            for (i = 0; i < text.length; i += 1) {
                 charCode = text.charCodeAt(i);
 
                 // Swap around the two bytes that make up the character code.
@@ -180,7 +180,6 @@ MediaPlayer.dependencies.ManifestLoader = function() {
     return {
         debug: undefined,
         parser: undefined,
-        errHandler: undefined,
         metricsModel: undefined,
         tokenAuthentication: undefined,
         load: function(url) {

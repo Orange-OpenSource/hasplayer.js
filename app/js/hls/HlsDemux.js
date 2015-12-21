@@ -16,7 +16,6 @@
 Hls.dependencies.HlsDemux = function() {
     "use strict";
 
-
     var _appendArray = function(array1, array2) {
         var tmp = new Uint8Array(array1.byteLength + array2.byteLength);
         tmp.set(array1, 0);

@@ -29,7 +29,6 @@ Dash.dependencies.DashHandler = function() {
         },
 
         replaceTokenForTemplate = function(url, token, value) {
-
             var startPos = 0,
                 endPos = 0,
                 tokenLen = token.length,

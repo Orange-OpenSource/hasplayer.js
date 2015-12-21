@@ -50,7 +50,7 @@ Hls.dependencies.HlsParser = function() {
         var i = 0;
         oData = oData.split('\n');
         //remove empty lines
-        for (i = 0; i < oData.length; i++) {
+        for (i = 0; i < oData.length; i += 1) {
             if (oData[i] === "" || oData[i] === " ") {
                 oData.splice(i, 1);
                 i--;
@@ -100,7 +100,7 @@ Hls.dependencies.HlsParser = function() {
             //streamParams = _getTagValue(streamInfArray[0], TAG_EXTXSTREAMINF).split(',');
             streamParams = _getTagParams(streamInfArray[0]);
 
-        for (i = streamParams.length - 1; i >= 0; i--) {
+        for (i = streamParams.length - 1; i >= 0; i -= 1) {
 
             // Check if '=' character is present. If not, it means that there was
             // a ',' in the parameter value
@@ -188,7 +188,7 @@ Hls.dependencies.HlsParser = function() {
         var streamsArray = [],
             i = 0;
 
-        for (i = 0; i < data.length; i++) {
+        for (i = 0; i < data.length; i += 1) {
 
             if (_containsTag(data[i], TAG_EXTXSTREAMINF)) {
                 streamsArray.push(_parseStreamInf([data[i], data[i + 1]]));
@@ -611,7 +611,7 @@ Hls.dependencies.HlsParser = function() {
         };
 
         // Create representations
-        for (i = 0; i < streams.length; i++) {
+        for (i = 0; i < streams.length; i += 1) {
             // Do not consider representation with bandwidth <= 64K which corresponds to audio only variant stream
             stream = streams[i];
             if (stream.bandwidth > 64000) {

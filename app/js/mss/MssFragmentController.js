@@ -16,26 +16,8 @@
 Mss.dependencies.MssFragmentController = function() {
     "use strict";
 
-    var getIndex = function(adaptation, manifest) {
-            var periods = manifest.Period_asArray,
-                adaptations,
-                i,
-                j;
-
-            for (i = 0; i < periods.length; i += 1) {
-                adaptations = periods[i].AdaptationSet_asArray;
-                for (j = 0; j < adaptations.length; j += 1) {
-                    if (adaptations[j] === adaptation) {
-                        return j;
-                    }
-                }
-            }
-
-            return -1;
-        },
-
-        processTfrf = function(tfrf, tfdt, adaptation) {
-            var manifest = rslt.manifestModel.getValue(),
+    var processTfrf = function(tfrf, tfdt, adaptation) {
+            var manifest = this.manifestModel.getValue(),
                 segmentsUpdated = false,
                 // Get adaptation's segment timeline (always a SegmentTimeline in Smooth Streaming use case)
                 segments = adaptation.SegmentTemplate.SegmentTimeline.S,
@@ -59,7 +41,7 @@ Mss.dependencies.MssFragmentController = function() {
                 t = segment.t;
 
                 if (fragment_absolute_time > t) {
-                    rslt.debug.log("[MssFragmentController] Add new segment - t = " + (fragment_absolute_time / 10000000.0));
+                    this.debug.log("[MssFragmentController] Add new segment - t = " + (fragment_absolute_time / 10000000.0));
                     segments.push({
                         t: fragment_absolute_time,
                         d: fragment_duration
@@ -84,7 +66,7 @@ Mss.dependencies.MssFragmentController = function() {
                         if ((t + segments[segmentId + i].d) != entries[i].fragment_absolute_time) {
                             segments[segmentId + i].t = entries[i].fragment_absolute_time;
                             segments[segmentId + i].d = entries[i].fragment_duration;
-                            rslt.debug.log("[MssFragmentController] Correct tfrf time  = " + entries[i].fragment_absolute_time + "and duration = " + entries[i].fragment_duration + "! ********");
+                            this.debug.log("[MssFragmentController] Correct tfrf time  = " + entries[i].fragment_absolute_time + "and duration = " + entries[i].fragment_duration + "! ********");
                             segmentsUpdated = true;
                         }
                     }
@@ -105,7 +87,7 @@ Mss.dependencies.MssFragmentController = function() {
                 // Remove segments prior to availability start time
                 segment = segments[0];
                 while (segment.t < availabilityStartTime) {
-                    rslt.debug.log("[MssFragmentController] Remove segment  - t = " + (segment.t / 10000000.0));
+                    this.debug.log("[MssFragmentController] Remove segment  - t = " + (segment.t / 10000000.0));
                     segments.splice(0, 1);
                     segment = segments[0];
                 }
@@ -115,8 +97,8 @@ Mss.dependencies.MssFragmentController = function() {
         convertFragment = function(data, request, adaptation) {
             var i = 0,
                 // Get track id corresponding to adaptation set
-                manifest = rslt.manifestModel.getValue(),
-                trackId = manifest ? getIndex(adaptation, manifest) + 1 : -1, // +1 since track_id shall start from '1'
+                manifest = this.manifestModel.getValue(),
+                trackId = manifest ? this.manifestExt.getIndex(adaptation, manifest) + 1 : -1, // +1 since track_id shall start from '1'
                 // Create new fragment
                 fragment = mp4lib.deserialize(data),
                 moof = null,
@@ -225,7 +207,7 @@ Mss.dependencies.MssFragmentController = function() {
             tfrf = traf.getBoxesByType("tfrf");
             if (tfrf.length !== 0) {
                 for (i = 0; i < tfrf.length; i += 1) {
-                    processTfrf(tfrf[i], tfdt, adaptation);
+                    processTfrf.call(this, tfrf[i], tfdt, adaptation);
                     traf.removeBoxByType("tfrf");
                 }
             }
@@ -260,7 +242,7 @@ Mss.dependencies.MssFragmentController = function() {
     var rslt = MediaPlayer.utils.copyMethods(MediaPlayer.dependencies.FragmentController);
 
     rslt.manifestModel = undefined;
-    rslt.mp4Processor = undefined;
+    rslt.manifestExt = undefined;
 
     rslt.process = function(bytes, request, representations) {
         var result = null,
@@ -277,7 +259,7 @@ Mss.dependencies.MssFragmentController = function() {
             // Get adaptation containing provided representations
             // (Note: here representations is of type Dash.vo.Representation)
             adaptation = manifest.Period_asArray[representations[0].adaptation.period.index].AdaptationSet_asArray[representations[0].adaptation.index];
-            result = convertFragment(result, request, adaptation);
+            result = convertFragment.call(this, result, request, adaptation);
 
             if (!result) {
                 return Q.when(null);

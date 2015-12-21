@@ -193,15 +193,15 @@ MediaPlayer.dependencies.Stream = function() {
             this.debug.log("[Stream] checkIfInitialized videoState=" + videoState + " audioState=" + audioState + " textTrackState=" + textTrackState);
             if (videoState !== null && audioState !== null && textTrackState !== null) {
                 if (videoState === "ready" && audioState === "ready" && textTrackState === "ready") {
-                        // Initialize protection controller
-                        if (protectionController) {
-                            protectionController.init(contentProtection, audioCodec, videoCodec);
-                        } else if (contentProtection && !this.capabilities.supportsEncryptedMedia()) {
-                            // No protectionController (MediaKeys not supported/enabled) but content is protected => error
+                    // Initialize protection controller
+                    if (protectionController) {
+                        protectionController.init(contentProtection, audioCodec, videoCodec);
+                    } else if (contentProtection && !this.capabilities.supportsEncryptedMedia()) {
+                        // No protectionController (MediaKeys not supported/enabled) but content is protected => error
                         this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS, "EME is not supported/enabled", null);
-                            initializedeferred.reject();
-                        }
-                        initializedeferred.resolve(true);
+                        initializedeferred.reject();
+                    }
+                    initializedeferred.resolve(true);
                 } else if (videoState === "error" || audioState === "error" || textTrackState === "error") {
                     initializedeferred.reject();
                 }
@@ -276,7 +276,7 @@ MediaPlayer.dependencies.Stream = function() {
                         },
                         // self.sourceBufferExt.createSourceBuffer() failed
                         function(ex) {
-                                videoState = "error";
+                            videoState = "error";
                             checkIfInitialized.call(self, videoState, audioState, textTrackState);
                             if (ex.code && ex.code === MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_SUPPORTED) {
                                 self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Video codec is not supported", {
@@ -292,7 +292,7 @@ MediaPlayer.dependencies.Stream = function() {
                 },
                 // self.manifestExt.getVideoData() failed
                 function() {
-                        videoState = "error";
+                    videoState = "error";
                     checkIfInitialized.call(self, videoState, audioState, textTrackState);
                     self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO, "No Video data in manifest");
                     // Video is required, cancel any other track initialization
@@ -348,7 +348,7 @@ MediaPlayer.dependencies.Stream = function() {
                         },
                         // self.sourceBufferExt.createSourceBuffer() failed
                         function(ex) {
-                                audioState = "error";
+                            audioState = "error";
                             if (ex.code && ex.code === MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_SUPPORTED) {
                                 self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Audio codec is not supported", {
                                     codec: videoCodec
@@ -400,7 +400,7 @@ MediaPlayer.dependencies.Stream = function() {
                                     message: "MediaSource undefined"
                                 });
                             }
-                            }
+                        }
                     ).then(
                         function(buffer) {
                             textController = self.system.getObject("bufferController");
@@ -870,7 +870,7 @@ MediaPlayer.dependencies.Stream = function() {
 
             // Resolve load promise in order to start playing (see doLoad())
             if (load !== null) {
-            load.resolve(null);
+                load.resolve(null);
                 load = null;
             } else {
                 // Else start playing (reload use case)
@@ -906,9 +906,9 @@ MediaPlayer.dependencies.Stream = function() {
                 deferredVideoData.then(
                     function(data) {
                         videoController.updateData(data, periodInfo);
-                                deferredVideoUpdate.resolve();
-                            }
-                        );
+                        deferredVideoUpdate.resolve();
+                    }
+                );
             } else {
                 deferredVideoUpdate.resolve();
             }
@@ -919,9 +919,9 @@ MediaPlayer.dependencies.Stream = function() {
                 deferredAudioData.then(
                     function(data) {
                         audioController.updateData(data, periodInfo);
-                                deferredAudioUpdate.resolve();
-                            }
-                        );
+                        deferredAudioUpdate.resolve();
+                    }
+                );
             } else {
                 deferredAudioUpdate.resolve();
             }
@@ -932,10 +932,10 @@ MediaPlayer.dependencies.Stream = function() {
                 deferredTextData.then(
                     function(data) {
                         textController.updateData(data, periodInfo);
-                                deferredTextUpdate.resolve();
-                            }
-                        );
+                        deferredTextUpdate.resolve();
                     }
+                );
+            }
 
             if (eventController) {
                 self.manifestExt.getEventsForPeriod(manifest, periodInfo).then(
@@ -990,7 +990,6 @@ MediaPlayer.dependencies.Stream = function() {
         manifestModel: undefined,
         mediaSourceExt: undefined,
         sourceBufferExt: undefined,
-        bufferExt: undefined,
         manifestExt: undefined,
         fragmentController: undefined,
         fragmentExt: undefined,
@@ -1116,7 +1115,7 @@ MediaPlayer.dependencies.Stream = function() {
                     function(index) {
                         textTrackIndex = index;
 
-                       // Update manifest
+                        // Update manifest
                         self.system.notify("manifestUpdate");
                     }
                 );

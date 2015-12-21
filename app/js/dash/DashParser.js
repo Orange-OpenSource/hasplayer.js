@@ -352,7 +352,6 @@ Dash.dependencies.DashParser = function () {
 
     return {
         debug: undefined,
-        errHandler: undefined,
         parse: internalParse
     };
 };

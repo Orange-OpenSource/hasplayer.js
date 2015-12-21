@@ -14,36 +14,37 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 Hls.dependencies.HlsHandler = function() {
-    var getInit = function (representation) {
-            var period = null,
-                self = this,
-                presentationStartTime = null,
-                deferred = Q.defer(),
-                manifest,
-                isDynamic,
-                request;
+    "use strict";
+    var getInit = function(representation) {
+        var period = null,
+            self = this,
+            presentationStartTime = null,
+            deferred = Q.defer(),
+            manifest,
+            isDynamic,
+            request;
 
-            //Mss.dependencies.MssHandler.prototype.getInitRequest.call(this,quality,data).then(onGetInitRequestSuccess);
-            // get the period and startTime
-            period = representation.adaptation.period;
-            presentationStartTime = period.start;
+        //Mss.dependencies.MssHandler.prototype.getInitRequest.call(this,quality,data).then(onGetInitRequestSuccess);
+        // get the period and startTime
+        period = representation.adaptation.period;
+        presentationStartTime = period.start;
 
-            manifest = rslt.manifestModel.getValue();
-            isDynamic = rslt.manifestExt.getIsDynamic(manifest);
+        manifest = rslt.manifestModel.getValue();
+        isDynamic = rslt.manifestExt.getIsDynamic(manifest);
 
-            request = new MediaPlayer.vo.SegmentRequest();
+        request = new MediaPlayer.vo.SegmentRequest();
 
-            request.streamType = rslt.getType();
-            request.type = "Initialization Segment";
-            request.url = null;
-            request.data = 1; //used to activate Loaded event in BufferControler
-            request.range =  representation.range;
-            request.availabilityStartTime = self.timelineConverter.calcAvailabilityStartTimeFromPresentationTime(presentationStartTime, representation.adaptation.period.mpd, isDynamic);
-            request.availabilityEndTime = self.timelineConverter.calcAvailabilityEndTimeFromPresentationTime(presentationStartTime + period.duration, period.mpd, isDynamic);
+        request.streamType = rslt.getType();
+        request.type = "Initialization Segment";
+        request.url = null;
+        request.data = 1; //used to activate Loaded event in BufferControler
+        request.range = representation.range;
+        request.availabilityStartTime = self.timelineConverter.calcAvailabilityStartTimeFromPresentationTime(presentationStartTime, representation.adaptation.period.mpd, isDynamic);
+        request.availabilityEndTime = self.timelineConverter.calcAvailabilityEndTimeFromPresentationTime(presentationStartTime + period.duration, period.mpd, isDynamic);
 
-            request.quality = representation.index;
-            deferred.resolve(request);
-            return deferred.promise;
+        request.quality = representation.index;
+        deferred.resolve(request);
+        return deferred.promise;
     };
 
     var rslt = MediaPlayer.utils.copyMethods(Dash.dependencies.DashHandler);
@@ -53,6 +54,6 @@ Hls.dependencies.HlsHandler = function() {
     return rslt;
 };
 
-Hls.dependencies.HlsHandler.prototype =  {
-    constructor : Hls.dependencies.HlsHandler
+Hls.dependencies.HlsHandler.prototype = {
+    constructor: Hls.dependencies.HlsHandler
 };

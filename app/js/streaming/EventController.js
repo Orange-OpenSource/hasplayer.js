@@ -160,7 +160,6 @@ MediaPlayer.dependencies.EventController = function() {
 
     return {
         manifestModel: undefined,
-        manifestExt: undefined,
         manifestLoader: undefined,
         debug: undefined,
         system: undefined,

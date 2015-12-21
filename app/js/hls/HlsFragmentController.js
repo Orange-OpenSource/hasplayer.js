@@ -24,7 +24,7 @@ Hls.dependencies.HlsFragmentController = function() {
                 tracks = rslt.hlsDemux.getTracks(new Uint8Array(data));
 
             // Add track duration
-            for (i = 0; i < tracks.length; i++) {
+            for (i = 0; i < tracks.length; i += 1) {
                 tracks[i].duration = manifest.mediaPresentationDuration;
             }
             // Generate init segment (moov)
@@ -37,7 +37,7 @@ Hls.dependencies.HlsFragmentController = function() {
             var i = 0,
                 tracks = rslt.hlsDemux.demux(new Uint8Array(data));
 
-            for (i = 0; i < tracks.length; i++) {
+            for (i = 0; i < tracks.length; i += 1) {
                 if (tracks[i].type === "video") {
                     rslt.startTime = tracks[i].samples[0].cts / tracks[i].timescale;
                 }

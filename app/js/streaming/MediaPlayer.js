@@ -115,7 +115,6 @@ MediaPlayer = function(aContext) {
             streamController.load(source, protectionData);
             system.mapValue("scheduleWhilePaused", scheduleWhilePaused);
             system.mapOutlet("scheduleWhilePaused", "stream");
-            system.mapOutlet("scheduleWhilePaused", "bufferController");
             system.mapValue("bufferMax", bufferMax);
             system.injectInto(this.bufferExt, "bufferMax");
         },

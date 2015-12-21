@@ -26,13 +26,17 @@ MediaPlayer.dependencies.FragmentLoader = function() {
             req.open("HEAD", request.url, true);
 
             req.onload = function() {
-                if (req.status < 200 || req.status > 399) return;
+                if (req.status < 200 || req.status > 399) {
+                    return;
+                }
                 isSuccessful = true;
                 request.deferred.resolve(request);
             };
 
             req.onloadend = req.onerror = function() {
-                if (isSuccessful) return;
+                if (isSuccessful) {
+                    return;
+                }
                 request.deferred.reject(req);
             };
 

@@ -11,7 +11,7 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- MediaPlayer.dependencies.StreamController = function () {
+MediaPlayer.dependencies.StreamController = function() {
     "use strict";
 
     /*
@@ -40,17 +40,17 @@
         defaultAudioLang = 'und',
         defaultSubtitleLang = 'und',
 
-        play = function () {
+        play = function() {
             activeStream.play();
         },
 
-        pause = function () {
+        pause = function() {
             if (activeStream) {
                 activeStream.pause();
             }
         },
 
-        seek = function (time) {
+        seek = function(time) {
             activeStream.seek(time);
         },
 
@@ -62,7 +62,7 @@
          *
          * TODO - move method to appropriate place - VideoModelExtensions??
          */
-        switchVideoModel = function (fromVideoModel, toVideoModel) {
+        switchVideoModel = function(fromVideoModel, toVideoModel) {
             var activeVideoElement = fromVideoModel.getElement(),
                 newVideoElement = toVideoModel.getElement();
 
@@ -82,15 +82,15 @@
             return Q.when(true);
         },
 
-        attachVideoEvents = function (videoModel) {
+        attachVideoEvents = function(videoModel) {
             videoModel.listen("seeking", seekingListener);
             videoModel.listen("progress", progressListener);
-                videoModel.listen("timeupdate", timeupdateListener);
+            videoModel.listen("timeupdate", timeupdateListener);
             videoModel.listen("pause", pauseListener);
             videoModel.listen("play", playListener);
         },
 
-        detachVideoEvents = function (videoModel) {
+        detachVideoEvents = function(videoModel) {
             videoModel.unlisten("seeking", seekingListener);
             videoModel.unlisten("progress", progressListener);
             videoModel.unlisten("timeupdate", timeupdateListener);
@@ -98,8 +98,8 @@
             videoModel.unlisten("play", playListener);
         },
 
-        copyVideoProperties = function (fromVideoElement, toVideoElement) {
-            ["controls", "loop", "muted", "playbackRate", "volume"].forEach( function(prop) {
+        copyVideoProperties = function(fromVideoElement, toVideoElement) {
+            ["controls", "loop", "muted", "playbackRate", "volume"].forEach(function(prop) {
                 toVideoElement[prop] = fromVideoElement[prop];
             });
         },
@@ -118,7 +118,7 @@
                 return;
             }
 
-            var lastRange = ranges.length -1,
+            var lastRange = ranges.length - 1,
                 bufferEndTime = ranges.end(lastRange),
                 remainingBufferDuration = activeStream.getStartTime() + activeStream.getDuration() - bufferEndTime;
 
@@ -134,19 +134,19 @@
          * TODO move to ???Extensions class
          */
         onTimeupdate = function() {
-            var streamEndTime  = activeStream.getStartTime() + activeStream.getDuration(),
+            var streamEndTime = activeStream.getStartTime() + activeStream.getDuration(),
                 currentTime = activeStream.getVideoModel().getCurrentTime(),
                 self = this,
                 //ORANGE : calculate fps
                 videoElement = activeStream.getVideoModel().getElement(),
                 playBackQuality = self.videoExt.getPlaybackQuality(videoElement),
-                elapsedTime = (new Date().getTime()- self.startPlayingTime)/1000;
+                elapsedTime = (new Date().getTime() - self.startPlayingTime) / 1000;
 
             //self.debug.log("[StreamController]", "FPS = " + playBackQuality.totalVideoFrames/elapsedTime);
 
             //ORANGE : replace addDroppedFrames metric by addConditionMetric
             //self.metricsModel.addDroppedFrames("video", playBackQuality);
-            self.metricsModel.addCondition(null, null, videoElement.videoWidth, videoElement.videoHeight,playBackQuality.droppedVideoFrames,playBackQuality.totalVideoFrames/elapsedTime);
+            self.metricsModel.addCondition(null, null, videoElement.videoWidth, videoElement.videoHeight, playBackQuality.droppedVideoFrames, playBackQuality.totalVideoFrames / elapsedTime);
 
             if (!getNextStream()) {
                 return;
@@ -255,18 +255,18 @@
 
             isPeriodSwitchingInProgress = true;
 
-                    from.pause();
-                    activeStream = to;
+            from.pause();
+            activeStream = to;
 
             switchVideoModel.call(this, from.getVideoModel(), to.getVideoModel());
 
-                    if (seekTo) {
-                        seek(from.getVideoModel().getCurrentTime());
-                    } else {
-                        seek(to.getStartTime());
-                    }
+            if (seekTo) {
+                seek(from.getVideoModel().getCurrentTime());
+            } else {
+                seek(to.getStartTime());
+            }
 
-                    play();
+            play();
             from.resetEventController();
             activeStream.startEventController();
             isPeriodSwitchingInProgress = false;
@@ -293,7 +293,6 @@
             if (!manifest) {
                 return Q.when(false);
             }
-
 
             if (self.capabilities.supportsEncryptedMedia()) {
                 if (!protectionController) {
@@ -381,29 +380,29 @@
         },
 
         // ORANGE: create function to handle audiotracks
-        updateAudioTracks = function(){
-            if(activeStream){
+        updateAudioTracks = function() {
+            if (activeStream) {
                 var self = this;
-                self.manifestExt.getAudioDatas(self.manifestModel.getValue(),activeStream.getPeriodIndex()).then(function(audiosDatas){
+                self.manifestExt.getAudioDatas(self.manifestModel.getValue(), activeStream.getPeriodIndex()).then(function(audiosDatas) {
                     audioTracks = audiosDatas;
                     // fire event to notify that audiotracks have changed
 
                     self.system.notify("audioTracksUpdated");
-                },function(){
+                }, function() {
                     audioTracks = null;
                     self.system.notify("audioTracksUpdated");
                 });
             }
         },
 
-        updateSubtitleTracks = function(){
-            if(activeStream){
+        updateSubtitleTracks = function() {
+            if (activeStream) {
                 var self = this;
-                self.manifestExt.getTextDatas(self.manifestModel.getValue(),activeStream.getPeriodIndex()).then(function(textDatas){
+                self.manifestExt.getTextDatas(self.manifestModel.getValue(), activeStream.getPeriodIndex()).then(function(textDatas) {
                     subtitleTracks = textDatas;
                     // fire event to notify that subtitletracks have changed
                     self.system.notify("subtitleTracksUpdated");
-                },function(){
+                }, function() {
                     subtitleTracks = null;
                     // fire event to notify that subtitletracks have changed
                     self.system.notify("subtitleTracksUpdated");
@@ -411,13 +410,13 @@
             }
         },
 
-        manifestUpdate = function(){
+        manifestUpdate = function() {
             var manifest = this.manifestModel.getValue(),
                 url = manifest.mpdUrl;
 
             if (manifest.hasOwnProperty("Location")) {
                 url = manifest.Location;
-            } 
+            }
 
             this.debug.log("### Refresh manifest @ " + url);
             this.refreshManifest(url, true);
@@ -447,9 +446,6 @@
         manifestLoader: undefined,
         manifestUpdater: undefined,
         manifestModel: undefined,
-        mediaSourceExt: undefined,
-        sourceBufferExt: undefined,
-        bufferExt: undefined,
         manifestExt: undefined,
         fragmentExt: undefined,
         capabilities: undefined,
@@ -463,12 +459,12 @@
         subscribe: undefined,
         unsubscribe: undefined,
         // ORANGE: set updateTime date
-        startTime : undefined,
-        startPlayingTime : undefined,
+        startTime: undefined,
+        startPlayingTime: undefined,
         currentURL: undefined,
 
         setup: function() {
-            this.system.mapHandler("manifestUpdate",undefined, manifestUpdate.bind(this));
+            this.system.mapHandler("manifestUpdate", undefined, manifestUpdate.bind(this));
             this.system.mapHandler("manifestUpdated", undefined, manifestHasUpdated.bind(this));
             timeupdateListener = onTimeupdate.bind(this);
             progressListener = onProgress.bind(this);
@@ -477,28 +473,28 @@
             playListener = onPlay.bind(this);
         },
 
-        getManifestExt: function () {
+        getManifestExt: function() {
             return activeStream.getManifestExt();
         },
 
-        setAutoPlay: function (value) {
+        setAutoPlay: function(value) {
             autoPlay = value;
         },
 
-        getAutoPlay: function () {
+        getAutoPlay: function() {
             return autoPlay;
         },
 
-        getVideoModel: function () {
+        getVideoModel: function() {
             return this.videoModel;
         },
 
-        setVideoModel: function (value) {
+        setVideoModel: function(value) {
             this.videoModel = value;
         },
 
         // ORANGE: audioTrack Management
-        getAudioTracks: function(){
+        getAudioTracks: function() {
             return audioTracks;
         },
 
@@ -512,34 +508,34 @@
         },
 
         // ORANGE: audioTrack Management
-        setAudioTrack:function(audioTrack){
-            if(activeStream){
+        setAudioTrack: function(audioTrack) {
+            if (activeStream) {
                 activeStream.setAudioTrack(audioTrack);
             }
         },
 
         // ORANGE: subtitleTrack Management
-        getSubtitleTracks: function(){
+        getSubtitleTracks: function() {
             return subtitleTracks;
         },
 
-        setSubtitleTrack:function(subtitleTrack){
-            if(activeStream){
+        setSubtitleTrack: function(subtitleTrack) {
+            if (activeStream) {
                 activeStream.setSubtitleTrack(subtitleTrack);
             }
         },
-        
+
         getSelectedSubtitleTrack: function() {
-            
-            if(activeStream){
+
+            if (activeStream) {
                 return activeStream.getSelectedSubtitleTrack();
             }
 
             return undefined;
         },
-        
+
         // ORANGE: add source stream parameters
-        load: function (url, protData) {
+        load: function(url, protData) {
             var self = this;
 
             self.currentURL = url;
@@ -567,10 +563,10 @@
             );
         },
 
-        refreshManifest: function(url, isIntern){
+        refreshManifest: function(url, isIntern) {
             var self = this;
             this.manifestLoader.abort();
-            this.manifestLoader.load(url,true).then(
+            this.manifestLoader.load(url, true).then(
                 function(manifestResult) {
                     self.manifestModel.setValue(manifestResult);
                     self.debug.log("### Manifest has been refreshed.");
@@ -582,21 +578,21 @@
 
                         // Notify webapp to refresh url if failed to dowload manifest (for example if manifest url expired)
                         if (isIntern && err.name === MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST) {
-                        self.eventBus.dispatchEvent({
+                            self.eventBus.dispatchEvent({
                                 type: "manifestUrlUpdate",
                                 data: url
-                        });
+                            });
                         }
                     }
                 }
             );
         },
 
-        reset: function () {
-            var teardownComplete = {}, 
+        reset: function() {
+            var teardownComplete = {},
                 funcs = [],
                 self = this;
-             
+
             this.debug.info("[StreamController] Reset");
 
             if (!!activeStream) {
@@ -612,39 +608,39 @@
             this.metricsModel.clearAllCurrentMetrics();
             isPeriodSwitchingInProgress = false;
 
-            teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE] = function () {
+            teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE] = function() {
                 var i = 0,
                     ln,
                     stream;
 
-                    // Complete teardown process
-                    ownProtectionController = false;
-                    protectionController = null;
-                    protectionData = null;
+                // Complete teardown process
+                ownProtectionController = false;
+                protectionController = null;
+                protectionData = null;
 
-                    // Reset the streams
-                for (i = 0, ln = streams.length; i < ln; i++) {
+                // Reset the streams
+                for (i = 0, ln = streams.length; i < ln; i += 1) {
                     stream = streams[i];
-                        funcs.push(stream.reset());
-                        // we should not remove the video element for the active stream since it is the element users see at the page
-                        if (stream !== activeStream) {
-                            removeVideoElement(stream.getVideoModel().getElement());
-                        }
-                        delete streams[i];
+                    funcs.push(stream.reset());
+                    // we should not remove the video element for the active stream since it is the element users see at the page
+                    if (stream !== activeStream) {
+                        removeVideoElement(stream.getVideoModel().getElement());
                     }
+                    delete streams[i];
+                }
 
-                    // Reset the video model (and controllers stalled states)
-                    self.videoModel.reset();
+                // Reset the video model (and controllers stalled states)
+                self.videoModel.reset();
 
-                    Q.all(funcs).then(
-                        function(){
-                            streams = [];
-                            activeStream = null;
-                            self.notify(MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE);
-                        });
+                Q.all(funcs).then(
+                    function() {
+                        streams = [];
+                        activeStream = null;
+                        self.notify(MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE);
+                    });
 
-                    self.manifestModel.setValue(null);
-                };
+                self.manifestModel.setValue(null);
+            };
 
             // Teardown the protection system, if necessary
             if (!protectionController) {

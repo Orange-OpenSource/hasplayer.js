@@ -62,14 +62,12 @@
         // The metrics extensions should have every method use promises.
 
         if (bufferType === "video") {
-            //found = this.manifestExt.getIsVideo(adaptation);
             this.manifestExt.getIsVideo(adaptation);
             if (adaptation.type === "video") {
                 found = true;
             }
         }
         else if (bufferType === "audio") {
-            //found = this.manifestExt.getIsAudio(adaptation); // TODO : Have to be sure it's the *active* audio track.
             this.manifestExt.getIsAudio(adaptation);
             if (adaptation.type === "audio") {
                 found = true;
@@ -173,8 +171,6 @@
         }
     };
 
-
-
     rslt.getCodecsForRepresentation = function (representationId) {
         var self = this,
             manifest = self.manifestModel.getValue(),
@@ -189,7 +185,6 @@
 
         return representation.codecs;
     };
-
 
     rslt.getH264ProfileLevel = function (codecs) {
 

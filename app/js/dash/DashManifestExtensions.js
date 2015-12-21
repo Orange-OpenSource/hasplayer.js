@@ -82,7 +82,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             representation,
             result = false,
             found = false;
-            
+
         if (adaptation) {
             col = adaptation.ContentComponent_asArray;
 
@@ -220,13 +220,31 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
         if (manifest && periodIndex >= 0) {
             adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
-            
+
             if (adaptations && adaptations.length > 0 && !isNaN(index)) {
                 return adaptations[index];
             }
         }
 
         return [];
+    },
+
+    getIndex: function(adaptation, manifest) {
+        var periods = manifest.Period_asArray,
+            adaptations,
+            i,
+            j;
+
+        for (i = 0; i < periods.length; i += 1) {
+            adaptations = periods[i].AdaptationSet_asArray;
+            for (j = 0; j < adaptations.length; j += 1) {
+                if (adaptations[j] === adaptation) {
+                    return j;
+                }
+            }
+        }
+
+        return -1;
     },
 
     getDataIndex: function(data, manifest, periodIndex) {
@@ -307,7 +325,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             len,
             deferred = Q.defer(),
             funcs = [];
-        
+
         if (manifest && periodIndex >= 0) {
             adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
             for (i = 0, len = adaptations.length; i < len; i += 1) {
@@ -340,7 +358,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             len,
             deferred = Q.defer(),
             funcs = [];
-        
+
         if (manifest && periodIndex >= 0) {
             adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
             for (i = 0, len = adaptations.length; i < len; i += 1) {
@@ -364,7 +382,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
         return deferred.promise;
     },
-    
+
     getSpecificAudioData: function(manifest, periodIndex, language) {
         "use strict";
         var i,
@@ -509,7 +527,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                             deferred.resolve(self.processAdaptation(datas[i]));
                         }
                     }
-        
+
                     if (!found) {
                         deferred.resolve(datas[0]);
                     }
@@ -647,7 +665,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             segmentInfo,
             r;
 
-        if (manifest && adaptation) {        
+        if (manifest && adaptation) {
             a = self.processAdaptation(manifest.Period_asArray[adaptation.period.index].AdaptationSet_asArray[adaptation.index]);
 
             for (var i = 0; i < a.Representation_asArray.length; i += 1) {
@@ -974,10 +992,10 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
         var eventStreams = [],
             inbandStreams;
-        
+
         if (data) {
             inbandStreams = data.InbandEventStream_asArray;
-    
+
             if (inbandStreams) {
                 for (var i = 0; i < inbandStreams.length; i += 1) {
                     var eventStream = new Dash.vo.EventStream();
@@ -998,7 +1016,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                 }
             }
         }
-        
+
         return eventStreams;
     },
 

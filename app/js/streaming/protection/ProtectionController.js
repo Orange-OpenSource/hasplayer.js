@@ -470,7 +470,6 @@ MediaPlayer.dependencies.ProtectionController = function() {
         unsubscribe: undefined,
         protectionExt: undefined,
         keySystem: undefined,
-        manifestExt: undefined,
 
         setup: function() {
             this[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE] = onKeyMessage.bind(this);
