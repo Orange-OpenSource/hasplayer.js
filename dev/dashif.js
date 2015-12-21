@@ -1,4 +1,4 @@
-/* Last build : 13.11.2015_9:46:49 / git revision : 70ca13d */
+/* Last build : 21.12.2015_11:5:4 / git revision : b66b984 */
  /* jshint ignore:start */
 (function() {
     var b = void 0, f = !0, j = null, l = !1;
@@ -26168,7 +26168,7 @@ if (!jQuery) {
         f: "\f",
         r: "\r",
         t: "	",
-        v: "",
+        v: "\x0B",
         "'": "'",
         '"': '"'
     }, Nb = function(a) {
@@ -26228,7 +26228,7 @@ if (!jQuery) {
             return "0" <= a && "9" >= a;
         },
         isWhitespace: function(a) {
-            return " " === a || "\r" === a || "	" === a || "\n" === a || "" === a || " " === a;
+            return " " === a || "\r" === a || "	" === a || "\n" === a || "\x0B" === a || " " === a;
         },
         isIdent: function(a) {
             return "a" <= a && "z" >= a || "A" <= a && "Z" >= a || "_" === a || "$" === a;
@@ -28499,33 +28499,12 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
         $scope.safeApply();
     }
     function onError(e) {
-        console.error("an error has occured with error code = " + e.event.code);
-        switch (e.event.code) {
-          case "DOWNLOAD_ERR_MANIFEST":
-          case "DOWNLOAD_ERR_SIDX":
-          case "DOWNLOAD_ERR_CONTENT":
-          case "DOWNLOAD_ERR_INIT":
-            console.error(' url :"' + e.event.data.url + '" and request response :"' + e.event.data.request.responseXML + '"');
-            break;
-
-          case "MANIFEST_ERR_CODEC":
-          case "MANIFEST_ERR_PARSE":
-          case "MANIFEST_ERR_NOSTREAM":
-            console.error("Manifest URL was " + e.event.data.mpdUrl + ' with message :"' + e.event.message + '"');
-            break;
-
-          case "CC_ERR_PARSE":
-            console.error('message :"' + e.event.message + '" for content = ' + e.event.data);
-            break;
-
-          default:
-            if (e.event.message) {
-                console.error('message :"' + e.event.message + '"');
-            }
-            break;
-        }
+        console.error("ERROR: " + JSON.stringify(e));
         if (e.event.code != "HASPLAYER_INIT_ERROR") {
             player.reset(2);
+            if (metricsAgent) {
+                metricsAgent.stop();
+            }
         }
     }
     $scope.invalidateChartDisplay = false;
@@ -28821,7 +28800,7 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
 
 angular.module("DashPlayer").controller("ChromecastController", [ "$scope", "$window", "$timeout", function($scope, $window, $timeout) {
     if (window.chrome) {
-        var PROTOCOL = "urn:x-cast:com.google.cast.video.hasplayer";
+        var PROTOCOL = "urn:x-cast:com.orange.cast.video.hasplayer";
         var APP_ID = "9ECD1B68";
         var CAST_SENDER_API = "//www.gstatic.com/cv/js/sender/v1/cast_sender.js";
         var currentSession = null;
@@ -28862,7 +28841,7 @@ angular.module("DashPlayer").controller("ChromecastController", [ "$scope", "$wi
             var p = new Promise(function(resolve, reject) {
                 console.log("init Sesssion");
                 if (!currentSession) {
-                    var sessionRequest = new chrome.cast.SessionRequest(APP_ID);
+                    var sessionRequest = new chrome.cast.SessionRequest(APP_ID, [ "VIDEO_OUT", "AUDIO_OUT" ], 6e4);
                     var apiConfig = new chrome.cast.ApiConfig(sessionRequest, sessionListener, receiverListener);
                     chrome.cast.initialize(apiConfig, function() {
                         resolve();
@@ -28878,7 +28857,9 @@ angular.module("DashPlayer").controller("ChromecastController", [ "$scope", "$wi
         var onInitSuccess = function() {
             var p = new Promise(function(resolve, reject) {
                 if (!currentSession) {
+                    console.info("requesting session");
                     chrome.cast.requestSession(function(e) {
+                        console.info("requesting sesdsion ok");
                         resolve(e);
                     }, function(err) {
                         reject(err);
@@ -28906,6 +28887,7 @@ angular.module("DashPlayer").controller("ChromecastController", [ "$scope", "$wi
             }
         };
         var sessionListener = function(e) {
+            console.info("session created");
             currentSession = e;
             e.addUpdateListener(sessionUpdateListener);
             e.addMessageListener(PROTOCOL, onReceiverMessage);
@@ -28974,7 +28956,7 @@ angular.module("DashPlayer").controller("ChromecastController", [ "$scope", "$wi
                 var params = {};
                 params.url = $scope.selectedItem.url;
                 params.backUrl = $scope.selectedItem.backUrl || null;
-                params.customData = $scope.selectedItem.customData || null;
+                params.cdmData = $scope.selectedItem.cdmData || null;
                 if ($scope.player.isReady()) {
                     var isLive = $scope.player.metricsExt.manifestExt.getIsDynamic($scope.player.metricsExt.manifestModel.getValue());
                     $scope.player.getVideoModel().pause();
