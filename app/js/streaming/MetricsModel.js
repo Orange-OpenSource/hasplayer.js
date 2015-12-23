@@ -256,7 +256,7 @@
             var vo = new MediaPlayer.vo.metrics.BufferLevel();
 
             vo.t = t;
-            vo.level = level;
+            vo.level = Number(level.toFixed(3));
 
             this.getMetricsFor(streamType).BufferLevel.push(vo);
 
