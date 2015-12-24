@@ -109,6 +109,7 @@ Hls.dependencies.HlsDemux = function() {
                     this.debug.log("[HlsDemux] Stream Type " + elementStream.m_stream_type + " unknown!");
                 }
 
+                // PATCH to remove audio track
                 //if (track.type === "video") {
                 track.timescale = mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY;
                 track.pid = elementStream.m_elementary_PID;

@@ -448,11 +448,12 @@ Hls.dependencies.HlsParser = function() {
 
         // PATCH to remove audio track
         /*var tracksCodecs = representation.codecs.split(',');
-        for (i = 0; i < tracksCodecs.length; i++) {
+        for (var i = 0; i < tracksCodecs.length; i++) {
             if (tracksCodecs[i].indexOf("avc") !== -1) {
                 representation.codecs = tracksCodecs[i];
             }
         }*/
+
         if (representation.codecs === "") {
             self.debug.log("[HlsParser]", "Load initialization segment: " + request.url);
             self.fragmentLoader.load(request).then(onLoaded.bind(self, representation), onError.bind(self));
