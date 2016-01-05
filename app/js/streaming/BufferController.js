@@ -1429,7 +1429,7 @@ MediaPlayer.dependencies.BufferController = function() {
             self.debug.log("[BufferController][" + type + "] Update data");
 
             // Set the new data
-            languageChanged = (data && (data.lang !== newData.lang)) ? true : false;
+            languageChanged = (data && ((data.lang !== null ? data.lang : data.id) !== ((newData.lang !== null ? newData.lang : newData.id)))) ? true : false;
             data = newData;
             periodInfo = newPeriodInfo;
             dataChanged = true;
