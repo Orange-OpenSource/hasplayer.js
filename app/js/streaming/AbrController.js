@@ -61,8 +61,8 @@ MediaPlayer.dependencies.AbrController = function () {
                 i,
                 funcs = [];
 
-            self.debug.log("[AbrController]["+type+"] Quality   boundaries: [" + qualityMin + "," + qualityMax + "]");
-            self.debug.log("[AbrController]["+type+"] Bandwidth boundaries: [" + bandwidthMin + "," + bandwidthMax + "]");
+                self.debug.log("[AbrController]["+type+"] Quality   boundaries: [" + qualityMin + "," + qualityMax + "]");
+                self.debug.log("[AbrController]["+type+"] Bandwidth boundaries: [" + bandwidthMin + "," + bandwidthMax + "]");
 
                 // Get min quality corresponding to min bandwidth
                 self.manifestExt.getRepresentationCount(data).then(
@@ -70,7 +70,7 @@ MediaPlayer.dependencies.AbrController = function () {
                         // Get bandwidth boundaries and override quality boundaries
                         if ((bandwidthMin !== -1) || (bandwidthMax !== -1)) {
                             for (i = 0; i < count; i += 1) {
-                                funcs.push(self.manifestExt.getRepresentationBandwidth( data, i));
+                                funcs.push(self.manifestExt.getRepresentationBandwidth(data, i));
                             }
                             Q.all(funcs).then(
                                 function (bandwidths) {
@@ -90,13 +90,17 @@ MediaPlayer.dependencies.AbrController = function () {
                                             }
                                         }
                                     }
+                                    qualityMin = (qualityMin >= count) ? (count - 1) : qualityMin;
+                                    qualityMax = (qualityMax >= count) ? (count - 1) : qualityMax;
+                                    deferred.resolve({min: qualityMin, max: qualityMax});
                                 }
                             );
+                        } else {
+                            qualityMin = (qualityMin >= count) ? (count - 1) : qualityMin;
+                            qualityMax = (qualityMax >= count) ? (count - 1) : qualityMax;
+                            deferred.resolve({min: qualityMin, max: qualityMax});                            
                         }
 
-                        qualityMin = (qualityMin >= count) ? (count - 1) : qualityMin;
-                        qualityMax = (qualityMax >= count) ? (count - 1) : qualityMax;
-                        deferred.resolve({min: qualityMin, max: qualityMax});
                     }
                 );
 
