@@ -1,4 +1,4 @@
-/* Last build : 21.12.2015_21:44:18 / git revision : db16a37 */
+/* Last build : 6.1.2016_21:43:59 / git revision : 9f60b38 */
  /* jshint ignore:start */
 (function() {
     var b = void 0, f = !0, j = null, l = !1;
@@ -28345,9 +28345,10 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
         if ($scope.audioTracks !== null) {
             $scope.audioData = $scope.audioTracks[0];
         }
+        player.enableSubtitles(true);
         $scope.textTracks = player.getSubtitleTracks();
         if ($scope.textTracks !== null) {
-            $scope.textTracks = $scope.textTracks[0];
+            $scope.textData = $scope.textTracks[0];
         }
     }
     function onFullScreenChange() {

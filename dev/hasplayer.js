@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 21.12.2015_21:44:9 / git revision : db16a37 */
+/* Last build : 6.1.2016_21:43:49 / git revision : 9f60b38 */
  /* jshint ignore:start */
 (function(root, factory) {
     if (typeof define === "function" && define.amd) {
@@ -5349,7 +5349,7 @@
     mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
     MediaPlayer = function(aContext) {
         "use strict";
-        var VERSION = "1.2.0", VERSION_HAS = "1.2.6_dev", GIT_TAG = "db16a37", BUILD_DATE = "21.12.2015_21:44:9", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
+        var VERSION = "1.2.0", VERSION_HAS = "1.2.6_dev", GIT_TAG = "9f60b38", BUILD_DATE = "6.1.2016_21:43:49", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
             return !!element && !!source && !resetting;
         }, play = function() {
             if (!initialized) {
@@ -5731,14 +5731,21 @@
                                 }
                             }
                         }
+                        qualityMin = qualityMin >= count ? count - 1 : qualityMin;
+                        qualityMax = qualityMax >= count ? count - 1 : qualityMax;
+                        deferred.resolve({
+                            min: qualityMin,
+                            max: qualityMax
+                        });
+                    });
+                } else {
+                    qualityMin = qualityMin >= count ? count - 1 : qualityMin;
+                    qualityMax = qualityMax >= count ? count - 1 : qualityMax;
+                    deferred.resolve({
+                        min: qualityMin,
+                        max: qualityMax
                     });
                 }
-                qualityMin = qualityMin >= count ? count - 1 : qualityMin;
-                qualityMax = qualityMax >= count ? count - 1 : qualityMax;
-                deferred.resolve({
-                    min: qualityMin,
-                    max: qualityMax
-                });
             });
             return deferred.promise;
         };
@@ -6674,7 +6681,7 @@
             updateData: function(newData, newPeriodInfo) {
                 var self = this;
                 self.debug.log("[BufferController][" + type + "] Update data");
-                languageChanged = data && data.lang !== newData.lang ? true : false;
+                languageChanged = data && (data.lang !== null ? data.lang : data.id) !== (newData.lang !== null ? newData.lang : newData.id) ? true : false;
                 data = newData;
                 periodInfo = newPeriodInfo;
                 dataChanged = true;
@@ -7262,7 +7269,7 @@
             sendWarning: function(code, message, data) {
                 this.eventBus.dispatchEvent({
                     type: "warning",
-                    event: {
+                    data: {
                         code: code,
                         message: message,
                         data: data
@@ -7273,7 +7280,7 @@
             sendError: function(code, message, data) {
                 this.eventBus.dispatchEvent({
                     type: "error",
-                    event: {
+                    data: {
                         code: code,
                         message: message,
                         data: data
@@ -7298,7 +7305,7 @@
     MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_APPEND_SOURCEBUFFER = "MEDIA_ERR_APPEND_SOURCEBUFFER";
     MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_REMOVE_SOURCEBUFFER = "MEDIA_ERR_REMOVE_SOURCEBUFFER";
     MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE = "MANIFEST_ERR_PARSE";
-    MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM = "MANIFEST_ERR_NOSTREAM";
+    MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_STREAM = "MANIFEST_ERR_NO_STREAM";
     MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO = "MANIFEST_ERR_NO_VIDEO";
     MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO = "MANIFEST_ERR_NO_AUDIO";
     MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST = "DOWNLOAD_ERR_MANIFEST";
@@ -8605,7 +8612,7 @@
             addBufferLevel: function(streamType, t, level) {
                 var vo = new MediaPlayer.vo.metrics.BufferLevel();
                 vo.t = t;
-                vo.level = level;
+                vo.level = Number(level.toFixed(3));
                 this.getMetricsFor(streamType).BufferLevel.push(vo);
                 if (this.getMetricsFor(streamType).BufferLevel.length > 10) {
                     this.getMetricsFor(streamType).BufferLevel.shift();
@@ -10530,7 +10537,7 @@
                 updateSubtitleTracks.call(self);
                 self.system.notify("streamsComposed");
             }, function() {
-                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM, "No stream/period is provided in the manifest");
+                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_STREAM, "No stream/period is provided in the manifest");
                 self.reset();
             });
         };
@@ -11705,7 +11712,7 @@
             }
             return protData;
         }, selectKeySystem = function(supportedKS, fromManifest) {
-            var self = this, sessionType, requestedKeySystems = [], ksIdx, ksAccess, i = 0, ksSelected, keySystemAccess;
+            var self = this, sessionType, requestedKeySystems = [], keySystemsInfo = [], ksIdx, ksAccess, i = 0, ksSelected, keySystemAccess;
             self.debug.log("[DRM] Select key system");
             if (this.keySystem) {
                 for (ksIdx = 0; ksIdx < supportedKS.length; ksIdx++) {
@@ -11714,6 +11721,10 @@
                         requestedKeySystems.push({
                             ks: supportedKS[ksIdx].ks,
                             configs: supportedKS[ksIdx].ks.getKeySystemConfigurations(videoCodec, audioCodec, sessionType)
+                        });
+                        keySystemsInfo.push({
+                            schemeIdURI: supportedKS[ksIdx].ks.schemeIdURI,
+                            systemString: supportedKS[ksIdx].ks.systemString
                         });
                         ksAccess = {};
                         ksAccess[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE] = function(event) {
@@ -11745,6 +11756,10 @@
                         ks: supportedKS[i].ks,
                         configs: supportedKS[i].ks.getKeySystemConfigurations(videoCodec, audioCodec, sessionType)
                     });
+                    keySystemsInfo.push({
+                        schemeIdURI: supportedKS[i].ks.schemeIdURI,
+                        systemString: supportedKS[i].ks.systemString
+                    });
                 }
                 ksSelected = {};
                 ksSelected[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE] = function(event) {
@@ -11758,7 +11773,9 @@
                                 error: "[DRM] KeySystem Access Denied! -- " + event.error
                             });
                         }
-                        self.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED, "No KeySystem/CDM available", requestedKeySystems));
+                        self.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED, "No KeySystem/CDM available", {
+                            keySystems: keySystemsInfo
+                        }));
                     } else {
                         keySystemAccess = event.data;
                         self.debug.log("[DRM] KeySystem Access (" + keySystemAccess.keySystem.systemString + ") Granted!  Selecting key system...");
@@ -11789,7 +11806,9 @@
                                 error: "[DRM] Error selecting key system! -- " + event.error
                             });
                         }
-                        self.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED, "No KeySystem/CDM available", requestedKeySystems));
+                        self.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED, "No KeySystem/CDM available", {
+                            keySystems: keySystemsInfo
+                        }));
                     }
                 };
                 this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED, ksSelected, undefined, true);
