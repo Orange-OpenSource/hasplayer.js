@@ -107,6 +107,7 @@ MediaPlayer.dependencies.ProtectionController = function() {
                 sessionType,
                 // Build our request object for requestKeySystemAccess
                 requestedKeySystems = [],
+                keySystemsInfo = [],
                 ksIdx,
                 ksAccess,
                 i = 0,
@@ -123,6 +124,11 @@ MediaPlayer.dependencies.ProtectionController = function() {
                         requestedKeySystems.push({
                             ks: supportedKS[ksIdx].ks,
                             configs: supportedKS[ksIdx].ks.getKeySystemConfigurations(videoCodec, audioCodec, sessionType)
+                        });
+                        // Key system info in case of error
+                        keySystemsInfo.push({
+                            schemeIdURI: supportedKS[ksIdx].ks.schemeIdURI,
+                            systemString: supportedKS[ksIdx].ks.systemString
                         });
 
                         // Ensure that we would be granted key system access using the key
@@ -162,6 +168,11 @@ MediaPlayer.dependencies.ProtectionController = function() {
                         ks: supportedKS[i].ks,
                         configs: supportedKS[i].ks.getKeySystemConfigurations(videoCodec, audioCodec, sessionType)
                     });
+                    // Key system info in case of error
+                    keySystemsInfo.push({
+                        schemeIdURI: supportedKS[i].ks.schemeIdURI,
+                        systemString: supportedKS[i].ks.systemString
+                    });
                 }
 
                 ksSelected = {};
@@ -178,7 +189,7 @@ MediaPlayer.dependencies.ProtectionController = function() {
                             });
                         }
                         self.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
-                            new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED, "No KeySystem/CDM available", requestedKeySystems));
+                            new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED, "No KeySystem/CDM available", {keySystems: keySystemsInfo}));
                     } else {
                         keySystemAccess = event.data;
                         self.debug.log("[DRM] KeySystem Access (" + keySystemAccess.keySystem.systemString + ") Granted!  Selecting key system...");
@@ -210,7 +221,7 @@ MediaPlayer.dependencies.ProtectionController = function() {
                             });
                         }
                         self.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
-                            new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED, "No KeySystem/CDM available", requestedKeySystems));
+                            new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED, "No KeySystem/CDM available", {keySystems: keySystemsInfo}));
 
                     }
                 };
