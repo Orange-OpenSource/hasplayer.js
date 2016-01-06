@@ -59,7 +59,7 @@ MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_REMOVE_SOURCEBUFFER = 
 
 // MediaPlayer errors
 MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE = "MANIFEST_ERR_PARSE";
-MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NOSTREAM = "MANIFEST_ERR_NOSTREAM";
+MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_STREAM = "MANIFEST_ERR_NO_STREAM";
 MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO = "MANIFEST_ERR_NO_VIDEO";
 MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO = "MANIFEST_ERR_NO_AUDIO";
 MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST = "DOWNLOAD_ERR_MANIFEST";
