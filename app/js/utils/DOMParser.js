@@ -42,7 +42,7 @@ MediaPlayer.utils.DOMParser = function() {
         },
 
         getAttributeName: function(node, attrValue) {
-            var returnValue = null,
+            var returnValue = [],
                 domAttribute = null,
                 i = 0,
                 attribList = null;
@@ -53,8 +53,7 @@ MediaPlayer.utils.DOMParser = function() {
                     for (i = 0; i < attribList.length; i++) {
                         domAttribute = attribList[i];
                         if (domAttribute.value === attrValue) {
-                            returnValue = domAttribute.name;
-                            return returnValue;
+                            returnValue.push(domAttribute.name);
                         }
                     }
                 }

@@ -33,8 +33,8 @@ MediaPlayer.utils.TTMLParser = function() {
         globalPrefTTNameSpace = "",
         globalPrefStyleNameSpace = "",
         globalPrefParameterNameSpace = "",
-        regionPrefTTNameSpace = "",
-        regionPrefStyleNameSpace = "",
+        //regionPrefTTNameSpace = "",
+        //regionPrefStyleNameSpace = "",
         // R0028 - A document must not contain a <timeExpression> value that does not conform to the subset of clock-time that
         // matches either of the following patterns: hh:mm:ss.mss or hh:mm:ss:ff, where hh denotes hours (00-23),
         // mm denotes minutes (00-59), ss denotes seconds (00-59), mss denotes milliseconds (000-999), and ff denotes frames (00-frameRate - 1).
@@ -151,26 +151,60 @@ MediaPlayer.utils.TTMLParser = function() {
             var styleName,
                 regionName,
                 i = 0,
-                j = 0;
+                j = 0,
+                k = 0,
+                l = 0,
+                m = 0,
+                n = 0,
+                o = 0;
 
-            for (j = 0; j < nodeTab.length; j++) {
-                styleName = this.domParser.getAttributeValue(nodeTab[j], 'style');
-                if (styleName) {
-                    for (i = 0; i < tabStyles[styleName].length; i++) {
-                        if (tabStyles[styleName][i].name === globalPrefStyleNameSpace + styleElementName) {
-                            return tabStyles[styleName][i].nodeValue;
-                        } else if (tabStyles[styleName][i].name === regionPrefStyleNameSpace + styleElementName) {
-                            return tabStyles[styleName][i].nodeValue;
+            for (j = 0; j < nodeTab.length; j += 1) {
+                //search styleElementName in node Element
+                for(k = 0; k < globalPrefStyleNameSpace.length; k += 1){
+                    styleName = this.domParser.getAttributeValue(nodeTab[j], globalPrefStyleNameSpace[k] + styleElementName);
+                    if (styleName) {
+                        return styleName;
+                    }
+                }
+                
+                //search style in node Element
+                for(k = 0; k < globalPrefTTNameSpace.length; k += 1){
+                    styleName = this.domParser.getAttributeValue(nodeTab[j], globalPrefTTNameSpace[k]+'style');
+                    if (styleName) {
+                        for (i = 0; i < tabStyles[styleName].length; i += 1) {
+                            for(l = 0; l < globalPrefStyleNameSpace.length; l += 1){
+                                if (tabStyles[styleName][i].name === globalPrefStyleNameSpace[l] + styleElementName) {
+                                    return tabStyles[styleName][i].nodeValue;
+                                }
+                            }
                         }
                     }
                 }
-                regionName = this.domParser.getAttributeValue(nodeTab[j], 'region');
-                if (regionName) {
-                    for (i = 0; i < tabRegions[regionName].length; i++) {
-                        if (tabRegions[regionName][i].name === globalPrefStyleNameSpace + styleElementName) {
-                            return tabRegions[regionName][i].nodeValue;
-                        } else if (tabRegions[regionName][i].name === regionPrefStyleNameSpace + styleElementName) {
-                            return tabRegions[regionName][i].nodeValue;
+            
+                for(k = 0; k < globalPrefTTNameSpace.length; k += 1){
+                    //search region in node Element
+                    regionName = this.domParser.getAttributeValue(nodeTab[j], globalPrefTTNameSpace[k] + 'region');
+                    if (regionName) {
+                        for (i = 0; i < tabRegions[regionName].length; i += 1) {
+                            for(l = 0; l < globalPrefStyleNameSpace.length; l += 1){
+                                if (tabRegions[regionName][i].name === globalPrefStyleNameSpace[l] + styleElementName) {
+                                    return tabRegions[regionName][i].nodeValue;
+                                }
+                            }
+
+                            //search style in region Element
+                            for(m = 0; m < globalPrefTTNameSpace.length; m += 1){
+                                styleName = tabRegions[regionName][i].nodeName === globalPrefTTNameSpace[m]+'style' ? tabRegions[regionName][i].nodeValue : null;
+                                if (styleName) {
+                                    for (n = 0; n < tabStyles[styleName].length; n += 1) {
+                                        for(o = 0; o < globalPrefStyleNameSpace.length; o += 1){
+                                            if (tabStyles[styleName][n].name === globalPrefStyleNameSpace[o] + styleElementName) {
+                                                return tabStyles[styleName][n].nodeValue;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
@@ -181,12 +215,15 @@ MediaPlayer.utils.TTMLParser = function() {
 
         findParameterElement = function(nodeTab, parameterElementName) {
             var parameterValue = null,
-                i = 0;
+                i = 0,
+                k = 0;
 
             for (i = 0; i < nodeTab.length; i++) {
-                parameterValue = this.domParser.getAttributeValue(nodeTab[i], globalPrefParameterNameSpace + parameterElementName);
-                if (parameterValue) {
-                    return parameterValue;
+                for(k = 0; k < globalPrefParameterNameSpace.length; k += 1){
+                    parameterValue = this.domParser.getAttributeValue(nodeTab[i], globalPrefParameterNameSpace[k] + parameterElementName);
+                    if (parameterValue) {
+                        return parameterValue;
+                    }
                 }
             }
 
@@ -196,7 +233,8 @@ MediaPlayer.utils.TTMLParser = function() {
         getNameSpace = function(node, type) {
             var nameSpace = null,
                 TTAFUrl = null,
-                TTMLUrl = null;
+                TTMLUrl = null,
+                i = 0;
 
             switch (type) {
                 case "style":
@@ -216,12 +254,14 @@ MediaPlayer.utils.TTMLParser = function() {
             if (TTAFUrl && TTMLUrl) {
                 nameSpace = this.domParser.getAttributeName(node, TTAFUrl);
 
-                if (!nameSpace) {
+                if (nameSpace.length === 0) {
                     nameSpace = this.domParser.getAttributeName(node, TTMLUrl);
                 }
 
-                if (nameSpace) {
-                    nameSpace = nameSpace.split(':').length > 1 ? nameSpace.split(':')[1] + ':' : "";
+                if (nameSpace.length > 0) {
+                    for(i = 0; i < nameSpace.length; i += 1) {
+                        nameSpace[i] = nameSpace[i].split(':').length > 1 ? nameSpace[i].split(':')[1] + ':' : "";
+                    }
                 }
             }
 
@@ -229,13 +269,18 @@ MediaPlayer.utils.TTMLParser = function() {
         },
 
         getTimeValue = function(node, parameter) {
-            var returnTime = null;
+            var returnTime = null,
+                i = 0;
 
-            returnTime = parseTimings(this.domParser.getAttributeValue(node, globalPrefTTNameSpace + parameter));
-
-            if (returnTime === null) {
-                returnTime = parseTimings(this.domParser.getAttributeValue(node, regionPrefTTNameSpace + parameter));
+            for(i = 0; i < globalPrefTTNameSpace.length; i += 1) {
+                returnTime = parseTimings(this.domParser.getAttributeValue(node, globalPrefTTNameSpace[i] + parameter));
             }
+
+           /* if (returnTime === null) {
+                for(i = 0; i < regionPrefTTNameSpace.length; i += 1) {
+                    returnTime = parseTimings(this.domParser.getAttributeValue(node, regionPrefTTNameSpace[i] + parameter));
+                }
+            }*/
 
             return returnTime;
         },
@@ -279,8 +324,9 @@ MediaPlayer.utils.TTMLParser = function() {
                 globalPrefParameterNameSpace = getNameSpace.call(this, nodeTt, 'parameter');
                 //define global namespace prefix for style
                 globalPrefStyleNameSpace = getNameSpace.call(this, nodeTt, 'style');
-
-                frameRate = this.domParser.getAttributeValue(nodeTt, globalPrefParameterNameSpace + "frameRate") ? parseInt(frameRate, 10) : null;
+                for(i = 0; i < globalPrefParameterNameSpace.length; i += 1) {
+                    frameRate = this.domParser.getAttributeValue(nodeTt, globalPrefParameterNameSpace[i] + "frameRate") ? parseInt(frameRate, 10) : null;
+                }
 
                 divBody = this.domParser.getChildNode(nodeBody, 'div');
 
@@ -306,9 +352,9 @@ MediaPlayer.utils.TTMLParser = function() {
                     caption = null;
                     region = regions[i];
 
-                    regionPrefTTNameSpace = getNameSpace.call(this, region, 'main');
+                    globalPrefTTNameSpace = globalPrefTTNameSpace.concat(getNameSpace.call(this, region, 'main'));
 
-                    regionPrefStyleNameSpace = getNameSpace.call(this, region, 'style');
+                    globalPrefStyleNameSpace = globalPrefStyleNameSpace.concat(getNameSpace.call(this, region, 'style'));
 
                     startTime = getTimeValue.call(this, region, 'begin');
 
