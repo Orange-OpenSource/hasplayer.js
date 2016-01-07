@@ -247,6 +247,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                     if (reqerror.aborted) {
                         // If request has been aborted, then do not retry
                         req.status = 0;
+                        req.aborted = true;
                         deferred.reject(req);
                     } else if (RETRY_ATTEMPTS <= 0) {
                         // in case of error we set the requestModel status equal to xhr status
