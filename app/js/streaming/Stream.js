@@ -963,6 +963,12 @@ MediaPlayer.dependencies.Stream = function() {
             return deferred.promise;
         },
 
+        streamsComposed = function() {
+            var time = this.videoModel.getCurrentTime();
+            console.log('***** STREAM ENABLE TEXTCONTROLLER TIME = '+time);
+            textController.seek(time);
+        },
+
         onVisibilitychange = function() {
 
             if (document.hidden === true || startClockTime === -1) {
@@ -1110,7 +1116,7 @@ MediaPlayer.dependencies.Stream = function() {
                 self = this;
 
             if (textController) {
-                // Get data index corresponding to new audio track
+                // Get data index corresponding to new subtitle track
                 self.manifestExt.getDataIndex(subtitleTrack, manifest, periodInfo.index).then(
                     function(index) {
                         textTrackIndex = index;
@@ -1206,6 +1212,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.system.unmapHandler("bufferingCompleted");
             this.system.unmapHandler("segmentLoadingFailed");
             this.system.unmapHandler("needForReload");
+            this.system.unmapHandler("streamsComposed", undefined, streamsComposed);
 
             tearDownMediaSource.call(this).then(
                 function() {
@@ -1248,16 +1255,15 @@ MediaPlayer.dependencies.Stream = function() {
         resetEventController: function() {
             eventController.reset();
         },
-
         enableSubtitles: function(enabled) {
-            var time;
-
+            
             if (enabled !== subtitlesEnabled) {
                 subtitlesEnabled = enabled;
                 if (textController) {
                     if (enabled) {
-                        time = this.videoModel.getCurrentTime();
-                        textController.seek(time);
+                        this.system.mapHandler("streamsComposed", undefined, streamsComposed.bind(this), true);
+                        // Update manifest
+                        this.system.notify("manifestUpdate");
                     } else {
                         textController.stop();
                     }
