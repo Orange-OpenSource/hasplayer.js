@@ -639,7 +639,7 @@ MediaPlayer = function(aContext) {
         enableSubtitles:function(enabled){
             if(streamController){
                 streamController.enableSubtitles(enabled);
-            }  
+            }
         },
 
 

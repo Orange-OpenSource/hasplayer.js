@@ -276,12 +276,6 @@ MediaPlayer.utils.TTMLParser = function() {
                 returnTime = parseTimings(this.domParser.getAttributeValue(node, globalPrefTTNameSpace[i] + parameter));
             }
 
-           /* if (returnTime === null) {
-                for(i = 0; i < regionPrefTTNameSpace.length; i += 1) {
-                    returnTime = parseTimings(this.domParser.getAttributeValue(node, regionPrefTTNameSpace[i] + parameter));
-                }
-            }*/
-
             return returnTime;
         },
 
@@ -305,6 +299,7 @@ MediaPlayer.utils.TTMLParser = function() {
                 i,
                 textDatas,
                 j,
+                k,
                 cellsSize,
                 cellResolution,
                 extent;
@@ -328,142 +323,143 @@ MediaPlayer.utils.TTMLParser = function() {
                     frameRate = this.domParser.getAttributeValue(nodeTt, globalPrefParameterNameSpace[i] + "frameRate") ? parseInt(frameRate, 10) : null;
                 }
 
-                divBody = this.domParser.getChildNode(nodeBody, 'div');
+                divBody = this.domParser.getChildNodes(nodeBody, 'div');
 
-                if (!divBody) {
+                if (!divBody || divBody.length === 0) {
                     errorMsg = "TTML body document does not contain any div";
                     return Q.reject(errorMsg);
                 }
 
-                regions = this.domParser.getChildNodes(divBody, 'p');
+                for (k = 0; k < divBody.length; k += 1) {
+                    regions = this.domParser.getChildNodes(divBody[k], 'p');
 
-                if (!regions || regions.length === 0) {
-                    errorMsg = "TTML document does not contain any cues";
-                    return Q.reject(errorMsg);
-                }
-
-                //get all styles informations
-                tabStyles = this.domParser.getAllSpecificNodes(nodeTt, 'style');
-
-                //get all regions informations
-                tabRegions = this.domParser.getAllSpecificNodes(nodeTt, 'region');
-
-                for (i = 0; i < regions.length; i += 1) {
-                    caption = null;
-                    region = regions[i];
-
-                    globalPrefTTNameSpace = globalPrefTTNameSpace.concat(getNameSpace.call(this, region, 'main'));
-
-                    globalPrefStyleNameSpace = globalPrefStyleNameSpace.concat(getNameSpace.call(this, region, 'style'));
-
-                    startTime = getTimeValue.call(this, region, 'begin');
-
-                    endTime = getTimeValue.call(this, region, 'end');
-
-                    if (isNaN(startTime) || isNaN(endTime)) {
-                        errorMsg = "TTML document has incorrect timing value";
+                    if (!regions || regions.length === 0) {
+                        errorMsg = "TTML document does not contain any cues";
                         return Q.reject(errorMsg);
                     }
 
-                    textDatas = this.domParser.getChildNodes(region, 'span');
-                    //subtitles are set in span 
-                    if (textDatas.length > 0) {
-                        for (j = 0; j < textDatas.length; j++) {
-                            /******************** Find style informations ***************************************
-                             *   1- in subtitle paragraph ToDo
-                             *   2- in style element referenced in the subtitle paragraph
-                             *   3- in region ToDo
-                             *   4- in style referenced in the region referenced in the subtitle paragraph
-                             *   5- in the main div ToDo
-                             *   6- in the style of the main div
-                             **************************************************************************************/
+                    //get all styles informations
+                    tabStyles = this.domParser.getAllSpecificNodes(nodeTt, 'style');
 
-                            cssStyle.backgroundColor = findStyleElement.call(this, [textDatas[j], region, divBody], 'backgroundColor');
-                            cssStyle.color = findStyleElement.call(this, [textDatas[j], region, divBody], 'color');
-                            cssStyle.fontSize = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontSize');
-                            cssStyle.fontFamily = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontFamily');
+                    //get all regions informations
+                    tabRegions = this.domParser.getAllSpecificNodes(nodeTt, 'region');
 
-                            extent = findStyleElement.call(this, [textDatas[j], region, divBody], 'extent');
+                    for (i = 0; i < regions.length; i += 1) {
+                        caption = null;
+                        region = regions[i];
+
+                        globalPrefTTNameSpace = globalPrefTTNameSpace.concat(getNameSpace.call(this, region, 'main'));
+
+                        globalPrefStyleNameSpace = globalPrefStyleNameSpace.concat(getNameSpace.call(this, region, 'style'));
+
+                        startTime = getTimeValue.call(this, region, 'begin');
+
+                        endTime = getTimeValue.call(this, region, 'end');
+
+                        if (isNaN(startTime) || isNaN(endTime)) {
+                            errorMsg = "TTML document has incorrect timing value";
+                            return Q.reject(errorMsg);
+                        }
+
+                        textDatas = this.domParser.getChildNodes(region, 'span');
+                        //subtitles are set in span 
+                        if (textDatas.length > 0) {
+                            for (j = 0; j < textDatas.length; j++) {
+                                /******************** Find style informations ***************************************
+                                 *   1- in subtitle paragraph ToDo
+                                 *   2- in style element referenced in the subtitle paragraph
+                                 *   3- in region ToDo
+                                 *   4- in style referenced in the region referenced in the subtitle paragraph
+                                 *   5- in the main div ToDo
+                                 *   6- in the style of the main div
+                                 **************************************************************************************/
+
+                                cssStyle.backgroundColor = findStyleElement.call(this, [textDatas[j], region, divBody], 'backgroundColor');
+                                cssStyle.color = findStyleElement.call(this, [textDatas[j], region, divBody], 'color');
+                                cssStyle.fontSize = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontSize');
+                                cssStyle.fontFamily = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontFamily');
+
+                                extent = findStyleElement.call(this, [textDatas[j], region, divBody], 'extent');
+
+                                if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === '%' && extent) {
+                                    extent = extent.split(' ')[1];
+                                    extent = parseFloat(extent.substr(0, extent.length - 1));
+                                    cssStyle.fontSize = (parseInt(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1), 10) * extent) / 100 + "%";
+                                } else if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === 'c' && extent) {
+                                    cellsSize = cssStyle.fontSize.replace(/\s/g, '').split('c');
+                                    cellResolution = findParameterElement.call(this, [textDatas[j], region, divBody, nodeTt], 'cellResolution').split(' ');
+                                    if (cellsSize.length > 1) {
+                                        cssStyle.fontSize = cellResolution[1] / cellsSize[1] + 'px';
+                                    } else {
+                                        cssStyle.fontSize = cellResolution[1] / cellsSize[0] + 'px';
+                                    }
+                                }
+
+                                //line and position element have no effect on IE
+                                //For Chrome line = 80 is a percentage workaround to reorder subtitles
+                                if (j === 0) {
+                                    caption = {
+                                        start: startTime,
+                                        end: endTime,
+                                        data: textDatas[j].textContent,
+                                        line: 80,
+                                        style: cssStyle
+                                    };
+                                } else {
+                                    //try to detect multi lines subtitle
+                                    caption = {
+                                        start: startTime,
+                                        end: endTime,
+                                        data: textDatas[j - 1].textContent + '\n' + textDatas[j].textContent,
+                                        line: 80,
+                                        style: cssStyle
+                                    };
+                                }
+                            }
+                            captionArray.push(caption);
+                        } else {
+                            cssStyle.backgroundColor = findStyleElement.call(this, [region, divBody], 'backgroundColor');
+                            cssStyle.color = findStyleElement.call(this, [region, divBody], 'color');
+                            cssStyle.fontSize = findStyleElement.call(this, [region, divBody], 'fontSize');
+                            cssStyle.fontFamily = findStyleElement.call(this, [region, divBody], 'fontFamily');
+
+                            extent = findStyleElement.call(this, [region, divBody], 'extent');
 
                             if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === '%' && extent) {
                                 extent = extent.split(' ')[1];
                                 extent = parseFloat(extent.substr(0, extent.length - 1));
                                 cssStyle.fontSize = (parseInt(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1), 10) * extent) / 100 + "%";
-                            } else if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === 'c' && extent) {
-                                cellsSize = cssStyle.fontSize.replace(/\s/g, '').split('c');
-                                cellResolution = findParameterElement.call(this, [textDatas[j], region, divBody, nodeTt], 'cellResolution').split(' ');
-                                if (cellsSize.length > 1) {
-                                    cssStyle.fontSize = cellResolution[1] / cellsSize[1] + 'px';
-                                } else {
-                                    cssStyle.fontSize = cellResolution[1] / cellsSize[0] + 'px';
-                                }
                             }
-
                             //line and position element have no effect on IE
                             //For Chrome line = 80 is a percentage workaround to reorder subtitles
-                            if (j === 0) {
+                            //try to detect multi lines subtitle
+                            if (i > 0) {
+                                previousStartTime = getTimeValue.call(this, regions[i - 1], 'begin');
+                                previousEndTime = getTimeValue.call(this, regions[i - 1], 'end');
+                            }
+
+                            if (startTime === previousStartTime && endTime === previousEndTime) {
+                                captionArray.pop();
                                 caption = {
                                     start: startTime,
                                     end: endTime,
-                                    data: textDatas[j].textContent,
+                                    data: regions[i - 1].textContent + '\n' + region.textContent,
                                     line: 80,
                                     style: cssStyle
                                 };
                             } else {
-                                //try to detect multi lines subtitle
                                 caption = {
                                     start: startTime,
                                     end: endTime,
-                                    data: textDatas[j - 1].textContent + '\n' + textDatas[j].textContent,
+                                    data: region.textContent,
                                     line: 80,
                                     style: cssStyle
                                 };
                             }
+                            captionArray.push(caption);
                         }
-                        captionArray.push(caption);
-                    } else {
-                        cssStyle.backgroundColor = findStyleElement.call(this, [region, divBody], 'backgroundColor');
-                        cssStyle.color = findStyleElement.call(this, [region, divBody], 'color');
-                        cssStyle.fontSize = findStyleElement.call(this, [region, divBody], 'fontSize');
-                        cssStyle.fontFamily = findStyleElement.call(this, [region, divBody], 'fontFamily');
-
-                        extent = findStyleElement.call(this, [region, divBody], 'extent');
-
-                        if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === '%' && extent) {
-                            extent = extent.split(' ')[1];
-                            extent = parseFloat(extent.substr(0, extent.length - 1));
-                            cssStyle.fontSize = (parseInt(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1), 10) * extent) / 100 + "%";
-                        }
-                        //line and position element have no effect on IE
-                        //For Chrome line = 80 is a percentage workaround to reorder subtitles
-                        //try to detect multi lines subtitle
-                        if (i > 0) {
-                            previousStartTime = getTimeValue.call(this, regions[i - 1], 'begin');
-                            previousEndTime = getTimeValue.call(this, regions[i - 1], 'end');
-                        }
-
-                        if (startTime === previousStartTime && endTime === previousEndTime) {
-                            captionArray.pop();
-                            caption = {
-                                start: startTime,
-                                end: endTime,
-                                data: regions[i - 1].textContent + '\n' + region.textContent,
-                                line: 80,
-                                style: cssStyle
-                            };
-                        } else {
-                            caption = {
-                                start: startTime,
-                                end: endTime,
-                                data: region.textContent,
-                                line: 80,
-                                style: cssStyle
-                            };
-                        }
-                        captionArray.push(caption);
                     }
                 }
-
                 return Q.when(captionArray);
 
             } catch (err) {
