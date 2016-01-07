@@ -750,16 +750,16 @@ MediaPlayer.dependencies.BufferController = function() {
                 return;
             }
 
-            // Send a warning
-            this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT,
-                "Failed to download media segment",
-                {
-                    url: e.url,
-                    status: e.status
-                });
-
             // Ignore in case of text track, this will not stop playing
             if (type === "text") {
+
+                this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT,
+                    "Failed to download media segment",
+                    {
+                        url: e.url,
+                        status: e.status
+                    });
+
                 return;
             }
 
@@ -767,11 +767,22 @@ MediaPlayer.dependencies.BufferController = function() {
             segmentDownloadErrorCount += 1;
 
             // => If failed SEGMENT_DOWNLOAD_ERROR_MAX times, then raise an error
-            // => Else try to reload session
+            // => Else raise a warning and try to reload session
             if (segmentDownloadErrorCount === SEGMENT_DOWNLOAD_ERROR_MAX) {
-                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.STREAM_ERR_BUFFER,
-                    "Failed to download " + type + " segments, buffer is now underflow", null);
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT,
+                    "Failed to download media segment",
+                    {
+                        url: e.url,
+                        status: e.status
+                    });
             } else {
+                this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT,
+                    "Failed to download media segment",
+                    {
+                        url: e.url,
+                        status: e.status
+                    });
+
                 recoveryTime = e.startTime + (e.duration * 1.5);
 
                 // If already in buffering state (i.e. empty buffer) then reload session now
