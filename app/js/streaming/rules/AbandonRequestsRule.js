@@ -46,7 +46,7 @@ MediaPlayer.rules.AbandonRequestsRule = function() {
                 estimatedTimeOfDownload,
                 switchRequest = new MediaPlayer.rules.SwitchRequest(MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE, MediaPlayer.rules.SwitchRequest.prototype.WEAK);
 
-                if ( request.firstByteDate === null || request.status === 0) {
+                if (request.firstByteDate === null || request.aborted) {
                     this.debug.log("[AbandonRequestsRule][" + type + "] Request has already been aborted.");
                     callback(switchRequest);
                     return;
@@ -55,8 +55,7 @@ MediaPlayer.rules.AbandonRequestsRule = function() {
                 elapsedTime = (now - request.firstByteDate.getTime()) / 1000;
                 //this.debug.log("[AbandonRequestsRule][" + type + "] elapsedTime = " + elapsedTime + " s (" + request.bytesLoaded + "/" + request.bytesTotal + ")");
 
-                if (request.bytesLoaded < request.bytesTotal &&
-                    elapsedTime >= (request.duration * GRACE_TIME_THRESHOLD)) {
+                if (request.bytesLoaded < request.bytesTotal && elapsedTime >= (request.duration * GRACE_TIME_THRESHOLD)) {
 
                     measuredBandwidth = request.bytesLoaded / elapsedTime;
                     estimatedTimeOfDownload = request.bytesTotal / measuredBandwidth;
