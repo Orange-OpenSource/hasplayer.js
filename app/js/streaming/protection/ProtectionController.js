@@ -353,7 +353,7 @@ MediaPlayer.dependencies.ProtectionController = function() {
                         new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_LICENSER_ERROR, "License request failed", {
                             url: url,
                             status: this.status,
-                            error: licenseServerData.getErrorResponse(this.response)
+                            error: (this.response && this.response !== null) ? licenseServerData.getErrorResponse(this.response) : ""
                         }));
                 }
                 xhrLicense = null;
