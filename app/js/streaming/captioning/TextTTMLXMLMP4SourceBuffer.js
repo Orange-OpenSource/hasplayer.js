@@ -171,7 +171,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
 
                 // parse data and add to cues
 
-                self.convertUTF8ToString(mdat.data)
+                self.convertUTFToString(mdat.data)
                     .then(function(result) {
                         self.ttmlParser.parse(result).then(function(cues) {
                             var i;
@@ -188,6 +188,26 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                                 });
                             }
                         }, function(error) {
+                             self.convertUTFToString(mdat.data, 'utf-16')
+                                .then(function(result) {
+                                    self.ttmlParser.parse(result).then(function(cues) {
+                                        var i;
+                                        if (cues) {
+                                            for (i = 0; i < cues.length; i += 1) {
+                                                cues[i].start = cues[i].start + fragmentStart;
+                                                cues[i].end = cues[i].end + fragmentStart;
+                                            }
+
+                                            self.textTrackExtensions.addCues(self.track, cues);
+
+                                            self.eventBus.dispatchEvent({
+                                                type: "updateend"
+                                            });
+                                        }
+                                    }
+                                    );
+                                }
+                                );
                             //self.debug.error("[TextTTMLXMLMP4SourceBuffer] error parsing TTML "+error);
                         });
                     });
@@ -195,7 +215,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
             return;
         },
 
-        convertUTF8ToString: function(buf) {
+        convertUTFToString: function(buf, encoding) {
             var deferred = Q.defer(),
                 blob = new Blob([buf], {
                     type: "text/xml"
@@ -205,7 +225,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
             f.onload = function(e) {
                 deferred.resolve(e.target.result);
             };
-            f.readAsText(blob);
+            f.readAsText(blob,encoding);
 
             return deferred.promise;
         },
