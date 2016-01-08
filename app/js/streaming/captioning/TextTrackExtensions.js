@@ -90,7 +90,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
             }
         },
 
-        deleteCues: function(video, disabled) {
+        deleteCues: function(video, disabled, start, end) {
             var track = null,
                 cues = null,
                 lastIdx = null,
@@ -105,7 +105,10 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                         lastIdx = cues.length - 1;
 
                         for (i = lastIdx; i >= 0; i -= 1) {
-                            track.removeCue(cues[i]);
+                            if (((end === undefined || end === -1) || (cues[i].endTime < end)) &&
+                                ((start === undefined || start === -1) || (cues[i].startTime > start))) {
+                                track.removeCue(cues[i]);
+                            }
                         }
                     }
                     //noway to delete track, just disable it

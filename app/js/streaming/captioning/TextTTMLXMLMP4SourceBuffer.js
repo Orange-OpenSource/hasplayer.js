@@ -105,7 +105,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                 throw "INVALID_ACCESS_ERR";
             }
 
-            this.getTextTrackExtensions().deleteCues(video, false);
+            this.getTextTrackExtensions().deleteCues(video, false, start, end);
             this.buffered.removeRange(start, end);
         },
 
