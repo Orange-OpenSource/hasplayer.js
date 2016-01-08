@@ -73,13 +73,15 @@ MediaPlayer.rules.o.DownloadRatioRule = function() {
 
                 deferred = Q.defer();
 
+                self.debug.info("[DownloadRatioRule][" + data.type + "] DL: " + Number(downloadTime.toFixed(3)) + "s, Total: " + Number(totalTime.toFixed(3)) + "s");
+
                 totalBytesLength = lastRequest.bytesLength;
 
-                //if we have at least 3 requests, take an average of calculated bandwidth
+                // If we have at least 3 requests, take an average of calculated bandwidth
                 if (requests.length >= 3) {
                     for (i = requests.length - 2; i >= (requests.length - 3); i--) {
-                        totalBytesLength += requests[i].bytesLength;
                         if (requests[i].tfinish && requests[i].trequest && requests[i].tresponse) {
+                            totalBytesLength += requests[i].bytesLength;
                             totalTime += (requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1000;
                             downloadTime += (requests[i].tfinish.getTime() - requests[i].tresponse.getTime()) / 1000;
                         }
@@ -91,7 +93,7 @@ MediaPlayer.rules.o.DownloadRatioRule = function() {
 
                 calculatedBandwidth = latencyInBandwidth ? (totalBytesLength / totalTime) : (totalBytesLength / downloadTime);
 
-                self.debug.info("[DownloadRatioRule][" + data.type + "] DL: " + (Math.round(downloadTime * 1000) / 1000) + "s, Total: " + (Math.round(totalTime * 1000) / 1000) + "s => bw = " + Math.round(calculatedBandwidth / 1000) + " kb/s");
+                self.debug.info("[DownloadRatioRule][" + data.type + "] BW = " + Math.round(calculatedBandwidth / 1000) + " kb/s");
 
                 if (isNaN(calculatedBandwidth)) {
                     return Q.when(new MediaPlayer.rules.SwitchRequest());
