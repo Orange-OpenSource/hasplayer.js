@@ -965,7 +965,6 @@ MediaPlayer.dependencies.Stream = function() {
 
         streamsComposed = function() {
             var time = this.videoModel.getCurrentTime();
-            console.log('***** STREAM ENABLE TEXTCONTROLLER TIME = '+time);
             textController.seek(time);
         },
 
