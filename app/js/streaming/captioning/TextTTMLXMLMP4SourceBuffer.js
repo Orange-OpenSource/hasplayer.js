@@ -123,7 +123,8 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                 tfdt,
                 trun,
                 fragmentStart,
-                fragmentDuration = 0;
+                fragmentDuration = 0,
+                encoding = 'utf-8';
 
             if (moov) {
                 // This must be an init segment, if it has a moov box.
@@ -168,10 +169,13 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                 }
 
                 self.buffered.addRange(fragmentStart, fragmentStart + fragmentDuration);
-
-                // parse data and add to cues
-
-                self.convertUTFToString(mdat.data)
+                
+                //detect utf-16 encoding
+                if (self.isUTF16(mdat.data)) {
+                    encoding = 'utf-16';
+                }
+                 // parse data and add to cues
+                self.convertUTFToString(mdat.data, encoding)
                     .then(function(result) {
                         self.ttmlParser.parse(result).then(function(cues) {
                             var i;
@@ -188,26 +192,6 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                                 });
                             }
                         }, function(error) {
-                             self.convertUTFToString(mdat.data, 'utf-16')
-                                .then(function(result) {
-                                    self.ttmlParser.parse(result).then(function(cues) {
-                                        var i;
-                                        if (cues) {
-                                            for (i = 0; i < cues.length; i += 1) {
-                                                cues[i].start = cues[i].start + fragmentStart;
-                                                cues[i].end = cues[i].end + fragmentStart;
-                                            }
-
-                                            self.textTrackExtensions.addCues(self.track, cues);
-
-                                            self.eventBus.dispatchEvent({
-                                                type: "updateend"
-                                            });
-                                        }
-                                    }
-                                    );
-                                }
-                                );
                             //self.debug.error("[TextTTMLXMLMP4SourceBuffer] error parsing TTML "+error);
                         });
                     });
@@ -225,9 +209,67 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
             f.onload = function(e) {
                 deferred.resolve(e.target.result);
             };
-            f.readAsText(blob,encoding);
+            f.readAsText(blob, encoding);
 
             return deferred.promise;
+        },
+
+        /**
+         * UTF-16 (LE or BE)
+         *
+         * RFC2781: UTF-16, an encoding of ISO 10646
+         *
+         * @link http://www.ietf.org/rfc/rfc2781.txt
+         * @private
+         * @ignore
+         */
+        isUTF16: function(data) {
+            var i = 0;
+            var len = data && data.length;
+            var pos = null;
+            var b1, b2, next, prev;
+
+            if (len < 2) {
+                if (data[0] > 0xFF) {
+                    return false;
+                }
+            } else {
+                b1 = data[0];
+                b2 = data[1];
+                if (b1 === 0xFF && // BOM (little-endian)
+                    b2 === 0xFE) {
+                    return true;
+                }
+                if (b1 === 0xFE && // BOM (big-endian)
+                    b2 === 0xFF) {
+                    return true;
+                }
+
+                for (; i < len; i++) {
+                    if (data[i] === 0x00) {
+                        pos = i;
+                        break;
+                    } else if (data[i] > 0xFF) {
+                        return false;
+                    }
+                }
+
+                if (pos === null) {
+                    return false; // Non ASCII
+                }
+
+                next = data[pos + 1]; // BE
+                if (next !== void 0 && next > 0x00 && next < 0x80) {
+                    return true;
+                }
+
+                prev = data[pos - 1]; // LE
+                if (prev !== void 0 && prev > 0x00 && prev < 0x80) {
+                    return true;
+                }
+            }
+
+            return false;
         },
 
         abort: function() {
