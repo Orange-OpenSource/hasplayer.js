@@ -112,6 +112,7 @@ MediaPlayer.dependencies.AbrController = function () {
         abrRulesCollection: undefined,
         manifestExt: undefined,
         metricsModel: undefined,
+        metricsExt:undefined,
         config: undefined,
 
         getAutoSwitchBitrate: function () {
@@ -277,25 +278,22 @@ MediaPlayer.dependencies.AbrController = function () {
                         }
 
                         // Check representation boundaries
-                        getQualityBoundaries.call(self, type, data).then(
-                            function (qualityBoundaries) {
-                                qualityMin = qualityBoundaries.min;
-                                qualityMax = qualityBoundaries.max;
+                        var qualityBoundaries = self.metricsExt.getQualityBoundaries(type);
+                        qualityMin = qualityBoundaries.min;
+                        qualityMax = qualityBoundaries.max;
 
-                                if ((qualityMin !== -1) && (quality < qualityMin)) {
-                                    quality = qualityMin;
-                                    self.debug.log("[AbrController]["+type+"] New quality < min => " + quality);
-                                }
+                        if (quality < qualityMin) {
+                            quality = qualityMin;
+                            self.debug.log("[AbrController]["+type+"] New quality < min => " + quality);
+                        }
 
-                                if ((qualityMax !== -1) && (quality > qualityMax)) {
-                                    quality = qualityMax;
-                                    self.debug.log("[AbrController]["+type+"] New quality > max => " + quality);
-                                }
+                        if (quality > qualityMax) {
+                            quality = qualityMax;
+                            self.debug.log("[AbrController]["+type+"] New quality > max => " + quality);
+                        }
 
-                                self.setPlaybackQuality.call(self, type, quality);
-                                deferred.resolve({quality: quality, confidence: result.confidence});
-                            }
-                        );
+                        self.setPlaybackQuality.call(self, type, quality);
+                        deferred.resolve({quality: quality, confidence: result.confidence});
                     } else {
                         deferred.resolve({quality: quality, confidence: result.confidence});
                     }

@@ -737,14 +737,14 @@ MediaPlayer.dependencies.BufferController = function() {
 
             signalSegmentBuffered.call(this);
 
-            // request.status = 0 (abandonned request) => load segment at lowest quality
-            if (e.status !== undefined && e.status === 0) {
-                if (e.quality !== 0) {
-                    this.debug.info("[BufferController][" + type + "] Segment download abandonned => Retry segment download at lowest quality");
-                    this.abrController.setAutoSwitchBitrate(false);
-                    this.abrController.setPlaybackQuality(type, 0);
+            // Abandonned request => load segment at lowest quality
+            if (e.aborted) {
+                // if (e.quality !== 0) {
+                    // this.debug.info("[BufferController][" + type + "] Segment download abandonned => Retry segment download at lowest quality");
+                    // this.abrController.setAutoSwitchBitrate(false);
+                    // this.abrController.setPlaybackQuality(type, 0);
                     bufferFragment.call(this);
-                }
+                // }
                 return;
             }
 
@@ -1249,6 +1249,9 @@ MediaPlayer.dependencies.BufferController = function() {
                                 currentTime.getTime() - lastTraceTime.getTime(), [evt.data.request.bytesLoaded ? evt.data.request.bytesLoaded : 0]);
 
                             self.fragmentController.abortRequestsForModel(fragmentModel);
+                            self.debug.info("[BufferController][" + type + "] Segment download abandonned => Retry segment download at lowest quality");
+                            self.abrController.setAutoSwitchBitrate(false);
+                            self.abrController.setPlaybackQuality(type, newQuality);
                         }
                     };
 

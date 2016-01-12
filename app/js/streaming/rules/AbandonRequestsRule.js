@@ -36,6 +36,7 @@ MediaPlayer.rules.AbandonRequestsRule = function() {
 
     return {
         debug: undefined,
+        metricsExt:undefined,
 
         execute: function(request, callback) {
             var now = new Date().getTime(),
@@ -63,8 +64,8 @@ MediaPlayer.rules.AbandonRequestsRule = function() {
                     //this.debug.log("[AbandonRequestsRule][" + type + "] bw = " + measuredBandwidth + " kb/s (" + estimatedTimeOfDownload + " s)");
 
                     if ((estimatedTimeOfDownload) > (request.duration * ABANDON_MULTIPLIER)) {
-                        switchRequest = new MediaPlayer.rules.SwitchRequest(0, MediaPlayer.rules.SwitchRequest.prototype.STRONG);
-                        this.debug.info("[AbandonRequestsRule][" + type + "] bw = " + measuredBandwidth + " kb/s => switch to lowest quality for "+request.url);
+                        switchRequest = new MediaPlayer.rules.SwitchRequest(this.metricsExt.getQualityBoundaries(type).min, MediaPlayer.rules.SwitchRequest.prototype.STRONG);
+                        this.debug.info("[AbandonRequestsRule][" + type + "] bw = " + measuredBandwidth + " kb/s => switch to lowest quality for " + request.url);
                     }
                 }
 
