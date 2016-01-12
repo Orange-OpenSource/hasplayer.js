@@ -217,6 +217,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
             // Stop reload timeout
             clearTimeout(reloadTimeout);
+            reloadTimeout = null;
 
             // Stop buffering process and cancel loaded request
             clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.USER_REQUEST_STOP_REASON);
@@ -404,8 +405,9 @@ MediaPlayer.dependencies.BufferController = function() {
                                     isQuotaExceeded = false;
 
                                     // In case of live streams, remove outdated buffer parts and requests
-                                    if (isDynamic) {
-                                        removeBuffer.call(self, -1, getWorkingTime.call(self) - 2).then(
+                                    // (checking bufferLevel ensure buffer is not empty or back to current time)
+                                    if (isDynamic && bufferLevel > 1) {
+                                        removeBuffer.call(self, -1, getWorkingTime.call(self) - 30).then(
                                             function() {
                                                 debugBufferRange.call(self);
                                                 deferred.resolve();
@@ -1513,6 +1515,16 @@ MediaPlayer.dependencies.BufferController = function() {
                         htmlVideoState = PLAYING;
                         this.debug.log("[BufferController][" + type + "] PLAYING - " + this.videoModel.getCurrentTime());
                         this.metricsModel.addState(type, "playing", this.videoModel.getCurrentTime());
+                    } else if (!this.getVideoModel().isStalled()) {
+                        var ranges = this.sourceBufferExt.getAllRanges(buffer);
+                        if (ranges.length > 0) {
+                            var gap = getWorkingTime.call(this) - ranges.end(ranges.length-1);
+                            this.debug.log("[BufferController][" + type + "] BUFFERING - delay from current time = " + gap);
+                            if (gap > 4) {
+                                this.debug.log("[BufferController][" + type + "] BUFFERING => reload session");
+                                requestForReload.call(this, 1);
+                            }
+                        }
                     }
                     break;
 
