@@ -156,32 +156,6 @@
             return vo;
         },
 
-        addRepresentationBoundaries: function (streamType, t, min, max) {
-            var vo = new MediaPlayer.vo.metrics.RepresentationBoundaries();
-
-            vo.t = t;
-            vo.min = min;
-            vo.max = max;
-
-            this.getMetricsFor(streamType).RepBoundariesList.push(vo);
-
-            this.metricAdded(streamType, "RepresentationBoundaries", vo);
-            return vo;
-        },
-
-        addBandwidthBoundaries: function (streamType, t, min, max) {
-            var vo = new MediaPlayer.vo.metrics.BandwidthBoundaries();
-
-            vo.t = t;
-            vo.min = min;
-            vo.max = max;
-
-            this.getMetricsFor(streamType).BandwidthBoundariesList.push(vo);
-
-            this.metricAdded(streamType, "BandwidthBoundaries", vo);
-            return vo;
-        },
-
         addRepresentationSwitch: function (streamType, t, mt, to, lto) {
             var vo = new MediaPlayer.vo.metrics.RepresentationSwitch();
 

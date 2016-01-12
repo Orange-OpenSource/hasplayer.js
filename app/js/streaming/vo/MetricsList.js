@@ -23,9 +23,7 @@ MediaPlayer.models.MetricsList = function () {
         PlayList: [],
         DroppedFrames: [],
         DVRInfo: [],
-        ManifestUpdate: [],
-        RepBoundariesList: [],
-        BandwidthBoundariesList: []
+        ManifestUpdate: []
     };
 };
 
