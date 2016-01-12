@@ -53,7 +53,6 @@
 
     var adaptationIsType = function (adaptation, bufferType) {
         var found = false;
-
         // TODO : HACK ATTACK
         // Below we call getIsVideo and getIsAudio and then check the adaptation set for a 'type' property.
         // getIsVideo and getIsAudio are adding this 'type' property and SHOULD NOT BE.
@@ -70,6 +69,12 @@
         else if (bufferType === "audio") {
             this.manifestExt.getIsAudio(adaptation);
             if (adaptation.type === "audio") {
+                found = true;
+            }
+        }
+        else if(bufferType === "text"){
+             this.manifestExt.getIsText(adaptation);
+              if (adaptation.type === "text") {
                 found = true;
             }
         }
@@ -285,6 +290,7 @@
 
     rslt.getQualityBoundaries = function(type){
         if(type){
+
             var bitrates = rslt.getBitratesForType(type),
                 qualityMin = rslt.config.getParamFor(type, "ABR.minQuality", "number", -1),
                 qualityMax = rslt.config.getParamFor(type, "ABR.maxQuality", "number",-1),
@@ -292,7 +298,6 @@
                 bandwidthMax = rslt.config.getParamFor(type, "ABR.maxBandwidth", "number", -1),
                 i,
                 count= bitrates.length;
-
 
             if(bandwidthMin !== -1){
                 for(i=0; i< bitrates.length; i++){
@@ -316,7 +321,7 @@
             qualityMin = (qualityMin < 0) ? 0: qualityMin;
             qualityMax = (qualityMax >= count || qualityMax <0) ? (count - 1) : qualityMax;
 
-            return ({min: qualityMin, max: qualityMax});
+            return {min: qualityMin, max: qualityMax};
 
         }else{
             return null;

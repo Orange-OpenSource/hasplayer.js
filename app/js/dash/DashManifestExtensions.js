@@ -136,33 +136,39 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             result = false,
             found = false;
 
-        if (col) {
-            for (i = 0, len = col.length; i < len; i += 1) {
-                if (col[i].contentType === "text") {
-                    result = true;
-                    found = true;
+        if(adaptation){
+            if (col) {
+                for (i = 0, len = col.length; i < len; i += 1) {
+                    if (col[i].contentType === "text") {
+                        result = true;
+                        found = true;
+                    }
                 }
             }
-        }
 
-        if (adaptation.mimeType) {
-            result = (adaptation.mimeType.indexOf("vtt") !== -1) || (adaptation.mimeType.indexOf("ttml") !== -1);
-            found = true;
-        }
+            if (adaptation.mimeType) {
+                result = (adaptation.mimeType.indexOf("vtt") !== -1) || (adaptation.mimeType.indexOf("ttml") !== -1);
+                found = true;
+            }
 
-        // couldn't find on adaptationset, so check a representation
-        if (!found) {
-            i = 0;
-            len = adaptation.Representation_asArray.length;
-            while (!found && i < len) {
-                representation = adaptation.Representation_asArray[i];
+            // couldn't find on adaptationset, so check a representation
+            if (!found) {
+                i = 0;
+                len = adaptation.Representation_asArray.length;
+                while (!found && i < len) {
+                    representation = adaptation.Representation_asArray[i];
 
-                if (representation.mimeType) {
-                    result = (representation.mimeType.indexOf("vtt") !== -1) || (representation.mimeType.indexOf("ttml") !== -1);
-                    found = true;
+                    if (representation.mimeType) {
+                        result = (representation.mimeType.indexOf("vtt") !== -1) || (representation.mimeType.indexOf("ttml") !== -1);
+                        found = true;
+                    }
+
+                    i += 1;
                 }
+            }
 
-                i += 1;
+            if(found){
+                adaptation.type = "text";
             }
         }
 
