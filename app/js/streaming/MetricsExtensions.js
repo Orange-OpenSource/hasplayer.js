@@ -205,41 +205,49 @@
         return profile + "@" + level.toString();
     };
 
-    rslt.getBitratesForType = function (type) {
+    rslt.getBitratesForType = function (type, data) {
         var self = this,
             manifest = self.manifestModel.getValue(),
             periodArray,
             period,
             periodArrayIndex,
-            adaptationSet,
             adaptationSetArray,
+            adaptationSet = null,
             representation,
             representationArray,
             adaptationSetArrayIndex,
             representationArrayIndex,
             bitrateArray = [];
 
-        if ((manifest === null) || (manifest === undefined)) {
+        if (((manifest === null) || (manifest === undefined)) && ((data === null) || (data === undefined))) {
             return null;
         }
 
-        periodArray = manifest.Period_asArray;
+        if (data) {
+            adaptationSet = data;
+        } else {
+            periodArray = manifest.Period_asArray;
 
-        for (periodArrayIndex = 0; periodArrayIndex < periodArray.length; periodArrayIndex = periodArrayIndex + 1) {
-            period = periodArray[periodArrayIndex];
-            adaptationSetArray = period.AdaptationSet_asArray;
-            for (adaptationSetArrayIndex = 0; adaptationSetArrayIndex < adaptationSetArray.length; adaptationSetArrayIndex = adaptationSetArrayIndex + 1) {
-                adaptationSet = adaptationSetArray[adaptationSetArrayIndex];
-                if (adaptationIsType.call(self, adaptationSet, type)) {
-                    //order adaptation in bitrate ascending value
-                    adaptationSet = self.manifestExt.processAdaptation(adaptationSet);
-                    representationArray = adaptationSet.Representation_asArray;
-                    for (representationArrayIndex = 0; representationArrayIndex < representationArray.length; representationArrayIndex = representationArrayIndex + 1) {
-                        representation = representationArray[representationArrayIndex];
-                        bitrateArray.push(representation.bandwidth);
+            for (periodArrayIndex = 0; periodArrayIndex < periodArray.length; periodArrayIndex = periodArrayIndex + 1) {
+                period = periodArray[periodArrayIndex];
+                adaptationSetArray = period.AdaptationSet_asArray;
+                for (adaptationSetArrayIndex = 0; adaptationSetArrayIndex < adaptationSetArray.length; adaptationSetArrayIndex = adaptationSetArrayIndex + 1) {
+                    adaptationSet = adaptationSetArray[adaptationSetArrayIndex];
+                    if (adaptationIsType.call(self, adaptationSetArray[adaptationSetArrayIndex], type)) {
+                        adaptationSet = adaptationSetArray[adaptationSetArrayIndex];
+                        break;
                     }
-                    return bitrateArray;
                 }
+            }
+        }
+
+        if (adaptationSet !== null) {
+            // Order adaptationSet's representations in bitrate ascending value
+            adaptationSet = self.manifestExt.processAdaptation(adaptationSet);
+            representationArray = adaptationSet.Representation_asArray;
+            for (representationArrayIndex = 0; representationArrayIndex < representationArray.length; representationArrayIndex = representationArrayIndex + 1) {
+                representation = representationArray[representationArrayIndex];
+                bitrateArray.push(representation.bandwidth);
             }
         }
 
@@ -288,10 +296,10 @@
         return bitrateArray;
     };
 
-    rslt.getQualityBoundaries = function(type){
-        if(type){
+    rslt.getQualityBoundaries = function(type, data) {
 
-            var bitrates = rslt.getBitratesForType(type),
+        if (type) {
+            var bitrates = rslt.getBitratesForType(type, data),
                 qualityMin = rslt.config.getParamFor(type, "ABR.minQuality", "number", -1),
                 qualityMax = rslt.config.getParamFor(type, "ABR.maxQuality", "number",-1),
                 bandwidthMin = rslt.config.getParamFor(type, "ABR.minBandwidth", "number", -1),
@@ -299,16 +307,16 @@
                 i,
                 count= bitrates.length;
 
-            if(bandwidthMin !== -1){
-                for(i=0; i< bitrates.length; i++){
-                    if(bitrates[i]>=bandwidthMin){
+            if (bandwidthMin !== -1) {
+                for (i = 0; i < bitrates.length; i++) {
+                    if (bitrates[i] >= bandwidthMin) {
                        qualityMin = (qualityMin === -1) ? i : Math.max(i, qualityMin);
                        break;
                     }
                 }
             }
 
-            if(bandwidthMax !== -1){
+            if (bandwidthMax !== -1) {
                for (i = bitrates.length - 1; i >= 0; i--) {
                     if (bitrates[i] <= bandwidthMax) {
                         qualityMax = (qualityMax === -1) ? i : Math.min(i, qualityMax);
@@ -323,7 +331,7 @@
 
             return {min: qualityMin, max: qualityMax};
 
-        }else{
+        } else {
             return null;
         }
     };
