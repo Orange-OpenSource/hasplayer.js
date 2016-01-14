@@ -28,17 +28,19 @@ If your goal is to improve or extend the code and contribute back to this projec
     * cd build/
 2. Install all Node Modules defined in package.json 
     * npm install
-3. Run build task
-    * grunt build
-4. You can also check for other available targter by running:
+3. Run build task for building hasplayer
+    * grunt build_hasplayer
+4. You can also check for other available targets by running:
     * grunt help
 
-The build task can be configured in order to select supported protocol(s) and to integrate or not EME support. For exemple:
-    * grunt build -protocol mss -no-protection ( = mss support only, no EME support)
+The build task can be configured in order to select supported protocol(s) and to integrate or not EME support.
+For example:
+
+    # grunt build_hasplayer -protocol mss -protection=false (mss support only, no EME support)
 
 ## Demo
 
-A builded version of the hasplayer.js and samples is available ah this address:
+A builded version of the hasplayer.js and samples is available at this address:
 
 http://orange-opensource.github.io/hasplayer.js
 
