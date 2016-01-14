@@ -18,9 +18,9 @@ module.exports = function(grunt) {
         'cssmin:generated',         // Minify the CSS in blocks
         'umd:all',                  // package in universal module definition
         'uglify:generated',         // Uglify the JS in blocks
-        'uglify:min',               // Minify the hasplayer.js into hasplayer.min.js
         'replace:infos',            // Add the git info in files
         'replace:copyright',        // Add the copyright
+        'uglify:min',               // Minify the hasplayer.js into hasplayer.min.js
         'clean:tmpFiles'            // Remove temporary files
     ]);
 

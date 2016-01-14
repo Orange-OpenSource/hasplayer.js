@@ -7,7 +7,7 @@ module.exports = function() {
                 compress: false,
                 mangle: false,
                 banner: '//COPYRIGHT/* Last build : @@TIMESTAMP / git revision : @@REVISION */\n /* jshint ignore:start */\n',
-                footer: '\n/* jshint ignore:end */'
+                footer: '\n/* jshint ignore:end */\n'
             }
         },
 
@@ -18,7 +18,8 @@ module.exports = function() {
                     drop_debugger: true,
                     warnings: false
                 },
-                preserveComments: 'all'
+                preserveComments: true,
+                footer: '\n/* jshint ignore:end */\n' // Add again footer since it is removed by this task !?
             },
             files: {
                 '<%= path %>/hasplayer.min.js': ['<%= path %>/hasplayer.js']
