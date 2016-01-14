@@ -1,4 +1,4 @@
-/* Last build : 15.9.2015_8:53:25 / git revision : 09b0b41 */
+/* Last build : 14.1.2016_15:14:2 / git revision : 5a8703b */
  /* jshint ignore:start */
 (function() {
     var b = void 0, f = !0, j = null, l = !1;
@@ -28340,11 +28340,16 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
             return null;
         }
     }
-    function onload(e) {
+    function onload() {
         $scope.audioTracks = player.getAudioTracks();
-        $scope.audioData = $scope.audioTracks[0];
+        if ($scope.audioTracks !== null) {
+            $scope.audioData = $scope.audioTracks[0];
+        }
+        player.enableSubtitles(true);
         $scope.textTracks = player.getSubtitleTracks();
-        $scope.textData = $scope.textTracks[0];
+        if ($scope.textTracks !== null) {
+            $scope.textData = $scope.textTracks[0];
+        }
     }
     function onFullScreenChange() {
         setSubtitlesCSSStyle(subtitlesCSSStyle);
@@ -28361,6 +28366,9 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     function onSubtitlesStyleChanged(style) {
         subtitlesCSSStyle = style;
         setSubtitlesCSSStyle(subtitlesCSSStyle);
+    }
+    function onManifestUrlUpdate() {
+        player.refreshManifest($scope.selectedItem.url);
     }
     function metricChanged(e) {
         var metrics, point;
@@ -28385,7 +28393,7 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
                     $scope.videoRatioCount = metrics.movingRatio["video"].count;
                     $scope.videoRatio = metrics.movingRatio["video"].low.toFixed(3) + " < " + metrics.movingRatio["video"].average.toFixed(3) + " < " + metrics.movingRatio["video"].high.toFixed(3);
                 }
-                if ($("#sliderBitrate").labeledslider("option", "max") === 0) {
+                if ($("#sliderBitrate").labeledslider("option", "max") === 0 && metrics.numBitratesValue > 0) {
                     var labels = [];
                     for (var i = 0; metrics.bitrateValues != null && i < metrics.bitrateValues.length; i++) {
                         labels.push(Math.round(metrics.bitrateValues[i] / 1e3) + "k");
@@ -28492,33 +28500,12 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
         $scope.safeApply();
     }
     function onError(e) {
-        console.error("an error has occured with error code = " + e.event.code);
-        switch (e.event.code) {
-          case "DOWNLOAD_ERR_MANIFEST":
-          case "DOWNLOAD_ERR_SIDX":
-          case "DOWNLOAD_ERR_CONTENT":
-          case "DOWNLOAD_ERR_INIT":
-            console.error(' url :"' + e.event.data.url + '" and request response :"' + e.event.data.request.responseXML + '"');
-            break;
-
-          case "MANIFEST_ERR_CODEC":
-          case "MANIFEST_ERR_PARSE":
-          case "MANIFEST_ERR_NOSTREAM":
-            console.error("Manifest URL was " + e.event.data.mpdUrl + ' with message :"' + e.event.message + '"');
-            break;
-
-          case "CC_ERR_PARSE":
-            console.error('message :"' + e.event.message + '" for content = ' + e.event.data);
-            break;
-
-          default:
-            if (e.event.message) {
-                console.error('message :"' + e.event.message + '"');
-            }
-            break;
-        }
-        if (e.event.code != "HASPLAYER_INIT_ERROR") {
+        console.error("ERROR: " + JSON.stringify(e));
+        if (e.data.code != "HASPLAYER_INIT_ERROR") {
             player.reset(2);
+            if (metricsAgent) {
+                metricsAgent.stop();
+            }
         }
     }
     $scope.invalidateChartDisplay = false;
@@ -28576,11 +28563,12 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     $scope.versionFull = player.getVersionFull();
     $scope.buildDate = player.getBuildDate();
     $scope.laURL = "";
-    $scope.customData = "";
+    $scope.cdmData = "";
     player.startup();
     player.addEventListener("error", onError.bind(this));
     player.addEventListener("metricChanged", metricChanged.bind(this));
     player.addEventListener("subtitlesStyleChanged", onSubtitlesStyleChanged.bind(this));
+    player.addEventListener("manifestUrlUpdate", onManifestUrlUpdate.bind(this));
     video.addEventListener("loadeddata", onload.bind(this));
     video.addEventListener("fullscreenchange", onFullScreenChange.bind(this));
     video.addEventListener("mozfullscreenchange", onFullScreenChange.bind(this));
@@ -28726,8 +28714,8 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     };
     $scope.setStream = function(item) {
         $scope.selectedItem = item;
-        $scope.laURL = item.protData && item.protData["com.microsoft.playready"] ? item.protData["com.microsoft.playready"].laURL : "";
-        $scope.customData = item.protData && item.protData["com.microsoft.playready"] ? item.protData["com.microsoft.playready"].customData : "";
+        $scope.laURL = item.protData && item.protData["com.widevine.alpha"] ? item.protData["com.widevine.alpha"].laURL : "";
+        $scope.cmdData = item.protData && item.protData["com.widevine.alpha"] ? item.protData["com.widevine.alpha"].cdmData : "";
     };
     function resetBitratesSlider() {
         $("#sliderBitrate").labeledslider({
@@ -28750,17 +28738,17 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     function initPlayer() {
         function DRMParams() {
             this.backUrl = null;
-            this.customData = null;
+            this.cdmData = null;
         }
-        if ($scope.laURL.length > 0 || $scope.customData.length > 0) {
+        if ($scope.laURL.length > 0 || $scope.cdmData.length > 0) {
             if (!$scope.selectedItem.protData) {
                 $scope.selectedItem.protData = {};
             }
-            if (!$scope.selectedItem.protData["com.microsoft.playready"]) {
-                $scope.selectedItem.protData["com.microsoft.playready"] = {};
+            if (!$scope.selectedItem.protData["com.widevine.alpha"]) {
+                $scope.selectedItem.protData["com.widevine.alpha"] = {};
             }
-            $scope.selectedItem.protData["com.microsoft.playready"].laURL = $scope.laURL;
-            $scope.selectedItem.protData["com.microsoft.playready"].customData = $scope.customData;
+            $scope.selectedItem.protData["com.widevine.alpha"].laURL = $scope.laURL;
+            $scope.selectedItem.protData["com.widevine.alpha"].cdmData = $scope.cdmData;
         }
         resetBitratesSlider();
         $scope.textTracks = null;
@@ -28813,7 +28801,7 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
 
 angular.module("DashPlayer").controller("ChromecastController", [ "$scope", "$window", "$timeout", function($scope, $window, $timeout) {
     if (window.chrome) {
-        var PROTOCOL = "urn:x-cast:com.google.cast.video.hasplayer";
+        var PROTOCOL = "urn:x-cast:com.orange.cast.video.hasplayer";
         var APP_ID = "9ECD1B68";
         var CAST_SENDER_API = "//www.gstatic.com/cv/js/sender/v1/cast_sender.js";
         var currentSession = null;
@@ -28854,7 +28842,7 @@ angular.module("DashPlayer").controller("ChromecastController", [ "$scope", "$wi
             var p = new Promise(function(resolve, reject) {
                 console.log("init Sesssion");
                 if (!currentSession) {
-                    var sessionRequest = new chrome.cast.SessionRequest(APP_ID);
+                    var sessionRequest = new chrome.cast.SessionRequest(APP_ID, [ "VIDEO_OUT", "AUDIO_OUT" ], 6e4);
                     var apiConfig = new chrome.cast.ApiConfig(sessionRequest, sessionListener, receiverListener);
                     chrome.cast.initialize(apiConfig, function() {
                         resolve();
@@ -28870,7 +28858,9 @@ angular.module("DashPlayer").controller("ChromecastController", [ "$scope", "$wi
         var onInitSuccess = function() {
             var p = new Promise(function(resolve, reject) {
                 if (!currentSession) {
+                    console.info("requesting session");
                     chrome.cast.requestSession(function(e) {
+                        console.info("requesting sesdsion ok");
                         resolve(e);
                     }, function(err) {
                         reject(err);
@@ -28898,6 +28888,7 @@ angular.module("DashPlayer").controller("ChromecastController", [ "$scope", "$wi
             }
         };
         var sessionListener = function(e) {
+            console.info("session created");
             currentSession = e;
             e.addUpdateListener(sessionUpdateListener);
             e.addMessageListener(PROTOCOL, onReceiverMessage);
@@ -28966,7 +28957,7 @@ angular.module("DashPlayer").controller("ChromecastController", [ "$scope", "$wi
                 var params = {};
                 params.url = $scope.selectedItem.url;
                 params.backUrl = $scope.selectedItem.backUrl || null;
-                params.customData = $scope.selectedItem.customData || null;
+                params.cdmData = $scope.selectedItem.cdmData || null;
                 if ($scope.player.isReady()) {
                     var isLive = $scope.player.metricsExt.manifestExt.getIsDynamic($scope.player.metricsExt.manifestModel.getValue());
                     $scope.player.getVideoModel().pause();
@@ -29022,4 +29013,5 @@ angular.module("DashPlayer").controller("ChromecastController", [ "$scope", "$wi
     $scope.chromecast.muted = false;
 } ]);
 /* jshint ignore:end */
+
 var jsonData=jsonData||{};jsonData.sources={items:[{type:"HLS",name:"Apple BipBop",url:"http://devimages.apple.com/iphone/samples/bipbop/bipbopall.m3u8",browsers:"cdsbi"},{type:"MSS",name:"VOD - SuperSpeedway",url:"http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest",browsers:"cdsbi"},{type:"MSS",name:"VOD - SuperSpeedway (PlayReady)",url:"http://playready.directtaps.net/smoothstreaming/SSWSS720H264PR/SuperSpeedway_720.ism/Manifest",browsers:"cdsbi"},{type:"MSS",name:"VOD - Elephants Dream (multi-audio/text)",url:"http://streams.smooth.vertigo.com/elephantsdream/Elephants_Dream_1024-h264-st-aac.ism/manifest",browsers:"cdsbi"},{type:"MSS",name:"LIVE - Big Buck Bunny",url:"http://2is7server1.rd.francetelecom.com/C4/C4-51_BBB.isml/Manifest",browsers:"cdsbi"},{type:"DASH",name:"Envivio",url:"http://dash.edgesuite.net/envivio/dashpr/clear/Manifest.mpd",browsers:"cdsbi"},{type:"DASH",name:"Segment List",url:"http://www.digitalprimates.net/dash/streams/gpac/mp4-main-multi-mpd-AV-NBS.mpd",browsers:"cdsbi"},{type:"DASH",name:"Segment Template",url:"http://www.digitalprimates.net/dash/streams/mp4-live-template/mp4-live-mpd-AV-BS.mpd",browsers:"cdsbi"},{type:"DASH",name:"Unified Streaming - Timeline",url:"http://demo.unified-streaming.com/video/ateam/ateam.ism/ateam.mpd",browsers:"cdsbi"},{name:"Unified Streaming Live",url:"http://live.unified-streaming.com/loop/loop.isml/loop.mpd?format=mp4&session_id=25020",browsers:"cdsbi"},{type:"DASH",name:"Microsoft #1",url:"http://wams.edgesuite.net/media/SintelTrailer_MP4_from_WAME/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)",browsers:"cdsbi"},{type:"DASH",name:"Microsoft #2",url:"http://wams.edgesuite.net/media/SintelTrailer_Smooth_from_WAME/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)",browsers:"cdsbi"},{type:"DASH",name:"Microsoft #3",url:"http://wams.edgesuite.net/media/SintelTrailer_Smooth_from_WAME_720p_Main_Profile/sintel_trailer-720p.ism/manifest(format=mpd-time-csf)",browsers:"cdsbi"},{type:"DASH",name:"Microsoft #4",url:"http://wams.edgesuite.net/media/MPTExpressionData01/ElephantsDream_1080p24_IYUV_2ch.ism/manifest(format=mpd-time-csf)",browsers:"cdsbi"},{type:"DASH",name:"Microsoft #5",url:"http://wams.edgesuite.net/media/MPTExpressionData02/BigBuckBunny_1080p24_IYUV_2ch.ism/manifest(format=mpd-time-csf)",browsers:"cdsbi"},{type:"DASH",name:"Microsoft Cenc #1",url:"http://wams.edgesuite.net/media/SintelTrailer_Smooth_from_WAME_720p_Main_Profile_CENC/CENC/sintel_trailer-720p.ism/manifest(format=mpd-time-csf)",browsers:"cdsbi"},{type:"DASH",name:"Microsoft Cenc #4",url:"http://wams.edgesuite.net/media/SintelTrailer_Smooth_from_WAME_CENC/CENC/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)",browsers:"cdsbi"}]},jsonData.notes={notes:[{title:"Known Issues",items:["Erratic playback at higher bitrates.","Streams using high profile codecs may not play properly.","Only streams with segmentAlignment='true' will work with abr.","Seek at start does not support multi-period content at this point."]},{title:"Release Notes v1.2.0",items:["Captions - TTML Fallback","Reduced logging output","Produce additional stats and show them in index.html","Token Auth support","Replace github ribbon with Star and Fork buttons","Style the new stats display in index.html","Basic handling of EMSG in segments","DVR Window support for pages hosting the player to display their own UI","fixes for multi-period","fixes for dynamic (Live)","contrib sample for using video.js with dash.js","Immediately seek to a a location within the media source upon initial load"]},{title:"Release Notes v1.1.2",items:["Improved support for dynamic mpd type","Added search for live edge.","Added support for overlapped segment requests.","Added support for multiple buffer levels.","Refined error type on the eventbus to be more uniform.","Added manifestLoaded type on the eventbus","Add reset() to MediaPlayer.","Added ScheduleWhilePaused property to MediaPlayer.","Added BufferMax property to MediaPlayer.","Added metricAdded, metricUpdated, metricChanged and metricsChanged events to remove polling","Fixed metrics for http requests and dropped frames"]},{title:"Release Notes v1.0.0",items:["Updated README.","Create responsive showcase page.","Clean up showcase page and javascript.","Add 'Fork me on GitHub' banner.","Externalize a bunch of showcase data to JSON files.","Remove jquery from baseline requirements.","Update baseline player page.","Fix a bug where the displayed rendition indexes were incorrect.","Fix a bug where autoPlay did not work as expected.","Fix a bug where multiple BaseURL nodes broke playback.","Changed live stream detection to use the MPD.@type property (with value 'dynamic').","First pass at closed captioning.","First pass at EME.","First pass at multi-period support.","Respond to fragment loading errors.","Added new test vectors.","Add a ChromeCast sample."]},{title:"Release Notes v0.2.5",items:["Update test vectors.","Update stream availability for Chrome versions and IE 11.","Revert BaseURLExtensions to fix issues with SIDX parsing.","Fix a bug when calculating stream end with SegmentTemplate.","Short circuit logic on unexpected pauses.","Various fixes to SourceBufferExtensions."]},{title:"Release Notes v0.2.4",items:["Added support for updateend event.","Added support for mpd url parameter (index.html?mpd=&lt;mpd url&gt;).","Added dash.min.js and dash.all.js","Extended logging in BufferController.","Improved shouldBufferMore calulation.","Improved getBufferLength calulation.","Improved validateInterval calulation.","Default in-page degbug logging to off.","Update the buffer length metrics even when shouldBufferMore is false.","Fix timescale defaults for SegmentTemplate.","Fix some seek bugs.","Fix some SIDX parse bugs."]},{title:"Release Notes v0.2.3",items:["Change license header.","Add footer.","Add more live support.  Still a work in progress.","Fix some bugs with the timeline."]},{title:"Release Notes v0.2.1",items:["Add support for SegmentBase manifests with reference_type = 1.  (Multi-level SIDX.)","Finish externalizing live toggle.  The player no longer attempts to discover liveness from the manifest.","Add a live toggle to the main UI.","Fix an issue where a custom value in the text input was ignored.","Fixed some bugs and clean up the SIDX loading.","Clean up some of the UI.","Added some new MediaSource test pages.","Expanded test.html to work with byte ranges.","Redid how live works again to support particular streams.  Live still needs more work."]},{title:"Release Notes v0.2.0",items:["Live pass #3.  More bugs fixed.  More remain, but live streams should play.","Fix lots of bugs.","Clean up UI; condense information into a more usable format.","Add some UI bits to make things more clear.","Added test vectors to sources dropdown.","Clean up the filtering so that it doesn't bog down the stream as much.","Add test application to verify that fragments work with MediaSource.","Added ability to change streams without refreshing the page.","Better error messaging."]},{title:"Release Notes v0.1.2",items:["Live pass #2.  Working better, but still not done.","Live w/ SegmentTemplate is working pretty good.","Live support for other methods is spotty.","Implement manifest refreshing.","Add filter to debug window.  **WARNING** Filtering has performance issues that still need to be sorted out.","Add trees to view metrics. **Must manually populate due to performance issues.**","Band-aid some VOD seeking bugs.","Implement use of presentation delay.","Fix some bugs."]},{title:"Release Notes v0.1.1",items:["Metrics first pass.","Live first pass (still not working).","ABR first pass.","If a buffer runs dry playback stalls until more data is loaded.","Fix some (maybe not all) performance issues.","Change copyright information."]},{title:"Release Notes v0.1.0",items:["Major architecture changes.","Moved a lot of code around to make smaller overall objects.","Implemented Promises to make everything async.","Implemented DI for easy overriding of objects.","Added more logging.","Metrics are not currently implemented.","Auto ABR is not yet working due to metrics dependancy."]},{title:"Release Notes v0.0.7",items:["Changes for structure and contents of JavaScript files.","-Scope is now better isolated.","-Better patterns for object creation.","-Overall cleaner code."]},{title:"Release Notes v0.0.6",items:["UI changes."]},{title:"Release Notes v0.0.5",items:["Flesh out abr support.","Add architecture for rule checking.","Add basic bandwidth rule.","Introduced a limitation: only streams with segmentAlignment='true' will work with abr."]},{title:"Release Notes v0.0.4",items:["Add metrics bling.","Expose methods to change audio bitrate.","Play video automatically after loading completes."]},{title:"Release Notes v0.0.3",items:["Handle BaseURL with no SegmentTemplate, SegmentList, or SegmentBase.","Handle SegmentBase nodes without an indexRange or initializationRange."]},{title:"Release Notes v0.0.2",items:["Rearchitect the application for better extensibility.","Properly signal end of stream.","Add metrics tracking.","Add charts and tables with metrics info."]},{title:"Release Notes v0.0.1",items:["Requires Chrome 24 or later.","Basic implements for the four fragment description types work.","SegmentList","SegmentTemplate","SegmentTemplate with SegmentTimeline","SegmentBase"]}]},jsonData.contributors={items:[{name:"Digital Primates",logo:"app/img/dp.png",link:"http://www.digitalprimates.net"},{name:"Microsoft Open Technologies",logo:"app/img/MSOpenTech.jpg",link:"http://msopentech.com"},{name:"YouTube",logo:"app/img/youtube.png",link:"http://www.youtube.com"},{name:"Akamai",logo:"app/img/akamai_ff.png",link:"http://www.akamai.com"},{name:"Senthil",link:"https://github.com/senthil-codr"},{name:"Brightcove",logo:"app/img/brightcove.png",link:"https://www.brightcove.com"},{name:"Fraunhofer Fokus",logo:"app/img/fh_fokus.png",link:"http://www.fokus.fraunhofer.de/en/fame/index.html"}]},jsonData.player_libraries={items:[{name:"q",link:"https://github.com/kriskowal/q"},{name:"dijon",link:"https://github.com/creynders/dijon-framework"},{name:"base64",link:"http://bannister.us/weblog/2007/06/09/simple-base64-encodedecode-javascript/"},{name:"jasmine",link:"http://pivotal.github.io/jasmine/"}]},jsonData.showcase_libraries={items:[{name:"jquery",link:"http://jquery.com/"},{name:"angular",link:"http://angularjs.org/"},{name:"bootstrap",link:"http://getbootstrap.com/"},{name:"flot",link:"http://www.flotcharts.org/"},{name:"angular treeview",link:"https://github.com/eu81273/angular.treeview"}]};
