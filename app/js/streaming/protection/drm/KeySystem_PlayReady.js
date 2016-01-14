@@ -69,6 +69,12 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
                 headers['Content-Type'] = headers.Content;
                 delete headers.Content;
             }
+            // Some versions of the PlayReady CDM do not return headers at all, which means the Content-Type
+            // does not get set and most license servers will just refuse the license request. That's no good,
+            // so set it manually if it is missing.
+            if (!headers.hasOwnProperty('Content-Type')) {
+                headers['Content-Type'] = 'text/xml; charset=utf-8';
+            }
             return headers;
         },
 
@@ -87,8 +93,14 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
                 Challenge = xmlDoc.getElementsByTagName("Challenge")[0].childNodes[0].nodeValue;
                 if (Challenge) {
                     licenseRequest = BASE64.decode(Challenge);
+                } else {
+                    // Some versions of the PlayReady CDM do not return the Microsoft-specified XML structure
+                    // but just return the raw license request. If we can't extract the license request, let's
+                    // assume it is the latter and just return the whole message.
+                    return msg;
                 }
             }
+            
             return licenseRequest;
         },
 
