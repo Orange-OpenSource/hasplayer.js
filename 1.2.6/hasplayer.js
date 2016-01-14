@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 14.1.2016_15:36:43 / git revision : b890462 */
+/* Last build : 14.1.2016_21:40:24 / git revision : 2e6ab42 */
  /* jshint ignore:start */
 (function(root, factory) {
     if (typeof define === "function" && define.amd) {
@@ -5349,7 +5349,7 @@
     mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
     MediaPlayer = function(aContext) {
         "use strict";
-        var VERSION = "1.2.0", VERSION_HAS = "1.2.6_dev", GIT_TAG = "b890462", BUILD_DATE = "14.1.2016_15:36:43", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
+        var VERSION = "1.2.0", VERSION_HAS = "1.2.6_dev", GIT_TAG = "2e6ab42", BUILD_DATE = "14.1.2016_21:40:24", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
             return !!element && !!source && !resetting;
         }, play = function() {
             if (!initialized) {
