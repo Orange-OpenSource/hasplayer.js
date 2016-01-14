@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 6.1.2016_21:43:49 / git revision : 9f60b38 */
+/* Last build : 14.1.2016_21:43:45 / git revision : 3bc4382 */
  /* jshint ignore:start */
 (function(root, factory) {
     if (typeof define === "function" && define.amd) {
@@ -5349,7 +5349,7 @@
     mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
     MediaPlayer = function(aContext) {
         "use strict";
-        var VERSION = "1.2.0", VERSION_HAS = "1.2.6_dev", GIT_TAG = "9f60b38", BUILD_DATE = "6.1.2016_21:43:49", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
+        var VERSION = "1.2.0", VERSION_HAS = "1.2.6_dev", GIT_TAG = "3bc4382", BUILD_DATE = "14.1.2016_21:43:45", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
             return !!element && !!source && !resetting;
         }, play = function() {
             if (!initialized) {
@@ -5705,55 +5705,13 @@
             return confidence;
         }, setInternalConfidence = function(type, value) {
             confidenceDict[type] = value;
-        }, getQualityBoundaries = function(type, data) {
-            var self = this, deferred = Q.defer(), qualityMin = self.config.getParamFor(type, "ABR.minQuality", "number", -1), qualityMax = self.config.getParamFor(type, "ABR.maxQuality", "number", -1), bandwidthMin = self.config.getParamFor(type, "ABR.minBandwidth", "number", -1), bandwidthMax = self.config.getParamFor(type, "ABR.maxBandwidth", "number", -1), i, funcs = [];
-            self.debug.log("[AbrController][" + type + "] Quality   boundaries: [" + qualityMin + "," + qualityMax + "]");
-            self.debug.log("[AbrController][" + type + "] Bandwidth boundaries: [" + bandwidthMin + "," + bandwidthMax + "]");
-            self.manifestExt.getRepresentationCount(data).then(function(count) {
-                if (bandwidthMin !== -1 || bandwidthMax !== -1) {
-                    for (i = 0; i < count; i += 1) {
-                        funcs.push(self.manifestExt.getRepresentationBandwidth(data, i));
-                    }
-                    Q.all(funcs).then(function(bandwidths) {
-                        if (bandwidthMin !== -1) {
-                            for (i = 0; i < count; i += 1) {
-                                if (bandwidths[i] >= bandwidthMin) {
-                                    qualityMin = qualityMin === -1 ? i : Math.max(i, qualityMin);
-                                    break;
-                                }
-                            }
-                        }
-                        if (bandwidthMax !== -1) {
-                            for (i = count - 1; i >= 0; i -= 1) {
-                                if (bandwidths[i] <= bandwidthMax) {
-                                    qualityMax = qualityMax === -1 ? i : Math.min(i, qualityMax);
-                                    break;
-                                }
-                            }
-                        }
-                        qualityMin = qualityMin >= count ? count - 1 : qualityMin;
-                        qualityMax = qualityMax >= count ? count - 1 : qualityMax;
-                        deferred.resolve({
-                            min: qualityMin,
-                            max: qualityMax
-                        });
-                    });
-                } else {
-                    qualityMin = qualityMin >= count ? count - 1 : qualityMin;
-                    qualityMax = qualityMax >= count ? count - 1 : qualityMax;
-                    deferred.resolve({
-                        min: qualityMin,
-                        max: qualityMax
-                    });
-                }
-            });
-            return deferred.promise;
         };
         return {
             debug: undefined,
             abrRulesCollection: undefined,
             manifestExt: undefined,
             metricsModel: undefined,
+            metricsExt: undefined,
             config: undefined,
             getAutoSwitchBitrate: function() {
                 return autoSwitchBitrate;
@@ -5857,22 +5815,21 @@
                             self.debug.log("[AbrController][" + type + "] Incremental switch => quality: " + quality);
                             quality = previousQuality + 1;
                         }
-                        getQualityBoundaries.call(self, type, data).then(function(qualityBoundaries) {
-                            qualityMin = qualityBoundaries.min;
-                            qualityMax = qualityBoundaries.max;
-                            if (qualityMin !== -1 && quality < qualityMin) {
-                                quality = qualityMin;
-                                self.debug.log("[AbrController][" + type + "] New quality < min => " + quality);
-                            }
-                            if (qualityMax !== -1 && quality > qualityMax) {
-                                quality = qualityMax;
-                                self.debug.log("[AbrController][" + type + "] New quality > max => " + quality);
-                            }
-                            self.setPlaybackQuality.call(self, type, quality);
-                            deferred.resolve({
-                                quality: quality,
-                                confidence: result.confidence
-                            });
+                        var qualityBoundaries = self.metricsExt.getQualityBoundaries(type, data);
+                        qualityMin = qualityBoundaries.min;
+                        qualityMax = qualityBoundaries.max;
+                        if (quality < qualityMin) {
+                            quality = qualityMin;
+                            self.debug.log("[AbrController][" + type + "] New quality < min => " + quality);
+                        }
+                        if (quality > qualityMax) {
+                            quality = qualityMax;
+                            self.debug.log("[AbrController][" + type + "] New quality > max => " + quality);
+                        }
+                        self.setPlaybackQuality.call(self, type, quality);
+                        deferred.resolve({
+                            quality: quality,
+                            confidence: result.confidence
                         });
                     } else {
                         deferred.resolve({
@@ -5980,6 +5937,7 @@
             started = false;
             waitingForBuffer = false;
             clearTimeout(reloadTimeout);
+            reloadTimeout = null;
             clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.USER_REQUEST_STOP_REASON);
             this.fragmentController.abortRequestsForModel(fragmentModel);
         }, getRepresentationForQuality = function(quality) {
@@ -6088,8 +6046,8 @@
                             currentBufferedQuality = quality;
                         }
                         isQuotaExceeded = false;
-                        if (isDynamic) {
-                            removeBuffer.call(self, -1, getWorkingTime.call(self) - 2).then(function() {
+                        if (isDynamic && bufferLevel > 1) {
+                            removeBuffer.call(self, -1, getWorkingTime.call(self) - 30).then(function() {
                                 debugBufferRange.call(self);
                                 deferred.resolve();
                             });
@@ -6277,26 +6235,28 @@
                 return;
             }
             signalSegmentBuffered.call(this);
-            if (e.status !== undefined && e.status === 0) {
-                if (e.quality !== 0) {
-                    this.debug.info("[BufferController][" + type + "] Segment download abandonned => Retry segment download at lowest quality");
-                    this.abrController.setAutoSwitchBitrate(false);
-                    this.abrController.setPlaybackQuality(type, 0);
-                    bufferFragment.call(this);
-                }
+            if (e.aborted) {
+                bufferFragment.call(this);
                 return;
             }
-            this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, "Failed to download media segment", {
-                url: e.url,
-                status: e.status
-            });
             if (type === "text") {
+                this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, "Failed to download media segment", {
+                    url: e.url,
+                    status: e.status
+                });
                 return;
             }
             segmentDownloadErrorCount += 1;
             if (segmentDownloadErrorCount === SEGMENT_DOWNLOAD_ERROR_MAX) {
-                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.STREAM_ERR_BUFFER, "Failed to download " + type + " segments, buffer is now underflow", null);
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, "Failed to download media segment", {
+                    url: e.url,
+                    status: e.status
+                });
             } else {
+                this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT, "Failed to download media segment", {
+                    url: e.url,
+                    status: e.status
+                });
                 recoveryTime = e.startTime + e.duration * 1.5;
                 if (htmlVideoState === BUFFERING) {
                     requestForReload.call(this, e.duration * 1.5);
@@ -6550,6 +6510,9 @@
                         metricsHttp.bytesLength = evt.data.request.bytesLoaded;
                         self.metricsModel.appendHttpTrace(metricsHttp, currentTime, currentTime.getTime() - lastTraceTime.getTime(), [ evt.data.request.bytesLoaded ? evt.data.request.bytesLoaded : 0 ]);
                         self.fragmentController.abortRequestsForModel(fragmentModel);
+                        self.debug.info("[BufferController][" + type + "] Segment download abandonned => Retry segment download at lowest quality");
+                        self.abrController.setAutoSwitchBitrate(false);
+                        self.abrController.setPlaybackQuality(type, newQuality);
                     }
                 };
                 for (i = 0, len = rules.length; i < len; i += 1) {
@@ -6740,6 +6703,16 @@
                         htmlVideoState = PLAYING;
                         this.debug.log("[BufferController][" + type + "] PLAYING - " + this.videoModel.getCurrentTime());
                         this.metricsModel.addState(type, "playing", this.videoModel.getCurrentTime());
+                    } else if (!this.getVideoModel().isStalled()) {
+                        var ranges = this.sourceBufferExt.getAllRanges(buffer);
+                        if (ranges.length > 0) {
+                            var gap = getWorkingTime.call(this) - ranges.end(ranges.length - 1);
+                            this.debug.log("[BufferController][" + type + "] BUFFERING - delay from current time = " + gap);
+                            if (gap > 4) {
+                                this.debug.log("[BufferController][" + type + "] BUFFERING => reload session");
+                                requestForReload.call(this, 1);
+                            }
+                        }
                     }
                     break;
 
@@ -7310,9 +7283,8 @@
     MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO = "MANIFEST_ERR_NO_AUDIO";
     MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST = "DOWNLOAD_ERR_MANIFEST";
     MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX = "DOWNLOAD_ERR_SIDX";
-    MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT = "DOWNLOAD_ERR_CONTENT";
     MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_INIT = "DOWNLOAD_ERR_INIT";
-    MediaPlayer.dependencies.ErrorHandler.prototype.STREAM_ERR_BUFFER = "STREAM_ERR_BUFFER";
+    MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT = "DOWNLOAD_ERR_CONTENT";
     MediaPlayer.dependencies.ErrorHandler.prototype.CC_ERR_PARSE = "CC_ERR_PARSE";
     MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR = "MEDIA_KEYERR";
     MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN = "MEDIA_KEYERR_UNKNOWN";
@@ -7763,6 +7735,7 @@
                     }, function(reqerror) {
                         if (reqerror.aborted) {
                             req.status = 0;
+                            req.aborted = true;
                             deferred.reject(req);
                         } else if (RETRY_ATTEMPTS <= 0) {
                             req.status = reqerror.status;
@@ -8266,12 +8239,18 @@
                 if (adaptation.type === "audio") {
                     found = true;
                 }
+            } else if (bufferType === "text") {
+                this.manifestExt.getIsText(adaptation);
+                if (adaptation.type === "text") {
+                    found = true;
+                }
             } else {
                 found = false;
             }
             return found;
         };
         var rslt = MediaPlayer.utils.copyMethods(Dash.dependencies.DashMetricsExtensions);
+        rslt.config = undefined;
         rslt.getDuration = function() {
             var self = this, manifest = self.manifestModel.getValue(), duration = manifest ? manifest.Period.duration : null;
             if (duration !== Infinity) {
@@ -8340,26 +8319,33 @@
             var profile = h264ProfileMap[codecs.substr(5, 2)], level = parseInt(codecs.substr(9, 2), 16) / 10;
             return profile + "@" + level.toString();
         };
-        rslt.getBitratesForType = function(type) {
-            var self = this, manifest = self.manifestModel.getValue(), periodArray, period, periodArrayIndex, adaptationSet, adaptationSetArray, representation, representationArray, adaptationSetArrayIndex, representationArrayIndex, bitrateArray = [];
-            if (manifest === null || manifest === undefined) {
+        rslt.getBitratesForType = function(type, data) {
+            var self = this, manifest = self.manifestModel.getValue(), periodArray, period, periodArrayIndex, adaptationSetArray, adaptationSet = null, representation, representationArray, adaptationSetArrayIndex, representationArrayIndex, bitrateArray = [];
+            if ((manifest === null || manifest === undefined) && (data === null || data === undefined)) {
                 return null;
             }
-            periodArray = manifest.Period_asArray;
-            for (periodArrayIndex = 0; periodArrayIndex < periodArray.length; periodArrayIndex = periodArrayIndex + 1) {
-                period = periodArray[periodArrayIndex];
-                adaptationSetArray = period.AdaptationSet_asArray;
-                for (adaptationSetArrayIndex = 0; adaptationSetArrayIndex < adaptationSetArray.length; adaptationSetArrayIndex = adaptationSetArrayIndex + 1) {
-                    adaptationSet = adaptationSetArray[adaptationSetArrayIndex];
-                    if (adaptationIsType.call(self, adaptationSet, type)) {
-                        adaptationSet = self.manifestExt.processAdaptation(adaptationSet);
-                        representationArray = adaptationSet.Representation_asArray;
-                        for (representationArrayIndex = 0; representationArrayIndex < representationArray.length; representationArrayIndex = representationArrayIndex + 1) {
-                            representation = representationArray[representationArrayIndex];
-                            bitrateArray.push(representation.bandwidth);
+            if (data) {
+                adaptationSet = data;
+            } else {
+                periodArray = manifest.Period_asArray;
+                for (periodArrayIndex = 0; periodArrayIndex < periodArray.length; periodArrayIndex = periodArrayIndex + 1) {
+                    period = periodArray[periodArrayIndex];
+                    adaptationSetArray = period.AdaptationSet_asArray;
+                    for (adaptationSetArrayIndex = 0; adaptationSetArrayIndex < adaptationSetArray.length; adaptationSetArrayIndex = adaptationSetArrayIndex + 1) {
+                        adaptationSet = adaptationSetArray[adaptationSetArrayIndex];
+                        if (adaptationIsType.call(self, adaptationSetArray[adaptationSetArrayIndex], type)) {
+                            adaptationSet = adaptationSetArray[adaptationSetArrayIndex];
+                            break;
                         }
-                        return bitrateArray;
                     }
+                }
+            }
+            if (adaptationSet !== null) {
+                adaptationSet = self.manifestExt.processAdaptation(adaptationSet);
+                representationArray = adaptationSet.Representation_asArray;
+                for (representationArrayIndex = 0; representationArrayIndex < representationArray.length; representationArrayIndex = representationArrayIndex + 1) {
+                    representation = representationArray[representationArrayIndex];
+                    bitrateArray.push(representation.bandwidth);
                 }
             }
             return bitrateArray;
@@ -8393,25 +8379,35 @@
             }
             return bitrateArray;
         };
-        rslt.getCurrentRepresentationBoundaries = function(metrics) {
-            if (metrics === null) {
+        rslt.getQualityBoundaries = function(type, data) {
+            if (type) {
+                var bitrates = rslt.getBitratesForType(type, data), qualityMin = rslt.config.getParamFor(type, "ABR.minQuality", "number", -1), qualityMax = rslt.config.getParamFor(type, "ABR.maxQuality", "number", -1), bandwidthMin = rslt.config.getParamFor(type, "ABR.minBandwidth", "number", -1), bandwidthMax = rslt.config.getParamFor(type, "ABR.maxBandwidth", "number", -1), i, count = bitrates.length;
+                if (bandwidthMin !== -1) {
+                    for (i = 0; i < bitrates.length; i++) {
+                        if (bitrates[i] >= bandwidthMin) {
+                            qualityMin = qualityMin === -1 ? i : Math.max(i, qualityMin);
+                            break;
+                        }
+                    }
+                }
+                if (bandwidthMax !== -1) {
+                    for (i = bitrates.length - 1; i >= 0; i--) {
+                        if (bitrates[i] <= bandwidthMax) {
+                            qualityMax = qualityMax === -1 ? i : Math.min(i, qualityMax);
+                            break;
+                        }
+                    }
+                }
+                qualityMin = qualityMin >= count ? count - 1 : qualityMin;
+                qualityMin = qualityMin < 0 ? 0 : qualityMin;
+                qualityMax = qualityMax >= count || qualityMax < 0 ? count - 1 : qualityMax;
+                return {
+                    min: qualityMin,
+                    max: qualityMax
+                };
+            } else {
                 return null;
             }
-            var repBoundaries = metrics.RepBoundariesList;
-            if (repBoundaries === null || repBoundaries.length <= 0) {
-                return null;
-            }
-            return repBoundaries[repBoundaries.length - 1];
-        };
-        rslt.getCurrentBandwidthBoundaries = function(metrics) {
-            if (metrics === null) {
-                return null;
-            }
-            var bandwidthBoundaries = metrics.BandwidthBoundariesList;
-            if (bandwidthBoundaries === null || bandwidthBoundaries.length <= 0) {
-                return null;
-            }
-            return bandwidthBoundaries[bandwidthBoundaries.length - 1];
         };
         return rslt;
     };
@@ -8537,24 +8533,6 @@
                 vo.b = b;
                 httpRequest.trace.push(vo);
                 this.metricUpdated(httpRequest.stream, "HttpRequestTrace", httpRequest);
-                return vo;
-            },
-            addRepresentationBoundaries: function(streamType, t, min, max) {
-                var vo = new MediaPlayer.vo.metrics.RepresentationBoundaries();
-                vo.t = t;
-                vo.min = min;
-                vo.max = max;
-                this.getMetricsFor(streamType).RepBoundariesList.push(vo);
-                this.metricAdded(streamType, "RepresentationBoundaries", vo);
-                return vo;
-            },
-            addBandwidthBoundaries: function(streamType, t, min, max) {
-                var vo = new MediaPlayer.vo.metrics.BandwidthBoundaries();
-                vo.t = t;
-                vo.min = min;
-                vo.max = max;
-                this.getMetricsFor(streamType).BandwidthBoundariesList.push(vo);
-                this.metricAdded(streamType, "BandwidthBoundaries", vo);
                 return vo;
             },
             addRepresentationSwitch: function(streamType, t, mt, to, lto) {
@@ -10095,6 +10073,9 @@
                 deferred.resolve();
             });
             return deferred.promise;
+        }, streamsComposed = function() {
+            var time = this.videoModel.getCurrentTime();
+            textController.seek(time);
         }, onVisibilitychange = function() {
             if (document.hidden === true || startClockTime === -1) {
                 return;
@@ -10263,6 +10244,7 @@
                 this.system.unmapHandler("bufferingCompleted");
                 this.system.unmapHandler("segmentLoadingFailed");
                 this.system.unmapHandler("needForReload");
+                this.system.unmapHandler("streamsComposed", undefined, streamsComposed);
                 tearDownMediaSource.call(this).then(function() {
                     if (protectionController) {
                         protectionController.unsubscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, self);
@@ -10296,13 +10278,12 @@
                 eventController.reset();
             },
             enableSubtitles: function(enabled) {
-                var time;
                 if (enabled !== subtitlesEnabled) {
                     subtitlesEnabled = enabled;
                     if (textController) {
                         if (enabled) {
-                            time = this.videoModel.getCurrentTime();
-                            textController.seek(time);
+                            this.system.mapHandler("streamsComposed", undefined, streamsComposed.bind(this), true);
+                            this.system.notify("manifestUpdate");
                         } else {
                             textController.stop();
                         }
@@ -11109,7 +11090,7 @@
                     }
                 }
             },
-            deleteCues: function(video, disabled) {
+            deleteCues: function(video, disabled, start, end) {
                 var track = null, cues = null, lastIdx = null, i = 0;
                 if (video) {
                     track = video.textTracks[0];
@@ -11118,7 +11099,9 @@
                         if (cues) {
                             lastIdx = cues.length - 1;
                             for (i = lastIdx; i >= 0; i -= 1) {
-                                track.removeCue(cues[i]);
+                                if ((end === undefined || end === -1 || cues[i].endTime < end) && (start === undefined || start === -1 || cues[i].startTime > start)) {
+                                    track.removeCue(cues[i]);
+                                }
                             }
                         }
                         if (disabled) {
@@ -11152,7 +11135,9 @@
             removeRange: function(start, end) {
                 var i = 0;
                 for (i = this.ranges.length - 1; i >= 0; i -= 1) {
-                    if (this.ranges[i].start >= start && this.ranges[i].end <= end) this.ranges.splice(i, 1);
+                    if ((end === undefined || end === -1 || this.ranges[i].end < end) && (start === undefined || start === -1 || this.ranges[i].start > start)) {
+                        this.ranges.splice(i, 1);
+                    }
                 }
                 this.length = this.ranges.length;
             },
@@ -11180,11 +11165,11 @@
                 if (start < 0 || start >= end) {
                     throw "INVALID_ACCESS_ERR";
                 }
-                this.getTextTrackExtensions().deleteCues(video, false);
+                this.getTextTrackExtensions().deleteCues(video, false, start, end);
                 this.buffered.removeRange(start, end);
             },
             append: function(bytes) {
-                var self = this, file = mp4lib.deserialize(bytes), moov = file.getBoxByType("moov"), mvhd, moof, mdat, traf, tfhd, tfdt, trun, fragmentStart, fragmentDuration = 0;
+                var self = this, file = mp4lib.deserialize(bytes), moov = file.getBoxByType("moov"), mvhd, moof, mdat, traf, tfhd, tfdt, trun, fragmentStart, fragmentDuration = 0, encoding = "utf-8";
                 if (moov) {
                     mvhd = moov.getBoxByType("mvhd");
                     self.timescale = mvhd.timescale;
@@ -11211,7 +11196,10 @@
                         fragmentDuration = tfhd.default_sample_duration / self.timescale;
                     }
                     self.buffered.addRange(fragmentStart, fragmentStart + fragmentDuration);
-                    self.convertUTF8ToString(mdat.data).then(function(result) {
+                    if (self.isUTF16(mdat.data)) {
+                        encoding = "utf-16";
+                    }
+                    self.convertUTFToString(mdat.data, encoding).then(function(result) {
                         self.ttmlParser.parse(result).then(function(cues) {
                             var i;
                             if (cues) {
@@ -11229,15 +11217,55 @@
                 }
                 return;
             },
-            convertUTF8ToString: function(buf) {
+            convertUTFToString: function(buf, encoding) {
                 var deferred = Q.defer(), blob = new Blob([ buf ], {
                     type: "text/xml"
                 }), f = new FileReader();
                 f.onload = function(e) {
                     deferred.resolve(e.target.result);
                 };
-                f.readAsText(blob);
+                f.readAsText(blob, encoding);
                 return deferred.promise;
+            },
+            isUTF16: function(data) {
+                var i = 0;
+                var len = data && data.length;
+                var pos = null;
+                var b1, b2, next, prev;
+                if (len < 2) {
+                    if (data[0] > 255) {
+                        return false;
+                    }
+                } else {
+                    b1 = data[0];
+                    b2 = data[1];
+                    if (b1 === 255 && b2 === 254) {
+                        return true;
+                    }
+                    if (b1 === 254 && b2 === 255) {
+                        return true;
+                    }
+                    for (;i < len; i++) {
+                        if (data[i] === 0) {
+                            pos = i;
+                            break;
+                        } else if (data[i] > 255) {
+                            return false;
+                        }
+                    }
+                    if (pos === null) {
+                        return false;
+                    }
+                    next = data[pos + 1];
+                    if (next !== void 0 && next > 0 && next < 128) {
+                        return true;
+                    }
+                    prev = data[pos - 1];
+                    if (prev !== void 0 && prev > 0 && prev < 128) {
+                        return true;
+                    }
+                }
+                return false;
             },
             abort: function() {
                 this.getTextTrackExtensions().deleteCues(video, true);
@@ -11261,7 +11289,7 @@
     };
     MediaPlayer.utils.TTMLParser = function() {
         "use strict";
-        var SECONDS_IN_HOUR = 60 * 60, SECONDS_IN_MIN = 60, TTAF_URI = "http://www.w3.org/2006/10/ttaf1", TTAF_PARAMETER_URI = "http://www.w3.org/2006/10/ttaf1#parameter", TTAF_STYLE_URI = "http://www.w3.org/2006/10/ttaf1#styling", TTML_URI = "http://www.w3.org/ns/ttml", TTML_PARAMETER_URI = "http://www.w3.org/ns/ttml#parameter", TTML_STYLE_URI = "http://www.w3.org/ns/ttml#styling", globalPrefTTNameSpace = "", globalPrefStyleNameSpace = "", globalPrefParameterNameSpace = "", regionPrefTTNameSpace = "", regionPrefStyleNameSpace = "", timingRegexClockTime = /^(0[0-9]|1[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])((\.[0-9][0-9][0-9])|(:[0-9][0-9]))$/, timingRegexOffsetTime = /^\d+(\.\d+|)(h|m|s|ms|f)$/, xmlDoc = null, nodeTt = null, nodeHead = null, nodeLayout = null, nodeStyling = null, nodeBody = null, frameRate = null, tabStyles = [], tabRegions = [], parseTimings = function(timingStr) {
+        var SECONDS_IN_HOUR = 60 * 60, SECONDS_IN_MIN = 60, TTAF_URI = "http://www.w3.org/2006/10/ttaf1", TTAF_PARAMETER_URI = "http://www.w3.org/2006/10/ttaf1#parameter", TTAF_STYLE_URI = "http://www.w3.org/2006/10/ttaf1#styling", TTML_URI = "http://www.w3.org/ns/ttml", TTML_PARAMETER_URI = "http://www.w3.org/ns/ttml#parameter", TTML_STYLE_URI = "http://www.w3.org/ns/ttml#styling", globalPrefTTNameSpace = "", globalPrefStyleNameSpace = "", globalPrefParameterNameSpace = "", timingRegexClockTime = /^(0[0-9]|1[0-9]|2[0-3]):([0-5][0-9]):([0-5][0-9])((\.[0-9][0-9][0-9])|(:[0-9][0-9]))$/, timingRegexOffsetTime = /^\d+(\.\d+|)(h|m|s|ms|f)$/, xmlDoc = null, nodeTt = null, nodeHead = null, nodeLayout = null, nodeStyling = null, nodeBody = null, frameRate = null, tabStyles = [], tabRegions = [], parseTimings = function(timingStr) {
             var timeParts, parsedTime, metric;
             if (timingRegexClockTime.test(timingStr)) {
                 timeParts = timingStr.split(":");
@@ -11320,41 +11348,65 @@
             }
             return passed;
         }, findStyleElement = function(nodeTab, styleElementName) {
-            var styleName, regionName, i = 0, j = 0;
-            for (j = 0; j < nodeTab.length; j++) {
-                styleName = this.domParser.getAttributeValue(nodeTab[j], "style");
-                if (styleName) {
-                    for (i = 0; i < tabStyles[styleName].length; i++) {
-                        if (tabStyles[styleName][i].name === globalPrefStyleNameSpace + styleElementName) {
-                            return tabStyles[styleName][i].nodeValue;
-                        } else if (tabStyles[styleName][i].name === regionPrefStyleNameSpace + styleElementName) {
-                            return tabStyles[styleName][i].nodeValue;
+            var styleName, regionName, i = 0, j = 0, k = 0, l = 0, m = 0, n = 0, o = 0;
+            for (j = 0; j < nodeTab.length; j += 1) {
+                for (k = 0; k < globalPrefStyleNameSpace.length; k += 1) {
+                    styleName = this.domParser.getAttributeValue(nodeTab[j], globalPrefStyleNameSpace[k] + styleElementName);
+                    if (styleName) {
+                        return styleName;
+                    }
+                }
+                for (k = 0; k < globalPrefTTNameSpace.length; k += 1) {
+                    styleName = this.domParser.getAttributeValue(nodeTab[j], globalPrefTTNameSpace[k] + "style");
+                    if (styleName) {
+                        for (i = 0; i < tabStyles[styleName].length; i += 1) {
+                            for (l = 0; l < globalPrefStyleNameSpace.length; l += 1) {
+                                if (tabStyles[styleName][i].name === globalPrefStyleNameSpace[l] + styleElementName) {
+                                    return tabStyles[styleName][i].nodeValue;
+                                }
+                            }
                         }
                     }
                 }
-                regionName = this.domParser.getAttributeValue(nodeTab[j], "region");
-                if (regionName) {
-                    for (i = 0; i < tabRegions[regionName].length; i++) {
-                        if (tabRegions[regionName][i].name === globalPrefStyleNameSpace + styleElementName) {
-                            return tabRegions[regionName][i].nodeValue;
-                        } else if (tabRegions[regionName][i].name === regionPrefStyleNameSpace + styleElementName) {
-                            return tabRegions[regionName][i].nodeValue;
+                for (k = 0; k < globalPrefTTNameSpace.length; k += 1) {
+                    regionName = this.domParser.getAttributeValue(nodeTab[j], globalPrefTTNameSpace[k] + "region");
+                    if (regionName) {
+                        for (i = 0; i < tabRegions[regionName].length; i += 1) {
+                            for (l = 0; l < globalPrefStyleNameSpace.length; l += 1) {
+                                if (tabRegions[regionName][i].name === globalPrefStyleNameSpace[l] + styleElementName) {
+                                    return tabRegions[regionName][i].nodeValue;
+                                }
+                            }
+                            for (m = 0; m < globalPrefTTNameSpace.length; m += 1) {
+                                styleName = tabRegions[regionName][i].nodeName === globalPrefTTNameSpace[m] + "style" ? tabRegions[regionName][i].nodeValue : null;
+                                if (styleName) {
+                                    for (n = 0; n < tabStyles[styleName].length; n += 1) {
+                                        for (o = 0; o < globalPrefStyleNameSpace.length; o += 1) {
+                                            if (tabStyles[styleName][n].name === globalPrefStyleNameSpace[o] + styleElementName) {
+                                                return tabStyles[styleName][n].nodeValue;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
             return null;
         }, findParameterElement = function(nodeTab, parameterElementName) {
-            var parameterValue = null, i = 0;
+            var parameterValue = null, i = 0, k = 0;
             for (i = 0; i < nodeTab.length; i++) {
-                parameterValue = this.domParser.getAttributeValue(nodeTab[i], globalPrefParameterNameSpace + parameterElementName);
-                if (parameterValue) {
-                    return parameterValue;
+                for (k = 0; k < globalPrefParameterNameSpace.length; k += 1) {
+                    parameterValue = this.domParser.getAttributeValue(nodeTab[i], globalPrefParameterNameSpace[k] + parameterElementName);
+                    if (parameterValue) {
+                        return parameterValue;
+                    }
                 }
             }
             return parameterValue;
         }, getNameSpace = function(node, type) {
-            var nameSpace = null, TTAFUrl = null, TTMLUrl = null;
+            var nameSpace = null, TTAFUrl = null, TTMLUrl = null, i = 0;
             switch (type) {
               case "style":
                 TTAFUrl = TTAF_STYLE_URI;
@@ -11373,19 +11425,20 @@
             }
             if (TTAFUrl && TTMLUrl) {
                 nameSpace = this.domParser.getAttributeName(node, TTAFUrl);
-                if (!nameSpace) {
+                if (nameSpace.length === 0) {
                     nameSpace = this.domParser.getAttributeName(node, TTMLUrl);
                 }
-                if (nameSpace) {
-                    nameSpace = nameSpace.split(":").length > 1 ? nameSpace.split(":")[1] + ":" : "";
+                if (nameSpace.length > 0) {
+                    for (i = 0; i < nameSpace.length; i += 1) {
+                        nameSpace[i] = nameSpace[i].split(":").length > 1 ? nameSpace[i].split(":")[1] + ":" : "";
+                    }
                 }
             }
             return nameSpace;
         }, getTimeValue = function(node, parameter) {
-            var returnTime = null;
-            returnTime = parseTimings(this.domParser.getAttributeValue(node, globalPrefTTNameSpace + parameter));
-            if (returnTime === null) {
-                returnTime = parseTimings(this.domParser.getAttributeValue(node, regionPrefTTNameSpace + parameter));
+            var returnTime = null, i = 0;
+            for (i = 0; i < globalPrefTTNameSpace.length; i += 1) {
+                returnTime = parseTimings(this.domParser.getAttributeValue(node, globalPrefTTNameSpace[i] + parameter));
             }
             return returnTime;
         }, internalParse = function(data) {
@@ -11394,7 +11447,7 @@
                 color: null,
                 fontSize: null,
                 fontFamily: null
-            }, caption, divBody, i, textDatas, j, cellsSize, cellResolution, extent;
+            }, caption, divBody, i, textDatas, j, k, cellsSize, cellResolution, extent;
             try {
                 xmlDoc = this.domParser.createXmlTree(data);
                 if (!passStructuralConstraints.call(this)) {
@@ -11404,56 +11457,94 @@
                 globalPrefTTNameSpace = getNameSpace.call(this, nodeTt, "main");
                 globalPrefParameterNameSpace = getNameSpace.call(this, nodeTt, "parameter");
                 globalPrefStyleNameSpace = getNameSpace.call(this, nodeTt, "style");
-                frameRate = this.domParser.getAttributeValue(nodeTt, globalPrefParameterNameSpace + "frameRate") ? parseInt(frameRate, 10) : null;
-                divBody = this.domParser.getChildNode(nodeBody, "div");
-                if (!divBody) {
+                for (i = 0; i < globalPrefParameterNameSpace.length; i += 1) {
+                    frameRate = this.domParser.getAttributeValue(nodeTt, globalPrefParameterNameSpace[i] + "frameRate") ? parseInt(frameRate, 10) : null;
+                }
+                divBody = this.domParser.getChildNodes(nodeBody, "div");
+                if (!divBody || divBody.length === 0) {
                     errorMsg = "TTML body document does not contain any div";
                     return Q.reject(errorMsg);
                 }
-                regions = this.domParser.getChildNodes(divBody, "p");
-                if (!regions || regions.length === 0) {
-                    errorMsg = "TTML document does not contain any cues";
-                    return Q.reject(errorMsg);
-                }
-                tabStyles = this.domParser.getAllSpecificNodes(nodeTt, "style");
-                tabRegions = this.domParser.getAllSpecificNodes(nodeTt, "region");
-                for (i = 0; i < regions.length; i += 1) {
-                    caption = null;
-                    region = regions[i];
-                    regionPrefTTNameSpace = getNameSpace.call(this, region, "main");
-                    regionPrefStyleNameSpace = getNameSpace.call(this, region, "style");
-                    startTime = getTimeValue.call(this, region, "begin");
-                    endTime = getTimeValue.call(this, region, "end");
-                    if (isNaN(startTime) || isNaN(endTime)) {
-                        errorMsg = "TTML document has incorrect timing value";
+                for (k = 0; k < divBody.length; k += 1) {
+                    regions = this.domParser.getChildNodes(divBody[k], "p");
+                    if (!regions || regions.length === 0) {
+                        errorMsg = "TTML document does not contain any cues";
                         return Q.reject(errorMsg);
                     }
-                    textDatas = this.domParser.getChildNodes(region, "span");
-                    if (textDatas.length > 0) {
-                        for (j = 0; j < textDatas.length; j++) {
-                            cssStyle.backgroundColor = findStyleElement.call(this, [ textDatas[j], region, divBody ], "backgroundColor");
-                            cssStyle.color = findStyleElement.call(this, [ textDatas[j], region, divBody ], "color");
-                            cssStyle.fontSize = findStyleElement.call(this, [ textDatas[j], region, divBody ], "fontSize");
-                            cssStyle.fontFamily = findStyleElement.call(this, [ textDatas[j], region, divBody ], "fontFamily");
-                            extent = findStyleElement.call(this, [ textDatas[j], region, divBody ], "extent");
+                    tabStyles = this.domParser.getAllSpecificNodes(nodeTt, "style");
+                    tabRegions = this.domParser.getAllSpecificNodes(nodeTt, "region");
+                    for (i = 0; i < regions.length; i += 1) {
+                        caption = null;
+                        region = regions[i];
+                        globalPrefTTNameSpace = globalPrefTTNameSpace.concat(getNameSpace.call(this, region, "main"));
+                        globalPrefStyleNameSpace = globalPrefStyleNameSpace.concat(getNameSpace.call(this, region, "style"));
+                        startTime = getTimeValue.call(this, region, "begin");
+                        endTime = getTimeValue.call(this, region, "end");
+                        if (isNaN(startTime) || isNaN(endTime)) {
+                            errorMsg = "TTML document has incorrect timing value";
+                            return Q.reject(errorMsg);
+                        }
+                        textDatas = this.domParser.getChildNodes(region, "span");
+                        if (textDatas.length > 0) {
+                            for (j = 0; j < textDatas.length; j++) {
+                                cssStyle.backgroundColor = findStyleElement.call(this, [ textDatas[j], region, divBody ], "backgroundColor");
+                                cssStyle.color = findStyleElement.call(this, [ textDatas[j], region, divBody ], "color");
+                                cssStyle.fontSize = findStyleElement.call(this, [ textDatas[j], region, divBody ], "fontSize");
+                                cssStyle.fontFamily = findStyleElement.call(this, [ textDatas[j], region, divBody ], "fontFamily");
+                                extent = findStyleElement.call(this, [ textDatas[j], region, divBody ], "extent");
+                                if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === "%" && extent) {
+                                    extent = extent.split(" ")[1];
+                                    extent = parseFloat(extent.substr(0, extent.length - 1));
+                                    cssStyle.fontSize = parseInt(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1), 10) * extent / 100 + "%";
+                                } else if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === "c" && extent) {
+                                    cellsSize = cssStyle.fontSize.replace(/\s/g, "").split("c");
+                                    cellResolution = findParameterElement.call(this, [ textDatas[j], region, divBody, nodeTt ], "cellResolution").split(" ");
+                                    if (cellsSize.length > 1) {
+                                        cssStyle.fontSize = cellResolution[1] / cellsSize[1] + "px";
+                                    } else {
+                                        cssStyle.fontSize = cellResolution[1] / cellsSize[0] + "px";
+                                    }
+                                }
+                                if (j === 0) {
+                                    caption = {
+                                        start: startTime,
+                                        end: endTime,
+                                        data: textDatas[j].textContent,
+                                        line: 80,
+                                        style: cssStyle
+                                    };
+                                } else {
+                                    caption = {
+                                        start: startTime,
+                                        end: endTime,
+                                        data: textDatas[j - 1].textContent + "\n" + textDatas[j].textContent,
+                                        line: 80,
+                                        style: cssStyle
+                                    };
+                                }
+                            }
+                            captionArray.push(caption);
+                        } else {
+                            cssStyle.backgroundColor = findStyleElement.call(this, [ region, divBody ], "backgroundColor");
+                            cssStyle.color = findStyleElement.call(this, [ region, divBody ], "color");
+                            cssStyle.fontSize = findStyleElement.call(this, [ region, divBody ], "fontSize");
+                            cssStyle.fontFamily = findStyleElement.call(this, [ region, divBody ], "fontFamily");
+                            extent = findStyleElement.call(this, [ region, divBody ], "extent");
                             if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === "%" && extent) {
                                 extent = extent.split(" ")[1];
                                 extent = parseFloat(extent.substr(0, extent.length - 1));
                                 cssStyle.fontSize = parseInt(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1), 10) * extent / 100 + "%";
-                            } else if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === "c" && extent) {
-                                cellsSize = cssStyle.fontSize.replace(/\s/g, "").split("c");
-                                cellResolution = findParameterElement.call(this, [ textDatas[j], region, divBody, nodeTt ], "cellResolution").split(" ");
-                                if (cellsSize.length > 1) {
-                                    cssStyle.fontSize = cellResolution[1] / cellsSize[1] + "px";
-                                } else {
-                                    cssStyle.fontSize = cellResolution[1] / cellsSize[0] + "px";
-                                }
                             }
-                            if (j === 0) {
+                            if (i > 0) {
+                                previousStartTime = getTimeValue.call(this, regions[i - 1], "begin");
+                                previousEndTime = getTimeValue.call(this, regions[i - 1], "end");
+                            }
+                            if (startTime === previousStartTime && endTime === previousEndTime) {
+                                captionArray.pop();
                                 caption = {
                                     start: startTime,
                                     end: endTime,
-                                    data: textDatas[j].textContent,
+                                    data: regions[i - 1].textContent + "\n" + region.textContent,
                                     line: 80,
                                     style: cssStyle
                                 };
@@ -11461,47 +11552,13 @@
                                 caption = {
                                     start: startTime,
                                     end: endTime,
-                                    data: textDatas[j - 1].textContent + "\n" + textDatas[j].textContent,
+                                    data: region.textContent,
                                     line: 80,
                                     style: cssStyle
                                 };
                             }
+                            captionArray.push(caption);
                         }
-                        captionArray.push(caption);
-                    } else {
-                        cssStyle.backgroundColor = findStyleElement.call(this, [ region, divBody ], "backgroundColor");
-                        cssStyle.color = findStyleElement.call(this, [ region, divBody ], "color");
-                        cssStyle.fontSize = findStyleElement.call(this, [ region, divBody ], "fontSize");
-                        cssStyle.fontFamily = findStyleElement.call(this, [ region, divBody ], "fontFamily");
-                        extent = findStyleElement.call(this, [ region, divBody ], "extent");
-                        if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === "%" && extent) {
-                            extent = extent.split(" ")[1];
-                            extent = parseFloat(extent.substr(0, extent.length - 1));
-                            cssStyle.fontSize = parseInt(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1), 10) * extent / 100 + "%";
-                        }
-                        if (i > 0) {
-                            previousStartTime = getTimeValue.call(this, regions[i - 1], "begin");
-                            previousEndTime = getTimeValue.call(this, regions[i - 1], "end");
-                        }
-                        if (startTime === previousStartTime && endTime === previousEndTime) {
-                            captionArray.pop();
-                            caption = {
-                                start: startTime,
-                                end: endTime,
-                                data: regions[i - 1].textContent + "\n" + region.textContent,
-                                line: 80,
-                                style: cssStyle
-                            };
-                        } else {
-                            caption = {
-                                start: startTime,
-                                end: endTime,
-                                data: region.textContent,
-                                line: 80,
-                                style: cssStyle
-                            };
-                        }
-                        captionArray.push(caption);
                     }
                 }
                 return Q.when(captionArray);
@@ -11899,7 +11956,7 @@
                     self.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_LICENSER_ERROR, "License request failed", {
                         url: url,
                         status: this.status,
-                        error: licenseServerData.getErrorResponse(this.response)
+                        error: this.response && this.response !== null ? licenseServerData.getErrorResponse(this.response) : ""
                     }));
                 }
                 xhrLicense = null;
@@ -13956,9 +14013,10 @@
         var GRACE_TIME_THRESHOLD = .5, ABANDON_MULTIPLIER = 2;
         return {
             debug: undefined,
+            metricsExt: undefined,
             execute: function(request, callback) {
                 var now = new Date().getTime(), type = request.streamType, elapsedTime, measuredBandwidth, estimatedTimeOfDownload, switchRequest = new MediaPlayer.rules.SwitchRequest(MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE, MediaPlayer.rules.SwitchRequest.prototype.WEAK);
-                if (request.firstByteDate === null || request.status === 0) {
+                if (request.firstByteDate === null || request.aborted) {
                     this.debug.log("[AbandonRequestsRule][" + type + "] Request has already been aborted.");
                     callback(switchRequest);
                     return;
@@ -13968,7 +14026,7 @@
                     measuredBandwidth = request.bytesLoaded / elapsedTime;
                     estimatedTimeOfDownload = request.bytesTotal / measuredBandwidth;
                     if (estimatedTimeOfDownload > request.duration * ABANDON_MULTIPLIER) {
-                        switchRequest = new MediaPlayer.rules.SwitchRequest(0, MediaPlayer.rules.SwitchRequest.prototype.STRONG);
+                        switchRequest = new MediaPlayer.rules.SwitchRequest(this.metricsExt.getQualityBoundaries(type).min, MediaPlayer.rules.SwitchRequest.prototype.STRONG);
                         this.debug.info("[AbandonRequestsRule][" + type + "] bw = " + measuredBandwidth + " kb/s => switch to lowest quality for " + request.url);
                     }
                 }
@@ -14012,11 +14070,12 @@
                         return Q.when(new MediaPlayer.rules.SwitchRequest());
                     }
                     deferred = Q.defer();
+                    self.debug.info("[DownloadRatioRule][" + data.type + "] DL: " + Number(downloadTime.toFixed(3)) + "s, Total: " + Number(totalTime.toFixed(3)) + "s");
                     totalBytesLength = lastRequest.bytesLength;
                     if (requests.length >= 3) {
                         for (i = requests.length - 2; i >= requests.length - 3; i--) {
-                            totalBytesLength += requests[i].bytesLength;
                             if (requests[i].tfinish && requests[i].trequest && requests[i].tresponse) {
+                                totalBytesLength += requests[i].bytesLength;
                                 totalTime += (requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1e3;
                                 downloadTime += (requests[i].tfinish.getTime() - requests[i].tresponse.getTime()) / 1e3;
                             }
@@ -14024,7 +14083,7 @@
                     }
                     totalBytesLength *= 8;
                     calculatedBandwidth = latencyInBandwidth ? totalBytesLength / totalTime : totalBytesLength / downloadTime;
-                    self.debug.info("[DownloadRatioRule][" + data.type + "] DL: " + Math.round(downloadTime * 1e3) / 1e3 + "s, Total: " + Math.round(totalTime * 1e3) / 1e3 + "s => bw = " + Math.round(calculatedBandwidth / 1e3) + " kb/s");
+                    self.debug.info("[DownloadRatioRule][" + data.type + "] BW = " + Math.round(calculatedBandwidth / 1e3) + " kb/s");
                     if (isNaN(calculatedBandwidth)) {
                         return Q.when(new MediaPlayer.rules.SwitchRequest());
                     }
@@ -14164,9 +14223,7 @@
             PlayList: [],
             DroppedFrames: [],
             DVRInfo: [],
-            ManifestUpdate: [],
-            RepBoundariesList: [],
-            BandwidthBoundariesList: []
+            ManifestUpdate: []
         };
     };
     MediaPlayer.models.MetricsList.prototype = {
@@ -14387,24 +14444,6 @@
     };
     MediaPlayer.vo.metrics.TCPConnection.prototype = {
         constructor: MediaPlayer.vo.metrics.TCPConnection
-    };
-    MediaPlayer.vo.metrics.BandwidthBoundaries = function() {
-        "use strict";
-        this.t = null;
-        this.min = null;
-        this.max = null;
-    };
-    MediaPlayer.vo.metrics.BandwidthBoundaries.prototype = {
-        constructor: MediaPlayer.vo.metrics.BandwidthBoundaries
-    };
-    MediaPlayer.vo.metrics.RepresentationBoundaries = function() {
-        "use strict";
-        this.t = null;
-        this.min = null;
-        this.max = null;
-    };
-    MediaPlayer.vo.metrics.RepresentationBoundaries.prototype = {
-        constructor: MediaPlayer.vo.metrics.RepresentationBoundaries
     };
     MediaPlayer.vo.metrics.State = function() {
         "use strict";
@@ -15540,28 +15579,33 @@
         getIsText: function(adaptation) {
             "use strict";
             var i, len, col = adaptation.ContentComponent_asArray, representation, result = false, found = false;
-            if (col) {
-                for (i = 0, len = col.length; i < len; i += 1) {
-                    if (col[i].contentType === "text") {
-                        result = true;
-                        found = true;
+            if (adaptation) {
+                if (col) {
+                    for (i = 0, len = col.length; i < len; i += 1) {
+                        if (col[i].contentType === "text") {
+                            result = true;
+                            found = true;
+                        }
                     }
                 }
-            }
-            if (adaptation.mimeType) {
-                result = adaptation.mimeType.indexOf("vtt") !== -1 || adaptation.mimeType.indexOf("ttml") !== -1;
-                found = true;
-            }
-            if (!found) {
-                i = 0;
-                len = adaptation.Representation_asArray.length;
-                while (!found && i < len) {
-                    representation = adaptation.Representation_asArray[i];
-                    if (representation.mimeType) {
-                        result = representation.mimeType.indexOf("vtt") !== -1 || representation.mimeType.indexOf("ttml") !== -1;
-                        found = true;
+                if (adaptation.mimeType) {
+                    result = adaptation.mimeType.indexOf("vtt") !== -1 || adaptation.mimeType.indexOf("ttml") !== -1;
+                    found = true;
+                }
+                if (!found) {
+                    i = 0;
+                    len = adaptation.Representation_asArray.length;
+                    while (!found && i < len) {
+                        representation = adaptation.Representation_asArray[i];
+                        if (representation.mimeType) {
+                            result = representation.mimeType.indexOf("vtt") !== -1 || representation.mimeType.indexOf("ttml") !== -1;
+                            found = true;
+                        }
+                        i += 1;
                     }
-                    i += 1;
+                }
+                if (found) {
+                    adaptation.type = "text";
                 }
             }
             return Q.when(result);
@@ -18185,15 +18229,14 @@
                 return returnTab;
             },
             getAttributeName: function(node, attrValue) {
-                var returnValue = null, domAttribute = null, i = 0, attribList = null;
+                var returnValue = [], domAttribute = null, i = 0, attribList = null;
                 if (node && node.attributes) {
                     attribList = node.attributes;
                     if (attribList) {
                         for (i = 0; i < attribList.length; i++) {
                             domAttribute = attribList[i];
                             if (domAttribute.value === attrValue) {
-                                returnValue = domAttribute.name;
-                                return returnValue;
+                                returnValue.push(domAttribute.name);
                             }
                         }
                     }
