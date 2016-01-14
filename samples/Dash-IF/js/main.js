@@ -537,7 +537,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
         console.error("ERROR: " + JSON.stringify(e));
 
-        if (e.event.code != "HASPLAYER_INIT_ERROR") {
+        if (e.data.code != "HASPLAYER_INIT_ERROR") {
             //stop
             player.reset(2);
             if (metricsAgent) {
