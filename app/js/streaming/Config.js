@@ -38,6 +38,12 @@ MediaPlayer.utils.Config = function () {
             "ABR.switchUpBufferTime": -1,
             "ABR.switchUpBufferRatio": -1,
             "ABR.keepBandwidthCondition": true,
+            // Manifest loader parameters
+            "ManifestLoader.RetryAttempts": -1,
+            "ManifestLoader.RetryInterval": -1,
+            // Fragment loader parameters
+            "FragmentLoader.RetryAttempts": -1,
+            "FragmentLoader.RetryInterval": -1,
             // Video parameters
             "video": {
             },

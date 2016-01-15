@@ -14,8 +14,13 @@
 MediaPlayer.dependencies.ManifestLoader = function() {
     "use strict";
 
-    var deferred = null,
-        request = new XMLHttpRequest(),
+    var DEFAULT_RETRY_ATTEMPTS = 2,
+        DEFAULT_RETRY_INTERVAL = 500,
+        retryAttempts = DEFAULT_RETRY_ATTEMPTS,
+        retryInterval = DEFAULT_RETRY_INTERVAL,
+        retryCount = 0,
+        deferred = null,
+        request = null,
 
         getDecodedResponseText = function(text) {
             var fixedCharCodes = '',
@@ -46,7 +51,7 @@ MediaPlayer.dependencies.ManifestLoader = function() {
             return fixedCharCodes;
     },
 
-        parseBaseUrl = function(url) {
+        _parseBaseUrl = function(url) {
             var base = null;
 
             if (url.indexOf("/") !== -1) {
@@ -59,7 +64,7 @@ MediaPlayer.dependencies.ManifestLoader = function() {
             return base;
         },
 
-        abort = function() {
+        _abort = function() {
             if (request !== null && request.readyState > 0 && request.readyState < 4) {
                 this.debug.log("[ManifestLoader] Manifest download abort.");
                 request.abort();
@@ -68,8 +73,8 @@ MediaPlayer.dependencies.ManifestLoader = function() {
             this.parser.abort();
         },
 
-        doLoad = function(url) {
-            var baseUrl = parseBaseUrl(url),
+        _load = function(url) {
+            var baseUrl = _parseBaseUrl(url),
                 requestTime = new Date(),
                 mpdLoadedTime = null,
                 needFailureReport = true,
@@ -93,7 +98,7 @@ MediaPlayer.dependencies.ManifestLoader = function() {
                     // Get the redirection URL and use it as base URL
                     if (request.responseURL) {
                         self.debug.log("[ManifestLoader] Redirect URL: " + request.responseURL);
-                        baseUrl = parseBaseUrl(request.responseURL);
+                        baseUrl = _parseBaseUrl(request.responseURL);
                     }
 
                     needFailureReport = false;
@@ -112,7 +117,7 @@ MediaPlayer.dependencies.ManifestLoader = function() {
                         null,
                         null);
 
-                    self.parser.parse(getDecodedResponseText(request.responseText), baseUrl).then(
+                    self.parser.parse(_getDecodedResponseText(request.responseText), baseUrl).then(
                         function(manifest) {
                             manifest.mpdUrl = url;
                             manifest.mpdLoadedTime = mpdLoadedTime;
@@ -154,14 +159,21 @@ MediaPlayer.dependencies.ManifestLoader = function() {
                 if (request.aborted) {
                     deferred.reject();
                 } else {
-                    deferred.reject({
-                        name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
-                        message: "Failed to download manifest",
-                        data : {
-                            url: url,
-                            status: request.status
-                        }
-                    });
+                    retryCount++;
+                    if (retryAttempts > 0 && retryCount <= retryAttempts) {
+                        setTimeout(function() {
+                            _load.call(self, url);
+                        }, retryInterval);
+                    } else {
+                        deferred.reject({
+                            name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
+                            message: "Failed to download manifest",
+                            data : {
+                                url: url,
+                                status: request.status
+                            }
+                        });
+                    }
                 }
             };
 
@@ -180,14 +192,24 @@ MediaPlayer.dependencies.ManifestLoader = function() {
     return {
         debug: undefined,
         parser: undefined,
+        config: undefined,
         metricsModel: undefined,
         tokenAuthentication: undefined,
+
+        setup: function() {
+            retryAttempts = this.config.getParam("ManifestLoader.RetryAttempts", "number", DEFAULT_RETRY_ATTEMPTS);
+            retryInterval = this.config.getParam("ManifestLoader.RetryInterval", "number", DEFAULT_RETRY_INTERVAL);
+        },
+
         load: function(url) {
             deferred = Q.defer();
-            doLoad.call(this, url);
+            request = new XMLHttpRequest();
+            retryCount = 0;
+            _load.call(this, url);
             return deferred.promise;
         },
-        abort: abort
+
+        abort: _abort
     };
 };
 

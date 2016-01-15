@@ -14,8 +14,10 @@
 MediaPlayer.dependencies.FragmentLoader = function() {
     "use strict";
 
-    var RETRY_ATTEMPTS = 0,
-        RETRY_INTERVAL = 500,
+    var DEFAULT_RETRY_ATTEMPTS = 2,
+        DEFAULT_RETRY_INTERVAL = 500,
+        retryAttempts = DEFAULT_RETRY_ATTEMPTS,
+        retryInterval = DEFAULT_RETRY_INTERVAL,
         retryCount = 0,
         xhrs = [],
 
@@ -213,23 +215,29 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                     retryCount = 0;
                     deferred.resolve(result);
                 }, function(reqerror) {
-                    if (retryCount < RETRY_ATTEMPTS) {
+                    if (retryCount < retryAttempts) {
                         _retry.call(self, request, deferred);
                     } else {
                         retryCount = 0;
                         deferred.reject(reqerror);
                     }
                 });
-            }, RETRY_INTERVAL);
+            }, retryInterval);
         };
 
     return {
         metricsModel: undefined,
         debug: undefined,
         tokenAuthentication: undefined,
+        config: undefined,
         notify: undefined,
         subscribe: undefined,
         unsubscribe: undefined,
+
+        setup: function() {
+            retryAttempts = this.config.getParam("FragmentLoader.RetryAttempts", "number", DEFAULT_RETRY_ATTEMPTS);
+            retryInterval = this.config.getParam("FragmentLoader.RetryInterval", "number", DEFAULT_RETRY_INTERVAL);
+        },
 
         load: function(req) {
             var self = this,
@@ -249,7 +257,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                         req.status = 0;
                         req.aborted = true;
                         deferred.reject(req);
-                    } else if (RETRY_ATTEMPTS <= 0) {
+                    } else if (retryAttempts <= 0) {
                         // in case of error we set the requestModel status equal to xhr status
                         req.status = reqerror.status;
                         deferred.reject(req);
