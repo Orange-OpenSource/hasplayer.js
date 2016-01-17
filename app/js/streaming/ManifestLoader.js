@@ -18,7 +18,7 @@ MediaPlayer.dependencies.ManifestLoader = function() {
         request = new XMLHttpRequest(),
 
         getDecodedResponseText = function(text) {
-            var fixedCharCodes = [],
+            var fixedCharCodes = '',
                 i = 0,
                 charCode;
 
@@ -40,11 +40,11 @@ MediaPlayer.dependencies.ManifestLoader = function() {
                 charCode = text.charCodeAt(i);
 
                 // Swap around the two bytes that make up the character code.
-                fixedCharCodes.push((charCode & 0xFF) << 8 | (charCode & 0xFF00) >> 8);
+                fixedCharCodes += ((charCode & 0xFF) << 8 | (charCode & 0xFF00) >> 8);
             }
 
-            return String.fromCharCode.apply(null, fixedCharCodes);
-        },
+            return fixedCharCodes
+    },
 
         parseBaseUrl = function(url) {
             var base = null;
