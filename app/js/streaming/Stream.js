@@ -733,12 +733,20 @@ MediaPlayer.dependencies.Stream = function() {
 
             manifest = manifestResult;
             self.debug.log("[Stream] Create MediaSource");
-            return self.mediaSourceExt.createMediaSource().then(
-                function(mediaSourceResult) {
-                    self.debug.log("[Stream] Setup MediaSource");
-                    return setUpMediaSource.call(self, mediaSourceResult);
-                }
-            ).then(
+
+            try {
+                mediaSource = self.mediaSourceExt.createMediaSource();
+            } catch (error) {
+                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_MEDIASOURCE, "Failed to create MediaSource", {
+                    error: {
+                        name: error.name,
+                        message: error.message
+                    }
+                });
+            }
+
+            self.debug.log("[Stream] Setup MediaSource");
+            setUpMediaSource.call(self, mediaSource).then(
                 function(mediaSourceResult) {
                     mediaSource = mediaSourceResult;
                     self.debug.log("[Stream] Initialize MediaSource");
