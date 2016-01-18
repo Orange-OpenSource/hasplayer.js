@@ -327,13 +327,6 @@ MediaPlayer.dependencies.StreamController = function() {
                                 return deferred.reject();
                             }
 
-                            self.metricsModel.updateManifestUpdateInfo(manifestUpdateInfo, {
-                                currentTime: self.videoModel.getCurrentTime(),
-                                buffered: self.videoModel.getElement().buffered,
-                                presentationStartTime: periods[0].start,
-                                clientTimeOffset: mpd.clientServerTimeShift
-                            });
-
                             for (pIdx = 0, pLen = periods.length; pIdx < pLen; pIdx += 1) {
                                 period = periods[pIdx];
                                 for (sIdx = 0, sLen = streams.length; sIdx < sLen; sIdx += 1) {
@@ -365,6 +358,13 @@ MediaPlayer.dependencies.StreamController = function() {
                                 activeStream = streams[0];
                                 attachVideoEvents.call(self, activeStream.getVideoModel());
                             }
+
+                            self.metricsModel.updateManifestUpdateInfo(manifestUpdateInfo, {
+                                currentTime: self.videoModel.getCurrentTime(),
+                                buffered: self.videoModel.getElement().buffered,
+                                presentationStartTime: periods[0].start,
+                                clientTimeOffset: mpd.clientServerTimeShift
+                            });
 
                             Q.all(updatedStreams).then(
                                 function() {
