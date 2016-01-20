@@ -738,11 +738,13 @@ MediaPlayer.dependencies.Stream = function() {
                 mediaSource = self.mediaSourceExt.createMediaSource();
             } catch (error) {
                 self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_MEDIASOURCE, "Failed to create MediaSource", {
-                    error: {
-                        name: error.name,
-                        message: error.message
-                    }
+                    name: error.name,
+                    message: error.message
                 });
+            }
+
+            if (mediaSource === null) {
+                return;
             }
 
             self.debug.log("[Stream] Setup MediaSource");
