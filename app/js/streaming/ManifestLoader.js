@@ -40,10 +40,10 @@ MediaPlayer.dependencies.ManifestLoader = function() {
                 charCode = text.charCodeAt(i);
 
                 // Swap around the two bytes that make up the character code.
-                fixedCharCodes += ((charCode & 0xFF) << 8 | (charCode & 0xFF00) >> 8);
+                fixedCharCodes += String.fromCharCode(((charCode & 0xFF) << 8 | (charCode & 0xFF00) >> 8));
             }
 
-            return fixedCharCodes
+            return fixedCharCodes;
     },
 
         parseBaseUrl = function(url) {
