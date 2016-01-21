@@ -52,6 +52,7 @@ MediaPlayer.dependencies.BufferController = function() {
         minBufferTime,
         minBufferTimeAtStartup,
         bufferTimeout,
+        bufferStateTimeout,
 
         playListMetrics = null,
         playListTraceMetrics = null,
@@ -212,6 +213,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
             // Stop buffering process
             clearTimeout(bufferTimeout);
+            clearTimeout(bufferStateTimeout);
             started = false;
             waitingForBuffer = false;
 
@@ -1503,9 +1505,14 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         updateBufferState: function() {
-            var currentTime = this.videoModel.getCurrentTime(),
+            var self = this,
+                currentTime = this.videoModel.getCurrentTime(),
                 previousTime = htmlVideoTime === -1? currentTime : htmlVideoTime,
-                progress = (currentTime - previousTime);
+                progress = (currentTime - previousTime),
+                ranges;
+
+            clearTimeout(bufferStateTimeout);
+            bufferStateTimeout = null;
 
             if (started === false) {
                 return;
@@ -1516,18 +1523,18 @@ MediaPlayer.dependencies.BufferController = function() {
             switch (htmlVideoState) {
                 case INIT:
                     htmlVideoState = BUFFERING;
-                    this.debug.log("[BufferController][" + type + "] BUFFERING - " + this.videoModel.getCurrentTime() + " - " + bufferLevel);
-                    this.metricsModel.addState(type, "buffering", this.videoModel.getCurrentTime());
+                    this.debug.log("[BufferController][" + type + "] BUFFERING - " + currentTime + " - " + bufferLevel);
+                    this.metricsModel.addState(type, "buffering", currentTime);
                     break;
 
                 case BUFFERING:
                     if (!this.getVideoModel().isPaused() &&
                         ((progress > 0) && (bufferLevel >= 1))) {
                         htmlVideoState = PLAYING;
-                        this.debug.log("[BufferController][" + type + "] PLAYING - " + this.videoModel.getCurrentTime());
-                        this.metricsModel.addState(type, "playing", this.videoModel.getCurrentTime());
+                        this.debug.log("[BufferController][" + type + "] PLAYING - " + currentTime);
+                        this.metricsModel.addState(type, "playing", currentTime);
                     } else if (!this.getVideoModel().isStalled()) {
-                        var ranges = this.sourceBufferExt.getAllRanges(buffer);
+                        ranges = this.sourceBufferExt.getAllRanges(buffer);
                         if (ranges.length > 0) {
                             var gap = getWorkingTime.call(this) - ranges.end(ranges.length-1);
                             this.debug.log("[BufferController][" + type + "] BUFFERING - delay from current time = " + gap);
@@ -1543,34 +1550,41 @@ MediaPlayer.dependencies.BufferController = function() {
                     if (!this.getVideoModel().isPaused() &&
                         ((progress <= 0 && bufferLevel <= 1) || (bufferLevel === 0))) {
                         htmlVideoState = BUFFERING;
-                        this.debug.log("[BufferController][" + type + "] BUFFERING - " + this.videoModel.getCurrentTime() + " - " + bufferLevel);
-                        this.metricsModel.addState(type, "buffering", this.videoModel.getCurrentTime());
+                        this.debug.log("[BufferController][" + type + "] BUFFERING - " + currentTime + " - " + bufferLevel);
+                        this.metricsModel.addState(type, "buffering", currentTime);
 
-                        // If buffering since a segment download failed, then ask for reloading session
-                        if (segmentDownloadFailed) {
-                            segmentDownloadFailed = false;
-                            requestForReload.call(this, recoveryTime - this.videoModel.getCurrentTime());
+                        if (isDynamic) {
+                            // If buffering since a segment download failed, then ask for reloading session
+                            if (segmentDownloadFailed) {
+                                segmentDownloadFailed = false;
+                                requestForReload.call(this, recoveryTime - currentTime);
+                            } else {
+                                // If buffering due to discontinuity in input stream, then seek to next buffer range
+                                ranges = this.sourceBufferExt.getAllRanges(buffer);
+                                var i;
+                                for (i = 0; i < ranges.length; i++) {
+                                    if (currentTime >= ranges.start(i) && currentTime <= ranges.end(i)) {
+                                        break;
+                                    }
+                                }
+                                if (i < (ranges.length - 1)) {
+                                    this.videoModel.setCurrentTime(ranges.start(i+1));
+                                }
+                            }
                         }
                     }
+
+                    bufferStateTimeout = setTimeout(function() {
+                        bufferStateTimeout = null;
+                        updateBufferLevel.call(self, false);
+                    }, 1000);
+
                     break;
             }
 
             if (currentTime > 0) {
                 htmlVideoTime = currentTime;
             }
-
-            // if the buffer controller is stopped and the buffer is full we should try to clear the buffer
-            // before that we should make sure that we will have enough space to append the data, so we wait
-            // until the video time moves forward for a value greater than rejected data duration since the last reject event or since the last seek.
-            /*if (isQuotaExceeded && rejectedBytes && !appendingRejectedData) {
-                appendingRejectedData = true;
-                //try to append the data that was previosly rejected
-                appendToBuffer.call(this, rejectedBytes.data, rejectedBytes.quality, rejectedBytes.index).then(
-                    function(){
-                        appendingRejectedData = false;
-                    }
-                );
-            }*/
         },
 
         updateStalledState: function() {
