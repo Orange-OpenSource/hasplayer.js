@@ -219,6 +219,8 @@ Hls.dependencies.HlsDemux = function() {
             // Allocate track data
             track.data = new Uint8Array(length);
 
+            track.dataCTS = [];
+            
             for (i = 0; i < track.samples.length; i++) {
                 sample = track.samples[i];
 
@@ -226,9 +228,6 @@ Hls.dependencies.HlsDemux = function() {
                 // in order to set the correct timestamp to each AAC frames after ADTS demultiplexing (see demuxADTS()),
                 // and then get around missing frames in input stream
                 if (track.streamType.search('ADTS') !== -1) {
-                    if (track.dataCTS === undefined) {
-                        track.dataCTS = [];
-                    }
                     track.dataCTS[offset] = sample.cts;
                 }
 
