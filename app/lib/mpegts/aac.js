@@ -64,7 +64,7 @@ mpegts.aac.getAudioSpecificConfig = function (data) { // data as Uint8Array
     return audioSpecificConfig;
 };
 
-mpegts.aac.parseADTS = function (data) { // data as Uint8Array
+mpegts.aac.parseADTS = function (data, cts) { // data as Uint8Array, cts as an array of cts for each frame index
 
     var aacFrames = [],
         adtsHeader = {},
@@ -107,6 +107,10 @@ mpegts.aac.parseADTS = function (data) { // data as Uint8Array
             aacFrame = {};
             aacFrame.offset = i;
             aacFrame.length = adtsHeader.aac_frame_length - (i - adtsFrameIndex);
+
+            if (cts && cts[adtsFrameIndex]) {
+                aacFrame.cts = cts[adtsFrameIndex];
+            }
 
             aacFrames.push(aacFrame);
 
