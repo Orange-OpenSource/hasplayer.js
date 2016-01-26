@@ -1563,12 +1563,12 @@ MediaPlayer.dependencies.BufferController = function() {
                                 ranges = this.sourceBufferExt.getAllRanges(buffer);
                                 var i;
                                 for (i = 0; i < ranges.length; i++) {
-                                    if (currentTime >= ranges.start(i) && currentTime <= ranges.end(i)) {
+                                    if (currentTime < ranges.start(i)) {
                                         break;
                                     }
                                 }
-                                if (i < (ranges.length - 1)) {
-                                    this.videoModel.setCurrentTime(ranges.start(i+1));
+                                if (i < ranges.length) {
+                                    this.videoModel.setCurrentTime(ranges.start(i));
                                 }
                             }
                         }
