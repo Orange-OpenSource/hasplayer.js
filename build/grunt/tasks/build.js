@@ -16,7 +16,7 @@ module.exports = function(grunt) {
         'useminPrepare:hasplayer',  // Get sources files list from specified blocks in playerSrc.html
         'concat:generated',         // Merge all the sources files in one for each block
         'cssmin:generated',         // Minify the CSS in blocks
-        'umd:all',                  // package in universal module definition
+        //'umd:all',                  // package in universal module definition
         'uglify:generated',         // Uglify the JS in blocks
         'replace:infos',            // Add the git info in files
         'replace:copyright',        // Add the copyright
