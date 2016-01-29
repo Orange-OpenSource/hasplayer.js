@@ -165,10 +165,10 @@ MediaPlayer.dependencies.FragmentLoader = function() {
             req.onloadend = req.onerror = function() {
                 if (xhrs.indexOf(req) === -1) {
                     return;
-                } else {
-                    xhrs.splice(xhrs.indexOf(req), 1);
                 }
 
+                xhrs.splice(xhrs.indexOf(req), 1);
+                
                 if (!needFailureReport) {
                     return;
                 }
@@ -300,5 +300,5 @@ MediaPlayer.dependencies.FragmentLoader.prototype = {
 };
 
 MediaPlayer.dependencies.FragmentLoader.eventList = {
-    ENAME_LOADING_PROGRESS: "loadingProgress",
+    ENAME_LOADING_PROGRESS: "loadingProgress"
 };

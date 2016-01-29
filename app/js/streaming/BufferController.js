@@ -756,8 +756,7 @@ MediaPlayer.dependencies.BufferController = function() {
             if (type === "text") {
 
                 this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT,
-                    "Failed to download media segment",
-                    {
+                    "Failed to download media segment", {
                         url: e.url,
                         status: e.status
                     });
@@ -772,21 +771,18 @@ MediaPlayer.dependencies.BufferController = function() {
             // => Else raise a warning and try to reload session
             if (segmentDownloadErrorCount === SEGMENT_DOWNLOAD_ERROR_MAX) {
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT,
-                    "Failed to download media segment",
-                    {
+                    "Failed to download media segment", {
                         url: e.url,
                         status: e.status
                     });
             } else {
                 this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT,
-                    "Failed to download media segment",
-                    {
+                    "Failed to download media segment", {
                         url: e.url,
                         status: e.status
                     });
 
                 recoveryTime = e.startTime + (e.duration * 1.5);
-
                 // If already in buffering state (i.e. empty buffer) then reload session now
                 // Else reload session when entering in buffering state (see updateBufferState())
                 if (htmlVideoState === BUFFERING) {
