@@ -26,6 +26,7 @@ MediaPlayer.dependencies.Stream = function() {
         audioTrackIndex = -1,
         textController = null,
         subtitlesEnabled = false,
+        trickModeEnabled = false,
         textTrackIndex = -1,
         autoPlay = true,
         initialized = false,
@@ -1282,6 +1283,25 @@ MediaPlayer.dependencies.Stream = function() {
                     }
                 }
             }
+        },
+
+        setTrickPlay: function(speed){
+            var funcs = [],
+                self = this;
+            trickModeEnabled = speed > 1 ? true : false;
+
+            if(videoController) {
+               funcs.push(videoController.setTrickPlay(speed));
+            }
+            if (audioController) {
+                funcs.push(audioController.setTrickPlay(speed));
+            }
+
+            Q.all(funcs).then(function (){
+                if (!trickModeEnabled) {
+                    seek.call(self, self.videoModel.getCurrentTime());
+                }
+            });
         },
 
         updateData: updateData,

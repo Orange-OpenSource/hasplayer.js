@@ -419,7 +419,7 @@ MediaPlayer.dependencies.StreamController = function() {
             if (manifest.hasOwnProperty("Location")) {
                 url = manifest.Location;
             }
-
+debugger;
             this.debug.log("### Refresh manifest @ " + url);
             this.refreshManifest(url, true);
         },
@@ -670,6 +670,12 @@ MediaPlayer.dependencies.StreamController = function() {
             subtitlesEnabled = enabled;
             if (activeStream) {
                 activeStream.enableSubtitles(enabled);
+            }
+        },
+
+        setTrickPlay: function(speed){
+            if (activeStream) {
+                activeStream.setTrickPlay(speed);
             }
         },
 

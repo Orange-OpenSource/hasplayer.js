@@ -749,10 +749,10 @@ MediaPlayer.dependencies.BufferController = function() {
             // Abandonned request => load segment at lowest quality
             if (e.aborted) {
                 // if (e.quality !== 0) {
-                    // this.debug.info("[BufferController][" + type + "] Segment download abandonned => Retry segment download at lowest quality");
-                    // this.abrController.setAutoSwitchBitrate(false);
-                    // this.abrController.setPlaybackQuality(type, 0);
-                    bufferFragment.call(this);
+                // this.debug.info("[BufferController][" + type + "] Segment download abandonned => Retry segment download at lowest quality");
+                // this.abrController.setAutoSwitchBitrate(false);
+                // this.abrController.setPlaybackQuality(type, 0);
+                bufferFragment.call(this);
                 // }
                 return;
             }
@@ -1537,7 +1537,7 @@ MediaPlayer.dependencies.BufferController = function() {
                     } else if (!this.getVideoModel().isStalled()) {
                         ranges = this.sourceBufferExt.getAllRanges(buffer);
                         if (ranges.length > 0) {
-                            var gap = getWorkingTime.call(this) - ranges.end(ranges.length-1);
+                            var gap = getWorkingTime.call(this) - ranges.end(ranges.length - 1);
                             this.debug.log("[BufferController][" + type + "] BUFFERING - delay from current time = " + gap);
                             if (gap > 4) {
                                 this.debug.log("[BufferController][" + type + "] BUFFERING => reload session");
@@ -1638,6 +1638,45 @@ MediaPlayer.dependencies.BufferController = function() {
                 }
             );
 
+            return deferred.promise;
+        },
+
+        setTrickPlay: function(speed) {
+            var self = this,
+                deferred = Q.defer();
+
+
+            this.debug.log("[BufferController][" + type + "] setTrickPlay - speed = " + speed);
+
+            switch (type) {
+                case 'video':
+                    if (speed > 1) {
+                        deferred.resolve();
+                        self.fragmentController.setSampleDuration(true);
+                        fragmentModel.fragmentLoader.activateKeyReq(true);
+                        self.videoModel.setPlaybackRate(speed);
+                    } else {
+                        self.fragmentController.setSampleDuration(false);
+                        fragmentModel.fragmentLoader.activateKeyReq(false);
+                        self.videoModel.setPlaybackRate(speed);
+                        removeBuffer.call(this).then(function() {
+                            debugBufferRange.call(self);
+                            deferred.resolve();
+                        });
+
+                    }
+                    break;
+                case 'audio':
+                    if (speed > 1) {
+                        deferred.resolve();
+                    } else {
+                        removeBuffer.call(this).then(function() {
+                            debugBufferRange.call(self);
+                            deferred.resolve();
+                        });
+                    }
+                    break;
+            }
             return deferred.promise;
         },
 
