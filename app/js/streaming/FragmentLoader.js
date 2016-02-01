@@ -80,11 +80,6 @@ MediaPlayer.dependencies.FragmentLoader = function() {
 
             lastTraceTime = request.requestStartDate;
 
-            //get Intra
-            if (self.activatedKeyReq && request.url.indexOf('video') !== -1 ) {
-                request.url = request.url.replace('Fragments','KeyFrames');
-            }
-
             req.open("GET", self.tokenAuthentication.addTokenAsQueryArg(request.url), true);
             req.responseType = "arraybuffer";
             req = self.tokenAuthentication.setTokenInRequestHeader(req);
@@ -238,7 +233,6 @@ MediaPlayer.dependencies.FragmentLoader = function() {
         notify: undefined,
         subscribe: undefined,
         unsubscribe: undefined,
-        activatedKeyReq: false,
 
         setup: function() {
             retryAttempts = this.config.getParam("FragmentLoader.RetryAttempts", "number", DEFAULT_RETRY_ATTEMPTS);
@@ -297,11 +291,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
             _checkForExistence.call(this, req);
 
             return req.deferred.promise;
-        },
-
-        activateKeyReq: function(state){
-            this.activatedKeyReq = state;
-        },
+        }
     };
 };
 

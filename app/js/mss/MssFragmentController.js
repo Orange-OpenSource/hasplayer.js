@@ -218,7 +218,7 @@ Mss.dependencies.MssFragmentController = function() {
             trun.flags |= 0x000001; // set trun.data-offset-present to true
             trun.data_offset = 0; // Set a default value for trun.data_offset
 
-            if (this.fixDuration && request.streamType === 'video') {
+            if (this.fixDuration && request.streamType === 'video' && trun.samples_table.length === 1) {
                 trun.samples_table[0].sample_duration = request.duration * request.timescale;
                 this.debug.log("[MssFragmentController] convertFragment  fix sample Duration = " + trun.samples_table[0].sample_duration);
             }

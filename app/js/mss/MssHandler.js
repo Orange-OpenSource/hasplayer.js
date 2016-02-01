@@ -142,6 +142,15 @@ Mss.dependencies.MssHandler = function() {
 
         return deferred.promise;
     };
+
+    rslt.getIFrameRequest = function(request){
+        if (request && request.url && request.url.indexOf('video') !== -1 ) {
+            request.url = request.url.replace('Fragments','KeyFrames');
+        }
+
+        return request;
+    };
+
     return rslt;
 };
 

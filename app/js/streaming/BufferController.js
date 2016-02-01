@@ -53,6 +53,7 @@ MediaPlayer.dependencies.BufferController = function() {
         minBufferTimeAtStartup,
         bufferTimeout,
         bufferStateTimeout,
+        trickModeEnabled = false,
 
         playListMetrics = null,
         playListTraceMetrics = null,
@@ -894,6 +895,10 @@ MediaPlayer.dependencies.BufferController = function() {
                     self.debug.log("[BufferController][" + type + "] new fragment request => already loaded or pending");
                     self.indexHandler.getNextSegmentRequest(_currentRepresentation).then(onFragmentRequest.bind(self));
                 } else {
+                    //if trick mode enbaled, get the request to get I Frame data.
+                    if (trickModeEnabled) {
+                        request = self.indexHandler.getIFrameRequest(request);
+                    }
                     // Store current segment time for next segment request
                     currentSegmentTime = request.startTime;
 
@@ -1653,11 +1658,11 @@ MediaPlayer.dependencies.BufferController = function() {
                     if (speed > 1) {
                         deferred.resolve();
                         self.fragmentController.setSampleDuration(true);
-                        fragmentModel.fragmentLoader.activateKeyReq(true);
+                        trickModeEnabled = true;
                         self.videoModel.setPlaybackRate(speed);
                     } else {
+                        trickModeEnabled = false;
                         self.fragmentController.setSampleDuration(false);
-                        fragmentModel.fragmentLoader.activateKeyReq(false);
                         self.videoModel.setPlaybackRate(speed);
                         removeBuffer.call(this).then(function() {
                             debugBufferRange.call(self);

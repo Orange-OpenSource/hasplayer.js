@@ -1174,6 +1174,10 @@ Dash.dependencies.DashHandler = function() {
             );
 
             return deferred.promise;
+        },
+
+        getIFrameRequest = function(request) {
+            //TBD
         };
 
     return {
@@ -1209,7 +1213,8 @@ Dash.dependencies.DashHandler = function() {
         getNextSegmentRequestFromSN: getNextFromSN,
         getCurrentTime: getCurrentTime,
         getSegmentCountForDuration: getSegmentCountForDuration,
-        updateSegmentList: updateSegmentList
+        updateSegmentList: updateSegmentList,
+        getIFrameRequest: getIFrameRequest 
     };
 };
 
