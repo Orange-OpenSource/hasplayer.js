@@ -43,6 +43,7 @@ Mss.dependencies.MssParser = function() {
         mapPeriod = function() {
             var period = {},
                 adaptations = [],
+                adaptation,
                 smoothNode = this.domParser.getChildNode(xmlDoc, "SmoothStreamingMedia"),
                 i;
 
@@ -52,11 +53,16 @@ Mss.dependencies.MssParser = function() {
             // For each StreamIndex node, create an AdaptationSet element
             for (i = 0; i < smoothNode.childNodes.length; i++) {
                 if (smoothNode.childNodes[i].nodeName === "StreamIndex") {
-                    adaptations.push(mapAdaptationSet.call(this, smoothNode.childNodes[i]));
+                    adaptation = mapAdaptationSet.call(this, smoothNode.childNodes[i]);
+                    if (adaptation !== null) {
+                        adaptations.push(adaptation);
+                    }
                 }
             }
 
-            period.AdaptationSet = (adaptations.length > 1) ? adaptations : adaptations[0];
+            if (adaptations.length > 0) {
+                period.AdaptationSet = (adaptations.length > 1) ? adaptations : adaptations[0];
+            }
             period.AdaptationSet_asArray = adaptations;
 
             return period;
@@ -95,10 +101,16 @@ Mss.dependencies.MssParser = function() {
                 // Map Representation to QualityLevel
                 representation = mapRepresentation.call(this, qualityLevels[i]);
 
-                // Copy SegmentTemplate into Representation
-                representation.SegmentTemplate = segmentTemplate;
+                if (representation !== null) {
+                    // Copy SegmentTemplate into Representation
+                    representation.SegmentTemplate = segmentTemplate;
 
-                representations.push(representation);
+                    representations.push(representation);
+                }
+            }
+
+            if (representations.length === 0) {
+                return null;
             }
 
             adaptationSet.Representation = (representations.length > 1) ? representations : representations[0];
@@ -123,6 +135,11 @@ Mss.dependencies.MssParser = function() {
 
             fourCCValue = this.domParser.getAttributeValue(qualityLevel, "FourCC");
 
+            // Do not support AACH (TODO)
+            if (fourCCValue.indexOf("AACH") >= 0) {
+                return null;
+            }
+
             // Get codecs value according to FourCC field
             // Note: If empty FourCC (optionnal for audio stream, see https://msdn.microsoft.com/en-us/library/ff728116%28v=vs.95%29.aspx),
             // then we consider the stream is an audio AAC stream
@@ -130,10 +147,10 @@ Mss.dependencies.MssParser = function() {
                 representation.codecs = getH264Codec.call(this, qualityLevel);
             } else if ((fourCCValue.indexOf("AAC") >= 0) || (fourCCValue === "")) {
                 representation.codecs = getAACCodec.call(this, qualityLevel);
+                representation.audioSamplingRate = parseInt(this.domParser.getAttributeValue(qualityLevel, "SamplingRate"), 10);
+                representation.audioChannels = parseInt(this.domParser.getAttributeValue(qualityLevel, "Channels"), 10);
             }
 
-            representation.audioSamplingRate = parseInt(this.domParser.getAttributeValue(qualityLevel, "SamplingRate"), 10);
-            representation.audioChannels = parseInt(this.domParser.getAttributeValue(qualityLevel, "Channels"), 10);
             representation.codecPrivateData = "" + this.domParser.getAttributeValue(qualityLevel, "CodecPrivateData");
             representation.BaseURL = qualityLevel.BaseURL;
 
