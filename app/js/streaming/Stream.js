@@ -1192,6 +1192,8 @@ MediaPlayer.dependencies.Stream = function() {
 
             this.debug.info("[Stream] Reset");
 
+            stopBuffering.call(this);
+
             pause.call(this);
 
             //document.removeEventListener("visibilityChange");
