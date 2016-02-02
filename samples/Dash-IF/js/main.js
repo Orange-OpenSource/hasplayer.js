@@ -174,6 +174,11 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     $scope.streamTypes = ["HLS", "MSS", "DASH"];
     $scope.streamType = "MSS";
 
+    $scope.protectionTypes = ["PlayReady", "Widevine"];
+    $scope.protectionType = bowser.chrome ? "Widevine" : "PlayReady";
+    setProtectionScheme();
+
+
     $('#sliderAudio').labeledslider({
         max:0,
         step:1,
@@ -820,10 +825,35 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     };
 
     $scope.setStream = function (item) {
+
         $scope.selectedItem = item;
-        $scope.laURL = (item.protData && item.protData['com.widevine.alpha']) ? item.protData['com.widevine.alpha'].laURL : "";
-        $scope.cmdData = (item.protData && item.protData['com.widevine.alpha']) ? item.protData['com.widevine.alpha'].cdmData : "";
+
+        setProtectionData();
     };
+
+
+    $scope.setProtectionType = function (item) {
+        $scope.protectionType = item;
+        setProtectionScheme();
+        setProtectionData();
+    };
+
+    function setProtectionScheme () {
+        switch ($scope.protectionType) {
+            case "PlayReady":
+                $scope.protectionScheme = "com.microsoft.playready";
+                break;
+            case "Widevine":
+                $scope.protectionScheme = "com.widevine.alpha";
+                break;
+        }
+    }
+
+    function setProtectionData () {
+        var protData = $scope.selectedItem.protData ? $scope.selectedItem.protData[$scope.protectionScheme] : null;
+        $scope.laURL = protData ? protData.laURL : "";
+        $scope.cmdData = protData ? protData.cdmData : "";
+    }
 
     function resetBitratesSlider () {
         $('#sliderBitrate').labeledslider({
@@ -843,6 +873,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
             }
         });
     }
+
     function initPlayer() {
 
         function DRMParams() {
