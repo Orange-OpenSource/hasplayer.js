@@ -37,6 +37,14 @@
         </div>
     </div>
 
+    <div class="modal fade" id="protectionTypeModal">
+        <div class="modal-dialog">
+            <div class="list-group modal-list">
+                <a ng-repeat="item in protectionTypes" href="#" class="list-group-item" ng-click="setProtectionType(item)" data-dismiss="modal" ng-show="true">{{item}}</a>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
 
         <div class="row title-header">
@@ -128,11 +136,30 @@
         </div>
 
         <div class="row nav-options">
-            <div class="input-group col-md-7">
-                <input type="text" class="form-control" placeholder="PlayReady licenser url" ng-model="laURL">
-            </div>
-            <div class="input-group col-md-5">
-                <input type="text" class="form-control" placeholder="PlayReady custom data" ng-model="cdmData">
+            <div class="input-group col-md-12">
+
+                <div id="desktop-streams" class="input-group-btn">
+                    <button type="button" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+                        {{protectionType}} <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li ng-repeat="item in protectionTypes" ng-click="setProtectionType(item)" ng-show="true">
+                            <a>{{item}}</a>
+                        </li>
+                    </ul>
+                </div>
+                <div id="mobile-streams" class="input-group-btn">
+                    <button type="button" class="btn btn-primary" data-toggle="modal" href="#protectionTypeModal">
+                        {{protectionType}} <span class="caret"></span>
+                    </button>
+                </div>
+
+                <div class="input-group col-md-7">
+                    <input type="text" class="form-control" placeholder="licenser url" ng-model="laURL">
+                </div>
+                <div class="input-group col-md-5">
+                    <input type="text" class="form-control" placeholder="CDM data" ng-model="cdmData">
+                </div>
             </div>
         </div>
 
