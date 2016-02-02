@@ -22,7 +22,7 @@ MediaPlayer.dependencies.ManifestLoader = function() {
         deferred = null,
         request = null,
 
-        getDecodedResponseText = function(text) {
+        _getDecodedResponseText = function(text) {
             var fixedCharCodes = '',
                 i = 0,
                 charCode;
