@@ -99,13 +99,14 @@ MediaPlayer.dependencies.protection.servers.PlayReady = function() {
                 enveloppe = xmlDoc ? this.domParser.getChildNode(xmlDoc, "soap:Envelope") : null,
                 body = enveloppe ? this.domParser.getChildNode(enveloppe, "soap:Body") : null,
                 fault = body ? this.domParser.getChildNode(body, "soap:Fault") : null,
-                faultstring = fault ? this.domParser.getChildNode(fault, "faultstring").firstChild.nodeValue : null,
                 detail = fault ? this.domParser.getChildNode(fault, "detail") : null,
                 exception = detail ? this.domParser.getChildNode(detail, "Exception") : null,
-                statusCode = exception ? this.domParser.getChildNode(exception, "StatusCode").firstChild.nodeValue : null,
-                message = exception ? this.domParser.getChildNode(exception, "Message").firstChild.nodeValue : null,
-                idStart = message ? message.lastIndexOf('[') + 1 : -1,
-                idEnd = message ? message.indexOf(']') : -1;
+                node = null,
+                faultstring = "",
+                statusCode = "",
+                message = "",
+                idStart = -1,
+                idEnd = -1;
 
             if (fault === null) {
                 return {
@@ -113,6 +114,19 @@ MediaPlayer.dependencies.protection.servers.PlayReady = function() {
                     name: "UnknownError",
                     message: String.fromCharCode.apply(null, new Uint8Array(serverResponse))
                 };
+            }
+
+            node = this.domParser.getChildNode(fault, "faultstring").firstChild;
+            faultstring = node ? node.nodeValue : null;
+
+            if (exception !== null) {
+                node = this.domParser.getChildNode(exception, "StatusCode");
+                statusCode = node ? node.firstChild.nodeValue : null;
+
+                node = this.domParser.getChildNode(exception, "Message");
+                message = node ? node.firstChild.nodeValue : null;
+                idStart = message ? message.lastIndexOf('[') + 1 : -1;
+                idEnd = message ? message.indexOf(']') : -1;
             }
 
             return {

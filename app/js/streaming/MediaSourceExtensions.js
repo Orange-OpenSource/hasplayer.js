@@ -25,9 +25,9 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
             hasMediaSource = ("MediaSource" in window);
 
         if (hasMediaSource) {
-            return Q.when(new MediaSource());
+            return new MediaSource();
         } else if (hasWebKit) {
-            return Q.when(new WebKitMediaSource());
+            return new WebKitMediaSource();
         }
 
         return null;
