@@ -896,7 +896,7 @@ MediaPlayer.dependencies.BufferController = function() {
                     self.indexHandler.getNextSegmentRequest(_currentRepresentation).then(onFragmentRequest.bind(self));
                 } else {
                     //if trick mode enbaled, get the request to get I Frame data.
-                    if (trickModeEnabled) {
+                    if (trickModeEnabled && type === 'video') {
                         request = self.indexHandler.getIFrameRequest(request);
                     }
                     // Store current segment time for next segment request
@@ -1673,8 +1673,10 @@ MediaPlayer.dependencies.BufferController = function() {
                     break;
                 case 'audio':
                     if (speed > 1) {
+                        trickModeEnabled = true;
                         deferred.resolve();
                     } else {
+                        trickModeEnabled = false;
                         removeBuffer.call(this).then(function() {
                             debugBufferRange.call(self);
                             deferred.resolve();
