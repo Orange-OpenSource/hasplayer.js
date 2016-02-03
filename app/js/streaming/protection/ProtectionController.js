@@ -245,20 +245,20 @@ MediaPlayer.dependencies.ProtectionController = function() {
         onKeyMessage = function(e) {
             var self = this,
                 licenseMessage = null,
-                keyMessage;
+                keyMessage,
+                messageType;
+
+            keyMessage = e.data;
+            messageType = (keyMessage.messageType) ? keyMessage.messageType : "license-request",
+            this.debug.log("[DRM] Key message: type = " + messageType);
 
             // Dispatch event to applications indicating we received a key message
-            keyMessage = e.data;
-
-            this.debug.log("[DRM] Key message: type = " + keyMessage.messageType);
-
             this.eventBus.dispatchEvent({
                 type: MediaPlayer.dependencies.ProtectionController.events.KEY_MESSAGE,
                 data: keyMessage
             });
 
-            var messageType = (keyMessage.messageType) ? keyMessage.messageType : "license-request",
-                message = keyMessage.message,
+            var message = keyMessage.message,
                 sessionToken = keyMessage.sessionToken,
                 protData = getProtData(this.keySystem),
                 keySystemString = this.keySystem.systemString,
