@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2.2.2016_17:54:27 / git revision : 0d21973 */
+/* Last build : 3.2.2016_21:44:17 / git revision : c5487d5 */
  /* jshint ignore:start */
 (function(root, factory) {
     if (typeof define === "function" && define.amd) {
@@ -5352,7 +5352,7 @@
     mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
     MediaPlayer = function(aContext) {
         "use strict";
-        var VERSION = "1.2.0", VERSION_HAS = "1.2.7_dev", GIT_TAG = "0d21973", BUILD_DATE = "2.2.2016_17:54:27", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
+        var VERSION = "1.2.0", VERSION_HAS = "1.2.7_dev", GIT_TAG = "c5487d5", BUILD_DATE = "3.2.2016_21:44:17", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
             return !!element && !!source && !resetting;
         }, play = function() {
             if (!initialized) {
@@ -11926,14 +11926,15 @@
                 data: data
             });
         }, onKeyMessage = function(e) {
-            var self = this, licenseMessage = null, keyMessage;
+            var self = this, licenseMessage = null, keyMessage, messageType;
             keyMessage = e.data;
-            this.debug.log("[DRM] Key message: type = " + keyMessage.messageType);
+            messageType = keyMessage.messageType ? keyMessage.messageType : "license-request", 
+            this.debug.log("[DRM] Key message: type = " + messageType);
             this.eventBus.dispatchEvent({
                 type: MediaPlayer.dependencies.ProtectionController.events.KEY_MESSAGE,
                 data: keyMessage
             });
-            var messageType = keyMessage.messageType ? keyMessage.messageType : "license-request", message = keyMessage.message, sessionToken = keyMessage.sessionToken, protData = getProtData(this.keySystem), keySystemString = this.keySystem.systemString, licenseServerData = this.protectionExt.getLicenseServer(this.keySystem, protData, messageType), needFailureReport = true, eventData = {
+            var message = keyMessage.message, sessionToken = keyMessage.sessionToken, protData = getProtData(this.keySystem), keySystemString = this.keySystem.systemString, licenseServerData = this.protectionExt.getLicenseServer(this.keySystem, protData, messageType), needFailureReport = true, eventData = {
                 sessionToken: sessionToken,
                 messageType: messageType
             };
@@ -13345,6 +13346,9 @@
                 headers["Content-Type"] = headers.Content;
                 delete headers.Content;
             }
+            if (!headers.hasOwnProperty("Content-Type")) {
+                headers["Content-Type"] = "text/xml; charset=utf-8";
+            }
             return headers;
         }, getLicenseRequest = function(message) {
             var msg, xmlDoc, licenseRequest = null, data = message instanceof ArrayBuffer ? message : message.buffer, dataview = messageFormat === "utf16" ? new Uint16Array(data) : new Uint8Array(data), Challenge;
@@ -13355,6 +13359,8 @@
                 if (Challenge) {
                     licenseRequest = BASE64.decode(Challenge);
                 }
+            } else {
+                licenseRequest = msg;
             }
             return licenseRequest;
         }, getLicenseServerURL = function(initData) {
