@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 3.2.2016_21:44:17 / git revision : c5487d5 */
+/* Last build : 4.2.2016_21:43:33 / git revision : f994d0c */
  /* jshint ignore:start */
 (function(root, factory) {
     if (typeof define === "function" && define.amd) {
@@ -5352,7 +5352,7 @@
     mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
     MediaPlayer = function(aContext) {
         "use strict";
-        var VERSION = "1.2.0", VERSION_HAS = "1.2.7_dev", GIT_TAG = "c5487d5", BUILD_DATE = "3.2.2016_21:44:17", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", isReady = function() {
+        var VERSION = "1.2.0", VERSION_HAS = "1.2.7_dev", GIT_TAG = "f994d0c", BUILD_DATE = "4.2.2016_21:43:33", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", subtitlesEnabled = false, isReady = function() {
             return !!element && !!source && !resetting;
         }, play = function() {
             if (!initialized) {
@@ -5376,6 +5376,7 @@
             }
             streamController.setDefaultAudioLang(defaultAudioLang);
             streamController.setDefaultSubtitleLang(defaultSubtitleLang);
+            streamController.enableSubtitles(subtitlesEnabled);
             streamController.load(source, protectionData);
             system.mapValue("scheduleWhilePaused", scheduleWhilePaused);
             system.mapOutlet("scheduleWhilePaused", "stream");
@@ -5597,6 +5598,7 @@
                 }
             },
             enableSubtitles: function(enabled) {
+                subtitlesEnabled = enabled;
                 if (streamController) {
                     streamController.enableSubtitles(enabled);
                 }
@@ -10347,7 +10349,7 @@
     };
     MediaPlayer.dependencies.StreamController = function() {
         "use strict";
-        var streams = [], activeStream, protectionController, ownProtectionController = false, STREAM_BUFFER_END_THRESHOLD = 6, STREAM_END_THRESHOLD = .2, autoPlay = true, isPeriodSwitchingInProgress = false, timeupdateListener, seekingListener, progressListener, pauseListener, playListener, audioTracks, subtitleTracks, protectionData, defaultAudioLang = "und", defaultSubtitleLang = "und", play = function() {
+        var streams = [], activeStream, protectionController, ownProtectionController = false, STREAM_BUFFER_END_THRESHOLD = 6, STREAM_END_THRESHOLD = .2, autoPlay = true, isPeriodSwitchingInProgress = false, timeupdateListener, seekingListener, progressListener, pauseListener, playListener, audioTracks, subtitleTracks, protectionData, defaultAudioLang = "und", defaultSubtitleLang = "und", subtitlesEnabled = false, play = function() {
             activeStream.play();
         }, pause = function() {
             if (activeStream) {
@@ -10506,6 +10508,7 @@
                             stream.setAutoPlay(autoPlay);
                             stream.setDefaultAudioLang(defaultAudioLang);
                             stream.setDefaultSubtitleLang(defaultSubtitleLang);
+                            stream.enableSubtitles(subtitlesEnabled);
                             stream.load(manifest, period);
                             streams.push(stream);
                         }
@@ -10672,7 +10675,9 @@
                         if (isIntern && err.name === MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST) {
                             self.eventBus.dispatchEvent({
                                 type: "manifestUrlUpdate",
-                                data: url
+                                data: {
+                                    url: url
+                                }
                             });
                         }
                     }
@@ -10728,6 +10733,7 @@
                 defaultSubtitleLang = language;
             },
             enableSubtitles: function(enabled) {
+                subtitlesEnabled = enabled;
                 if (activeStream) {
                     activeStream.enableSubtitles(enabled);
                 }
@@ -11482,8 +11488,8 @@
             }
             return nameSpace;
         }, getTimeValue = function(node, parameter) {
-            var returnTime = null, i = 0;
-            for (i = 0; i < globalPrefTTNameSpace.length; i += 1) {
+            var returnTime = NaN, i = 0;
+            for (i = 0; i < globalPrefTTNameSpace.length && isNaN(returnTime); i += 1) {
                 returnTime = parseTimings(this.domParser.getAttributeValue(node, globalPrefTTNameSpace[i] + parameter));
             }
             return returnTime;
