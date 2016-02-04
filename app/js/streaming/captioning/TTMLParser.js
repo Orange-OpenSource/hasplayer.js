@@ -269,10 +269,10 @@ MediaPlayer.utils.TTMLParser = function() {
         },
 
         getTimeValue = function(node, parameter) {
-            var returnTime = null,
+            var returnTime = NaN,
                 i = 0;
 
-            for(i = 0; i < globalPrefTTNameSpace.length; i += 1) {
+            for(i = 0; i < globalPrefTTNameSpace.length && isNaN(returnTime); i += 1) {
                 returnTime = parseTimings(this.domParser.getAttributeValue(node, globalPrefTTNameSpace[i] + parameter));
             }
 
