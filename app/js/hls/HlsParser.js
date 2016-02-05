@@ -509,7 +509,7 @@ Hls.dependencies.HlsParser = function() {
         };
 
         var onreport = function() {
-            if (!error) {
+            if (!error || playlistRequest.aborted) {
                 return;
             }
             deferred.reject({
