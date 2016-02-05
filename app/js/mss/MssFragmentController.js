@@ -218,9 +218,32 @@ Mss.dependencies.MssFragmentController = function() {
             trun.flags |= 0x000001; // set trun.data-offset-present to true
             trun.data_offset = 0; // Set a default value for trun.data_offset
 
-            if (this.fixDuration && request.streamType === 'video' && trun.samples_table.length === 1) {
-                trun.samples_table[0].sample_duration = request.duration * request.timescale;
-                this.debug.log("[MssFragmentController] convertFragment  fix sample Duration = " + trun.samples_table[0].sample_duration);
+            //in trickMode, we have to modify sample duration for audio and video
+            if (this.fixDuration && trun.samples_table.length === 1) {
+                if (request.streamType === 'audio') {
+                    var fullDuration = request.duration * request.timescale,
+                        concatDuration =  trun.samples_table[0].sample_duration,
+                        mdatData = mdat.data;
+                    //we have to duplicate the sample from KeyFrame request to be accepted by audio decoder.
+                    //all the samples have to have a duration equals to request.duration * request.timescale
+                    while(concatDuration<fullDuration){
+                        trun.samples_table.push({sample_duration: trun.samples_table[0].sample_duration, sample_size: trun.samples_table[0].sample_size});
+                        concatDuration = trun.samples_table[0].sample_duration * trun.samples_table.length;
+                    }
+                    
+                    if (concatDuration > fullDuration) {
+                        trun.samples_table[trun.samples_table.length-1].sample_duration -= (concatDuration-fullDuration);
+                    }
+
+                    //in the same way, we have to duplicate mdat.data.
+                    trun.sample_count = trun.samples_table.length;
+                    mdat.data = new Uint8Array(mdatData.length*(trun.sample_count));
+                    for (i = 0; i < trun.sample_count; i += 1) {
+                        mdat.data.set(mdatData, mdatData.length*i);
+                    }
+                }else{
+                    trun.samples_table[0].sample_duration = request.duration * request.timescale;
+                }
             }
 
             // Determine new size of the converted fragment

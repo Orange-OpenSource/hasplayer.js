@@ -419,7 +419,7 @@ MediaPlayer.dependencies.StreamController = function() {
             if (manifest.hasOwnProperty("Location")) {
                 url = manifest.Location;
             }
-debugger;
+
             this.debug.log("### Refresh manifest @ " + url);
             this.refreshManifest(url, true);
         },
