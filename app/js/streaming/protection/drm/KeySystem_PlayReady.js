@@ -268,7 +268,7 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
             if(protectionData){
                 protData = protectionData;
                 if(protData.sessionType){
-                    sessionType = protData.sessionType;
+                    this.sessionType = protData.sessionType;
                 }
             }
         },

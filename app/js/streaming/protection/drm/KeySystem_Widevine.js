@@ -62,7 +62,7 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
             if(protectionData){
                 protData = protectionData;
                 if(protData.sessionType){
-                    sessionType = protData.sessionType;
+                    this.sessionType = protData.sessionType;
                 }
             }
         },
