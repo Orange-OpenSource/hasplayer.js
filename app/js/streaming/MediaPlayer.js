@@ -48,8 +48,8 @@ MediaPlayer = function(aContext) {
     /*
      *
      */
-    var VERSION = "1.2.0",
-        VERSION_HAS = "1.2.7_dev",
+    var VERSION_DASHJS = "1.2.0",
+        VERSION = "1.2.7_dev",
         GIT_TAG = "@@REVISION",
         BUILD_DATE = "@@TIMESTAMP",
         context = aContext,
@@ -372,16 +372,6 @@ MediaPlayer = function(aContext) {
         },
 
         /**
-         * get the HAS version
-         * @access public
-         * @memberof MediaPlayer#
-         * @return hasplayer version
-         */
-        getVersionHAS: function() {
-            return VERSION_HAS;
-        },
-
-        /**
          * get the full version (with git tag, only at build)
          * @access public
          * @memberof MediaPlayer#
@@ -389,10 +379,20 @@ MediaPlayer = function(aContext) {
          */
         getVersionFull: function() {
             if (GIT_TAG.indexOf("@@") === -1) {
-                return VERSION_HAS + '_' + GIT_TAG;
+                return VERSION + '_' + GIT_TAG;
             } else {
-                return VERSION_HAS;
+                return VERSION;
             }
+        },
+
+        /**
+         * get the HAS version
+         * @access public
+         * @memberof MediaPlayer#
+         * @return hasplayer version
+         */
+        getVersionDashJS: function() {
+            return VERSION_DASHJS;
         },
 
         /**
