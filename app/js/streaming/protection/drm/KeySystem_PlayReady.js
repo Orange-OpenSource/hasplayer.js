@@ -90,7 +90,7 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
 
             msg = String.fromCharCode.apply(null, dataview);
             xmlDoc = this.domParser.createXmlTree(msg);
-            
+
             if (xmlDoc.getElementsByTagName("Challenge")[0]) {
                 Challenge = xmlDoc.getElementsByTagName("Challenge")[0].childNodes[0].nodeValue;
                 if (Challenge) {
@@ -263,9 +263,14 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
         domParser: undefined,
         /*sessionType:"persistent-license",*/
         sessionType:"temporary",
-        
+
         init: function(protectionData){
-            protData = protectionData;
+            if(protectionData){
+                protData = protectionData;
+                if(protData.sessionType){
+                    this.sessionType = protData.sessionType;
+                }
+            }
         },
 
         getInitData: parseInitDataFromContentProtection,
