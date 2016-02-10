@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 4.2.2016_21:43:33 / git revision : f994d0c */
+/* Last build : 10.2.2016_21:43:33 / git revision : 41528b3 */
  /* jshint ignore:start */
 (function(root, factory) {
     if (typeof define === "function" && define.amd) {
@@ -5352,7 +5352,7 @@
     mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
     MediaPlayer = function(aContext) {
         "use strict";
-        var VERSION = "1.2.0", VERSION_HAS = "1.2.7_dev", GIT_TAG = "f994d0c", BUILD_DATE = "4.2.2016_21:43:33", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", subtitlesEnabled = false, isReady = function() {
+        var VERSION = "1.2.0", VERSION_HAS = "1.2.7_dev", GIT_TAG = "41528b3", BUILD_DATE = "10.2.2016_21:43:33", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", subtitlesEnabled = false, isReady = function() {
             return !!element && !!source && !resetting;
         }, play = function() {
             if (!initialized) {
@@ -13457,7 +13457,12 @@
             domParser: undefined,
             sessionType: "temporary",
             init: function(protectionData) {
-                protData = protectionData;
+                if (protectionData) {
+                    protData = protectionData;
+                    if (protData.sessionType) {
+                        this.sessionType = protData.sessionType;
+                    }
+                }
             },
             getInitData: parseInitDataFromContentProtection,
             getKeySystemConfigurations: MediaPlayer.dependencies.protection.CommonEncryption.getKeySystemConfigurations,
@@ -13492,6 +13497,9 @@
             init: function(protectionData) {
                 if (protectionData) {
                     protData = protectionData;
+                    if (protData.sessionType) {
+                        this.sessionType = protData.sessionType;
+                    }
                 }
             },
             getInitData: doGetInitData,

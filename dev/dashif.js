@@ -1,4 +1,4 @@
-/* Last build : 4.2.2016_21:43:49 / git revision : f994d0c */
+/* Last build : 10.2.2016_21:43:49 / git revision : 41528b3 */
  /* jshint ignore:start */
 (function() {
     var b = void 0, f = !0, j = null, l = !1;
@@ -28850,7 +28850,7 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     function setProtectionData() {
         var protData = $scope.selectedItem.protData ? $scope.selectedItem.protData[$scope.protectionScheme] : null;
         $scope.laURL = protData ? protData.laURL : "";
-        $scope.cmdData = protData ? protData.cdmData : "";
+        $scope.cdmData = protData ? protData.cdmData : "";
     }
     function resetBitratesSlider() {
         $("#sliderBitrate").labeledslider({
