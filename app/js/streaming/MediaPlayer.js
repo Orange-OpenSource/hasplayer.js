@@ -718,7 +718,7 @@ MediaPlayer = function(aContext) {
             // ORANGE : add metric
             loop = videoModel.getElement().loop;
             if (url) {
-                this.metricsModel.addSession(null, url, loop, null, "HasPlayer.js_" + this.getVersionHAS());
+                this.metricsModel.addSession(null, url, loop, null, "HasPlayer.js_" + this.getVersion());
             }
 
             this.uriQueryFragModel.reset();
