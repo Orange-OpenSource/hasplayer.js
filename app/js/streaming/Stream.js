@@ -1285,21 +1285,23 @@ MediaPlayer.dependencies.Stream = function() {
             }
         },
 
-        setTrickPlay: function(speed){
+        setTrickPlay: function(enabled){
             var funcs = [],
                 self = this;
-            trickModeEnabled = speed > 1 ? true : false;
+            trickModeEnabled = enabled;
 
             if(videoController) {
-               funcs.push(videoController.setTrickPlay(speed));
+               funcs.push(videoController.setTrickPlay(enabled));
             }
             if (audioController) {
-                funcs.push(audioController.setTrickPlay(speed));
+                funcs.push(audioController.setTrickPlay(enabled));
             }
 
             Q.all(funcs).then(function (){
                 if (!trickModeEnabled) {
-                    seek.call(self, self.videoModel.getCurrentTime());
+                    var currentTime = self.videoModel.getCurrentTime();
+                    self.debug.info("[Stream] setTrickPlay disabled seek to "+currentTime);
+                    seek.call(self, currentTime);
                 }
             });
         },

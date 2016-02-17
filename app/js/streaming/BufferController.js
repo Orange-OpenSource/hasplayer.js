@@ -906,7 +906,7 @@ MediaPlayer.dependencies.BufferController = function() {
                     // Download the segment
                     self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null /*signalStreamComplete*/ ).then(
                         function() {
-                                sendRequest.call(self);
+                            sendRequest.call(self);
                         });
                 }
             } else {
@@ -1514,7 +1514,7 @@ MediaPlayer.dependencies.BufferController = function() {
         updateBufferState: function() {
             var self = this,
                 currentTime = this.videoModel.getCurrentTime(),
-                previousTime = htmlVideoTime === -1? currentTime : htmlVideoTime,
+                previousTime = htmlVideoTime === -1 ? currentTime : htmlVideoTime,
                 progress = (currentTime - previousTime),
                 ranges;
 
@@ -1647,31 +1647,24 @@ MediaPlayer.dependencies.BufferController = function() {
             return deferred.promise;
         },
 
-        setTrickPlay: function(speed) {
+        setTrickPlay: function(enabled) {
             var self = this,
                 deferred = Q.defer();
 
 
-            this.debug.log("[BufferController][" + type + "] setTrickPlay - speed = " + speed);
+            this.debug.log("[BufferController][" + type + "] setTrickPlay - enabled = " + enabled);
 
-            switch (type) {
-                case 'video':
-                case 'audio':
-                    if (speed > 1) {
-                        deferred.resolve();
-                        self.fragmentController.setSampleDuration(true);
-                        trickModeEnabled = true;
-                        self.videoModel.setPlaybackRate(speed);
-                    } else {
-                        trickModeEnabled = false;
-                        self.fragmentController.setSampleDuration(false);
-                        self.videoModel.setPlaybackRate(speed);
-                        removeBuffer.call(this).then(function() {
-                            debugBufferRange.call(self);
-                            deferred.resolve();
-                        });
-                    }
-                    break;
+            trickModeEnabled = enabled;
+
+            if (enabled) {
+                deferred.resolve();
+                self.fragmentController.setSampleDuration(true);
+            } else {
+                self.fragmentController.setSampleDuration(false);
+                removeBuffer.call(this).then(function() {
+                    debugBufferRange.call(self);
+                    deferred.resolve();
+                });
             }
             return deferred.promise;
         },
