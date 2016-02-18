@@ -74,6 +74,7 @@ Mss.dependencies.MssParser = function() {
                 representations = [],
                 representation,
                 segmentTemplate = {},
+                segments,
                 qualityLevels = null,
                 i;
 
@@ -118,6 +119,13 @@ Mss.dependencies.MssParser = function() {
 
             // Set SegmentTemplate
             adaptationSet.SegmentTemplate = segmentTemplate;
+
+            segments = segmentTemplate.SegmentTimeline.S_asArray;
+            this.metricsModel.addDVRInfo(adaptationSet.contentType, 0, null, {
+                start: segments[0].t / segmentTemplate.timescale,
+                end: (segments[segments.length - 1].t + segments[segments.length - 1].d)  / segmentTemplate.timescale
+            });
+
 
             return adaptationSet;
         },
@@ -551,6 +559,7 @@ Mss.dependencies.MssParser = function() {
         system: undefined,
         errHandler: undefined,
         domParser: undefined,
+        metricsModel: undefined,
 
         parse: internalParse
     };
