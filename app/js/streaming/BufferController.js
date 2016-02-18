@@ -122,9 +122,10 @@ MediaPlayer.dependencies.BufferController = function() {
             stalled = value;
             self.videoModel.stallStream(type, stalled);
 
-            // Notify ABR controller we start buffering or playing in order to adapt ABR rules
-            self.abrController.setPlayerState(stalled ? "buffering" : "playing");
-
+            // Notify ABR controller we start buffering in order to adapt ABR rules (see InsufficientbufferRule)
+            if (stalled) {
+                self.abrController.setPlayerState("buffering");
+            }
         },
 
         startPlayback = function() {
@@ -936,7 +937,7 @@ MediaPlayer.dependencies.BufferController = function() {
         getWorkingTime = function() {
             var time = -1;
 
-            if (this.videoModel.isPaused()) {
+            if (this.videoModel.isPaused() || seeking) {
                 time = seekTarget;
             } else {
                 time = this.videoModel.getCurrentTime();
