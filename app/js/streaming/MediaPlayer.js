@@ -189,6 +189,14 @@ MediaPlayer = function(aContext) {
             return val;
         },
 
+        getDVRWindowRange = function () {
+            var metric = this.metricsModel.getReadOnlyMetricsFor('video'),
+                dvrInfo = metric ? this.metricsExt.getCurrentDVRInfo(metric) : null,
+                range = dvrInfo ? dvrInfo.range : null;
+
+            return range;
+        },
+
         /**
          * seek to a special time (seconds) in the stream.
          * html5 video currentTime parameter is better to use than this function.
@@ -776,6 +784,7 @@ MediaPlayer = function(aContext) {
         durationAsUTC: durationAsUTC,
         getDVRWindowSize: getDVRWindowSize,
         getDVRSeekOffset: getDVRSeekOffset,
+        getDVRWindowRange: getDVRWindowRange,
         formatUTC: formatUTC,
         convertToTimeCode: convertToTimeCode
 
