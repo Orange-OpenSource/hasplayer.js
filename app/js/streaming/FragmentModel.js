@@ -235,6 +235,10 @@ MediaPlayer.dependencies.FragmentModel = function () {
             }
         },
 
+        clearExecutedRequests: function() {
+            executedRequests = [];
+        },
+
         cancelPendingRequests: function() {
             pendingRequests = [];
         },
