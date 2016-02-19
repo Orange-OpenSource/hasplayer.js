@@ -15,14 +15,12 @@ var chartXaxisWindow = 30;
 // the number of plots
 var plotCount = (chartXaxisWindow * 1000) / updateIntervalLength;
 
-var enableNetBalancer = false
+var enableNetBalancer = false;
 var serviceNetBalancerEnabled = true;
 var netBalancerLimitValue = 0;
 var netBalancerLimitSetted = true;
 
 var streamSource;
-
-var context = 'hasplayer_custom';
 
 var startTime;
 
@@ -44,7 +42,6 @@ metricsAgentActive = false,
 currentIdToToggle = 0,
 isPlaying = false,
 isMetricsOn = !hideMetricsAtStart,
-firstAccess = true,
 audioTracksSelectIsPresent = false;
 
 
@@ -112,24 +109,6 @@ function initNetBalancerSlider() {
     sendNetBalancerLimit(true, (initBW * 1000));
 }
 
-
-function setTimeWithSeconds(sec) {
-    var sec_num = parseInt(sec, 10); // don't forget the second param
-    var hours   = Math.floor(sec_num / 3600);
-    var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
-    var seconds = sec_num - (hours * 3600) - (minutes * 60);
-
-    if (hours   < 10) {hours   = "0"+hours;}
-    if (minutes < 10) {minutes = "0"+minutes;}
-    if (seconds < 10) {seconds = "0"+seconds;}
-    var time    = hours+':'+minutes+':'+seconds;
-    return time;
-}
-
-function updateSeekBar() {
-    $("#seekBar").attr('value',video.currentTime);
-    $(".current-time").text(setTimeWithSeconds(video.currentTime));
-}
 
 function initChartAndSlider() {
     var metricsExt = player.getMetricsExt(),
@@ -352,22 +331,6 @@ function update() {
     chartBandwidth.setupGrid();
     chartBandwidth.draw();
 
-    if(firstAccess && (video.duration > 0)) {
-
-        firstAccess = false;
-        $(".controlBar").show();
-        if(!player.metricsExt.manifestExt.getIsDynamic(player.metricsExt.manifestModel.getValue())) {
-            $(".live").hide();
-            $(".seekbar-container").show();
-            $("#seekBar").attr('max', video.duration);
-            $(".duration").text(setTimeWithSeconds(video.duration));
-            $("#videoPlayer").on('timeupdate', updateSeekBar);
-        } else {
-            $(".seekbar-container").hide();
-            $(".live").show();
-        }
-    }
-
     //$("#downloadingInfos").html("<span class='downloadingTitle'>Downloading</span><br>" + Math.round(downloadRepInfos.bandwidth/1000) + " kbps<br>"+ downloadRepInfos.width +"x"+downloadRepInfos.height + "<br>"+ downloadRepInfos.codecs + "<br>"+ bufferLevel + "s");
     //$("#playingInfos").html("<span class='playingTitle'>Playing</span><br>"+ Math.round(playRepInfos.bandwidth/1000) + " kbps<br>"+ playRepInfos.width +"x"+playRepInfos.height + "<br>"+ playRepInfos.codecs + "<br>"+ bufferLevel + "s<br>");
 
@@ -455,6 +418,72 @@ function appendText(message) {
     $("#textarea").scrollTop($("#textarea")[0].scrollHeight);
 }
 
+// SEEK BAR
+
+function setTimeWithSeconds(sec) {
+    var sec_num = parseInt(sec, 10);
+    var hours   = Math.floor(sec_num / 3600);
+    var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+    var seconds = sec_num - (hours * 3600) - (minutes * 60);
+
+    if (hours   < 10) {hours   = "0"+hours;}
+    if (minutes < 10) {minutes = "0"+minutes;}
+    if (seconds < 10) {seconds = "0"+seconds;}
+    var time    = hours+':'+minutes+':'+seconds;
+    return time;
+}
+
+function initSeekBar() {
+    $(".controlBar").show();
+
+    $(".seekbar-container").show();
+
+    if (video.duration !== Infinity) {
+        $("#seekBar").attr('max', video.duration);
+        $(".duration").text(setTimeWithSeconds(video.duration));
+        $(".live").hide();
+    } else {
+        var range = player.getDVRWindowRange(),
+            duration = range.end - range.start;
+        $("#seekBar").attr('max', duration);
+        $(".duration").text(setTimeWithSeconds(range.end));
+        $(".live").show();
+    }
+}
+
+function updateSeekBar() {
+
+    if (video.duration !== Infinity) {
+        $("#seekBar").attr('value', video.currentTime);
+        $(".current-time").text(setTimeWithSeconds(video.currentTime));
+    } else {
+        var range = player.getDVRWindowRange(),
+            duration = range.end - range.start,
+            value = video.currentTime - range.start;
+        $("#seekBar").attr('max', duration);
+        $("#seekBar").attr('value', value);
+        $(".duration").text(setTimeWithSeconds(range.end));
+        $(".current-time").text(setTimeWithSeconds(video.currentTime));
+    }
+}
+
+function onSeek() {
+    if (video.duration !== Infinity) {
+        player.seek(event.offsetX * video.duration / $("#seekBar").width());
+        updateSeekBar();
+    } else {
+        var range = player.getDVRWindowRange(),
+            progress = event.offsetX / $("#seekBar").width(),
+            duration = range.end - range.start,
+            seekTime = range.start + (duration * progress);
+
+        player.seek(seekTime);
+    }
+    updateSeekBar();
+}
+
+
+
 function initControlBar () {
     var controlBar = $('#controlBar');
     controlBar.hide();
@@ -488,8 +517,7 @@ function initControlBar () {
     });
 
     $("#seekBar").click(function(event) {
-        video.currentTime = event.offsetX * video.duration / $("#seekBar").width();
-        updateSeekBar();
+        onSeek(event);
     });
 
 }
@@ -541,6 +569,7 @@ function initVideoController () {
 
     $("#videoPlayer").on("loadeddata", function () {
         appendText("loadeddata");
+        initSeekBar();
     });
 
     $("#videoPlayer").on("canplay", function () {
@@ -560,12 +589,14 @@ function initVideoController () {
     });
 
     $("#videoPlayer").on("progress", function () {
-        //appendText("progress: " + video.currentTime);
     });
 
     $("#videoPlayer").on("timeupdate", function() {
+        updateSeekBar();
     });
 }
+
+
 
 //init player by attaching source stream
 function parseUrlParams () {
@@ -584,8 +615,6 @@ function parseUrlParams () {
 
             if ((name === 'file') || (name === 'url')) {
                 streamSource = value + anchor;
-            } else  if (name === 'context') {
-                context = value;
             } else if (name === 'metrics') {
                 enableMetrics = true;
             } else if ((name === 'debug') && (value !== 'false')) {
@@ -604,7 +633,7 @@ function metricUpdated(e) {
 
     if (e.data.stream == "video" && e.data.metric == "HttpRequestTrace") {
         metric = e.data.value;
-        if (metric.tfinish != null && enableNetBalancer && !netBalancerLimitSetted) {
+        if (metric.tfinish !== null && enableNetBalancer && !netBalancerLimitSetted) {
             console.log("Set NetBalancer Limit"+netBalancerLimitValue);
             sendNetBalancerLimit(true, (netBalancerLimitValue * 1000));
             netBalancerLimitSetted = true;
@@ -630,30 +659,13 @@ function metricAdded(e) {
 
 function initPlayer() {
 
-    switch (context) {
-        case 'dash':
-            player = new MediaPlayer(new MediaPlayer.di.Context());
-            break;
-        case 'hasplayer_default':
-            //player = new MediaPlayer(new Custom.di.CustomContextNoRule());
-            break;
-        case 'hasplayer_custom':
-        default:
-            player = new MediaPlayer(new MediaPlayer.di.Context());
-            break;
-    }
-
+    player = new MediaPlayer(new MediaPlayer.di.Context());
     player.startup();
     player.attachView(video);
     player.setAutoPlay(true);
+    player.getDebug().setLevel(4);
     player.addEventListener("metricUpdated", metricUpdated.bind(this));
     player.addEventListener("metricAdded", metricAdded.bind(this));
-
-    /*var config = {
-        "ABR.minQuality": 1,
-    };
-
-    player.setConfig(config);*/
 
     // Initialize chromecast receiver
     if (isCrKey) {

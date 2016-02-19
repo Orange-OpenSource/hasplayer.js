@@ -91,6 +91,11 @@ Mss.dependencies.MssFragmentController = function() {
                     segments.splice(0, 1);
                     segment = segments[0];
                 }
+
+                this.metricsModel.addDVRInfo(adaptation.type, 0, null, {
+                    start: segments[0].t / adaptation.SegmentTemplate.timescale,
+                    end: (segments[segments.length - 1].t + segments[segments.length - 1].d)  / adaptation.SegmentTemplate.timescale
+                });
             }
         },
 
@@ -243,6 +248,7 @@ Mss.dependencies.MssFragmentController = function() {
 
     rslt.manifestModel = undefined;
     rslt.manifestExt = undefined;
+    rslt.metricsModel = undefined;
 
     rslt.process = function(bytes, request, representations) {
         var result = null,
