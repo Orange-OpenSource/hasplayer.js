@@ -74,8 +74,8 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
             removeRange: function(start, end) {
                 var i = 0;
                 for (i = this.ranges.length - 1; i >= 0; i -= 1) {
-                    if (((end === undefined || end === -1) || (this.ranges[i].end < end)) &&
-                        ((start === undefined || start === -1) || (this.ranges[i].start > start))) {
+                    if (((end === undefined || end === -1) || (this.ranges[i].end <= end)) &&
+                        ((start === undefined || start === -1) || (this.ranges[i].start >= start))) {
                         this.ranges.splice(i, 1);
                     }
                 }
