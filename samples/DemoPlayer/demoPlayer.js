@@ -470,13 +470,11 @@ function updateSeekBar() {
 function onSeek() {
     if (video.duration !== Infinity) {
         player.seek(event.offsetX * video.duration / $("#seekBar").width());
-        updateSeekBar();
     } else {
         var range = player.getDVRWindowRange(),
             progress = event.offsetX / $("#seekBar").width(),
             duration = range.end - range.start,
             seekTime = range.start + (duration * progress);
-
         player.seek(seekTime);
     }
     updateSeekBar();
