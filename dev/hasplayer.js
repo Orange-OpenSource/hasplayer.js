@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 10.2.2016_21:43:33 / git revision : 41528b3 */
+/* Last build : 19.2.2016_21:43:38 / git revision : 97329d7 */
  /* jshint ignore:start */
 (function(root, factory) {
     if (typeof define === "function" && define.amd) {
@@ -5352,7 +5352,7 @@
     mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
     MediaPlayer = function(aContext) {
         "use strict";
-        var VERSION = "1.2.0", VERSION_HAS = "1.2.7_dev", GIT_TAG = "41528b3", BUILD_DATE = "10.2.2016_21:43:33", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", subtitlesEnabled = false, isReady = function() {
+        var VERSION_DASHJS = "1.2.0", VERSION = "1.2.7_dev", GIT_TAG = "97329d7", BUILD_DATE = "19.2.2016_21:43:38", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", subtitlesEnabled = false, isReady = function() {
             return !!element && !!source && !resetting;
         }, play = function() {
             if (!initialized) {
@@ -5419,6 +5419,9 @@
                 val = metric.range.end;
             }
             return val;
+        }, getDVRWindowRange = function() {
+            var metric = this.metricsModel.getReadOnlyMetricsFor("video"), dvrInfo = metric ? this.metricsExt.getCurrentDVRInfo(metric) : null, range = dvrInfo ? dvrInfo.range : null;
+            return range;
         }, seek = function(value) {
             streamController.seek(value);
         }, time = function() {
@@ -5486,15 +5489,15 @@
             getVersion: function() {
                 return VERSION;
             },
-            getVersionHAS: function() {
-                return VERSION_HAS;
-            },
             getVersionFull: function() {
                 if (GIT_TAG.indexOf("@@") === -1) {
-                    return VERSION_HAS + "_" + GIT_TAG;
+                    return VERSION + "_" + GIT_TAG;
                 } else {
-                    return VERSION_HAS;
+                    return VERSION;
                 }
+            },
+            getVersionDashJS: function() {
+                return VERSION_DASHJS;
             },
             getBuildDate: function() {
                 if (BUILD_DATE.indexOf("@@") === -1) {
@@ -5635,7 +5638,7 @@
                 }
                 loop = videoModel.getElement().loop;
                 if (url) {
-                    this.metricsModel.addSession(null, url, loop, null, "HasPlayer.js_" + this.getVersionHAS());
+                    this.metricsModel.addSession(null, url, loop, null, "HasPlayer.js_" + this.getVersion());
                 }
                 this.uriQueryFragModel.reset();
                 if (url) {
@@ -5671,6 +5674,7 @@
             durationAsUTC: durationAsUTC,
             getDVRWindowSize: getDVRWindowSize,
             getDVRSeekOffset: getDVRSeekOffset,
+            getDVRWindowRange: getDVRWindowRange,
             formatUTC: formatUTC,
             convertToTimeCode: convertToTimeCode
         };
@@ -5890,7 +5894,9 @@
             self.debug.info("[BufferController][" + type + "] stalled = " + value);
             stalled = value;
             self.videoModel.stallStream(type, stalled);
-            self.abrController.setPlayerState(stalled ? "buffering" : "playing");
+            if (stalled) {
+                self.abrController.setPlayerState("buffering");
+            }
         }, startPlayback = function() {
             if (!ready || !started) {
                 return;
@@ -5926,6 +5932,7 @@
             if (started === true) {
                 doStop.call(self);
             }
+            this.fragmentController.clearExecutedRequests(fragmentModel);
             playListMetrics = this.metricsModel.addPlayList(type, currentTime, seekTarget, MediaPlayer.vo.metrics.PlayList.SEEK_START_REASON);
             seeking = true;
             seekTarget = time;
@@ -6349,7 +6356,7 @@
             return periodInfo.start + periodInfo.duration - currentTime;
         }, getWorkingTime = function() {
             var time = -1;
-            if (this.videoModel.isPaused()) {
+            if (this.videoModel.isPaused() || seeking) {
                 time = seekTarget;
             } else {
                 time = this.videoModel.getCurrentTime();
@@ -7588,6 +7595,11 @@
                     model.removeExecutedRequestsBeforeTime(time);
                 }
             },
+            clearExecutedRequests: function(model) {
+                if (model) {
+                    model.clearExecutedRequests();
+                }
+            },
             cancelPendingRequestsForModel: function(model) {
                 if (model) {
                     model.cancelPendingRequests();
@@ -7941,6 +7953,9 @@
                     }
                 }
             },
+            clearExecutedRequests: function() {
+                executedRequests = [];
+            },
             cancelPendingRequests: function() {
                 pendingRequests = [];
             },
@@ -8179,7 +8194,7 @@
     };
     MediaPlayer.models.ManifestModel = function() {
         "use strict";
-        var manifest;
+        var manifest = null;
         return {
             system: undefined,
             eventBus: undefined,
@@ -9575,6 +9590,7 @@
                 return;
             }
             this.debug.info("[Stream] Do seek: " + time);
+            this.videoModel.pause();
             initialSeekTime = time;
             this.system.mapHandler("bufferUpdated", undefined, onBufferUpdated.bind(this));
             startBuffering(initialSeekTime);
@@ -11099,19 +11115,33 @@
         var Cue;
         return {
             eventBus: undefined,
+            config: undefined,
             setup: function() {
                 Cue = window.VTTCue || window.TextTrackCue;
             },
-            subtitlesStyleChanged: function(style) {
+            cueEnter: function(subtitle_style, subtitle_text) {
                 this.eventBus.dispatchEvent({
-                    type: "subtitlesStyleChanged",
-                    data: style
+                    type: "cueEnter",
+                    data: {
+                        text: subtitle_text,
+                        style: subtitle_style
+                    }
+                });
+            },
+            cueExit: function(subtitle_style, subtitle_text) {
+                this.eventBus.dispatchEvent({
+                    type: "cueExit",
+                    data: {
+                        text: subtitle_text,
+                        style: subtitle_style
+                    }
                 });
             },
             addTextTrack: function(video, captionData, label, scrlang, isDefaultTrack) {
-                var track = null, currentItem = null, i;
+                var track = null, currentItem = null, subtitleDisplayMode = "subtitles", i;
                 if (video.textTracks.length === 0) {
-                    track = video.addTextTrack("subtitles", label, scrlang);
+                    subtitleDisplayMode = this.config.getParam("TextTrackExtensions.displayModeExtern", "boolean") === true ? "metadata" : "subtitles";
+                    track = video.addTextTrack(subtitleDisplayMode, label, scrlang);
                     track.default = isDefaultTrack;
                     track.mode = "showing";
                 } else {
@@ -11124,7 +11154,10 @@
                 return Q.when(track);
             },
             onCueEnter: function(e) {
-                this.subtitlesStyleChanged(e.currentTarget.style);
+                this.cueEnter(e.currentTarget.style, e.currentTarget.text);
+            },
+            onCueExit: function(e) {
+                this.cueExit(e.currentTarget.style, e.currentTarget.text);
             },
             addCues: function(track, captionData) {
                 var i = 0, currentItem = null, newCue = null;
@@ -11133,6 +11166,7 @@
                     if (currentItem.start < currentItem.end) {
                         newCue = new Cue(currentItem.start, currentItem.end, currentItem.data);
                         newCue.onenter = this.onCueEnter.bind(this);
+                        newCue.onexit = this.onCueExit.bind(this);
                         newCue.snapToLines = false;
                         newCue.line = currentItem.line;
                         if (currentItem.style) {
@@ -14381,6 +14415,26 @@
     MediaPlayer.vo.metrics.BufferLevel.prototype = {
         constructor: MediaPlayer.vo.metrics.BufferLevel
     };
+    MediaPlayer.vo.metrics.BufferedSwitch = function() {
+        "use strict";
+        this.mt = null;
+        this.to = null;
+        this.lto = null;
+    };
+    MediaPlayer.vo.metrics.BufferedSwitch.prototype = {
+        constructor: MediaPlayer.vo.metrics.BufferedSwitch
+    };
+    MediaPlayer.vo.metrics.Condition = function() {
+        "use strict";
+        this.isFullScreen = null;
+        this.windowSize = null;
+        this.droppedFrames = null;
+        this.fps = null;
+        this.bandwidth = null;
+    };
+    MediaPlayer.vo.metrics.Condition.prototype = {
+        constructor: MediaPlayer.vo.metrics.Condition
+    };
     MediaPlayer.vo.metrics.DroppedFrames = function() {
         "use strict";
         this.time = null;
@@ -14388,6 +14442,15 @@
     };
     MediaPlayer.vo.metrics.DroppedFrames.prototype = {
         constructor: MediaPlayer.vo.metrics.DroppedFrames
+    };
+    MediaPlayer.vo.metrics.DVRInfo = function() {
+        "use strict";
+        this.time = null;
+        this.range = null;
+        this.mpd = null;
+    };
+    MediaPlayer.vo.metrics.DVRInfo.prototype = {
+        constructor: MediaPlayer.vo.metrics.DVRInfo
     };
     MediaPlayer.vo.metrics.HTTPRequest = function() {
         "use strict";
@@ -14501,25 +14564,15 @@
     MediaPlayer.vo.metrics.RepresentationSwitch.prototype = {
         constructor: MediaPlayer.vo.metrics.RepresentationSwitch
     };
-    MediaPlayer.vo.metrics.BufferedSwitch = function() {
+    MediaPlayer.vo.metrics.Session = function() {
         "use strict";
-        this.mt = null;
-        this.to = null;
-        this.lto = null;
+        this.uri = null;
+        this.loopMode = null;
+        this.endTime = null;
+        this.playerType = null;
     };
-    MediaPlayer.vo.metrics.BufferedSwitch.prototype = {
-        constructor: MediaPlayer.vo.metrics.BufferedSwitch
-    };
-    MediaPlayer.vo.metrics.TCPConnection = function() {
-        "use strict";
-        this.tcpid = null;
-        this.dest = null;
-        this.topen = null;
-        this.tclose = null;
-        this.tconnect = null;
-    };
-    MediaPlayer.vo.metrics.TCPConnection.prototype = {
-        constructor: MediaPlayer.vo.metrics.TCPConnection
+    MediaPlayer.vo.metrics.Session.prototype = {
+        constructor: MediaPlayer.vo.metrics.Session
     };
     MediaPlayer.vo.metrics.State = function() {
         "use strict";
@@ -14531,26 +14584,16 @@
     MediaPlayer.vo.metrics.State.prototype = {
         constructor: MediaPlayer.vo.metrics.State
     };
-    MediaPlayer.vo.metrics.Session = function() {
+    MediaPlayer.vo.metrics.TCPConnection = function() {
         "use strict";
-        this.uri = null;
-        this.loopMode = null;
-        this.endTime = null;
-        this.playerType = null;
+        this.tcpid = null;
+        this.dest = null;
+        this.topen = null;
+        this.tclose = null;
+        this.tconnect = null;
     };
-    MediaPlayer.vo.metrics.Session.prototype = {
-        constructor: MediaPlayer.vo.metrics.Session
-    };
-    MediaPlayer.vo.metrics.Condition = function() {
-        "use strict";
-        this.isFullScreen = null;
-        this.windowSize = null;
-        this.droppedFrames = null;
-        this.fps = null;
-        this.bandwidth = null;
-    };
-    MediaPlayer.vo.metrics.Condition.prototype = {
-        constructor: MediaPlayer.vo.metrics.Condition
+    MediaPlayer.vo.metrics.TCPConnection.prototype = {
+        constructor: MediaPlayer.vo.metrics.TCPConnection
     };
     Dash = function() {
         "use strict";
@@ -17551,7 +17594,7 @@
                 }
             };
             var onreport = function() {
-                if (!error) {
+                if (!error || playlistRequest.aborted) {
                     return;
                 }
                 deferred.reject({
@@ -17807,7 +17850,7 @@
             period.AdaptationSet_asArray = adaptations;
             return period;
         }, mapAdaptationSet = function(streamIndex) {
-            var adaptationSet = {}, representations = [], representation, segmentTemplate = {}, qualityLevels = null, i;
+            var adaptationSet = {}, representations = [], representation, segmentTemplate = {}, segments, qualityLevels = null, i;
             adaptationSet.id = this.domParser.getAttributeValue(streamIndex, "Name");
             adaptationSet.lang = this.domParser.getAttributeValue(streamIndex, "Language");
             adaptationSet.contentType = this.domParser.getAttributeValue(streamIndex, "Type");
@@ -17833,6 +17876,11 @@
             adaptationSet.Representation = representations.length > 1 ? representations : representations[0];
             adaptationSet.Representation_asArray = representations;
             adaptationSet.SegmentTemplate = segmentTemplate;
+            segments = segmentTemplate.SegmentTimeline.S_asArray;
+            this.metricsModel.addDVRInfo(adaptationSet.contentType, 0, null, {
+                start: segments[0].t / segmentTemplate.timescale,
+                end: (segments[segments.length - 1].t + segments[segments.length - 1].d) / segmentTemplate.timescale
+            });
             return adaptationSet;
         }, mapRepresentation = function(qualityLevel) {
             var representation = {}, fourCCValue = null;
@@ -18046,6 +18094,7 @@
             system: undefined,
             errHandler: undefined,
             domParser: undefined,
+            metricsModel: undefined,
             parse: internalParse
         };
     };
@@ -18188,6 +18237,10 @@
                     segments.splice(0, 1);
                     segment = segments[0];
                 }
+                this.metricsModel.addDVRInfo(adaptation.type, 0, null, {
+                    start: segments[0].t / adaptation.SegmentTemplate.timescale,
+                    end: (segments[segments.length - 1].t + segments[segments.length - 1].d) / adaptation.SegmentTemplate.timescale
+                });
             }
         }, convertFragment = function(data, request, adaptation) {
             var i = 0, manifest = this.manifestModel.getValue(), trackId = manifest ? this.manifestExt.getIndex(adaptation, manifest) + 1 : -1, fragment = mp4lib.deserialize(data), moof = null, mdat = null, traf = null, trun = null, tfhd = null, saio = null, sepiff = null, saiz = null, tfdt = null, tfrf = null, sizedifferent = false, pos = -1, fragment_size = 0, moofPosInFragment = 0, trafPosInMoof = 0, sencPosInTraf = 0, new_data = null;
@@ -18272,6 +18325,7 @@
         var rslt = MediaPlayer.utils.copyMethods(MediaPlayer.dependencies.FragmentController);
         rslt.manifestModel = undefined;
         rslt.manifestExt = undefined;
+        rslt.metricsModel = undefined;
         rslt.process = function(bytes, request, representations) {
             var result = null, manifest = this.manifestModel.getValue(), adaptation = null;
             if (bytes !== null && bytes !== undefined && bytes.byteLength > 0) {

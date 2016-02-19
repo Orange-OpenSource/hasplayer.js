@@ -1,4 +1,4 @@
-/* Last build : 10.2.2016_21:43:49 / git revision : 41528b3 */
+/* Last build : 19.2.2016_21:43:54 / git revision : 97329d7 */
  /* jshint ignore:start */
 (function() {
     var b = void 0, f = !0, j = null, l = !1;
@@ -28674,8 +28674,8 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     context = new MediaPlayer.di.Context();
     player = new MediaPlayer(context);
     $scope.version = player.getVersion();
-    $scope.versionHAS = player.getVersionHAS();
     $scope.versionFull = player.getVersionFull();
+    $scope.versionDashJS = player.getVersionDashJS();
     $scope.buildDate = player.getBuildDate();
     $scope.laURL = "";
     $scope.cdmData = "";

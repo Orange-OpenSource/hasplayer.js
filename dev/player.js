@@ -1,4 +1,4 @@
-/* Last build : 10.2.2016_21:43:49 / git revision : 41528b3 */
+/* Last build : 19.2.2016_21:43:54 / git revision : 97329d7 */
  /* jshint ignore:start */
 var cast = window.cast || {};
 
@@ -145,8 +145,6 @@ var netBalancerLimitSetted = true;
 
 var streamSource;
 
-var context = "hasplayer_custom";
-
 var startTime;
 
 var downloadRepInfos = {
@@ -185,7 +183,7 @@ var downloadRepInfos = {
     legend: {
         show: false
     }
-}, video, player, enableMetrics = false, metricsAgent = null, metricsAgentActive = false, currentIdToToggle = 0, isPlaying = false, isMetricsOn = !hideMetricsAtStart, firstAccess = true, audioTracksSelectIsPresent = false;
+}, video, player, enableMetrics = false, metricsAgent = null, metricsAgentActive = false, currentIdToToggle = 0, isPlaying = false, isMetricsOn = !hideMetricsAtStart, audioTracksSelectIsPresent = false;
 
 function hideNetworkLimiter() {
     if (serviceNetBalancerEnabled) {
@@ -243,29 +241,6 @@ function initNetBalancerSlider() {
     });
     $("#networkBandwidth").html(5e3 + " kb/s");
     sendNetBalancerLimit(true, initBW * 1e3);
-}
-
-function setTimeWithSeconds(sec) {
-    var sec_num = parseInt(sec, 10);
-    var hours = Math.floor(sec_num / 3600);
-    var minutes = Math.floor((sec_num - hours * 3600) / 60);
-    var seconds = sec_num - hours * 3600 - minutes * 60;
-    if (hours < 10) {
-        hours = "0" + hours;
-    }
-    if (minutes < 10) {
-        minutes = "0" + minutes;
-    }
-    if (seconds < 10) {
-        seconds = "0" + seconds;
-    }
-    var time = hours + ":" + minutes + ":" + seconds;
-    return time;
-}
-
-function updateSeekBar() {
-    $("#seekBar").attr("value", video.currentTime);
-    $(".current-time").text(setTimeWithSeconds(video.currentTime));
 }
 
 function initChartAndSlider() {
@@ -425,20 +400,6 @@ function update() {
     chartBandwidth.setData(bandwidthData);
     chartBandwidth.setupGrid();
     chartBandwidth.draw();
-    if (firstAccess && video.duration > 0) {
-        firstAccess = false;
-        $(".controlBar").show();
-        if (!player.metricsExt.manifestExt.getIsDynamic(player.metricsExt.manifestModel.getValue())) {
-            $(".live").hide();
-            $(".seekbar-container").show();
-            $("#seekBar").attr("max", video.duration);
-            $(".duration").text(setTimeWithSeconds(video.duration));
-            $("#videoPlayer").on("timeupdate", updateSeekBar);
-        } else {
-            $(".seekbar-container").hide();
-            $(".live").show();
-        }
-    }
     $("#state").html("Playing");
     $("#playingBandwidth").html(Math.round(playRepInfos.bandwidth / 1e3).toLocaleString() + " kb/s");
     $("#playingResolution").html(playRepInfos.width + "x" + playRepInfos.height);
@@ -516,6 +477,62 @@ function appendText(message) {
     $("#textarea").scrollTop($("#textarea")[0].scrollHeight);
 }
 
+function setTimeWithSeconds(sec) {
+    var sec_num = parseInt(sec, 10);
+    var hours = Math.floor(sec_num / 3600);
+    var minutes = Math.floor((sec_num - hours * 3600) / 60);
+    var seconds = sec_num - hours * 3600 - minutes * 60;
+    if (hours < 10) {
+        hours = "0" + hours;
+    }
+    if (minutes < 10) {
+        minutes = "0" + minutes;
+    }
+    if (seconds < 10) {
+        seconds = "0" + seconds;
+    }
+    var time = hours + ":" + minutes + ":" + seconds;
+    return time;
+}
+
+function initSeekBar() {
+    $(".controlBar").show();
+    $(".seekbar-container").show();
+    if (video.duration !== Infinity) {
+        $("#seekBar").attr("max", video.duration);
+        $(".duration").text(setTimeWithSeconds(video.duration));
+        $(".live").hide();
+    } else {
+        var range = player.getDVRWindowRange(), duration = range.end - range.start;
+        $("#seekBar").attr("max", duration);
+        $(".duration").text(setTimeWithSeconds(range.end));
+        $(".live").show();
+    }
+}
+
+function updateSeekBar() {
+    if (video.duration !== Infinity) {
+        $("#seekBar").attr("value", video.currentTime);
+        $(".current-time").text(setTimeWithSeconds(video.currentTime));
+    } else {
+        var range = player.getDVRWindowRange(), duration = range.end - range.start, value = video.currentTime - range.start;
+        $("#seekBar").attr("max", duration);
+        $("#seekBar").attr("value", value);
+        $(".duration").text(setTimeWithSeconds(range.end));
+        $(".current-time").text(setTimeWithSeconds(video.currentTime));
+    }
+}
+
+function onSeek() {
+    if (video.duration !== Infinity) {
+        player.seek(event.offsetX * video.duration / $("#seekBar").width());
+    } else {
+        var range = player.getDVRWindowRange(), progress = event.offsetX / $("#seekBar").width(), duration = range.end - range.start, seekTime = range.start + duration * progress;
+        player.seek(seekTime);
+    }
+    updateSeekBar();
+}
+
 function initControlBar() {
     var controlBar = $("#controlBar");
     controlBar.hide();
@@ -548,8 +565,7 @@ function initControlBar() {
         toggleFullScreen();
     });
     $("#seekBar").click(function(event) {
-        video.currentTime = event.offsetX * video.duration / $("#seekBar").width();
-        updateSeekBar();
+        onSeek(event);
     });
 }
 
@@ -591,6 +607,7 @@ function initVideoController() {
     });
     $("#videoPlayer").on("loadeddata", function() {
         appendText("loadeddata");
+        initSeekBar();
     });
     $("#videoPlayer").on("canplay", function() {
         appendText("canplay");
@@ -605,7 +622,9 @@ function initVideoController() {
         appendText("durationchange: " + video.duration);
     });
     $("#videoPlayer").on("progress", function() {});
-    $("#videoPlayer").on("timeupdate", function() {});
+    $("#videoPlayer").on("timeupdate", function() {
+        updateSeekBar();
+    });
 }
 
 function parseUrlParams() {
@@ -617,8 +636,6 @@ function parseUrlParams() {
             value = params[i].substr(name.length + 1);
             if (name === "file" || name === "url") {
                 streamSource = value + anchor;
-            } else if (name === "context") {
-                context = value;
             } else if (name === "metrics") {
                 enableMetrics = true;
             } else if (name === "debug" && value !== "false") {
@@ -636,7 +653,7 @@ function metricUpdated(e) {
     var metric;
     if (e.data.stream == "video" && e.data.metric == "HttpRequestTrace") {
         metric = e.data.value;
-        if (metric.tfinish != null && enableNetBalancer && !netBalancerLimitSetted) {
+        if (metric.tfinish !== null && enableNetBalancer && !netBalancerLimitSetted) {
             console.log("Set NetBalancer Limit" + netBalancerLimitValue);
             sendNetBalancerLimit(true, netBalancerLimitValue * 1e3);
             netBalancerLimitSetted = true;
@@ -660,22 +677,11 @@ function metricAdded(e) {
 }
 
 function initPlayer() {
-    switch (context) {
-      case "dash":
-        player = new MediaPlayer(new MediaPlayer.di.Context());
-        break;
-
-      case "hasplayer_default":
-        break;
-
-      case "hasplayer_custom":
-      default:
-        player = new MediaPlayer(new MediaPlayer.di.Context());
-        break;
-    }
+    player = new MediaPlayer(new MediaPlayer.di.Context());
     player.startup();
     player.attachView(video);
     player.setAutoPlay(true);
+    player.getDebug().setLevel(4);
     player.addEventListener("metricUpdated", metricUpdated.bind(this));
     player.addEventListener("metricAdded", metricAdded.bind(this));
     if (isCrKey) {
