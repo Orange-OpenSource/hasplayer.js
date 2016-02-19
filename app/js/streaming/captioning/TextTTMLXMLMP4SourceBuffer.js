@@ -40,17 +40,35 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
             },
 
             addRange: function(start, end) {
-                this.ranges.push({
-                    start: start,
-                    end: end
-                });
-                this.length = this.length + 1;
+                var i = 0,
+                    rangesUpdated = false,
+                    tolerance =  0.01;
 
-                // TimeRanges must be normalized
+                //detect discontinuity in ranges.
+                for (i = 0; i < this.ranges.length; i++) {
+                    if (this.ranges[i].end <= (start+tolerance) && this.ranges[i].end >= (start-tolerance)) {
+                        rangesUpdated = true;
+                        this.ranges[i].end = end;
+                    }
 
-                this.ranges.sort(function(a, b) {
-                    return a.start - b.start;
-                });
+                    if (this.ranges[i].start <= (end+tolerance) && this.ranges[i].start >= (end-tolerance)) {
+                        rangesUpdated = true;
+                        this.ranges[i].start = start;
+                    }
+                }
+                
+                if (!rangesUpdated) {
+                    this.ranges.push({
+                        start: start,
+                        end: end
+                    });
+                    this.length = this.length + 1;
+
+                    // TimeRanges must be normalized
+                    this.ranges.sort(function(a, b) {
+                        return a.start - b.start;
+                    });
+                }
             },
 
             removeRange: function(start, end) {
