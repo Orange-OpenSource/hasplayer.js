@@ -17,29 +17,45 @@ MediaPlayer.utils.TextTrackExtensions = function() {
 
     return {
         eventBus: undefined,
+        config: undefined,
 
         setup: function() {
             Cue = window.VTTCue || window.TextTrackCue;
         },
 
-        subtitlesStyleChanged: function(style) {
+        cueEnter: function(subtitle_style, subtitle_text) {
             this.eventBus.dispatchEvent({
-                type: "subtitlesStyleChanged",
-                data: style
+                type: "cueEnter",
+                data: {
+                    text: subtitle_text,
+                    style: subtitle_style,
+                }
+            });
+        },
+
+        cueExit: function(subtitle_style, subtitle_text) {
+            this.eventBus.dispatchEvent({
+                type: "cueExit",
+                data: {
+                    text: subtitle_text,
+                    style: subtitle_style,
+                }
             });
         },
 
         addTextTrack: function(video, captionData, label, scrlang, isDefaultTrack) {
             var track = null,
                 currentItem = null,
+                subtitleDisplayMode = 'subtitles',
                 i;
 
             //no function removeTextTrack is defined
             //add one, only if it's necessary
             //deleteCues will be very efficient in this case
             if (video.textTracks.length === 0) {
+                subtitleDisplayMode = this.config.getParam("TextTrackExtensions.displayModeExtern", "boolean") === true ? 'metadata' : 'subtitles';
                 //TODO: Ability to define the KIND in the MPD - ie subtitle vs caption....
-                track = video.addTextTrack("subtitles", label, scrlang);
+                track = video.addTextTrack(subtitleDisplayMode, label, scrlang);
                 // track.default is an object property identifier that is a reserved word
                 // The following jshint directive is used to suppressed the warning "Expected an identifier and instead saw 'default' (a reserved word)"
                 /*jshint -W024 */
@@ -59,7 +75,11 @@ MediaPlayer.utils.TextTrackExtensions = function() {
         },
 
         onCueEnter: function(e) {
-            this.subtitlesStyleChanged(e.currentTarget.style);
+            this.cueEnter(e.currentTarget.style, e.currentTarget.text);
+        },
+
+        onCueExit: function(e) {
+            this.cueExit(e.currentTarget.style, e.currentTarget.text);
         },
 
         // Orange: addCues added so it is possible to add cues during playback,
@@ -76,6 +96,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                     newCue = new Cue(currentItem.start, currentItem.end, currentItem.data);
 
                     newCue.onenter = this.onCueEnter.bind(this);
+                    newCue.onexit = this.onCueExit.bind(this);
 
                     newCue.snapToLines = false;
 
