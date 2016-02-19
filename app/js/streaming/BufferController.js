@@ -190,6 +190,10 @@ MediaPlayer.dependencies.BufferController = function() {
                 doStop.call(self);
             }
 
+            // Clear executed requests from fragment controller. In case the browser has itslef silently 
+            // clear the buffer, then FragmentController will not state that the cleared segments have been already loaded.
+            this.fragmentController.clearExecutedRequests(fragmentModel);
+
             // Restart
             playListMetrics = this.metricsModel.addPlayList(type, currentTime, seekTarget, MediaPlayer.vo.metrics.PlayList.SEEK_START_REASON);
             seeking = true;

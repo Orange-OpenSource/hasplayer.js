@@ -167,6 +167,12 @@ MediaPlayer.dependencies.FragmentController = function () {
             }
         },
 
+        clearExecutedRequests: function(model) {
+            if (model) {
+                model.clearExecutedRequests();
+            }
+        },
+
         cancelPendingRequestsForModel: function(model) {
             if (model) {
                 model.cancelPendingRequests();
