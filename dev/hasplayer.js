@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 19.2.2016_21:43:38 / git revision : 97329d7 */
+/* Last build : 22.2.2016_21:43:27 / git revision : 9ce1ec0 */
  /* jshint ignore:start */
 (function(root, factory) {
     if (typeof define === "function" && define.amd) {
@@ -5352,7 +5352,7 @@
     mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
     MediaPlayer = function(aContext) {
         "use strict";
-        var VERSION_DASHJS = "1.2.0", VERSION = "1.2.7_dev", GIT_TAG = "97329d7", BUILD_DATE = "19.2.2016_21:43:38", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", subtitlesEnabled = false, isReady = function() {
+        var VERSION_DASHJS = "1.2.0", VERSION = "1.2.7_dev", GIT_TAG = "9ce1ec0", BUILD_DATE = "22.2.2016_21:43:27", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", subtitlesEnabled = false, isReady = function() {
             return !!element && !!source && !resetting;
         }, play = function() {
             if (!initialized) {
@@ -11209,19 +11209,32 @@
                 return this.ranges[index].end;
             },
             addRange: function(start, end) {
-                this.ranges.push({
-                    start: start,
-                    end: end
-                });
-                this.length = this.length + 1;
-                this.ranges.sort(function(a, b) {
-                    return a.start - b.start;
-                });
+                var i = 0, rangesUpdated = false, tolerance = .01;
+                for (i = 0; i < this.ranges.length; i++) {
+                    if (this.ranges[i].end <= start + tolerance && this.ranges[i].end >= start - tolerance) {
+                        rangesUpdated = true;
+                        this.ranges[i].end = end;
+                    }
+                    if (this.ranges[i].start <= end + tolerance && this.ranges[i].start >= end - tolerance) {
+                        rangesUpdated = true;
+                        this.ranges[i].start = start;
+                    }
+                }
+                if (!rangesUpdated) {
+                    this.ranges.push({
+                        start: start,
+                        end: end
+                    });
+                    this.length = this.length + 1;
+                    this.ranges.sort(function(a, b) {
+                        return a.start - b.start;
+                    });
+                }
             },
             removeRange: function(start, end) {
                 var i = 0;
                 for (i = this.ranges.length - 1; i >= 0; i -= 1) {
-                    if ((end === undefined || end === -1 || this.ranges[i].end < end) && (start === undefined || start === -1 || this.ranges[i].start > start)) {
+                    if ((end === undefined || end === -1 || this.ranges[i].end <= end) && (start === undefined || start === -1 || this.ranges[i].start >= start)) {
                         this.ranges.splice(i, 1);
                     }
                 }
