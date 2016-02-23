@@ -106,7 +106,7 @@ MediaPlayer.dependencies.Stream = function() {
 
             this.debug.info("[Stream] Do seek: " + time);
 
-            this.videoModel.pause();
+            //this.videoModel.pause();
             
             // Performs a programmatical seek:
             // 1- seeks the buffer controllers at the desired time
@@ -1311,7 +1311,7 @@ MediaPlayer.dependencies.Stream = function() {
             eventController.reset();
         },
         enableSubtitles: function(enabled) {
-            
+
             if (enabled !== subtitlesEnabled) {
                 subtitlesEnabled = enabled;
                 if (textController) {
