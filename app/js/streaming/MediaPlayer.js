@@ -774,9 +774,9 @@ MediaPlayer = function(aContext) {
             defaultSubtitleLang = language;
         },
 
-        setTrickPlay: function(enabled){
+        setTrickPlay: function(speed){
             if(streamController){
-                streamController.setTrickPlay(enabled);
+                streamController.setTrickPlay(speed);
             }
         },
 
