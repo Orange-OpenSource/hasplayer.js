@@ -110,14 +110,14 @@ Hls.dependencies.HlsDemux = function() {
                 }
 
                 // PATCH to remove audio track
-                //if (track.type === "video") {
+                // if (track.type === "video") {
                 track.timescale = mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY;
                 track.pid = elementStream.m_elementary_PID;
                 track.trackId = trackIdCounter;
                 pidToTrackId[elementStream.m_elementary_PID] = trackIdCounter;
                 tracks.push(track);
                 trackIdCounter++;
-                //}
+                // }
             }
 
             return pmt;
@@ -176,6 +176,17 @@ Hls.dependencies.HlsDemux = function() {
 
                 // Store payload of PES packet as a subsample
                 sampleData = pesPacket.getPayload();
+
+                // Set sample flags
+                if (track.type === "audio") {
+                    sample.flags = 0x01000000; // sample_depends_on = 1, other flags = 0
+                }
+                if (track.type === "video" && (track.streamType.search('H.264') !== -1)) {
+                    // In case of H.264 stream, check if the sample is an IDR sample
+                    // If IDR: sample_depends_on = 2, sample_is_non_sync_sample = false
+                    // If non-IDR: sample_depends_on = 1, sample_is_non_sync_sample = true
+                    sample.flags = mpegts.h264.isIDR(sampleData) ? 0x02000000 : 0x01010000;
+                }
 
                 sample.subSamples.push(sampleData);
                 track.samples.push(sample);
@@ -304,6 +315,7 @@ Hls.dependencies.HlsDemux = function() {
                 sample.cts = sample.dts = (aacFrames[i].cts ? aacFrames[i].cts : cts);
                 sample.size = aacFrames[i].length;
                 sample.duration = duration;
+                sample.flags = 0x01000000; // sample_depends_on = 1, other flags = 0
                 aacSamples.push(sample);
 
                 // Update cts for next frame
