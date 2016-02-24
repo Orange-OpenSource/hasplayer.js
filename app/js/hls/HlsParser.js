@@ -122,6 +122,14 @@ Hls.dependencies.HlsParser = function() {
                         break;
                     case ATTR_CODECS:
                         stream.codecs = value.replace(/"/g, ''); // Remove '"' characters
+
+                        // PATCH to remove audio track
+                        // var codecs = stream.codecs.split(',');
+                        // for (var c = 0; c < codecs.length; c++) {
+                        //     if (codecs[c].indexOf("avc") !== -1) {
+                        //         stream.codecs = codecs[c];
+                        //     }
+                        // }
                         break;
 
                         // > HLD v3
@@ -353,11 +361,11 @@ Hls.dependencies.HlsParser = function() {
             manifest.availabilityStartTime = new Date(mpdLoadedTime.getTime() - (manifestDuration * 1000));
 
             // => set timeshift buffer depth
-            manifest.timeShiftBufferDepth = manifestDuration - representation.SegmentList.duration;
+            manifest.timeShiftBufferDepth = manifestDuration;
         }
 
         // Set minBufferTime
-        manifest.minBufferTime = representation.SegmentList.duration * 2; //MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME
+        manifest.minBufferTime = representation.SegmentList.duration * 3; //MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME
 
         // Filter invalid representations
         /*for (i = 0; i < adaptationSet.Representation_asArray.length; i++) {
@@ -445,14 +453,6 @@ Hls.dependencies.HlsParser = function() {
             // ERROR
             deferred.resolve();
         };
-
-        // PATCH to remove audio track
-        /*var tracksCodecs = representation.codecs.split(',');
-        for (var i = 0; i < tracksCodecs.length; i++) {
-            if (tracksCodecs[i].indexOf("avc") !== -1) {
-                representation.codecs = tracksCodecs[i];
-            }
-        }*/
 
         if (representation.codecs === "") {
             self.debug.log("[HlsParser]", "Load initialization segment: " + request.url);
