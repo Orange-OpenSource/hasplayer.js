@@ -297,6 +297,25 @@ mpegts.h264.bytestreamToMp4 = function (data) { // data as Uint8Array
 
 };
 
+mpegts.h264.isIDR = function (data) { // data as Uint8Array
+    var i = 0,
+        naluType;
+
+    while (i < data.length) {
+        if ((data[i] === 0x00) && (data[i+1] === 0x00) && (data[i+2] === 0x00) && (data[i+3] === 0x01)) {
+            naluType = data[i + 4] & 0x1F;
+            if (naluType === mpegts.h264.NALUTYPE_IDR) {
+                return true;
+            }
+            i+=4;
+        }
+        else {
+            i++;
+        }
+    }
+    return false;
+};
+
 mpegts.h264.NALUTYPE_NONIDR = 1;
 mpegts.h264.NALUTYPE_IDR = 5;
 mpegts.h264.NALUTYPE_SEI = 6;
