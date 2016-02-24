@@ -868,6 +868,9 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             // Add Track Fragment Run box (trun)
             traf.boxes.push(createTrackFragmentRunBox(track));
 
+            // Add Sample Dependency Table box (sdtp)
+            traf.boxes.push(createSampleDependencyTableBox(track));
+
             return traf;
         },
 
@@ -932,9 +935,10 @@ MediaPlayer.dependencies.Mp4Processor = function() {
 
             trun.version = 0;
             trun.flags = 0x000001 | // data-offset-present
-            sample_duration_present_flag | // sample-duration-present
-            0x000200 | // sample-size-present
-            ((track.type === 'video') ? 0x000800 : 0x000000); // sample-composition-time-offsets-present
+                         sample_duration_present_flag | // sample-duration-present
+                         0x000200 | // sample-size-present
+                         0x000400 | // sample-flags-present
+                         ((track.type === 'video') ? 0x000800 : 0x000000); // sample-composition-time-offsets-present
 
             trun.data_offset = 0; // Initialize to 0, will be updated once mdat is set
             trun.samples_table = [];
@@ -944,7 +948,8 @@ MediaPlayer.dependencies.Mp4Processor = function() {
                 sample = {
                     sample_duration: track.samples[i].duration,
                     sample_size: track.samples[i].size,
-                    sample_composition_time_offset: track.samples[i].cts - track.samples[i].dts
+                    sample_composition_time_offset: track.samples[i].cts - track.samples[i].dts,
+                    sample_flags: track.samples[i].flags
                 };
 
                 if (sample.sample_composition_time_offset < 0) {
@@ -956,6 +961,21 @@ MediaPlayer.dependencies.Mp4Processor = function() {
 
             return trun;
         },
+
+        createSampleDependencyTableBox = function(track) {
+            var sdtp = new mp4lib.boxes.SampleDependencyTableBox(),
+                i;
+
+            sdtp.version = 0;
+            sdtp.flags = 0;
+            sdtp.sample_dependency_table = [];
+            for (i = 0; i < track.samples.length; i++) {
+                sdtp.sample_dependency_table.push((track.samples[i].flags & 0x0FF00000) >> 20);
+            }
+
+            return sdtp;
+        },
+
 
         createMediaDataBox = function(track) {
 

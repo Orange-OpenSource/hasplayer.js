@@ -1742,19 +1742,19 @@ mp4lib.boxes.SampleDependencyTableBox.prototype.constructor = mp4lib.boxes.Sampl
 
 mp4lib.boxes.SampleDependencyTableBox.prototype.computeLength = function() {
     mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT8.getLength() * this.sample_dependency_array.length;
+    this.size += mp4lib.fields.FIELD_UINT8.getLength() * this.sample_dependency_table.length;
 };
 
 mp4lib.boxes.SampleDependencyTableBox.prototype.read = function(data, pos, end) {
     mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-    this.sample_dependency_array = this._readArrayData(data, mp4lib.fields.FIELD_UINT8);
+    this.sample_dependency_table = this._readArrayData(data, mp4lib.fields.FIELD_UINT8);
     return this.localPos;
 };
 
 mp4lib.boxes.SampleDependencyTableBox.prototype.write = function(data, pos) {
     mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
 
-    this._writeArrayData(data, mp4lib.fields.FIELD_UINT8, this.sample_dependency_array);
+    this._writeArrayData(data, mp4lib.fields.FIELD_UINT8, this.sample_dependency_table);
     return this.localPos;
 };
 
