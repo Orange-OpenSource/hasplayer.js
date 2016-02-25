@@ -1326,7 +1326,7 @@ MediaPlayer.dependencies.Stream = function() {
             }
         },
 
-        setTrickPlay: function(speed) {
+        setTrickModeSpeed: function(speed) {
             var funcs = [],
                 self = this,
                 trickModeEnabled = speed != 1 ? true : false;
@@ -1334,16 +1334,16 @@ MediaPlayer.dependencies.Stream = function() {
             trickModeSpeed = speed;
 
             if (videoController) {
-                funcs.push(videoController.setTrickPlay(trickModeEnabled));
+                funcs.push(videoController.setTrickMode(trickModeEnabled));
             }
             if (audioController) {
-                funcs.push(audioController.setTrickPlay(trickModeEnabled));
+                funcs.push(audioController.setTrickMode(trickModeEnabled));
             }
 
             Q.all(funcs).then(function() {
                 var currentTime = self.videoModel.getCurrentTime();
                 if (!trickModeEnabled) {
-                    self.debug.info("[Stream] setTrickPlay disabled seek to " + currentTime);
+                    self.debug.info("[Stream] setTrickModeSpeed disabled seek to " + currentTime);
                     trickModeSeekValue = 0;
                     self.videoModel.listen("seeking", seekingListener);
                     self.videoModel.unlisten("seeked", seekedListener);

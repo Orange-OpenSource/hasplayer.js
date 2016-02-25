@@ -1657,12 +1657,12 @@ MediaPlayer.dependencies.BufferController = function() {
             return lastDownloadedSegmentDuration;
         },
 
-        setTrickPlay: function(enabled) {
+        setTrickMode: function(enabled) {
             var self = this,
                 deferred = Q.defer();
 
 
-            this.debug.log("[BufferController][" + type + "] setTrickPlay - enabled = " + enabled);
+            this.debug.log("[BufferController][" + type + "] setTrickMode - enabled = " + enabled);
 
             trickModeEnabled = enabled;
 
