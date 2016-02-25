@@ -525,6 +525,8 @@ MediaPlayer.dependencies.Stream = function() {
             this.debug.info("<video> play event");
             this.debug.log("[Stream] Got play event.");
 
+            this.setTrickModeSpeed(1);
+
             // set the currentTime here to be sure that videoTag is ready to accept the seek (cause IE fail on set currentTime on BufferUpdate)
             if (currentTimeToSet !== 0) {
                 this.system.notify("setCurrentTime");
@@ -1335,11 +1337,15 @@ MediaPlayer.dependencies.Stream = function() {
                     self.videoModel.setMute(false);
                 };
 
+            if (speed === trickModeSpeed) {
+                return;
+            }
+
             if (trickModeSpeed === 1 && trickModeEnabled) {
                 self.videoModel.setMute(true);
                 self.videoModel.pause();
                 self.videoModel.listen("seeked", seekedListener);
-            } else if (!trickModeEnabled) {
+            } else if (!trickModeEnabled && self.videoModel.isPaused()) {
                 self.videoModel.play();
             }
 
