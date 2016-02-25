@@ -58,7 +58,6 @@ MediaPlayer.models.VideoModel = function () {
             return element.paused;
         },
 
-        //ORANGE : add isSeeking function
         isSeeking: function() {
             return element.seeking;
         },
@@ -69,6 +68,14 @@ MediaPlayer.models.VideoModel = function () {
 
         setPlaybackRate: function (value) {
             element.playbackRate = value;
+        },
+
+        getMute:  function () {
+            return element.muted;
+        },
+
+        setMute: function (value) {
+            element.muted = value;
         },
 
         getCurrentTime: function () {

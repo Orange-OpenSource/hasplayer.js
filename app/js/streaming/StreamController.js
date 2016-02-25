@@ -673,10 +673,17 @@ MediaPlayer.dependencies.StreamController = function() {
             }
         },
 
-        setTrickModeSpeed: function(speed){
+        setTrickModeSpeed: function(speed) {
             if (activeStream) {
                 activeStream.setTrickModeSpeed(speed);
             }
+        },
+
+        getTrickModeSpeed: function() {
+            if (activeStream) {
+                return activeStream.getTrickModeSpeed();
+            }
+            return 0;
         },
 
         play: play,

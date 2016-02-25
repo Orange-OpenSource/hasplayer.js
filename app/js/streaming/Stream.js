@@ -633,7 +633,7 @@ MediaPlayer.dependencies.Stream = function() {
 
             this.debug.info("<video> seeked event");
 
-            if (trickModeSpeed != 1) {
+            if (trickModeSpeed !== 1) {
 
                 timeForOneSeek = new Date().getTime() - timeStartSeekForTrick;
                 timeToSeek = (trickModeSeekValue * 1000) / trickModeSpeed;
@@ -1329,7 +1329,19 @@ MediaPlayer.dependencies.Stream = function() {
         setTrickModeSpeed: function(speed) {
             var funcs = [],
                 self = this,
-                trickModeEnabled = speed != 1 ? true : false;
+                trickModeEnabled = (speed !== 1) ? true : false,
+                enableMute = function() {
+                    self.videoModel.unlisten("playing", enableMute);
+                    self.videoModel.setMute(false);
+                };
+
+            if (trickModeSpeed === 1 && trickModeEnabled) {
+                self.videoModel.setMute(true);
+                self.videoModel.pause();
+                self.videoModel.listen("seeked", seekedListener);
+            } else if (!trickModeEnabled) {
+                self.videoModel.play();
+            }
 
             trickModeSpeed = speed;
 
@@ -1347,12 +1359,12 @@ MediaPlayer.dependencies.Stream = function() {
                     trickModeSeekValue = 0;
                     self.videoModel.listen("seeking", seekingListener);
                     self.videoModel.unlisten("seeked", seekedListener);
+                    self.videoModel.listen("playing", enableMute);
                     seek.call(self, currentTime);
                 } else {
                     if (videoController) {
                         trickModeSeekValue = videoController.getLastDownloadedSegmentDuration();
                     }
-                    self.videoModel.listen("seeked", seekedListener);
                     timeStartSeekForTrick = new Date().getTime();
                     if (speed < 1) {
                         trickModeSeekValue = -trickModeSeekValue;
@@ -1360,6 +1372,10 @@ MediaPlayer.dependencies.Stream = function() {
                     self.videoModel.setCurrentTime(currentTime + trickModeSeekValue);
                 }
             });
+        },
+
+        getTrickModeSpeed: function() {
+            return trickModeSpeed;
         },
 
         updateData: updateData,

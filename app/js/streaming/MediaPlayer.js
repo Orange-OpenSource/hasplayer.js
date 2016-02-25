@@ -775,9 +775,17 @@ MediaPlayer = function(aContext) {
         },
 
         setTrickModeSpeed: function(speed){
-            if(streamController){
+            if (streamController) {
                 streamController.setTrickModeSpeed(speed);
             }
+        },
+
+        getTrickModeSpeed: function() {
+            if (streamController) {
+                return streamController.getTrickModeSpeed();
+            }
+
+            return 0;
         },
 
         play: play,
