@@ -745,7 +745,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
             return;
         }
 
-        newSpeed = (currentSpeed === 1) ? -2 : (currentSpeed * 2);
+        newSpeed = (currentSpeed === 1) ? -2 : ((currentSpeed > 1) ? (currentSpeed / 2) : (currentSpeed * 2));
 
         player.setTrickModeSpeed(newSpeed);
         $scope.trickModeSpeed = "x" + newSpeed;
