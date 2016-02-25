@@ -723,6 +723,34 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         }
     };
 
+    $scope.trickModeSpeedUp = function () {
+        var currentSpeed = player.getTrickModeSpeed(),
+            newSpeed;
+
+        if (currentSpeed === 128.0) {
+            return;
+        }
+
+        newSpeed = (currentSpeed < 0) ? 1 : (currentSpeed * 2);
+
+        player.setTrickModeSpeed(newSpeed);
+        $scope.trickModeSpeed = "x" + newSpeed;
+    };
+
+    $scope.trickModeSpeedDown = function () {
+        var currentSpeed = player.getTrickModeSpeed(),
+            newSpeed;
+
+        if (currentSpeed === -128.0) {
+            return;
+        }
+
+        newSpeed = (currentSpeed === 1) ? -2 : (currentSpeed * 2);
+
+        player.setTrickModeSpeed(newSpeed);
+        $scope.trickModeSpeed = "x" + newSpeed;
+    };
+
     ////////////////////////////////////////
     //
     // Page Setup
