@@ -634,7 +634,22 @@ MediaPlayer.dependencies.Stream = function() {
             var self = this,
                 timeForOneSeek,
                 timeToSeek,
-                delta = 100;
+                delta = 100,
+                _jump = function(delay) {
+                    setTimeout(function() {
+                        timeStartSeekForTrick = new Date().getTime();
+                        var seekValue = self.getVideoModel().getCurrentTime() + trickModeSeekValue;
+                        if (seekValue < 0) {
+                            self.videoModel.unlisten("seeked", seekedListener);
+                            seekValue = 0;
+                        }else if (seekValue >= self.videoModel.getElement().duration){
+                            self.videoModel.unlisten("seeked", seekedListener);
+                            seekValue = self.videoModel.getElement().duration;
+                        }
+                        self.debug.log("[Stream] _jump to "+seekValue);
+                        self.videoModel.setCurrentTime(seekValue);
+                    }, delay);
+                };
 
             this.debug.info("<video> seeked event");
 
@@ -653,7 +668,7 @@ MediaPlayer.dependencies.Stream = function() {
                     if (trickModeSpeed < 1) {
                         trickModeSeekValue = -trickModeSeekValue;
                     }
-                    self.videoModel.setCurrentTime(self.getVideoModel().getCurrentTime() + trickModeSeekValue);
+                    _jump.call(self, 0);
                 }else{
 
                     timeForOneSeek = new Date().getTime() - timeStartSeekForTrick;
@@ -664,29 +679,23 @@ MediaPlayer.dependencies.Stream = function() {
                     if (timeForOneSeek <= (Math.abs(timeToSeek) - delta)) {
                         var delay = Math.round(timeToSeek - timeForOneSeek);
                         this.debug.log("[Stream] trick Mode Enabled, seek in " + delay + 'ms');
-
-                        setTimeout(function() {
-                            timeStartSeekForTrick = new Date().getTime();
-                            self.videoModel.setCurrentTime(self.getVideoModel().getCurrentTime() + trickModeSeekValue);
-                        }, delay);
-
-
+                        _jump.call(self, delay);
                     } else if (timeForOneSeek >= (Math.abs(timeToSeek) - delta) && timeForOneSeek <= (Math.abs(timeToSeek) + delta)) {
                         self.debug.log("[Stream] trick Mode Enabled, seek right now");
                         timeStartSeekForTrick = new Date().getTime();
-                        self.videoModel.setCurrentTime(self.getVideoModel().getCurrentTime() + trickModeSeekValue);
+                        _jump.call(self, 0);
                     } else {
                         timeStartSeekForTrick = new Date().getTime();
 
                         trickModeSeekValue = (trickModeSpeed * timeForOneSeek) / 1000;
 
                         self.debug.log("[Stream] trick Mode Speed not respected, new trickModeSeekValue = " + trickModeSeekValue);
-
-                        self.videoModel.setCurrentTime(self.getVideoModel().getCurrentTime() + trickModeSeekValue);
+                        
+                        _jump.call(self, 0);
                     }
                 }
             } else {
-                this.debug.log("[Stream] onSeeked not trick mode, unregister seeked event");
+                this.debug.log("[Stream] onSeeked not trick mode, unregister seeked event and register seeking");
                 this.videoModel.listen("seeking", seekingListener);
                 this.videoModel.unlisten("seeked", seekedListener);
             }
@@ -847,7 +856,7 @@ MediaPlayer.dependencies.Stream = function() {
 
         currentTimeChanged = function() {
             this.debug.log("[Stream] Current time has changed, block programmatic seek.");
-
+            this.debug.log("[Stream] currentTimeChanged, register seeked event and unregister seeking");
             this.videoModel.unlisten("seeking", seekingListener);
             this.videoModel.listen("seeked", seekedListener);
         },
@@ -1388,6 +1397,7 @@ MediaPlayer.dependencies.Stream = function() {
                     trickModeSpeedState = "Stopped";
                     self.debug.info("[Stream] setTrickModeSpeed disabled seek to " + currentTime);
                     trickModeSeekValue = 0;
+                    self.debug.log("[Stream] setTrickModeSpeed, unregister seeked event and register seeking");
                     self.videoModel.listen("seeking", seekingListener);
                     self.videoModel.unlisten("seeked", seekedListener);
                     self.videoModel.listen("playing", enableMute);
