@@ -1030,6 +1030,12 @@ MediaPlayer.dependencies.BufferController = function() {
             timeToEnd = getTimeToEnd.call(self);
             self.debug.log("[BufferController][" + type + "] time to end = " + timeToEnd);
 
+            //for trick mode, buffer needs to be filled faster
+            if(trickModeEnabled){
+                if (bufferLevel<1) {
+                    bufferFragment.call(self);
+                }
+            }else{
             if (languageChanged ||
                 ((bufferLevel < minBufferTime) &&
                     ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted)))) {
@@ -1040,6 +1046,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 delay = bufferLevel - minBufferTime;
                 self.debug.log("[BufferController][" + type + "] Check buffer in " + delay + " seconds");
                 updateCheckBufferTimeout.call(self, delay);
+            }
             }
         },
 
