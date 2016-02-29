@@ -273,7 +273,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
                         // if this is the initialization data for current quality we need to push it to the buffer
                         self.debug.info("[BufferController][" + type + "] Buffer initialization segment ", (request.url !== null) ? request.url : request.quality);
-                        //console.saveBinArray(data, type + "_init_" + request.quality + ".mp4");
+                        //    console.saveBinArray(data, type + "_init_" + request.quality + ".mp4");
                         // Clear the buffer if required (language track switching)
                         clearBuffer.call(self).then(
                             function() {
@@ -340,7 +340,7 @@ MediaPlayer.dependencies.BufferController = function() {
                         }
 
                         self.debug.info("[BufferController][" + type + "] Buffer segment from url ", request.url);
-                        //console.saveBinArray(data, type + "_" + request.index + "_" + request.quality + ".mp4");
+                        //    console.saveBinArray(data, type + "_" + request.index + "_" + request.quality + ".mp4");
                         deleteInbandEvents.call(self, data).then(
                             function(data) {
                                 appendToBuffer.call(self, data, request.quality, request.index).then(
@@ -1036,28 +1036,35 @@ MediaPlayer.dependencies.BufferController = function() {
                     bufferFragment.call(self);
                 }
             }else{
-            if (languageChanged ||
-                ((bufferLevel < minBufferTime) &&
-                    ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted)))) {
-                // Buffer needs to be filled
-                bufferFragment.call(self);
-            } else {
-                // Determine the timeout delay before checking again the buffer
-                delay = bufferLevel - minBufferTime;
-                self.debug.log("[BufferController][" + type + "] Check buffer in " + delay + " seconds");
-                updateCheckBufferTimeout.call(self, delay);
-            }
+                if (languageChanged ||
+                    ((bufferLevel < minBufferTime) &&
+                        ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted)))) {
+                    // Buffer needs to be filled
+                    bufferFragment.call(self);
+                } else {
+                    // Determine the timeout delay before checking again the buffer
+                    delay = bufferLevel - minBufferTime;
+                    self.debug.log("[BufferController][" + type + "] Check buffer in " + delay + " seconds");
+                    updateCheckBufferTimeout.call(self, delay);
+                }
             }
         },
 
         updateCheckBufferTimeout = function(delay) {
-            var self = this;
+            var self = this,
+                delayMs =  Math.max((delay * 1000), 2000);
+            
+            self.debug.log("[BufferController][" + type + "] Check buffer delta = " + delayMs + " ms");
+
+           /* if (trickModeEnabled) {
+                delayMs = 500;
+            }*/
 
             clearTimeout(bufferTimeout);
             bufferTimeout = setTimeout(function() {
                 bufferTimeout = null;
                 checkIfSufficientBuffer.call(self);
-            }, Math.max((delay * 1000), 2000));
+            }, delayMs);
         },
 
         cancelCheckBufferTimeout = function() {

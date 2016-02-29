@@ -30,7 +30,8 @@ MediaPlayer.dependencies.Stream = function() {
         trickModeSpeedState = "Stopped",
         trickModeSpeed = 1,
         trickModeSeekValue = 0,
-        timeStartSeekForTrick = null,
+        timeStartFirstSeekForTrick = null,
+        videoTimeFirstSeekForTrick = null,
 
         textTrackIndex = -1,
         autoPlay = true,
@@ -632,15 +633,17 @@ MediaPlayer.dependencies.Stream = function() {
 
         onSeeked = function() {
             var self = this,
-                timeForOneSeek,
-                timeToSeek,
-                delta = 100,
-                _jump = function(delay) {
+                timeSinceSeekStarted,
+                videoTimeSinceSeekStarted,
+                ratio,
+                seekValue,
+                currentTime,
+                delta = 0.1,
+                _jump = function(delay, seekValue) {
                     setTimeout(function() {
-                        timeStartSeekForTrick = new Date().getTime();
-                        var seekValue = self.getVideoModel().getCurrentTime() + trickModeSeekValue;
-                        if (seekValue < 0) {
+                        if (seekValue < 0 /*&& self.getVideoModel().getCurrentTime()>0*/) {
                             self.videoModel.unlisten("seeked", seekedListener);
+                            stopBuffering.call(self);
                             seekValue = 0;
                         }else if (seekValue >= self.videoModel.getElement().duration){
                             self.videoModel.unlisten("seeked", seekedListener);
@@ -658,7 +661,8 @@ MediaPlayer.dependencies.Stream = function() {
                 if (trickModeSpeedState === "Changed") {
                     this.debug.log("[Stream] trick Mode is Enabled and the speed has changed, initialize seek parameters");
                     
-                    timeStartSeekForTrick = new Date().getTime();
+                    timeStartFirstSeekForTrick = new Date().getTime();
+                    videoTimeFirstSeekForTrick = self.videoModel.getCurrentTime();
                     self.debug.info("[Stream] setTrickModeSpeed trickModeSpeedState = Running");
                     trickModeSpeedState = "Running";
                     if (videoController) {
@@ -668,30 +672,29 @@ MediaPlayer.dependencies.Stream = function() {
                     if (trickModeSpeed < 1) {
                         trickModeSeekValue = -trickModeSeekValue;
                     }
-                    _jump.call(self, 0);
+                    seekValue = videoTimeFirstSeekForTrick + trickModeSeekValue;
+                    _jump.call(self, 0, seekValue);
                 }else{
+                    currentTime = self.getVideoModel().getCurrentTime();
+                    timeSinceSeekStarted = (new Date().getTime() - timeStartFirstSeekForTrick) / 1000;
+                    videoTimeSinceSeekStarted = currentTime - videoTimeFirstSeekForTrick;
 
-                    timeForOneSeek = new Date().getTime() - timeStartSeekForTrick;
-                    timeToSeek = (trickModeSeekValue * 1000) / trickModeSpeed;
+                    seekValue = currentTime + trickModeSeekValue;
 
-                    this.debug.log("[Stream] trick Mode Enabled last seek has taken " + timeForOneSeek + "ms the goal was " + timeToSeek + "ms");
+                    ratio = videoTimeSinceSeekStarted / trickModeSpeed;
 
-                    if (timeForOneSeek <= (Math.abs(timeToSeek) - delta)) {
-                        var delay = Math.round(timeToSeek - timeForOneSeek);
-                        this.debug.log("[Stream] trick Mode Enabled, seek in " + delay + 'ms');
-                        _jump.call(self, delay);
-                    } else if (timeForOneSeek >= (Math.abs(timeToSeek) - delta) && timeForOneSeek <= (Math.abs(timeToSeek) + delta)) {
-                        self.debug.log("[Stream] trick Mode Enabled, seek right now");
-                        timeStartSeekForTrick = new Date().getTime();
-                        _jump.call(self, 0);
-                    } else {
-                        timeStartSeekForTrick = new Date().getTime();
-
-                        trickModeSeekValue = (trickModeSpeed * timeForOneSeek) / 1000;
-
-                        self.debug.log("[Stream] trick Mode Speed not respected, new trickModeSeekValue = " + trickModeSeekValue);
-                        
-                        _jump.call(self, 0);
+                    self.debug.info("[Stream] onSeeked calculated speed = "+(videoTimeSinceSeekStarted/timeSinceSeekStarted));
+                    
+                    if (timeSinceSeekStarted <= (Math.abs(ratio)-delta)) {
+                        var delay = Math.round(ratio - timeSinceSeekStarted);
+                        this.debug.log("[Stream] trick Mode Enabled, seek in " + delay + 's');
+                        _jump.call(self, delay * 1000, seekValue);
+                    }else if (timeSinceSeekStarted >= (Math.abs(ratio)-delta) && timeSinceSeekStarted <= (Math.abs(ratio)+delta)){
+                        _jump.call(self, 0, seekValue);
+                    }else{
+                        trickModeSeekValue = (trickModeSpeed * timeSinceSeekStarted);
+                        seekValue = currentTime + trickModeSeekValue;
+                        _jump.call(self, 0, seekValue);
                     }
                 }
             } else {
@@ -1388,20 +1391,18 @@ MediaPlayer.dependencies.Stream = function() {
             }
 
             Q.all(funcs).then(function() {
-                var currentTime = self.videoModel.getCurrentTime();
 
                 trickModeSpeed = speed;
 
                 if (!trickModeEnabled) {
                     self.debug.info("[Stream] setTrickModeSpeed trickModeSpeedState = Stopped");
                     trickModeSpeedState = "Stopped";
-                    self.debug.info("[Stream] setTrickModeSpeed disabled seek to " + currentTime);
                     trickModeSeekValue = 0;
                     self.debug.log("[Stream] setTrickModeSpeed, unregister seeked event and register seeking");
                     self.videoModel.listen("seeking", seekingListener);
                     self.videoModel.unlisten("seeked", seekedListener);
                     self.videoModel.listen("playing", enableMute);
-                    seek.call(self, currentTime);
+                    seek.call(self, self.videoModel.getCurrentTime());
                 } else {
                     if (trickModeSpeedState === "Running") {
                         self.debug.info("[Stream] setTrickModeSpeed trickModeSpeedState = Changed");
@@ -1412,15 +1413,16 @@ MediaPlayer.dependencies.Stream = function() {
                             trickModeSeekValue = videoController.getLastDownloadedSegmentDuration();
                         }
 
-                        timeStartSeekForTrick = new Date().getTime();
+                        timeStartFirstSeekForTrick = new Date().getTime();
+                        videoTimeFirstSeekForTrick = self.videoModel.getCurrentTime();
 
                         if (speed < 1) {
                             trickModeSeekValue = -trickModeSeekValue;
                         }
                         self.debug.info("[Stream] setTrickModeSpeed trickModeSpeedState = Running");
                         trickModeSpeedState = "Running";
-                        self.debug.info("[Stream] setTrickModeSpeed first Seek to " + (currentTime + trickModeSeekValue) + " with speed " + trickModeSpeed);
-                        self.videoModel.setCurrentTime(currentTime + trickModeSeekValue);
+                        self.debug.info("[Stream] setTrickModeSpeed first Seek to " + (videoTimeFirstSeekForTrick + trickModeSeekValue) + " with speed " + trickModeSpeed);
+                        self.videoModel.setCurrentTime(videoTimeFirstSeekForTrick + trickModeSeekValue);
                     }
                 }
             });
