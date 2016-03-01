@@ -633,20 +633,24 @@ MediaPlayer.dependencies.Stream = function() {
 
         onSeeked = function() {
             var self = this,
-                timeSinceSeekStarted,
-                videoTimeSinceSeekStarted,
-                ratio,
+                deltaTime,
+                deltaVideoTime,
+                timeSeekCalculated,
                 seekValue,
                 currentTime,
+                calculatedSpeed,
                 delta = 0.1,
                 _jump = function(delay, seekValue) {
                     setTimeout(function() {
-                        if (seekValue < 0 /*&& self.getVideoModel().getCurrentTime()>0*/) {
+                        currentTime = self.videoModel.getCurrentTime();
+                        if (currentTime === 0 || currentTime === self.videoModel.getElement().duration) {
                             self.videoModel.unlisten("seeked", seekedListener);
-                            stopBuffering.call(self);
+                            //stopBuffering.call(self);
+                            return;
+                        }
+                        if (seekValue < 0) {
                             seekValue = 0;
                         }else if (seekValue >= self.videoModel.getElement().duration){
-                            self.videoModel.unlisten("seeked", seekedListener);
                             seekValue = self.videoModel.getElement().duration;
                         }
                         self.debug.log("[Stream] _jump to "+seekValue);
@@ -676,24 +680,30 @@ MediaPlayer.dependencies.Stream = function() {
                     _jump.call(self, 0, seekValue);
                 }else{
                     currentTime = self.getVideoModel().getCurrentTime();
-                    timeSinceSeekStarted = (new Date().getTime() - timeStartFirstSeekForTrick) / 1000;
-                    videoTimeSinceSeekStarted = currentTime - videoTimeFirstSeekForTrick;
+                    deltaTime = (new Date().getTime() - timeStartFirstSeekForTrick) / 1000;
 
-                    seekValue = currentTime + trickModeSeekValue;
+                    deltaVideoTime = currentTime - videoTimeFirstSeekForTrick;
 
-                    ratio = videoTimeSinceSeekStarted / trickModeSpeed;
+                    timeSeekCalculated = deltaVideoTime / trickModeSpeed;
 
-                    self.debug.info("[Stream] onSeeked calculated speed = "+(videoTimeSinceSeekStarted/timeSinceSeekStarted));
+                    calculatedSpeed = deltaVideoTime/deltaTime;
                     
-                    if (timeSinceSeekStarted <= (Math.abs(ratio)-delta)) {
-                        var delay = Math.round(ratio - timeSinceSeekStarted);
-                        this.debug.log("[Stream] trick Mode Enabled, seek in " + delay + 's');
-                        _jump.call(self, delay * 1000, seekValue);
-                    }else if (timeSinceSeekStarted >= (Math.abs(ratio)-delta) && timeSinceSeekStarted <= (Math.abs(ratio)+delta)){
+                    self.debug.info("[Stream] onSeeked deltaTime = "+ deltaTime+" s and deltaVideoTime = "+deltaVideoTime+" s so, real speed = "+ calculatedSpeed);
+
+                    if (Math.abs(calculatedSpeed) > Math.abs(trickModeSpeed+delta)) {
+                        seekValue = currentTime + trickModeSeekValue;
+                        var delay = Math.round((timeSeekCalculated - deltaTime)*1000);
+                        this.debug.log("[Stream] onSeeked trick Mode Enabled, seek in " + delay + 'ms');
+                        _jump.call(self, delay, seekValue);
+                    }else if (Math.abs(calculatedSpeed) >= (Math.abs(trickModeSpeed-delta)) && Math.abs(calculatedSpeed) <= (Math.abs(trickModeSpeed+delta))) {
+                        seekValue = currentTime + trickModeSeekValue;
+                        this.debug.log("[Stream] onSeeked trick Mode Enabled, seek right now");
                         _jump.call(self, 0, seekValue);
                     }else{
-                        trickModeSeekValue = (trickModeSpeed * timeSinceSeekStarted);
+                        var deltaVideoTimeEspected = trickModeSpeed * deltaTime;
+                        trickModeSeekValue = deltaVideoTimeEspected;
                         seekValue = currentTime + trickModeSeekValue;
+                        this.debug.log("[Stream] onSeeked trick Mode Enabled, changed seek step value to " + trickModeSeekValue + 's');
                         _jump.call(self, 0, seekValue);
                     }
                 }
@@ -1421,7 +1431,7 @@ MediaPlayer.dependencies.Stream = function() {
                         }
                         self.debug.info("[Stream] setTrickModeSpeed trickModeSpeedState = Running");
                         trickModeSpeedState = "Running";
-                        self.debug.info("[Stream] setTrickModeSpeed first Seek to " + (videoTimeFirstSeekForTrick + trickModeSeekValue) + " with speed " + trickModeSpeed);
+                        self.debug.log("[Stream] setTrickModeSpeed trick Mode Enabled, first seek step value to " + trickModeSeekValue + 's'+ " with speed " + trickModeSpeed);
                         self.videoModel.setCurrentTime(videoTimeFirstSeekForTrick + trickModeSeekValue);
                     }
                 }
