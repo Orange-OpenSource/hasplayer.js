@@ -100,7 +100,7 @@ Mss.dependencies.MssParser = function() {
                 qualityLevels[i].Id = adaptationSet.id + "_" + this.domParser.getAttributeValue(qualityLevels[i], "Index");
 
                 // Map Representation to QualityLevel
-                representation = mapRepresentation.call(this, qualityLevels[i]);
+                representation = mapRepresentation.call(this, qualityLevels[i], streamIndex);
 
                 if (representation !== null) {
                     // Copy SegmentTemplate into Representation
@@ -130,7 +130,7 @@ Mss.dependencies.MssParser = function() {
             return adaptationSet;
         },
 
-        mapRepresentation = function(qualityLevel) {
+        mapRepresentation = function(qualityLevel, streamIndex) {
 
             var representation = {},
                 fourCCValue = null;
@@ -143,6 +143,9 @@ Mss.dependencies.MssParser = function() {
 
             fourCCValue = this.domParser.getAttributeValue(qualityLevel, "FourCC");
 
+            if (!fourCCValue) {
+                fourCCValue = this.domParser.getAttributeValue(streamIndex, "FourCC");
+            }
             // Do not support AACH (TODO)
             if (fourCCValue.indexOf("AACH") >= 0) {
                 return null;
@@ -154,7 +157,7 @@ Mss.dependencies.MssParser = function() {
             if (fourCCValue === "H264" || fourCCValue === "AVC1") {
                 representation.codecs = getH264Codec.call(this, qualityLevel);
             } else if ((fourCCValue.indexOf("AAC") >= 0) || (fourCCValue === "")) {
-                representation.codecs = getAACCodec.call(this, qualityLevel);
+                representation.codecs = getAACCodec.call(this, qualityLevel, fourCCValue);
                 representation.audioSamplingRate = parseInt(this.domParser.getAttributeValue(qualityLevel, "SamplingRate"), 10);
                 representation.audioChannels = parseInt(this.domParser.getAttributeValue(qualityLevel, "Channels"), 10);
             }
@@ -181,11 +184,10 @@ Mss.dependencies.MssParser = function() {
             return "avc1." + avcoti;
         },
 
-        getAACCodec = function(qualityLevel) {
+        getAACCodec = function(qualityLevel, fourCCValue) {
             var objectType = 0,
                 codecPrivateData = this.domParser.getAttributeValue(qualityLevel, "CodecPrivateData").toString(),
                 codecPrivateDataHex,
-                fourCCValue = this.domParser.getAttributeValue(qualityLevel, "FourCC"),
                 samplingRate = parseInt(this.domParser.getAttributeValue(qualityLevel, "SamplingRate"), 10),
                 arr16,
                 indexFreq,
@@ -196,7 +198,6 @@ Mss.dependencies.MssParser = function() {
             if (fourCCValue === "AACH") {
                 objectType = 0x05;
             }
-
             //if codecPrivateData is empty, build it :
             if (codecPrivateData === undefined || codecPrivateData === "") {
                 objectType = 0x02; //AAC Main Low Complexity => object Type = 2
