@@ -1545,6 +1545,10 @@ MediaPlayer.dependencies.BufferController = function() {
                 return;
             }
 
+            if (trickModeEnabled) {
+                return;
+            }
+
             //this.debug.log("#### [" + type + "] level = " + bufferLevel + ", currentTime = " + currentTime + ", progress = " + progress);
 
             switch (htmlVideoState) {
