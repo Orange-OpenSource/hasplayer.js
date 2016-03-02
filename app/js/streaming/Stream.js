@@ -30,6 +30,7 @@ MediaPlayer.dependencies.Stream = function() {
         // trick mode variables
         tmState = "Stopped",
         tmSpeed = 1,
+        tmPreviousSpeed = -1,
         tmStartTime,
         tmVideoStartTime,
         tmMinSeekStep,
@@ -686,18 +687,21 @@ MediaPlayer.dependencies.Stream = function() {
                     tmStartTime = (new Date().getTime()) / 1000;
                     tmVideoStartTime = currentVideoTime;
                     self.debug.info("[Stream] Trick mode (x" + tmSpeed + "): videoTime = " + tmVideoStartTime);
+                    //if trick mode speed has decreased, we have to decrease tmSeekStep
+                    tmSeekStep = Math.abs(tmPreviousSpeed / tmSpeed) > 1 ? tmSeekStep / Math.abs(tmPreviousSpeed / tmSpeed) : tmSeekStep;
                     seekValue = currentVideoTime + (tmSeekStep * Math.sign(tmSpeed));
                     delay = 0;
                 } else if (speed < (Math.abs(tmSpeed) * ratio)) {
                     // Measured speed < target speed => increase seek step
-                    tmSeekStep *= 2;
+                    var speedRatio = Math.abs(tmSpeed/speed);
+                    tmSeekStep *= Math.round(speedRatio)+Math.round(speedRatio%tmMinSeekStep);
                     self.debug.info("[Stream] Trick mode (x" + tmSpeed + "): seek step = " + tmSeekStep);
                     seekValue = currentVideoTime + (tmSeekStep * Math.sign(tmSpeed));
                     delay = 0;
                 } else {
                     // Measured speed > target speed => wait before next seek
                     seekValue = currentVideoTime + (tmSeekStep * Math.sign(tmSpeed));
-                    delay = (elapsedVideoTime / Math.abs(tmSpeed)) - elapsedTime - elapsedSeekTime;
+                    delay = (Math.abs(seekValue - tmVideoStartTime) / Math.abs(tmSpeed)) - elapsedTime - elapsedSeekTime;
                 }
 
                 _seek.call(self, delay, seekValue);
@@ -1400,7 +1404,7 @@ MediaPlayer.dependencies.Stream = function() {
             }
 
             Q.all(funcs).then(function() {
-
+                tmPreviousSpeed = tmSpeed;
                 tmSpeed = speed;
                 currentVideoTime = self.videoModel.getCurrentTime();
 
