@@ -73,6 +73,7 @@ MediaPlayer.dependencies.Stream = function() {
         // trick mode variables
         tmState = "Stopped",
         tmSpeed = 1,
+        tmPreviousSpeed,
         tmStartTime,
         tmVideoStartTime,
         tmMinSeekStep,
@@ -1405,7 +1406,7 @@ MediaPlayer.dependencies.Stream = function() {
             self.debug.info("[Stream] Trick mode: speed = " + speed);
 
             if (enableTrickMode && tmState === "Stopped") {
-                self.debug.info("[Stream] Set mute: false");
+                self.debug.info("[Stream] Set mute: true");
                 self.videoModel.setMute(true);
                 self.videoModel.pause();
                 self.videoModel.listen("seeked", seekedListener);
@@ -1433,7 +1434,6 @@ MediaPlayer.dependencies.Stream = function() {
                     self.videoModel.listen("timeupdate", enableMute);
                     seek.call(self, currentVideoTime, true);
                 } else {
-                    self.debug.info("[Stream] Trick mode: speed = " + tmSpeed);
                     if (tmState === "Running") {
                         tmState = "Changed";
                     }
