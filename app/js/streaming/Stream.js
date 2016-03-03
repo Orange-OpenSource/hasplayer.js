@@ -36,6 +36,7 @@ MediaPlayer.dependencies.Stream = function() {
         tmMinSeekStep,
         tmSeekStep,
         tmSeekTime,
+        tmEndDetected = false,
 
         textTrackIndex = -1,
         autoPlay = true,
@@ -647,15 +648,17 @@ MediaPlayer.dependencies.Stream = function() {
                 seekValue,
                 delay,
                 _seek = function (delay, seekValue) {
+                    if (self.videoModel.getCurrentTime() === 0 || tmEndDetected) {
+                        self.videoModel.unlisten("seeked", seekedListener);
+                        self.videoModel.setCurrentTime(0);
+                        tmEndDetected = false;
+                        return;
+                    }
                     if (seekValue < 0) {
-                        self.videoModel.unlisten("seeked", seekedListener);
-                        stopBuffering.call(self);
                         seekValue = 0;
-                        delay = 0;
                     } else if (seekValue >= self.videoModel.getElement().duration) {
-                        self.videoModel.unlisten("seeked", seekedListener);
-                        seekValue = self.videoModel.getElement().duration;
-                        delay = 0;
+                        seekValue = self.videoModel.getElement().duration - tmMinSeekStep;
+                        tmEndDetected = true;
                     }
                     if (delay > 0) {
                         self.debug.log("[Stream] Trick mode (x" + tmSpeed + "): wait " + delay.toFixed(3) + " s");
