@@ -54,6 +54,7 @@ MediaPlayer.dependencies.BufferController = function() {
         bufferTimeout,
         bufferStateTimeout,
         trickModeEnabled = false,
+        trickModePreviousQuality,
 
         playListMetrics = null,
         playListTraceMetrics = null,
@@ -224,6 +225,8 @@ MediaPlayer.dependencies.BufferController = function() {
             clearTimeout(bufferStateTimeout);
             started = false;
             waitingForBuffer = false;
+
+            seeking = false;
 
             // Stop reload timeout
             clearTimeout(reloadTimeout);
@@ -1455,15 +1458,6 @@ MediaPlayer.dependencies.BufferController = function() {
             this.eventController = value;
         },
 
-        getAutoSwitchBitrate: function() {
-            var self = this;
-            return self.abrController.getAutoSwitchBitrate();
-        },
-
-        setAutoSwitchBitrate: function(value) {
-            this.abrController.setAutoSwitchBitrate(value);
-        },
-
         getData: function() {
             return data;
         },
@@ -1679,7 +1673,6 @@ MediaPlayer.dependencies.BufferController = function() {
             var self = this,
                 deferred = Q.defer();
 
-
             this.debug.log("[BufferController][" + type + "] setTrickMode - enabled = " + enabled);
 
             if (trickModeEnabled === enabled) {
@@ -1688,19 +1681,16 @@ MediaPlayer.dependencies.BufferController = function() {
             }
             trickModeEnabled = enabled;
 
-            if (enabled) {
+            self.fragmentController.setSampleDuration(trickModeEnabled);
+            trickModePreviousQuality = trickModeEnabled ? self.abrController.getQualityFor(type) : trickModePreviousQuality;
+            self.abrController.setAutoSwitchBitrate(!trickModeEnabled);
+            self.abrController.setPlaybackQuality(type, (trickModeEnabled ? 0 : trickModePreviousQuality));
+            removeBuffer.call(this, 0, (trickModeEnabled ? self.videoModel.getCurrentTime() : -1)).then(function() {
+                self.debug.log("[BufferController][" + type + "] buffer cleared");
+                debugBufferRange.call(self);
                 deferred.resolve();
-                self.fragmentController.setSampleDuration(true);
-                self.setAutoSwitchBitrate(false);
-                self.abrController.setPlaybackQuality(type, 0);
-            } else {
-                self.setAutoSwitchBitrate(true);
-                self.fragmentController.setSampleDuration(false);
-                removeBuffer.call(this).then(function() {
-                    debugBufferRange.call(self);
-                    deferred.resolve();
-                });
-            }
+            });
+
             return deferred.promise;
         },
 
