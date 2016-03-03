@@ -37,6 +37,7 @@ MediaPlayer.dependencies.Stream = function() {
         tmSeekStep,
         tmSeekTime,
         tmEndDetected = false,
+        tmTimerId = null,
 
         textTrackIndex = -1,
         autoPlay = true,
@@ -663,7 +664,7 @@ MediaPlayer.dependencies.Stream = function() {
                     if (delay > 0) {
                         self.debug.log("[Stream] Trick mode (x" + tmSpeed + "): wait " + delay.toFixed(3) + " s");
                     }
-                    setTimeout(function () {
+                    tmTimerId = setTimeout(function () {
                         tmSeekTime = new Date().getTime() / 1000;
                         self.debug.log("[Stream] Trick mode (x" + tmSpeed + "): seek time = " + seekValue.toFixed(3));
                         self.videoModel.setCurrentTime(seekValue);
@@ -685,6 +686,10 @@ MediaPlayer.dependencies.Stream = function() {
                 self.debug.log("[Stream] Trick mode (x" + tmSpeed + "): elapsed time = " + elapsedTime.toFixed(3) + ", elapsed video time = " + elapsedVideoTime.toFixed(3) + ", speed = " + speed.toFixed(3));
 
                 if (tmState === "Changed") {
+                    if (tmTimerId) {
+                        clearTimeout(tmTimerId);
+                        tmTimerId = null;
+                    }
                     // Target speed changed => reset start times, and seek
                     tmState = "Running";
                     tmStartTime = (new Date().getTime()) / 1000;
@@ -819,7 +824,7 @@ MediaPlayer.dependencies.Stream = function() {
         doLoad = function(manifestResult) {
 
             var self = this;
-
+ 
             //self.debug.log("Stream start loading.");
 
             manifest = manifestResult;
@@ -1287,6 +1292,15 @@ MediaPlayer.dependencies.Stream = function() {
 
             pause.call(this);
 
+            //if we were in trick mode, reset all
+            if (tmTimerId) {
+                clearTimeout(tmTimerId);
+                tmTimerId = null;
+            }
+
+            self.videoModel.unlisten("seeked", seekedListener);
+            self.videoModel.setMute(false);
+
             //document.removeEventListener("visibilityChange");
 
             this.videoModel.unlisten("play", playListener);
@@ -1412,6 +1426,11 @@ MediaPlayer.dependencies.Stream = function() {
                 currentVideoTime = self.videoModel.getCurrentTime();
 
                 if (!enableTrickMode) {
+                    //stop trick mode if necessary.
+                    if (tmTimerId) {
+                        clearTimeout(tmTimerId);
+                        tmTimerId = null;
+                    }
                     self.debug.info("[Stream] Trick mode: Stopped, current time = " + currentVideoTime);
                     tmState = "Stopped";
                     self.videoModel.listen("seeking", seekingListener);
