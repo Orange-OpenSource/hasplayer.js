@@ -116,7 +116,6 @@ Mss.dependencies.MssFragmentController = function() {
                 saiz = null,
                 tfdt = null,
                 tfrf = null,
-                sdtp = null,
                 sizedifferent = false,
                 pos = -1,
                 fragment_size = 0,
@@ -230,24 +229,21 @@ Mss.dependencies.MssFragmentController = function() {
                     concatDuration = 0,
                     mdatData = mdat.data;
 
-                sdtp = traf.getBoxByType("sdtp");
-
                 //we have to duplicate the sample from KeyFrame request to be accepted by decoder.
-                //all the samples have to have a duration equals to request.duration * request.timescale
-                var sampleDuration = Math.floor(fullDuration / sdtp.sample_dependency_array.length);
-
-                trun.samples_table[0].sample_duration = sampleDuration;
-                for (i = 0; i < (sdtp.sample_dependency_array.length - 1); i++) {
+                //all the samples have to have a duration equals to request.duration * request.timescale               
+                var trunEntries = Math.floor(fullDuration / trun.samples_table[0].sample_duration);
+                
+                for (i = 0; i < (trunEntries - 1); i++) {
                     if (request.streamType === 'video') {
                         trun.samples_table.push({
-                            sample_duration: sampleDuration,
+                            sample_duration: trun.samples_table[0].sample_duration,
                             sample_size: trun.samples_table[0].sample_size,
                             sample_composition_time_offset: trun.samples_table[0].sample_composition_time_offset,
                             sample_flags: trun.samples_table[0].sample_flags
                         });
                     } else {
                         trun.samples_table.push({
-                            sample_duration: sampleDuration,
+                            sample_duration: trun.samples_table[0].sample_duration,
                             sample_size: trun.samples_table[0].sample_size
                         });
                     }
