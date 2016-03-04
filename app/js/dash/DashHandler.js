@@ -15,7 +15,7 @@ Dash.dependencies.DashHandler = function() {
     "use strict";
 
     var index = -1,
-        requestedTime,
+        requestedTime = null,
         isDynamic,
         type,
         offset = null,
@@ -505,7 +505,7 @@ Dash.dependencies.DashHandler = function() {
                 return range;
             }
 
-            if (!isDynamic && requestedTime) {
+            if (!isDynamic && requestedTime !== null) {
                 return null;
             }
 
