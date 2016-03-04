@@ -626,14 +626,14 @@ MediaPlayer.dependencies.Stream = function() {
                 seekValue,
                 delay,
                 _seek = function (delay, seekValue) {
-                    if (self.videoModel.getCurrentTime() === 0 || tmEndDetected) {
+                    if (self.videoModel.getCurrentTime() === self.getStartTime() || tmEndDetected) {
                         self.videoModel.unlisten("seeked", seekedListener);
                         self.videoModel.setCurrentTime(0);
                         tmEndDetected = false;
                         return;
                     }
-                    if (seekValue < 0) {
-                        seekValue = 0;
+                    if (seekValue < self.getStartTime()) {
+                        seekValue = self.getStartTime();
                     } else if (seekValue >= self.videoModel.getElement().duration) {
                         seekValue = self.videoModel.getElement().duration - tmMinSeekStep;
                         tmEndDetected = true;
