@@ -80,6 +80,7 @@ MediaPlayer.dependencies.Stream = function() {
         tmSeekStep,
         tmSeekTime,
         tmSeekTimeout,
+        tmSeekValue,
         tmEndDetected = false,
 
         eventController = null,
@@ -621,11 +622,14 @@ MediaPlayer.dependencies.Stream = function() {
         onSeeking = function() {
             var time = this.videoModel.getCurrentTime();
             this.debug.info("[Stream] <video> seeking event: " + time);
-            //test if seek time is less than range start, never seek before range start.
-            var start = this.getStartTime();
 
-            if (time < start) {
-                time = start;
+            // Check if seek time is less than range start, never seek before range start.
+            time = (time < this.getStartTime()) ? this.getStartTime() : time;
+
+            // Check if seeking is different from trick mode seeking, then cancel trick mode
+            if ((tmSpeed !== 1) && (time.toFixed(3) !== tmSeekValue.toFixed(3))) {
+                this.setTrickModeSpeed(1);
+                return;
             }
 
             startBuffering.call(this, time);
@@ -661,6 +665,7 @@ MediaPlayer.dependencies.Stream = function() {
                     tmSeekTimeout = setTimeout(function () {
                         tmSeekTime = new Date().getTime() / 1000;
                         self.debug.log("[Stream] Trick mode (x" + tmSpeed + "): seek time = " + seekValue.toFixed(3));
+                        tmSeekValue = seekValue;
                         self.videoModel.setCurrentTime(seekValue);
                     }, delay > 0 ? (delay * 1000) : 0);
                 };
@@ -1445,6 +1450,7 @@ MediaPlayer.dependencies.Stream = function() {
                         self.debug.info("[Stream] Trick mode (x" + tmSpeed + "): videoTime = " + tmVideoStartTime);
                         seekValue = currentVideoTime + (tmSeekStep * Math.sign(tmSpeed));
                         self.debug.info("[Stream] Trick mode (x" + tmSpeed + "): seek step = " + tmSeekStep);
+                        tmSeekValue = seekValue;
                         seek.call(self, seekValue);
                     }
                 }
