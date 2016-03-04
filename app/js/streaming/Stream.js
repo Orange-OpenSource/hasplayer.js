@@ -499,21 +499,6 @@ MediaPlayer.dependencies.Stream = function() {
             var self = this;
 
             this.debug.info("[Stream] <video> loadedmetadata event");
-
-            /*seekTime = this.timelineConverter.calcPresentationStartTime(periodInfo);
-            this.debug.info("[Stream] Starting playback at offset: " + seekTime);
-            // ORANGE: performs a programmatical seek only if initial seek time is different
-            // from current time (live use case)
-
-            if (seekTime !== this.videoModel.getCurrentTime()) {
-                // ORANGE: we start the <video> element at the real start time got from the video buffer
-                // once the first fragment has been appended (see onBufferUpdated())
-                this.system.mapHandler("bufferUpdated", undefined, onBufferUpdated.bind(self));
-
-            } else if (load !== null) {
-                load.resolve(null);
-                load = null;
-            }*/
         },
 
         onCanPlay = function() {
@@ -543,12 +528,6 @@ MediaPlayer.dependencies.Stream = function() {
                     setVideoModelCurrentTime.call(this, playStartTime);
                     playStartTime = -1;
                 }
-                //if a pause command was detected just before this onPlay event, startBuffering again
-                //if it was a pause, follow by a seek (in reality just a seek command), don't startBuffering, it's done in onSeeking event
-                // we can't, each time, startBuffering in onPlay event (for seek and pause commands) because onPlay event is not fired on IE after a seek command. :-(
-                //if (isPaused && !isSeeked) {
-                    //startBuffering.call(this);
-                //}
             }
 
             this.metricsModel.addPlayList("video", new Date().getTime(), this.videoModel.getCurrentTime(), "play");
@@ -859,20 +838,8 @@ MediaPlayer.dependencies.Stream = function() {
             ).then(
                 function( /*done*/ ) {
                     self.debug.log("[Stream] Playback initialized");
-                    //return load.promise;
                 }
-            )/*.then(
-                function() {
-                    self.debug.log("[Stream] element loaded!");
-                    // only first period stream must be played automatically during playback initialization
-                    if (periodInfo.index === 0) {
-                        eventController.start();
-                        if (autoPlay) {
-                            play.call(self);
-                        }
-                    }
-                }
-            )*/;
+            );
         },
 
         setVideoModelCurrentTime = function(time) {
@@ -880,12 +847,6 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.unlisten("seeking", seekingListener);
             this.videoModel.listen("seeked", seekedListener);
             this.videoModel.setCurrentTime(time);
-        },
-
-        currentTimeChanged = function() {
-            this.debug.log("[Stream] Current time has changed, block programmatic seek.");
-            this.videoModel.unlisten("seeking", seekingListener);
-            this.videoModel.listen("seeked", seekedListener);
         },
 
         bufferingCompleted = function() {
@@ -912,9 +873,7 @@ MediaPlayer.dependencies.Stream = function() {
         // startTime = first video segment time for static streams
         // => then seek every BufferController at the found start time
         onStartTimeFound = function(startTime) {
-
             this.debug.info("[Stream] Start time = " + startTime);
-
             seek.call(this, startTime, (periodInfo.index === 0) && autoPlay);
         },
 
@@ -969,20 +928,12 @@ MediaPlayer.dependencies.Stream = function() {
             // Set current time on video if 'play' event has already been raised.
             // If 'play' event has not yet been raised, the the current time will be set afterwards
             if (!self.videoModel.isPaused()) {
-                //self.system.notify("setCurrentTime");
                 self.videoModel.setCurrentTime(startTime);
             } else {
                 playStartTime = startTime;
             }
 
-            // Resolve load promise in order to start playing (see doLoad())
-            /*if (load !== null) {
-                load.resolve(null);
-                load = null;
-            } else {*/
-                // Else start playing (reload use case)
-                play.call(self);
-            //}
+            play.call(self);
         },
 
         updateData = function(updatedPeriodInfo) {
@@ -1118,7 +1069,6 @@ MediaPlayer.dependencies.Stream = function() {
         notify: undefined,
 
         setup: function() {
-            this.system.mapHandler("setCurrentTime", undefined, currentTimeChanged.bind(this));
             this.system.mapHandler("bufferingCompleted", undefined, bufferingCompleted.bind(this));
             this.system.mapHandler("segmentLoadingFailed", undefined, segmentLoadingFailed.bind(this));
             this.system.mapHandler("startTimeFound", undefined, onStartTimeFound.bind(this));
@@ -1323,7 +1273,6 @@ MediaPlayer.dependencies.Stream = function() {
 
             this.system.unmapHandler("bufferUpdated");
             this.system.unmapHandler("liveEdgeFound");
-            this.system.unmapHandler("setCurrentTime");
             this.system.unmapHandler("bufferingCompleted");
             this.system.unmapHandler("segmentLoadingFailed");
             this.system.unmapHandler("needForReload");
