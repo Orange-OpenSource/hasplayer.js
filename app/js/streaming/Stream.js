@@ -602,14 +602,14 @@ MediaPlayer.dependencies.Stream = function() {
             var time = this.videoModel.getCurrentTime();
             this.debug.info("[Stream] <video> seeking event: " + time);
 
-            // Check if seek time is less than range start, never seek before range start.
-            time = (time < this.getStartTime()) ? this.getStartTime() : time;
-
             // Check if seeking is different from trick mode seeking, then cancel trick mode
             if ((tmSpeed !== 1) && (time.toFixed(3) !== tmSeekValue.toFixed(3))) {
                 this.setTrickModeSpeed(1);
                 return;
             }
+
+            // Check if seek time is less than range start, never seek before range start.
+            time = (time < this.getStartTime()) ? this.getStartTime() : time;
 
             startBuffering.call(this, time);
         },
