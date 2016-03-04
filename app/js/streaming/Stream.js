@@ -627,9 +627,7 @@ MediaPlayer.dependencies.Stream = function() {
                 delay,
                 _seek = function (delay, seekValue) {
                     if (self.videoModel.getCurrentTime() === self.getStartTime() || tmEndDetected) {
-                        self.videoModel.unlisten("seeked", seekedListener);
-                        self.videoModel.setCurrentTime(0);
-                        tmEndDetected = false;
+                        self.debug.log("[Stream] Trick mode (x" + tmSpeed + "): stop");
                         return;
                     }
                     if (seekValue < self.getStartTime()) {
@@ -1383,15 +1381,15 @@ MediaPlayer.dependencies.Stream = function() {
                 if (!enableTrickMode) {
                     self.debug.info("[Stream] Trick mode: Stopped, current time = " + currentVideoTime);
                     tmState = "Stopped";
-                    //self.videoModel.listen("seeking", seekingListener);
-                    //self.videoModel.unlisten("seeked", seekedListener);
                     self.videoModel.listen("timeupdate", enableMute);
-                    seek.call(self, currentVideoTime, true);
+                    currentVideoTime = tmEndDetected ? self.getStartTime() : currentVideoTime;
+                    seek.call(self, tmEndDetected ? self.getStartTime() : currentVideoTime, true);
                 } else {
                     if (tmState === "Running") {
                         tmState = "Changed";
                     }
                     else if (tmState === "Stopped") {
+                        tmEndDetected = false;
                         tmState = "Running";
                         tmSeekStep = tmMinSeekStep = videoController.getLastDownloadedSegmentDuration();
                         tmStartTime = tmSeekTime = (new Date().getTime()) / 1000;
