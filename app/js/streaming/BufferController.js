@@ -1685,11 +1685,13 @@ MediaPlayer.dependencies.BufferController = function() {
             trickModePreviousQuality = trickModeEnabled ? self.abrController.getQualityFor(type) : trickModePreviousQuality;
             self.abrController.setAutoSwitchBitrate(!trickModeEnabled);
             self.abrController.setPlaybackQuality(type, (trickModeEnabled ? 0 : trickModePreviousQuality));
-            removeBuffer.call(this, 0, (trickModeEnabled ? self.videoModel.getCurrentTime() : -1)).then(function() {
-                self.debug.log("[BufferController][" + type + "] buffer cleared");
-                debugBufferRange.call(self);
+            if (trickModeEnabled) {
                 deferred.resolve();
-            });
+            } else {
+                removeBuffer.call(this).then(function() {
+                    deferred.resolve();
+                });
+            }
 
             return deferred.promise;
         },
