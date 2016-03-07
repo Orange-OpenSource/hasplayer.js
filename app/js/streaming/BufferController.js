@@ -255,7 +255,7 @@ MediaPlayer.dependencies.BufferController = function() {
         onBytesLoaded = function(request, response) {
 
             // Store current segment sequence number for next segment request (HLS use case)
-            if (request.sequenceNumber) {
+            if (request.sequenceNumber !== undefined) {
                 currentSequenceNumber = request.sequenceNumber;
             }
 

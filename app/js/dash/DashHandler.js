@@ -641,7 +641,7 @@ Dash.dependencies.DashHandler = function() {
                         seg.indexRange = s.indexRange;
 
                         // ORANGE: add sequence number (HLS use case)
-                        if (s.sequenceNumber) {
+                        if (s.sequenceNumber !== undefined) {
                             seg.sequenceNumber = s.sequenceNumber;
                         }
 
@@ -868,7 +868,7 @@ Dash.dependencies.DashHandler = function() {
             for (i = 0; i < ln; i += 1) {
                 seg = representation.segments[i];
 
-                if (seg.sequenceNumber && (seg.sequenceNumber === sn)) {
+                if ((seg.sequenceNumber !== undefined) && (seg.sequenceNumber === sn)) {
                     if (i < (ln - 1)) {
                         return representation.segments[i + 1];
                     }
@@ -931,7 +931,7 @@ Dash.dependencies.DashHandler = function() {
             request.quality = representation.index;
             request.index = segment.availabilityIdx;
             // ORANGE: add sequence number (HLS use case)
-            if (segment.sequenceNumber) {
+            if (segment.sequenceNumber !== undefined) {
                 request.sequenceNumber = segment.sequenceNumber;
             }
 
