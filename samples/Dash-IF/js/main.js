@@ -367,6 +367,10 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         }
     }
 
+    function onplay(/*e*/) {
+        $scope.trickModeSpeed = "x1";
+    }
+
     //if video size change, player has to update subtitles size
     function onFullScreenChange(){
         setSubtitlesCSSStyle(subtitlesCSSStyle);
@@ -644,6 +648,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     player.addEventListener("subtitlesStyleChanged",onSubtitlesStyleChanged.bind(this));
     player.addEventListener("manifestUrlUpdate", onManifestUrlUpdate.bind(this));
     video.addEventListener("loadeddata", onload.bind(this));
+    video.addEventListener("play", onplay.bind(this));
     video.addEventListener("fullscreenchange", onFullScreenChange.bind(this));
     video.addEventListener("mozfullscreenchange", onFullScreenChange.bind(this));
     video.addEventListener("webkitfullscreenchange", onFullScreenChange.bind(this));
