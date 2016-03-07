@@ -547,16 +547,19 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
     getCodec: function(data) {
         "use strict";
-        var representation = data.Representation_asArray[0],
-            codec = (representation.mimeType + ';codecs="' + representation.codecs + '"');
-        return Q.when(codec);
-    },
+        var i = 0,
+            representation,
+            codec = null;
 
-    getCodec_: function(data) {
-        "use strict";
-        var representation = data.Representation_asArray[0],
-            codec = (representation.mimeType + ';codecs="' + representation.codecs + '"');
-        return codec;
+        while ((codec === null) && (i < data.Representation_asArray.length)) {
+            representation = data.Representation_asArray[i];
+            if (representation.codecs !== null && representation.codecs !== "") {
+                codec = (representation.mimeType + ';codecs="' + representation.codecs + '"');
+            }
+            i++;
+        }
+
+        return Q.when(codec);
     },
 
     getMimeType: function(data) {
