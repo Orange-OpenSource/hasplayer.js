@@ -227,11 +227,18 @@ Mss.dependencies.MssFragmentController = function() {
             if (this.fixDuration && trun.samples_table.length === 1) {
                 var fullDuration = request.duration * request.timescale,
                     concatDuration = 0,
-                    mdatData = mdat.data;
+                    mdatData = mdat.data,
+                    sampleDuration;
 
+                //if sample_duration is not defined, search duration in tfhd box
+                if (trun.samples_table[0].sample_duration === undefined) {
+                    sampleDuration = tfhd.default_sample_duration;
+                }else{
+                    sampleDuration = trun.samples_table[0].sample_duration;
+                }
                 //we have to duplicate the sample from KeyFrame request to be accepted by decoder.
                 //all the samples have to have a duration equals to request.duration * request.timescale               
-                var trunEntries = Math.floor(fullDuration / trun.samples_table[0].sample_duration);
+                var trunEntries = Math.floor(fullDuration / sampleDuration);
                 
                 for (i = 0; i < (trunEntries - 1); i++) {
                     if (request.streamType === 'video') {
