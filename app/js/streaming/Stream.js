@@ -734,7 +734,7 @@ MediaPlayer.dependencies.Stream = function() {
             // Then, once manifest has been refresh and data updated, we reload session (see updateData())
             pause.call(this);
             isReloading = true;
-            this.system.notify("manifestUpdate");
+            this.system.notify("manifestUpdate", true);
         },
 
         updateBuffer = function() {
@@ -1322,12 +1322,15 @@ MediaPlayer.dependencies.Stream = function() {
         getPeriodInfo: function() {
             return periodInfo;
         },
+
         startEventController: function() {
             eventController.start();
         },
+
         resetEventController: function() {
             eventController.reset();
         },
+        
         enableSubtitles: function(enabled) {
 
             if (enabled !== subtitlesEnabled) {

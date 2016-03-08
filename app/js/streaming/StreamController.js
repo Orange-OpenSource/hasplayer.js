@@ -40,6 +40,7 @@ MediaPlayer.dependencies.StreamController = function() {
         defaultAudioLang = 'und',
         defaultSubtitleLang = 'und',
         subtitlesEnabled = false,
+        reloadStream = false,
 
         /*
          * Replaces the currently displayed <video> with a new data and corresponding <video> element.
@@ -398,16 +399,11 @@ MediaPlayer.dependencies.StreamController = function() {
             }
         },
 
-        manifestUpdate = function() {
-            var manifest = this.manifestModel.getValue(),
-                url = manifest.mpdUrl;
-
-            if (manifest.hasOwnProperty("Location")) {
-                url = manifest.Location;
+        manifestUpdate = function(reload) {
+            if (reload === true) {
+                reloadStream = true;
             }
-
-            this.debug.log("### Refresh manifest @ " + url);
-            this.refreshManifest(url, true);
+            this.refreshManifest();
         },
 
         manifestHasUpdated = function() {
@@ -533,6 +529,8 @@ MediaPlayer.dependencies.StreamController = function() {
 
             self.debug.info("[StreamController] load url: " + url);
 
+            reloadStream = false;
+
             self.manifestLoader.load(url).then(
                 function(manifest) {
                     self.manifestModel.setValue(manifest);
@@ -551,28 +549,43 @@ MediaPlayer.dependencies.StreamController = function() {
             );
         },
 
-        refreshManifest: function(url, isIntern) {
+        refreshManifest: function(url) {
+            var manifest = this.manifestModel.getValue(),
+                manifestUrl = url ? url : (manifest.hasOwnProperty("Location") ? manifest.Location : manifest.mpdUrl);
+
+            this.debug.log("### Refresh manifest @ " + manifestUrl);
+
             var self = this;
             this.manifestLoader.abort();
-            this.manifestLoader.load(url, true).then(
+            this.manifestLoader.load(manifestUrl, true).then(
                 function(manifestResult) {
                     self.manifestModel.setValue(manifestResult);
                     self.debug.log("### Manifest has been refreshed.");
+                    reloadStream = false;
                 },
                 function(err) {
                     // err is undefined in the case the request has been aborted
-                    if (err) {
-                        self.errHandler.sendWarning(err.name, err.message, err.data);
+                    if (err === undefined) {
+                        return;
+                    }
 
-                        // Notify webapp to refresh url if failed to dowload manifest (for example if manifest url expired)
-                        if (isIntern && err.name === MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST) {
-                            self.eventBus.dispatchEvent({
+                    // Url is refreshed
+                    if (url) {
+                        // Raise an error only in case we try to reload the session
+                        // to recover some segment downloading error
+                        if (reloadStream) {
+                            self.errHandler.sendError(err.name, err.message, err.data);
+                        }
+                    } else {
+                        // If internal manifest updating (for ex. track switching),
+                        // then raise a warning and ask for refreshing the url (in case it is no more valid or expired)
+                        self.errHandler.sendWarning(err.name, err.message, err.data);
+                        self.eventBus.dispatchEvent({
                                 type: "manifestUrlUpdate",
                                 data: {
-                                    url: url
+                                    url: manifestUrl
                                 }
                             });
-                        }
                     }
                 }
             );
