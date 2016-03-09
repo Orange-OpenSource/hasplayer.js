@@ -241,29 +241,24 @@ Mss.dependencies.MssFragmentController = function() {
                 var trunEntries = Math.floor(fullDuration / sampleDuration);
                 
                 for (i = 0; i < (trunEntries - 1); i++) {
-                    if (request.streamType === 'video') {
-                        trun.samples_table.push({
-                            sample_duration: trun.samples_table[0].sample_duration,
-                            sample_size: trun.samples_table[0].sample_size,
-                            sample_composition_time_offset: trun.samples_table[0].sample_composition_time_offset,
-                            sample_flags: trun.samples_table[0].sample_flags
-                        });
-                    } else {
-                        trun.samples_table.push({
-                            sample_duration: trun.samples_table[0].sample_duration,
-                            sample_size: trun.samples_table[0].sample_size
-                        });
+                    trun.samples_table.push({
+                        sample_duration: trun.samples_table[0].sample_duration,
+                        sample_size: trun.samples_table[0].sample_size,
+                        sample_composition_time_offset: trun.samples_table[0].sample_composition_time_offset,
+                        sample_flags: trun.samples_table[0].sample_flags
+                    });
+                }
+
+                if(trun.samples_table[0].sample_duration !== undefined){
+                    for (i = 0; i < trun.samples_table.length; i++) {
+                        concatDuration += trun.samples_table[i].sample_duration;
                     }
-                }
 
-                for (i = 0; i < trun.samples_table.length; i++) {
-                    concatDuration += trun.samples_table[i].sample_duration;
-                }
-
-                if (concatDuration > fullDuration) {
-                    trun.samples_table[trun.samples_table.length - 1].sample_duration -= (concatDuration - fullDuration);
-                } else {
-                    trun.samples_table[trun.samples_table.length - 1].sample_duration += (fullDuration - concatDuration);
+                    if (concatDuration > fullDuration) {
+                        trun.samples_table[trun.samples_table.length - 1].sample_duration -= (concatDuration - fullDuration);
+                    } else {
+                        trun.samples_table[trun.samples_table.length - 1].sample_duration += (fullDuration - concatDuration);
+                    }
                 }
 
                 //in the same way, we have to duplicate mdat.data.
