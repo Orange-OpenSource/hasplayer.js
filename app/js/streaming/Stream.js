@@ -691,12 +691,11 @@ MediaPlayer.dependencies.Stream = function() {
 
                 _seek.call(self, delay, seekValue);
 
-            } else {
-                // The current time has been changed on video model, then reactivate 'seeking' event listener
-                // (see setVideoModelCurrentTime())
-                this.videoModel.listen("seeking", seekingListener);
-                this.videoModel.unlisten("seeked", seekedListener);
             }
+
+            // The current time has been changed on video model, then reactivate 'seeking' event listener
+            // (see setVideoModelCurrentTime())
+            this.videoModel.listen("seeking", seekingListener);
 
             startClockTime = -1;
             startStreamTime = -1;
@@ -859,7 +858,6 @@ MediaPlayer.dependencies.Stream = function() {
         setVideoModelCurrentTime = function(time) {
             this.debug.log("[Stream] Set video model current time: " + time);
             this.videoModel.unlisten("seeking", seekingListener);
-            this.videoModel.listen("seeked", seekedListener);
             this.videoModel.setCurrentTime(time);
         },
 
@@ -1259,7 +1257,6 @@ MediaPlayer.dependencies.Stream = function() {
             // Trick mode seeking timeout
             clearTimeout(tmSeekTimeout);
 
-            self.videoModel.unlisten("seeked", seekedListener);
             self.videoModel.setMute(false);
 
             //document.removeEventListener("visibilityChange");
@@ -1268,6 +1265,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.unlisten("pause", pauseListener);
             this.videoModel.unlisten("error", errorListener);
             this.videoModel.unlisten("seeking", seekingListener);
+            this.videoModel.unlisten("seeked", seekingListener);
             this.videoModel.unlisten("timeupdate", timeupdateListener);
             this.videoModel.unlisten("durationchange", durationchangeListener);
             this.videoModel.unlisten("progress", progressListener);
@@ -1374,7 +1372,6 @@ MediaPlayer.dependencies.Stream = function() {
                 self.debug.info("[Stream] Set mute: true");
                 self.videoModel.setMute(true);
                 self.videoModel.pause();
-                self.videoModel.listen("seeked", seekedListener);
             } else if (!enableTrickMode) {
                 tmSpeed = 1;
                 clearTimeout(tmSeekTimeout);
