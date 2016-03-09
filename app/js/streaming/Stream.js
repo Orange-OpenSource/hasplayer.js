@@ -523,7 +523,7 @@ MediaPlayer.dependencies.Stream = function() {
                 this.setTrickModeSpeed(1);
             } else {
                 // Set the currentTime here to be sure that videoTag is ready to accept the seek (cause IE fail on set currentTime on BufferUpdate)
-                if (playStartTime > 0) {
+                if (playStartTime >= 0) {
                     setVideoModelCurrentTime.call(this, playStartTime);
                     playStartTime = -1;
                 } else {
