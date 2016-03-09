@@ -871,7 +871,7 @@ MediaPlayer.dependencies.Stream = function() {
         // => then seek every BufferController at the found start time
         onStartTimeFound = function(startTime) {
             this.debug.info("[Stream] Start time = " + startTime);
-            seek.call(this, 100/*startTime*/, (periodInfo.index === 0) && autoPlay);
+            seek.call(this, startTime, (periodInfo.index === 0) && autoPlay);
         },
 
         // ORANGE: 'bufferUpdated' event raised when some data has been appended into media buffers
