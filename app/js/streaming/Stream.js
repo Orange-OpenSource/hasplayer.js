@@ -522,10 +522,12 @@ MediaPlayer.dependencies.Stream = function() {
             if (tmSpeed !== 1) {
                 this.setTrickModeSpeed(1);
             } else {
-                // set the currentTime here to be sure that videoTag is ready to accept the seek (cause IE fail on set currentTime on BufferUpdate)
+                // Set the currentTime here to be sure that videoTag is ready to accept the seek (cause IE fail on set currentTime on BufferUpdate)
                 if (playStartTime > 0) {
                     setVideoModelCurrentTime.call(this, playStartTime);
                     playStartTime = -1;
+                } else {
+                    startBuffering.call(this);
                 }
             }
 
@@ -647,6 +649,9 @@ MediaPlayer.dependencies.Stream = function() {
                 };
 
             this.debug.info("[Stream] <video> seeked event");
+
+            // Notify BufferControllers that video has seeked
+            seekedBuffers.call(this);
 
             // Trick mode
             if (tmSpeed !== 1) {
@@ -787,6 +792,18 @@ MediaPlayer.dependencies.Stream = function() {
             }
             if (textController) {
                 textController.stop();
+            }
+        },
+
+        seekedBuffers = function() {
+            if (videoController) {
+                videoController.seeked();
+            }
+            if (audioController) {
+                audioController.seeked();
+            }
+            if (textController) {
+                textController.seeked();
             }
         },
 
