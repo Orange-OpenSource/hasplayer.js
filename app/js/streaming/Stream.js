@@ -37,7 +37,6 @@ MediaPlayer.dependencies.Stream = function() {
         textTrackIndex = -1,
         autoPlay = true,
         initialized = false,
-        load,
         errored = false,
 
         // Events listeners
@@ -872,7 +871,7 @@ MediaPlayer.dependencies.Stream = function() {
         // => then seek every BufferController at the found start time
         onStartTimeFound = function(startTime) {
             this.debug.info("[Stream] Start time = " + startTime);
-            seek.call(this, startTime, (periodInfo.index === 0) && autoPlay);
+            seek.call(this, 100/*startTime*/, (periodInfo.index === 0) && autoPlay);
         },
 
         // ORANGE: 'bufferUpdated' event raised when some data has been appended into media buffers
@@ -1076,8 +1075,6 @@ MediaPlayer.dependencies.Stream = function() {
             // Protection event handlers
             this[MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR] = onProtectionError.bind(this);
             /* @endif */
-
-            load = Q.defer();
 
             playListener = onPlay.bind(this);
             pauseListener = onPause.bind(this);
@@ -1285,7 +1282,6 @@ MediaPlayer.dependencies.Stream = function() {
                     protectionController = undefined;
                     self.fragmentController = undefined;
 
-                    load = Q.defer();
                     deferred.resolve();
                 });
 
