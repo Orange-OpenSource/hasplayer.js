@@ -1635,9 +1635,9 @@ MediaPlayer.dependencies.BufferController = function() {
 
             self.fragmentController.setSampleDuration(trickModeEnabled);
             trickModePreviousQuality = trickModeEnabled ? self.abrController.getQualityFor(type) : trickModePreviousQuality;
-            self.abrController.setAutoSwitchBitrate(!trickModeEnabled);
             self.abrController.setPlaybackQuality(type, (trickModeEnabled ? 0 : trickModePreviousQuality));
             if (trickModeEnabled) {
+                self.abrController.setAutoSwitchBitrate(false);
                 deferred.resolve();
             } else {
                 removeBuffer.call(this).then(function() {
