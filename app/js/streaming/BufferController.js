@@ -302,6 +302,9 @@ MediaPlayer.dependencies.BufferController = function() {
                         // ORANGE : For HLS Stream, init segment are pushed with media (@see HlsFragmentController)
                         loadNextFragment.call(self);
                     }
+                }, function(e) {
+                    signalSegmentBuffered.call(self);
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", e.message);
                 }
             );
         },
@@ -1109,9 +1112,9 @@ MediaPlayer.dependencies.BufferController = function() {
                                                 signalSegmentBuffered.call(self);
                                                 if (e.name === MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED) {
                                                     self.errHandler.sendError(e.name, e.message, e.data);
+                                                } else {
+                                                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing initialization segment", e.message);
                                                 }
-                                                // TODO: manage not available init segment request (internal error?)
-                                                // TODO: discard unsupported representations
                                             }
                                         );
                                     } else {
