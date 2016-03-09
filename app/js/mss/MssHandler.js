@@ -144,7 +144,7 @@ Mss.dependencies.MssHandler = function() {
     };
 
     rslt.getIFrameRequest = function(request){
-        if (request && request.url && (request.url.indexOf('video') !== -1 || request.url.indexOf('audio') !== -1)) {
+        if (request && request.url && (request.streamType === "video" || request.streamType === "audio")) {
             request.url = request.url.replace('Fragments','KeyFrames');
         }
 
