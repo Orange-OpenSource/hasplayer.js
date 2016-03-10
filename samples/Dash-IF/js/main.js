@@ -176,7 +176,6 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
     $scope.protectionTypes = ["PlayReady", "Widevine"];
     $scope.protectionType = bowser.chrome ? "Widevine" : "PlayReady";
-    setProtectionScheme();
 
 
     $('#sliderAudio').labeledslider({
@@ -716,14 +715,14 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
     $scope.playbackRateDown = function () {
 
-        if (video.playbackRate === 1.0) {
+        if (video.playbackRate < 0.1) {
             return;
         }
 
         video.playbackRate = video.playbackRate / 2;
         $scope.playbackRate = "x" + video.playbackRate;
 
-        if (video.playbackRate === 1.0) {
+        if (video.playbackRate < 0.1) {
             player.setAutoSwitchQuality(true);
         }
     };
@@ -858,16 +857,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     };
 
     $scope.setStream = function (item) {
-
         $scope.selectedItem = item;
-
-        setProtectionData();
-    };
-
-
-    $scope.setProtectionType = function (item) {
-        $scope.protectionType = item;
-        setProtectionScheme();
         setProtectionData();
     };
 
@@ -882,11 +872,20 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         }
     }
 
+    $scope.setProtectionType = function (item) {
+        $scope.protectionType = item;
+        setProtectionScheme();
+        setProtectionData();
+    };
+
     function setProtectionData () {
         var protData = $scope.selectedItem.protData ? $scope.selectedItem.protData[$scope.protectionScheme] : null;
         $scope.laURL = protData ? protData.laURL : "";
         $scope.cdmData = protData ? protData.cdmData : "";
     }
+
+    setProtectionScheme();
+
 
     function resetBitratesSlider () {
         $('#sliderBitrate').labeledslider({
@@ -908,11 +907,6 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     }
 
     function initPlayer() {
-
-        function DRMParams() {
-            this.backUrl = null;
-            this.cdmData = null;
-        }
 
         // Update PR protection data
         if (($scope.laURL.length > 0) || (($scope.cdmData.length > 0))) {
