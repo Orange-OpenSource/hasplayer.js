@@ -1,4 +1,4 @@
-/* Last build : 22.2.2016_21:43:44 / git revision : 9ce1ec0 */
+/* Last build : 10.3.2016_21:49:58 / git revision : 89bb502 */
  /* jshint ignore:start */
 (function() {
     var b = void 0, f = !0, j = null, l = !1;
@@ -28312,7 +28312,6 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     $scope.streamType = "MSS";
     $scope.protectionTypes = [ "PlayReady", "Widevine" ];
     $scope.protectionType = bowser.chrome ? "Widevine" : "PlayReady";
-    setProtectionScheme();
     $("#sliderAudio").labeledslider({
         max: 0,
         step: 1,
@@ -28465,6 +28464,9 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
         if ($scope.textTracks !== null) {
             $scope.textData = $scope.textTracks[0];
         }
+    }
+    function onplay() {
+        $scope.trickModeSpeed = "x1";
     }
     function onFullScreenChange() {
         setSubtitlesCSSStyle(subtitlesCSSStyle);
@@ -28685,6 +28687,7 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     player.addEventListener("subtitlesStyleChanged", onSubtitlesStyleChanged.bind(this));
     player.addEventListener("manifestUrlUpdate", onManifestUrlUpdate.bind(this));
     video.addEventListener("loadeddata", onload.bind(this));
+    video.addEventListener("play", onplay.bind(this));
     video.addEventListener("fullscreenchange", onFullScreenChange.bind(this));
     video.addEventListener("mozfullscreenchange", onFullScreenChange.bind(this));
     video.addEventListener("webkitfullscreenchange", onFullScreenChange.bind(this));
@@ -28736,14 +28739,32 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
         player.setQualityFor("video", 0);
     };
     $scope.playbackRateDown = function() {
-        if (video.playbackRate === 1) {
+        if (video.playbackRate < .1) {
             return;
         }
         video.playbackRate = video.playbackRate / 2;
         $scope.playbackRate = "x" + video.playbackRate;
-        if (video.playbackRate === 1) {
+        if (video.playbackRate < .1) {
             player.setAutoSwitchQuality(true);
         }
+    };
+    $scope.trickModeSpeedUp = function() {
+        var currentSpeed = player.getTrickModeSpeed(), newSpeed;
+        if (currentSpeed === 128) {
+            return;
+        }
+        newSpeed = currentSpeed < 0 ? 1 : currentSpeed * 2;
+        player.setTrickModeSpeed(newSpeed);
+        $scope.trickModeSpeed = "x" + newSpeed;
+    };
+    $scope.trickModeSpeedDown = function() {
+        var currentSpeed = player.getTrickModeSpeed(), newSpeed;
+        if (currentSpeed === -128) {
+            return;
+        }
+        newSpeed = currentSpeed === 1 ? -2 : currentSpeed > 1 ? currentSpeed / 2 : currentSpeed * 2;
+        player.setTrickModeSpeed(newSpeed);
+        $scope.trickModeSpeed = "x" + newSpeed;
     };
     $scope.selectStreams = function() {
         $scope.availableStreams = $scope.streams.filter(function(item) {
@@ -28831,11 +28852,6 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
         $scope.selectedItem = item;
         setProtectionData();
     };
-    $scope.setProtectionType = function(item) {
-        $scope.protectionType = item;
-        setProtectionScheme();
-        setProtectionData();
-    };
     function setProtectionScheme() {
         switch ($scope.protectionType) {
           case "PlayReady":
@@ -28847,11 +28863,17 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
             break;
         }
     }
+    $scope.setProtectionType = function(item) {
+        $scope.protectionType = item;
+        setProtectionScheme();
+        setProtectionData();
+    };
     function setProtectionData() {
         var protData = $scope.selectedItem.protData ? $scope.selectedItem.protData[$scope.protectionScheme] : null;
         $scope.laURL = protData ? protData.laURL : "";
         $scope.cdmData = protData ? protData.cdmData : "";
     }
+    setProtectionScheme();
     function resetBitratesSlider() {
         $("#sliderBitrate").labeledslider({
             max: 0,
@@ -28871,10 +28893,6 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
         });
     }
     function initPlayer() {
-        function DRMParams() {
-            this.backUrl = null;
-            this.cdmData = null;
-        }
         if ($scope.laURL.length > 0 || $scope.cdmData.length > 0) {
             if (!$scope.selectedItem.protData) {
                 $scope.selectedItem.protData = {};
