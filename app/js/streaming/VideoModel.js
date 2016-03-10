@@ -58,7 +58,6 @@ MediaPlayer.models.VideoModel = function () {
             return element.paused;
         },
 
-        //ORANGE : add isSeeking function
         isSeeking: function() {
             return element.seeking;
         },
@@ -71,19 +70,19 @@ MediaPlayer.models.VideoModel = function () {
             element.playbackRate = value;
         },
 
+        getMute:  function () {
+            return element.muted;
+        },
+
+        setMute: function (value) {
+            element.muted = value;
+        },
+
         getCurrentTime: function () {
             return element.currentTime;
         },
 
         setCurrentTime: function (currentTime) {
-            //_currentTime = currentTime;
-
-            // We don't set the same currentTime because it can cause firing unexpected Pause event in IE11
-            // providing playbackRate property equals to zero.
-            if (element.currentTime === currentTime) {
-                return;
-            }
-
             element.currentTime = currentTime;
         },
 

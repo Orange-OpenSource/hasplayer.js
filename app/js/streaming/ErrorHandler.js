@@ -42,6 +42,9 @@ MediaPlayer.dependencies.ErrorHandler.prototype = {
 };
 
 // <video> element errors
+MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR = "INTERNAL_ERROR";
+
+// <video> element errors
 MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ABORTED = "MEDIA_ERR_ABORTED";
 MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_NETWORK = "MEDIA_ERR_NETWORK";
 MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_DECODE = "MEDIA_ERR_DECODE";

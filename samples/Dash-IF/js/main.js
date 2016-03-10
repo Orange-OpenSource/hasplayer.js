@@ -367,6 +367,10 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         }
     }
 
+    function onplay(/*e*/) {
+        $scope.trickModeSpeed = "x1";
+    }
+
     //if video size change, player has to update subtitles size
     function onFullScreenChange(){
         setSubtitlesCSSStyle(subtitlesCSSStyle);
@@ -644,6 +648,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     player.addEventListener("subtitlesStyleChanged",onSubtitlesStyleChanged.bind(this));
     player.addEventListener("manifestUrlUpdate", onManifestUrlUpdate.bind(this));
     video.addEventListener("loadeddata", onload.bind(this));
+    video.addEventListener("play", onplay.bind(this));
     video.addEventListener("fullscreenchange", onFullScreenChange.bind(this));
     video.addEventListener("mozfullscreenchange", onFullScreenChange.bind(this));
     video.addEventListener("webkitfullscreenchange", onFullScreenChange.bind(this));
@@ -721,6 +726,34 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         if (video.playbackRate === 1.0) {
             player.setAutoSwitchQuality(true);
         }
+    };
+
+    $scope.trickModeSpeedUp = function () {
+        var currentSpeed = player.getTrickModeSpeed(),
+            newSpeed;
+
+        if (currentSpeed === 128.0) {
+            return;
+        }
+
+        newSpeed = (currentSpeed < 0) ? 1 : (currentSpeed * 2);
+
+        player.setTrickModeSpeed(newSpeed);
+        $scope.trickModeSpeed = "x" + newSpeed;
+    };
+
+    $scope.trickModeSpeedDown = function () {
+        var currentSpeed = player.getTrickModeSpeed(),
+            newSpeed;
+
+        if (currentSpeed === -128.0) {
+            return;
+        }
+
+        newSpeed = (currentSpeed === 1) ? -2 : ((currentSpeed > 1) ? (currentSpeed / 2) : (currentSpeed * 2));
+
+        player.setTrickModeSpeed(newSpeed);
+        $scope.trickModeSpeed = "x" + newSpeed;
     };
 
     ////////////////////////////////////////

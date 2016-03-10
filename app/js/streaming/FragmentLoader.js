@@ -166,7 +166,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                 if (xhrs.indexOf(req) === -1) {
                     return;
                 }
-
+                
                 xhrs.splice(xhrs.indexOf(req), 1);
                 
                 if (!needFailureReport) {

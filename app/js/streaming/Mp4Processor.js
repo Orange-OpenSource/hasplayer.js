@@ -978,7 +978,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
                 trafs,
                 mdatLength = 0,
                 trackglobal = {},
-                mdatTracksTab,
+                mdatTracksTab = [],
                 offset = 0;
 
             // Create file
@@ -989,10 +989,12 @@ MediaPlayer.dependencies.Mp4Processor = function() {
 
             // Create Movie Fragment Header box (moof) 
             moof.boxes.push(createMovieFragmentHeaderBox(sequenceNumber));
-
-            for (i = 0; i < tracks.length; i += 1) {
-                // Create Track Fragment box (traf)
-                moof.boxes.push(createTrackFragmentBox(tracks[i]));
+            
+            if (tracks) {
+                for (i = 0; i < tracks.length; i += 1) {
+                    // Create Track Fragment box (traf)
+                    moof.boxes.push(createTrackFragmentBox(tracks[i]));
+                }
             }
 
             moof_file.boxes.push(moof);
@@ -1005,18 +1007,22 @@ MediaPlayer.dependencies.Mp4Processor = function() {
 
             length += 8; // 8 = 'size' + 'type' mdat fields length
 
-            // mdat array size = tracks.length
-            mdatTracksTab = [tracks.length];
+            if (tracks && tracks.length) {
+                // mdat array size = tracks.length
+                mdatTracksTab = [tracks.length];
+            }
 
-            for (i = 0; i < tracks.length; i += 1) {
-                // Update trun.data_offset for the track
-                trafs[i].getBoxByType("trun").data_offset = length;
-                // Update length of output fragment file
-                length += tracks[i].data.length;
-                // Add current data in mdatTracksTab array
-                mdatTracksTab[i] = tracks[i].data;
-                // Update length of global mdat
-                mdatLength += mdatTracksTab[i].length;
+            if (tracks) {
+                for (i = 0; i < tracks.length; i += 1) {
+                    // Update trun.data_offset for the track
+                    trafs[i].getBoxByType("trun").data_offset = length;
+                    // Update length of output fragment file
+                    length += tracks[i].data.length;
+                    // Add current data in mdatTracksTab array
+                    mdatTracksTab[i] = tracks[i].data;
+                    // Update length of global mdat
+                    mdatLength += mdatTracksTab[i].length;
+                }
             }
 
             trackglobal.data = new Uint8Array(mdatLength);

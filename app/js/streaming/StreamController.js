@@ -41,20 +41,6 @@ MediaPlayer.dependencies.StreamController = function() {
         defaultSubtitleLang = 'und',
         subtitlesEnabled = false,
 
-        play = function() {
-            activeStream.play();
-        },
-
-        pause = function() {
-            if (activeStream) {
-                activeStream.pause();
-            }
-        },
-
-        seek = function(time) {
-            activeStream.seek(time);
-        },
-
         /*
          * Replaces the currently displayed <video> with a new data and corresponding <video> element.
          *
@@ -673,9 +659,34 @@ MediaPlayer.dependencies.StreamController = function() {
             }
         },
 
-        play: play,
-        seek: seek,
-        pause: pause
+        setTrickModeSpeed: function(speed) {
+            if (activeStream) {
+                activeStream.setTrickModeSpeed(speed);
+            }
+        },
+
+        getTrickModeSpeed: function() {
+            if (activeStream) {
+                return activeStream.getTrickModeSpeed();
+            }
+            return 0;
+        },
+
+        play: function() {
+            activeStream.play();
+        },
+
+        pause: function() {
+            if (activeStream) {
+                activeStream.pause();
+            }
+        },
+
+        seek: function(time) {
+            if (activeStream) {
+                activeStream.seek(time);
+            }
+        },
     };
 };
 
