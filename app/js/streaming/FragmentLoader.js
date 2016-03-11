@@ -20,6 +20,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
         retryInterval = DEFAULT_RETRY_INTERVAL,
         retryCount = 0,
         xhrs = [],
+        type,
 
         _checkForExistence = function(request) {
             var req = new XMLHttpRequest(),
@@ -137,7 +138,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                 latency = (request.firstByteDate.getTime() - request.requestStartDate.getTime());
                 download = (request.requestEndDate.getTime() - request.firstByteDate.getTime());
 
-                self.debug.log("[FragmentLoader][" + request.streamType + "] Loaded: " + request.url + " (" + req.status + ", " + latency + "ms, " + download + "ms)");
+                self.debug.log("[FragmentLoader]["+type+"] Loaded: " + request.url + " (" + req.status + ", " + latency + "ms, " + download + "ms)");
 
                 httpRequestMetrics.tresponse = request.firstByteDate;
                 httpRequestMetrics.tfinish = request.requestEndDate;
@@ -199,7 +200,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                 d.reject(req);
             };
 
-            self.debug.log("[FragmentLoader][" + request.streamType + "] Load: " + request.url);
+            self.debug.log("[FragmentLoader]["+type+"] Load: " + request.url);
 
             req.send();
             return d.promise;
@@ -239,6 +240,10 @@ MediaPlayer.dependencies.FragmentLoader = function() {
             retryInterval = this.config.getParam("FragmentLoader.RetryInterval", "number", DEFAULT_RETRY_INTERVAL);
         },
 
+        setType: function (value) {
+            type = value;
+        },
+
         load: function(req) {
             var self = this,
                 deferred = Q.defer();
@@ -274,7 +279,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
             var i = 0;
 
             for (i = 0; i < xhrs.length; i += 1) {
-                this.debug.log("[FragmentLoader] Abort XHR " + (xhrs[i].responseURL ? xhrs[i].responseURL : ""));
+                this.debug.log("[FragmentLoader]["+type+"] Abort XHR " + (xhrs[i].responseURL ? xhrs[i].responseURL : ""));
                 xhrs[i].abort();
             }
 

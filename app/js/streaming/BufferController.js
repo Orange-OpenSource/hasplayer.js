@@ -314,12 +314,13 @@ MediaPlayer.dependencies.BufferController = function() {
                 eventStreamAdaption = this.manifestExt.getEventStreamForAdaptationSet(self.getData()),
                 eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(self.getData(), _currentRepresentation),
                 segmentStartTime = null;
-
+            
             lastDownloadedSegmentDuration = request.duration;
 
-            if (!isRunning()) {
-                return;
-            }
+            // Push segment into buffer even if BufferController is stopped, since FragmentLoader would indicate this segment already loaded
+            // if (!isRunning()) {
+            //     return;
+            // }
 
             // Reset segment download error status
             segmentDownloadFailed = false;
@@ -862,7 +863,7 @@ MediaPlayer.dependencies.BufferController = function() {
                     if (trickModeEnabled) {
                         request = self.indexHandler.getIFrameRequest(request);
                     }
-                   
+
                     // Download the segment
                     self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null /*signalStreamComplete*/ ).then(
                         function() {
@@ -1014,7 +1015,7 @@ MediaPlayer.dependencies.BufferController = function() {
            /* if (trickModeEnabled) {
                 delayMs = 500;
             }*/
-
+            
             clearTimeout(bufferTimeout);
             bufferTimeout = setTimeout(function() {
                 bufferTimeout = null;
@@ -1403,6 +1404,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 this.fragmentController = value;
                 fragmentModel = this.fragmentController.attachBufferController(this);
                 fragmentModel.fragmentLoader.subscribe(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, this);
+                fragmentModel.setType(type);
             }
         },
 
@@ -1626,7 +1628,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 deferred = Q.defer();
 
             this.debug.log("[BufferController][" + type + "] setTrickMode - enabled = " + enabled);
-
+            
             if (trickModeEnabled === enabled) {
                 deferred.resolve();
                 return deferred.promise;

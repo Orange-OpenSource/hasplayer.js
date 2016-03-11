@@ -753,7 +753,7 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         startBuffering = function(time) {
-            this.debug.log("[Stream] startBuffering at time " + time);
+            this.debug.log("[Stream] startBuffering" + ((time === undefined) ? "" : (" at time " + time)));
 
             if (videoController) {
                 if (time === undefined) {
