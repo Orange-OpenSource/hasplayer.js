@@ -261,6 +261,31 @@ Mss.dependencies.MssFragmentController = function() {
                     }
                 }
 
+                //update sepiff and saiz boxes with replicated datas
+                if (sepiff !== null) {
+                    //if sepiff box has all datas for the complete fragments, delete thoses informations
+                    if (sepiff.sample_count > 1) {
+                        sepiff.entry = sepiff.entry.slice(0, 1);
+                    }
+                    //replicate the first entry
+                    for (i = 0; i < (trunEntries - 1); i += 1) {
+                        sepiff.entry.push(sepiff.entry[0]);
+                    }
+                
+                    if (saiz.default_sample_info_size === 0) {
+                        //as for sepiff box....
+                        if (saiz.sample_count > 1) {
+                            saiz.sample_info_size = saiz.sample_info_size.slice(0, 1);
+                        }
+                        for (i = 0; i < (trunEntries-1); i += 1) {
+                            saiz.sample_info_size.push(saiz.sample_info_size[0]);
+                        }
+                    }
+
+                    sepiff.sample_count = sepiff.entry.length;
+                    saiz.sample_count = sepiff.entry.length;
+                }
+                
                 //in the same way, we have to duplicate mdat.data.
                 trun.sample_count = trun.samples_table.length;
                 mdat.data = new Uint8Array(mdatData.length * trun.sample_count);
