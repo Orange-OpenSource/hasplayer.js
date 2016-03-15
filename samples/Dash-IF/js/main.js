@@ -176,7 +176,10 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
     $scope.protectionTypes = ["PlayReady", "Widevine"];
     $scope.protectionType = bowser.chrome ? "Widevine" : "PlayReady";
-
+    var protectionSchemes = ["com.microsoft.playready", "com.widevine.alpha"];
+    // create blank structure for selectedItem
+    $scope.selectedItem = {};
+    setProtectionData();
 
     $('#sliderAudio').labeledslider({
         max:0,
@@ -638,8 +641,6 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     $scope.versionDashJS = player.getVersionDashJS();
     $scope.buildDate = player.getBuildDate();
 
-    $scope.laURL = "";
-    $scope.cdmData = "";
 
     player.startup();
     player.addEventListener("error", onError.bind(this));
@@ -875,13 +876,17 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     $scope.setProtectionType = function (item) {
         $scope.protectionType = item;
         setProtectionScheme();
-        setProtectionData();
     };
 
     function setProtectionData () {
-        var protData = $scope.selectedItem.protData ? $scope.selectedItem.protData[$scope.protectionScheme] : null;
-        $scope.laURL = protData ? protData.laURL : "";
-        $scope.cdmData = protData ? protData.cdmData : "";
+        if(!$scope.selectedItem.protData){
+            $scope.selectedItem.protData = {};
+        }
+        for(var i=0; i< protectionSchemes.length; i++){
+            if(!$scope.selectedItem.protData[protectionSchemes[i]]){
+                $scope.selectedItem.protData[protectionSchemes[i]] = {};
+            }
+        }
     }
 
     setProtectionScheme();
@@ -907,21 +912,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     }
 
     function initPlayer() {
-
-        // Update PR protection data
-        if (($scope.laURL.length > 0) || (($scope.cdmData.length > 0))) {
-            if (!$scope.selectedItem.protData) {
-                $scope.selectedItem.protData = {};
-            }
-            if (!$scope.selectedItem.protData['com.widevine.alpha']) {
-                $scope.selectedItem.protData['com.widevine.alpha'] = {};
-            }
-            $scope.selectedItem.protData['com.widevine.alpha'].laURL = $scope.laURL;
-            $scope.selectedItem.protData['com.widevine.alpha'].cdmData = $scope.cdmData;
-        }
-
         resetBitratesSlider();
-
         //ORANGE : reset subtitles data.
         $scope.textTracks = null;
         $scope.textData = null;
@@ -974,9 +965,8 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     if (paramUrl !== null) {
         var startPlayback = true;
 
-        $scope.selectedItem = {};
         $scope.selectedItem.url = paramUrl;
-
+        setProtectionData();
         if (vars.hasOwnProperty("autoplay")) {
             startPlayback = (vars.autoplay === 'true');
         }
