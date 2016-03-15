@@ -143,7 +143,7 @@ Mss.dependencies.MssParser = function() {
 
             fourCCValue = this.domParser.getAttributeValue(qualityLevel, "FourCC");
 
-            if (!fourCCValue) {
+            if (fourCCValue === null) {
                 fourCCValue = this.domParser.getAttributeValue(streamIndex, "FourCC");
             }
             // Do not support AACH (TODO)
