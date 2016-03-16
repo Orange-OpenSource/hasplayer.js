@@ -771,7 +771,7 @@ MediaPlayer.dependencies.Stream = function() {
                 }
             }
 
-            if (textController && subtitlesEnabled) {
+            if (textController && subtitlesEnabled && tmSpeed === 1) {
                 if (time === undefined) {
                     textController.start();
                 } else {
@@ -1265,7 +1265,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.unlisten("pause", pauseListener);
             this.videoModel.unlisten("error", errorListener);
             this.videoModel.unlisten("seeking", seekingListener);
-            this.videoModel.unlisten("seeked", seekingListener);
+            this.videoModel.unlisten("seeked", seekedListener);
             this.videoModel.unlisten("timeupdate", timeupdateListener);
             this.videoModel.unlisten("durationchange", durationchangeListener);
             this.videoModel.unlisten("progress", progressListener);
