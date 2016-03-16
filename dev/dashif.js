@@ -1,4 +1,4 @@
-/* Last build : 10.3.2016_21:49:58 / git revision : 89bb502 */
+/* Last build : 16.3.2016_21:48:6 / git revision : c119399 */
  /* jshint ignore:start */
 (function() {
     var b = void 0, f = !0, j = null, l = !1;
@@ -28312,6 +28312,9 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     $scope.streamType = "MSS";
     $scope.protectionTypes = [ "PlayReady", "Widevine" ];
     $scope.protectionType = bowser.chrome ? "Widevine" : "PlayReady";
+    var protectionSchemes = [ "com.microsoft.playready", "com.widevine.alpha" ];
+    $scope.selectedItem = {};
+    setProtectionData();
     $("#sliderAudio").labeledslider({
         max: 0,
         step: 1,
@@ -28624,6 +28627,7 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
                 metricsAgent.stop();
             }
         }
+        alert(e.data.code);
     }
     $scope.invalidateChartDisplay = false;
     $scope.invalidateDisplay = function(value) {
@@ -28679,8 +28683,6 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     $scope.versionFull = player.getVersionFull();
     $scope.versionDashJS = player.getVersionDashJS();
     $scope.buildDate = player.getBuildDate();
-    $scope.laURL = "";
-    $scope.cdmData = "";
     player.startup();
     player.addEventListener("error", onError.bind(this));
     player.addEventListener("metricChanged", metricChanged.bind(this));
@@ -28866,12 +28868,16 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     $scope.setProtectionType = function(item) {
         $scope.protectionType = item;
         setProtectionScheme();
-        setProtectionData();
     };
     function setProtectionData() {
-        var protData = $scope.selectedItem.protData ? $scope.selectedItem.protData[$scope.protectionScheme] : null;
-        $scope.laURL = protData ? protData.laURL : "";
-        $scope.cdmData = protData ? protData.cdmData : "";
+        if (!$scope.selectedItem.protData) {
+            $scope.selectedItem.protData = {};
+        }
+        for (var i = 0; i < protectionSchemes.length; i++) {
+            if (!$scope.selectedItem.protData[protectionSchemes[i]]) {
+                $scope.selectedItem.protData[protectionSchemes[i]] = {};
+            }
+        }
     }
     setProtectionScheme();
     function resetBitratesSlider() {
@@ -28893,16 +28899,6 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
         });
     }
     function initPlayer() {
-        if ($scope.laURL.length > 0 || $scope.cdmData.length > 0) {
-            if (!$scope.selectedItem.protData) {
-                $scope.selectedItem.protData = {};
-            }
-            if (!$scope.selectedItem.protData["com.widevine.alpha"]) {
-                $scope.selectedItem.protData["com.widevine.alpha"] = {};
-            }
-            $scope.selectedItem.protData["com.widevine.alpha"].laURL = $scope.laURL;
-            $scope.selectedItem.protData["com.widevine.alpha"].cdmData = $scope.cdmData;
-        }
         resetBitratesSlider();
         $scope.textTracks = null;
         $scope.textData = null;
@@ -28939,8 +28935,8 @@ app.controller("DashController", [ "$scope", "$window", "Sources", "Notes", "Con
     }
     if (paramUrl !== null) {
         var startPlayback = true;
-        $scope.selectedItem = {};
         $scope.selectedItem.url = paramUrl;
+        setProtectionData();
         if (vars.hasOwnProperty("autoplay")) {
             startPlayback = vars.autoplay === "true";
         }

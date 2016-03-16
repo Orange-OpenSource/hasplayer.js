@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 10.3.2016_21:49:43 / git revision : 89bb502 */
+/* Last build : 16.3.2016_21:47:50 / git revision : c119399 */
  /* jshint ignore:start */
 (function(root, factory) {
     if (typeof define === "function" && define.amd) {
@@ -5352,7 +5352,7 @@
     mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
     MediaPlayer = function(aContext) {
         "use strict";
-        var VERSION_DASHJS = "1.2.0", VERSION = "1.2.7_dev", GIT_TAG = "89bb502", BUILD_DATE = "10.3.2016_21:49:43", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", subtitlesEnabled = false, isReady = function() {
+        var VERSION_DASHJS = "1.2.0", VERSION = "1.2.7_dev", GIT_TAG = "c119399", BUILD_DATE = "16.3.2016_21:47:50", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", subtitlesEnabled = false, isReady = function() {
             return !!element && !!source && !resetting;
         }, play = function() {
             if (!initialized) {
@@ -6014,9 +6014,6 @@
         }, onMediaLoaded = function(request, response) {
             var self = this, eventStreamAdaption = this.manifestExt.getEventStreamForAdaptationSet(self.getData()), eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(self.getData(), _currentRepresentation), segmentStartTime = null;
             lastDownloadedSegmentDuration = request.duration;
-            if (!isRunning()) {
-                return;
-            }
             segmentDownloadFailed = false;
             segmentDownloadErrorCount = 0;
             self.debug.log("[BufferController][" + type + "] Media loaded ", request.url);
@@ -6650,6 +6647,7 @@
                     this.fragmentController = value;
                     fragmentModel = this.fragmentController.attachBufferController(this);
                     fragmentModel.fragmentLoader.subscribe(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, this);
+                    fragmentModel.setType(type);
                 }
             },
             setEventController: function(value) {
@@ -7659,7 +7657,7 @@
     };
     MediaPlayer.dependencies.FragmentLoader = function() {
         "use strict";
-        var DEFAULT_RETRY_ATTEMPTS = 2, DEFAULT_RETRY_INTERVAL = 500, retryAttempts = DEFAULT_RETRY_ATTEMPTS, retryInterval = DEFAULT_RETRY_INTERVAL, retryCount = 0, xhrs = [], _checkForExistence = function(request) {
+        var DEFAULT_RETRY_ATTEMPTS = 2, DEFAULT_RETRY_INTERVAL = 500, retryAttempts = DEFAULT_RETRY_ATTEMPTS, retryInterval = DEFAULT_RETRY_INTERVAL, retryCount = 0, xhrs = [], type, _checkForExistence = function(request) {
             var req = new XMLHttpRequest(), isSuccessful = false;
             req.open("HEAD", request.url, true);
             req.onload = function() {
@@ -7722,7 +7720,7 @@
                 request.requestEndDate = currentTime;
                 latency = request.firstByteDate.getTime() - request.requestStartDate.getTime();
                 download = request.requestEndDate.getTime() - request.firstByteDate.getTime();
-                self.debug.log("[FragmentLoader][" + request.streamType + "] Loaded: " + request.url + " (" + req.status + ", " + latency + "ms, " + download + "ms)");
+                self.debug.log("[FragmentLoader][" + type + "] Loaded: " + request.url + " (" + req.status + ", " + latency + "ms, " + download + "ms)");
                 httpRequestMetrics.tresponse = request.firstByteDate;
                 httpRequestMetrics.tfinish = request.requestEndDate;
                 httpRequestMetrics.responsecode = req.status;
@@ -7760,7 +7758,7 @@
                 lastTraceTime = currentTime;
                 d.reject(req);
             };
-            self.debug.log("[FragmentLoader][" + request.streamType + "] Load: " + request.url);
+            self.debug.log("[FragmentLoader][" + type + "] Load: " + request.url);
             req.send();
             return d.promise;
         }, _retry = function(request, deferred) {
@@ -7792,6 +7790,9 @@
                 retryAttempts = this.config.getParam("FragmentLoader.RetryAttempts", "number", DEFAULT_RETRY_ATTEMPTS);
                 retryInterval = this.config.getParam("FragmentLoader.RetryInterval", "number", DEFAULT_RETRY_INTERVAL);
             },
+            setType: function(value) {
+                type = value;
+            },
             load: function(req) {
                 var self = this, deferred = Q.defer();
                 if (req.type === "Initialization Segment" && req.data) {
@@ -7819,7 +7820,7 @@
             abort: function() {
                 var i = 0;
                 for (i = 0; i < xhrs.length; i += 1) {
-                    this.debug.log("[FragmentLoader] Abort XHR " + (xhrs[i].responseURL ? xhrs[i].responseURL : ""));
+                    this.debug.log("[FragmentLoader][" + type + "] Abort XHR " + (xhrs[i].responseURL ? xhrs[i].responseURL : ""));
                     xhrs[i].abort();
                 }
                 xhrs.length = 0;
@@ -7843,7 +7844,7 @@
     };
     MediaPlayer.dependencies.FragmentModel = function() {
         "use strict";
-        var context, executedRequests = [], pendingRequests = [], loadingRequests = [], startLoadingCallback, successLoadingCallback, errorLoadingCallback, streamEndCallback, LOADING_REQUEST_THRESHOLD = 2, loadCurrentFragment = function(request) {
+        var context, executedRequests = [], pendingRequests = [], loadingRequests = [], startLoadingCallback, successLoadingCallback, errorLoadingCallback, streamEndCallback, type, LOADING_REQUEST_THRESHOLD = 2, loadCurrentFragment = function(request) {
             var onSuccess, onError, self = this;
             startLoadingCallback.call(context, request);
             onSuccess = function(request, response) {
@@ -7884,6 +7885,12 @@
             },
             getContext: function() {
                 return context;
+            },
+            setType: function(value) {
+                type = value;
+                if (this.fragmentLoader) {
+                    this.fragmentLoader.setType(value);
+                }
             },
             addRequest: function(value) {
                 if (value) {
@@ -10034,7 +10041,7 @@
                 textController.updateBufferLevel(true);
             }
         }, startBuffering = function(time) {
-            this.debug.log("[Stream] startBuffering at time " + time);
+            this.debug.log("[Stream] startBuffering" + (time === undefined ? "" : " at time " + time));
             if (videoController) {
                 if (time === undefined) {
                     videoController.start();
@@ -18057,7 +18064,7 @@
             representation.width = parseInt(this.domParser.getAttributeValue(qualityLevel, "MaxWidth"), 10);
             representation.height = parseInt(this.domParser.getAttributeValue(qualityLevel, "MaxHeight"), 10);
             fourCCValue = this.domParser.getAttributeValue(qualityLevel, "FourCC");
-            if (!fourCCValue) {
+            if (fourCCValue === null) {
                 fourCCValue = this.domParser.getAttributeValue(streamIndex, "FourCC");
             }
             if (fourCCValue.indexOf("AACH") >= 0) {
@@ -18512,6 +18519,24 @@
                     } else {
                         trun.samples_table[trun.samples_table.length - 1].sample_duration += fullDuration - concatDuration;
                     }
+                }
+                if (sepiff !== null) {
+                    if (sepiff.sample_count > 1) {
+                        sepiff.entry = sepiff.entry.slice(0, 1);
+                    }
+                    for (i = 0; i < trunEntries - 1; i += 1) {
+                        sepiff.entry.push(sepiff.entry[0]);
+                    }
+                    if (saiz.default_sample_info_size === 0) {
+                        if (saiz.sample_count > 1) {
+                            saiz.sample_info_size = saiz.sample_info_size.slice(0, 1);
+                        }
+                        for (i = 0; i < trunEntries - 1; i += 1) {
+                            saiz.sample_info_size.push(saiz.sample_info_size[0]);
+                        }
+                    }
+                    sepiff.sample_count = sepiff.entry.length;
+                    saiz.sample_count = sepiff.entry.length;
                 }
                 trun.sample_count = trun.samples_table.length;
                 mdat.data = new Uint8Array(mdatData.length * trun.sample_count);
