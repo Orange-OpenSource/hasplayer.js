@@ -1203,7 +1203,7 @@ MediaPlayer.dependencies.Stream = function() {
             var self = this,
                 manifest = self.manifestModel.getValue();
 
-            if (textController) {
+            if (textController && subtitlesEnabled) {
                 return self.manifestExt.getDataForIndex_(textTrackIndex, manifest, periodInfo.index);
             }
 
