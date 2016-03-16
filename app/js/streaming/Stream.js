@@ -1409,6 +1409,7 @@ MediaPlayer.dependencies.Stream = function() {
                         tmVideoStartTime = currentVideoTime;
                         self.debug.info("[Stream] Trick mode (x" + tmSpeed + "): videoTime = " + tmVideoStartTime);
                         seekValue = currentVideoTime + (tmSeekStep * Math.sign(tmSpeed));
+                        seekValue = Math.round((seekValue - (seekValue % tmMinSeekStep)) * 1000) / 1000;
                         self.debug.info("[Stream] Trick mode (x" + tmSpeed + "): seek step = " + tmSeekStep);
                         tmSeekValue = seekValue;
                         seek.call(self, seekValue);
