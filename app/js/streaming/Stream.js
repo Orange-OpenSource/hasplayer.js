@@ -1381,9 +1381,9 @@ MediaPlayer.dependencies.Stream = function() {
                 stopBuffering.call(self);
             }
 
-            funcs.push(videoController.setTrickMode(enableTrickMode));
+            funcs.push(videoController.setTrickMode(enableTrickMode, speed > 1));
             if (audioController) {
-                funcs.push(audioController.setTrickMode(enableTrickMode));
+                funcs.push(audioController.setTrickMode(enableTrickMode, speed > 1));
             }
 
             Q.all(funcs).then(function() {
@@ -1404,7 +1404,7 @@ MediaPlayer.dependencies.Stream = function() {
                     else if (tmState === "Stopped") {
                         tmEndDetected = false;
                         tmState = "Running";
-                        tmSeekStep = tmMinSeekStep = videoController.getLastDownloadedSegmentDuration();
+                        tmSeekStep = tmMinSeekStep = videoController.getSegmentDuration();
                         tmStartTime = tmSeekTime = (new Date().getTime()) / 1000;
                         tmVideoStartTime = currentVideoTime;
                         self.debug.info("[Stream] Trick mode (x" + tmSpeed + "): videoTime = " + tmVideoStartTime);

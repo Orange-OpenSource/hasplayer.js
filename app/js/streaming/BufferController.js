@@ -53,6 +53,7 @@ MediaPlayer.dependencies.BufferController = function() {
         bufferStateTimeout,
         trickModeEnabled = false,
         trickModePreviousQuality,
+        trickModeForward = false,
 
         playListMetrics = null,
         playListTraceMetrics = null,
@@ -84,7 +85,7 @@ MediaPlayer.dependencies.BufferController = function() {
         // ORANGE: HLS chunk sequence number
         currentSequenceNumber = -1,
 
-        lastDownloadedSegmentDuration = NaN,
+        segmentDuration = NaN,
 
         sendRequest = function() {
 
@@ -315,7 +316,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(self.getData(), _currentRepresentation),
                 segmentStartTime = null;
             
-            lastDownloadedSegmentDuration = request.duration;
+            segmentDuration = request.duration;
 
             // Push segment into buffer even if BufferController is stopped, since FragmentLoader would indicate this segment already loaded
             // if (!isRunning()) {
@@ -429,10 +430,20 @@ MediaPlayer.dependencies.BufferController = function() {
 
                                     isQuotaExceeded = false;
 
-                                    // In case of live streams, remove outdated buffer parts and requests
-                                    // (checking bufferLevel ensure buffer is not empty or back to current time)
                                     if (isDynamic && bufferLevel > 1) {
+                                        // In case of live streams, remove outdated buffer parts and requests
+                                        // (checking bufferLevel ensure buffer is not empty or back to current time)
                                         removeBuffer.call(self, -1, getWorkingTime.call(self) - 30).then(
+                                            function() {
+                                                debugBufferRange.call(self);
+                                                deferred.resolve();
+                                            }
+                                        );
+                                    } else if (trickModeEnabled) {
+                                        // In case of trick play, remove outdated buffer parts according to trick play direction
+                                        var start = trickModeForward ? -1 : (getWorkingTime.call(self) + segmentDuration);
+                                        var end = trickModeForward ? (getWorkingTime.call(self) - segmentDuration) : -1;
+                                        removeBuffer.call(self, start, end).then(
                                             function() {
                                                 debugBufferRange.call(self);
                                                 deferred.resolve();
@@ -1623,11 +1634,11 @@ MediaPlayer.dependencies.BufferController = function() {
             return deferred.promise;
         },
 
-        getLastDownloadedSegmentDuration: function(){
-            return lastDownloadedSegmentDuration;
+        getSegmentDuration: function(){
+            return segmentDuration;
         },
 
-        setTrickMode: function(enabled) {
+        setTrickMode: function(enabled, forward) {
             var self = this,
                 deferred = Q.defer();
 
@@ -1643,6 +1654,7 @@ MediaPlayer.dependencies.BufferController = function() {
             trickModePreviousQuality = trickModeEnabled ? self.abrController.getQualityFor(type) : trickModePreviousQuality;
             self.abrController.setPlaybackQuality(type, (trickModeEnabled ? 0 : trickModePreviousQuality));
             if (trickModeEnabled) {
+                trickModeForward = forward;
                 self.abrController.setAutoSwitchBitrate(false);
                 deferred.resolve();
             } else {
