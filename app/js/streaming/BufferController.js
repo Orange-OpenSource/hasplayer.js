@@ -901,7 +901,7 @@ MediaPlayer.dependencies.BufferController = function() {
                     }
                 } else {
                     // For VOD streams, signal end of stream
-                    signalStreamComplete.call(self);
+                    //signalStreamComplete.call(self);
                 }
             }
         },
