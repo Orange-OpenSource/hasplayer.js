@@ -42,6 +42,7 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
     var videoElement = null,
         mediaKeys = null,
         keySystemAccess = null,
+        boundDoSetKeys = null,
 
         // API names object selected for this user agent
         api = null,
@@ -75,7 +76,6 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
         // readyState, so we need this logic to ensure we don't set the keys
         // too early
         setMediaKeys = function() {
-            var boundDoSetKeys = null;
             var doSetKeys = function() {
                 videoElement.removeEventListener("loadedmetadata", boundDoSetKeys);
                 videoElement[api.setMediaKeys](mediaKeys);
@@ -307,6 +307,7 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
             // Replacing the previous element
             if (videoElement) {
                 videoElement.removeEventListener(api.needkey, eventHandler);
+                videoElement.removeEventListener("loadedmetadata", boundDoSetKeys);
             }
 
             videoElement = mediaElement;
