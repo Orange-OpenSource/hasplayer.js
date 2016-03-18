@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 16.3.2016_21:47:50 / git revision : c119399 */
+/* Last build : 18.3.2016_21:46:50 / git revision : ab882bd */
  /* jshint ignore:start */
 (function(root, factory) {
     if (typeof define === "function" && define.amd) {
@@ -5352,7 +5352,7 @@
     mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
     MediaPlayer = function(aContext) {
         "use strict";
-        var VERSION_DASHJS = "1.2.0", VERSION = "1.2.7_dev", GIT_TAG = "c119399", BUILD_DATE = "16.3.2016_21:47:50", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", subtitlesEnabled = false, isReady = function() {
+        var VERSION_DASHJS = "1.2.0", VERSION = "1.2.7_dev", GIT_TAG = "ab882bd", BUILD_DATE = "18.3.2016_21:46:50", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", subtitlesEnabled = false, isReady = function() {
             return !!element && !!source && !resetting;
         }, play = function() {
             if (!initialized) {
@@ -5885,7 +5885,7 @@
     MediaPlayer.dependencies.AbrController.BANDWIDTH_SAFETY = .9;
     MediaPlayer.dependencies.BufferController = function() {
         "use strict";
-        var READY = "READY", state = READY, ready = false, started = false, waitingForBuffer = false, initialPlayback = true, initializationData = [], seeking = false, seekTarget = -1, dataChanged = true, languageChanged = false, availableRepresentations, _currentRepresentation, currentBufferedQuality = -1, currentDownloadQuality = -1, stalled = false, isDynamic = false, isBufferingCompleted = false, deferredRejectedDataAppend = null, deferredBuffersFlatten = null, periodInfo = null, fragmentsToLoad = 0, fragmentModel = null, bufferLevel = 0, isQuotaExceeded = false, rejectedBytes = null, fragmentDuration = 0, appendingRejectedData = false, mediaSource, type, data = null, buffer = null, minBufferTime, minBufferTimeAtStartup, bufferTimeout, bufferStateTimeout, trickModeEnabled = false, trickModePreviousQuality, playListMetrics = null, playListTraceMetrics = null, playListTraceMetricsClosed = true, inbandEventFound = false, INIT = -1, BUFFERING = 0, PLAYING = 1, htmlVideoState = INIT, htmlVideoTime = -1, deferredFragmentBuffered = null, isFirstMediaSegment = false, appendSync = false, SEGMENT_DOWNLOAD_ERROR_MAX = 3, segmentDownloadFailed = false, segmentDownloadErrorCount = 0, recoveryTime = -1, reloadTimeout = null, currentSequenceNumber = -1, lastDownloadedSegmentDuration = NaN, sendRequest = function() {
+        var READY = "READY", state = READY, ready = false, started = false, waitingForBuffer = false, initialPlayback = true, initializationData = [], seeking = false, seekTarget = -1, dataChanged = true, languageChanged = false, availableRepresentations, _currentRepresentation, currentBufferedQuality = -1, currentDownloadQuality = -1, stalled = false, isDynamic = false, isBufferingCompleted = false, deferredRejectedDataAppend = null, deferredBuffersFlatten = null, periodInfo = null, fragmentsToLoad = 0, fragmentModel = null, bufferLevel = 0, isQuotaExceeded = false, rejectedBytes = null, fragmentDuration = 0, appendingRejectedData = false, mediaSource, type, data = null, buffer = null, minBufferTime, minBufferTimeAtStartup, bufferTimeout, bufferStateTimeout, trickModeEnabled = false, trickModePreviousQuality, trickModeForward = false, playListMetrics = null, playListTraceMetrics = null, playListTraceMetricsClosed = true, inbandEventFound = false, INIT = -1, BUFFERING = 0, PLAYING = 1, htmlVideoState = INIT, htmlVideoTime = -1, deferredFragmentBuffered = null, isFirstMediaSegment = false, appendSync = false, SEGMENT_DOWNLOAD_ERROR_MAX = 3, segmentDownloadFailed = false, segmentDownloadErrorCount = 0, recoveryTime = -1, reloadTimeout = null, currentSequenceNumber = -1, segmentDuration = NaN, sendRequest = function() {
             if (!isRunning.call(this)) {
                 return;
             }
@@ -6013,7 +6013,7 @@
             });
         }, onMediaLoaded = function(request, response) {
             var self = this, eventStreamAdaption = this.manifestExt.getEventStreamForAdaptationSet(self.getData()), eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(self.getData(), _currentRepresentation), segmentStartTime = null;
-            lastDownloadedSegmentDuration = request.duration;
+            segmentDuration = request.duration;
             segmentDownloadFailed = false;
             segmentDownloadErrorCount = 0;
             self.debug.log("[BufferController][" + type + "] Media loaded ", request.url);
@@ -6084,6 +6084,13 @@
                         isQuotaExceeded = false;
                         if (isDynamic && bufferLevel > 1) {
                             removeBuffer.call(self, -1, getWorkingTime.call(self) - 30).then(function() {
+                                debugBufferRange.call(self);
+                                deferred.resolve();
+                            });
+                        } else if (trickModeEnabled) {
+                            var start = trickModeForward ? -1 : getWorkingTime.call(self) + segmentDuration;
+                            var end = trickModeForward ? getWorkingTime.call(self) - segmentDuration : -1;
+                            removeBuffer.call(self, start, end).then(function() {
                                 debugBufferRange.call(self);
                                 deferred.resolve();
                             });
@@ -6343,9 +6350,7 @@
                             self.errHandler.sendError(err.name, err.message, err.data);
                         });
                     }
-                } else {
-                    signalStreamComplete.call(self);
-                }
+                } else {}
             }
         }, hasData = function() {
             return !!data && !!buffer;
@@ -6708,6 +6713,9 @@
                 if (started === false) {
                     return;
                 }
+                if (type === "text") {
+                    return;
+                }
                 if (trickModeEnabled) {
                     return;
                 }
@@ -6808,10 +6816,10 @@
                 });
                 return deferred.promise;
             },
-            getLastDownloadedSegmentDuration: function() {
-                return lastDownloadedSegmentDuration;
+            getSegmentDuration: function() {
+                return segmentDuration;
             },
-            setTrickMode: function(enabled) {
+            setTrickMode: function(enabled, forward) {
                 var self = this, deferred = Q.defer();
                 this.debug.log("[BufferController][" + type + "] setTrickMode - enabled = " + enabled);
                 if (trickModeEnabled === enabled) {
@@ -6823,6 +6831,7 @@
                 trickModePreviousQuality = trickModeEnabled ? self.abrController.getQualityFor(type) : trickModePreviousQuality;
                 self.abrController.setPlaybackQuality(type, trickModeEnabled ? 0 : trickModePreviousQuality);
                 if (trickModeEnabled) {
+                    trickModeForward = forward;
                     self.abrController.setAutoSwitchBitrate(false);
                     deferred.resolve();
                 } else {
@@ -10056,7 +10065,7 @@
                     audioController.seek(time);
                 }
             }
-            if (textController && subtitlesEnabled) {
+            if (textController && subtitlesEnabled && tmSpeed === 1) {
                 if (time === undefined) {
                     textController.start();
                 } else {
@@ -10325,7 +10334,7 @@
             },
             getSelectedSubtitleTrack: function() {
                 var self = this, manifest = self.manifestModel.getValue();
-                if (textController) {
+                if (textController && subtitlesEnabled) {
                     return self.manifestExt.getDataForIndex_(textTrackIndex, manifest, periodInfo.index);
                 }
                 return undefined;
@@ -10366,7 +10375,7 @@
                 this.videoModel.unlisten("pause", pauseListener);
                 this.videoModel.unlisten("error", errorListener);
                 this.videoModel.unlisten("seeking", seekingListener);
-                this.videoModel.unlisten("seeked", seekingListener);
+                this.videoModel.unlisten("seeked", seekedListener);
                 this.videoModel.unlisten("timeupdate", timeupdateListener);
                 this.videoModel.unlisten("durationchange", durationchangeListener);
                 this.videoModel.unlisten("progress", progressListener);
@@ -10454,9 +10463,9 @@
                     clearTimeout(tmSeekTimeout);
                     stopBuffering.call(self);
                 }
-                funcs.push(videoController.setTrickMode(enableTrickMode));
+                funcs.push(videoController.setTrickMode(enableTrickMode, speed > 1));
                 if (audioController) {
-                    funcs.push(audioController.setTrickMode(enableTrickMode));
+                    funcs.push(audioController.setTrickMode(enableTrickMode, speed > 1));
                 }
                 Q.all(funcs).then(function() {
                     tmPreviousSpeed = tmSpeed;
@@ -10474,11 +10483,12 @@
                         } else if (tmState === "Stopped") {
                             tmEndDetected = false;
                             tmState = "Running";
-                            tmSeekStep = tmMinSeekStep = videoController.getLastDownloadedSegmentDuration();
+                            tmSeekStep = tmMinSeekStep = videoController.getSegmentDuration();
                             tmStartTime = tmSeekTime = new Date().getTime() / 1e3;
                             tmVideoStartTime = currentVideoTime;
                             self.debug.info("[Stream] Trick mode (x" + tmSpeed + "): videoTime = " + tmVideoStartTime);
                             seekValue = currentVideoTime + tmSeekStep * Math.sign(tmSpeed);
+                            seekValue = Math.round((seekValue - seekValue % tmMinSeekStep) * 1e3) / 1e3;
                             self.debug.info("[Stream] Trick mode (x" + tmSpeed + "): seek step = " + tmSeekStep);
                             tmSeekValue = seekValue;
                             seek.call(self, seekValue);
@@ -11726,99 +11736,103 @@
                     regions = this.domParser.getChildNodes(divBody[k], "p");
                     if (!regions || regions.length === 0) {
                         errorMsg = "TTML document does not contain any cues";
-                        return Q.reject(errorMsg);
-                    }
-                    tabStyles = this.domParser.getAllSpecificNodes(nodeTt, "style");
-                    tabRegions = this.domParser.getAllSpecificNodes(nodeTt, "region");
-                    for (i = 0; i < regions.length; i += 1) {
-                        caption = null;
-                        region = regions[i];
-                        globalPrefTTNameSpace = globalPrefTTNameSpace.concat(getNameSpace.call(this, region, "main"));
-                        globalPrefStyleNameSpace = globalPrefStyleNameSpace.concat(getNameSpace.call(this, region, "style"));
-                        startTime = getTimeValue.call(this, region, "begin");
-                        endTime = getTimeValue.call(this, region, "end");
-                        if (isNaN(startTime) || isNaN(endTime)) {
-                            errorMsg = "TTML document has incorrect timing value";
-                            return Q.reject(errorMsg);
-                        }
-                        textDatas = this.domParser.getChildNodes(region, "span");
-                        if (textDatas.length > 0) {
-                            for (j = 0; j < textDatas.length; j++) {
-                                cssStyle.backgroundColor = findStyleElement.call(this, [ textDatas[j], region, divBody ], "backgroundColor");
-                                cssStyle.color = findStyleElement.call(this, [ textDatas[j], region, divBody ], "color");
-                                cssStyle.fontSize = findStyleElement.call(this, [ textDatas[j], region, divBody ], "fontSize");
-                                cssStyle.fontFamily = findStyleElement.call(this, [ textDatas[j], region, divBody ], "fontFamily");
-                                extent = findStyleElement.call(this, [ textDatas[j], region, divBody ], "extent");
-                                if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === "%" && extent) {
-                                    extent = extent.split(" ")[1];
-                                    extent = parseFloat(extent.substr(0, extent.length - 1));
-                                    cssStyle.fontSize = parseInt(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1), 10) * extent / 100 + "%";
-                                } else if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === "c" && extent) {
-                                    cellsSize = cssStyle.fontSize.replace(/\s/g, "").split("c");
-                                    cellResolution = findParameterElement.call(this, [ textDatas[j], region, divBody, nodeTt ], "cellResolution").split(" ");
-                                    if (cellsSize.length > 1) {
-                                        cssStyle.fontSize = cellResolution[1] / cellsSize[1] + "px";
-                                    } else {
-                                        cssStyle.fontSize = cellResolution[1] / cellsSize[0] + "px";
-                                    }
-                                }
-                                if (j === 0) {
-                                    caption = {
-                                        start: startTime,
-                                        end: endTime,
-                                        data: textDatas[j].textContent,
-                                        line: 80,
-                                        style: cssStyle
-                                    };
-                                } else {
-                                    caption = {
-                                        start: startTime,
-                                        end: endTime,
-                                        data: textDatas[j - 1].textContent + "\n" + textDatas[j].textContent,
-                                        line: 80,
-                                        style: cssStyle
-                                    };
-                                }
-                            }
-                            captionArray.push(caption);
-                        } else {
-                            cssStyle.backgroundColor = findStyleElement.call(this, [ region, divBody ], "backgroundColor");
-                            cssStyle.color = findStyleElement.call(this, [ region, divBody ], "color");
-                            cssStyle.fontSize = findStyleElement.call(this, [ region, divBody ], "fontSize");
-                            cssStyle.fontFamily = findStyleElement.call(this, [ region, divBody ], "fontFamily");
-                            extent = findStyleElement.call(this, [ region, divBody ], "extent");
-                            if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === "%" && extent) {
-                                extent = extent.split(" ")[1];
-                                extent = parseFloat(extent.substr(0, extent.length - 1));
-                                cssStyle.fontSize = parseInt(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1), 10) * extent / 100 + "%";
-                            }
-                            if (i > 0) {
-                                previousStartTime = getTimeValue.call(this, regions[i - 1], "begin");
-                                previousEndTime = getTimeValue.call(this, regions[i - 1], "end");
-                            }
-                            if (startTime === previousStartTime && endTime === previousEndTime) {
-                                captionArray.pop();
-                                caption = {
-                                    start: startTime,
-                                    end: endTime,
-                                    data: regions[i - 1].textContent + "\n" + region.textContent,
-                                    line: 80,
-                                    style: cssStyle
-                                };
+                    } else {
+                        tabStyles = this.domParser.getAllSpecificNodes(nodeTt, "style");
+                        tabRegions = this.domParser.getAllSpecificNodes(nodeTt, "region");
+                        for (i = 0; i < regions.length; i += 1) {
+                            caption = null;
+                            region = regions[i];
+                            globalPrefTTNameSpace = globalPrefTTNameSpace.concat(getNameSpace.call(this, region, "main"));
+                            globalPrefStyleNameSpace = globalPrefStyleNameSpace.concat(getNameSpace.call(this, region, "style"));
+                            startTime = getTimeValue.call(this, region, "begin");
+                            endTime = getTimeValue.call(this, region, "end");
+                            if (isNaN(startTime) || isNaN(endTime)) {
+                                errorMsg = "TTML document has incorrect timing value";
                             } else {
-                                caption = {
-                                    start: startTime,
-                                    end: endTime,
-                                    data: region.textContent,
-                                    line: 80,
-                                    style: cssStyle
-                                };
+                                textDatas = this.domParser.getChildNodes(region, "span");
+                                if (textDatas.length > 0) {
+                                    for (j = 0; j < textDatas.length; j++) {
+                                        cssStyle.backgroundColor = findStyleElement.call(this, [ textDatas[j], region, divBody ], "backgroundColor");
+                                        cssStyle.color = findStyleElement.call(this, [ textDatas[j], region, divBody ], "color");
+                                        cssStyle.fontSize = findStyleElement.call(this, [ textDatas[j], region, divBody ], "fontSize");
+                                        cssStyle.fontFamily = findStyleElement.call(this, [ textDatas[j], region, divBody ], "fontFamily");
+                                        extent = findStyleElement.call(this, [ textDatas[j], region, divBody ], "extent");
+                                        if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === "%" && extent) {
+                                            extent = extent.split(" ")[1];
+                                            extent = parseFloat(extent.substr(0, extent.length - 1));
+                                            cssStyle.fontSize = parseInt(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1), 10) * extent / 100 + "%";
+                                        } else if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === "c" && extent) {
+                                            cellsSize = cssStyle.fontSize.replace(/\s/g, "").split("c");
+                                            cellResolution = findParameterElement.call(this, [ textDatas[j], region, divBody, nodeTt ], "cellResolution").split(" ");
+                                            if (cellsSize.length > 1) {
+                                                cssStyle.fontSize = cellResolution[1] / cellsSize[1] + "px";
+                                            } else {
+                                                cssStyle.fontSize = cellResolution[1] / cellsSize[0] + "px";
+                                            }
+                                        }
+                                        if (j === 0) {
+                                            caption = {
+                                                start: startTime,
+                                                end: endTime,
+                                                data: textDatas[j].textContent,
+                                                line: 80,
+                                                style: cssStyle
+                                            };
+                                        } else {
+                                            caption = {
+                                                start: startTime,
+                                                end: endTime,
+                                                data: textDatas[j - 1].textContent + "\n" + textDatas[j].textContent,
+                                                line: 80,
+                                                style: cssStyle
+                                            };
+                                        }
+                                    }
+                                    captionArray.push(caption);
+                                } else {
+                                    cssStyle.backgroundColor = findStyleElement.call(this, [ region, divBody ], "backgroundColor");
+                                    cssStyle.color = findStyleElement.call(this, [ region, divBody ], "color");
+                                    cssStyle.fontSize = findStyleElement.call(this, [ region, divBody ], "fontSize");
+                                    cssStyle.fontFamily = findStyleElement.call(this, [ region, divBody ], "fontFamily");
+                                    extent = findStyleElement.call(this, [ region, divBody ], "extent");
+                                    if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === "%" && extent) {
+                                        extent = extent.split(" ")[1];
+                                        extent = parseFloat(extent.substr(0, extent.length - 1));
+                                        cssStyle.fontSize = parseInt(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1), 10) * extent / 100 + "%";
+                                    }
+                                    if (i > 0) {
+                                        previousStartTime = getTimeValue.call(this, regions[i - 1], "begin");
+                                        previousEndTime = getTimeValue.call(this, regions[i - 1], "end");
+                                    }
+                                    if (startTime === previousStartTime && endTime === previousEndTime) {
+                                        captionArray.pop();
+                                        caption = {
+                                            start: startTime,
+                                            end: endTime,
+                                            data: regions[i - 1].textContent + "\n" + region.textContent,
+                                            line: 80,
+                                            style: cssStyle
+                                        };
+                                    } else {
+                                        caption = {
+                                            start: startTime,
+                                            end: endTime,
+                                            data: region.textContent,
+                                            line: 80,
+                                            style: cssStyle
+                                        };
+                                    }
+                                    captionArray.push(caption);
+                                }
                             }
-                            captionArray.push(caption);
                         }
                     }
                 }
-                return Q.when(captionArray);
+                if (captionArray.length > 0) {
+                    return Q.when(captionArray);
+                } else {
+                    return Q.reject(errorMsg);
+                }
             } catch (err) {
                 errorMsg = err.message;
                 return Q.reject(errorMsg);
@@ -12887,7 +12901,7 @@
         return null;
     };
     MediaPlayer.models.ProtectionModel_3Feb2014 = function() {
-        var videoElement = null, mediaKeys = null, keySystemAccess = null, api = null, sessions = [], createEventHandler = function() {
+        var videoElement = null, mediaKeys = null, keySystemAccess = null, boundDoSetKeys = null, api = null, sessions = [], createEventHandler = function() {
             var self = this;
             return {
                 handleEvent: function(event) {
@@ -12902,7 +12916,6 @@
                 }
             };
         }, eventHandler = null, setMediaKeys = function() {
-            var boundDoSetKeys = null;
             var doSetKeys = function() {
                 videoElement.removeEventListener("loadedmetadata", boundDoSetKeys);
                 videoElement[api.setMediaKeys](mediaKeys);
@@ -13083,6 +13096,7 @@
                 if (videoElement === mediaElement) return;
                 if (videoElement) {
                     videoElement.removeEventListener(api.needkey, eventHandler);
+                    videoElement.removeEventListener("loadedmetadata", boundDoSetKeys);
                 }
                 videoElement = mediaElement;
                 if (videoElement) {
