@@ -907,11 +907,11 @@ MediaPlayer.dependencies.Stream = function() {
             // PATCH (+0.5) for chrome for which there is an issue for starting live streams,
             // due to a difference (rounding?) between manifest segments times and real samples times
             // returned by the buffer.
-            //startTime = videoRange.start; // + 0.5;
+            startTime = videoRange.start; // + 0.5;
             // Do not need to take videoRange.start since in case of live streams the seekTime corresponds
             // to the start of a video segment, then to the videoRange.start
             // (except if theoretical segment time does not corresponds to absolute media time)
-            startTime = seekTime;
+            //startTime = seekTime;
 
             if (audioController) {
                 // Check if audio buffer is not empty
