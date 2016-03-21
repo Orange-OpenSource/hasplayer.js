@@ -30,14 +30,17 @@ MediaPlayer.models.VideoModel = function () {
             stalledStreams[type] = stalled;
 
             if (!isStalled()) {
+                this.debug.info("<video> setPlaybackRate(1)");
                 element.playbackRate = 1;
             } else {
+                this.debug.info("<video> setPlaybackRate(0)");
                 element.playbackRate = 0;
             }
         };
 
     return {
         system : undefined,
+        debug : undefined,
 
         setup : function () {
         },
@@ -47,10 +50,12 @@ MediaPlayer.models.VideoModel = function () {
         },
 
         play: function () {
+            this.debug.info("<video> play()");
             element.play();
         },
 
         pause: function () {
+            this.debug.info("<video> pause()");
             element.pause();
         },
 
@@ -62,11 +67,16 @@ MediaPlayer.models.VideoModel = function () {
             return element.seeking;
         },
 
+        getDuration:  function () {
+            return element.duration;
+        },
+
         getPlaybackRate:  function () {
             return element.playbackRate;
         },
 
         setPlaybackRate: function (value) {
+            this.debug.info("<video> setPlaybackRate(" + value + ")");
             element.playbackRate = value;
         },
 
@@ -83,6 +93,7 @@ MediaPlayer.models.VideoModel = function () {
         },
 
         setCurrentTime: function (currentTime) {
+            this.debug.info("<video> setCurrentTime(" + currentTime + ")");
             element.currentTime = currentTime;
         },
 

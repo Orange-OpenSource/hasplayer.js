@@ -633,8 +633,8 @@ MediaPlayer.dependencies.Stream = function() {
                     }
                     if (seekValue < self.getStartTime()) {
                         seekValue = self.getStartTime();
-                    } else if (seekValue >= self.videoModel.getElement().duration) {
-                        seekValue = self.videoModel.getElement().duration - tmMinSeekStep;
+                    } else if (seekValue >= self.videoModel.getDuration()) {
+                        seekValue = self.videoModel.getDuration() - tmMinSeekStep;
                         tmEndDetected = true;
                     }
                     if (delay > 0) {
@@ -712,11 +712,11 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         onDurationchange = function() {
-            this.debug.info("[Stream] <video> durationchange event: " + this.videoModel.getElement().duration);
+            this.debug.info("[Stream] <video> durationchange event: " + this.videoModel.getDuration());
         },
 
         onRatechange = function() {
-            this.debug.info("[Stream] <video> ratechange event: " + this.videoModel.getElement().playbackRate);
+            this.debug.info("[Stream] <video> ratechange event: " + this.videoModel.getPlaybackRate());
             if (videoController) {
                 videoController.updateStalledState();
             }
