@@ -808,6 +808,11 @@ MediaPlayer.dependencies.BufferController = function() {
         loadInitialization = function(quality) {
             var self = this;
 
+            // Check if running state
+            if (!isRunning.call(self)) {
+                return;
+            }
+
             // Check if initialization segment for current quality has not already been stored
             if (initializationData[quality]) {
                 self.debug.info("[BufferController][" + type + "] Buffer initialization segment, quality = ", quality);
@@ -1152,6 +1157,11 @@ MediaPlayer.dependencies.BufferController = function() {
                 deferred = Q.defer(),
                 manifest = self.manifestModel.getValue(),
                 representation;
+
+            // Check if running state
+            if (!isRunning.call(self)) {
+                return;
+            }
 
             self.manifestExt.getDataIndex(data, manifest, periodInfo.index).then(
                 function(idx) {
