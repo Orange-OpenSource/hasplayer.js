@@ -32,7 +32,7 @@ Hls.dependencies.HlsParser = function() {
         ATTR_AUDIO = "AUDIO",
         ATTR_SUBTITLES = "SUBTITLES",
         ATTR_RESOLUTION = "RESOLUTION",
-        ATTR_CODECS = "CODECS";
+        ATTR_CODECS = "CODECS",
     /*ATTR_METHOD = "METHOD",
         ATTR_IV = "IV",
         ATTR_URI = "URI",
@@ -43,6 +43,13 @@ Hls.dependencies.HlsParser = function() {
         ATTR_AUTOSELECT = "AUTOSELECT",
         ATTR_LANGUAGE = "LANGUAGE",
         VAL_YES = "YES";*/
+        DEFAULT_RETRY_ATTEMPTS = 2,
+        DEFAULT_RETRY_INTERVAL = 500,
+        retryAttempts = DEFAULT_RETRY_ATTEMPTS,
+        retryInterval = DEFAULT_RETRY_INTERVAL,
+        retryCount = 0,
+        deferredPlaylist = null;
+        
 
     var playlistRequest = new XMLHttpRequest();
 
@@ -479,8 +486,7 @@ Hls.dependencies.HlsParser = function() {
 
 
     var doUpdatePlaylist = function(representation) {
-        var deferred = Q.defer(),
-            error = true,
+        var error = true,
             self = this;
 
         var onabort = function() {
@@ -495,9 +501,9 @@ Hls.dependencies.HlsParser = function() {
             if (playlistRequest.status === 200 && playlistRequest.readyState === 4) {
                 error = false;
                 if (_parsePlaylist.call(self, playlistRequest.response, representation)) {
-                    deferred.resolve();
+                    deferredPlaylist.resolve();
                 } else {
-                    deferred.reject({
+                    deferredPlaylist.reject({
                         name: MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE,
                         message: "Failed to parse variant stream playlist",
                         data: {
@@ -510,15 +516,25 @@ Hls.dependencies.HlsParser = function() {
 
         var onreport = function() {
             if (!error || playlistRequest.aborted) {
+                deferredPlaylist.resolve();
                 return;
             }
-            deferred.reject({
-                name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
-                message: "Failed to download variant stream playlist",
-                data: {
-                    url: representation.url
-                }
-            });
+
+            retryCount++;
+            if (retryAttempts > 0 && retryCount <= retryAttempts) {
+                setTimeout(function() {
+                    doUpdatePlaylist.call(self, representation);
+                }, retryInterval);
+            } else {
+                deferredPlaylist.reject({
+                    name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
+                    message: "Failed to download variant stream playlist",
+                    data: {
+                        url: representation.url,
+                        status: playlistRequest.status
+                    }
+                });
+            }
         };
 
         try {
@@ -532,8 +548,6 @@ Hls.dependencies.HlsParser = function() {
         } catch (e) {
             playlistRequest.onerror();
         }
-
-        return deferred.promise;
     };
 
     var processManifest = function(data, baseUrl) {
@@ -693,7 +707,7 @@ Hls.dependencies.HlsParser = function() {
         self.abrController.getPlaybackQuality("video", adaptationSet).then(
             function(result) {
                 representation = adaptationSet.Representation_asArray[result.quality];
-                doUpdatePlaylist.call(self, representation).then(
+                self.updatePlaylist(representation).then(
                     function() {
                         postProcess.call(self, mpd, result.quality).then(function() {
                             deferred.resolve(mpd);
@@ -724,13 +738,23 @@ Hls.dependencies.HlsParser = function() {
 
     return {
         debug: undefined,
+        config: undefined,
         manifestModel: undefined,
         fragmentLoader: undefined,
         abrController: undefined,
         hlsDemux: undefined,
 
         parse: internalParse,
-        updatePlaylist: doUpdatePlaylist,
+
+        updatePlaylist: function (representation) {
+            retryAttempts = this.config.getParam("ManifestLoader.RetryAttempts", "number", DEFAULT_RETRY_ATTEMPTS);
+            retryInterval = this.config.getParam("ManifestLoader.RetryInterval", "number", DEFAULT_RETRY_INTERVAL);
+            retryCount = 0;
+            deferredPlaylist = Q.defer();
+            doUpdatePlaylist.call(this, representation);
+            return deferredPlaylist.promise;
+        },
+
         abort: abort
     };
 };
