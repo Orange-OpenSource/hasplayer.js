@@ -1036,6 +1036,7 @@ MediaPlayer.dependencies.Stream = function() {
         streamsComposed = function() {
             var time = this.videoModel.getCurrentTime();
             textController.seek(time);
+            textController.seeked();
         },
 
         onVisibilitychange = function() {
