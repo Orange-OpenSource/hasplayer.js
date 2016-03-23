@@ -150,61 +150,59 @@ MediaPlayer.utils.TTMLParser = function() {
         findStyleElement = function(nodeTab, styleElementName) {
             var styleName,
                 regionName,
-                i = 0,
-                j = 0,
-                k = 0,
-                l = 0,
-                m = 0,
-                n = 0,
-                o = 0;
+                resu = null,
+                i = 0;
 
-            for (j = 0; j < nodeTab.length; j += 1) {
+
+            for (i = 0; i < nodeTab.length; i += 1) {
                 //search styleElementName in node Element
-                for (k = 0; k < globalPrefStyleNameSpace.length; k += 1) {
-                    styleName = this.domParser.getAttributeValue(nodeTab[j], globalPrefStyleNameSpace[k] + styleElementName);
-                    if (styleName) {
-                        return styleName;
+                resu = findParameterElement.call(this, [nodeTab[i]], globalPrefStyleNameSpace, styleElementName);
+
+                if (resu) {
+                    return resu;
+                }
+
+                //search style reference in node Element
+                styleName = findParameterElement.call(this, [nodeTab[i]], globalPrefTTNameSpace, 'style');
+                if (styleName) {
+                    //search if styleElementName is defined in the specific style reference
+                    resu = searchInTab(tabStyles, styleName, styleElementName);
+                    if (resu) {
+                        return resu;
                     }
                 }
 
-                //search style in node Element
-                for (k = 0; k < globalPrefTTNameSpace.length; k += 1) {
-                    styleName = this.domParser.getAttributeValue(nodeTab[j], globalPrefTTNameSpace[k] + 'style');
+                //search region reference in node Element
+                regionName = findParameterElement.call(this, [nodeTab[i]], globalPrefTTNameSpace, 'region');
+                if (regionName) {
+                    //region reference has been found in the node element, search styleElementName definition in this specified region
+                    resu = searchInTab(tabRegions, regionName, styleElementName);
+
+                    if (resu) {
+                        return resu;
+                    }
+
+                    styleName = searchInTab(tabRegions, regionName, 'style');
+                    //search style reference in this specified region Element
+
                     if (styleName) {
-                        for (i = 0; i < tabStyles[styleName].length; i += 1) {
-                            for (l = 0; l < globalPrefStyleNameSpace.length; l += 1) {
-                                if (tabStyles[styleName][i].name === globalPrefStyleNameSpace[l] + styleElementName) {
-                                    return tabStyles[styleName][i].nodeValue;
-                                }
-                            }
+                        //specified style has been detected
+                        //browse attributes of this style to detect styleElementName attribute
+                        resu = searchInTab(tabStyles, styleName, styleElementName);
+                        if (resu) {
+                            return resu;
                         }
-                    }
-                }
 
-                for (k = 0; k < globalPrefTTNameSpace.length; k += 1) {
-                    //search region in node Element
-                    regionName = this.domParser.getAttributeValue(nodeTab[j], globalPrefTTNameSpace[k] + 'region');
-                    if (regionName) {
-                        for (i = 0; i < tabRegions[regionName].length; i += 1) {
-                            for (l = 0; l < globalPrefStyleNameSpace.length; l += 1) {
-                                if (tabRegions[regionName][i].name === globalPrefStyleNameSpace[l] + styleElementName) {
-                                    return tabRegions[regionName][i].nodeValue;
-                                }
+                        //search if others styles are referenced in the selected one
+                        styleName = searchInTab(tabStyles, styleName, 'style');
+                        
+                        while (styleName) {
+                            //search in this other style
+                            resu = searchInTab(tabStyles, styleName, styleElementName);
+                            if (resu) {
+                                return resu;
                             }
-
-                            //search style in region Element
-                            for (m = 0; m < globalPrefTTNameSpace.length; m += 1) {
-                                styleName = tabRegions[regionName][i].nodeName === globalPrefTTNameSpace[m] + 'style' ? tabRegions[regionName][i].nodeValue : null;
-                                if (styleName) {
-                                    for (n = 0; n < tabStyles[styleName].length; n += 1) {
-                                        for (o = 0; o < globalPrefStyleNameSpace.length; o += 1) {
-                                            if (tabStyles[styleName][n].name === globalPrefStyleNameSpace[o] + styleElementName) {
-                                                return tabStyles[styleName][n].nodeValue;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
+                            styleName = searchInTab(tabStyles, styleName, 'style');
                         }
                     }
                 }
@@ -213,14 +211,36 @@ MediaPlayer.utils.TTMLParser = function() {
             return null;
         },
 
-        findParameterElement = function(nodeTab, parameterElementName) {
+        searchInTab = function(tab, elementNameReference, styleElementName) {
+            var i = 0,
+                j = 0;
+
+            for (i = 0; i < tab[elementNameReference].length; i += 1) {
+                //search with style nameSpaces
+                for (j = 0; j < globalPrefStyleNameSpace.length; j += 1) {
+                    if (tab[elementNameReference][i].name === globalPrefStyleNameSpace[j] + styleElementName) {
+                        return tab[elementNameReference][i].nodeValue;
+                    }
+                }
+                //search with main nameSpaces
+                for (j = 0; j < globalPrefTTNameSpace.length; j += 1) {
+                    if (tab[elementNameReference][i].name === globalPrefTTNameSpace[j] + styleElementName) {
+                        return tab[elementNameReference][i].nodeValue;
+                    }
+                }
+            }
+
+            return null;
+        },
+
+        findParameterElement = function(nodeTab, nameSpaceTab, parameterElementName) {
             var parameterValue = null,
                 i = 0,
                 k = 0;
-
-            for (i = 0; i < nodeTab.length; i++) {
-                for (k = 0; k < globalPrefParameterNameSpace.length; k += 1) {
-                    parameterValue = this.domParser.getAttributeValue(nodeTab[i], globalPrefParameterNameSpace[k] + parameterElementName);
+            //search for each node in the noteTab, if the parameterElementName is defined
+            for (i = 0; i < nodeTab.length; i += 1) {
+                for (k = 0; k < nameSpaceTab.length; k += 1) {
+                    parameterValue = this.domParser.getAttributeValue(nodeTab[i], nameSpaceTab[k] + parameterElementName);
                     if (parameterValue) {
                         return parameterValue;
                     }
@@ -230,11 +250,28 @@ MediaPlayer.utils.TTMLParser = function() {
             return parameterValue;
         },
 
+        arrayUnique = function(array) {
+            var a = array.concat(),
+                i = 0,
+                j = 0;
+            for (i = 0; i < a.length; ++i) {
+                for (j = i + 1; j < a.length; ++j) {
+                    if (a[i] === a[j]) {
+                        a.splice(j--, 1);
+                    }
+                }
+            }
+
+            return a;
+        },
+
         getNameSpace = function(node, type) {
             var nameSpace = null,
                 TTAFUrl = null,
                 TTMLUrl = null,
-                i = 0;
+                i = 0,
+                tabReturn = [],
+                valTab;
 
             switch (type) {
                 case "style":
@@ -252,20 +289,44 @@ MediaPlayer.utils.TTMLParser = function() {
             }
 
             if (TTAFUrl && TTMLUrl) {
-                nameSpace = this.domParser.getAttributeName(node, TTAFUrl);
+                if (Array.isArray(node)) {
+                    for (var key in node) {
+                        for (i = node[key].length - 1; i >= 0; i -= 1) {
+                            nameSpace = node[key][i].nodeValue === TTMLUrl ? node[key][i].nodeName : null;
 
-                if (nameSpace.length === 0) {
-                    nameSpace = this.domParser.getAttributeName(node, TTMLUrl);
-                }
+                            if (nameSpace === null) {
+                                nameSpace = node[key][i].nodeValue === TTAFUrl ? node[key][i].nodeName : null;
+                            }
 
-                if (nameSpace.length > 0) {
-                    for (i = 0; i < nameSpace.length; i += 1) {
-                        nameSpace[i] = nameSpace[i].split(':').length > 1 ? nameSpace[i].split(':')[1] + ':' : "";
+                            if (nameSpace) {
+                                nameSpace = nameSpace.split(':').length > 1 ? nameSpace.split(':')[1] + ':' : "";
+                                if (tabReturn.indexOf(nameSpace) < 0) {
+                                    tabReturn.push(nameSpace);
+                                    //nameSpace attribute has been detected, we can remove it.
+                                    node[key].removeNamedItem(node[key][i].nodeName);
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    nameSpace = this.domParser.getAttributeName(node, TTAFUrl);
+
+                    if (nameSpace.length === 0) {
+                        nameSpace = this.domParser.getAttributeName(node, TTMLUrl);
+                    }
+
+                    if (nameSpace.length > 0) {
+                        for (i = 0; i < nameSpace.length; i += 1) {
+                            valTab = nameSpace[i].split(':').length > 1 ? nameSpace[i].split(':')[1] + ':' : "";
+                            if (tabReturn.indexOf(valTab) < 0) {
+                                tabReturn.push(valTab);
+                            }
+                        }
                     }
                 }
             }
 
-            return nameSpace;
+            return tabReturn;
         },
 
         getTimeValue = function(node, parameter) {
@@ -330,25 +391,32 @@ MediaPlayer.utils.TTMLParser = function() {
                     return Q.reject(errorMsg);
                 }
 
+                //get all styles informations
+                tabStyles = this.domParser.getAllSpecificNodes(nodeTt, 'style');
+                //search prefTT nameSpace in tabStyles
+                globalPrefTTNameSpace = arrayUnique(globalPrefTTNameSpace.concat(getNameSpace.call(this, tabStyles, 'main')));
+                //search prefStyle nameSpace in tabStyles
+                globalPrefStyleNameSpace = arrayUnique(globalPrefStyleNameSpace.concat(getNameSpace.call(this, tabStyles, 'style')));
+                //get all regions informations
+                tabRegions = this.domParser.getAllSpecificNodes(nodeTt, 'region');
+                //search prefTT nameSpace in tabRegions
+                globalPrefTTNameSpace = arrayUnique(globalPrefTTNameSpace.concat(getNameSpace.call(this, tabRegions, 'main')));
+                //search prefStyle nameSpace in tabRegions
+                globalPrefStyleNameSpace = arrayUnique(globalPrefStyleNameSpace.concat(getNameSpace.call(this, tabRegions, 'style')));
+
                 for (k = 0; k < divBody.length; k += 1) {
                     regions = this.domParser.getChildNodes(divBody[k], 'p');
 
                     if (!regions || regions.length === 0) {
                         errorMsg = "TTML document does not contain any cues";
                     } else {
-                        //get all styles informations
-                        tabStyles = this.domParser.getAllSpecificNodes(nodeTt, 'style');
-
-                        //get all regions informations
-                        tabRegions = this.domParser.getAllSpecificNodes(nodeTt, 'region');
-
                         for (i = 0; i < regions.length; i += 1) {
                             caption = null;
                             region = regions[i];
 
-                            globalPrefTTNameSpace = globalPrefTTNameSpace.concat(getNameSpace.call(this, region, 'main'));
+                            globalPrefTTNameSpace = arrayUnique(globalPrefTTNameSpace.concat(getNameSpace.call(this, region, 'main')));
 
-                            globalPrefStyleNameSpace = globalPrefStyleNameSpace.concat(getNameSpace.call(this, region, 'style'));
+                            globalPrefStyleNameSpace = arrayUnique(globalPrefStyleNameSpace.concat(getNameSpace.call(this, region, 'style')));
 
                             startTime = getTimeValue.call(this, region, 'begin');
 
@@ -358,7 +426,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                 errorMsg = "TTML document has incorrect timing value";
                             } else {
                                 textDatas = this.domParser.getChildNodes(region, 'span');
-                                //subtitles are set in span 
+                                //subtitles are set in span
                                 if (textDatas.length > 0) {
                                     for (j = 0; j < textDatas.length; j++) {
                                         /******************** Find style informations ***************************************
@@ -383,7 +451,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                             cssStyle.fontSize = (parseInt(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1), 10) * extent) / 100 + "%";
                                         } else if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === 'c' && extent) {
                                             cellsSize = cssStyle.fontSize.replace(/\s/g, '').split('c');
-                                            cellResolution = findParameterElement.call(this, [textDatas[j], region, divBody, nodeTt], 'cellResolution').split(' ');
+                                            cellResolution = findParameterElement.call(this, [textDatas[j], region, divBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution').split(' ');
                                             if (cellsSize.length > 1) {
                                                 cssStyle.fontSize = cellResolution[1] / cellsSize[1] + 'px';
                                             } else {
