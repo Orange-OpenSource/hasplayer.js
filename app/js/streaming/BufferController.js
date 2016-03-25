@@ -352,7 +352,19 @@ MediaPlayer.dependencies.BufferController = function() {
                         }
 
                         self.debug.info("[BufferController][" + type + "] Buffer segment from url ", request.url);
-                        //    console.saveBinArray(data, type + "_" + request.index + "_" + request.quality + ".mp4");
+                
+                        /*if (trickModeEnabled) {
+                            var filename = type + "_" + request.index + "_" + request.quality + ".mp4",
+                                blob = new Blob([data], {
+                                    type: 'data/mp4'
+                                });
+
+                            if (navigator.msSaveBlob) { // For IE10+ and edge
+                                navigator.msSaveBlob(blob, filename);
+                            }
+                        }*/
+
+                        //console.saveBinArray(data, type + "_" + request.index + "_" + request.quality + ".mp4");
                         deleteInbandEvents.call(self, data).then(
                             function(data) {
                                 appendToBuffer.call(self, data, request.quality, request.index).then(
