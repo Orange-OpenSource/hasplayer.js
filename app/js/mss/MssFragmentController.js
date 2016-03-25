@@ -143,7 +143,7 @@ Mss.dependencies.MssFragmentController = function() {
                 sepiff.boxtype = "senc";
                 sepiff.extended_type = undefined;
 
-                saio = traf.getBoxByType("saio");
+                saio = traf.getBoxByType("saio");              
                 if (saio === null) {
                     // Create Sample Auxiliary Information Offsets Box box (saio)
                     saio = new mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox();
@@ -271,6 +271,11 @@ Mss.dependencies.MssFragmentController = function() {
                     for (i = 0; i < (trunEntries - 1); i += 1) {
                         sepiff.entry.push(sepiff.entry[0]);
                     }
+
+                    //if saio box was defined in the mp4 stream, saiz was also defined : get it now!
+                    if (saiz === null) {
+                        saiz = traf.getBoxByType("saiz");
+                    }
                 
                     if (saiz.default_sample_info_size === 0) {
                         //as for sepiff box....
@@ -337,7 +342,11 @@ Mss.dependencies.MssFragmentController = function() {
             // Get adaptation containing provided representations
             // (Note: here representations is of type Dash.vo.Representation)
             adaptation = manifest.Period_asArray[representations[0].adaptation.period.index].AdaptationSet_asArray[representations[0].adaptation.index];
-            result = convertFragment.call(this, result, request, adaptation);
+            try{
+                result = convertFragment.call(this, result, request, adaptation);
+            }catch(e) {
+                return Q.reject(e);
+            }
 
             if (!result) {
                 return Q.when(null);

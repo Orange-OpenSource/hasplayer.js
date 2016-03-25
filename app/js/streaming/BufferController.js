@@ -383,12 +383,15 @@ MediaPlayer.dependencies.BufferController = function() {
                             }
                         );
                     } else {
-                        self.debug.log("[BufferController][" + type + "] Error with segment data, no bytes to push");
+                        self.debug.error("[BufferController][" + type + "] Error with segment data, no bytes to push");
                         // Signal end of buffering process
                         signalSegmentBuffered.call(self);
                         // Check buffer level
                         checkIfSufficientBuffer.call(self);
                     }
+                }, function(e) {
+                    signalSegmentBuffered.call(self);
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", e.message);
                 }
             );
         },
