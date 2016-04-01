@@ -8,6 +8,8 @@ If your intent is to use the player code without contributing back to this proje
 
 If your goal is to improve or extend the code and contribute back to this project, then you should make your changes in, and submit a pull request against, the DEVELOPMENT branch. 
 
+Learn more about versions and roadmap on the [wiki](https://github.com/Orange-OpenSource/hasplayer.js/wiki).
+
 ## Quick Start
 
 ### Reference Player
