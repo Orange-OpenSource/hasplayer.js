@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 18.3.2016_21:46:50 / git revision : ab882bd */
+/* Last build : 1.4.2016_21:44:0 / git revision : 1b59dca */
  /* jshint ignore:start */
 (function(root, factory) {
     if (typeof define === "function" && define.amd) {
@@ -3374,16 +3374,16 @@
     mp4lib.boxes.SampleDependencyTableBox.prototype.constructor = mp4lib.boxes.SampleDependencyTableBox;
     mp4lib.boxes.SampleDependencyTableBox.prototype.computeLength = function() {
         mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-        this.size += mp4lib.fields.FIELD_UINT8.getLength() * this.sample_dependency_array.length;
+        this.size += mp4lib.fields.FIELD_UINT8.getLength() * this.sample_dependency_table.length;
     };
     mp4lib.boxes.SampleDependencyTableBox.prototype.read = function(data, pos, end) {
         mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-        this.sample_dependency_array = this._readArrayData(data, mp4lib.fields.FIELD_UINT8);
+        this.sample_dependency_table = this._readArrayData(data, mp4lib.fields.FIELD_UINT8);
         return this.localPos;
     };
     mp4lib.boxes.SampleDependencyTableBox.prototype.write = function(data, pos) {
         mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-        this._writeArrayData(data, mp4lib.fields.FIELD_UINT8, this.sample_dependency_array);
+        this._writeArrayData(data, mp4lib.fields.FIELD_UINT8, this.sample_dependency_table);
         return this.localPos;
     };
     mp4lib.boxes.SampleEntryBox = function(boxType, size) {
@@ -4787,6 +4787,21 @@
         data[startCodeIndex + 2] = (naluSize & 65280) >> 8;
         data[startCodeIndex + 3] = naluSize & 255;
     };
+    mpegts.h264.isIDR = function(data) {
+        var i = 0, naluType;
+        while (i < data.length) {
+            if (data[i] === 0 && data[i + 1] === 0 && data[i + 2] === 0 && data[i + 3] === 1) {
+                naluType = data[i + 4] & 31;
+                if (naluType === mpegts.h264.NALUTYPE_IDR) {
+                    return true;
+                }
+                i += 4;
+            } else {
+                i++;
+            }
+        }
+        return false;
+    };
     mpegts.h264.NALUTYPE_NONIDR = 1;
     mpegts.h264.NALUTYPE_IDR = 5;
     mpegts.h264.NALUTYPE_SEI = 6;
@@ -5352,7 +5367,7 @@
     mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 255;
     MediaPlayer = function(aContext) {
         "use strict";
-        var VERSION_DASHJS = "1.2.0", VERSION = "1.2.7_dev", GIT_TAG = "ab882bd", BUILD_DATE = "18.3.2016_21:46:50", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", subtitlesEnabled = false, isReady = function() {
+        var VERSION_DASHJS = "1.2.0", VERSION = "1.3.0_dev", GIT_TAG = "1b59dca", BUILD_DATE = "1.4.2016_21:44:0", context = aContext, system, element, source, protectionData = null, streamController, videoModel, initialized = false, resetting = false, playing = false, autoPlay = true, scheduleWhilePaused = false, bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED, defaultAudioLang = "und", defaultSubtitleLang = "und", subtitlesEnabled = false, isReady = function() {
             return !!element && !!source && !resetting;
         }, play = function() {
             if (!initialized) {
@@ -6054,10 +6069,13 @@
                         });
                     });
                 } else {
-                    self.debug.log("[BufferController][" + type + "] Error with segment data, no bytes to push");
+                    self.debug.error("[BufferController][" + type + "] Error with segment data, no bytes to push");
                     signalSegmentBuffered.call(self);
                     checkIfSufficientBuffer.call(self);
                 }
+            }, function(e) {
+                signalSegmentBuffered.call(self);
+                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", e.message);
             });
         }, appendToBuffer = function(data, quality, index) {
             var self = this, deferred = Q.defer(), currentVideoTime = self.videoModel.getCurrentTime(), currentTime = new Date();
@@ -6294,6 +6312,9 @@
             self.system.notify("bufferingCompleted");
         }, loadInitialization = function(quality) {
             var self = this;
+            if (!isRunning.call(self)) {
+                return;
+            }
             if (initializationData[quality]) {
                 self.debug.info("[BufferController][" + type + "] Buffer initialization segment, quality = ", quality);
                 appendToBuffer.call(this, initializationData[quality], quality).then(function() {
@@ -6487,6 +6508,9 @@
             });
         }, updatePlayListForRepresentation = function(repIndex) {
             var self = this, deferred = Q.defer(), manifest = self.manifestModel.getValue(), representation;
+            if (!isRunning.call(self)) {
+                return;
+            }
             self.manifestExt.getDataIndex(data, manifest, periodInfo.index).then(function(idx) {
                 representation = manifest.Period_asArray[periodInfo.index].AdaptationSet_asArray[idx].Representation_asArray[repIndex];
                 self.parser.hlsParser.updatePlaylist(representation).then(function() {
@@ -9264,6 +9288,7 @@
             traf.boxes.push(createTrackFragmentHeaderBox(track));
             traf.boxes.push(createTrackFragmentBaseMediaDecodeTimeBox(track));
             traf.boxes.push(createTrackFragmentRunBox(track));
+            traf.boxes.push(createSampleDependencyTableBox(track));
             return traf;
         }, createTrackFragmentHeaderBox = function(track) {
             var tfhd = new mp4lib.boxes.TrackFragmentHeaderBox();
@@ -9282,7 +9307,7 @@
             cts_base = track.samples[0].cts;
             sample_duration_present_flag = track.samples[0].duration > 0 ? 256 : 0;
             trun.version = 0;
-            trun.flags = 1 | sample_duration_present_flag | 512 | (track.type === "video" ? 2048 : 0);
+            trun.flags = 1 | sample_duration_present_flag | 512 | 1024 | (track.type === "video" ? 2048 : 0);
             trun.data_offset = 0;
             trun.samples_table = [];
             trun.sample_count = track.samples.length;
@@ -9290,7 +9315,8 @@
                 sample = {
                     sample_duration: track.samples[i].duration,
                     sample_size: track.samples[i].size,
-                    sample_composition_time_offset: track.samples[i].cts - track.samples[i].dts
+                    sample_composition_time_offset: track.samples[i].cts - track.samples[i].dts,
+                    sample_flags: track.samples[i].flags
                 };
                 if (sample.sample_composition_time_offset < 0) {
                     trun.version = 1;
@@ -9298,6 +9324,15 @@
                 trun.samples_table.push(sample);
             }
             return trun;
+        }, createSampleDependencyTableBox = function(track) {
+            var sdtp = new mp4lib.boxes.SampleDependencyTableBox(), i;
+            sdtp.version = 0;
+            sdtp.flags = 0;
+            sdtp.sample_dependency_table = [];
+            for (i = 0; i < track.samples.length; i++) {
+                sdtp.sample_dependency_table.push((track.samples[i].flags & 267386880) >> 20);
+            }
+            return sdtp;
         }, createMediaDataBox = function(track) {
             var mdat = new mp4lib.boxes.MediaDataBox();
             mdat.data = track.data;
@@ -9968,8 +10003,8 @@
                 }
                 if (seekValue < self.getStartTime()) {
                     seekValue = self.getStartTime();
-                } else if (seekValue >= self.videoModel.getElement().duration) {
-                    seekValue = self.videoModel.getElement().duration - tmMinSeekStep;
+                } else if (seekValue >= self.videoModel.getDuration()) {
+                    seekValue = self.videoModel.getDuration() - tmMinSeekStep;
                     tmEndDetected = true;
                 }
                 if (delay > 0) {
@@ -10023,9 +10058,9 @@
             this.debug.info("[Stream] <video> timeupdate event: " + this.videoModel.getCurrentTime());
             updateBuffer.call(this);
         }, onDurationchange = function() {
-            this.debug.info("[Stream] <video> durationchange event: " + this.videoModel.getElement().duration);
+            this.debug.info("[Stream] <video> durationchange event: " + this.videoModel.getDuration());
         }, onRatechange = function() {
-            this.debug.info("[Stream] <video> ratechange event: " + this.videoModel.getElement().playbackRate);
+            this.debug.info("[Stream] <video> ratechange event: " + this.videoModel.getPlaybackRate());
             if (videoController) {
                 videoController.updateStalledState();
             }
@@ -10148,7 +10183,7 @@
             if (videoRange === null) {
                 return;
             }
-            startTime = seekTime;
+            startTime = videoRange.start;
             if (audioController) {
                 audioRange = self.sourceBufferExt.getBufferRange(audioController.getBuffer(), seekTime, 2);
                 if (audioRange === null) {
@@ -10224,6 +10259,7 @@
         }, streamsComposed = function() {
             var time = this.videoModel.getCurrentTime();
             textController.seek(time);
+            textController.seeked();
         }, onVisibilitychange = function() {
             if (document.hidden === true || startClockTime === -1) {
                 return;
@@ -11033,21 +11069,26 @@
         }, stallStream = function(type, stalled) {
             stalledStreams[type] = stalled;
             if (!isStalled()) {
+                this.debug.info("<video> setPlaybackRate(1)");
                 element.playbackRate = 1;
             } else {
+                this.debug.info("<video> setPlaybackRate(0)");
                 element.playbackRate = 0;
             }
         };
         return {
             system: undefined,
+            debug: undefined,
             setup: function() {},
             reset: function() {
                 stalledStreams = [];
             },
             play: function() {
+                this.debug.info("<video> play()");
                 element.play();
             },
             pause: function() {
+                this.debug.info("<video> pause()");
                 element.pause();
             },
             isPaused: function() {
@@ -11056,10 +11097,14 @@
             isSeeking: function() {
                 return element.seeking;
             },
+            getDuration: function() {
+                return element.duration;
+            },
             getPlaybackRate: function() {
                 return element.playbackRate;
             },
             setPlaybackRate: function(value) {
+                this.debug.info("<video> setPlaybackRate(" + value + ")");
                 element.playbackRate = value;
             },
             getMute: function() {
@@ -11072,6 +11117,7 @@
                 return element.currentTime;
             },
             setCurrentTime: function(currentTime) {
+                this.debug.info("<video> setCurrentTime(" + currentTime + ")");
                 element.currentTime = currentTime;
             },
             listen: function(type, callback) {
@@ -14550,6 +14596,7 @@
         this.dts = 0;
         this.cts = 0;
         this.duration = 0;
+        this.flags = 0;
         this.data = null;
         this.size = 0;
     };
@@ -17364,6 +17411,12 @@
                 sample.dts += dtsOffset;
                 sample.cts += dtsOffset;
                 sampleData = pesPacket.getPayload();
+                if (track.type === "audio") {
+                    sample.flags = 16777216;
+                }
+                if (track.type === "video" && track.streamType.search("H.264") !== -1) {
+                    sample.flags = mpegts.h264.isIDR(sampleData) ? 33554432 : 16842752;
+                }
                 sample.subSamples.push(sampleData);
                 track.samples.push(sample);
             } else {
@@ -17431,6 +17484,7 @@
                 sample.cts = sample.dts = aacFrames[i].cts ? aacFrames[i].cts : cts;
                 sample.size = aacFrames[i].length;
                 sample.duration = duration;
+                sample.flags = 16777216;
                 aacSamples.push(sample);
                 cts = sample.cts + duration;
                 if (i > 0) {
@@ -17564,7 +17618,7 @@
         constructor: Hls.dependencies.HlsDemux
     };
     Hls.dependencies.HlsParser = function() {
-        var TAG_EXTM3U = "#EXTM3U", TAG_EXTINF = "#EXTINF", TAG_EXTXVERSION = "#EXT-X-VERSION", TAG_EXTXTARGETDURATION = "#EXT-X-TARGETDURATION", TAG_EXTXMEDIASEQUENCE = "#EXT-X-MEDIA-SEQUENCE", TAG_EXTXSTREAMINF = "#EXT-X-STREAM-INF", TAG_EXTXENDLIST = "#EXT-X-ENDLIST", ATTR_BANDWIDTH = "BANDWIDTH", ATTR_PROGRAMID = "PROGRAM-ID", ATTR_AUDIO = "AUDIO", ATTR_SUBTITLES = "SUBTITLES", ATTR_RESOLUTION = "RESOLUTION", ATTR_CODECS = "CODECS";
+        var TAG_EXTM3U = "#EXTM3U", TAG_EXTINF = "#EXTINF", TAG_EXTXVERSION = "#EXT-X-VERSION", TAG_EXTXTARGETDURATION = "#EXT-X-TARGETDURATION", TAG_EXTXMEDIASEQUENCE = "#EXT-X-MEDIA-SEQUENCE", TAG_EXTXSTREAMINF = "#EXT-X-STREAM-INF", TAG_EXTXENDLIST = "#EXT-X-ENDLIST", ATTR_BANDWIDTH = "BANDWIDTH", ATTR_PROGRAMID = "PROGRAM-ID", ATTR_AUDIO = "AUDIO", ATTR_SUBTITLES = "SUBTITLES", ATTR_RESOLUTION = "RESOLUTION", ATTR_CODECS = "CODECS", DEFAULT_RETRY_ATTEMPTS = 2, DEFAULT_RETRY_INTERVAL = 500, retryAttempts = DEFAULT_RETRY_ATTEMPTS, retryInterval = DEFAULT_RETRY_INTERVAL, retryCount = 0, deferredPlaylist = null;
         var playlistRequest = new XMLHttpRequest();
         var _splitLines = function(oData) {
             var i = 0;
@@ -17719,9 +17773,9 @@
             if (manifest.type === "dynamic") {
                 mpdLoadedTime = new Date();
                 manifest.availabilityStartTime = new Date(mpdLoadedTime.getTime() - manifestDuration * 1e3);
-                manifest.timeShiftBufferDepth = manifestDuration - representation.SegmentList.duration;
+                manifest.timeShiftBufferDepth = manifestDuration;
             }
-            manifest.minBufferTime = representation.SegmentList.duration * 2;
+            manifest.minBufferTime = representation.SegmentList.duration * 3;
             representation = adaptationSet.Representation_asArray[quality];
             request.type = "Initialization Segment";
             request.url = representation.SegmentList.Initialization.sourceURL;
@@ -17758,7 +17812,7 @@
             return base;
         };
         var doUpdatePlaylist = function(representation) {
-            var deferred = Q.defer(), error = true, self = this;
+            var error = true, self = this;
             var onabort = function() {
                 playlistRequest.aborted = true;
             };
@@ -17769,9 +17823,9 @@
                 if (playlistRequest.status === 200 && playlistRequest.readyState === 4) {
                     error = false;
                     if (_parsePlaylist.call(self, playlistRequest.response, representation)) {
-                        deferred.resolve();
+                        deferredPlaylist.resolve();
                     } else {
-                        deferred.reject({
+                        deferredPlaylist.reject({
                             name: MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE,
                             message: "Failed to parse variant stream playlist",
                             data: {
@@ -17783,15 +17837,24 @@
             };
             var onreport = function() {
                 if (!error || playlistRequest.aborted) {
+                    deferredPlaylist.resolve();
                     return;
                 }
-                deferred.reject({
-                    name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
-                    message: "Failed to download variant stream playlist",
-                    data: {
-                        url: representation.url
-                    }
-                });
+                retryCount++;
+                if (retryAttempts > 0 && retryCount <= retryAttempts) {
+                    setTimeout(function() {
+                        doUpdatePlaylist.call(self, representation);
+                    }, retryInterval);
+                } else {
+                    deferredPlaylist.reject({
+                        name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
+                        message: "Failed to download variant stream playlist",
+                        data: {
+                            url: representation.url,
+                            status: playlistRequest.status
+                        }
+                    });
+                }
             };
             try {
                 playlistRequest.onload = onload;
@@ -17803,7 +17866,6 @@
             } catch (e) {
                 playlistRequest.onerror();
             }
-            return deferred.promise;
         };
         var processManifest = function(data, baseUrl) {
             var deferred = Q.defer(), mpd, period, adaptationsSets = [], adaptationSet, representations = [], representation, representationId = 0, streams = [], stream, self = this, i = 0;
@@ -17877,7 +17939,7 @@
             adaptationsSets.push(adaptationSet);
             self.abrController.getPlaybackQuality("video", adaptationSet).then(function(result) {
                 representation = adaptationSet.Representation_asArray[result.quality];
-                doUpdatePlaylist.call(self, representation).then(function() {
+                self.updatePlaylist(representation).then(function() {
                     postProcess.call(self, mpd, result.quality).then(function() {
                         deferred.resolve(mpd);
                     });
@@ -17900,12 +17962,20 @@
         };
         return {
             debug: undefined,
+            config: undefined,
             manifestModel: undefined,
             fragmentLoader: undefined,
             abrController: undefined,
             hlsDemux: undefined,
             parse: internalParse,
-            updatePlaylist: doUpdatePlaylist,
+            updatePlaylist: function(representation) {
+                retryAttempts = this.config.getParam("ManifestLoader.RetryAttempts", "number", DEFAULT_RETRY_ATTEMPTS);
+                retryInterval = this.config.getParam("ManifestLoader.RetryInterval", "number", DEFAULT_RETRY_INTERVAL);
+                retryCount = 0;
+                deferredPlaylist = Q.defer();
+                doUpdatePlaylist.call(this, representation);
+                return deferredPlaylist.promise;
+            },
             abort: abort
         };
     };
@@ -18541,6 +18611,9 @@
                     for (i = 0; i < trunEntries - 1; i += 1) {
                         sepiff.entry.push(sepiff.entry[0]);
                     }
+                    if (saiz === null) {
+                        saiz = traf.getBoxByType("saiz");
+                    }
                     if (saiz.default_sample_info_size === 0) {
                         if (saiz.sample_count > 1) {
                             saiz.sample_info_size = saiz.sample_info_size.slice(0, 1);
@@ -18583,7 +18656,11 @@
             }
             if (request && request.type === "Media Segment" && manifest && representations && representations.length > 0) {
                 adaptation = manifest.Period_asArray[representations[0].adaptation.period.index].AdaptationSet_asArray[representations[0].adaptation.index];
-                result = convertFragment.call(this, result, request, adaptation);
+                try {
+                    result = convertFragment.call(this, result, request, adaptation);
+                } catch (e) {
+                    return Q.reject(e);
+                }
                 if (!result) {
                     return Q.when(null);
                 }
