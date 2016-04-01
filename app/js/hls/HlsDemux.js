@@ -64,7 +64,7 @@ Hls.dependencies.HlsDemux = function() {
             pat = new mpegts.si.PAT();
             pat.parse(tsPacket.packet.getPayload());
 
-            this.debug.log("[HlsDemux] PAT: PMT_PID=" + pat.getPmtPid());
+            //this.debug.log("[HlsDemux] PAT: PMT_PID=" + pat.getPmtPid());
 
             return pat;
         },
@@ -84,7 +84,7 @@ Hls.dependencies.HlsDemux = function() {
             pmt = new mpegts.si.PMT();
             pmt.parse(tsPacket.packet.getPayload());
 
-            this.debug.log("[HlsDemux] PMT");
+            //this.debug.log("[HlsDemux] PMT");
 
             for (i = 0; i < pmt.m_listOfComponents.length; i++) {
                 elementStream = pmt.m_listOfComponents[i];
@@ -110,14 +110,14 @@ Hls.dependencies.HlsDemux = function() {
                 }
 
                 // PATCH to remove audio track
-                //if (track.type === "video") {
+                // if (track.type === "video") {
                 track.timescale = mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY;
                 track.pid = elementStream.m_elementary_PID;
                 track.trackId = trackIdCounter;
                 pidToTrackId[elementStream.m_elementary_PID] = trackIdCounter;
                 tracks.push(track);
                 trackIdCounter++;
-                //}
+                // }
             }
 
             return pmt;
@@ -177,6 +177,17 @@ Hls.dependencies.HlsDemux = function() {
                 // Store payload of PES packet as a subsample
                 sampleData = pesPacket.getPayload();
 
+                // Set sample flags
+                if (track.type === "audio") {
+                    sample.flags = 0x01000000; // sample_depends_on = 1, other flags = 0
+                }
+                if (track.type === "video" && (track.streamType.search('H.264') !== -1)) {
+                    // In case of H.264 stream, check if the sample is an IDR sample
+                    // If IDR: sample_depends_on = 2, sample_is_non_sync_sample = false
+                    // If non-IDR: sample_depends_on = 1, sample_is_non_sync_sample = true
+                    sample.flags = mpegts.h264.isIDR(sampleData) ? 0x02000000 : 0x01010000;
+                }
+
                 sample.subSamples.push(sampleData);
                 track.samples.push(sample);
             } else {
@@ -219,8 +230,17 @@ Hls.dependencies.HlsDemux = function() {
             // Allocate track data
             track.data = new Uint8Array(length);
 
+            track.dataCTS = [];
+            
             for (i = 0; i < track.samples.length; i++) {
                 sample = track.samples[i];
+
+                // In case of ADTS, for each input sample (i.e. PES packet), we store the CTS (=PTS)
+                // in order to set the correct timestamp to each AAC frames after ADTS demultiplexing (see demuxADTS()),
+                // and then get around missing frames in input stream
+                if (track.streamType.search('ADTS') !== -1) {
+                    track.dataCTS[offset] = sample.cts;
+                }
 
                 // Copy all sub-sample parts into track data
                 for (s = 0; s < sample.subSamples.length; s++) {
@@ -235,8 +255,23 @@ Hls.dependencies.HlsDemux = function() {
             }
 
             // In case of AAC-ADTS stream, demultiplex ADTS frames into AAC frames
+            // (Demultiplexing is performed on the whole segment data in case ADTS packets are not aligned
+            // on PES packets)
             if (track.streamType.search('ADTS') !== -1) {
-                demuxADTS(track);
+                demuxADTS.call(this, track);
+            }
+
+            // Patch first frame timestamp and duration in case of missing frames at the end
+            // of the previous segment
+            if (track.previousCts && track.previousDuration) {
+                sample = track.samples[0];
+                var gap = sample.cts - (track.previousCts + track.previousDuration);
+                if (gap > 0) {
+                    sample.cts -= gap;
+                    sample.dts -= gap;
+                    sample.duration += gap;
+                    this.debug.log("[HlsDemux][" + track.type + "] Patch sample duration, cts = " + (sample.cts / 90000).toFixed(3) + ", duration = " + (sample.duration / 90000).toFixed(3));
+                }
             }
 
         },
@@ -253,7 +288,7 @@ Hls.dependencies.HlsDemux = function() {
                 i;
 
             // Parse AAC-ADTS access units and get AAC frames description
-            aacFrames = mpegts.aac.parseADTS(track.data);
+            aacFrames = mpegts.aac.parseADTS(track.data, track.dataCTS);
 
             // And determine total length of AAC frames
             length = 0;
@@ -275,11 +310,25 @@ Hls.dependencies.HlsDemux = function() {
             for (i = 0; i < aacFrames.length; i++) {
                 // Create sample
                 sample = new MediaPlayer.vo.Mp4Track.Sample();
-                sample.cts = sample.dts = cts;
+
+                // Set CTS according to ADTS frame CTS (=PES CTS) or according to sample duration
+                sample.cts = sample.dts = (aacFrames[i].cts ? aacFrames[i].cts : cts);
                 sample.size = aacFrames[i].length;
                 sample.duration = duration;
+                sample.flags = 0x01000000; // sample_depends_on = 1, other flags = 0
                 aacSamples.push(sample);
 
+                // Update cts for next frame
+                cts = sample.cts + duration;
+
+                // Update previous sample duration in case of missing frames
+                if (i > 0) {
+                    aacSamples[i-1].duration = aacSamples[i].cts - aacSamples[i-1].cts;
+                    if (aacSamples[i-1].duration > duration) {
+                        this.debug.log("[HlsDemux][" + track.type + "] Patch sample duration, cts = " + (aacSamples[i-1].cts / 90000).toFixed(3) + ", duration = " + (aacSamples[i-1].duration / 90000).toFixed(3));
+                    }
+                }
+                
                 // Copy AAC frame data
                 data.set(track.data.subarray(aacFrames[i].offset, aacFrames[i].offset + aacFrames[i].length), offset);
                 offset += aacFrames[i].length;
@@ -308,9 +357,13 @@ Hls.dependencies.HlsDemux = function() {
         },
 
         doInit = function(startTime) {
-            pat = null;
-            pmt = null;
-            tracks = [];
+            //pat = null;
+            //pmt = null;
+
+            // Reset codecs info to force setting new codecs (quality switch)
+            for (var i = 0; i < tracks.length; i++) {
+                tracks[i].codecs = "";
+            }
 
             if (dtsOffset === -1) {
                 dtsOffset = startTime;
@@ -391,8 +444,8 @@ Hls.dependencies.HlsDemux = function() {
                 track.codecPrivateData = codecPrivateDataHex.toUpperCase();*/
             }
 
-            this.debug.log("[HlsDemux][" + track.trackId + "] track codecPrivateData = " + track.codecPrivateData);
-            this.debug.log("[HlsDemux][" + track.trackId + "] track codecs = " + track.codecs);
+            this.debug.log("[HlsDemux][" + track.type + "] track codecPrivateData = " + track.codecPrivateData);
+            this.debug.log("[HlsDemux][" + track.type + "] track codecs = " + track.codecs);
 
             return track;
         },
@@ -427,6 +480,7 @@ Hls.dependencies.HlsDemux = function() {
 
         doDemux = function(data) {
             var nbPackets = data.length / mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE,
+                track,
                 i = 0;
 
             this.debug.log("[HlsDemux] Demux chunk, size = " + data.length + ", nb packets = " + nbPackets);
@@ -443,6 +497,14 @@ Hls.dependencies.HlsDemux = function() {
 
             // Clear current tracks' data
             for (i = 0; i < tracks.length; i++) {
+                track = tracks[i];
+
+                // Store last sample timestamp and duration (in case of lost/missing samples)
+                if (track.samples.length > 0) {
+                    track.previousCts = track.samples[track.samples.length - 1].cts;
+                    track.previousDuration = track.samples[track.samples.length - 1].duration;
+                }
+
                 tracks[i].samples = [];
                 tracks[i].data = null;
             }
@@ -455,10 +517,11 @@ Hls.dependencies.HlsDemux = function() {
             }
 
             // Re-assemble samples from sub-samples
-            this.debug.log("[HlsDemux] Demux: baseDts = " + baseDts + ", dtsOffset = " + dtsOffset);
+            //this.debug.log("[HlsDemux] Demux: baseDts = " + baseDts + ", dtsOffset = " + dtsOffset);
             for (i = 0; i < tracks.length; i++) {
-                postProcess.call(this, tracks[i]);
-                this.debug.log("[HlsDemux][" + tracks[i].trackId + "] Demux: 1st PTS = " + tracks[i].samples[0].dts + " (" + (tracks[i].samples[0].dts / 90000) + ")");
+                track = tracks[i];
+                postProcess.call(this, track);
+                this.debug.log("[HlsDemux][" + track.type + "] Demux: 1st PTS = " + track.samples[0].dts + " (" + (track.samples[0].dts / 90000) + ")");
             }
 
             return tracks;

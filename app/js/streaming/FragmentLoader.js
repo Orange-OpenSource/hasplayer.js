@@ -14,10 +14,13 @@
 MediaPlayer.dependencies.FragmentLoader = function() {
     "use strict";
 
-    var RETRY_ATTEMPTS = 0,
-        RETRY_INTERVAL = 500,
+    var DEFAULT_RETRY_ATTEMPTS = 2,
+        DEFAULT_RETRY_INTERVAL = 500,
+        retryAttempts = DEFAULT_RETRY_ATTEMPTS,
+        retryInterval = DEFAULT_RETRY_INTERVAL,
         retryCount = 0,
         xhrs = [],
+        type,
 
         _checkForExistence = function(request) {
             var req = new XMLHttpRequest(),
@@ -135,7 +138,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                 latency = (request.firstByteDate.getTime() - request.requestStartDate.getTime());
                 download = (request.requestEndDate.getTime() - request.firstByteDate.getTime());
 
-                self.debug.log("[FragmentLoader][" + request.streamType + "] Loaded: " + request.url + " (" + req.status + ", " + latency + "ms, " + download + "ms)");
+                self.debug.log("[FragmentLoader]["+type+"] Loaded: " + request.url + " (" + req.status + ", " + latency + "ms, " + download + "ms)");
 
                 httpRequestMetrics.tresponse = request.firstByteDate;
                 httpRequestMetrics.tfinish = request.requestEndDate;
@@ -163,10 +166,10 @@ MediaPlayer.dependencies.FragmentLoader = function() {
             req.onloadend = req.onerror = function() {
                 if (xhrs.indexOf(req) === -1) {
                     return;
-                } else {
-                    xhrs.splice(xhrs.indexOf(req), 1);
                 }
-
+                
+                xhrs.splice(xhrs.indexOf(req), 1);
+                
                 if (!needFailureReport) {
                     return;
                 }
@@ -197,7 +200,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                 d.reject(req);
             };
 
-            self.debug.log("[FragmentLoader][" + request.streamType + "] Load: " + request.url);
+            self.debug.log("[FragmentLoader]["+type+"] Load: " + request.url);
 
             req.send();
             return d.promise;
@@ -213,23 +216,33 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                     retryCount = 0;
                     deferred.resolve(result);
                 }, function(reqerror) {
-                    if (retryCount < RETRY_ATTEMPTS) {
+                    if (retryCount < retryAttempts) {
                         _retry.call(self, request, deferred);
                     } else {
                         retryCount = 0;
                         deferred.reject(reqerror);
                     }
                 });
-            }, RETRY_INTERVAL);
+            }, retryInterval);
         };
 
     return {
         metricsModel: undefined,
         debug: undefined,
         tokenAuthentication: undefined,
+        config: undefined,
         notify: undefined,
         subscribe: undefined,
         unsubscribe: undefined,
+
+        setup: function() {
+            retryAttempts = this.config.getParam("FragmentLoader.RetryAttempts", "number", DEFAULT_RETRY_ATTEMPTS);
+            retryInterval = this.config.getParam("FragmentLoader.RetryInterval", "number", DEFAULT_RETRY_INTERVAL);
+        },
+
+        setType: function (value) {
+            type = value;
+        },
 
         load: function(req) {
             var self = this,
@@ -249,7 +262,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                         req.status = 0;
                         req.aborted = true;
                         deferred.reject(req);
-                    } else if (RETRY_ATTEMPTS <= 0) {
+                    } else if (retryAttempts <= 0) {
                         // in case of error we set the requestModel status equal to xhr status
                         req.status = reqerror.status;
                         deferred.reject(req);
@@ -266,7 +279,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
             var i = 0;
 
             for (i = 0; i < xhrs.length; i += 1) {
-                this.debug.log("[FragmentLoader] Abort XHR " + (xhrs[i].responseURL ? xhrs[i].responseURL : ""));
+                this.debug.log("[FragmentLoader]["+type+"] Abort XHR " + (xhrs[i].responseURL ? xhrs[i].responseURL : ""));
                 xhrs[i].abort();
             }
 
@@ -292,5 +305,5 @@ MediaPlayer.dependencies.FragmentLoader.prototype = {
 };
 
 MediaPlayer.dependencies.FragmentLoader.eventList = {
-    ENAME_LOADING_PROGRESS: "loadingProgress",
+    ENAME_LOADING_PROGRESS: "loadingProgress"
 };

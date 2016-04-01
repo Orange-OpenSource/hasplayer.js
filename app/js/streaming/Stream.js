@@ -11,6 +11,14 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+// Define Math.sign method in case it is not defined (like in IE11)
+if (!Math.sign) {
+    Math.sign = function(value) {
+        return value < 0 ? -1 : 1;
+    };
+}
+
 MediaPlayer.dependencies.Stream = function() {
     "use strict";
 
@@ -18,7 +26,6 @@ MediaPlayer.dependencies.Stream = function() {
         mediaSource,
         videoCodec = null,
         audioCodec = null,
-        currentTimeToSet = 0,
         contentProtection = null,
         videoController = null,
         videoTrackIndex = -1,
@@ -26,14 +33,14 @@ MediaPlayer.dependencies.Stream = function() {
         audioTrackIndex = -1,
         textController = null,
         subtitlesEnabled = false,
+
         textTrackIndex = -1,
         autoPlay = true,
         initialized = false,
-        load,
         errored = false,
-        // ORANGE : add FullScreen Listener
+
+        // Events listeners
         fullScreenListener,
-        // ORANGE : add Ended Event listener
         endedListener,
         loadedListener,
         playListener,
@@ -48,18 +55,32 @@ MediaPlayer.dependencies.Stream = function() {
         canplayListener,
         playingListener,
         loadstartListener,
+
+        // Audio/text languages
         defaultAudioLang = 'und',
         defaultSubtitleLang = 'und',
 
         periodInfo = null,
-        //ORANGE : detect when a paused command occurs whitout a seek one
-        isPaused = false,
-        isSeeked = false,
 
-        initialSeekTime,
+        // Play start time (= live edge for live streams)
+        playStartTime = -1,
 
-        // ORANGE: interval id for checking buffers start time
+        // Programmatical seek
+        seekTime,
         checkStartTimeIntervalId,
+
+        // trick mode variables
+        tmState = "Stopped",
+        tmSpeed = 1,
+        tmPreviousSpeed,
+        tmStartTime,
+        tmVideoStartTime,
+        tmMinSeekStep,
+        tmSeekStep,
+        tmSeekTime,
+        tmSeekTimeout,
+        tmSeekValue,
+        tmEndDetected = false,
 
         eventController = null,
         protectionController,
@@ -77,36 +98,39 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         play = function() {
-            this.debug.info("[Stream] Attempting play...");
-
             if (!initialized) {
+                //this.debug.info("[Stream] (play) not initialized");
                 return;
             }
 
-            this.debug.info("[Stream] Do play.");
+            this.debug.info("[Stream] Play.");
             this.videoModel.play();
         },
 
         pause = function() {
-            this.debug.info("[Stream] Do pause.");
+            this.debug.info("[Stream] Pause.");
             this.videoModel.pause();
         },
 
-        seek = function(time) {
-            this.debug.log("[Stream] Attempting seek...");
-
+        seek = function(time, autoplay) {
             if (!initialized) {
+                //this.debug.info("[Stream] (seek) not initialized");
                 return;
             }
 
-            this.debug.info("[Stream] Do seek: " + time);
+            this.debug.info("[Stream] Seek: " + time);
 
-            // Performs a programmatical seek:
-            // 1- seeks the buffer controllers at the desired time
-            // 2- once data is present in the buffers, then we can set the current time to the <video> component (see onBufferUpdated()) 
-            initialSeekTime = time;
-            this.system.mapHandler("bufferUpdated", undefined, onBufferUpdated.bind(this));
-            startBuffering(initialSeekTime);
+            // Stream is starting playing => fills the buffers before setting <video> current time
+            if (autoplay === true) {
+                // 1- seeks the buffer controllers at the desired time
+                // 2- once data is present in the buffers, then we can set the current time to the <video> component (see onBufferUpdated()) 
+                seekTime = time;
+                this.system.mapHandler("bufferUpdated", undefined, onBufferUpdated.bind(this));
+                startBuffering.call(this, seekTime);
+            } else {
+                // Stream is already playing, simply seek the <video> component
+                this.videoModel.setCurrentTime(time);
+            }
         },
 
         // Media Source
@@ -351,7 +375,7 @@ MediaPlayer.dependencies.Stream = function() {
                             audioState = "error";
                             if (ex.code && ex.code === MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_SUPPORTED) {
                                 self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Audio codec is not supported", {
-                                    codec: videoCodec
+                                    codec: audioCodec
                                 });
                             } else {
                                 self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create audio source buffer",
@@ -455,16 +479,13 @@ MediaPlayer.dependencies.Stream = function() {
             var self = this,
                 initialize = Q.defer();
 
-            //self.debug.log("Getting ready for playback...");
-
             self.manifestExt.getDuration(self.manifestModel.getValue(), periodInfo).then(
                 function(duration) {
                     self.debug.log("[Stream] Setting duration: " + duration);
                     return self.mediaSourceExt.setDuration(mediaSource, duration);
                 }
             ).then(
-                function( /*value*/ ) {
-                    //self.debug.log("Duration successfully set to: " + value);
+                function() {
                     initialized = true;
                     initialize.resolve(true);
                 }
@@ -473,37 +494,18 @@ MediaPlayer.dependencies.Stream = function() {
             return initialize.promise;
         },
 
-        onLoad = function() {
+        onLoaded = function() {
             var self = this;
 
-            this.debug.info("<video> loadedmetadata event");
-            this.debug.log("[Stream] Got loadedmetadata event.");
-
-            initialSeekTime = this.timelineConverter.calcPresentationStartTime(periodInfo);
-            this.debug.info("[Stream] Starting playback at offset: " + initialSeekTime);
-            // ORANGE: performs a programmatical seek only if initial seek time is different
-            // from current time (live use case)
-
-            isPaused = this.videoModel.isPaused();
-            if (initialSeekTime !== this.videoModel.getCurrentTime()) {
-                // ORANGE: we start the <video> element at the real start time got from the video buffer
-                // once the first fragment has been appended (see onBufferUpdated())
-                this.system.mapHandler("bufferUpdated", undefined, onBufferUpdated.bind(self));
-
-            } else if (load !== null) {
-                load.resolve(null);
-                load = null;
-            }
+            this.debug.info("[Stream] <video> loadedmetadata event");
         },
 
-        onCanPlay = function(e) {
-            this.debug.info("<video> " + e.type + " event");
-            this.debug.log("[Stream] Got canplay event.");
+        onCanPlay = function() {
+            this.debug.info("[Stream] <video> canplay event");
         },
 
         onPlaying = function() {
-            this.debug.info("<video> playing event");
-            this.debug.log("[Stream] Got playing event.");
+            this.debug.info("[Stream] <video> playing event");
 
             // Store start time (clock and stream time) for resynchronization purpose
             startClockTime = new Date().getTime() / 1000;
@@ -511,30 +513,25 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         onLoadStart = function() {
-            this.debug.info("<video> loadstart event");
+            this.debug.info("[Stream] <video> loadstart event");
         },
 
         onPlay = function() {
-            this.debug.info("<video> play event");
-            this.debug.log("[Stream] Got play event.");
-
-            // set the currentTime here to be sure that videoTag is ready to accept the seek (cause IE fail on set currentTime on BufferUpdate)
-            if (currentTimeToSet !== 0) {
-                this.system.notify("setCurrentTime");
-                this.videoModel.setCurrentTime(currentTimeToSet);
-                currentTimeToSet = 0;
-            }
-            //if a pause command was detected just before this onPlay event, startBuffering again
-            //if it was a pause, follow by a seek (in reality just a seek command), don't startBuffering, it's done in onSeeking event
-            // we can't, each time, startBuffering in onPlay event (for seek and pause commands) because onPlay event is not fired on IE after a seek command. :-(
-            if (isPaused && !isSeeked) {
-                startBuffering();
+            this.debug.info("[Stream] <video> play event");
+            
+            if (tmSpeed !== 1) {
+                this.setTrickModeSpeed(1);
+            } else {
+                // Set the currentTime here to be sure that videoTag is ready to accept the seek (cause IE fail on set currentTime on BufferUpdate)
+                if (playStartTime >= 0) {
+                    setVideoModelCurrentTime.call(this, playStartTime);
+                    playStartTime = -1;
+                } else {
+                    startBuffering.call(this);
+                }
             }
 
             this.metricsModel.addPlayList("video", new Date().getTime(), this.videoModel.getCurrentTime(), "play");
-
-            isPaused = false;
-            isSeeked = false;
         },
 
         // ORANGE : fullscreen event
@@ -551,15 +548,13 @@ MediaPlayer.dependencies.Stream = function() {
 
         // ORANGE : ended event
         onEnded = function() {
-            this.debug.info("<video> ended event");
+            this.debug.info("[Stream] <video> ended event");
             //add stopped state metric with reason = 1 : end of stream
             this.metricsModel.addState("video", "stopped", this.videoModel.getCurrentTime(), 1);
         },
 
         onPause = function() {
-            this.debug.info("<video> pause event");
-            //this.debug.log("[Stream] ################################# Got pause event.");
-            isPaused = true;
+            this.debug.info("[Stream] <video> pause event");
             startClockTime = -1;
             startStreamTime = -1;
             this.metricsModel.addPlayList("video", new Date().getTime(), this.videoModel.getCurrentTime(), "pause");
@@ -569,7 +564,7 @@ MediaPlayer.dependencies.Stream = function() {
         onError = function(event) {
             var error = event.srcElement.error,
                 code,
-                message = "<video> error: ";
+                message = "[Stream] <video> error: ";
 
             if (error.code === -1) {
                 // not an error!
@@ -606,45 +601,122 @@ MediaPlayer.dependencies.Stream = function() {
 
         onSeeking = function() {
             var time = this.videoModel.getCurrentTime();
-            this.debug.info("<video> seeking event: " + time);
-            //test if seek time is less than range start, never seek before range start.
-            var start = this.getStartTime();
+            this.debug.info("[Stream] <video> seeking event: " + time);
 
-            if (time < start) {
-                time = start;
+            // Check if seeking is different from trick mode seeking, then cancel trick mode
+            if ((tmSpeed !== 1) && (time.toFixed(3) !== tmSeekValue.toFixed(3))) {
+                this.setTrickModeSpeed(1);
+                return;
             }
 
-            isSeeked = true;
-            startBuffering(time);
+            // Check if seek time is less than range start, never seek before range start.
+            time = (time < this.getStartTime()) ? this.getStartTime() : time;
+
+            startBuffering.call(this, time);
         },
 
         onSeeked = function() {
-            this.debug.info("<video> seeked event");
-            //this.debug.log("Seek complete.");
+            var self = this,
+                currentTime,
+                currentVideoTime,
+                elapsedTime,
+                elapsedSeekTime,
+                elapsedVideoTime,
+                speed,
+                ratio = 0.9,
+                seekValue,
+                delay,
+                _seek = function (delay, seekValue) {
+                    if (self.videoModel.getCurrentTime() === self.getStartTime() || tmEndDetected) {
+                        self.debug.log("[Stream] Trick mode (x" + tmSpeed + "): stop");
+                        return;
+                    }
+                    if (seekValue < self.getStartTime()) {
+                        seekValue = self.getStartTime();
+                    } else if (seekValue >= self.videoModel.getDuration()) {
+                        seekValue = self.videoModel.getDuration() - tmMinSeekStep;
+                        tmEndDetected = true;
+                    }
+                    if (delay > 0) {
+                        self.debug.log("[Stream] Trick mode (x" + tmSpeed + "): wait " + delay.toFixed(3) + " s");
+                    }
+                    tmSeekTimeout = setTimeout(function () {
+                        tmSeekTime = new Date().getTime() / 1000;
+                        self.debug.log("[Stream] Trick mode (x" + tmSpeed + "): seek time = " + seekValue.toFixed(3));
+                        tmSeekValue = seekValue;
+                        self.videoModel.setCurrentTime(seekValue);
+                    }, delay > 0 ? (delay * 1000) : 0);
+                };
 
+            this.debug.info("[Stream] <video> seeked event");
+
+            // Notify BufferControllers that video has seeked
+            seekedBuffers.call(this);
+
+            // Trick mode
+            if (tmSpeed !== 1) {
+
+                currentTime = (new Date().getTime()) / 1000;
+                currentVideoTime = self.videoModel.getCurrentTime();
+                elapsedTime = currentTime - tmStartTime;
+                elapsedSeekTime = currentTime - tmSeekTime;
+                elapsedVideoTime = Math.abs(currentVideoTime - tmVideoStartTime);
+                speed = (elapsedVideoTime / elapsedTime);
+
+                self.debug.log("[Stream] Trick mode (x" + tmSpeed + "): elapsed time = " + elapsedTime.toFixed(3) + ", elapsed video time = " + elapsedVideoTime.toFixed(3) + ", speed = " + speed.toFixed(3));
+
+                if (tmState === "Changed") {
+                    clearTimeout(tmSeekTimeout);
+                    // Target speed changed => reset start times, and seek
+                    tmState = "Running";
+                    tmStartTime = (new Date().getTime()) / 1000;
+                    tmVideoStartTime = currentVideoTime;
+                    self.debug.info("[Stream] Trick mode (x" + tmSpeed + "): videoTime = " + tmVideoStartTime);
+                    //if trick mode speed has decreased, we have to decrease tmSeekStep
+                    tmSeekStep = Math.abs(tmPreviousSpeed / tmSpeed) > 1 ? tmSeekStep / Math.abs(tmPreviousSpeed / tmSpeed) : tmSeekStep;
+                    seekValue = currentVideoTime + (tmSeekStep * Math.sign(tmSpeed));
+                    delay = 0;
+                } else if (speed < (Math.abs(tmSpeed) * ratio)) {
+                    // Measured speed < target speed => increase seek step
+                    var speedRatio = Math.abs(tmSpeed/speed);
+                    tmSeekStep *= Math.round(speedRatio)+Math.round(speedRatio%tmMinSeekStep);
+                    self.debug.info("[Stream] Trick mode (x" + tmSpeed + "): seek step = " + tmSeekStep);
+                    seekValue = currentVideoTime + (tmSeekStep * Math.sign(tmSpeed));
+                    delay = 0;
+                } else {
+                    // Measured speed > target speed => wait before next seek
+                    seekValue = currentVideoTime + (tmSeekStep * Math.sign(tmSpeed));
+                    delay = (Math.abs(seekValue - tmVideoStartTime) / Math.abs(tmSpeed)) - elapsedTime - elapsedSeekTime;
+                }
+
+                _seek.call(self, delay, seekValue);
+
+            }
+
+            // The current time has been changed on video model, then reactivate 'seeking' event listener
+            // (see setVideoModelCurrentTime())
             this.videoModel.listen("seeking", seekingListener);
-            this.videoModel.unlisten("seeked", seekedListener);
 
             startClockTime = -1;
             startStreamTime = -1;
         },
 
         onProgress = function() {
-            this.debug.info("<video> progress event");
+            this.debug.info("[Stream] <video> progress event");
             updateBuffer.call(this);
         },
 
         onTimeupdate = function() {
-            this.debug.info("<video> timeupdate event: " + this.videoModel.getCurrentTime());
+            this.debug.info("[Stream] <video> timeupdate event: " + this.videoModel.getCurrentTime());
             updateBuffer.call(this);
         },
 
         onDurationchange = function() {
-            this.debug.info("<video> durationchange event: " + this.videoModel.getElement().duration);
+            this.debug.info("[Stream] <video> durationchange event: " + this.videoModel.getDuration());
         },
 
         onRatechange = function() {
-            this.debug.info("<video> ratechange event: " + this.videoModel.getElement().playbackRate);
+            this.debug.info("[Stream] <video> ratechange event: " + this.videoModel.getPlaybackRate());
             if (videoController) {
                 videoController.updateStalledState();
             }
@@ -662,7 +734,7 @@ MediaPlayer.dependencies.Stream = function() {
             // Then, once manifest has been refresh and data updated, we reload session (see updateData())
             pause.call(this);
             isReloading = true;
-            this.system.notify("manifestUpdate");
+            this.system.notify("manifestUpdate", true);
         },
 
         updateBuffer = function() {
@@ -681,6 +753,8 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         startBuffering = function(time) {
+            this.debug.log("[Stream] startBuffering" + ((time === undefined) ? "" : (" at time " + time)));
+
             if (videoController) {
                 if (time === undefined) {
                     videoController.start();
@@ -696,7 +770,8 @@ MediaPlayer.dependencies.Stream = function() {
                     audioController.seek(time);
                 }
             }
-            if (textController && subtitlesEnabled) {
+
+            if (textController && subtitlesEnabled && tmSpeed === 1) {
                 if (time === undefined) {
                     textController.start();
                 } else {
@@ -706,6 +781,8 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         stopBuffering = function() {
+            this.debug.log("[Stream] stopBuffering");
+
             if (videoController) {
                 videoController.stop();
             }
@@ -714,6 +791,18 @@ MediaPlayer.dependencies.Stream = function() {
             }
             if (textController) {
                 textController.stop();
+            }
+        },
+
+        seekedBuffers = function() {
+            if (videoController) {
+                videoController.seeked();
+            }
+            if (audioController) {
+                audioController.seeked();
+            }
+            if (textController) {
+                textController.seeked();
             }
         },
 
@@ -728,17 +817,27 @@ MediaPlayer.dependencies.Stream = function() {
         doLoad = function(manifestResult) {
 
             var self = this;
-
+ 
             //self.debug.log("Stream start loading.");
 
             manifest = manifestResult;
             self.debug.log("[Stream] Create MediaSource");
-            return self.mediaSourceExt.createMediaSource().then(
-                function(mediaSourceResult) {
-                    self.debug.log("[Stream] Setup MediaSource");
-                    return setUpMediaSource.call(self, mediaSourceResult);
-                }
-            ).then(
+
+            try {
+                mediaSource = self.mediaSourceExt.createMediaSource();
+            } catch (error) {
+                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_MEDIASOURCE, "Failed to create MediaSource", {
+                    name: error.name,
+                    message: error.message
+                });
+            }
+
+            if (mediaSource === null) {
+                return;
+            }
+
+            self.debug.log("[Stream] Setup MediaSource");
+            setUpMediaSource.call(self, mediaSource).then(
                 function(mediaSourceResult) {
                     mediaSource = mediaSourceResult;
                     self.debug.log("[Stream] Initialize MediaSource");
@@ -752,27 +851,14 @@ MediaPlayer.dependencies.Stream = function() {
             ).then(
                 function( /*done*/ ) {
                     self.debug.log("[Stream] Playback initialized");
-                    return load.promise;
-                }
-            ).then(
-                function() {
-                    self.debug.log("[Stream] element loaded!");
-                    // only first period stream must be played automatically during playback initialization
-                    if (periodInfo.index === 0) {
-                        eventController.start();
-                        if (autoPlay) {
-                            play.call(self);
-                        }
-                    }
                 }
             );
         },
 
-        currentTimeChanged = function() {
-            this.debug.log("[Stream] Current time has changed, block programmatic seek.");
-
+        setVideoModelCurrentTime = function(time) {
+            this.debug.log("[Stream] Set video model current time: " + time);
             this.videoModel.unlisten("seeking", seekingListener);
-            this.videoModel.listen("seeked", seekedListener);
+            this.videoModel.setCurrentTime(time);
         },
 
         bufferingCompleted = function() {
@@ -799,24 +885,12 @@ MediaPlayer.dependencies.Stream = function() {
         // startTime = first video segment time for static streams
         // => then seek every BufferController at the found start time
         onStartTimeFound = function(startTime) {
-
-            this.debug.info("[Stream] ### Start time = " + startTime);
-
-            initialSeekTime = startTime;
-
-            if (videoController) {
-                videoController.seek(startTime);
-            }
-            if (audioController) {
-                audioController.seek(startTime);
-            }
-            if (textController && subtitlesEnabled) {
-                textController.seek(startTime);
-            }
+            this.debug.info("[Stream] Start time = " + startTime);
+            seek.call(this, startTime, (periodInfo.index === 0) && autoPlay);
         },
 
         // ORANGE: 'bufferUpdated' event raised when some data has been appended into media buffers
-        // => if not started (live use case) then check for playback start time
+        // => if not started (live use case) then check for playback start time and do play
         onBufferUpdated = function() {
             var self = this,
                 videoRange,
@@ -826,7 +900,7 @@ MediaPlayer.dependencies.Stream = function() {
             self.debug.info("[Stream] Check start time");
 
             // Check if video buffer is not empty
-            videoRange = self.sourceBufferExt.getBufferRange(videoController.getBuffer(), initialSeekTime, 2);
+            videoRange = self.sourceBufferExt.getBufferRange(videoController.getBuffer(), seekTime, 2);
             if (videoRange === null) {
                 return;
             }
@@ -834,10 +908,14 @@ MediaPlayer.dependencies.Stream = function() {
             // due to a difference (rounding?) between manifest segments times and real samples times
             // returned by the buffer.
             startTime = videoRange.start; // + 0.5;
+            // Do not need to take videoRange.start since in case of live streams the seekTime corresponds
+            // to the start of a video segment, then to the videoRange.start
+            // (except if theoretical segment time does not corresponds to absolute media time)
+            //startTime = seekTime;
 
             if (audioController) {
                 // Check if audio buffer is not empty
-                audioRange = self.sourceBufferExt.getBufferRange(audioController.getBuffer(), initialSeekTime, 2);
+                audioRange = self.sourceBufferExt.getBufferRange(audioController.getBuffer(), seekTime, 2);
                 if (audioRange === null) {
                     return;
                 }
@@ -861,21 +939,13 @@ MediaPlayer.dependencies.Stream = function() {
 
             // Set current time on video if 'play' event has already been raised.
             // If 'play' event has not yet been raised, the the current time will be set afterwards
-            if (isPaused === false) {
-                self.system.notify("setCurrentTime");
+            if (!self.videoModel.isPaused()) {
                 self.videoModel.setCurrentTime(startTime);
             } else {
-                currentTimeToSet = startTime;
+                playStartTime = startTime;
             }
 
-            // Resolve load promise in order to start playing (see doLoad())
-            if (load !== null) {
-                load.resolve(null);
-                load = null;
-            } else {
-                // Else start playing (reload use case)
-                play.call(self);
-            }
+            play.call(self);
         },
 
         updateData = function(updatedPeriodInfo) {
@@ -966,6 +1036,7 @@ MediaPlayer.dependencies.Stream = function() {
         streamsComposed = function() {
             var time = this.videoModel.getCurrentTime();
             textController.seek(time);
+            textController.seeked();
         },
 
         onVisibilitychange = function() {
@@ -1011,7 +1082,6 @@ MediaPlayer.dependencies.Stream = function() {
         notify: undefined,
 
         setup: function() {
-            this.system.mapHandler("setCurrentTime", undefined, currentTimeChanged.bind(this));
             this.system.mapHandler("bufferingCompleted", undefined, bufferingCompleted.bind(this));
             this.system.mapHandler("segmentLoadingFailed", undefined, segmentLoadingFailed.bind(this));
             this.system.mapHandler("startTimeFound", undefined, onStartTimeFound.bind(this));
@@ -1022,8 +1092,6 @@ MediaPlayer.dependencies.Stream = function() {
             this[MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR] = onProtectionError.bind(this);
             /* @endif */
 
-            load = Q.defer();
-
             playListener = onPlay.bind(this);
             pauseListener = onPause.bind(this);
             errorListener = onError.bind(this);
@@ -1033,7 +1101,7 @@ MediaPlayer.dependencies.Stream = function() {
             ratechangeListener = onRatechange.bind(this);
             timeupdateListener = onTimeupdate.bind(this);
             durationchangeListener = onDurationchange.bind(this);
-            loadedListener = onLoad.bind(this);
+            loadedListener = onLoaded.bind(this);
             canplayListener = onCanPlay.bind(this);
             playingListener = onPlaying.bind(this);
             loadstartListener = onLoadStart.bind(this);
@@ -1057,6 +1125,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.listen("pause", pauseListener);
             this.videoModel.listen("error", errorListener);
             this.videoModel.listen("seeking", seekingListener);
+            this.videoModel.listen("seeked", seekedListener);
             this.videoModel.listen("timeupdate", timeupdateListener);
             this.videoModel.listen("durationchange", durationchangeListener);
             this.videoModel.listen("progress", progressListener);
@@ -1135,7 +1204,7 @@ MediaPlayer.dependencies.Stream = function() {
             var self = this,
                 manifest = self.manifestModel.getValue();
 
-            if (textController) {
+            if (textController && subtitlesEnabled) {
                 return self.manifestExt.getDataForIndex_(textTrackIndex, manifest, periodInfo.index);
             }
 
@@ -1182,7 +1251,14 @@ MediaPlayer.dependencies.Stream = function() {
 
             this.debug.info("[Stream] Reset");
 
+            stopBuffering.call(this);
+
             pause.call(this);
+
+            // Trick mode seeking timeout
+            clearTimeout(tmSeekTimeout);
+
+            self.videoModel.setMute(false);
 
             //document.removeEventListener("visibilityChange");
 
@@ -1190,6 +1266,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.unlisten("pause", pauseListener);
             this.videoModel.unlisten("error", errorListener);
             this.videoModel.unlisten("seeking", seekingListener);
+            this.videoModel.unlisten("seeked", seekedListener);
             this.videoModel.unlisten("timeupdate", timeupdateListener);
             this.videoModel.unlisten("durationchange", durationchangeListener);
             this.videoModel.unlisten("progress", progressListener);
@@ -1207,7 +1284,6 @@ MediaPlayer.dependencies.Stream = function() {
 
             this.system.unmapHandler("bufferUpdated");
             this.system.unmapHandler("liveEdgeFound");
-            this.system.unmapHandler("setCurrentTime");
             this.system.unmapHandler("bufferingCompleted");
             this.system.unmapHandler("segmentLoadingFailed");
             this.system.unmapHandler("needForReload");
@@ -1222,7 +1298,6 @@ MediaPlayer.dependencies.Stream = function() {
                     protectionController = undefined;
                     self.fragmentController = undefined;
 
-                    load = Q.defer();
                     deferred.resolve();
                 });
 
@@ -1248,14 +1323,17 @@ MediaPlayer.dependencies.Stream = function() {
         getPeriodInfo: function() {
             return periodInfo;
         },
+
         startEventController: function() {
             eventController.start();
         },
+
         resetEventController: function() {
             eventController.reset();
         },
+        
         enableSubtitles: function(enabled) {
-            
+
             if (enabled !== subtitlesEnabled) {
                 subtitlesEnabled = enabled;
                 if (textController) {
@@ -1268,6 +1346,81 @@ MediaPlayer.dependencies.Stream = function() {
                     }
                 }
             }
+        },
+
+        setTrickModeSpeed: function(speed) {
+            var funcs = [],
+                self = this,
+                enableTrickMode = (speed !== 1) ? true : false,
+                currentVideoTime,
+                seekValue,
+                enableMute = function() {
+                    if (self.videoModel.getCurrentTime() > (currentVideoTime + 1)) {
+                        self.videoModel.unlisten("timeupdate", enableMute);
+                        self.debug.info("[Stream] Set mute: false");
+                        self.videoModel.setMute(false);
+                    }
+                };
+
+            if (speed === tmSpeed) {
+                return;
+            }
+
+            if (!videoController) {
+                return;
+            }
+
+            self.debug.info("[Stream] Trick mode: speed = " + speed);
+
+            if (enableTrickMode && tmState === "Stopped") {
+                self.debug.info("[Stream] Set mute: true");
+                self.videoModel.setMute(true);
+                self.videoModel.pause();
+            } else if (!enableTrickMode) {
+                tmSpeed = 1;
+                clearTimeout(tmSeekTimeout);
+                stopBuffering.call(self);
+            }
+
+            funcs.push(videoController.setTrickMode(enableTrickMode, speed > 1));
+            if (audioController) {
+                funcs.push(audioController.setTrickMode(enableTrickMode, speed > 1));
+            }
+
+            Q.all(funcs).then(function() {
+                tmPreviousSpeed = tmSpeed;
+                tmSpeed = speed;
+                currentVideoTime = self.videoModel.getCurrentTime();
+
+                if (!enableTrickMode) {
+                    self.debug.info("[Stream] Trick mode: Stopped, current time = " + currentVideoTime);
+                    tmState = "Stopped";
+                    self.videoModel.listen("timeupdate", enableMute);
+                    currentVideoTime = tmEndDetected ? self.getStartTime() : currentVideoTime;
+                    seek.call(self, tmEndDetected ? self.getStartTime() : currentVideoTime, true);
+                } else {
+                    if (tmState === "Running") {
+                        tmState = "Changed";
+                    }
+                    else if (tmState === "Stopped") {
+                        tmEndDetected = false;
+                        tmState = "Running";
+                        tmSeekStep = tmMinSeekStep = videoController.getSegmentDuration();
+                        tmStartTime = tmSeekTime = (new Date().getTime()) / 1000;
+                        tmVideoStartTime = currentVideoTime;
+                        self.debug.info("[Stream] Trick mode (x" + tmSpeed + "): videoTime = " + tmVideoStartTime);
+                        seekValue = currentVideoTime + (tmSeekStep * Math.sign(tmSpeed));
+                        seekValue = Math.round((seekValue - (seekValue % tmMinSeekStep)) * 1000) / 1000;
+                        self.debug.info("[Stream] Trick mode (x" + tmSpeed + "): seek step = " + tmSeekStep);
+                        tmSeekValue = seekValue;
+                        seek.call(self, seekValue);
+                    }
+                }
+            });
+        },
+
+        getTrickModeSpeed: function() {
+            return tmSpeed;
         },
 
         updateData: updateData,

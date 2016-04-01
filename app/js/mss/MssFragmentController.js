@@ -91,6 +91,11 @@ Mss.dependencies.MssFragmentController = function() {
                     segments.splice(0, 1);
                     segment = segments[0];
                 }
+
+                this.metricsModel.addDVRInfo(adaptation.type, 0, null, {
+                    start: segments[0].t / adaptation.SegmentTemplate.timescale,
+                    end: (segments[segments.length - 1].t + segments[segments.length - 1].d) / adaptation.SegmentTemplate.timescale
+                });
             }
         },
 
@@ -138,7 +143,7 @@ Mss.dependencies.MssFragmentController = function() {
                 sepiff.boxtype = "senc";
                 sepiff.extended_type = undefined;
 
-                saio = traf.getBoxByType("saio");
+                saio = traf.getBoxByType("saio");              
                 if (saio === null) {
                     // Create Sample Auxiliary Information Offsets Box box (saio)
                     saio = new mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox();
@@ -218,6 +223,82 @@ Mss.dependencies.MssFragmentController = function() {
             trun.flags |= 0x000001; // set trun.data-offset-present to true
             trun.data_offset = 0; // Set a default value for trun.data_offset
 
+            //in trickMode, we have to modify sample duration for audio and video
+            if (this.fixDuration && trun.samples_table.length === 1) {
+                var fullDuration = request.duration * request.timescale,
+                    concatDuration = 0,
+                    mdatData = mdat.data,
+                    sampleDuration;
+
+                //if sample_duration is not defined, search duration in tfhd box
+                if (trun.samples_table[0].sample_duration === undefined) {
+                    sampleDuration = tfhd.default_sample_duration;
+                }else{
+                    sampleDuration = trun.samples_table[0].sample_duration;
+                }
+                //we have to duplicate the sample from KeyFrame request to be accepted by decoder.
+                //all the samples have to have a duration equals to request.duration * request.timescale               
+                var trunEntries = Math.floor(fullDuration / sampleDuration);
+                
+                for (i = 0; i < (trunEntries - 1); i++) {
+                    trun.samples_table.push({
+                        sample_duration: trun.samples_table[0].sample_duration,
+                        sample_size: trun.samples_table[0].sample_size,
+                        sample_composition_time_offset: trun.samples_table[0].sample_composition_time_offset,
+                        sample_flags: trun.samples_table[0].sample_flags
+                    });
+                }
+
+                if(trun.samples_table[0].sample_duration !== undefined){
+                    for (i = 0; i < trun.samples_table.length; i++) {
+                        concatDuration += trun.samples_table[i].sample_duration;
+                    }
+
+                    if (concatDuration > fullDuration) {
+                        trun.samples_table[trun.samples_table.length - 1].sample_duration -= (concatDuration - fullDuration);
+                    } else {
+                        trun.samples_table[trun.samples_table.length - 1].sample_duration += (fullDuration - concatDuration);
+                    }
+                }
+
+                //update sepiff and saiz boxes with replicated datas
+                if (sepiff !== null) {
+                    //if sepiff box has all datas for the complete fragments, delete thoses informations
+                    if (sepiff.sample_count > 1) {
+                        sepiff.entry = sepiff.entry.slice(0, 1);
+                    }
+                    //replicate the first entry
+                    for (i = 0; i < (trunEntries - 1); i += 1) {
+                        sepiff.entry.push(sepiff.entry[0]);
+                    }
+
+                    //if saio box was defined in the mp4 stream, saiz was also defined : get it now!
+                    if (saiz === null) {
+                        saiz = traf.getBoxByType("saiz");
+                    }
+                
+                    if (saiz.default_sample_info_size === 0) {
+                        //as for sepiff box....
+                        if (saiz.sample_count > 1) {
+                            saiz.sample_info_size = saiz.sample_info_size.slice(0, 1);
+                        }
+                        for (i = 0; i < (trunEntries-1); i += 1) {
+                            saiz.sample_info_size.push(saiz.sample_info_size[0]);
+                        }
+                    }
+
+                    sepiff.sample_count = sepiff.entry.length;
+                    saiz.sample_count = sepiff.entry.length;
+                }
+                
+                //in the same way, we have to duplicate mdat.data.
+                trun.sample_count = trun.samples_table.length;
+                mdat.data = new Uint8Array(mdatData.length * trun.sample_count);
+                for (i = 0; i < trun.sample_count; i += 1) {
+                    mdat.data.set(mdatData, mdatData.length * i);
+                }
+            }
+
             // Determine new size of the converted fragment
             // and allocate new data buffer
             fragment_size = fragment.getLength();
@@ -243,6 +324,8 @@ Mss.dependencies.MssFragmentController = function() {
 
     rslt.manifestModel = undefined;
     rslt.manifestExt = undefined;
+    rslt.metricsModel = undefined;
+    rslt.fixDuration = false;
 
     rslt.process = function(bytes, request, representations) {
         var result = null,
@@ -259,7 +342,11 @@ Mss.dependencies.MssFragmentController = function() {
             // Get adaptation containing provided representations
             // (Note: here representations is of type Dash.vo.Representation)
             adaptation = manifest.Period_asArray[representations[0].adaptation.period.index].AdaptationSet_asArray[representations[0].adaptation.index];
-            result = convertFragment.call(this, result, request, adaptation);
+            try{
+                result = convertFragment.call(this, result, request, adaptation);
+            }catch(e) {
+                return Q.reject(e);
+            }
 
             if (!result) {
                 return Q.when(null);
@@ -267,6 +354,10 @@ Mss.dependencies.MssFragmentController = function() {
         }
 
         return Q.when(result);
+    };
+
+    rslt.setSampleDuration = function(state) {
+        this.fixDuration = state;
     };
 
     return rslt;

@@ -30,14 +30,17 @@ MediaPlayer.models.VideoModel = function () {
             stalledStreams[type] = stalled;
 
             if (!isStalled()) {
+                this.debug.info("<video> setPlaybackRate(1)");
                 element.playbackRate = 1;
             } else {
+                this.debug.info("<video> setPlaybackRate(0)");
                 element.playbackRate = 0;
             }
         };
 
     return {
         system : undefined,
+        debug : undefined,
 
         setup : function () {
         },
@@ -47,10 +50,12 @@ MediaPlayer.models.VideoModel = function () {
         },
 
         play: function () {
+            this.debug.info("<video> play()");
             element.play();
         },
 
         pause: function () {
+            this.debug.info("<video> pause()");
             element.pause();
         },
 
@@ -58,9 +63,12 @@ MediaPlayer.models.VideoModel = function () {
             return element.paused;
         },
 
-        //ORANGE : add isSeeking function
         isSeeking: function() {
             return element.seeking;
+        },
+
+        getDuration:  function () {
+            return element.duration;
         },
 
         getPlaybackRate:  function () {
@@ -68,7 +76,16 @@ MediaPlayer.models.VideoModel = function () {
         },
 
         setPlaybackRate: function (value) {
+            this.debug.info("<video> setPlaybackRate(" + value + ")");
             element.playbackRate = value;
+        },
+
+        getMute:  function () {
+            return element.muted;
+        },
+
+        setMute: function (value) {
+            element.muted = value;
         },
 
         getCurrentTime: function () {
@@ -76,14 +93,7 @@ MediaPlayer.models.VideoModel = function () {
         },
 
         setCurrentTime: function (currentTime) {
-            //_currentTime = currentTime;
-
-            // We don't set the same currentTime because it can cause firing unexpected Pause event in IE11
-            // providing playbackRate property equals to zero.
-            if (element.currentTime === currentTime) {
-                return;
-            }
-
+            this.debug.info("<video> setCurrentTime(" + currentTime + ")");
             element.currentTime = currentTime;
         },
 

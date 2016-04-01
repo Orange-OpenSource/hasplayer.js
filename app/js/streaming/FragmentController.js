@@ -56,7 +56,6 @@ MediaPlayer.dependencies.FragmentController = function () {
     return {
         system: undefined,
         debug: undefined,
-        fragmentLoader: undefined,
 
         process: function (bytes) {
             var result = null;
@@ -168,6 +167,12 @@ MediaPlayer.dependencies.FragmentController = function () {
             }
         },
 
+        clearExecutedRequests: function(model) {
+            if (model) {
+                model.clearExecutedRequests();
+            }
+        },
+
         cancelPendingRequestsForModel: function(model) {
             if (model) {
                 model.cancelPendingRequests();
@@ -178,21 +183,6 @@ MediaPlayer.dependencies.FragmentController = function () {
             if (model) {
                 model.abortRequests();
             }
-        },
-
-        isFragmentExists: function(request) {
-            var deferred = Q.defer();
-
-            this.fragmentLoader.checkForExistence(request).then(
-                function() {
-                    deferred.resolve(true);
-                },
-                function() {
-                    deferred.resolve(false);
-                }
-            );
-
-            return deferred.promise;
         },
 
         prepareFragmentForLoading: function(bufferController, request, startLoadingCallback, successLoadingCallback, errorLoadingCallback, streamEndCallback) {

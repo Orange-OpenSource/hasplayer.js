@@ -46,9 +46,9 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
             if(protData && protData.pssh){
                 return BASE64.decodeArray(protData.pssh).buffer;
             }
-            
+
             return MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection(cpData);
-            
+
         };
 
     return {
@@ -61,11 +61,14 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
         init:function(protectionData){
             if(protectionData){
                 protData = protectionData;
+                if(protData.sessionType){
+                    this.sessionType = protData.sessionType;
+                }
             }
         },
 
         getInitData: doGetInitData,
-        
+
         getKeySystemConfigurations: MediaPlayer.dependencies.protection.CommonEncryption.getKeySystemConfigurations,
 
         getRequestHeadersFromMessage: function(/*message*/) { return null; },

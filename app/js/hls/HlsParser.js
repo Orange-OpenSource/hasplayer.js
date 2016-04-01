@@ -32,7 +32,7 @@ Hls.dependencies.HlsParser = function() {
         ATTR_AUDIO = "AUDIO",
         ATTR_SUBTITLES = "SUBTITLES",
         ATTR_RESOLUTION = "RESOLUTION",
-        ATTR_CODECS = "CODECS";
+        ATTR_CODECS = "CODECS",
     /*ATTR_METHOD = "METHOD",
         ATTR_IV = "IV",
         ATTR_URI = "URI",
@@ -43,6 +43,13 @@ Hls.dependencies.HlsParser = function() {
         ATTR_AUTOSELECT = "AUTOSELECT",
         ATTR_LANGUAGE = "LANGUAGE",
         VAL_YES = "YES";*/
+        DEFAULT_RETRY_ATTEMPTS = 2,
+        DEFAULT_RETRY_INTERVAL = 500,
+        retryAttempts = DEFAULT_RETRY_ATTEMPTS,
+        retryInterval = DEFAULT_RETRY_INTERVAL,
+        retryCount = 0,
+        deferredPlaylist = null;
+        
 
     var playlistRequest = new XMLHttpRequest();
 
@@ -122,6 +129,14 @@ Hls.dependencies.HlsParser = function() {
                         break;
                     case ATTR_CODECS:
                         stream.codecs = value.replace(/"/g, ''); // Remove '"' characters
+
+                        // PATCH to remove audio track
+                        // var codecs = stream.codecs.split(',');
+                        // for (var c = 0; c < codecs.length; c++) {
+                        //     if (codecs[c].indexOf("avc") !== -1) {
+                        //         stream.codecs = codecs[c];
+                        //     }
+                        // }
                         break;
 
                         // > HLD v3
@@ -353,11 +368,11 @@ Hls.dependencies.HlsParser = function() {
             manifest.availabilityStartTime = new Date(mpdLoadedTime.getTime() - (manifestDuration * 1000));
 
             // => set timeshift buffer depth
-            manifest.timeShiftBufferDepth = manifestDuration - representation.SegmentList.duration;
+            manifest.timeShiftBufferDepth = manifestDuration;
         }
 
         // Set minBufferTime
-        manifest.minBufferTime = representation.SegmentList.duration * 2; //MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME
+        manifest.minBufferTime = representation.SegmentList.duration * 3; //MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME
 
         // Filter invalid representations
         /*for (i = 0; i < adaptationSet.Representation_asArray.length; i++) {
@@ -446,14 +461,6 @@ Hls.dependencies.HlsParser = function() {
             deferred.resolve();
         };
 
-        // PATCH to remove audio track
-        /*var tracksCodecs = representation.codecs.split(',');
-        for (var i = 0; i < tracksCodecs.length; i++) {
-            if (tracksCodecs[i].indexOf("avc") !== -1) {
-                representation.codecs = tracksCodecs[i];
-            }
-        }*/
-
         if (representation.codecs === "") {
             self.debug.log("[HlsParser]", "Load initialization segment: " + request.url);
             self.fragmentLoader.load(request).then(onLoaded.bind(self, representation), onError.bind(self));
@@ -479,8 +486,7 @@ Hls.dependencies.HlsParser = function() {
 
 
     var doUpdatePlaylist = function(representation) {
-        var deferred = Q.defer(),
-            error = true,
+        var error = true,
             self = this;
 
         var onabort = function() {
@@ -495,9 +501,9 @@ Hls.dependencies.HlsParser = function() {
             if (playlistRequest.status === 200 && playlistRequest.readyState === 4) {
                 error = false;
                 if (_parsePlaylist.call(self, playlistRequest.response, representation)) {
-                    deferred.resolve();
+                    deferredPlaylist.resolve();
                 } else {
-                    deferred.reject({
+                    deferredPlaylist.reject({
                         name: MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE,
                         message: "Failed to parse variant stream playlist",
                         data: {
@@ -509,16 +515,26 @@ Hls.dependencies.HlsParser = function() {
         };
 
         var onreport = function() {
-            if (!error) {
+            if (!error || playlistRequest.aborted) {
+                deferredPlaylist.resolve();
                 return;
             }
-            deferred.reject({
-                name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
-                message: "Failed to download variant stream playlist",
-                data: {
-                    url: representation.url
-                }
-            });
+
+            retryCount++;
+            if (retryAttempts > 0 && retryCount <= retryAttempts) {
+                setTimeout(function() {
+                    doUpdatePlaylist.call(self, representation);
+                }, retryInterval);
+            } else {
+                deferredPlaylist.reject({
+                    name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
+                    message: "Failed to download variant stream playlist",
+                    data: {
+                        url: representation.url,
+                        status: playlistRequest.status
+                    }
+                });
+            }
         };
 
         try {
@@ -532,8 +548,6 @@ Hls.dependencies.HlsParser = function() {
         } catch (e) {
             playlistRequest.onerror();
         }
-
-        return deferred.promise;
     };
 
     var processManifest = function(data, baseUrl) {
@@ -693,7 +707,7 @@ Hls.dependencies.HlsParser = function() {
         self.abrController.getPlaybackQuality("video", adaptationSet).then(
             function(result) {
                 representation = adaptationSet.Representation_asArray[result.quality];
-                doUpdatePlaylist.call(self, representation).then(
+                self.updatePlaylist(representation).then(
                     function() {
                         postProcess.call(self, mpd, result.quality).then(function() {
                             deferred.resolve(mpd);
@@ -724,13 +738,23 @@ Hls.dependencies.HlsParser = function() {
 
     return {
         debug: undefined,
+        config: undefined,
         manifestModel: undefined,
         fragmentLoader: undefined,
         abrController: undefined,
         hlsDemux: undefined,
 
         parse: internalParse,
-        updatePlaylist: doUpdatePlaylist,
+
+        updatePlaylist: function (representation) {
+            retryAttempts = this.config.getParam("ManifestLoader.RetryAttempts", "number", DEFAULT_RETRY_ATTEMPTS);
+            retryInterval = this.config.getParam("ManifestLoader.RetryInterval", "number", DEFAULT_RETRY_INTERVAL);
+            retryCount = 0;
+            deferredPlaylist = Q.defer();
+            doUpdatePlaylist.call(this, representation);
+            return deferredPlaylist.promise;
+        },
+
         abort: abort
     };
 };

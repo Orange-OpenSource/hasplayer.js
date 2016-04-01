@@ -39,20 +39,8 @@ MediaPlayer.dependencies.StreamController = function() {
         protectionData,
         defaultAudioLang = 'und',
         defaultSubtitleLang = 'und',
-
-        play = function() {
-            activeStream.play();
-        },
-
-        pause = function() {
-            if (activeStream) {
-                activeStream.pause();
-            }
-        },
-
-        seek = function(time) {
-            activeStream.seek(time);
-        },
+        subtitlesEnabled = false,
+        reloadStream = false,
 
         /*
          * Replaces the currently displayed <video> with a new data and corresponding <video> element.
@@ -327,13 +315,6 @@ MediaPlayer.dependencies.StreamController = function() {
                                 return deferred.reject();
                             }
 
-                            self.metricsModel.updateManifestUpdateInfo(manifestUpdateInfo, {
-                                currentTime: self.videoModel.getCurrentTime(),
-                                buffered: self.videoModel.getElement().buffered,
-                                presentationStartTime: periods[0].start,
-                                clientTimeOffset: mpd.clientServerTimeShift
-                            });
-
                             for (pIdx = 0, pLen = periods.length; pIdx < pLen; pIdx += 1) {
                                 period = periods[pIdx];
                                 for (sIdx = 0, sLen = streams.length; sIdx < sLen; sIdx += 1) {
@@ -352,6 +333,7 @@ MediaPlayer.dependencies.StreamController = function() {
                                     stream.setAutoPlay(autoPlay);
                                     stream.setDefaultAudioLang(defaultAudioLang);
                                     stream.setDefaultSubtitleLang(defaultSubtitleLang);
+                                    stream.enableSubtitles(subtitlesEnabled);
                                     stream.load(manifest, period);
                                     streams.push(stream);
                                 }
@@ -365,6 +347,13 @@ MediaPlayer.dependencies.StreamController = function() {
                                 activeStream = streams[0];
                                 attachVideoEvents.call(self, activeStream.getVideoModel());
                             }
+
+                            self.metricsModel.updateManifestUpdateInfo(manifestUpdateInfo, {
+                                currentTime: self.videoModel.getCurrentTime(),
+                                buffered: self.videoModel.getElement().buffered,
+                                presentationStartTime: periods[0].start,
+                                clientTimeOffset: mpd.clientServerTimeShift
+                            });
 
                             Q.all(updatedStreams).then(
                                 function() {
@@ -410,16 +399,11 @@ MediaPlayer.dependencies.StreamController = function() {
             }
         },
 
-        manifestUpdate = function() {
-            var manifest = this.manifestModel.getValue(),
-                url = manifest.mpdUrl;
-
-            if (manifest.hasOwnProperty("Location")) {
-                url = manifest.Location;
+        manifestUpdate = function(reload) {
+            if (reload === true) {
+                reloadStream = true;
             }
-
-            this.debug.log("### Refresh manifest @ " + url);
-            this.refreshManifest(url, true);
+            this.refreshManifest();
         },
 
         manifestHasUpdated = function() {
@@ -545,6 +529,8 @@ MediaPlayer.dependencies.StreamController = function() {
 
             self.debug.info("[StreamController] load url: " + url);
 
+            reloadStream = false;
+
             self.manifestLoader.load(url).then(
                 function(manifest) {
                     self.manifestModel.setValue(manifest);
@@ -563,26 +549,43 @@ MediaPlayer.dependencies.StreamController = function() {
             );
         },
 
-        refreshManifest: function(url, isIntern) {
+        refreshManifest: function(url) {
+            var manifest = this.manifestModel.getValue(),
+                manifestUrl = url ? url : (manifest.hasOwnProperty("Location") ? manifest.Location : manifest.mpdUrl);
+
+            this.debug.log("### Refresh manifest @ " + manifestUrl);
+
             var self = this;
             this.manifestLoader.abort();
-            this.manifestLoader.load(url, true).then(
+            this.manifestLoader.load(manifestUrl, true).then(
                 function(manifestResult) {
                     self.manifestModel.setValue(manifestResult);
                     self.debug.log("### Manifest has been refreshed.");
+                    reloadStream = false;
                 },
                 function(err) {
                     // err is undefined in the case the request has been aborted
-                    if (err) {
-                        self.errHandler.sendWarning(err.name, err.message, err.data);
+                    if (err === undefined) {
+                        return;
+                    }
 
-                        // Notify webapp to refresh url if failed to dowload manifest (for example if manifest url expired)
-                        if (isIntern && err.name === MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST) {
-                            self.eventBus.dispatchEvent({
-                                type: "manifestUrlUpdate",
-                                data: url
-                            });
+                    // Url is refreshed
+                    if (url) {
+                        // Raise an error only in case we try to reload the session
+                        // to recover some segment downloading error
+                        if (reloadStream) {
+                            self.errHandler.sendError(err.name, err.message, err.data);
                         }
+                    } else {
+                        // If internal manifest updating (for ex. track switching),
+                        // then raise a warning and ask for refreshing the url (in case it is no more valid or expired)
+                        self.errHandler.sendWarning(err.name, err.message, err.data);
+                        self.eventBus.dispatchEvent({
+                                type: "manifestUrlUpdate",
+                                data: {
+                                    url: manifestUrl
+                                }
+                            });
                     }
                 }
             );
@@ -663,14 +666,40 @@ MediaPlayer.dependencies.StreamController = function() {
         },
 
         enableSubtitles: function(enabled) {
+            subtitlesEnabled = enabled;
             if (activeStream) {
                 activeStream.enableSubtitles(enabled);
             }
         },
 
-        play: play,
-        seek: seek,
-        pause: pause
+        setTrickModeSpeed: function(speed) {
+            if (activeStream) {
+                activeStream.setTrickModeSpeed(speed);
+            }
+        },
+
+        getTrickModeSpeed: function() {
+            if (activeStream) {
+                return activeStream.getTrickModeSpeed();
+            }
+            return 0;
+        },
+
+        play: function() {
+            activeStream.play();
+        },
+
+        pause: function() {
+            if (activeStream) {
+                activeStream.pause();
+            }
+        },
+
+        seek: function(time) {
+            if (activeStream) {
+                activeStream.seek(time);
+            }
+        },
     };
 };
 

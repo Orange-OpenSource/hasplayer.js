@@ -23,6 +23,7 @@ MediaPlayer.dependencies.FragmentModel = function () {
         successLoadingCallback,
         errorLoadingCallback,
         streamEndCallback,
+        type,
 
         LOADING_REQUEST_THRESHOLD = 2,
 
@@ -85,6 +86,13 @@ MediaPlayer.dependencies.FragmentModel = function () {
 
         getContext: function() {
             return context;
+        },
+
+        setType: function (value) {
+            type = value;
+            if (this.fragmentLoader) {
+                this.fragmentLoader.setType(value);
+            }
         },
 
         addRequest: function(value) {
@@ -233,6 +241,10 @@ MediaPlayer.dependencies.FragmentModel = function () {
                     removeExecutedRequest.call(this, req);
                 }
             }
+        },
+
+        clearExecutedRequests: function() {
+            executedRequests = [];
         },
 
         cancelPendingRequests: function() {

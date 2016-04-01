@@ -48,8 +48,8 @@ MediaPlayer = function(aContext) {
     /*
      *
      */
-    var VERSION = "1.2.0",
-        VERSION_HAS = "1.2.6",
+    var VERSION_DASHJS = "1.2.0",
+        VERSION = "1.2.7",
         GIT_TAG = "@@REVISION",
         BUILD_DATE = "@@TIMESTAMP",
         context = aContext,
@@ -67,6 +67,7 @@ MediaPlayer = function(aContext) {
         bufferMax = MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_REQUIRED,
         defaultAudioLang = 'und',
         defaultSubtitleLang = 'und',
+        subtitlesEnabled = false,
 
         /**
          * is hasplayer ready to play the stream? element and source have been setted?
@@ -110,6 +111,7 @@ MediaPlayer = function(aContext) {
 
             streamController.setDefaultAudioLang(defaultAudioLang);
             streamController.setDefaultSubtitleLang(defaultSubtitleLang);
+            streamController.enableSubtitles(subtitlesEnabled);
 
             // ORANGE: add source stream parameters
             streamController.load(source, protectionData);
@@ -185,6 +187,14 @@ MediaPlayer = function(aContext) {
             }
 
             return val;
+        },
+
+        getDVRWindowRange = function () {
+            var metric = this.metricsModel.getReadOnlyMetricsFor('video'),
+                dvrInfo = metric ? this.metricsExt.getCurrentDVRInfo(metric) : null,
+                range = dvrInfo ? dvrInfo.range : null;
+
+            return range;
         },
 
         /**
@@ -362,16 +372,6 @@ MediaPlayer = function(aContext) {
         },
 
         /**
-         * get the HAS version
-         * @access public
-         * @memberof MediaPlayer#
-         * @return hasplayer version
-         */
-        getVersionHAS: function() {
-            return VERSION_HAS;
-        },
-
-        /**
          * get the full version (with git tag, only at build)
          * @access public
          * @memberof MediaPlayer#
@@ -379,10 +379,20 @@ MediaPlayer = function(aContext) {
          */
         getVersionFull: function() {
             if (GIT_TAG.indexOf("@@") === -1) {
-                return VERSION_HAS + '_' + GIT_TAG;
+                return VERSION + '_' + GIT_TAG;
             } else {
-                return VERSION_HAS;
+                return VERSION;
             }
+        },
+
+        /**
+         * get the HAS version
+         * @access public
+         * @memberof MediaPlayer#
+         * @return hasplayer version
+         */
+        getVersionDashJS: function() {
+            return VERSION_DASHJS;
         },
 
         /**
@@ -637,6 +647,7 @@ MediaPlayer = function(aContext) {
          * @param  enabled - boolean true if the download of subtitle need to be enabled
         */
         enableSubtitles:function(enabled){
+            subtitlesEnabled = enabled;
             if(streamController){
                 streamController.enableSubtitles(enabled);
             }
@@ -707,7 +718,7 @@ MediaPlayer = function(aContext) {
             // ORANGE : add metric
             loop = videoModel.getElement().loop;
             if (url) {
-                this.metricsModel.addSession(null, url, loop, null, "HasPlayer.js_" + this.getVersionHAS());
+                this.metricsModel.addSession(null, url, loop, null, "HasPlayer.js_" + this.getVersion());
             }
 
             this.uriQueryFragModel.reset();
@@ -763,6 +774,23 @@ MediaPlayer = function(aContext) {
             defaultSubtitleLang = language;
         },
 
+        setTrickModeSpeed: function(speed){
+            if (streamController) {
+                if (streamController.getTrickModeSpeed() !== speed && speed === 1) {
+                    videoModel.play();
+                }else{
+                    streamController.setTrickModeSpeed(speed);
+                }
+            }
+        },
+
+        getTrickModeSpeed: function() {
+            if (streamController) {
+                return streamController.getTrickModeSpeed();
+            }
+
+            return 0;
+        },
 
         play: play,
         isReady: isReady,
@@ -773,6 +801,7 @@ MediaPlayer = function(aContext) {
         durationAsUTC: durationAsUTC,
         getDVRWindowSize: getDVRWindowSize,
         getDVRSeekOffset: getDVRSeekOffset,
+        getDVRWindowRange: getDVRWindowRange,
         formatUTC: formatUTC,
         convertToTimeCode: convertToTimeCode
 

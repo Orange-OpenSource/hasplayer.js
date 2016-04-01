@@ -14,7 +14,7 @@
 MediaPlayer.models.ManifestModel = function () {
     "use strict";
 
-    var manifest;
+    var manifest = null;
 
     return {
         system: undefined,

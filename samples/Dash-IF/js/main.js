@@ -176,8 +176,10 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
     $scope.protectionTypes = ["PlayReady", "Widevine"];
     $scope.protectionType = bowser.chrome ? "Widevine" : "PlayReady";
-    setProtectionScheme();
-
+    var protectionSchemes = ["com.microsoft.playready", "com.widevine.alpha"];
+    // create blank structure for selectedItem
+    $scope.selectedItem = {};
+    setProtectionData();
 
     $('#sliderAudio').labeledslider({
         max:0,
@@ -367,6 +369,10 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         }
     }
 
+    function onplay(/*e*/) {
+        $scope.trickModeSpeed = "x1";
+    }
+
     //if video size change, player has to update subtitles size
     function onFullScreenChange(){
         setSubtitlesCSSStyle(subtitlesCSSStyle);
@@ -549,6 +555,9 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
                 metricsAgent.stop();
             }
         }
+
+        //alert('ERROR - '  + e.data.code + ":\n" + JSON.stringify(e, null, '  '));
+        alert(e.data.code);
     }
 
     ////////////////////////////////////////
@@ -631,12 +640,10 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     player = new MediaPlayer(context);
 
     $scope.version = player.getVersion();
-    $scope.versionHAS = player.getVersionHAS();
     $scope.versionFull = player.getVersionFull();
+    $scope.versionDashJS = player.getVersionDashJS();
     $scope.buildDate = player.getBuildDate();
 
-    $scope.laURL = "";
-    $scope.cdmData = "";
 
     player.startup();
     player.addEventListener("error", onError.bind(this));
@@ -644,6 +651,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     player.addEventListener("subtitlesStyleChanged",onSubtitlesStyleChanged.bind(this));
     player.addEventListener("manifestUrlUpdate", onManifestUrlUpdate.bind(this));
     video.addEventListener("loadeddata", onload.bind(this));
+    video.addEventListener("play", onplay.bind(this));
     video.addEventListener("fullscreenchange", onFullScreenChange.bind(this));
     video.addEventListener("mozfullscreenchange", onFullScreenChange.bind(this));
     video.addEventListener("webkitfullscreenchange", onFullScreenChange.bind(this));
@@ -711,16 +719,44 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
     $scope.playbackRateDown = function () {
 
-        if (video.playbackRate === 1.0) {
+        if (video.playbackRate < 0.1) {
             return;
         }
 
         video.playbackRate = video.playbackRate / 2;
         $scope.playbackRate = "x" + video.playbackRate;
 
-        if (video.playbackRate === 1.0) {
+        if (video.playbackRate < 0.1) {
             player.setAutoSwitchQuality(true);
         }
+    };
+
+    $scope.trickModeSpeedUp = function () {
+        var currentSpeed = player.getTrickModeSpeed(),
+            newSpeed;
+
+        if (currentSpeed === 128.0) {
+            return;
+        }
+
+        newSpeed = (currentSpeed < 0) ? 1 : (currentSpeed * 2);
+
+        player.setTrickModeSpeed(newSpeed);
+        $scope.trickModeSpeed = "x" + newSpeed;
+    };
+
+    $scope.trickModeSpeedDown = function () {
+        var currentSpeed = player.getTrickModeSpeed(),
+            newSpeed;
+
+        if (currentSpeed === -128.0) {
+            return;
+        }
+
+        newSpeed = (currentSpeed === 1) ? -2 : ((currentSpeed > 1) ? (currentSpeed / 2) : (currentSpeed * 2));
+
+        player.setTrickModeSpeed(newSpeed);
+        $scope.trickModeSpeed = "x" + newSpeed;
     };
 
     ////////////////////////////////////////
@@ -825,16 +861,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     };
 
     $scope.setStream = function (item) {
-
         $scope.selectedItem = item;
-
-        setProtectionData();
-    };
-
-
-    $scope.setProtectionType = function (item) {
-        $scope.protectionType = item;
-        setProtectionScheme();
         setProtectionData();
     };
 
@@ -849,11 +876,24 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         }
     }
 
+    $scope.setProtectionType = function (item) {
+        $scope.protectionType = item;
+        setProtectionScheme();
+    };
+
     function setProtectionData () {
-        var protData = $scope.selectedItem.protData ? $scope.selectedItem.protData[$scope.protectionScheme] : null;
-        $scope.laURL = protData ? protData.laURL : "";
-        $scope.cmdData = protData ? protData.cdmData : "";
+        if(!$scope.selectedItem.protData){
+            $scope.selectedItem.protData = {};
+        }
+        for(var i=0; i< protectionSchemes.length; i++){
+            if(!$scope.selectedItem.protData[protectionSchemes[i]]){
+                $scope.selectedItem.protData[protectionSchemes[i]] = {};
+            }
+        }
     }
+
+    setProtectionScheme();
+
 
     function resetBitratesSlider () {
         $('#sliderBitrate').labeledslider({
@@ -875,26 +915,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     }
 
     function initPlayer() {
-
-        function DRMParams() {
-            this.backUrl = null;
-            this.cdmData = null;
-        }
-
-        // Update PR protection data
-        if (($scope.laURL.length > 0) || (($scope.cdmData.length > 0))) {
-            if (!$scope.selectedItem.protData) {
-                $scope.selectedItem.protData = {};
-            }
-            if (!$scope.selectedItem.protData['com.widevine.alpha']) {
-                $scope.selectedItem.protData['com.widevine.alpha'] = {};
-            }
-            $scope.selectedItem.protData['com.widevine.alpha'].laURL = $scope.laURL;
-            $scope.selectedItem.protData['com.widevine.alpha'].cdmData = $scope.cdmData;
-        }
-
         resetBitratesSlider();
-
         //ORANGE : reset subtitles data.
         $scope.textTracks = null;
         $scope.textData = null;
@@ -947,9 +968,8 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     if (paramUrl !== null) {
         var startPlayback = true;
 
-        $scope.selectedItem = {};
         $scope.selectedItem.url = paramUrl;
-
+        setProtectionData();
         if (vars.hasOwnProperty("autoplay")) {
             startPlayback = (vars.autoplay === 'true');
         }
