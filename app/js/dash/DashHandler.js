@@ -1178,6 +1178,10 @@ Dash.dependencies.DashHandler = function() {
 
         getIFrameRequest = function(request) {
             //TBD
+        },
+
+        getFragmentInfoRequest = function(request) {
+            //TBD
         };
 
     return {
@@ -1214,7 +1218,8 @@ Dash.dependencies.DashHandler = function() {
         getCurrentTime: getCurrentTime,
         getSegmentCountForDuration: getSegmentCountForDuration,
         updateSegmentList: updateSegmentList,
-        getIFrameRequest: getIFrameRequest 
+        getIFrameRequest: getIFrameRequest,
+        getFragmentInfoRequest: getFragmentInfoRequest
     };
 };
 

@@ -14,8 +14,9 @@
 
 // Define Math.sign method in case it is not defined (like in IE11)
 if (!Math.sign) {
-    Math.sign = function(value) {
-        return value < 0 ? -1 : 1;
+    Math.sign = function (value) {
+        "use strict";
+        return (value < 0) ? -1 : 1;
     };
 }
 
@@ -33,6 +34,7 @@ MediaPlayer.dependencies.Stream = function() {
         audioTrackIndex = -1,
         textController = null,
         subtitlesEnabled = false,
+        fragmentInfoController = null,
 
         textTrackIndex = -1,
         autoPlay = true,
@@ -91,6 +93,8 @@ MediaPlayer.dependencies.Stream = function() {
         startClockTime = -1,
         startStreamTime = -1,
         visibilitychangeListener,
+
+        currentTime,
 
         // Protection errors
         onProtectionError = function(event) {
@@ -589,8 +593,18 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         onSeeking = function() {
-            var time = this.videoModel.getCurrentTime();
+            var time = this.videoModel.getCurrentTime(),
+                self = this;
+
             this.debug.info("[Stream] <video> seeking event: " + time);
+
+            if(self.manifestExt.getIsDynamic(manifest) === true){
+                if (fragmentInfoController === null){
+                    fragmentInfoController = self.system.getObject("fragmentInfoController");
+                    fragmentInfoController.initialize("video", currentTime, self.fragmentController, videoController);
+                    fragmentInfoController.start();
+                }
+            }
 
             // Check if seeking is different from trick mode seeking, then cancel trick mode
             if ((tmSpeed !== 1) && (time.toFixed(3) !== tmSeekValue.toFixed(3))) {
@@ -696,7 +710,8 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         onTimeupdate = function() {
-            this.debug.info("[Stream] <video> timeupdate event: " + this.videoModel.getCurrentTime());
+            currentTime = this.videoModel.getCurrentTime();
+            this.debug.info("[Stream] <video> timeupdate event: " + currentTime);
             updateBuffer.call(this);
         },
 

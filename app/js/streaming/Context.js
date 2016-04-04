@@ -42,6 +42,7 @@ MediaPlayer.di.Context = function () {
             this.system.mapSingleton('capabilities', MediaPlayer.utils.Capabilities);
             this.system.mapSingleton('config', MediaPlayer.utils.Config);
             this.system.mapSingleton('debug', MediaPlayer.utils.Debug);
+            this.system.mapSingleton('debugController', MediaPlayer.utils.DebugController);
             this.system.mapClass('domParser', MediaPlayer.utils.DOMParser);
             this.system.mapSingleton('eventBus', MediaPlayer.utils.EventBus);
             this.system.mapSingleton('textTrackExtensions', MediaPlayer.utils.TextTrackExtensions);
@@ -63,6 +64,7 @@ MediaPlayer.di.Context = function () {
             this.system.mapSingleton('errHandler', MediaPlayer.dependencies.ErrorHandler);
             this.system.mapClass('eventController', MediaPlayer.dependencies.EventController);
             this.system.mapClass('fragmentController', MediaPlayer.dependencies.FragmentController);
+            this.system.mapClass('fragmentInfoController', MediaPlayer.dependencies.FragmentInfoController);
             this.system.mapClass('fragmentLoader', MediaPlayer.dependencies.FragmentLoader);
             this.system.mapClass('fragmentModel', MediaPlayer.dependencies.FragmentModel);
             this.system.mapClass('manifestLoader', MediaPlayer.dependencies.ManifestLoader);
