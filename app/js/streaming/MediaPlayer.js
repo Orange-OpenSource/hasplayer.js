@@ -653,6 +653,15 @@ MediaPlayer = function(aContext) {
             }
         },
 
+         /**
+         * function used to retrieve if subtitle is enable or not
+         * @access public
+         * @memberof MediaPlayer#
+         * @retrun  boolean true if the download of subtitle is enabled
+        */
+        isSubtitlesEnabled: function() {
+            return subtitlesEnabled;
+        },
 
         /**
          * get the subtitle track list

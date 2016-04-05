@@ -1063,6 +1063,7 @@ MediaPlayer.dependencies.Stream = function() {
         errHandler: undefined,
         timelineConverter: undefined,
         scheduleWhilePaused: undefined,
+        textTrackExtensions:undefined,
         // ORANGE : add metricsModel
         metricsModel: undefined,
         eventBus: undefined,
@@ -1318,6 +1319,11 @@ MediaPlayer.dependencies.Stream = function() {
                         // Update manifest
                         this.system.notify("manifestUpdate");
                     } else {
+                        // hide subtitle here
+                        var track = this.textTrackExtensions.getCurrentTextTrack(this.videoModel.getElement());
+                        if(track){
+                            track.mode = "hidden";
+                        }
                         textController.stop();
                     }
                 }
