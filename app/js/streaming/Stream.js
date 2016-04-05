@@ -935,6 +935,34 @@ MediaPlayer.dependencies.Stream = function() {
             play.call(self);
         },
 
+        selectTrack = function (controller, track, currentIndex) {
+            var index = -1;
+
+            if (!controller) {
+                return currentIndex;
+            }
+
+            if (currentIndex === -1) {
+                return currentIndex;
+            }
+
+            // Get data index corresponding to the new selected track
+            index = this.manifestExt.getDataIndex_(track, manifest, periodInfo.index);
+
+            // Check if different track selected
+            if (index !== currentIndex) {
+                if (this.manifestExt.getIsDynamic(manifest)) {
+                    // If live, refresh the manifest to get new selected track segments info
+                    this.system.notify("manifestUpdate");
+                } else {
+                    // Else update controller data directly
+                    controller.updateData(track, periodInfo);
+                }
+            }
+
+            return index;
+        },
+
         updateData = function(updatedPeriodInfo) {
             var self = this,
                 videoData,
@@ -1125,67 +1153,29 @@ MediaPlayer.dependencies.Stream = function() {
             //document.addEventListener("visibilitychange", visibilitychangeListener);
         },
 
-        // ORANGE: add the capability to set audioTrack
         setAudioTrack: function(audioTrack) {
-            var manifest = this.manifestModel.getValue(),
-                self = this;
-
-            if (audioController) {
-                // Get data index corresponding to new audio track
-                self.manifestExt.getDataIndex(audioTrack, manifest, periodInfo.index).then(
-                    function(index) {
-                        // check if we are not in the same track
-                        if (audioTrackIndex !== -1 && index !== audioTrackIndex) {
-
-                            audioTrackIndex = index;
-
-                            // Update manifest
-                            self.system.notify("manifestUpdate");
-                        }
-                    });
-            }
+            audioTrackIndex = selectTrack.call(this, audioController, audioTrack, audioTrackIndex);
         },
 
         getSelectedAudioTrack: function() {
-            var self = this,
-                manifest = self.manifestModel.getValue();
+            var manifest = this.manifestModel.getValue();
 
             if (audioController) {
-                return self.manifestExt.getDataForIndex_(audioTrackIndex, manifest, periodInfo.index);
+                return this.manifestExt.getDataForIndex_(audioTrackIndex, manifest, periodInfo.index);
             }
 
             return undefined;
         },
 
-        // ORANGE: add the capability to set subtitle track
         setSubtitleTrack: function(subtitleTrack) {
-            var deferredSubtitleUpdate = Q.defer(),
-                manifest = this.manifestModel.getValue(),
-                self = this;
-
-            if (textController) {
-                // Get data index corresponding to new subtitle track
-                self.manifestExt.getDataIndex(subtitleTrack, manifest, periodInfo.index).then(
-                    function(index) {
-                        textTrackIndex = index;
-
-                        // Update manifest
-                        self.system.notify("manifestUpdate");
-                    }
-                );
-            } else {
-                deferredSubtitleUpdate.reject();
-            }
-
-            return deferredSubtitleUpdate.promise;
+            subtitleTrack = selectTrack.call(this, textController, subtitleTrack, subtitleTrack);
         },
 
         getSelectedSubtitleTrack: function() {
-            var self = this,
-                manifest = self.manifestModel.getValue();
+            var manifest = this.manifestModel.getValue();
 
             if (textController && subtitlesEnabled) {
-                return self.manifestExt.getDataForIndex_(textTrackIndex, manifest, periodInfo.index);
+                return this.manifestExt.getDataForIndex_(textTrackIndex, manifest, periodInfo.index);
             }
 
             return undefined;
