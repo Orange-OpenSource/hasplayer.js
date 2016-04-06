@@ -1325,9 +1325,13 @@ MediaPlayer.dependencies.Stream = function() {
                 subtitlesEnabled = enabled;
                 if (textController) {
                     if (enabled) {
-                        this.system.mapHandler("streamsComposed", undefined, streamsComposed.bind(this), true);
-                        // Update manifest
-                        this.system.notify("manifestUpdate");
+                        if (this.manifestExt.getIsDynamic(manifest)) {
+                            // In case of live streams, refresh manifest before activating subtitles
+                            this.system.mapHandler("streamsComposed", undefined, streamsComposed.bind(this), true);
+                            this.system.notify("manifestUpdate");
+                        } else {
+                            streamsComposed.call(this);
+                        }
                     } else {
                         // hide subtitle here
                         var track = this.textTrackExtensions.getCurrentTextTrack(this.videoModel.getElement());
