@@ -253,67 +253,50 @@ MetricsTreeConverter = function () {
             return treeMetrics;
         },
 
-        representationBoundariesToTreeMetrics = function (representationBoundaries) {
+        playbackQualityToTreeMetrics = function (playbackQuality) {
             var treeMetrics = [],
                 treeMetric,
-                repBoundariesMetric,
-                tMetric,
-                minMetric,
-                maxMetric,
+                metric,
                 i;
 
-            for (i = 0; i < representationBoundaries.length; i += 1) {
-                repBoundariesMetric = representationBoundaries[i];
+            for (i = 0; i < playbackQuality.length; i += 1) {
+                metric = playbackQuality[i];
 
-                treeMetric = {};
-                treeMetric.text = "Representation Boundaries: " + (i + 1);
-                treeMetric.items = [];
+                treeMetric = {
+                    text: "Playback Quality: " + (i + 1),
+                    items: [
+                        { text: "t:" + metric.t },
+                        { text: "mt:" + metric.mt },
+                        { text: "droppedFrames:" + metric.droppedFrames },
+                        { text: "totalVideoFrames:" + metric.totalVideoFrames }
+                    ]
+                };
                 treeMetric.collapsed = true;
-
-                tMetric = {};
-                tMetric.text = "t: " + repBoundariesMetric.t;
-
-                minMetric = {};
-                minMetric.text = "min: " + repBoundariesMetric.min;
-
-                maxMetric = {};
-                maxMetric.text = "max: " + repBoundariesMetric.max;
-
-                treeMetric.items.push(tMetric);
-                treeMetric.items.push(minMetric);
-                treeMetric.items.push(maxMetric);
-
                 treeMetrics.push(treeMetric);
             }
 
             return treeMetrics;
         },
 
-        droppedFramesToTreeMetrics = function (droppedFrames) {
+        videoResolutionToTreeMetrics = function (videoResolution) {
             var treeMetrics = [],
                 treeMetric,
-                bufferMetric,
-                timeMetric,
-                droppedFramesMetric,
+                metric,
                 i;
 
-            for (i = 0; i < droppedFrames.length; i += 1) {
-                bufferMetric = droppedFrames[i];
+            for (i = 0; i < videoResolution.length; i += 1) {
+                metric = videoResolution[i];
 
-                treeMetric = {};
-                treeMetric.text = "DroppedFrame: " + (i + 1);
-                treeMetric.items = [];
+                treeMetric = {
+                    text: "Video Resolution: " + (i + 1),
+                    items: [
+                        { text: "t:" + metric.t },
+                        { text: "mt:" + metric.mt },
+                        { text: "width:" + metric.width },
+                        { text: "height:" + metric.height }
+                    ]
+                };
                 treeMetric.collapsed = true;
-
-                timeMetric = {};
-                timeMetric.text = "time: " + bufferMetric.time;
-
-                droppedFramesMetric = {};
-                droppedFramesMetric.text = "droppedFrames: " + bufferMetric.droppedFrames;
-
-                treeMetric.items.push(timeMetric);
-                treeMetric.items.push(droppedFramesMetric);
-
                 treeMetrics.push(treeMetric);
             }
 
@@ -481,8 +464,8 @@ MetricsTreeConverter = function () {
             var bufferTreeMetrics = bufferLevelMetricToTreeMetric(metrics.BufferLevel),
                 playListMetrics = playListMetricToTreeMetric(metrics.PlayList),
                 representationSwitchMetrics = representationSwitchToTreeMetrics(metrics.RepSwitchList),
-                representationBoundariesMetrics = representationBoundariesToTreeMetrics(metrics.RepBoundariesList),
-                droppedFramesMetrics = droppedFramesToTreeMetrics(metrics.DroppedFrames),
+                playbackQualityMetrics = playbackQualityToTreeMetrics(metrics.PlaybackQuality),
+                videoResolutionMetrics = videoResolutionToTreeMetrics(metrics.VideoResolution),
                 httpRequestMetrics = httpRequestToTreeMetric(metrics.HttpList),
                 tcpConnectionMetrics = tcpConnectionToTreeMetric(metrics.TcpList),
                 manifestTreeMetrics = manifesfToTreeMetrics(metricsExt.manifestModel.getValue()),
@@ -500,13 +483,13 @@ MetricsTreeConverter = function () {
                     collapsed: true
                 },
                 {
-                    text: "Representation Boundaries",
-                    items: representationBoundariesMetrics,
+                    text: "Playback Quality",
+                    items: playbackQualityMetrics,
                     collapsed: true
                 },
                 {
-                    text: "Dropped Frames",
-                    items: droppedFramesMetrics,
+                    text: "Video Resolution",
+                    items: videoResolutionMetrics,
                     collapsed: true
                 },
                 {
