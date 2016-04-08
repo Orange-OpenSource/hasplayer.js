@@ -128,13 +128,12 @@
             vo.responsecode = responsecode;
             vo.interval = interval;
             vo.mediaduration = mediaduration;
-            // ORANGE: add request media start time and quality
             vo.startTime = startTime;
             vo.quality = quality;
 
             this.getMetricsFor(streamType).HttpList.push(vo);
 
-            // ORANGE: to avoid memory leak
+            // Keep only last 10 metrics to avoid memory leak
             if(this.getMetricsFor(streamType).HttpList.length > 10) {
                 this.getMetricsFor(streamType).HttpList.shift();
             }
@@ -194,7 +193,7 @@
             return vo;
         },
 
-        addSession: function (streamType,url,loop, endTime, playerType) {
+        addSession: function (streamType, url, loop, endTime, playerType) {
             var vo = new MediaPlayer.vo.metrics.Session();
 
             vo.uri = url;
@@ -234,8 +233,8 @@
 
             this.getMetricsFor(streamType).BufferLevel.push(vo);
 
-            // ORANGE: to avoid memory leak
-            if(this.getMetricsFor(streamType).BufferLevel.length > 10) {
+            // Keep only last 10 metrics to avoid memory leak
+            if (this.getMetricsFor(streamType).BufferLevel.length > 10) {
                 this.getMetricsFor(streamType).BufferLevel.shift();
             }
 
@@ -244,16 +243,20 @@
         },
 
 
-        addDVRInfo: function (streamType, currentTime, mpd, range) {
+        addDVRInfo: function (streamType, t, range) {
             var vo = new MediaPlayer.vo.metrics.DVRInfo();
 
-            vo.time = currentTime ;
+            vo.t = t;
             vo.range = range;
-            vo.mpd= mpd;
 
             this.getMetricsFor(streamType).DVRInfo.push(vo);
             this.metricAdded(streamType, "DVRInfo", vo);
 
+            // Keep only last 10 metrics to avoid memory leak
+            if (this.getMetricsFor(streamType).DVRInfo.length > 10) {
+                this.getMetricsFor(streamType).DVRInfo.shift();
+            }
+            
             return vo;
         },
 

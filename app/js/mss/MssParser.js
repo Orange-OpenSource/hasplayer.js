@@ -121,7 +121,7 @@ Mss.dependencies.MssParser = function() {
             adaptationSet.SegmentTemplate = segmentTemplate;
 
             segments = segmentTemplate.SegmentTimeline.S_asArray;
-            this.metricsModel.addDVRInfo(adaptationSet.contentType, 0, null, {
+            this.metricsModel.addDVRInfo(adaptationSet.contentType, new Date(), {
                 start: segments[0].t / segmentTemplate.timescale,
                 end: (segments[segments.length - 1].t + segments[segments.length - 1].d)  / segmentTemplate.timescale
             });
