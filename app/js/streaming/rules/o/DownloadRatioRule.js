@@ -1,4 +1,4 @@
-﻿/*
+/*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
  *
@@ -15,6 +15,8 @@
  */
 MediaPlayer.rules.o.DownloadRatioRule = function() {
     "use strict";
+
+    var rule = "DownloadRatio";
 
     return {
         debug: undefined,
@@ -120,7 +122,7 @@ MediaPlayer.rules.o.DownloadRatioRule = function() {
                                                     p = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
 
                                                     self.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count-1) + " (" + bandwidths[q] + "), p=" + p);
-                                                    deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
+                                                    deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p, false, rule));
                                                 } else {
 
                                                     for (i = count - 1; i > current; i -= 1) {
@@ -134,7 +136,7 @@ MediaPlayer.rules.o.DownloadRatioRule = function() {
                                                     p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
 
                                                     self.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count-1) + " (" + bandwidths[q] + "), p=" + p);
-                                                    deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
+                                                    deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p, false, rule));
                                                 }
                                             }
                                         );
