@@ -691,6 +691,15 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(null);
     },
 
+    getRepresentationCount_: function(adaptation) {
+        "use strict";
+        if (adaptation) {
+            return adaptation.Representation_asArray.length;
+        }
+
+        return null;
+    },
+
     getRepresentationFor: function(index, data) {
         "use strict";
         return Q.when(data.Representation_asArray[index]);
