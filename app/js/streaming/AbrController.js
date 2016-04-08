@@ -156,6 +156,41 @@ MediaPlayer.dependencies.AbrController = function () {
             );
 
             return deferred.promise;
+        },
+
+        getQualityBoundaries = function(type, data) {
+            var bitrates = this.metricsExt.getBitratesForType(type, data),
+                qualityMin = this.config.getParamFor(type, "ABR.minQuality", "number", -1),
+                qualityMax = this.config.getParamFor(type, "ABR.maxQuality", "number",-1),
+                bandwidthMin = this.config.getParamFor(type, "ABR.minBandwidth", "number", -1),
+                bandwidthMax = this.config.getParamFor(type, "ABR.maxBandwidth", "number", -1),
+                i,
+                count= bitrates.length;
+
+            if (bandwidthMin !== -1) {
+                for (i = 0; i < bitrates.length; i++) {
+                    if (bitrates[i] >= bandwidthMin) {
+                       qualityMin = (qualityMin === -1) ? i : Math.max(i, qualityMin);
+                       break;
+                    }
+                }
+            }
+
+            if (bandwidthMax !== -1) {
+               for (i = bitrates.length - 1; i >= 0; i--) {
+                    if (bitrates[i] <= bandwidthMax) {
+                        qualityMax = (qualityMax === -1) ? i : Math.min(i, qualityMax);
+                        break;
+                    }
+               }
+            }
+
+            qualityMin = (qualityMin >= count) ? (count - 1) : qualityMin;
+            qualityMin = (qualityMin < 0) ? 0: qualityMin;
+            qualityMax = (qualityMax >= count || qualityMax <0) ? (count - 1) : qualityMax;
+
+            return {min: qualityMin, max: qualityMax};
+
         };
 
     return {
@@ -222,7 +257,7 @@ MediaPlayer.dependencies.AbrController = function () {
                         }
 
                         // Check representation boundaries
-                        var qualityBoundaries = self.metricsExt.getQualityBoundaries(type, data);
+                        var qualityBoundaries = getQualityBoundaries.call(self, type, data);
                         qualityMin = qualityBoundaries.min;
                         qualityMax = qualityBoundaries.max;
 
@@ -247,7 +282,7 @@ MediaPlayer.dependencies.AbrController = function () {
                     setInternalConfidence.call(self, type, confidence);
 
                     self.debug.info("[AbrController]["+type+"] Set quality: " + quality);
-                    deferred.resolve({quality: quality, confidence: result.confidence});
+                    deferred.resolve({quality: quality, confidence: confidence});
                 }
             );
 
