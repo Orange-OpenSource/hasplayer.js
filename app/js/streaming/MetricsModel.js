@@ -107,14 +107,15 @@
             vo.tconnect = tconnect;
 
             this.getMetricsFor(streamType).TcpList.push(vo);
-
             this.metricAdded(streamType, "TcpConnection", vo);
+
             return vo;
         },
 
         // ORANGE: add request quality
         addHttpRequest: function (streamType, tcpid, type, url, actualurl, range, trequest, tresponse, tfinish, responsecode, interval, mediaduration, startTime, quality) {
-            var vo = new MediaPlayer.vo.metrics.HTTPRequest();
+            var vo = new MediaPlayer.vo.metrics.HTTPRequest(),
+                metrics = this.getMetricsFor(streamType).HttpList;
 
             vo.stream = streamType;
             vo.tcpid = tcpid;
@@ -131,14 +132,14 @@
             vo.startTime = startTime;
             vo.quality = quality;
 
-            this.getMetricsFor(streamType).HttpList.push(vo);
+            metrics.push(vo);
+            this.metricAdded(streamType, "HttpRequest", vo);
 
             // Keep only last 10 metrics to avoid memory leak
-            if(this.getMetricsFor(streamType).HttpList.length > 10) {
-                this.getMetricsFor(streamType).HttpList.shift();
+            if (metrics.length > 10) {
+                metrics.shift();
             }
 
-            this.metricAdded(streamType, "HttpRequest", vo);
             return vo;
         },
 
@@ -150,8 +151,8 @@
             vo.b = b;
 
             httpRequest.trace.push(vo);
-
             this.metricUpdated(httpRequest.stream, "HttpRequestTrace", httpRequest);
+
             return vo;
         },
 
@@ -164,8 +165,8 @@
             vo.lto = lto;
 
             this.getMetricsFor(streamType).RepSwitchList.push(vo);
-
             this.metricAdded(streamType, "RepresentationSwitch", vo);
+
             return vo;
         },
 
@@ -177,8 +178,8 @@
             vo.lto = lto;
 
             this.getMetricsFor(streamType).BufferedSwitchList.push(vo);
-
             this.metricAdded(streamType, "BufferedSwitch", vo);
+
             return vo;
         },
 
@@ -190,6 +191,7 @@
             vo.reason = reason;
 
             this.metricAdded(streamType, "State", vo);
+
             return vo;
         },
 
@@ -206,6 +208,7 @@
             vo.playerType = playerType;
 
             this.metricAdded(streamType, "Session", vo);
+
             return vo;
         },
 
@@ -218,6 +221,7 @@
             vo.droppedFrames = droppedFrames;
 
             this.metricAdded(streamType, "Condition", vo);
+
             return vo;
         },
 
@@ -226,47 +230,48 @@
         },
 
         addBufferLevel: function (streamType, t, level) {
-            var vo = new MediaPlayer.vo.metrics.BufferLevel();
+            var vo = new MediaPlayer.vo.metrics.BufferLevel(),
+                metrics = this.getMetricsFor(streamType).BufferLevel;
 
             vo.t = t;
             vo.level = Number(level.toFixed(3));
 
-            this.getMetricsFor(streamType).BufferLevel.push(vo);
+            metrics.push(vo);
+            this.metricAdded(streamType, "BufferLevel", vo);
 
             // Keep only last 10 metrics to avoid memory leak
-            if (this.getMetricsFor(streamType).BufferLevel.length > 10) {
-                this.getMetricsFor(streamType).BufferLevel.shift();
+            if (metrics.length > 10) {
+                metrics.shift();
             }
 
-            this.metricAdded(streamType, "BufferLevel", vo);
             return vo;
         },
 
 
         addDVRInfo: function (streamType, t, range) {
-            var vo = new MediaPlayer.vo.metrics.DVRInfo();
+            var vo = new MediaPlayer.vo.metrics.DVRInfo(),
+                metrics = this.getMetricsFor(streamType).DVRInfo;
 
             vo.t = t;
             vo.range = range;
 
-            this.getMetricsFor(streamType).DVRInfo.push(vo);
+            metrics.push(vo);
             this.metricAdded(streamType, "DVRInfo", vo);
 
             // Keep only last 10 metrics to avoid memory leak
-            if (this.getMetricsFor(streamType).DVRInfo.length > 10) {
-                this.getMetricsFor(streamType).DVRInfo.shift();
+            if (metrics.length > 10) {
+                metrics.shift();
             }
-            
+
             return vo;
         },
 
         addDroppedFrames: function (streamType, quality) {
             var vo = new MediaPlayer.vo.metrics.DroppedFrames(),
-            list = this.getMetricsFor(streamType).DroppedFrames;
+                list = this.getMetricsFor(streamType).DroppedFrames;
 
             vo.time = quality.creationTime;
             vo.droppedFrames = quality.droppedVideoFrames;
-            // ORANGE : add decoded video frames
             vo.decodedFrameCount = quality.totalVideoFrames;
 
             if (list.length > 0 && list[list.length - 1] === vo) {
@@ -297,12 +302,17 @@
                 }
             }
 
-            console.log("[MetricsModel] PlaybackQuality = " + JSON.stringify(vo));
+            //console.log("[MetricsModel] PlaybackQuality = " + JSON.stringify(vo));
 
             metrics.push(vo);
             this.metricAdded(streamType, "PlaybackQuality", vo);
-            return vo;
 
+            // Keep only last 10 metrics to avoid memory leak
+            if (metrics.length > 10) {
+                metrics.shift();
+            }
+
+            return vo;
         },
 
         addVideoResolution: function (streamType, t, width, height, mediaTime) {
@@ -395,21 +405,22 @@
         },
 
         addPlayList: function (streamType, start, mstart, starttype) {
-            var vo = new MediaPlayer.vo.metrics.PlayList();
+            var vo = new MediaPlayer.vo.metrics.PlayList(),
+                metrics = this.getMetricsFor(streamType).PlayList;
 
             vo.stream = streamType;
             vo.start = start;
             vo.mstart = mstart;
             vo.starttype = starttype;
 
-            this.getMetricsFor(streamType).PlayList.push(vo);
+            metrics.push(vo);
+            this.metricAdded(streamType, "PlayList", vo);
 
-            // ORANGE: to avoid memory leak
-            if(this.getMetricsFor(streamType).PlayList.length > 10) {
-                this.getMetricsFor(streamType).PlayList.shift();
+            // Keep only last 10 metrics to avoid memory leak
+            if (metrics.length > 10) {
+                metrics.shift();
             }
 
-            this.metricAdded(streamType, "PlayList", vo);
             return vo;
         },
 
@@ -425,13 +436,13 @@
             vo.stopreason = stopreason;
 
             playList.trace.push(vo);
+            this.metricUpdated(playList.stream, "PlayListTrace", playList);
 
-            // ORANGE: to avoid memory leak
-            if(playList.trace.length > 10) {
+            // Keep only last 10 metrics to avoid memory leak
+            if (playList.trace.length > 10) {
                 playList.trace.shift();
             }
 
-            this.metricUpdated(playList.stream, "PlayListTrace", playList);
             return vo;
         }
     };
