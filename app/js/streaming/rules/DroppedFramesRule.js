@@ -66,7 +66,13 @@ MediaPlayer.rules.DroppedFramesRule = function() {
                 return Q.when(new MediaPlayer.rules.SwitchRequest());
             }
 
+            if (data.type !== "video") {
+                return Q.when(new MediaPlayer.rules.SwitchRequest());
+            }
+
             if (playbackQuality === null) {
+                // No PlaybackQuality metric => start of a new stream => reset lastPlaybackQuality
+                lastPlaybackQuality = null;
                 return Q.when(new MediaPlayer.rules.SwitchRequest());
             }
 
