@@ -210,11 +210,11 @@
             return vo;
         },
 
-        addCondition: function (streamType,isFullScreen,videoWidth, videoHeight, droppedFrames,fps) {
+        addCondition: function (streamType, isFullScreen, videoWidth, videoHeight, droppedFrames, fps) {
             var vo = new MediaPlayer.vo.metrics.Condition();
 
             vo.isFullScreen = isFullScreen;
-            vo.windowSize = videoWidth+"x"+videoHeight;
+            vo.windowSize = videoWidth + "x" + videoHeight;
             vo.fps = fps;
             vo.droppedFrames = droppedFrames;
 
@@ -244,8 +244,7 @@
         },
 
 
-        addDVRInfo: function (streamType, currentTime, mpd, range)
-        {
+        addDVRInfo: function (streamType, currentTime, mpd, range) {
             var vo = new MediaPlayer.vo.metrics.DVRInfo();
 
             vo.time = currentTime ;
@@ -277,6 +276,56 @@
             return vo;
         },
 
+
+        addPlaybackQuality: function (streamType, t, quality, mediaTime) {
+            var vo = new MediaPlayer.vo.metrics.PlaybackQuality(),
+                metrics = this.getMetricsFor(streamType).PlaybackQuality;
+
+            vo.t = t;//quality.creationTime;
+            vo.mt = mediaTime;
+            vo.droppedFrames = quality.droppedVideoFrames;
+            vo.totalVideoFrames = quality.totalVideoFrames;
+
+            // Add new metrics only if droppedVideoFrames or totalVideoFrames changed
+            if (metrics.length > 0) {
+                if ((vo.droppedFrames === metrics[metrics.length-1].droppedFrames) &&
+                    (vo.totalVideoFrames === metrics[metrics.length-1].totalVideoFrames)) {
+                    return metrics[metrics.length - 1];
+                }
+            }
+
+            console.log("[MetricsModel] PlaybackQuality = " + JSON.stringify(vo));
+
+            metrics.push(vo);
+            this.metricAdded(streamType, "PlaybackQuality", vo);
+            return vo;
+
+        },
+
+        addVideoResolution: function (streamType, t, width, height, mediaTime) {
+            var vo = new MediaPlayer.vo.metrics.VideoResolution(),
+                metrics = this.getMetricsFor(streamType).VideoResolution;
+
+            vo.t = t;
+            vo.mt = mediaTime;
+            vo.width = width;
+            vo.height = height;
+
+            // Add new metrics only if width or height changed
+            if (metrics.length > 0) {
+                if ((vo.width === metrics[metrics.length-1].width) &&
+                    (vo.height === metrics[metrics.length-1].height)) {
+                    return metrics[metrics.length - 1];
+                }
+            }
+
+            console.log("[MetricsModel] VideoResolution = " + JSON.stringify(vo));
+
+            metrics.push(vo);
+            this.metricAdded(streamType, "VideoResolution", vo);
+
+            return vo;
+        },
 
         addManifestUpdate: function(streamType, type, requestTime, fetchTime, availabilityStartTime, presentationStartTime, clientTimeOffset, currentTime, buffered, latency) {
             var vo = new MediaPlayer.vo.metrics.ManifestUpdate(),
