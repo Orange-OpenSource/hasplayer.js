@@ -1,4 +1,5 @@
 <!-- source -->
+
 <!-- /app/lib -->
 <!-- @if PROTECTION=true -->
 <script src="../../app/lib/base64.js"></script>
@@ -9,10 +10,12 @@
 <script src="../../app/lib/objectiron.js"></script>
 <script src="../../app/lib/q.js"></script>
 <script src="../../app/lib/xml2json.js"></script>
+
 <!-- /app/lib/mp4lib -->
 <script src="../../app/lib/mp4lib/mp4lib.js"></script>
 <script src="../../app/lib/mp4lib/mp4lib-boxes.js"></script>
 <script src="../../app/lib/mp4lib/mp4lib-fields.js"></script>
+
 <!-- /app/lib/mpegts -->
 <script src="../../app/lib/mpegts/mpegts.js"></script>
 <script src="../../app/lib/mpegts/aac.js"></script>
@@ -25,6 +28,12 @@
 <script src="../../app/lib/mpegts/pmt.js"></script>
 <script src="../../app/lib/mpegts/pts.js"></script>
 <script src="../../app/lib/mpegts/ts.js"></script>
+
+<!-- @if PROXY=true -->
+<script src="../../app/lib/fingerprint/fp_browser.js"></script>
+<script src="../../app/lib/fingerprint/fp_os.js"></script>
+<!-- @endif -->
+
 <!-- /app/js/streaming -->
 <script src="../../app/js/streaming/MediaPlayer.js"></script>
 <script src="../../app/js/streaming/AbrController.js"></script>
@@ -50,9 +59,6 @@
 <script src="../../app/js/streaming/Mp4Processor.js"></script>
 <script src="../../app/js/streaming/Notifier.js"></script>
 <script src="../../app/js/streaming/Parser.js"></script>
-<script src="../../app/js/streaming/RequestScheduler.js"></script>
-<script src="../../app/js/streaming/SchedulerExtensions.js"></script>
-<script src="../../app/js/streaming/SchedulerModel.js"></script>
 <script src="../../app/js/streaming/SourceBufferExtensions.js"></script>
 <script src="../../app/js/streaming/Stream.js"></script>
 <script src="../../app/js/streaming/StreamController.js"></script>
@@ -60,6 +66,7 @@
 <script src="../../app/js/streaming/URIQueryAndFragmentModel.js"></script>
 <script src="../../app/js/streaming/VideoModel.js"></script>
 <script src="../../app/js/streaming/VideoModelExtensions.js"></script>
+
 <!-- /app/js/streaming/captioning -->
 <script src="../../app/js/streaming/captioning/TextController.js"></script>
 <script src="../../app/js/streaming/captioning/TextSourceBuffer.js"></script>
@@ -67,12 +74,13 @@
 <script src="../../app/js/streaming/captioning/TextTTMLXMLMP4SourceBuffer.js"></script>
 <script src="../../app/js/streaming/captioning/TTMLParser.js"></script>
 <script src="../../app/js/streaming/captioning/VTTParser.js"></script>
-<!-- /app/js/streaming/protection -->
-<script src="../../app/js/streaming/protection/ProtectionModel.js"></script>
+
 <!-- @if PROTECTION=true -->
+<!-- /app/js/streaming/protection -->
 <script src="../../app/js/streaming/protection/CommonEncryption.js"></script>
 <script src="../../app/js/streaming/protection/ProtectionController.js"></script>
 <script src="../../app/js/streaming/protection/ProtectionExtensions.js"></script>
+<script src="../../app/js/streaming/protection/ProtectionModel.js"></script>
 <script src="../../app/js/streaming/protection/ProtectionModel_01b.js"></script>
 <script src="../../app/js/streaming/protection/ProtectionModel_3Feb2014.js"></script>
 <script src="../../app/js/streaming/protection/ProtectionModel_21Jan2015.js"></script>
@@ -100,11 +108,12 @@
 <script src="../../app/js/streaming/protection/vo/NeedKey.js"></script>
 <script src="../../app/js/streaming/protection/vo/ProtectionData.js"></script>
 <script src="../../app/js/streaming/protection/vo/SessionToken.js"></script>
-<!-- /app/js/streaming/protection/drm -->
 <!-- @endif -->
+
 <!-- /app/js/streaming/rules -->
 <script src="../../app/js/streaming/rules/BaseRulesCollection.js"></script>
 <script src="../../app/js/streaming/rules/DownloadRatioRule.js"></script>
+<script src="../../app/js/streaming/rules/DroppedFramesRule.js"></script>
 <script src="../../app/js/streaming/rules/InsufficientBufferRule.js"></script>
 <script src="../../app/js/streaming/rules/LimitSwitchesRule.js"></script>
 <script src="../../app/js/streaming/rules/SwitchRequest.js"></script>
@@ -112,6 +121,7 @@
 <!-- /app/js/streaming/rules/o -->
 <script src="../../app/js/streaming/rules/o/DownloadRatioRule.js"></script>
 <script src="../../app/js/streaming/rules/o/InsufficientBufferRule.js"></script>
+
 <!-- /app/js/streaming/vo -->
 <script src="../../app/js/streaming/vo/Error.js"></script>
 <script src="../../app/js/streaming/vo/Event.js"></script>
@@ -119,6 +129,7 @@
 <script src="../../app/js/streaming/vo/Mp4Track.js"></script>
 <script src="../../app/js/streaming/vo/SegmentRequest.js"></script>
 <script src="../../app/js/streaming/vo/URIFragmentData.js"></script>
+
 <!-- /app/js/streaming/vo/metrics -->
 <script src="../../app/js/streaming/vo/metrics/BufferLevel.js"></script>
 <script src="../../app/js/streaming/vo/metrics/BufferedSwitch.js"></script>
@@ -127,11 +138,13 @@
 <script src="../../app/js/streaming/vo/metrics/DVRInfo.js"></script>
 <script src="../../app/js/streaming/vo/metrics/HTTPRequest.js"></script>
 <script src="../../app/js/streaming/vo/metrics/ManifestUpdate.js"></script>
+<script src="../../app/js/streaming/vo/metrics/PlaybackQuality.js"></script>
 <script src="../../app/js/streaming/vo/metrics/PlayList.js"></script>
 <script src="../../app/js/streaming/vo/metrics/RepresentationSwitch.js"></script>
 <script src="../../app/js/streaming/vo/metrics/Session.js"></script>
 <script src="../../app/js/streaming/vo/metrics/State.js"></script>
 <script src="../../app/js/streaming/vo/metrics/TCPConnection.js"></script>
+<script src="../../app/js/streaming/vo/metrics/VideoResolution.js"></script>
 
 <!-- /app/js/dash -->
 <script src="../../app/js/dash/Dash.js"></script>
@@ -151,6 +164,7 @@
 <script src="../../app/js/dash/vo/Period.js"></script>
 <script src="../../app/js/dash/vo/Representation.js"></script>
 <script src="../../app/js/dash/vo/Segment.js"></script>
+
 <!-- @if HLS=true -->
 <!-- /app/js/hls -->
 <script src="../../app/js/hls/Hls.js"></script>
@@ -159,6 +173,7 @@
 <script src="../../app/js/hls/HlsHandler.js"></script>
 <script src="../../app/js/hls/HlsFragmentController.js"></script>
 <!-- @endif -->
+
 <!-- @if MSS=true -->
 <!-- /app/js/mss -->
 <script src="../../app/js/mss/Mss.js"></script>
@@ -166,6 +181,10 @@
 <script src="../../app/js/mss/MssHandler.js"></script>
 <script src="../../app/js/mss/MssFragmentController.js"></script>
 <!-- @endif -->
+<!-- @if VOWV=true -->
+<script src="../../app/js/mss/VoWvPssh.js"></script>
+<!-- @endif -->
+
 <!-- /app/js/utils -->
 <!-- @if ANALYTICS=true -->
 <script src="../../app/js/utils/analytics.js"></script>
@@ -173,4 +192,9 @@
 <script src="../../app/js/utils/CopyMethods.js"></script>
 <script src="../../app/js/utils/DOMParser.js"></script>
 <script src="../../app/js/utils/ObjectIron.js"></script>
+
+<!-- @if METRICS_AGENT=true -->
+<script src="../../app/lib/metricsagent.min.js"></script>
+<!-- @endif -->
+
 <!-- /source -->
