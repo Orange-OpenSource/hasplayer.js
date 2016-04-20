@@ -92,7 +92,7 @@ Mss.dependencies.MssFragmentController = function() {
                     segment = segments[0];
                 }
 
-                this.metricsModel.addDVRInfo(adaptation.type, 0, null, {
+                this.metricsModel.addDVRInfo(adaptation.type, new Date(), {
                     start: segments[0].t / adaptation.SegmentTemplate.timescale,
                     end: (segments[segments.length - 1].t + segments[segments.length - 1].d) / adaptation.SegmentTemplate.timescale
                 });

@@ -285,6 +285,38 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(-1);
     },
 
+    getDataIndex_: function(data, manifest, periodIndex) {
+        "use strict";
+
+        var adaptations,
+            i,
+            len;
+
+        if (manifest && periodIndex >= 0) {
+            adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+
+            // ORANGE : compare data with id or string representation to avoid reference error due to manifest refresh
+            if (data.id) {
+                for (i = 0, len = adaptations.length; i < len; i += 1) {
+                    if (adaptations[i].id && adaptations[i].id === data.id) {
+                        return i;
+                    }
+                }
+            } else {
+                var strData = JSON.stringify(data);
+                var strAdapt;
+                for (i = 0, len = adaptations.length; i < len; i += 1) {
+                    strAdapt = JSON.stringify(adaptations[i]);
+                    if (strAdapt === strData) {
+                        return i;
+                    }
+                }
+            }
+        }
+
+        return -1;
+    },
+
     getVideoData: function(manifest, periodIndex) {
         "use strict";
         //return Q.when(null);
@@ -657,6 +689,15 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         }
 
         return Q.when(null);
+    },
+
+    getRepresentationCount_: function(adaptation) {
+        "use strict";
+        if (adaptation) {
+            return adaptation.Representation_asArray.length;
+        }
+
+        return null;
     },
 
     getRepresentationFor: function(index, data) {

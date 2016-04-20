@@ -40,7 +40,6 @@ MediaPlayer.dependencies.Stream = function() {
         errored = false,
 
         // Events listeners
-        fullScreenListener,
         endedListener,
         loadedListener,
         playListener,
@@ -532,18 +531,6 @@ MediaPlayer.dependencies.Stream = function() {
             }
 
             this.metricsModel.addPlayList("video", new Date().getTime(), this.videoModel.getCurrentTime(), "play");
-        },
-
-        // ORANGE : fullscreen event
-        onFullScreenChange = function() {
-            var videoElement = this.videoModel.getElement(),
-                isFullScreen = 0;
-
-            if (document.webkitIsFullScreen || document.msFullscreenElement || document.mozFullScreen) {
-                // browser is fullscreen
-                isFullScreen = 1;
-            }
-            this.metricsModel.addCondition(null, isFullScreen, videoElement.videoWidth, videoElement.videoHeight);
         },
 
         // ORANGE : ended event
@@ -1106,8 +1093,6 @@ MediaPlayer.dependencies.Stream = function() {
             playingListener = onPlaying.bind(this);
             loadstartListener = onLoadStart.bind(this);
 
-            // ORANGE : add FullScreen Event listener
-            fullScreenListener = onFullScreenChange.bind(this);
             // ORANGE : add Ended Event listener
             endedListener = onEnded.bind(this);
 
@@ -1135,12 +1120,6 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.listen("canplay", canplayListener);
             this.videoModel.listen("playing", playingListener);
             this.videoModel.listen("loadstart", loadstartListener);
-
-            // ORANGE : add FullScreen Event listener
-            this.videoModel.listen("webkitfullscreenchange", fullScreenListener);
-            this.videoModel.listen("fullscreenchange", fullScreenListener);
-            this.videoModel.listenOnParent("fullscreenchange", fullScreenListener);
-            this.videoModel.listenOnParent("webkitfullscreenchange", fullScreenListener);
 
             //document.addEventListener("visibilitychange", visibilitychangeListener);
         },
@@ -1277,10 +1256,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.unlisten("playing", playingListener);
             this.videoModel.unlisten("loadstart", loadstartListener);
 
-            this.videoModel.unlisten("webkitfullscreenchange", fullScreenListener);
-            this.videoModel.unlisten("fullscreenchange", fullScreenListener);
-            this.videoModel.unlistenOnParent("fullscreenchange", fullScreenListener);
-            this.videoModel.unlistenOnParent("webkitfullscreenchange", fullScreenListener);
+            this.system.unmapHandler("streamsComposed", undefined, streamsComposed);
 
             this.system.unmapHandler("bufferUpdated");
             this.system.unmapHandler("liveEdgeFound");

@@ -13,9 +13,9 @@
  */
 MediaPlayer.vo.metrics.DVRInfo = function () {
     "use strict";
-    this.time = null;
-    this.range = null;
-    this.mpd=null;
+
+    this.time = null;   // Time of the measurement of the DVR info
+    this.range = null;  // DVR range
 };
 
 MediaPlayer.vo.metrics.DVRInfo.prototype = {

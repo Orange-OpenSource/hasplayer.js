@@ -38,6 +38,8 @@ MediaPlayer.rules.AbandonRequestsRule = function() {
         debug: undefined,
         metricsExt:undefined,
 
+        name: "AbandonRequestRule",
+
         execute: function(request, callback) {
             var now = new Date().getTime(),
                 type = request.streamType,

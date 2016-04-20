@@ -1,50 +1,25 @@
 /*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
- *
+ * 
  * Copyright (c) 2013, Digital Primates
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-MediaPlayer.rules.BaseRulesCollection = function () {
+MediaPlayer.vo.metrics.PlaybackQuality = function () {
     "use strict";
 
-    var rules = [],
-        adandonFragmentRules = [];
-
-    return {
-        downloadRatioRule: undefined,
-        insufficientBufferRule: undefined,
-        droppedFramesRule: undefined,
-        abandonRequestRule:undefined,
- 
-        getRules: function (type) {
-            switch (type) {
-                case MediaPlayer.rules.BaseRulesCollection.prototype.QUALITY_SWITCH_RULES:
-                    return Q.when(rules);
-                case MediaPlayer.rules.BaseRulesCollection.prototype.ABANDON_FRAGMENT_RULES:
-                    return Q.when(adandonFragmentRules);
-                default:
-                    return null;
-            }
-        },
-
-        setup: function () {
-            rules.push(this.downloadRatioRule);
-            rules.push(this.insufficientBufferRule);
-            rules.push(this.droppedFramesRule);
-            adandonFragmentRules.push(this.abandonRequestRule);
-        }
-    };
+    this.t = null;                  // Real-Time | Time of the measurement of the playback quality
+    this.mt = null;                 // Media-Time | Media presentation time of the measurement of the playback quality
+    this.droppedFrames = null;      // Number of dropped frames
+    this.totalVideoFrames = null;   // Number of decoded video frames
 };
 
-MediaPlayer.rules.BaseRulesCollection.prototype = {
-    constructor: MediaPlayer.rules.BaseRulesCollection,
-    QUALITY_SWITCH_RULES: "qualitySwitchRules",
-    ABANDON_FRAGMENT_RULES: "abandonFragmentRules"
+MediaPlayer.vo.metrics.PlaybackQuality.prototype = {
+    constructor: MediaPlayer.vo.metrics.PlaybackQuality
 };

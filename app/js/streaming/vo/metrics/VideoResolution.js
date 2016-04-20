@@ -1,7 +1,7 @@
 /*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
  *
- * Copyright (c) 2013, Digital Primates
+ * Copyright (c) 2013, Orange
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -11,40 +11,15 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-MediaPlayer.rules.BaseRulesCollection = function () {
+MediaPlayer.vo.metrics.VideoResolution = function () {
     "use strict";
 
-    var rules = [],
-        adandonFragmentRules = [];
-
-    return {
-        downloadRatioRule: undefined,
-        insufficientBufferRule: undefined,
-        droppedFramesRule: undefined,
-        abandonRequestRule:undefined,
- 
-        getRules: function (type) {
-            switch (type) {
-                case MediaPlayer.rules.BaseRulesCollection.prototype.QUALITY_SWITCH_RULES:
-                    return Q.when(rules);
-                case MediaPlayer.rules.BaseRulesCollection.prototype.ABANDON_FRAGMENT_RULES:
-                    return Q.when(adandonFragmentRules);
-                default:
-                    return null;
-            }
-        },
-
-        setup: function () {
-            rules.push(this.downloadRatioRule);
-            rules.push(this.insufficientBufferRule);
-            rules.push(this.droppedFramesRule);
-            adandonFragmentRules.push(this.abandonRequestRule);
-        }
-    };
+    this.t = null;      // Real-Time | Time of the event.
+    this.mt = null;     // Media-Time | Media presentation time of the measurement of the video resolution
+    this.width = null;  // video width
+    this.height = null; // video height
 };
 
-MediaPlayer.rules.BaseRulesCollection.prototype = {
-    constructor: MediaPlayer.rules.BaseRulesCollection,
-    QUALITY_SWITCH_RULES: "qualitySwitchRules",
-    ABANDON_FRAGMENT_RULES: "abandonFragmentRules"
+MediaPlayer.vo.metrics.VideoResolution.prototype = {
+    constructor: MediaPlayer.vo.metrics.VideoResolution
 };

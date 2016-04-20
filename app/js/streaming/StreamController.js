@@ -122,19 +122,15 @@ MediaPlayer.dependencies.StreamController = function() {
          * TODO move to ???Extensions class
          */
         onTimeupdate = function() {
-            var streamEndTime = activeStream.getStartTime() + activeStream.getDuration(),
-                currentTime = activeStream.getVideoModel().getCurrentTime(),
-                self = this,
-                //ORANGE : calculate fps
+            var self = this,
+                time = new Date(),
+                streamEndTime = activeStream.getStartTime() + activeStream.getDuration(),
                 videoElement = activeStream.getVideoModel().getElement(),
-                playBackQuality = self.videoExt.getPlaybackQuality(videoElement),
-                elapsedTime = (new Date().getTime() - self.startPlayingTime) / 1000;
+                currentTime = videoElement.currentTime,
+                playBackQuality = self.videoExt.getPlaybackQuality(videoElement);
 
-            //self.debug.log("[StreamController]", "FPS = " + playBackQuality.totalVideoFrames/elapsedTime);
-
-            //ORANGE : replace addDroppedFrames metric by addConditionMetric
-            //self.metricsModel.addDroppedFrames("video", playBackQuality);
-            self.metricsModel.addCondition(null, null, videoElement.videoWidth, videoElement.videoHeight, playBackQuality.droppedVideoFrames, playBackQuality.totalVideoFrames / elapsedTime);
+            self.metricsModel.addPlaybackQuality("video", time, playBackQuality, currentTime);
+            self.metricsModel.addVideoResolution("video", time, videoElement.videoWidth, videoElement.videoHeight, currentTime);
 
             if (!getNextStream()) {
                 return;
@@ -176,14 +172,6 @@ MediaPlayer.dependencies.StreamController = function() {
 
         onPlay = function() {
             this.manifestUpdater.start();
-
-            //ORANGE : if first startPlayingTime not defined, set it
-            if (this.startPlayingTime === undefined) {
-                this.startPlayingTime = new Date().getTime();
-            }
-
-            var videoElement = activeStream.getVideoModel().getElement();
-            this.metricsModel.addCondition(null, 0, videoElement.videoWidth, videoElement.videoHeight);
         },
 
         /*
@@ -274,9 +262,6 @@ MediaPlayer.dependencies.StreamController = function() {
                 sIdx,
                 period,
                 stream;
-
-            //ORANGE : reset startPlayingTime
-            self.startPlayingTime = undefined;
 
             if (!manifest) {
                 return Q.when(false);
@@ -442,10 +427,6 @@ MediaPlayer.dependencies.StreamController = function() {
         notify: undefined,
         subscribe: undefined,
         unsubscribe: undefined,
-        // ORANGE: set updateTime date
-        startTime: undefined,
-        startPlayingTime: undefined,
-        currentURL: undefined,
 
         setup: function() {
             this.system.mapHandler("manifestUpdate", undefined, manifestUpdate.bind(this));
@@ -477,7 +458,6 @@ MediaPlayer.dependencies.StreamController = function() {
             this.videoModel = value;
         },
 
-        // ORANGE: audioTrack Management
         getAudioTracks: function() {
             return audioTracks;
         },
@@ -491,14 +471,12 @@ MediaPlayer.dependencies.StreamController = function() {
             return undefined;
         },
 
-        // ORANGE: audioTrack Management
         setAudioTrack: function(audioTrack) {
             if (activeStream) {
                 activeStream.setAudioTrack(audioTrack);
             }
         },
 
-        // ORANGE: subtitleTrack Management
         getSubtitleTracks: function() {
             return subtitleTracks;
         },
@@ -518,11 +496,9 @@ MediaPlayer.dependencies.StreamController = function() {
             return undefined;
         },
 
-        // ORANGE: add source stream parameters
         load: function(url, protData) {
             var self = this;
 
-            self.currentURL = url;
             if (protData) {
                 protectionData = protData;
             }
