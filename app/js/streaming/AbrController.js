@@ -92,7 +92,7 @@ MediaPlayer.dependencies.AbrController = function () {
                                     for (i = 0, len = results.length; i < len; i += 1) {
                                         req = results[i];
                                         if (req.quality !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
-                                            self.debug.log("[AbrController]["+type+"] Request for quality " + req.quality + ", priority = " + req.priority + ", max = " + req.max + " (" + req.rule + ")");
+                                            self.debug.log("[AbrController]["+type+"] Request for quality " + req.quality + ", priority = " + req.priority + " (" + rules[i].name + ")");
                                             values[req.priority] = Math.min(values[req.priority], req.quality);
                                         }
 
