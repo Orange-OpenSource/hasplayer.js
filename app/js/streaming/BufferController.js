@@ -124,9 +124,7 @@ MediaPlayer.dependencies.BufferController = function() {
             self.videoModel.stallStream(type, stalled);
 
             // Notify ABR controller we start buffering in order to adapt ABR rules (see InsufficientbufferRule)
-            if (stalled) {
-                self.abrController.setPlayerState("buffering");
-            }
+            self.abrController.setPlayerState(stalled ? "buffering" : "playing");
         },
 
         startPlayback = function() {
