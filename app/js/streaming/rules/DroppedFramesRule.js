@@ -16,51 +16,46 @@
 MediaPlayer.rules.DroppedFramesRule = function() {
     "use strict";
 
-    var rule = "DroppedFrames",
-        MIN_ELAPSED_TIME = 1,
+    var MIN_ELAPSED_TIME = 1,
         lastPlaybackQuality = null,
+        currentDroppedFrames = -1,
+        currentTotalVideoFrames = -1,
 
-        getDroppedFramesAndFPS = function(playbackQuality) {
-            var elapsedTime,
-                droppedFrames,
-                totalVideoFrames,
-                fps;
+        getDroppedFrames = function(playbackQuality) {
+            var elapsedTime;
 
             if (lastPlaybackQuality === null) {
                 lastPlaybackQuality = playbackQuality;
-                return null;
+                return;
             }
 
             // Check sufficient elapsed media time to determine frame rate 
             elapsedTime = playbackQuality.mt - lastPlaybackQuality.mt;
             if (elapsedTime < MIN_ELAPSED_TIME) {
-                return null;
+                return;
             }
 
-            droppedFrames = playbackQuality.droppedFrames - lastPlaybackQuality.droppedFrames;
-            totalVideoFrames = playbackQuality.totalVideoFrames - lastPlaybackQuality.totalVideoFrames;
-            fps = totalVideoFrames / elapsedTime;
+            currentDroppedFrames = playbackQuality.droppedFrames - lastPlaybackQuality.droppedFrames;
+            currentTotalVideoFrames = playbackQuality.totalVideoFrames - lastPlaybackQuality.totalVideoFrames;
 
             lastPlaybackQuality = playbackQuality;
-
-            return {
-                droppedFrames: droppedFrames,
-                fps: fps
-            };
         };
 
     return {
         debug: undefined,
-        manifestExt: undefined,
         metricsExt: undefined,
         manifestModel: undefined,
         config: undefined,
 
+        name: "DroppedFramesRule",
+
         checkIndex: function(current, metrics, data) {
-            var self = this,
-                droppedFramesMaxRatio = self.config.getParamFor(data.type, "ABR.droppedFramesMaxRatio", "number", 0.5),
-                playbackQuality = self.metricsExt.getCurrentPlaybackQuality(metrics),
-                res;
+            var droppedFramesMaxRatio = this.config.getParamFor(data.type, "ABR.droppedFramesMaxRatio", "number", 0.30),
+                droppedFramesMinRatio = this.config.getParamFor(data.type, "ABR.droppedFramesMinRatio", "number", 0.10),
+                playbackQuality = this.metricsExt.getCurrentPlaybackQuality(metrics),
+                q = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE,
+                p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT,
+                ratio;
 
             if (data === null) {
                 return Q.when(new MediaPlayer.rules.SwitchRequest());
@@ -73,35 +68,36 @@ MediaPlayer.rules.DroppedFramesRule = function() {
             if (playbackQuality === null) {
                 // No PlaybackQuality metric => start of a new stream => reset lastPlaybackQuality
                 lastPlaybackQuality = null;
+                currentDroppedFrames = currentTotalVideoFrames = -1;
                 return Q.when(new MediaPlayer.rules.SwitchRequest());
             }
 
-            //self.debug.info("[DroppedFramesRule]["+data.type+"] PlaybackQuality = " + JSON.stringify(playbackQuality));
+            //this.debug.info("[DroppedFramesRule]["+data.type+"] PlaybackQuality = " + JSON.stringify(playbackQuality));
 
             // Determine number of dropped frames and fps
-            res = getDroppedFramesAndFPS(playbackQuality);
+            getDroppedFrames(playbackQuality);
 
-            if (res === null) {
+            if (currentDroppedFrames === -1) {
                 return Q.when(new MediaPlayer.rules.SwitchRequest());
             }
 
-            self.debug.info("[DroppedFramesRule]["+data.type+"] " + JSON.stringify(res));
+            ratio = currentDroppedFrames / currentTotalVideoFrames;
 
-            // If too much dropped frames, then switch to lower representation
-            if ((res.droppedFrames > (res.fps * droppedFramesMaxRatio)) &&
-                (current > 0)) {
-                self.debug.info("[DroppedFramesRule]["+data.type+"] Switch to quality " + (current - 1));
-                return Q.when(new MediaPlayer.rules.SwitchRequest((current - 1), MediaPlayer.rules.SwitchRequest.prototype.STRONG, true, rule));
+            this.debug.info("[DroppedFramesRule]["+data.type+"] DroppedFrames:" + currentDroppedFrames + ", totalVideoFrames:" + currentTotalVideoFrames + " => ratio = " + ratio);
+
+            if (ratio > droppedFramesMaxRatio && current > 0) {
+                // If too much dropped frames, then switch to lower representation
+                q = current - 1;
+                p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
+            } else if (ratio > droppedFramesMinRatio) {
+                // Still some dropped frames, then stay at current quality
+                q = current;
+                p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
             }
 
-            // If no dropped frames, then allow to switch to higher representation
-            if ((res.droppedFrames === 0) &&
-                (current < (self.manifestExt.getRepresentationCount_(data) - 1))) {
-                self.debug.info("[DroppedFramesRule]["+data.type+"] Switch to quality " + (current + 1));
-                return Q.when(new MediaPlayer.rules.SwitchRequest((current + 1), MediaPlayer.rules.SwitchRequest.prototype.DEFAULT, true, rule));
-            }
+            this.debug.info("[DroppedFramesRule][" + data.type + "] SwitchRequest: q=" + q + ", p=" + p);
 
-            return Q.when(new MediaPlayer.rules.SwitchRequest());
+            return Q.when(new MediaPlayer.rules.SwitchRequest(q, p));
         }
     };
 };
