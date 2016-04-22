@@ -19,19 +19,12 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         state = READY,
         ready = false,
         started = false,
-        waitingForBuffer = false,
-        isBufferingCompleted = false,
         fragmentModel = null,
         fragmentDuration = 0,
         type,
         bufferTimeout,
-
-        _currentTime,
+        _fragmentInfoTime,
         _videoController,
-
-        //ORANGE
-        deferredFragmentBuffered = null,
-
         // ORANGE: segment downlaod failed recovery
         SEGMENT_DOWNLOAD_ERROR_MAX = 3,
         segmentDownloadFailed = false,
@@ -61,7 +54,7 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             this.debug.info("[FragmentInfoController][" + type + "] startPlayback");
 
             // Start buffering process
-            checkIfSufficientBuffer.call(this);
+            bufferFragmentInfo.call(this);
         },
 
         doStart = function() {
@@ -71,15 +64,9 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
                 return;
             }
 
-            if (isBufferingCompleted) {
-                isBufferingCompleted = false;
-            }
-
             started = true;
 
             self.debug.info("[FragmentInfoController][" + type + "] START");
-
-            waitingForBuffer = true;
 
             startPlayback.call(self);
         },
@@ -93,7 +80,6 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             // Stop buffering process
             clearTimeout(bufferTimeout);
             started = false;
-            waitingForBuffer = false;
 
             // Stop reload timeout
             clearTimeout(reloadTimeout);
@@ -126,48 +112,29 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
                 function() {
                     self.debug.info("[FragmentInfoController][" + type + "] Buffer segment from url ", request.url);
 
-                    // Signal end of buffering process
-                    signalSegmentBuffered.call(self);
-
-                    updateCheckBufferTimeout.call(self, segmentDuration);
+                    delayLoadNextFragmentInfo.call(self, segmentDuration);
                 }, function(e) {
-                    signalSegmentBuffered.call(self);
                     self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing fragment info segment", e.message);
                 }
             );
         },
 
         isRunning = function() {
-            var self = this;
             if (started) {
                 return true;
             }
 
-            // If buffering process is running, then we interrupt it
-            signalSegmentBuffered.call(self);
-
             return false;
         },
 
-        signalSegmentBuffered = function() {
-            if (deferredFragmentBuffered) {
-                //self.debug.log("[FragmentInfoController]["+type+"] End of buffering process");
-                deferredFragmentBuffered.resolve();
-                deferredFragmentBuffered = null;
-            }
-        },
-
         onBytesError = function(e) {
-
             if (!isRunning.call(this)) {
                 return;
             }
 
-            signalSegmentBuffered.call(this);
-
             // Abandonned request => load segment at lowest quality
             if (e.aborted) {
-                bufferFragment.call(this);
+                bufferFragmentInfo.call(this);
                 return;
             }
 
@@ -198,78 +165,32 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             }
         },
 
-        signalStreamComplete = function( /*request*/ ) {
-            var self = this;
-
-            self.debug.log("[FragmentInfoController][" + type + "] Stream is complete.");
-
-            isBufferingCompleted = true;
-
-            signalSegmentBuffered.call(self);
-
-            doStop.call(self);
-
-            self.system.notify("bufferingCompleted");
-        },
-
-        loadNextFragment = function() {
-            var self = this,
-                segmentTime;
-
-            // Check if running state
-            if (!isRunning.call(self)) {
-                return;
-            }
-
-            // Get next segment time
-            segmentTime = _currentTime;
-
-            self.debug.log("[FragmentInfoController][" + type + "] loadNextFragment for time: " + segmentTime);
-
-            _videoController.getIndexHandler().getSegmentRequestForTime(_videoController.getCurrentRepresentation(), segmentTime).then(onFragmentRequest.bind(self));
-        },
-
         onFragmentRequest = function(request) {
             var self = this;
 
             // Check if current request signals end of stream
             if ((request !== null) && (request.action === request.ACTION_COMPLETE)) {
-                signalStreamComplete.call(self);
+                doStop.call(self);
                 return;
             }
 
             if (request !== null) {
-                _currentTime = request.startTime + request.duration;
+                _fragmentInfoTime = request.startTime + request.duration;
 
                 request = _videoController.getIndexHandler().getFragmentInfoRequest(request);
 
                 // Download the fragment info segment
-                self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null /*signalStreamComplete*/ ).then(
+                self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null).then(
                     function() {
                         sendRequest.call(self);
                 });
             } else {
                 // No more fragment in current list
                 self.debug.log("[FragmentInfoController][" + type + "] loadNextFragment failed");
-                signalSegmentBuffered.call(self);
             }
         },
 
-        checkIfSufficientBuffer = function() {
-            var self = this;
-
-            // Check if running state
-            if (!isRunning.call(self)) {
-                return;
-            }
-
-            self.debug.log("[FragmentInfoController][" + type + "] Check buffer...");
-
-            // Buffer needs to be filled
-            bufferFragment.call(self);
-        },
-
-        updateCheckBufferTimeout = function(delay) {
+        delayLoadNextFragmentInfo = function(delay) {
             var self = this,
                 delayMs = Math.max((delay * 1000), 2000);
 
@@ -278,22 +199,27 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             clearTimeout(bufferTimeout);
             bufferTimeout = setTimeout(function() {
                 bufferTimeout = null;
-                checkIfSufficientBuffer.call(self);
+                bufferFragmentInfo.call(self);
             }, delayMs);
         },
 
-        bufferFragment = function() {
-            var self = this;
+        bufferFragmentInfo = function() {
+            var self = this,
+                segmentTime;
 
-            if (deferredFragmentBuffered !== null) {
-                self.debug.error("[FragmentInfoController][" + type + "] deferredFragmentBuffered has not been resolved, create a new one is not correct.");
+            // Check if running state
+            if (!isRunning.call(self)) {
+                return;
             }
-
-            deferredFragmentBuffered = Q.defer();
 
             self.debug.log("[FragmentInfoController][" + type + "] Start buffering process...");
 
-            loadNextFragment.call(self);
+            // Get next segment time
+            segmentTime = _fragmentInfoTime;
+
+            self.debug.log("[FragmentInfoController][" + type + "] loadNextFragment for time: " + segmentTime);
+
+            _videoController.getIndexHandler().getSegmentRequestForTime(_videoController.getCurrentRepresentation(), segmentTime).then(onFragmentRequest.bind(self));
         },
 
         onFragmentLoadProgress = function(evt) {
@@ -354,7 +280,8 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         abrRulesCollection: undefined,
 
         initialize: function(type, fragmentController, controllerVideo) {
-            var self = this;
+            var self = this,
+                ranges = null;
 
             self.debug.log("[FragmentInfoController][" + type + "] Initialize");
 
@@ -362,10 +289,10 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
 
             _videoController = controllerVideo;
 
-            var ranges = self.sourceBufferExt.getAllRanges(_videoController.getBuffer());
+            ranges = self.sourceBufferExt.getAllRanges(_videoController.getBuffer());
 
             if (ranges.length > 0) {
-                _currentTime = ranges.end(ranges.length-1);
+                _fragmentInfoTime = ranges.end(ranges.length-1);
             }
 
             self.setType(type);
@@ -394,35 +321,18 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         },
 
         reset: function() {
-            var self = this,
-                cancel = function cancelDeferred(d) {
-                    if (d) {
-                        d.reject();
-                        d = null;
-                    }
-                },
-                deferred = Q.defer();
+            var self = this;
 
             doStop.call(self);
 
-            Q.when(deferredFragmentBuffered ? deferredFragmentBuffered.promise : true).then(
-                function() {
-                    cancel(deferredFragmentBuffered);
+            if (fragmentModel) {
+                fragmentModel.fragmentLoader.unsubscribe(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, self.abrController);
+                self.fragmentController.abortRequestsForModel(fragmentModel);
+                self.fragmentController.detachBufferController(fragmentModel);
+                fragmentModel = null;
+            }
 
-                    if (fragmentModel) {
-                        fragmentModel.fragmentLoader.unsubscribe(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, self.abrController);
-                        self.fragmentController.abortRequestsForModel(fragmentModel);
-                        self.fragmentController.detachBufferController(fragmentModel);
-                        fragmentModel = null;
-                    }
-
-                    deferred.resolve();
-                }, function() {
-                    deferred.reject();
-                }
-            );
-
-            return deferred.promise;
+            return Q.when(null);
         },
 
         start: doStart,
