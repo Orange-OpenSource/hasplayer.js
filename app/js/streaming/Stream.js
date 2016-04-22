@@ -94,8 +94,6 @@ MediaPlayer.dependencies.Stream = function() {
         startStreamTime = -1,
         visibilitychangeListener,
 
-        currentTime,
-
         // Protection errors
         onProtectionError = function(event) {
             this.errHandler.sendError(event.data.code, event.data.message, event.data.data);
@@ -173,6 +171,11 @@ MediaPlayer.dependencies.Stream = function() {
                     if (!!videoController) {
                         funcs.push(videoController.reset(errored));
                     }
+
+                    if (!!fragmentInfoController) {
+                        funcs.push(fragmentInfoController.reset(errored));
+                    }
+
                     if (!!audioController) {
                         funcs.push(audioController.reset(errored));
                     }
@@ -601,8 +604,7 @@ MediaPlayer.dependencies.Stream = function() {
             if(self.manifestExt.getIsDynamic(manifest) === true){
                 if (fragmentInfoController === null){
                     fragmentInfoController = self.system.getObject("fragmentInfoController");
-                    fragmentInfoController.initialize("video", currentTime, self.fragmentController, videoController);
-                    fragmentInfoController.start();
+                    fragmentInfoController.initialize("video", self.fragmentController, videoController);
                 }
             }
 
@@ -710,8 +712,7 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         onTimeupdate = function() {
-            currentTime = this.videoModel.getCurrentTime();
-            this.debug.info("[Stream] <video> timeupdate event: " + currentTime);
+            this.debug.info("[Stream] <video> timeupdate event: " + this.videoModel.getCurrentTime());
             updateBuffer.call(this);
         },
 
@@ -790,6 +791,11 @@ MediaPlayer.dependencies.Stream = function() {
             if (videoController) {
                 videoController.stop();
             }
+
+            if (fragmentInfoController) {
+                fragmentInfoController.stop();
+            }
+
             if (audioController) {
                 audioController.stop();
             }
