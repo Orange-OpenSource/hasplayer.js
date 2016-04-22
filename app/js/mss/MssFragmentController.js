@@ -94,7 +94,7 @@ Mss.dependencies.MssFragmentController = function() {
 
                 this.metricsModel.addDVRInfo(adaptation.type, new Date(), {
                     start: segments[0].t / adaptation.SegmentTemplate.timescale,
-                    end: (segments[segments.length - 1].t + segments[segments.length - 1].d) / adaptation.SegmentTemplate.timescale
+                    end: ((segments[segments.length - 1].t + segments[segments.length - 1].d - manifest.minBufferTime*10000000.0) / adaptation.SegmentTemplate.timescale)
                 });
             }
         },
