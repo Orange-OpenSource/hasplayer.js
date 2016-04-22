@@ -120,11 +120,7 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         },
 
         isRunning = function() {
-            if (started) {
-                return true;
-            }
-
-            return false;
+            return started;
         },
 
         onBytesError = function(e) {
@@ -186,7 +182,7 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
                 });
             } else {
                 // No more fragment in current list
-                self.debug.log("[FragmentInfoController][" + type + "] loadNextFragment failed");
+                self.debug.log("[FragmentInfoController][" + type + "] bufferFragmentInfo failed");
             }
         },
 
@@ -276,7 +272,6 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         debug: undefined,
         system: undefined,
         errHandler: undefined,
-        config: undefined,
         abrRulesCollection: undefined,
 
         initialize: function(type, fragmentController, controllerVideo) {
