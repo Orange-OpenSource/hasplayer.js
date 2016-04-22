@@ -884,7 +884,8 @@ Dash.dependencies.DashHandler = function() {
                 segments = representation.segments,
                 upperIdx,
                 lowerIdx,
-                upperTime;
+                upperTime,
+                lowerTime;
 
             if (!segments || segments.length === 0) {
                 updateRequired = true;
@@ -894,7 +895,8 @@ Dash.dependencies.DashHandler = function() {
                 // ORANGE: check also regarding requested time (@see getForTime()), required for live use case
                 // to avoid already loaded fragments to be returned
                 upperTime = segments[segments.length - 1].presentationStartTime;
-                updateRequired = (index < lowerIdx) || (index > upperIdx) || (requestedTime > upperTime);
+                lowerTime = segments[0].presentationStartTime;
+                updateRequired = (index < lowerIdx) || (index > upperIdx) || (requestedTime > upperTime) || (requestedTime < lowerTime);
             }
 
             return updateRequired;
