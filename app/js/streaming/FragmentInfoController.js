@@ -24,7 +24,7 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         type,
         bufferTimeout,
         _fragmentInfoTime,
-        _videoController,
+        _bufferController,
         // ORANGE: segment downlaod failed recovery
         SEGMENT_DOWNLOAD_ERROR_MAX = 3,
         segmentDownloadFailed = false,
@@ -108,7 +108,7 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             }
 
             // ORANGE: add request and representations in function parameters, used by MssFragmentController
-            self.fragmentController.process(response.data, request, _videoController.getAvailableRepresentations()).then(
+            self.fragmentController.process(response.data, request, _bufferController.getAvailableRepresentations()).then(
                 function() {
                     self.debug.info("[FragmentInfoController][" + type + "] Buffer segment from url ", request.url);
 
@@ -141,19 +141,19 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             // => Else raise a warning and try to reload session
             if (segmentDownloadErrorCount === SEGMENT_DOWNLOAD_ERROR_MAX) {
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT,
-                    "Failed to download media segment", {
+                    "Failed to download fragmentInfo segment", {
                         url: e.url,
                         status: e.status
                     });
             } else {
                 this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT,
-                    "Failed to download media segment", {
+                    "Failed to download fragmentInfo segment", {
                         url: e.url,
                         status: e.status
                     });
                 // If already in buffering state (i.e. empty buffer) then reload session now
                 // Else reload session when entering in buffering state (see updateBufferState())
-                if (_videoController.getHtmlVideoState() === BUFFERING) {
+                if (_bufferController.getHtmlVideoState() === BUFFERING) {
                     requestForReload.call(this, (e.duration * 1.5));
                 } else {
                     segmentDownloadFailed = true;
@@ -173,7 +173,7 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             if (request !== null) {
                 _fragmentInfoTime = request.startTime + request.duration;
 
-                request = _videoController.getIndexHandler().getFragmentInfoRequest(request);
+                request = _bufferController.getIndexHandler().getFragmentInfoRequest(request);
 
                 // Download the fragment info segment
                 self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null).then(
@@ -215,7 +215,7 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
 
             self.debug.log("[FragmentInfoController][" + type + "] loadNextFragment for time: " + segmentTime);
 
-            _videoController.getIndexHandler().getSegmentRequestForTime(_videoController.getCurrentRepresentation(), segmentTime).then(onFragmentRequest.bind(self));
+            _bufferController.getIndexHandler().getSegmentRequestForTime(_bufferController.getCurrentRepresentation(), segmentTime).then(onFragmentRequest.bind(self));
         },
 
         onFragmentLoadProgress = function(evt) {
@@ -274,7 +274,7 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         errHandler: undefined,
         abrRulesCollection: undefined,
 
-        initialize: function(type, fragmentController, controllerVideo) {
+        initialize: function(type, fragmentController, bufferController) {
             var self = this,
                 ranges = null;
 
@@ -282,9 +282,9 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
 
             self[MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS] = onFragmentLoadProgress;
 
-            _videoController = controllerVideo;
+            _bufferController = bufferController;
 
-            ranges = self.sourceBufferExt.getAllRanges(_videoController.getBuffer());
+            ranges = self.sourceBufferExt.getAllRanges(_bufferController.getBuffer());
 
             if (ranges.length > 0) {
                 _fragmentInfoTime = ranges.end(ranges.length-1);
