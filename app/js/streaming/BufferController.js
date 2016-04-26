@@ -997,7 +997,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
             self.debug.log("[BufferController][" + type + "] Check buffer...");
 
-            updateBufferLevel.call(self, false);
+            updateBufferLevel.call(self, true);
 
             // Check stalled mode of video model
             if (stalled) {
