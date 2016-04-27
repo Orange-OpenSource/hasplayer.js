@@ -72,7 +72,6 @@ Hls.dependencies.HlsDemux = function() {
         getPMT = function(data, pid) {
             var tsPacket = getTsPacket.call(this, data, 0, pid),
                 i = 0,
-                trackIdCounter = 1, // start at 1;
                 elementStream,
                 track,
                 streamTypeDesc;
@@ -113,10 +112,7 @@ Hls.dependencies.HlsDemux = function() {
                 // if (track.type === "video") {
                 track.timescale = mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY;
                 track.pid = elementStream.m_elementary_PID;
-                track.trackId = trackIdCounter;
-                pidToTrackId[elementStream.m_elementary_PID] = trackIdCounter;
                 tracks.push(track);
-                trackIdCounter++;
                 // }
             }
 
@@ -231,7 +227,7 @@ Hls.dependencies.HlsDemux = function() {
             track.data = new Uint8Array(length);
 
             track.dataCTS = [];
-            
+
             for (i = 0; i < track.samples.length; i++) {
                 sample = track.samples[i];
 
@@ -323,12 +319,12 @@ Hls.dependencies.HlsDemux = function() {
 
                 // Update previous sample duration in case of missing frames
                 if (i > 0) {
-                    aacSamples[i-1].duration = aacSamples[i].cts - aacSamples[i-1].cts;
-                    if (aacSamples[i-1].duration > duration) {
-                        this.debug.log("[HlsDemux][" + track.type + "] Patch sample duration, cts = " + (aacSamples[i-1].cts / 90000).toFixed(3) + ", duration = " + (aacSamples[i-1].duration / 90000).toFixed(3));
+                    aacSamples[i - 1].duration = aacSamples[i].cts - aacSamples[i - 1].cts;
+                    if (aacSamples[i - 1].duration > duration) {
+                        this.debug.log("[HlsDemux][" + track.type + "] Patch sample duration, cts = " + (aacSamples[i - 1].cts / 90000).toFixed(3) + ", duration = " + (aacSamples[i - 1].duration / 90000).toFixed(3));
                     }
                 }
-                
+
                 // Copy AAC frame data
                 data.set(track.data.subarray(aacFrames[i].offset, aacFrames[i].offset + aacFrames[i].length), offset);
                 offset += aacFrames[i].length;
@@ -451,7 +447,9 @@ Hls.dependencies.HlsDemux = function() {
         },
 
         doGetTracks = function(data) {
-            var i = 0;
+            var i = 0,
+                trackIdCounter = 1; // start at 1;
+
             // Parse PSI (PAT, PMT) if not yet received
             if (pat === null) {
                 pat = getPAT.call(this, data);
@@ -473,6 +471,13 @@ Hls.dependencies.HlsDemux = function() {
                 if (tracks[i].codecs === "") {
                     tracks.splice(i, 1);
                 }
+            }
+
+            // Set track id and map to to PID
+            for (i = 0; i < tracks.length; i++) {
+                tracks[i].trackId = trackIdCounter;
+                pidToTrackId[tracks[i].pid] = trackIdCounter;
+                trackIdCounter++;
             }
 
             return tracks;
