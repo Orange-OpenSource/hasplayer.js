@@ -52,7 +52,8 @@ MediaPlayer.dependencies.BufferController = function() {
         bufferTimeout,
         bufferStateTimeout,
         trickModeEnabled = false,
-        trickModePreviousQuality,
+        trickModePreviousQuality = 0,
+        trickModePreviousAutoSwitch = true,
         trickModeForward = false,
 
         playListMetrics = null,
@@ -749,8 +750,8 @@ MediaPlayer.dependencies.BufferController = function() {
             if (e.aborted) {
                 // if (e.quality !== 0) {
                 // this.debug.info("[BufferController][" + type + "] Segment download abandonned => Retry segment download at lowest quality");
-                // this.abrController.setAutoSwitchBitrate(false);
-                // this.abrController.setPlaybackQuality(type, 0);
+                // this.abrController.setAutoSwitchFor(type, false);
+                // this.abrController.setQualityFor(type, 0);
                 bufferFragment.call(this);
                 // }
                 return;
@@ -1079,11 +1080,6 @@ MediaPlayer.dependencies.BufferController = function() {
                     self.abrController.getPlaybackQuality(type, data).then(
                         function(result) {
 
-                            // Re-enable ABR in case it has been previsouly disabled (see onBytesError)
-                            if (!trickModeEnabled) {
-                                self.abrController.setAutoSwitchBitrate(true);
-                            }
-
                             quality = result.quality;
 
                             // Get corresponding representation
@@ -1272,8 +1268,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
                             self.fragmentController.abortRequestsForModel(fragmentModel);
                             self.debug.info("[BufferController][" + type + "] Segment download abandonned => Retry segment download at lowest quality");
-                            self.abrController.setAutoSwitchBitrate(false);
-                            self.abrController.setPlaybackQuality(type, newQuality);
+                            self.abrController.setQualityFor(type, newQuality);
                         }
                     };
 
@@ -1655,8 +1650,7 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         setTrickMode: function(enabled, forward) {
-            var self = this,
-                deferred = Q.defer();
+            var deferred = Q.defer();
 
             this.debug.log("[BufferController][" + type + "] setTrickMode - enabled = " + enabled);
 
@@ -1666,14 +1660,25 @@ MediaPlayer.dependencies.BufferController = function() {
             }
             trickModeEnabled = enabled;
 
-            self.fragmentController.setSampleDuration(trickModeEnabled);
-            trickModePreviousQuality = trickModeEnabled ? self.abrController.getQualityFor(type) : trickModePreviousQuality;
-            self.abrController.setPlaybackQuality(type, (trickModeEnabled ? 0 : trickModePreviousQuality));
+            if (this.fragmentController.setSampleDuration) {
+                this.fragmentController.setSampleDuration(trickModeEnabled);
+            }
+
             if (trickModeEnabled) {
+                // Trick mode enabled
+                // => store current quality and auto switch state
+                // => disable auto switch and set lowest quality
                 trickModeForward = forward;
-                self.abrController.setAutoSwitchBitrate(false);
+                trickModePreviousQuality = this.abrController.getQualityFor(type);
+                trickModePreviousAutoSwitch = this.abrController.getAutoSwitchFor(type);
+                this.abrController.setAutoSwitchFor(type, false);
+                this.abrController.setQualityFor(type, 0);
                 deferred.resolve();
             } else {
+                // Trick mode disabled
+                // => restore ABR quality and auto switch state
+                this.abrController.setAutoSwitchFor(type, trickModePreviousAutoSwitch);
+                this.abrController.setQualityFor(type, trickModePreviousQuality);
                 removeBuffer.call(this).then(function() {
                     deferred.resolve();
                 });
