@@ -32,7 +32,6 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         reloadTimeout = null,
 
         segmentDuration = NaN,
-        BUFFERING = 0,
 
         sendRequest = function() {
 
@@ -137,10 +136,10 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             // Segment download failed
             segmentDownloadErrorCount += 1;
 
-            // => If failed SEGMENT_DOWNLOAD_ERROR_MAX times, then raise an error
+            // => If failed SEGMENT_DOWNLOAD_ERROR_MAX times, then raise a warning
             // => Else raise a warning and try to reload session
             if (segmentDownloadErrorCount === SEGMENT_DOWNLOAD_ERROR_MAX) {
-                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT,
+                this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT,
                     "Failed to download fragmentInfo segment", {
                         url: e.url,
                         status: e.status
@@ -151,13 +150,6 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
                         url: e.url,
                         status: e.status
                     });
-                // If already in buffering state (i.e. empty buffer) then reload session now
-                // Else reload session when entering in buffering state (see updateBufferState())
-                if (_bufferController.getHtmlVideoState() === BUFFERING) {
-                    requestForReload.call(this, (e.duration * 1.5));
-                } else {
-                    segmentDownloadFailed = true;
-                }
             }
         },
 
@@ -216,54 +208,6 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             self.debug.log("[FragmentInfoController][" + type + "] loadNextFragment for time: " + segmentTime);
 
             _bufferController.getIndexHandler().getSegmentRequestForTime(_bufferController.getCurrentRepresentation(), segmentTime).then(onFragmentRequest.bind(self));
-        },
-
-        onFragmentLoadProgress = function(evt) {
-            var self = this,
-                i = 0,
-                len = 0,
-                type = evt.data.request.streamType,
-                currentTime;
-
-            self.abrRulesCollection.getRules(MediaPlayer.rules.BaseRulesCollection.prototype.ABANDON_FRAGMENT_RULES).then(
-                function(rules) {
-                    var callback = function(switchRequest) {
-
-                        var newQuality = switchRequest.quality,
-                            abrCurrentQuality = self.abrController.getQualityFor(type);
-
-                        if (newQuality < abrCurrentQuality) {
-                            self.debug.info("[FragmentInfoController][" + type + "] Abandon current fragment : " + evt.data.request.url);
-
-                            currentTime = new Date();
-
-                            self.fragmentController.abortRequestsForModel(fragmentModel);
-                            self.debug.info("[FragmentInfoController][" + type + "] Segment download abandonned => Retry segment download at lowest quality");
-                            self.abrController.setAutoSwitchBitrate(false);
-                            self.abrController.setPlaybackQuality(type, newQuality);
-                        }
-                    };
-
-                    for (i = 0, len = rules.length; i < len; i += 1) {
-                        rules[i].execute(evt.data.request, callback);
-                    }
-                });
-        },
-
-        requestForReload = function(delay) {
-            var self = this;
-
-            // Check if not already notified
-            if (reloadTimeout !== null) {
-                return;
-            }
-
-            this.debug.info("[FragmentInfoController][" + type + "] Reload session in " + delay + " s.");
-            reloadTimeout = setTimeout(function() {
-                reloadTimeout = null;
-                self.debug.info("[FragmentInfoController][" + type + "] Reload session");
-                self.system.notify("needForReload");
-            }, delay * 1000);
         };
 
     return {
@@ -279,8 +223,6 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
                 ranges = null;
 
             self.debug.log("[FragmentInfoController][" + type + "] Initialize");
-
-            self[MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS] = onFragmentLoadProgress;
 
             _bufferController = bufferController;
 
@@ -310,7 +252,6 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             if (value) {
                 this.fragmentController = value;
                 fragmentModel = this.fragmentController.attachBufferController(this);
-                fragmentModel.fragmentLoader.subscribe(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, this);
                 fragmentModel.setType(type);
             }
         },
@@ -321,7 +262,6 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             doStop.call(self);
 
             if (fragmentModel) {
-                fragmentModel.fragmentLoader.unsubscribe(MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS, self.abrController);
                 self.fragmentController.abortRequestsForModel(fragmentModel);
                 self.fragmentController.detachBufferController(fragmentModel);
                 fragmentModel = null;
