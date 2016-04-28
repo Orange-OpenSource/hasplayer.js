@@ -15,10 +15,22 @@ MediaPlayer.dependencies.AbrController = function () {
     "use strict";
 
     var autoSwitchBitrate = true,
+        autoSwitchDic = {},
         qualityDict = {},
         qualityMaxDict = {},
         confidenceDict = {},
         playerState = "",
+
+        getInternalAutoSwitch = function (type) {
+            if (!autoSwitchDic.hasOwnProperty(type)) {
+                autoSwitchDic[type] = true;
+            }
+            return autoSwitchDic[type];
+        },
+
+        setInternalAutoSwitch = function (type, value) {
+            autoSwitchDic[type] = value;
+        },
 
         getInternalQuality = function (type) {
             var quality;
@@ -54,6 +66,7 @@ MediaPlayer.dependencies.AbrController = function () {
 
         getRulesRequestQuality = function (type, data) {
             var self = this,
+                autoSwitch = getInternalAutoSwitch(type),
                 quality = getInternalQuality(type),
                 confidence = getInternalConfidence(type),
                 newQuality = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE,
@@ -66,7 +79,7 @@ MediaPlayer.dependencies.AbrController = function () {
                 req,
                 values;
 
-            if (!autoSwitchBitrate) {
+            if (!autoSwitchBitrate || !autoSwitch) {
                 self.debug.log("[AbrController]["+type+"] ABR disabled");
                 return Q.when({quality: quality, confidence: confidence});
             }
@@ -206,6 +219,7 @@ MediaPlayer.dependencies.AbrController = function () {
         },
 
         setAutoSwitchBitrate: function (value) {
+            this.debug.log("[AbrController] Set auto switch: " + value);
             autoSwitchBitrate = value;
         },
 
@@ -289,18 +303,28 @@ MediaPlayer.dependencies.AbrController = function () {
             return deferred.promise;
         },
 
-        setPlaybackQuality: function (type, newPlaybackQuality) {
-            var quality = getInternalQuality(type);
+        getAutoSwitchFor: function (type) {
+            return getInternalAutoSwitch(type);
+        },
 
-            this.debug.log("[AbrController]["+type+"] Set playback quality: " + newPlaybackQuality);
-
-            if (newPlaybackQuality !== quality) {
-                setInternalQuality(type, newPlaybackQuality);
+        setAutoSwitchFor: function (type, value) {
+            var autoSwitch = getInternalAutoSwitch(type);
+            if (value !== autoSwitch) {
+                this.debug.log("[AbrController]["+type+"] Set auto switch: " + value);
+                setInternalAutoSwitch(type, value);
             }
         },
 
         getQualityFor: function (type) {
             return getInternalQuality(type);
+        },
+
+        setQualityFor: function (type, value) {
+            var quality = getInternalQuality(type);
+            if (value !== quality) {
+                this.debug.log("[AbrController]["+type+"] Set playback quality: " + value);
+                setInternalQuality(type, value);
+            }
         },
 
         setPlayerState: function(state) {
