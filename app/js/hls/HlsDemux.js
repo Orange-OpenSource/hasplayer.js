@@ -537,10 +537,10 @@ Hls.dependencies.HlsDemux = function() {
 
                 this.debug.log("[HlsDemux][" + track.type + "] Demux: 1st PTS = " + track.samples[0].dts + " (" + (track.samples[0].dts / 90000) + ")");
 
-                // Check tracks desynchronization (if > 20 sec)
+                // Check tracks desynchronization (if > 10 sec)
                 firstDts = Math.max(firstDts, track.samples[0].dts);
                 offset = Math.abs(track.samples[0].dts - firstDts) / 90000;
-                if (offset > 20) {
+                if (offset > 10) {
                     throw {
                         name: MediaPlayer.dependencies.ErrorHandler.prototype.HLS_DEMUX_ERROR,
                         message: "A/V desynchronization (" + Math.round(offset) + " s.)"
