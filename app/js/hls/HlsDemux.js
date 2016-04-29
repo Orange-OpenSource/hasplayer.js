@@ -60,7 +60,6 @@ Hls.dependencies.HlsDemux = function() {
                 return null;
             }
 
-
             pat = new mpegts.si.PAT();
             pat.parse(tsPacket.packet.getPayload());
 
@@ -164,6 +163,7 @@ Hls.dependencies.HlsDemux = function() {
                 if (baseDts === -1) {
                     baseDts = sample.dts;
                 }
+
                 sample.dts -= baseDts;
                 sample.cts -= baseDts;
 
@@ -385,7 +385,12 @@ Hls.dependencies.HlsDemux = function() {
 
             // We have no packet of track's PID , need some more packets to get track info
             if (tsPacket === null) {
-                return null;
+                // We throw an error since the <video> element will raise a MEDIA_ERR_SRC_NOT_SUPPORTED error
+                // when pushing the initialization segment
+                throw {
+                    name: MediaPlayer.dependencies.ErrorHandler.prototype.HLS_DEMUX_ERROR,
+                    message: "No packets for track " + track.type
+                };
             }
 
             // Get PES packet
@@ -442,8 +447,6 @@ Hls.dependencies.HlsDemux = function() {
 
             this.debug.log("[HlsDemux][" + track.type + "] track codecPrivateData = " + track.codecPrivateData);
             this.debug.log("[HlsDemux][" + track.type + "] track codecs = " + track.codecs);
-
-            return track;
         },
 
         doGetTracks = function(data) {
@@ -454,14 +457,20 @@ Hls.dependencies.HlsDemux = function() {
             if (pat === null) {
                 pat = getPAT.call(this, data);
                 if (pat === null) {
-                    return;
+                    throw {
+                        name: MediaPlayer.dependencies.ErrorHandler.prototype.HLS_DEMUX_ERROR,
+                        message: "Failed to demux, missing signalization (PAT)"
+                    };
                 }
             }
 
             if (pmt === null) {
                 pmt = getPMT.call(this, data, pat.getPmtPid());
                 if (pmt === null) {
-                    return;
+                    throw {
+                        name: MediaPlayer.dependencies.ErrorHandler.prototype.HLS_DEMUX_ERROR,
+                        message: "Failed to demux, missing signalization (PMT)"
+                    };
                 }
             }
 
@@ -470,6 +479,10 @@ Hls.dependencies.HlsDemux = function() {
                 getTrackCodecInfo.call(this, data, tracks[i]);
                 if (tracks[i].codecs === "") {
                     tracks.splice(i, 1);
+                    throw {
+                        name: MediaPlayer.dependencies.ErrorHandler.prototype.HLS_DEMUX_ERROR,
+                        message: "Failed to get codec information for track " + tracks[i].type
+                    };
                 }
             }
 
@@ -486,19 +499,14 @@ Hls.dependencies.HlsDemux = function() {
         doDemux = function(data) {
             var nbPackets = data.length / mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE,
                 track,
-                i = 0;
+                i = 0,
+                firstDts = -1,
+                offset;
 
             this.debug.log("[HlsDemux] Demux chunk, size = " + data.length + ", nb packets = " + nbPackets);
 
             // Get PAT, PMT and tracks information if not yet received
-            if (doGetTracks.call(this, data) === null) {
-                return null;
-            }
-
-            // If PMT not received, then unable to demux
-            if (pmt === null) {
-                return tracks;
-            }
+            doGetTracks.call(this, data);
 
             // Clear current tracks' data
             for (i = 0; i < tracks.length; i++) {
@@ -526,7 +534,18 @@ Hls.dependencies.HlsDemux = function() {
             for (i = 0; i < tracks.length; i++) {
                 track = tracks[i];
                 postProcess.call(this, track);
+
                 this.debug.log("[HlsDemux][" + track.type + "] Demux: 1st PTS = " + track.samples[0].dts + " (" + (track.samples[0].dts / 90000) + ")");
+
+                // Check tracks desynchronization (if > 20 sec)
+                firstDts = Math.max(firstDts, track.samples[0].dts);
+                offset = Math.abs(track.samples[0].dts - firstDts) / 90000;
+                if (offset > 20) {
+                    throw {
+                        name: MediaPlayer.dependencies.ErrorHandler.prototype.HLS_DEMUX_ERROR,
+                        message: "A/V desynchronization (" + Math.round(offset) + " s.)"
+                    };
+                }
             }
 
             return tracks;
