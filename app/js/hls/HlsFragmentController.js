@@ -59,35 +59,44 @@ Hls.dependencies.HlsFragmentController = function() {
     rslt.process = function(bytes, request, representations) {
         var result = null,
             InitSegmentData = null,
-            catArray = null;
+            catArray = null,
+            deferred = null;
 
         if ((bytes === null) || (bytes === undefined) || (bytes.byteLength === 0)) {
             return Q.when(bytes);
         }
 
-        // Media segment => generate corresponding moof data segment from demultiplexed mpeg-2 ts chunk
-        if (request && (request.type === "Media Segment") && representations && (representations.length > 0)) {
-            if (lastRequestQuality === null || lastRequestQuality !== request.quality) {
-                rslt.hlsDemux.reset(request.startTime * 90000);
-                InitSegmentData = generateInitSegment(bytes);
-                request.index = undefined;
-                lastRequestQuality = request.quality;
+        try {
+            deferred = Q.defer();
+            // Media segment => generate corresponding moof data segment from demultiplexed MPEG2-TS chunk
+            if (request && (request.type === "Media Segment") && representations && (representations.length > 0)) {
+                if (lastRequestQuality === null || lastRequestQuality !== request.quality) {
+                    // If quality changed then generate initialization segment
+                    rslt.hlsDemux.reset(request.startTime * 90000);
+                    InitSegmentData = generateInitSegment(bytes);
+                    request.index = undefined;
+                    lastRequestQuality = request.quality;
+                }
+
+                // Generate media segment (moof)
+                result = generateMediaSegment(bytes);
+
+                // Iinsert initialization if required
+                if (InitSegmentData !== null) {
+                    catArray = new Uint8Array(InitSegmentData.length + result.length);
+                    catArray.set(InitSegmentData, 0);
+                    catArray.set(result, InitSegmentData.length);
+                    result = catArray;
+                }
+
+                rslt.sequenceNumber++;
             }
-
-            result = generateMediaSegment(bytes);
-
-            //new quality => append init segment + media segment in Buffer
-            if (InitSegmentData !== null) {
-                catArray = new Uint8Array(InitSegmentData.length + result.length);
-                catArray.set(InitSegmentData, 0);
-                catArray.set(result, InitSegmentData.length);
-                result = catArray;
-            }
-
-            rslt.sequenceNumber++;
+            deferred.resolve(result);
+        } catch (e) {
+            deferred.reject(e);
         }
 
-        return Q.when(result);
+        return deferred.promise;
     };
 
     rslt.getStartTime = function() {
