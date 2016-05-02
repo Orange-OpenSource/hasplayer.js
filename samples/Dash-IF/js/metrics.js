@@ -1,4 +1,4 @@
-MetricsTreeConverter = function () {
+var MetricsTreeConverter = function () {
     "use strict";
 
     var bufferLevelMetricToTreeMetric = function (bufferLevelMetrics) {
@@ -61,7 +61,7 @@ MetricsTreeConverter = function () {
                         text : "duration : "+p.duration
                     };
                     period.items.push(duration);
-                    
+
                     //for each adaptationSet
                     adaptationSet = {};
                     adaptationSet.text = "AdapationSet";
@@ -105,7 +105,7 @@ MetricsTreeConverter = function () {
                             ],
                             collapsed: true
                         });
-                        
+
                         adaptationSet.items.push(adapation);
                     }
                     period.items.push(adaptationSet);
@@ -114,8 +114,8 @@ MetricsTreeConverter = function () {
             } catch (e) {
                 console.error("Error in periodsToTreeMetrics : ",e);
             }
-            
-            
+
+
             return treeManifest;
         },
 
