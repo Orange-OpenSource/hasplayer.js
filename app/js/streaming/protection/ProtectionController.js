@@ -301,7 +301,9 @@ MediaPlayer.dependencies.ProtectionController = function() {
                 } else if (protData.laURL && protData.laURL !== "") { // TODO: Deprecated!
                     url = protData.laURL;
                 }
-            } else {
+            }
+
+            if (url === null) {
                 url = this.keySystem.getLicenseServerURLFromInitData(MediaPlayer.dependencies.protection.CommonEncryption.getPSSHData(sessionToken.initData));
                 if (!url) {
                     url = e.data.defaultURL;
