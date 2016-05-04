@@ -16,7 +16,7 @@
 if (!Math.sign) {
     Math.sign = function (value) {
         "use strict";
-        return (value < 0) ? -1 : 1;
+        return (value < 0) ? -1 : ((value === 0) ? 0 : 1);
     };
 }
 
