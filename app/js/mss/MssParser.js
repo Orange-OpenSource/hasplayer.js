@@ -144,7 +144,7 @@ Mss.dependencies.MssParser = function() {
             fourCCValue = this.domParser.getAttributeValue(qualityLevel, "FourCC");
 
             if (fourCCValue === null) {
-                fourCCValue = this.domParser.getAttributeValue(streamIndex, "FourCC");
+                fourCCValue = this.domParser.getAttributeValue(streamIndex, "FourCC") || "AAC";     // if FourCC not found consider AAC (suppose we are in audio stream)
             }
             // Do not support AACH (TODO)
             if (fourCCValue.indexOf("AACH") >= 0) {
