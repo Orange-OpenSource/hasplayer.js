@@ -503,8 +503,6 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         onLoaded = function() {
-            var self = this;
-
             this.debug.info("[Stream] <video> loadedmetadata event");
         },
 
