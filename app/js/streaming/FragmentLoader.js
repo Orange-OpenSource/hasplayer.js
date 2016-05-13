@@ -46,7 +46,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
             req.send();
         },
 
-        _load = function(request, bytesRange) {
+        _load = function(request) {
             var d = Q.defer(),
                 req = new XMLHttpRequest(),
                 httpRequestMetrics = null,
@@ -85,8 +85,8 @@ MediaPlayer.dependencies.FragmentLoader = function() {
             req.responseType = "arraybuffer";
             req = self.tokenAuthentication.setTokenInRequestHeader(req);
 
-            if (bytesRange) {
-                req.setRequestHeader("Range", bytesRange);
+            if (request.range) {
+                req.setRequestHeader("Range", 'bytes='+request.range);
             }
 
             req.onprogress = function(event) {
