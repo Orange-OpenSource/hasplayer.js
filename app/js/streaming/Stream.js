@@ -251,6 +251,27 @@ MediaPlayer.dependencies.Stream = function() {
             }
         },
 
+        initializeMediaSource_ = function() {
+
+            var data,
+                codec;
+
+            initializedeferred = Q.defer();
+            eventController = this.system.getObject("eventController");
+
+            // Initialize video controller
+            data = this.manifestExt.getVideoData_(manifest, periodInfo.index);
+            videoTrackIndex = this.manifestExt.getDataIndex_(data, manifest, periodInfo.index);
+            codec = this.manifestExt.getCodec(data);
+            if (codec === null) {
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO, "Video codec information not available");
+                initializedeferred.reject();
+                return;
+            }
+
+            
+        },
+
         initializeMediaSource = function() {
             var videoState = null,
                 audioState = null,

@@ -21,6 +21,66 @@ Dash.dependencies.DashManifestExtensions = function() {
 Dash.dependencies.DashManifestExtensions.prototype = {
     constructor: Dash.dependencies.DashManifestExtensions,
 
+    getIsType: function(adaptation, type, mimeTypes) {
+        "use strict";
+        var i, j,
+            found = false,
+            representation;
+
+        if (!adaptation) {
+            return false;
+        }
+
+        adaptation.type = null;
+
+        // Check contentType attribute at adaptation level
+        for (i = 0; i < adaptation.ContentComponent_asArray.length && !found; i ++) {
+            if (adaptation.ContentComponent_asArray[i].contentType === type) {
+                adaptation.type = type;
+                found = true;
+            }
+        }
+
+        // Check mimeType attribute at adaptation level
+        if (!found) {
+            if (adaptation.mimeType) {
+                for (i = 0; i < mimeTypes.length && !found; i++) {
+                    if (adaptation.mimeType.indexOf(mimeTypes[i]) !== -1) {
+                        adaptation.type = type;
+                        found = true;
+                    }
+                }
+            }
+        }
+
+        // Check mimeType attribute at representation level
+        if (!found) {
+            for (i = 0; i < adaptation.Representation_asArray.length && !found; i++) {
+                representation = adaptation.Representation_asArray[i];
+                for (j = 0; j < mimeTypes.length && !found; j++) {
+                    if (representation.mimeType.indexOf(mimeTypes[j]) !== -1) {
+                        adaptation.type = type;
+                        found = true;
+                    }
+                }
+            }
+        }
+
+        return found;
+    },
+
+    getIsVideo_: function(adaptation) {
+        return this.getIsType(adaptation, "video", ["video"]);
+    },
+
+    getIsAudio_: function(adaptation) {
+        return this.getIsType(adaptation, "audio", ["audio"]);
+    },
+
+    getIstext_: function(adaptation) {
+        return this.getIsType(adaptation, "text", ["vtt", "ttml"]);
+    },
+
     getIsAudio: function(adaptation) {
         "use strict";
         var i,
@@ -353,6 +413,26 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
         return deferred.promise;
     },
+    getVideoData_: function(manifest, periodIndex) {
+        "use strict";
+        //return Q.when(null);
+        //------------------------------------
+        var adaptations,
+            i;
+
+        if (!manifest || periodIndex < 0) {
+            return null;
+        }
+
+        adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+        for (i = 0; i < adaptations.length; i += 1) {
+            if (this.getIsVideo(adaptations[i])) {
+                return adaptations[i];
+            }
+        }
+
+        return null;
+    },
 
     getTextDatas: function(manifest, periodIndex) {
         "use strict";
@@ -592,6 +672,22 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         }
 
         return Q.when(codec);
+    },
+    getCodec_: function(adaptation) {
+        "use strict";
+        var i = 0,
+            representation,
+            codec = null;
+
+        while ((codec === null) && (i < adaptation.Representation_asArray.length)) {
+            representation = adaptation.Representation_asArray[i];
+            if (representation.codecs !== null && representation.codecs !== "") {
+                codec = (representation.mimeType + ';codecs="' + representation.codecs + '"');
+            }
+            i++;
+        }
+
+        return codec;
     },
 
     getMimeType: function(data) {

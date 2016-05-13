@@ -48,6 +48,33 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
         }
         return deferred.promise;
     },
+    createSourceBuffer_: function (mediaSource, codec) {
+        "use strict";
+
+        var buffer = null;
+
+        if (!mediaSource) {
+            return null;
+        }
+
+        try {
+            buffer = mediaSource.addSourceBuffer(codec);
+        } catch(ex) {
+            // For text track not supported by MSE, we try to create corresponding specific source buffer
+            if (this.manifestExt.getIsTextTrack(codec)) {
+                if ((codec === 'text/vtt') || (codec === 'text/ttml')) {
+                    buffer = this.system.getObject("textSourceBuffer");
+                } else if (codec === 'application/ttml+xml+mp4') {
+                    buffer = this.system.getObject("textTTMLXMLMP4SourceBuffer");
+                } else {
+                    throw ex;
+                }
+            } else {
+                throw ex;
+            }
+        }
+        return buffer;
+    },
 
     removeSourceBuffer: function (mediaSource, buffer) {
         "use strict";
@@ -62,6 +89,13 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
         }
         }
         return deferred.promise;
+    },
+    removeSourceBuffer_: function (mediaSource, buffer) {
+        "use strict";
+        try {
+            mediaSource.removeSourceBuffer(buffer);
+        } catch (ex) {
+        }
     },
 
     getBufferRange: function (buffer, time, tolerance) {
@@ -261,5 +295,15 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
             deferred.reject(ex.description);
         }
         return deferred.promise;
+    },
+
+    abort_: function (mediaSource, buffer) {
+        "use strict";
+        try {
+            if (mediaSource.readyState === "open") {
+                buffer.abort();
+            }
+        } catch(ex){
+        }
     }
 };
