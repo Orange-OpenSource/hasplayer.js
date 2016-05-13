@@ -89,15 +89,14 @@ mp4lib.boxes.File.prototype.read = function(data) {
             box.__sourceBuffer = data.subarray(pos - box.size, pos);
         }
 
-        this.boxes.push(box);
+        //if boxtype is unknown, don't add it to the list box
+        if (box.boxtype) {
+            this.boxes.push(box);
+        }
 
         if (box.size <= 0 || box.size === null) {
             throw new mp4lib.ParseException('Problem on size of box ' + box.boxtype +
                 ', parsing stopped to avoid infinite loop');
-        }
-
-        if (!box.boxtype) {
-            throw new mp4lib.ParseException('Problem on unknown box, parsing stopped to avoid infinite loop');
         }
     }
 };
@@ -388,16 +387,15 @@ mp4lib.boxes.ContainerBox.prototype.read = function(data, pos, end) {
         if (mp4lib.debug) {
             box.__sourceBuffer = data.subarray(pos - box.size, pos);
         }
-
-        this.boxes.push(box);
+        
+        //if boxtype is unknown, don't add it to the list box
+        if (box.boxtype) {
+            this.boxes.push(box);
+        }
 
         if (box.size <= 0 || box.size === null) {
             throw new mp4lib.ParseException('Problem on size of box ' + box.boxtype +
                 ', parsing stopped to avoid infinite loop');
-        }
-
-        if (!box.boxtype) {
-            throw new mp4lib.ParseException('Problem on unknown box, parsing stopped to avoid infinite loop');
         }
     }
 
