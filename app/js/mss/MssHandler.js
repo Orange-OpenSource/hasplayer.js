@@ -151,6 +151,15 @@ Mss.dependencies.MssHandler = function() {
         return request;
     };
 
+    rslt.getFragmentInfoRequest = function(request){
+        if (request && request.url && (request.streamType === "video" || request.streamType === "audio")) {
+            request.url = request.url.replace('Fragments','FragmentInfo');
+            request.type = "FragmentInfo Segment";
+        }
+
+        return request;
+    };
+
     return rslt;
 };
 

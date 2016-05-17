@@ -202,8 +202,6 @@ MediaPlayer.dependencies.BufferController = function() {
             // Wait for current buffering process to be completed before restarting
             Q.when(deferredFragmentBuffered ? deferredFragmentBuffered.promise : true).then(
                 function() {
-                    // Reset segment list to avoid DashHandler dysfunctionning
-                    _currentRepresentation.segments = null;
                     //self.debug.log("[BufferController]["+type+"] SEEK: deferredFragmentBuffered = "+deferredFragmentBuffered+" Call start!");
                     doStart.call(self);
                 }
@@ -312,7 +310,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 eventStreamAdaption = this.manifestExt.getEventStreamForAdaptationSet(self.getData()),
                 eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(self.getData(), _currentRepresentation),
                 segmentStartTime = null;
-            
+
             segmentDuration = request.duration;
 
             // Push segment into buffer even if BufferController is stopped, since FragmentLoader would indicate this segment already loaded
@@ -350,7 +348,7 @@ MediaPlayer.dependencies.BufferController = function() {
                         }
 
                         self.debug.info("[BufferController][" + type + "] Buffer segment from url ", request.url);
-                
+
                         /*if (trickModeEnabled) {
                             var filename = type + "_" + request.index + "_" + request.quality + ".mp4",
                                 blob = new Blob([data], {
@@ -378,8 +376,6 @@ MediaPlayer.dependencies.BufferController = function() {
                                                 self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
                                             }
                                         }
-
-                                        _currentRepresentation.segments = null;
 
                                         self.debug.log("[BufferController][" + type + "] Media segment buffered");
                                         // Signal end of buffering process
@@ -1035,13 +1031,13 @@ MediaPlayer.dependencies.BufferController = function() {
         updateCheckBufferTimeout = function(delay) {
             var self = this,
                 delayMs =  Math.max((delay * 1000), 2000);
-            
+
             self.debug.log("[BufferController][" + type + "] Check buffer delta = " + delayMs + " ms");
 
            /* if (trickModeEnabled) {
                 delayMs = 500;
             }*/
-            
+
             clearTimeout(bufferTimeout);
             bufferTimeout = setTimeout(function() {
                 bufferTimeout = null;
@@ -1099,9 +1095,6 @@ MediaPlayer.dependencies.BufferController = function() {
                                 currentDownloadQuality = quality;
                                 // Load initialization segment
                                 loadInit = true;
-
-                                // Reset segment list
-                                _currentRepresentation.segments = null;
 
                                 clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.REPRESENTATION_SWITCH_STOP_REASON);
                                 self.debug.log("[BufferController][" + type + "] Send RepresentationSwitch with quality = " + quality);
@@ -1395,6 +1388,10 @@ MediaPlayer.dependencies.BufferController = function() {
             );
         },
 
+        getIndexHandler: function(){
+            return this.indexHandler;
+        },
+
         getType: function() {
             return type;
         },
@@ -1457,6 +1454,14 @@ MediaPlayer.dependencies.BufferController = function() {
                 self.debug.log("[BufferController][" + type + "] Language changed");
                 cancelCheckBufferTimeout.call(this);
             }
+        },
+
+        getHtmlVideoState: function() {
+            return htmlVideoState;
+        },
+
+        getAvailableRepresentations: function() {
+            return availableRepresentations;
         },
 
         getCurrentRepresentation: function() {
@@ -1654,7 +1659,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 deferred = Q.defer();
 
             this.debug.log("[BufferController][" + type + "] setTrickMode - enabled = " + enabled);
-            
+
             if (trickModeEnabled === enabled) {
                 deferred.resolve();
                 return deferred.promise;

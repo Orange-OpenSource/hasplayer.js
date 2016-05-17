@@ -94,8 +94,41 @@ Mss.dependencies.MssFragmentController = function() {
 
                 this.metricsModel.addDVRInfo(adaptation.type, new Date(), {
                     start: segments[0].t / adaptation.SegmentTemplate.timescale,
-                    end: (segments[segments.length - 1].t + segments[segments.length - 1].d) / adaptation.SegmentTemplate.timescale
+                    end: ((segments[segments.length - 1].t + segments[segments.length - 1].d - manifest.minBufferTime*10000000.0) / adaptation.SegmentTemplate.timescale)
                 });
+            }
+        },
+
+        updateSegmentsList = function(bytes, request, adaptation) {
+            var fragment = null,
+                moof = null,
+                traf = null,
+                tfdt = null,
+                tfrf = null,
+                pos,
+                i = 0;
+
+            // Create new fragment
+            fragment = mp4lib.deserialize(bytes);
+            moof = fragment.getBoxByType("moof");
+            traf = moof.getBoxByType("traf");
+            // Create and add tfdt box
+            tfdt = traf.getBoxByType("tfdt");
+            if (tfdt === null) {
+                tfdt = new mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox();
+                tfdt.version = 1;
+                tfdt.flags = 0;
+                tfdt.baseMediaDecodeTime = Math.floor(request.startTime * request.timescale);
+                // Insert tfdt box just after the tfhd box (therefore before the trun box)
+                pos = traf.getBoxIndexByType("tfhd");
+                traf.boxes.splice(pos + 1, 0, tfdt);
+            }
+            // Process tfrf box
+            tfrf = traf.getBoxesByType("tfrf");
+            if (tfrf.length !== 0) {
+                for (i = 0; i < tfrf.length; i += 1) {
+                    processTfrf.call(this, tfrf[i], tfdt, adaptation);
+                }
             }
         },
 
@@ -143,7 +176,7 @@ Mss.dependencies.MssFragmentController = function() {
                 sepiff.boxtype = "senc";
                 sepiff.extended_type = undefined;
 
-                saio = traf.getBoxByType("saio");              
+                saio = traf.getBoxByType("saio");
                 if (saio === null) {
                     // Create Sample Auxiliary Information Offsets Box box (saio)
                     saio = new mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox();
@@ -233,13 +266,13 @@ Mss.dependencies.MssFragmentController = function() {
                 //if sample_duration is not defined, search duration in tfhd box
                 if (trun.samples_table[0].sample_duration === undefined) {
                     sampleDuration = tfhd.default_sample_duration;
-                }else{
+                } else {
                     sampleDuration = trun.samples_table[0].sample_duration;
                 }
                 //we have to duplicate the sample from KeyFrame request to be accepted by decoder.
                 //all the samples have to have a duration equals to request.duration * request.timescale               
                 var trunEntries = Math.floor(fullDuration / sampleDuration);
-                
+
                 for (i = 0; i < (trunEntries - 1); i++) {
                     trun.samples_table.push({
                         sample_duration: trun.samples_table[0].sample_duration,
@@ -249,7 +282,7 @@ Mss.dependencies.MssFragmentController = function() {
                     });
                 }
 
-                if(trun.samples_table[0].sample_duration !== undefined){
+                if (trun.samples_table[0].sample_duration !== undefined) {
                     for (i = 0; i < trun.samples_table.length; i++) {
                         concatDuration += trun.samples_table[i].sample_duration;
                     }
@@ -276,13 +309,13 @@ Mss.dependencies.MssFragmentController = function() {
                     if (saiz === null) {
                         saiz = traf.getBoxByType("saiz");
                     }
-                
+
                     if (saiz.default_sample_info_size === 0) {
                         //as for sepiff box....
                         if (saiz.sample_count > 1) {
                             saiz.sample_info_size = saiz.sample_info_size.slice(0, 1);
                         }
-                        for (i = 0; i < (trunEntries-1); i += 1) {
+                        for (i = 0; i < (trunEntries - 1); i += 1) {
                             saiz.sample_info_size.push(saiz.sample_info_size[0]);
                         }
                     }
@@ -290,7 +323,7 @@ Mss.dependencies.MssFragmentController = function() {
                     sepiff.sample_count = sepiff.entry.length;
                     saiz.sample_count = sepiff.entry.length;
                 }
-                
+
                 //in the same way, we have to duplicate mdat.data.
                 trun.sample_count = trun.samples_table.length;
                 mdat.data = new Uint8Array(mdatData.length * trun.sample_count);
@@ -338,18 +371,29 @@ Mss.dependencies.MssFragmentController = function() {
             return Q.when(null);
         }
 
-        if (request && (request.type === "Media Segment") && manifest && representations && (representations.length > 0)) {
+        if (manifest && representations && (representations.length > 0)) {
             // Get adaptation containing provided representations
             // (Note: here representations is of type Dash.vo.Representation)
             adaptation = manifest.Period_asArray[representations[0].adaptation.period.index].AdaptationSet_asArray[representations[0].adaptation.index];
-            try{
-                result = convertFragment.call(this, result, request, adaptation);
-            }catch(e) {
-                return Q.reject(e);
-            }
+            // if (request && (request.type === "Media Segment") && manifest && representations && (representations.length > 0)) {
+            if (request) {
+                if (request.type === "Media Segment") {
+                    try {
+                        result = convertFragment.call(this, result, request, adaptation);
+                    } catch (e) {
+                        return Q.reject(e);
+                    }
 
-            if (!result) {
-                return Q.when(null);
+                    if (!result) {
+                        return Q.when(null);
+                    }
+                } else if (request.type === "FragmentInfo Segment") {
+                    try {
+                        updateSegmentsList.call(this, result, request, adaptation);
+                    } catch (e) {
+                        return Q.reject(e);
+                    }
+                }
             }
         }
 
