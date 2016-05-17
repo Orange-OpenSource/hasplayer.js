@@ -116,6 +116,32 @@ MediaPlayer.dependencies.StreamController = function() {
             }
         },
 
+        switchStream = function(from, to, seekTo) {
+
+            if (isPeriodSwitchingInProgress || !from || !to || from === to) {
+                return;
+            }
+
+            isPeriodSwitchingInProgress = true;
+
+            from.pause();
+            activeStream = to;
+
+            switchVideoModel.call(this, from.getVideoModel(), to.getVideoModel());
+
+            if (seekTo) {
+                this.seek(from.getVideoModel().getCurrentTime());
+            } else {
+                this.seek(to.getStartTime());
+            }
+
+            this.play();
+            from.resetEventController();
+            activeStream.startEventController();
+            isPeriodSwitchingInProgress = false;
+        },
+
+
         /*
          * Called when current playback positon is changed.
          * Used to determine the time current stream is finished and we should switch to the next stream.
@@ -221,31 +247,6 @@ MediaPlayer.dependencies.StreamController = function() {
             if (element.parentNode) {
                 element.parentNode.removeChild(element);
             }
-        },
-
-        switchStream = function(from, to, seekTo) {
-
-            if (isPeriodSwitchingInProgress || !from || !to || from === to) {
-                return;
-            }
-
-            isPeriodSwitchingInProgress = true;
-
-            from.pause();
-            activeStream = to;
-
-            switchVideoModel.call(this, from.getVideoModel(), to.getVideoModel());
-
-            if (seekTo) {
-                seek(from.getVideoModel().getCurrentTime());
-            } else {
-                seek(to.getStartTime());
-            }
-
-            play();
-            from.resetEventController();
-            activeStream.startEventController();
-            isPeriodSwitchingInProgress = false;
         },
 
         composeStreams = function() {

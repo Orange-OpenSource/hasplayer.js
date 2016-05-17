@@ -1,7 +1,7 @@
 {
     "noarg": true,
     "noempty": true,
-    "latedef": true,
+    "latedef": false,
     "undef": true,
     "unused": true,
     "strict": false,
