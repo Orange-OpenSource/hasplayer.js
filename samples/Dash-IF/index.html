@@ -7,8 +7,7 @@
     <link rel="icon" type="image/png" href="http://dashpg.com/w/2012/09/dashif.ico" />
     <meta name="viewport" content="width=device-width, height=device-height, user-scalable=no">
 
-    <!-- build:style inline main -->
-    <!-- build:css style.css -->
+    <!-- build:inlinecss -->
     <link rel="stylesheet" href="lib/bootstrap/css/bootstrap.min.css">
     <link rel="stylesheet" href="lib/bootstrap/css/bootstrap-glyphicons.inlineimg.css">
     <link rel="stylesheet" href="lib/angular.treeview/css/angular.treeview.inlineimg.css">
@@ -17,9 +16,8 @@
     <link rel="stylesheet" href="lib/jquery.ui/jquery-ui-1.10.3.custom.min.inlineimg.css">
     <link rel="stylesheet" href="lib/jquery.ui.labeledslider/jquery.ui.labeledslider.css">
     <!-- endbuild -->
-    <!-- /build -->
 
-<!-- source -->
+<!-- sources -->
 
 <!-- /app/lib -->
 <script src="../../app/lib/base64.js"></script>
@@ -58,10 +56,12 @@
 <script src="../../app/js/streaming/Context.js"></script>
 <script src="../../app/js/streaming/ContextManager.js"></script>
 <script src="../../app/js/streaming/Debug.js"></script>
+<script src="../../app/js/streaming/DebugController.js"></script>
 <script src="../../app/js/streaming/ErrorHandler.js"></script>
 <script src="../../app/js/streaming/EventBus.js"></script>
 <script src="../../app/js/streaming/EventController.js"></script>
 <script src="../../app/js/streaming/FragmentController.js"></script>
+<script src="../../app/js/streaming/FragmentInfoController.js"></script>
 <script src="../../app/js/streaming/FragmentLoader.js"></script>
 <script src="../../app/js/streaming/FragmentModel.js"></script>
 <script src="../../app/js/streaming/ManifestLoader.js"></script>
@@ -186,13 +186,14 @@
 <script src="../../app/js/mss/MssParser.js"></script>
 <script src="../../app/js/mss/MssHandler.js"></script>
 <script src="../../app/js/mss/MssFragmentController.js"></script>
-<script src="../../app/js/mss/VoWvPssh.js"></script>
 
 <!-- /app/js/utils -->
 <!--script src="../../app/js/utils/analytics.js"></script-->
 <script src="../../app/js/utils/CopyMethods.js"></script>
 <script src="../../app/js/utils/DOMParser.js"></script>
 <script src="../../app/js/utils/ObjectIron.js"></script>
+
+<!-- endsources -->
 
 <!-- metricsagent -->
 <script src="../../../metricsagent.js/src/MetricsAgent.js"></script>
@@ -204,8 +205,6 @@
 <script src="../../../metricsagent.js/src/formatters/CSQoEFormatter.js"></script>
 <script src="../../../metricsagent.js/src/formatters/PrismeFormatter.js"></script>
 <!-- /metricsagent -->
-
-<!-- /source -->
 
 <!-- build:js dashif.js -->
 <script src="lib/video/video-4.6.min.js"></script>
