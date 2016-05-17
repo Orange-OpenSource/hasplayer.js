@@ -88,6 +88,14 @@ MediaPlayer.models.VideoModel = function () {
             element.muted = value;
         },
 
+        getVolume: function () {
+            return element.volume;
+        },
+
+        setVolume: function (value) {
+            element.volume = value;
+        },
+
         getCurrentTime: function () {
             return element.currentTime;
         },

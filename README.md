@@ -51,10 +51,12 @@ See LICENSE file for copyright details.
 
 
 ## Getting Started
+
 Create a video element somewhere in your html. For our purposes, make sure to set the controls property to true.
 ```
 <video id="videoPlayer" controls="true"></video>
 ```
+
 Add hasplayer.js to the end of the body.
 ```
 <body>
@@ -62,15 +64,16 @@ Add hasplayer.js to the end of the body.
   <script src="yourPathToHasplayer/hasplayer.js"></script>
 </body>
 ```
-Now comes the good stuff. We need to create a context. Then from that context we create a media player, initialize it, attach it to our "videoPlayer" and then tell it where to get the video from. We will do this in an anonymous self executing function, that way it will run as soon as the page loads. So, here is how we do it:
+
+Now comes the good stuff. We need to create an MediaPlayer. Then we need to initialize it, attach it to our "videoPlayer" and then tell it where to get the video from. We will do this in an anonymous self executing function, that way it will run as soon as the page loads. So, here is how we do it:
 ``` js
 (function(){
-    var url = "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest";
-    var context = new MediaPlayer.di.Context();
-    var player = new MediaPlayer(context);
-    player.startup();
-    player.attachView(document.querySelector("#videoPlayer"));
-    player.attachSource(url);
+    var stream = {
+        url: "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest"
+    };
+    var mediaPlayer = new MediaPlayer();
+    MediaPlayer.init(document.querySelector("#videoPlayer"));
+    MediaPlayer.load(stream);
 })();
 ```
 
@@ -79,7 +82,7 @@ When it is all done, it should look similar to this:
 <!doctype html>
 <html>
     <head>
-        <title>Hasplayer.js Rocks</title>
+        <title>hasplayer.js Rocks</title>
     </head>
     <body>
         <div>
@@ -88,12 +91,12 @@ When it is all done, it should look similar to this:
         <script src="yourPathToHasplayer/hasplayer.js"></script>
         <script>
             (function(){
-                var url = "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest";
-                var context = new MediaPlayer.di.Context();
-                var player = new MediaPlayer(context);
-                player.startup();
-                player.attachView(document.querySelector("#videoPlayer"));
-                player.attachSource(url);
+                var stream = {
+                    url: "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest"
+                };
+                var mediaPlayer = new MediaPlayer();
+                mediaPlayer.init(document.querySelector("#videoPlayer"));
+                mediaPlayer.load(stream);
             })();
         </script>
     </body>
