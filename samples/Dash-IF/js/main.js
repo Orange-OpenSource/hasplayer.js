@@ -224,11 +224,11 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     };
 
     $scope.selectAudioTrack = function(track){
-        player.setAudioTrack(track);
+        player.selectTrack(MediaPlayer.TRACKS_TYPE.AUDIO,track);
     };
 
     $scope.selectTextTrack = function(track){
-        player.setSubtitleTrack(track);
+        player.selectTrack(MediaPlayer.TRACKS_TYPE.TEXT,track);
     };
 
     function getCribbedMetricsFor(type) {
@@ -357,13 +357,13 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
     function onload(/*e*/) {
         //init audio tracks
-        $scope.audioTracks = player.getAudioTracks();
+        $scope.audioTracks = player.getTracks(MediaPlayer.TRACKS_TYPE.AUDIO);
         if ($scope.audioTracks !== null) {
         $scope.audioData = $scope.audioTracks[0];
         }
         //init subtitles tracks
         player.enableSubtitles(true);
-        $scope.textTracks = player.getSubtitleTracks();
+        $scope.textTracks = player.getTracks(MediaPlayer.TRACKS_TYPE.TEXT);
         if ($scope.textTracks !== null) {
             $scope.textData = $scope.textTracks[0];
         }
@@ -636,8 +636,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     ////////////////////////////////////////
 
     video = document.querySelector(".dash-video-player video");
-    context = new MediaPlayer.di.Context();
-    player = new MediaPlayer(context);
+    player = new MediaPlayer();
 
     $scope.version = player.getVersion();
     $scope.versionFull = player.getVersionFull();
@@ -645,7 +644,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     $scope.buildDate = player.getBuildDate();
 
 
-    player.startup();
+    player.init(video);
     player.addEventListener("error", onError.bind(this));
     player.addEventListener("metricChanged", metricChanged.bind(this));
     player.addEventListener("subtitlesStyleChanged",onSubtitlesStyleChanged.bind(this));
@@ -655,7 +654,6 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     video.addEventListener("fullscreenchange", onFullScreenChange.bind(this));
     video.addEventListener("mozfullscreenchange", onFullScreenChange.bind(this));
     video.addEventListener("webkitfullscreenchange", onFullScreenChange.bind(this));
-    player.attachView(video);
     player.setAutoPlay(true);
     player.getDebug().setLevel(4);
     if (config) {
@@ -921,11 +919,11 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         $scope.textData = null;
 
         // ORANGE: reset ABR controller
-        player.setQualityFor("video", 0);
-        player.setQualityFor("audio", 0);
+        player.setInitialQualityFor("video", 0);
+        player.setInitialQualityFor("audio", 0);
 
         $scope.playbackRate = "x1";
-        player.attachSource($scope.selectedItem.url, $scope.selectedItem.protData);
+        player.load($scope.selectedItem);
     }
 
     $scope.doLoad = function () {
