@@ -1178,11 +1178,11 @@ Dash.dependencies.DashHandler = function() {
             return deferred.promise;
         },
 
-        getIFrameRequest = function(request) {
+        getIFrameRequest = function(/*request*/) {
             //TBD
         },
 
-        getFragmentInfoRequest = function(request) {
+        getFragmentInfoRequest = function(/*request*/) {
             //TBD
         };
 
