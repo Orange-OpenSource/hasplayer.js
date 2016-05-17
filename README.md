@@ -26,17 +26,10 @@ Learn more about versions and roadmap on the [wiki](https://github.com/Orange-Op
 
 ### Build / Run
 
-1. Change directories to the build folder
-    * cd build/
-2. Install all Node Modules defined in package.json 
-    * npm install
-3. Run build task
-    * grunt build
-4. You can also check for other available targter by running:
-    * grunt help
+npm build
 
 The build task can be configured in order to select supported protocol(s) and to integrate or not EME support. For exemple:
-    * grunt build -protocol mss -no-protection ( = mss support only, no EME support)
+    * npm build -protocol mss -no-protection ( = mss support only, no EME support)
 
 ## Demo
 
