@@ -179,6 +179,11 @@ gulp.task('copy-index', ['package-info'], function() {
         .pipe(gulp.dest(config.distDir));
 });
 
+gulp.task('releases-notes', function() {
+    return gulp.src('../RELEASES NOTES.txt')
+        .pipe(gulp.dest(config.distDir));
+});
+
 gulp.task('zip', function() {
     return gulp.src(config.distDir + '/**/*')
         .pipe(zip(pkg.name + '.zip'))
