@@ -1,0 +1,28 @@
+{
+  "tags": {
+    "allowUnknownTags": true
+  },
+  "source": {
+        "include": ["../app/js/streaming/MediaPlayer.js", "../doc/JSDoc/README.md"]
+  },
+  "plugins": ["plugins/markdown"],
+  "templates": {
+    "cleverLinks": false,
+    "monospaceLinks": false,
+    "default": {
+        "outputSourceFiles": true
+    },
+    "systemName"      : "MediaPlayer.js",
+    "footer"          : "",
+    "copyright"       : "Orange Copyright ©",
+    "navType"         : "vertical",
+    "theme"           : "cyborg",
+    "linenums"        : true,
+    "collapseSymbols" : false,
+    "inverseNav"      : true
+  },
+  "markdown": {
+    "parser": "gfm",
+    "hardwrap": true
+  }
+}
