@@ -403,7 +403,6 @@ MediaPlayer.dependencies.StreamController = function() {
                 },
                 function() {
                     self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_STREAM, "No stream/period is provided in the manifest");
-                    self.reset();
                 }
             );
         };
@@ -567,12 +566,14 @@ MediaPlayer.dependencies.StreamController = function() {
             );
         },
 
-        reset: function() {
+        reset: function(reason) {
             var teardownComplete = {},
                 funcs = [],
                 self = this;
 
             this.debug.info("[StreamController] Reset");
+
+            this.metricsModel.addState('video', 'stopped', this.videoModel.getCurrentTime(), reason);
 
             if (!!activeStream) {
                 detachVideoEvents.call(this, activeStream.getVideoModel());
