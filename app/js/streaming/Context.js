@@ -42,6 +42,7 @@ MediaPlayer.di.Context = function () {
             this.system.mapSingleton('capabilities', MediaPlayer.utils.Capabilities);
             this.system.mapSingleton('config', MediaPlayer.utils.Config);
             this.system.mapSingleton('debug', MediaPlayer.utils.Debug);
+            this.system.mapSingleton('debugController', MediaPlayer.utils.DebugController);
             this.system.mapClass('domParser', MediaPlayer.utils.DOMParser);
             this.system.mapSingleton('eventBus', MediaPlayer.utils.EventBus);
             this.system.mapSingleton('textTrackExtensions', MediaPlayer.utils.TextTrackExtensions);
