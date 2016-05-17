@@ -143,20 +143,26 @@ Mss.dependencies.MssParser = function() {
 
             fourCCValue = this.domParser.getAttributeValue(qualityLevel, "FourCC");
 
+            // If FourCC not defined at QualityLevel level, then get it from StreamIndex level
             if (fourCCValue === null) {
-                fourCCValue = this.domParser.getAttributeValue(streamIndex, "FourCC") || "AAC";     // if FourCC not found consider AAC (suppose we are in audio stream)
+                fourCCValue = this.domParser.getAttributeValue(streamIndex, "FourCC");
             }
+
+            // If still not defined (optionnal for audio stream, see https://msdn.microsoft.com/en-us/library/ff728116%28v=vs.95%29.aspx),
+            // then we consider the stream is an audio AAC stream
+            if (fourCCValue === null) {
+                fourCCValue = "AAC";
+            }
+
             // Do not support AACH (TODO)
             if (fourCCValue.indexOf("AACH") >= 0) {
                 return null;
             }
 
             // Get codecs value according to FourCC field
-            // Note: If empty FourCC (optionnal for audio stream, see https://msdn.microsoft.com/en-us/library/ff728116%28v=vs.95%29.aspx),
-            // then we consider the stream is an audio AAC stream
             if (fourCCValue === "H264" || fourCCValue === "AVC1") {
                 representation.codecs = getH264Codec.call(this, qualityLevel);
-            } else if ((fourCCValue.indexOf("AAC") >= 0) || (fourCCValue === "")) {
+            } else if (fourCCValue.indexOf("AAC") >= 0) {
                 representation.codecs = getAACCodec.call(this, qualityLevel, fourCCValue);
                 representation.audioSamplingRate = parseInt(this.domParser.getAttributeValue(qualityLevel, "SamplingRate"), 10);
                 representation.audioChannels = parseInt(this.domParser.getAttributeValue(qualityLevel, "Channels"), 10);
