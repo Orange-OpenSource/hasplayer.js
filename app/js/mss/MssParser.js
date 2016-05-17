@@ -416,17 +416,7 @@ Mss.dependencies.MssParser = function() {
             return contentProtection;
         },
 
-        /*var createCENCContentProtection = function (protectionHeader) {
-
-        var contentProtection = {};
-
-        contentProtection.schemeIdUri = "urn:mpeg:dash:mp4protection:2011";
-        contentProtection.value = "cenc";
-
-        return contentProtection;
-    };*/
-
-        createWidevineContentProtection = function(protectionHeader) {
+        createWidevineContentProtection = function(/*protectionHeader*/) {
 
             var contentProtection = {},
                 keySystem = this.system.getObject("ksWidevine");
@@ -490,13 +480,10 @@ Mss.dependencies.MssParser = function() {
                 contentProtection["cenc:default_KID"] = KID;
                 contentProtections.push(contentProtection);
 
-                // For chrome, create ContentProtection for Widevine as a CENC protection
-                if (navigator.userAgent.indexOf("Chrome") >= 0) {
-                    //contentProtections.push(createCENCContentProtection(manifest.Protection.ProtectionHeader));
-                    contentProtection = createWidevineContentProtection.call(this, protectionHeader);
-                    contentProtection["cenc:default_KID"] = KID;
-                    contentProtections.push(contentProtection);
-                }
+                // Create ContentProtection for Widevine (as a CENC protection)
+                contentProtection = createWidevineContentProtection.call(this, protectionHeader);
+                contentProtection["cenc:default_KID"] = KID;
+                contentProtections.push(contentProtection);
 
                 mpd.ContentProtection = (contentProtections.length > 1) ? contentProtections : contentProtections[0];
                 mpd.ContentProtection_asArray = contentProtections;
@@ -564,7 +551,6 @@ Mss.dependencies.MssParser = function() {
     return {
         debug: undefined,
         system: undefined,
-        errHandler: undefined,
         domParser: undefined,
         metricsModel: undefined,
 
