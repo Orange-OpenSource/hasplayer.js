@@ -21,15 +21,15 @@ Learn more about versions and roadmap on the [wiki](https://github.com/Orange-Op
 ### Install Dependencies
 
 1. [install nodejs](http://nodejs.org/)
-2. [install grunt](http://gruntjs.com/getting-started)
-    * npm install -g grunt-cli
+2. [install gulp](https://github.com/gulpjs/gulp/blob/master/docs/getting-started.md)
+    * npm install -g gulp
 
 ### Build / Run
 
 npm build
 
 The build task can be configured in order to select supported protocol(s) and to integrate or not EME support. For exemple:
-    * npm build -protocol mss -no-protection ( = mss support only, no EME support)
+    * npm build -hls=false -protection=false (= no hls support, no EME support)
 
 ## Demo
 
