@@ -1,0 +1,105 @@
+{
+    "items": [
+        {
+            "type":"HLS",
+            "name":"Back to the Mac",
+            "url":"http://qthttp.apple.com.edgesuite.net/1010qwoeiuryfg/sl.m3u8",
+            "browsers":"cdsbi"
+        },
+        {
+            "type": "MSS",
+            "name": "VOD - SuperSpeedway",
+            "url": "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "MSS",
+            "name": "VOD - SuperSpeedway (PlayReady)",
+            "url": "http://playready.directtaps.net/smoothstreaming/SSWSS720H264PR/SuperSpeedway_720.ism/Manifest",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "MSS",
+            "name": "VOD - Elephants Dream (multi-audio/text)",
+            "url": "http://streams.smooth.vertigo.com/elephantsdream/Elephants_Dream_1024-h264-st-aac.ism/manifest",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "MSS",
+            "name": "LIVE - Big Buck Bunny",
+            "url": "http://2is7server1.rd.francetelecom.com/C4/C4-51_BBB.isml/Manifest",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "DASH",
+            "name": "Envivio",
+            "url": "http://dash.edgesuite.net/envivio/dashpr/clear/Manifest.mpd",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "DASH",
+            "name": "Segment List",
+            "url": "http://www.digitalprimates.net/dash/streams/gpac/mp4-main-multi-mpd-AV-NBS.mpd",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "DASH",
+            "name": "Segment Template",
+            "url": "http://www.digitalprimates.net/dash/streams/mp4-live-template/mp4-live-mpd-AV-BS.mpd",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "DASH",
+            "name": "Unified Streaming - Timeline",
+            "url": "http://demo.unified-streaming.com/video/ateam/ateam.ism/ateam.mpd",
+            "browsers": "cdsbi"
+        },
+        {
+            "name": "Unified Streaming Live",
+             "url": "http://live.unified-streaming.com/loop/loop.isml/loop.mpd?format=mp4&session_id=25020",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "DASH",
+            "name": "Microsoft #1",
+            "url": "http://wams.edgesuite.net/media/SintelTrailer_MP4_from_WAME/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "DASH",
+            "name": "Microsoft #2",
+            "url": "http://wams.edgesuite.net/media/SintelTrailer_Smooth_from_WAME/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "DASH",
+            "name": "Microsoft #3",
+            "url": "http://wams.edgesuite.net/media/SintelTrailer_Smooth_from_WAME_720p_Main_Profile/sintel_trailer-720p.ism/manifest(format=mpd-time-csf)",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "DASH",
+            "name": "Microsoft #4",
+            "url": "http://wams.edgesuite.net/media/MPTExpressionData01/ElephantsDream_1080p24_IYUV_2ch.ism/manifest(format=mpd-time-csf)",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "DASH",
+            "name": "Microsoft #5",
+            "url": "http://wams.edgesuite.net/media/MPTExpressionData02/BigBuckBunny_1080p24_IYUV_2ch.ism/manifest(format=mpd-time-csf)",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "DASH",
+            "name": "Microsoft Cenc #1",
+            "url": "http://wams.edgesuite.net/media/SintelTrailer_Smooth_from_WAME_720p_Main_Profile_CENC/CENC/sintel_trailer-720p.ism/manifest(format=mpd-time-csf)",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "DASH",
+            "name": "Microsoft Cenc #4",
+            "url": "http://wams.edgesuite.net/media/SintelTrailer_Smooth_from_WAME_CENC/CENC/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)",
+            "browsers": "cdsbi"
+        }
+    ]
+}
