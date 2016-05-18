@@ -37,5 +37,9 @@
         "mpegts",
         "Custom",
         "ActiveXObject",
+        "Promise",
+        "define",
+        "fingerprint_browser",
+        "fingerprint_os",
         "DEBUG"]
 }
