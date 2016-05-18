@@ -51,15 +51,15 @@ option.init(process.argv, options);
 
 // create the final globs for sources according to options
 var sourcesGlob = sources.default;
-if (gulp.option('protection')) {
+if (gulp.option('protection', true)) {
     sourcesGlob = sourcesGlob.concat(sources.protection);
 }
 
-if (gulp.option('hls')) {
+if (gulp.option('hls', true)) {
     sourcesGlob = sourcesGlob.concat(sources.hls);
 }
 
-if (gulp.option('mss')) {
+if (gulp.option('mss', true)) {
     sourcesGlob = sourcesGlob.concat(sources.mss);
 }
 
