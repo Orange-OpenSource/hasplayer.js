@@ -357,31 +357,17 @@ MediaPlayer.dependencies.StreamController = function() {
         // ORANGE: create function to handle audiotracks
         updateAudioTracks = function() {
             if (activeStream) {
-                var self = this;
-                self.manifestExt.getAudioDatas(self.manifestModel.getValue(), activeStream.getPeriodIndex()).then(function(audiosDatas) {
-                    audioTracks = audiosDatas;
-                    // fire event to notify that audiotracks have changed
-
-                    self.system.notify("audioTracksUpdated");
-                }, function() {
-                    audioTracks = null;
-                    self.system.notify("audioTracksUpdated");
-                });
+                audioTracks = this.manifestExt.getAudioDatas(this.manifestModel.getValue(), activeStream.getPeriodIndex());
+                // fire event to notify that audiotracks have changed
+                this.system.notify("audioTracksUpdated");
             }
         },
 
         updateSubtitleTracks = function() {
             if (activeStream) {
-                var self = this;
-                self.manifestExt.getTextDatas(self.manifestModel.getValue(), activeStream.getPeriodIndex()).then(function(textDatas) {
-                    subtitleTracks = textDatas;
-                    // fire event to notify that subtitletracks have changed
-                    self.system.notify("subtitleTracksUpdated");
-                }, function() {
-                    subtitleTracks = null;
-                    // fire event to notify that subtitletracks have changed
-                    self.system.notify("subtitleTracksUpdated");
-                });
+                subtitleTracks = this.manifestExt.getTextDatas(this.manifestModel.getValue(), activeStream.getPeriodIndex());
+                // fire event to notify that subtitletracks have changed
+                this.system.notify("subtitleTracksUpdated");
             }
         },
 
