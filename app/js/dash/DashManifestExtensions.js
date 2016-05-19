@@ -752,25 +752,21 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             return Q.when(periods);
         }
 
-        self.getCheckTime(manifest, periods[0]).then(
-            function(checkTime) {
-                mpd.checkTime = checkTime;
+        mpd.checkTime = self.getCheckTime(manifest, periods[0]);
 
-                // The last Period extends until the end of the Media Presentation.
-                // The difference between the PeriodStart time of the last Period
-                // and the mpd duration
-                if (vo1 !== null && isNaN(vo1.duration)) {
-                    self.getEndTimeForLastPeriod(mpd).then(
-                        function(periodEndTime) {
-                            vo1.duration = periodEndTime - vo1.start;
-                            deferred.resolve(periods);
-                        }
-                    );
-                } else {
+        // The last Period extends until the end of the Media Presentation.
+        // The difference between the PeriodStart time of the last Period
+        // and the mpd duration
+        if (vo1 !== null && isNaN(vo1.duration)) {
+            self.getEndTimeForLastPeriod(mpd).then(
+                function(periodEndTime) {
+                    vo1.duration = periodEndTime - vo1.start;
                     deferred.resolve(periods);
                 }
-            }
-        );
+            );
+        } else {
+            deferred.resolve(periods);
+        }
 
         return Q.when(deferred.promise);
     },
@@ -816,31 +812,20 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         // either if the client obtains an updated MPD or the client verifies that the MPD has not been updated since the previous fetching.
         var fetchTime = this.timelineConverter.calcPresentationTimeFromWallTime(manifest.mpdLoadedTime, period);
 
-        return Q.when(fetchTime);
+        return fetchTime;
     },
 
     getCheckTime: function(manifest, period) {
-        var self = this,
-            deferred = Q.defer(),
-            checkTime = NaN;
+        var checkTime = NaN;
 
         // If the MPD@minimumUpdatePeriod attribute in the client is provided, then the check time is defined as the
         // sum of the fetch time of this operating MPD and the value of this attribute,
         // i.e. CheckTime = FetchTime + MPD@minimumUpdatePeriod.
         if (manifest.hasOwnProperty("minimumUpdatePeriod")) {
-            self.getFetchTime(manifest, period).then(
-                function(fetchTime) {
-                    checkTime = fetchTime + manifest.minimumUpdatePeriod;
-                    deferred.resolve(checkTime);
-                }
-            );
-        } else {
-            // TODO If the MPD@minimumUpdatePeriod attribute in the client is not provided, external means are used to
-            // determine CheckTime, such as a priori knowledge, or HTTP cache headers, etc.
-            deferred.resolve(checkTime);
+            checkTime = this.getFetchTime(manifest, period) + manifest.minimumUpdatePeriod;
         }
 
-        return deferred.promise;
+        return checkTime;
     },
 
     getEndTimeForLastPeriod: function(mpd) {
@@ -973,14 +958,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
     },
 
     getRepresentationBandwidth: function(adaptation, index) {
-        var bandwidth,
-            rep;
-
-        rep = this.getRepresentationFor(index, adaptation);
-
-        bandwidth = this.getBandwidth(rep);
-
-        return bandwidth;
+        return this.getBandwidth(this.getRepresentationFor(index, adaptation));
     }
 
 };
