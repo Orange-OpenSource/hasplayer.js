@@ -14,7 +14,7 @@
 
 // Define Math.sign method in case it is not defined (like in IE11)
 if (!Math.sign) {
-    Math.sign = function (value) {
+    Math.sign = function(value) {
         "use strict";
         return (value < 0) ? -1 : ((value === 0) ? 0 : 1);
     };
@@ -185,7 +185,7 @@ MediaPlayer.dependencies.Stream = function() {
                     if (!!fragmentInfoAudioController) {
                         funcs.push(fragmentInfoAudioController.reset(errored));
                     }
-                    
+
                     if (!!textController) {
                         funcs.push(textController.reset(errored));
                     }
@@ -255,18 +255,20 @@ MediaPlayer.dependencies.Stream = function() {
             }
 
             if (!this.capabilities.supportsCodec(this.videoModel.getElement(), videoCodec)) {
-                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Video codec is not supported", { codec: videoCodec });
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Video codec is not supported", {
+                    codec: videoCodec
+                });
                 initializedeferred.reject();
                 return initializedeferred.promise;
             }
 
             contentProtection = this.manifestExt.getContentProtectionData(data);
             if (mediaSource) {
-                try{
+                try {
                     buffer = this.sourceBufferExt.createSourceBuffer_(mediaSource, videoCodec);
-                }catch(ex){
+                } catch (ex) {
                     this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create video source buffer",
-                                    new MediaPlayer.vo.Error(ex.code, ex.name, ex.message));
+                        new MediaPlayer.vo.Error(ex.code, ex.name, ex.message));
                     initializedeferred.reject();
                     return initializedeferred.promise;
                 }
@@ -274,7 +276,7 @@ MediaPlayer.dependencies.Stream = function() {
                 // If MediaSource is not defined then raise DOMException 'InvalidAccessError'
                 // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer)                
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create video source buffer",
-                                    new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS, "InvalidAccessError", "MediaSource undefined"));
+                    new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS, "InvalidAccessError", "MediaSource undefined"));
                 initializedeferred.reject();
                 return initializedeferred.promise;
             }
@@ -283,7 +285,7 @@ MediaPlayer.dependencies.Stream = function() {
             videoController.initialize("video", periodInfo, data, buffer, this.fragmentController, mediaSource, eventController);
 
             data = this.manifestExt.getSpecificAudioData(manifest, periodInfo.index, defaultAudioLang);
-            
+
             if (data === null) {
                 this.debug.log("[Stream] No audio streams.");
                 this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "No audio data in manifest");
@@ -297,18 +299,20 @@ MediaPlayer.dependencies.Stream = function() {
                 }
 
                 if (!this.capabilities.supportsCodec(this.videoModel.getElement(), audioCodec)) {
-                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Audio codec is not supported", { codec: audioCodec });
+                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Audio codec is not supported", {
+                        codec: audioCodec
+                    });
                     initializedeferred.resolve();
                     return initializedeferred.promise;
                 }
-     
+
                 if (mediaSource) {
                     buffer = this.sourceBufferExt.createSourceBuffer_(mediaSource, audioCodec);
                 } else {
                     // If MediaSource is not defined then raise DOMException 'InvalidAccessError'
                     // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer)
                     this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create audio source buffer",
-                                        new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS, "InvalidAccessError", "MediaSource undefined"));
+                        new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS, "InvalidAccessError", "MediaSource undefined"));
                     initializedeferred.resolve();
                     return initializedeferred.promise;
                 }
@@ -321,7 +325,7 @@ MediaPlayer.dependencies.Stream = function() {
 
             if (data === null) {
                 this.debug.log("[Stream] No text tracks.");
-            }else {
+            } else {
 
                 textTrackIndex = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
                 var mimeType = this.manifestExt.getMimeType(data);
@@ -331,14 +335,14 @@ MediaPlayer.dependencies.Stream = function() {
                     initializedeferred.resolve();
                     return initializedeferred.promise;
                 }
-     
+
                 if (mediaSource) {
                     buffer = this.sourceBufferExt.createSourceBuffer_(mediaSource, mimeType);
                 } else {
                     // If MediaSource is not defined then raise DOMException 'InvalidAccessError'
                     // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer)
                     this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create audio source buffer",
-                                        new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS, "InvalidAccessError", "MediaSource undefined"));
+                        new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS, "InvalidAccessError", "MediaSource undefined"));
                     initializedeferred.resolve();
                     return initializedeferred.promise;
                 }
@@ -351,7 +355,7 @@ MediaPlayer.dependencies.Stream = function() {
             }
 
             if (eventController) {
-                eventController.addInlineEvents(this.manifestExt.getEventsForPeriod_(manifest, periodInfo));
+                eventController.addInlineEvents(this.manifestExt.getEventsForPeriod(manifest, periodInfo));
             }
 
             if (protectionController) {
@@ -375,18 +379,18 @@ MediaPlayer.dependencies.Stream = function() {
             initialized = true;
         },
 
-        startFragmentInfoControllers = function () {
+        startFragmentInfoControllers = function() {
             if (fragmentInfoVideoController === null && videoController) {
                 fragmentInfoVideoController = this.system.getObject("fragmentInfoController");
                 fragmentInfoVideoController.initialize("video", this.fragmentController, videoController);
             }
 
-            if (fragmentInfoAudioController === null && audioController){
+            if (fragmentInfoAudioController === null && audioController) {
                 fragmentInfoAudioController = this.system.getObject("fragmentInfoController");
                 fragmentInfoAudioController.initialize("audio", this.fragmentController, audioController);
             }
 
-            if (fragmentInfoTextController === null && textController){
+            if (fragmentInfoTextController === null && textController) {
                 fragmentInfoTextController = this.system.getObject("fragmentInfoController");
                 fragmentInfoTextController.initialize("text", this.fragmentController, textController);
             }
@@ -511,7 +515,7 @@ MediaPlayer.dependencies.Stream = function() {
                 ratio = 0.9,
                 seekValue,
                 delay,
-                _seek = function (delay, seekValue) {
+                _seek = function(delay, seekValue) {
                     if (self.videoModel.getCurrentTime() === self.getStartTime() || tmEndDetected) {
                         self.debug.log("[Stream] Trick mode (x" + tmSpeed + "): stop");
                         return;
@@ -525,7 +529,7 @@ MediaPlayer.dependencies.Stream = function() {
                     if (delay > 0) {
                         self.debug.log("[Stream] Trick mode (x" + tmSpeed + "): wait " + delay.toFixed(3) + " s");
                     }
-                    tmSeekTimeout = setTimeout(function () {
+                    tmSeekTimeout = setTimeout(function() {
                         tmSeekTime = new Date().getTime() / 1000;
                         self.debug.log("[Stream] Trick mode (x" + tmSpeed + "): seek time = " + seekValue.toFixed(3));
                         tmSeekValue = seekValue;
@@ -563,8 +567,8 @@ MediaPlayer.dependencies.Stream = function() {
                     delay = 0;
                 } else if (speed < (Math.abs(tmSpeed) * ratio)) {
                     // Measured speed < target speed => increase seek step
-                    var speedRatio = Math.abs(tmSpeed/speed);
-                    tmSeekStep *= Math.round(speedRatio)+Math.round(speedRatio%tmMinSeekStep);
+                    var speedRatio = Math.abs(tmSpeed / speed);
+                    tmSeekStep *= Math.round(speedRatio) + Math.round(speedRatio % tmMinSeekStep);
                     self.debug.info("[Stream] Trick mode (x" + tmSpeed + "): seek step = " + tmSeekStep);
                     seekValue = currentVideoTime + (tmSeekStep * Math.sign(tmSpeed));
                     delay = 0;
@@ -717,7 +721,7 @@ MediaPlayer.dependencies.Stream = function() {
         doLoad = function(manifestResult) {
 
             var self = this;
- 
+
             //self.debug.log("Stream start loading.");
 
             manifest = manifestResult;
@@ -846,7 +850,7 @@ MediaPlayer.dependencies.Stream = function() {
             play.call(this);
         },
 
-        selectTrack = function (controller, track, currentIndex) {
+        selectTrack = function(controller, track, currentIndex) {
             var index = -1;
 
             if (!controller) {
@@ -877,14 +881,11 @@ MediaPlayer.dependencies.Stream = function() {
         updateData = function(updatedPeriodInfo) {
             var self = this,
                 videoData,
-                deferredVideoData,
-                deferredAudioData,
-                deferredTextData,
+                data,
                 deferred = Q.defer(),
                 deferredVideoUpdate = Q.defer(),
                 deferredAudioUpdate = Q.defer(),
-                deferredTextUpdate = Q.defer(),
-                deferredEventUpdate = Q.defer();
+                deferredTextUpdate = Q.defer();
 
             manifest = self.manifestModel.getValue();
             periodInfo = updatedPeriodInfo;
@@ -894,52 +895,33 @@ MediaPlayer.dependencies.Stream = function() {
                 videoData = videoController.getData();
 
                 if (!!videoData && videoData.hasOwnProperty("id")) {
-                    deferredVideoData = self.manifestExt.getDataForId(videoData.id, manifest, periodInfo.index);
+                    data = self.manifestExt.getDataForId(videoData.id, manifest, periodInfo.index);
                 } else {
-                    deferredVideoData = self.manifestExt.getDataForIndex(videoTrackIndex, manifest, periodInfo.index);
+                    data = self.manifestExt.getDataForIndex(videoTrackIndex, manifest, periodInfo.index);
                 }
-
-                deferredVideoData.then(
-                    function(data) {
-                        videoController.updateData(data, periodInfo);
-                        deferredVideoUpdate.resolve();
-                    }
-                );
+                videoController.updateData(data, periodInfo);
+                deferredVideoUpdate.resolve();
             } else {
                 deferredVideoUpdate.resolve();
             }
 
             if (audioController) {
-                deferredAudioData = self.manifestExt.getDataForIndex(audioTrackIndex, manifest, periodInfo.index);
-
-                deferredAudioData.then(
-                    function(data) {
-                        audioController.updateData(data, periodInfo);
-                        deferredAudioUpdate.resolve();
-                    }
-                );
+                data = self.manifestExt.getDataForIndex(audioTrackIndex, manifest, periodInfo.index);
+                audioController.updateData(data, periodInfo);
+                deferredAudioUpdate.resolve();
             } else {
                 deferredAudioUpdate.resolve();
             }
 
             if (textController) {
-                deferredTextData = self.manifestExt.getDataForIndex(textTrackIndex, manifest, periodInfo.index);
-
-                deferredTextData.then(
-                    function(data) {
-                        textController.updateData(data, periodInfo);
-                        deferredTextUpdate.resolve();
-                    }
-                );
+                data = self.manifestExt.getDataForIndex(textTrackIndex, manifest, periodInfo.index);
+                textController.updateData(data, periodInfo);
+                deferredTextUpdate.resolve();
             }
 
             if (eventController) {
-                self.manifestExt.getEventsForPeriod(manifest, periodInfo).then(
-                    function(events) {
-                        eventController.addInlineEvents(events);
-                        deferredEventUpdate.resolve();
-                    }
-                );
+                var events = self.manifestExt.getEventsForPeriod(manifest, periodInfo);
+                eventController.addInlineEvents(events);
             }
 
             Q.when(deferredVideoUpdate.promise, deferredAudioUpdate.promise, deferredTextUpdate.promise).then(
@@ -1023,7 +1005,7 @@ MediaPlayer.dependencies.Stream = function() {
         errHandler: undefined,
         timelineConverter: undefined,
         scheduleWhilePaused: undefined,
-        textTrackExtensions:undefined,
+        textTrackExtensions: undefined,
         // ORANGE : add metricsModel
         metricsModel: undefined,
         eventBus: undefined,
@@ -1092,7 +1074,7 @@ MediaPlayer.dependencies.Stream = function() {
             var manifest = this.manifestModel.getValue();
 
             if (audioController) {
-                return this.manifestExt.getDataForIndex_(audioTrackIndex, manifest, periodInfo.index);
+                return this.manifestExt.getDataForIndex(audioTrackIndex, manifest, periodInfo.index);
             }
 
             return undefined;
@@ -1106,7 +1088,7 @@ MediaPlayer.dependencies.Stream = function() {
             var manifest = this.manifestModel.getValue();
 
             if (textController && subtitlesEnabled) {
-                return this.manifestExt.getDataForIndex_(textTrackIndex, manifest, periodInfo.index);
+                return this.manifestExt.getDataForIndex(textTrackIndex, manifest, periodInfo.index);
             }
 
             return undefined;
@@ -1232,7 +1214,7 @@ MediaPlayer.dependencies.Stream = function() {
         resetEventController: function() {
             eventController.reset();
         },
-        
+
         enableSubtitles: function(enabled) {
 
             if (enabled !== subtitlesEnabled) {
@@ -1249,7 +1231,7 @@ MediaPlayer.dependencies.Stream = function() {
                     } else {
                         // hide subtitle here
                         var track = this.textTrackExtensions.getCurrentTextTrack(this.videoModel.getElement());
-                        if(track){
+                        if (track) {
                             track.mode = "hidden";
                         }
                         textController.stop();
@@ -1267,7 +1249,7 @@ MediaPlayer.dependencies.Stream = function() {
                 restoreMute = function() {
                     if (self.videoModel.getCurrentTime() > (currentVideoTime + 1)) {
                         self.videoModel.unlisten("timeupdate", restoreMute);
-                        self.debug.info("[Stream] Set mute: "+muteState+", the mute state before using trick mode.");
+                        self.debug.info("[Stream] Set mute: " + muteState + ", the mute state before using trick mode.");
                         self.videoModel.setMute(muteState);
                     }
                 };
@@ -1314,8 +1296,7 @@ MediaPlayer.dependencies.Stream = function() {
                 } else {
                     if (tmState === "Running") {
                         tmState = "Changed";
-                    }
-                    else if (tmState === "Stopped") {
+                    } else if (tmState === "Stopped") {
                         tmEndDetected = false;
                         tmState = "Running";
                         tmSeekStep = tmMinSeekStep = videoController.getSegmentDuration();

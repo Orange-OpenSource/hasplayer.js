@@ -35,10 +35,10 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         adaptation.type = null;
 
         col = adaptation.ContentComponent_asArray;
-        
+
         if (col) {
             // Check contentType attribute at adaptation level
-            for (i = 0; i < adaptation.ContentComponent_asArray.length && !found; i ++) {
+            for (i = 0; i < adaptation.ContentComponent_asArray.length && !found; i++) {
                 if (adaptation.ContentComponent_asArray[i].contentType === type) {
                     adaptation.type = type;
                     found = true;
@@ -201,7 +201,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             result = false,
             found = false;
 
-        if(adaptation){
+        if (adaptation) {
             if (col) {
                 for (i = 0, len = col.length; i < len; i += 1) {
                     if (col[i].contentType === "text") {
@@ -232,7 +232,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                 }
             }
 
-            if(found){
+            if (found) {
                 adaptation.type = "text";
             }
         }
@@ -271,21 +271,14 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
         for (i = 0, len = adaptations.length; i < len; i += 1) {
             if (adaptations[i].hasOwnProperty("id") && adaptations[i].id === id) {
-                return Q.when(adaptations[i]);
+                return adaptations[i];
             }
         }
 
-        return Q.when(null);
+        return null;
     },
 
     getDataForIndex: function(index, manifest, periodIndex) {
-        "use strict";
-        var adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
-
-        return Q.when(adaptations[index]);
-    },
-
-    getDataForIndex_: function(index, manifest, periodIndex) {
         "use strict";
         var adaptations;
 
@@ -390,7 +383,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             }
         }
 
-        return datas;    
+        return datas;
     },
 
     getAudioDatas: function(manifest, periodIndex) {
@@ -407,7 +400,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
         adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
         for (i = 0; i < adaptations.length; i += 1) {
-            if(this.getIsAudio_(adaptations[i])){
+            if (this.getIsAudio_(adaptations[i])) {
                 datas.push(adaptations[i]);
             }
         }
@@ -424,7 +417,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         if (!manifest || periodIndex < 0) {
             return null;
         }
-      
+
         datas = this.getAudioDatas(manifest, periodIndex);
         if (datas.length === 0) {
             return null;
@@ -432,7 +425,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
         for (i = 0; i < datas.length; i += 1) {
             if (datas[i].lang === language) {
-               return this.processAdaptation(datas[i]);
+                return this.processAdaptation(datas[i]);
             }
         }
 
@@ -451,7 +444,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
         datas = this.getTextDatas(manifest, periodIndex);
         if (datas.length === 0) {
-                return null;
+            return null;
         }
 
         for (i = 0; i < datas.length; i += 1) {
@@ -569,15 +562,6 @@ Dash.dependencies.DashManifestExtensions.prototype = {
     },
 
     getRepresentationCount: function(adaptation) {
-        "use strict";
-        if (adaptation) {
-            return Q.when(adaptation.Representation_asArray.length);
-        }
-
-        return Q.when(null);
-    },
-
-    getRepresentationCount_: function(adaptation) {
         "use strict";
         if (adaptation) {
             return adaptation.Representation_asArray.length;
@@ -878,50 +862,6 @@ Dash.dependencies.DashManifestExtensions.prototype = {
     },
 
     getEventsForPeriod: function(manifest, period) {
-        var periodArray = manifest === null ? null : manifest.Period_asArray,
-            eventStreams = periodArray === null ? null : periodArray[period.index].EventStream_asArray,
-            events = [];
-
-        if (eventStreams) {
-            for (var i = 0; i < eventStreams.length; i += 1) {
-                var eventStream = new Dash.vo.EventStream();
-                eventStream.period = period;
-                eventStream.timescale = 1;
-
-                if (eventStreams[i].hasOwnProperty("schemeIdUri")) {
-                    eventStream.schemeIdUri = eventStreams[i].schemeIdUri;
-                } else {
-                    throw "Invalid EventStream. SchemeIdUri has to be set";
-                }
-                if (eventStreams[i].hasOwnProperty("timescale")) {
-                    eventStream.timescale = eventStreams[i].timescale;
-                }
-                if (eventStreams[i].hasOwnProperty("value")) {
-                    eventStream.value = eventStreams[i].value;
-                }
-                for (var j = 0; j < eventStreams[i].Event_asArray.length; j += 1) {
-                    var event = new Dash.vo.Event();
-                    event.presentationTime = 0;
-                    event.eventStream = eventStream;
-
-                    if (eventStreams[i].Event_asArray[j].hasOwnProperty("presentationTime")) {
-                        event.presentationTime = eventStreams[i].Event_asArray[j].presentationTime;
-                    }
-                    if (eventStreams[i].Event_asArray[j].hasOwnProperty("duration")) {
-                        event.duration = eventStreams[i].Event_asArray[j].duration;
-                    }
-                    if (eventStreams[i].Event_asArray[j].hasOwnProperty("id")) {
-                        event.id = eventStreams[i].Event_asArray[j].id;
-                    }
-                    events.push(event);
-                }
-            }
-        }
-
-        return Q.when(events);
-    },
-
-        getEventsForPeriod_: function(manifest, period) {
         var periodArray = manifest === null ? null : manifest.Period_asArray,
             eventStreams = periodArray === null ? null : periodArray[period.index].EventStream_asArray,
             events = [];

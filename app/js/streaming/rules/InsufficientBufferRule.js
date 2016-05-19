@@ -78,22 +78,21 @@ MediaPlayer.rules.InsufficientBufferRule = function() {
                                 self.isStartBuffering[data.type] = false;
                             }
 
-                            self.manifestExt.getRepresentationCount(data).then(
-                                function(max) {
-                                    max -= 1; // 0 based
+                            var max = self.manifestExt.getRepresentationCount(data);
 
-                                    if (bufferLevel.level <= switchLowerBufferTime) {
-                                        q = 0;
-                                        p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
-                                    } else if (bufferLevel.level <= switchDownBufferTime) {
-                                        q = (current > 0) ? (current - 1) : 0;
-                                        p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
-                                    }
+                            max -= 1; // 0 based
 
-                                    self.debug.info("[InsufficientBufferRule][" + data.type + "] SwitchRequest: q=" + q + ", p=" + p);
-                                    deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
-                                }
-                            );
+                            if (bufferLevel.level <= switchLowerBufferTime) {
+                                q = 0;
+                                p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
+                            } else if (bufferLevel.level <= switchDownBufferTime) {
+                                q = (current > 0) ? (current - 1) : 0;
+                                p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
+                            }
+
+                            self.debug.info("[InsufficientBufferRule][" + data.type + "] SwitchRequest: q=" + q + ", p=" + p);
+                            deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
+
                         }
                     } else {
                         self.debug.log("[InsufficientBufferRule][" + data.type + "] Manifest not present yet");
