@@ -38,16 +38,14 @@ MediaPlayer.dependencies.ManifestUpdater = function() {
         update = function() {
             var self = this,
                 manifest = self.manifestModel.getValue(),
-                timeSinceLastUpdate;
+                timeSinceLastUpdate, 
+                t;
 
             if (manifest !== undefined && manifest !== null) {
-                self.manifestExt.getRefreshDelay(manifest).then(
-                    function(t) {
-                        timeSinceLastUpdate = (new Date().getTime() - manifest.mpdLoadedTime.getTime()) / 1000;
-                        refreshDelay = Math.max(t - timeSinceLastUpdate, 0);
-                        start.call(self);
-                    }
-                );
+                t = self.manifestExt.getRefreshDelay(manifest);
+                timeSinceLastUpdate = (new Date().getTime() - manifest.mpdLoadedTime.getTime()) / 1000;
+                refreshDelay = Math.max(t - timeSinceLastUpdate, 0);
+                start.call(self);
             }
         },
 

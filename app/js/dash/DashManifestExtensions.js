@@ -558,7 +558,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             delay = Math.max(parseFloat(manifest.minimumUpdatePeriod), minDelay);
         }
 
-        return Q.when(delay);
+        return delay;
     },
 
     getRepresentationCount: function(adaptation) {
