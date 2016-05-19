@@ -516,22 +516,13 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         initializePlayback = function() {
-            var self = this,
-                initialize = Q.defer();
+            var duration;
 
-            self.manifestExt.getDuration(self.manifestModel.getValue(), periodInfo).then(
-                function(duration) {
-                    self.debug.log("[Stream] Setting duration: " + duration);
-                    return self.mediaSourceExt.setDuration(mediaSource, duration);
-                }
-            ).then(
-                function() {
-                    initialized = true;
-                    initialize.resolve(true);
-                }
-            );
+            duration = this.manifestExt.getDuration(this.manifestModel.getValue(), periodInfo);
+            this.debug.log("[Stream] Setting duration: " + duration);
+            this.mediaSourceExt.setDuration(mediaSource, duration);
 
-            return initialize.promise;
+            initialized = true;
         },
 
         startFragmentInfoControllers = function () {
@@ -905,10 +896,7 @@ MediaPlayer.dependencies.Stream = function() {
             ).then(
                 function( /*result*/ ) {
                     self.debug.log("[Stream] Initialize playback");
-                    return initializePlayback.call(self);
-                }
-            ).then(
-                function( /*done*/ ) {
+                    initializePlayback.call(self);
                     self.debug.log("[Stream] Playback initialized");
                 }
             );
