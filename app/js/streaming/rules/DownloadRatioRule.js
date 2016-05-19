@@ -105,41 +105,39 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                     function(count) {
                         self.manifestExt.getRepresentationFor(current, data).then(
                             function(currentRepresentation) {
-                                self.manifestExt.getBandwidth(currentRepresentation).then(
-                                    function(currentBandwidth) {
-                                        for (i = 0; i < count; i += 1) {
-                                            funcs.push(self.manifestExt.getRepresentationBandwidth(data, i));
-                                        }
-                                        Q.all(funcs).then(
-                                            function(bandwidths) {
-                                                if (calculatedBandwidth <= currentBandwidth) {
-                                                    for (i = current - 1; i > 0; i -= 1) {
-                                                        if (bandwidths[i] <= calculatedBandwidth) {
-                                                            break;
-                                                        }
-                                                    }
-                                                    q = i;
-                                                    p = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
-
-                                                    self.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count-1) + " (" + bandwidths[q] + "), p=" + p);
-                                                    deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
-                                                } else {
-                                                    for (i = count - 1; i > current; i -= 1) {
-                                                        if (calculatedBandwidth > (bandwidths[i] * switchUpRatioSafetyFactor)) {
-                                                            //self.debug.log("[DownloadRatioRule][" + data.type + "] bw = " + calculatedBandwidth + " results[i] * switchUpRatioSafetyFactor =" + (bandwidths[i] * switchUpRatioSafetyFactor) + " with i=" + i);
-                                                            break;
-                                                        }
-                                                    }
-
-                                                    q = i;
-                                                    p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
-
-                                                    self.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count-1) + " (" + bandwidths[q] + "), p=" + p);
-                                                    deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
+                                var currentBandwidth = self.manifestExt.getBandwidth(currentRepresentation);
+                                for (i = 0; i < count; i += 1) {
+                                    funcs.push(self.manifestExt.getRepresentationBandwidth(data, i));
+                                }
+                                Q.all(funcs).then(
+                                    function(bandwidths) {
+                                        if (calculatedBandwidth <= currentBandwidth) {
+                                            for (i = current - 1; i > 0; i -= 1) {
+                                                if (bandwidths[i] <= calculatedBandwidth) {
+                                                    break;
                                                 }
                                             }
-                                        );
-                                    });
+                                            q = i;
+                                            p = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
+
+                                            self.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count - 1) + " (" + bandwidths[q] + "), p=" + p);
+                                            deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
+                                        } else {
+                                            for (i = count - 1; i > current; i -= 1) {
+                                                if (calculatedBandwidth > (bandwidths[i] * switchUpRatioSafetyFactor)) {
+                                                    //self.debug.log("[DownloadRatioRule][" + data.type + "] bw = " + calculatedBandwidth + " results[i] * switchUpRatioSafetyFactor =" + (bandwidths[i] * switchUpRatioSafetyFactor) + " with i=" + i);
+                                                    break;
+                                                }
+                                            }
+
+                                            q = i;
+                                            p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
+
+                                            self.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count - 1) + " (" + bandwidths[q] + "), p=" + p);
+                                            deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
+                                        }
+                                    }
+                                );
                             });
                     });
             } else {

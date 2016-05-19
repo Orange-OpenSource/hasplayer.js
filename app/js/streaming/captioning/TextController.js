@@ -36,42 +36,32 @@ MediaPlayer.dependencies.TextController = function () {
              var self = this;
             // TODO Multiple tracks can be handled here by passing in quality level.
             self.indexHandler.getInitRequest(availableRepresentations[0]).then(
-                 function (request) {
-                 //self.debug.log("Loading text track initialization: " + request.url);
-                 //self.debug.log(request);
-                     self.fragmentLoader.load(request).then(onBytesLoaded.bind(self, request), onBytesError.bind(self, request));
-                     setState.call(self, LOADING);
-                 }
-             );
-         },
-         doStart = function () {
-             startPlayback.call(this);
-         },
+                function(request) {
+                    //self.debug.log("Loading text track initialization: " + request.url);
+                    //self.debug.log(request);
+                    self.fragmentLoader.load(request).then(onBytesLoaded.bind(self, request), onBytesError.bind(self, request));
+                    setState.call(self, LOADING);
+                }
+            );
+        },
+        doStart = function() {
+            startPlayback.call(this);
+        },
 
-         updateRepresentations = function (data, periodInfo) {
-             var self = this,
-                 deferred = Q.defer(),
-                 manifest = self.manifestModel.getValue();
-             self.manifestExt.getDataIndex(data, manifest, periodInfo.index).then(
-                 function(idx) {
-                     self.manifestExt.getAdaptationsForPeriod(manifest, periodInfo).then(
-                         function(adaptations) {
-                             self.manifestExt.getRepresentationsForAdaptation(manifest, adaptations[idx]).then(
-                                 function(representations) {
-                                     deferred.resolve(representations);
-                                 }
-                             );
-                         }
-                     );
-                 }
-             );
+        updateRepresentations = function(data, periodInfo) {
+            var adaptations,
+                manifest = this.manifestModel.getValue(),
+                idx;
 
-             return deferred.promise;
-         },
+            idx = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
 
-         onBytesLoaded = function (request, response) {
-             var self = this;
-             //self.debug.log(" Text track Bytes finished loading: " + request.url);
+            adaptations = this.manifestExt.getAdaptationsForPeriod(manifest, periodInfo);
+            return this.manifestExt.getRepresentationsForAdaptation(manifest, adaptations[idx]);
+        },
+
+        onBytesLoaded = function(request, response) {
+            var self = this;
+            //self.debug.log(" Text track Bytes finished loading: " + request.url);
             // ORANGE: add request parameter to retrieve startTime and timescale in fragmentController
              self.fragmentController.process(response.data, request).then(
                  function (data) {
@@ -101,12 +91,11 @@ MediaPlayer.dependencies.TextController = function () {
             self.setBuffer(buffer);
             self.setMediaSource(source);
 
-            self.updateData(data, periodInfo).then(
-                function() {
+            self.updateData(data, periodInfo);
+
             initialized = true;
-                    startPlayback.call(self);
-                }
-            );
+            
+            startPlayback.call(self);
         },
 
         setPeriodInfo: function(value) {
@@ -145,23 +134,13 @@ MediaPlayer.dependencies.TextController = function () {
             mediaSource = value;
         },
 
-        updateData: function (dataValue, periodInfoValue) {
-            var self = this,
-                deferred = Q.defer();
-
+        updateData: function(dataValue, periodInfoValue) {
             data = dataValue;
             periodInfo = periodInfoValue;
 
-            updateRepresentations.call(self, data, periodInfo).then(
-                function(representations) {
-                    availableRepresentations = representations;
-                    setState.call(self, READY);
-                    startPlayback.call(self);
-                    deferred.resolve();
-                }
-            );
-
-            return deferred.promise;
+            availableRepresentations = updateRepresentations.call(this, data, periodInfo);
+            setState.call(this, READY);
+            startPlayback.call(this);
         },
 
         reset: function (errored) {
