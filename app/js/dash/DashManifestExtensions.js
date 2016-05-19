@@ -74,7 +74,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return found;
     },
 
-    getIsVideo_: function(adaptation) {
+    getIsVideo: function(adaptation) {
         return this.getIsType(adaptation, "video", ["video"]);
     },
 
@@ -139,59 +139,6 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return Q.when(result);
     },
 
-    getIsVideo: function(adaptation) {
-        "use strict";
-        var i,
-            len,
-            col,
-            representation,
-            result = false,
-            found = false;
-
-        if (adaptation) {
-            col = adaptation.ContentComponent_asArray;
-
-            if (col) {
-                for (i = 0, len = col.length; i < len; i += 1) {
-                    if (col[i].contentType === "video") {
-                        result = true;
-                        found = true;
-                    }
-                }
-            }
-
-            if (adaptation.mimeType) {
-                result = adaptation.mimeType.indexOf("video") !== -1;
-                found = true;
-            }
-
-            // couldn't find on adaptationset, so check a representation
-            if (!found) {
-                i = 0;
-                len = adaptation.Representation_asArray.length;
-                while (!found && i < len) {
-                    representation = adaptation.Representation_asArray[i];
-
-                    if (representation.mimeType) {
-                        result = representation.mimeType.indexOf("video") !== -1;
-                        found = true;
-                    }
-
-                    i += 1;
-                }
-            }
-
-            // TODO : Add the type here so that somebody who has access to the adapatation set can check it.
-            // THIS IS A HACK for a bug in DashMetricsExtensions.
-            // See the note in DashMetricsExtensions.adaptationIsType().
-            if (result) {
-                adaptation.type = "video";
-            }
-        }
-
-        return Q.when(result);
-    },
-
     getIsText: function(adaptation) {
         "use strict";
         var i,
@@ -249,7 +196,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         "use strict";
         // TODO : Check "Role" node.
         // TODO : Use this somewhere.
-        return Q.when(false);
+        return false;
     },
 
     processAdaptation: function(adaptation) {
@@ -356,7 +303,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
         adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
         for (i = 0; i < adaptations.length; i += 1) {
-            if (this.getIsVideo_(adaptations[i])) {
+            if (this.getIsVideo(adaptations[i])) {
                 return adaptations[i];
             }
         }

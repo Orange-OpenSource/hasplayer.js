@@ -23,33 +23,6 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
 
     createSourceBuffer: function (mediaSource, codec) {
         "use strict";
-        var deferred = Q.defer(),
-            self = this;
-
-        try {
-            if (mediaSource) {
-                deferred.resolve(mediaSource.addSourceBuffer(codec));
-            } else {
-                deferred.reject();
-            }
-        } catch(ex) {
-            // For text track not supported by MSE, we try to create corresponding specific source buffer
-            if (self.manifestExt.getIsTextTrack(codec)) {
-                if ((codec === 'text/vtt') || (codec === 'text/ttml')) {
-                    deferred.resolve(self.system.getObject("textSourceBuffer"));
-                } else if (codec === 'application/ttml+xml+mp4') {
-                    deferred.resolve(self.system.getObject("textTTMLXMLMP4SourceBuffer"));
-                } else {
-                    deferred.reject(ex);
-                }
-            } else {
-                deferred.reject(ex);
-            }
-        }
-        return deferred.promise;
-    },
-    createSourceBuffer_: function (mediaSource, codec) {
-        "use strict";
 
         var buffer = null;
 
@@ -77,20 +50,6 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
     },
 
     removeSourceBuffer: function (mediaSource, buffer) {
-        "use strict";
-        var deferred = Q.defer();
-        try {
-            deferred.resolve(mediaSource.removeSourceBuffer(buffer));
-        } catch(ex){
-            if (buffer && typeof(buffer.getTextTrackExtensions) === "function") {
-                deferred.resolve();
-            } else {
-            deferred.reject(ex.description);
-        }
-        }
-        return deferred.promise;
-    },
-    removeSourceBuffer_: function (mediaSource, buffer) {
         "use strict";
         try {
             mediaSource.removeSourceBuffer(buffer);

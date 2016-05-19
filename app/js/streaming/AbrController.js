@@ -231,10 +231,10 @@ MediaPlayer.dependencies.AbrController = function() {
 
         getMetricsFor: function(data) {
             var deferred = Q.defer(),
+                isVideo,
                 self = this;
 
-            self.manifestExt.getIsVideo(data).then(
-                function(isVideo) {
+            isVideo = self.manifestExt.getIsVideo(data);
                     if (isVideo) {
                         deferred.resolve(self.metricsModel.getMetricsFor("video"));
                     } else {
@@ -248,8 +248,6 @@ MediaPlayer.dependencies.AbrController = function() {
                             }
                         );
                     }
-                }
-            );
 
             return deferred.promise;
         },

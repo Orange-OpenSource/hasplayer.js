@@ -265,7 +265,7 @@ MediaPlayer.dependencies.Stream = function() {
             contentProtection = this.manifestExt.getContentProtectionData(data);
             if (mediaSource) {
                 try {
-                    buffer = this.sourceBufferExt.createSourceBuffer_(mediaSource, videoCodec);
+                    buffer = this.sourceBufferExt.createSourceBuffer(mediaSource, videoCodec);
                 } catch (ex) {
                     this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create video source buffer",
                         new MediaPlayer.vo.Error(ex.code, ex.name, ex.message));
@@ -307,7 +307,7 @@ MediaPlayer.dependencies.Stream = function() {
                 }
 
                 if (mediaSource) {
-                    buffer = this.sourceBufferExt.createSourceBuffer_(mediaSource, audioCodec);
+                    buffer = this.sourceBufferExt.createSourceBuffer(mediaSource, audioCodec);
                 } else {
                     // If MediaSource is not defined then raise DOMException 'InvalidAccessError'
                     // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer)
@@ -337,7 +337,7 @@ MediaPlayer.dependencies.Stream = function() {
                 }
 
                 if (mediaSource) {
-                    buffer = this.sourceBufferExt.createSourceBuffer_(mediaSource, mimeType);
+                    buffer = this.sourceBufferExt.createSourceBuffer(mediaSource, mimeType);
                 } else {
                     // If MediaSource is not defined then raise DOMException 'InvalidAccessError'
                     // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer)
