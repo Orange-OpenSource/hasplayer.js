@@ -1167,12 +1167,8 @@ MediaPlayer.dependencies.BufferController = function() {
             representation = manifest.Period_asArray[periodInfo.index].AdaptationSet_asArray[idx].Representation_asArray[repIndex];
             self.parser.hlsParser.updatePlaylist(representation).then(
                 function() {
-                    updateRepresentations.call(self, data, periodInfo).then(
-                        function(representations) {
-                            availableRepresentations = representations;
-                            deferred.resolve();
-                        }
-                    );
+                    availableRepresentations = updateRepresentations.call(self, data, periodInfo);
+                    deferred.resolve();
                 },
                 function(err) {
                     deferred.reject(err);
@@ -1316,7 +1312,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 manifest = self.manifestModel.getValue();
 
             doUpdateData.call(this);
-            
+
             // Retreive the representation of initial quality to enable some parameters initialization
             // (@see getLiveEdgeTime() for example)
             self.abrController.getPlaybackQuality(type, data).then(
