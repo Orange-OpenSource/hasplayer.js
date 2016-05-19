@@ -572,7 +572,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
     getRepresentationFor: function(index, data) {
         "use strict";
-        return Q.when(data.Representation_asArray[index]);
+        return data.Representation_asArray[index];
     },
 
     getRepresentationsForAdaptation: function(manifest, adaptation) {
@@ -973,18 +973,14 @@ Dash.dependencies.DashManifestExtensions.prototype = {
     },
 
     getRepresentationBandwidth: function(adaptation, index) {
-        var self = this,
-            bandwidth,
-            deferred = Q.defer();
+        var bandwidth,
+            rep;
 
-        self.getRepresentationFor(index, adaptation).then(
-            function(rep) {
-                bandwidth = self.getBandwidth(rep);
-                deferred.resolve(bandwidth);
-            }
-        );
+        rep = this.getRepresentationFor(index, adaptation);
 
-        return deferred.promise;
+        bandwidth = this.getBandwidth(rep);
+
+        return bandwidth;
     }
 
 };
