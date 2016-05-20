@@ -88,7 +88,7 @@ MediaPlayer.dependencies.Stream = function() {
 
         eventController = null,
         protectionController,
-        initializedeferred = null,
+        initializeMediaSourceFinished = true,
 
         reloadTimeout = null,
         isReloading = false,
@@ -223,10 +223,9 @@ MediaPlayer.dependencies.Stream = function() {
                         });
                 };
 
-            Q.when(initializedeferred ? initializedeferred.promise : true).then(
+
+            Q.when(initializeMediaSourceFinished).then(
                 function() {
-                    executeReset();
-                }, function() {
                     executeReset();
                 });
             return deferred.promise;
@@ -236,30 +235,31 @@ MediaPlayer.dependencies.Stream = function() {
             var data,
                 buffer;
 
-            initializedeferred = Q.defer();
+            initializeMediaSourceFinished = false;
             eventController = this.system.getObject("eventController");
 
+            /********** INIT VIDEO *****************/
             // Initialize video controller
             data = this.manifestExt.getVideoData(manifest, periodInfo.index);
             if (data === null) {
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO, "No Video data in manifest");
-                initializedeferred.reject();
-                return initializedeferred.promise;
+                initializeMediaSourceFinished = true;
+                return false;
             }
             videoTrackIndex = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
             videoCodec = this.manifestExt.getCodec(data);
             if (videoCodec === null) {
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO, "Video codec information not available");
-                initializedeferred.reject();
-                return initializedeferred.promise;
+                initializeMediaSourceFinished = true;
+                return false;
             }
 
             if (!this.capabilities.supportsCodec(this.videoModel.getElement(), videoCodec)) {
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Video codec is not supported", {
                     codec: videoCodec
                 });
-                initializedeferred.reject();
-                return initializedeferred.promise;
+                initializeMediaSourceFinished = true;
+                return false;
             }
 
             contentProtection = this.manifestExt.getContentProtectionData(data);
@@ -269,21 +269,21 @@ MediaPlayer.dependencies.Stream = function() {
                 } catch (ex) {
                     this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create video source buffer",
                         new MediaPlayer.vo.Error(ex.code, ex.name, ex.message));
-                    initializedeferred.reject();
-                    return initializedeferred.promise;
+                    initializeMediaSourceFinished = true;
+                    return false;
                 }
             } else {
                 // If MediaSource is not defined then raise DOMException 'InvalidAccessError'
                 // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer)                
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create video source buffer",
                     new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS, "InvalidAccessError", "MediaSource undefined"));
-                initializedeferred.reject();
-                return initializedeferred.promise;
+                initializeMediaSourceFinished = true;
+                return false;
             }
 
             videoController = this.system.getObject("bufferController");
             videoController.initialize("video", periodInfo, data, buffer, this.fragmentController, mediaSource, eventController);
-
+            /********** INIT AUDIO *****************/
             data = this.manifestExt.getSpecificAudioData(manifest, periodInfo.index, defaultAudioLang);
 
             if (data === null) {
@@ -294,16 +294,16 @@ MediaPlayer.dependencies.Stream = function() {
                 audioCodec = this.manifestExt.getCodec(data);
                 if (audioCodec === null) {
                     this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "Audio codec information not available");
-                    initializedeferred.resolve();
-                    return initializedeferred.promise;
+                    initializeMediaSourceFinished = true;
+                    return true;
                 }
 
                 if (!this.capabilities.supportsCodec(this.videoModel.getElement(), audioCodec)) {
                     this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Audio codec is not supported", {
                         codec: audioCodec
                     });
-                    initializedeferred.resolve();
-                    return initializedeferred.promise;
+                    initializeMediaSourceFinished = true;
+                    return true;
                 }
 
                 if (mediaSource) {
@@ -313,14 +313,14 @@ MediaPlayer.dependencies.Stream = function() {
                     // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer)
                     this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create audio source buffer",
                         new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS, "InvalidAccessError", "MediaSource undefined"));
-                    initializedeferred.resolve();
-                    return initializedeferred.promise;
+                    initializeMediaSourceFinished = true;
+                    return true;
                 }
 
                 audioController = this.system.getObject("bufferController");
                 audioController.initialize("audio", periodInfo, data, buffer, this.fragmentController, mediaSource, eventController);
             }
-
+            /********** INIT SUBTITLES *****************/
             data = this.manifestExt.getSpecificTextData(manifest, periodInfo.index, defaultSubtitleLang);
 
             if (data === null) {
@@ -332,8 +332,8 @@ MediaPlayer.dependencies.Stream = function() {
 
                 if (mimeType === null) {
                     this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_TEXT, "Text codec information not available");
-                    initializedeferred.resolve();
-                    return initializedeferred.promise;
+                    initializeMediaSourceFinished = true;
+                    return true;
                 }
 
                 if (mediaSource) {
@@ -343,8 +343,8 @@ MediaPlayer.dependencies.Stream = function() {
                     // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer)
                     this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create audio source buffer",
                         new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS, "InvalidAccessError", "MediaSource undefined"));
-                    initializedeferred.resolve();
-                    return initializedeferred.promise;
+                    initializeMediaSourceFinished = true;
+                    return true;
                 }
 
                 textController = this.system.getObject("bufferController");
@@ -363,10 +363,12 @@ MediaPlayer.dependencies.Stream = function() {
             } else if (contentProtection && !this.capabilities.supportsEncryptedMedia()) {
                 // No protectionController (MediaKeys not supported/enabled) but content is protected => error
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS, "EME is not supported/enabled", null);
-                initializedeferred.reject();
+                initializeMediaSourceFinished = true;
+                return false;
             }
-            initializedeferred.resolve();
-            return initializedeferred.promise;
+
+            initializeMediaSourceFinished = true;
+            return true;
         },
 
         initializePlayback = function() {
@@ -745,13 +747,11 @@ MediaPlayer.dependencies.Stream = function() {
                 function(mediaSourceResult) {
                     mediaSource = mediaSourceResult;
                     self.debug.log("[Stream] Initialize MediaSource");
-                    initializeMediaSource.call(self);
-                }
-            ).then(
-                function( /*result*/ ) {
-                    self.debug.log("[Stream] Initialize playback");
-                    initializePlayback.call(self);
-                    self.debug.log("[Stream] Playback initialized");
+                    if (initializeMediaSource.call(self)) {
+                        self.debug.log("[Stream] Initialize playback");
+                        initializePlayback.call(self);
+                        self.debug.log("[Stream] Playback initialized");
+                    }
                 }
             );
         },
