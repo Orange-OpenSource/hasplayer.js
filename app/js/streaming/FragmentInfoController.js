@@ -167,10 +167,8 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
                 request = _bufferController.getIndexHandler().getFragmentInfoRequest(request);
 
                 // Download the fragment info segment
-                self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null).then(
-                    function() {
-                        sendRequest.call(self);
-                    });
+                self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null);
+                sendRequest.call(self);
             } else {
                 // No more fragment in current list
                 self.debug.log("[FragmentInfoController][" + type + "] bufferFragmentInfo failed");

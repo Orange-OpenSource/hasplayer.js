@@ -892,10 +892,8 @@ MediaPlayer.dependencies.BufferController = function() {
                     }
 
                     // Download the segment
-                    self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null /*signalStreamComplete*/ ).then(
-                        function() {
-                            sendRequest.call(self);
-                        });
+                    self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null /*signalStreamComplete*/ );
+                    sendRequest.call(self);
                 }
             } else {
                 // No more fragment in current list
@@ -1120,11 +1118,8 @@ MediaPlayer.dependencies.BufferController = function() {
                                 loadInitialization.call(self, quality).then(
                                     function(request) {
                                         if (request !== null) {
-                                            self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null /*signalStreamComplete*/ ).then(
-                                                function() {
-                                                    sendRequest.call(self);
-                                                }
-                                            );
+                                            self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null /*signalStreamComplete*/ );
+                                            sendRequest.call(self);
                                         }
                                     }, function(e) {
                                         signalSegmentBuffered.call(self);

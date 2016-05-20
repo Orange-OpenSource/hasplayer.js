@@ -189,13 +189,13 @@ MediaPlayer.dependencies.FragmentController = function () {
             var fragmentModel = findModel(bufferController);
 
             if (!fragmentModel || !request) {
-                return Q.when(null);
+                return null;
             }
             // Store the request and all the necessary callbacks in the model for deferred execution
             fragmentModel.addRequest(request);
             fragmentModel.setCallbacks(startLoadingCallback, successLoadingCallback, errorLoadingCallback, streamEndCallback);
 
-            return Q.when(true);
+            return true;
         }
     };
 };
