@@ -265,7 +265,7 @@ MediaPlayer.dependencies.StreamController = function() {
                 stream;
 
             if (!manifest) {
-                return Q.when(false);
+                return false;
             }
 
             if (self.capabilities.supportsEncryptedMedia()) {
@@ -366,17 +366,16 @@ MediaPlayer.dependencies.StreamController = function() {
         },
 
         manifestHasUpdated = function() {
-            var self = this,
-                result = composeStreams.call(self);
+            var result = composeStreams.call(this);
 
             if (result) {
                 // ORANGE: Update Audio Tracks List
-                updateAudioTracks.call(self);
+                updateAudioTracks.call(this);
                 // ORANGE: Update Subtitle Tracks List
-                updateSubtitleTracks.call(self);
-                self.system.notify("streamsComposed");
+                updateSubtitleTracks.call(this);
+                this.system.notify("streamsComposed");
             } else {
-                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_STREAM, "No stream/period is provided in the manifest");
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_STREAM, "No stream/period is provided in the manifest");
             }
         };
 
