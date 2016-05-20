@@ -67,7 +67,7 @@ MediaPlayer.dependencies.StreamController = function() {
             detachVideoEvents.call(this, fromVideoModel);
             attachVideoEvents.call(this, toVideoModel);
 
-            return Q.when(true);
+            return true;
         },
 
         attachVideoEvents = function(videoModel) {

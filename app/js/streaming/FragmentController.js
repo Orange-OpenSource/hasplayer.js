@@ -11,7 +11,7 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-MediaPlayer.dependencies.FragmentController = function () {
+MediaPlayer.dependencies.FragmentController = function() {
     "use strict";
 
     var fragmentModels = [],
@@ -57,7 +57,7 @@ MediaPlayer.dependencies.FragmentController = function () {
         system: undefined,
         debug: undefined,
 
-        process: function (bytes) {
+        process: function(bytes) {
             var result = null;
 
             if (bytes !== null && bytes !== undefined && bytes.byteLength > 0) {
@@ -76,7 +76,7 @@ MediaPlayer.dependencies.FragmentController = function () {
             // Wrap the buffer controller into model and store it to track the loading state and execute the requests
             model = findModel(bufferController);
 
-            if (!model){
+            if (!model) {
                 model = this.system.getObject("fragmentModel");
                 model.setContext(bufferController);
                 fragmentModels.push(model);
@@ -133,9 +133,9 @@ MediaPlayer.dependencies.FragmentController = function () {
             return fragmentModel.getLoadingRequests();
         },
 
-		isInitializationRequest: function(request){
-			return (request && request.type && request.type.toLowerCase() === "initialization segment");
-		},
+        isInitializationRequest: function(request) {
+            return (request && request.type && request.type.toLowerCase() === "initialization segment");
+        },
 
         getLoadingTime: function(bufferController) {
             var fragmentModel = findModel(bufferController);
