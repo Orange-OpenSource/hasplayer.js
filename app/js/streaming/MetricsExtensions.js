@@ -13,7 +13,7 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- MediaPlayer.dependencies.MetricsExtensions = function () {
+MediaPlayer.dependencies.MetricsExtensions = function() {
     "use strict";
 
     var h264ProfileMap = {
@@ -23,7 +23,7 @@
         "64": "High"
     };
 
-    var findRepresentionInPeriodArray = function (periodArray, representationId) {
+    var findRepresentionInPeriodArray = function(periodArray, representationId) {
         var period,
             adaptationSet,
             adaptationSetArray,
@@ -51,7 +51,7 @@
         return null;
     };
 
-    var adaptationIsType = function (adaptation, bufferType) {
+    var adaptationIsType = function(adaptation, bufferType) {
         var found = false;
         // TODO : HACK ATTACK
         // Below we call getIsVideo and getIsAudio and then check the adaptation set for a 'type' property.
@@ -65,20 +65,17 @@
             if (adaptation.type === "video") {
                 found = true;
             }
-        }
-        else if (bufferType === "audio") {
+        } else if (bufferType === "audio") {
             this.manifestExt.getIsAudio(adaptation);
             if (adaptation.type === "audio") {
                 found = true;
             }
-        }
-        else if(bufferType === "text"){
-             this.manifestExt.getIsText(adaptation);
-              if (adaptation.type === "text") {
+        } else if (bufferType === "text") {
+            this.manifestExt.getIsText(adaptation);
+            if (adaptation.type === "text") {
                 found = true;
             }
-        }
-        else {
+        } else {
             found = false;
         }
 
@@ -88,11 +85,11 @@
     var rslt = MediaPlayer.utils.copyMethods(Dash.dependencies.DashMetricsExtensions);
 
     rslt.config = undefined;
-    
+
     rslt.getDuration = function() {
         var self = this,
             manifest = self.manifestModel.getValue(),
-            duration = manifest? manifest.Period.duration : null;
+            duration = manifest ? manifest.Period.duration : null;
 
         if (duration !== Infinity) {
             return duration;
@@ -107,8 +104,7 @@
             i = 0,
             adaptation;
 
-        for(i = 0;i<manifest.Period.AdaptationSet.length;i++)
-        {
+        for (i = 0; i < manifest.Period.AdaptationSet.length; i++) {
             adaptation = manifest.Period.AdaptationSet[i];
             if (adaptation.type === type) {
                 return adaptation.mimeType;
@@ -124,8 +120,7 @@
             i = 0,
             adaptation;
 
-        for(i = 0;i<manifest.Period.AdaptationSet.length;i++)
-        {
+        for (i = 0; i < manifest.Period.AdaptationSet.length; i++) {
             adaptation = manifest.Period.AdaptationSet[i];
             if (adaptation.type === type || adaptation.contentType === type) {
                 //return codecs of the first Representation
@@ -136,7 +131,7 @@
         return null;
     };
 
-    rslt.getVideoWidthForRepresentation = function (representationId) {
+    rslt.getVideoWidthForRepresentation = function(representationId) {
         var self = this,
             manifest = self.manifestModel.getValue(),
             representation,
@@ -152,12 +147,12 @@
             }
 
             return representation.width;
-        }else {
+        } else {
             return null;
         }
     };
 
-    rslt.getVideoHeightForRepresentation = function (representationId) {
+    rslt.getVideoHeightForRepresentation = function(representationId) {
         var self = this,
             manifest = self.manifestModel.getValue(),
             representation,
@@ -173,12 +168,12 @@
             }
 
             return representation.height;
-        }else{
+        } else {
             return null;
         }
     };
 
-    rslt.getCodecsForRepresentation = function (representationId) {
+    rslt.getCodecsForRepresentation = function(representationId) {
         var self = this,
             manifest = self.manifestModel.getValue(),
             representation,
@@ -193,10 +188,9 @@
         return representation.codecs;
     };
 
-    rslt.getH264ProfileLevel = function (codecs) {
+    rslt.getH264ProfileLevel = function(codecs) {
 
-        if (codecs.indexOf("avc1") < 0)
-        {
+        if (codecs.indexOf("avc1") < 0) {
             return "";
         }
         var profile = h264ProfileMap[codecs.substr(5, 2)],
@@ -205,7 +199,7 @@
         return profile + "@" + level.toString();
     };
 
-    rslt.getBitratesForType = function (type, data) {
+    rslt.getBitratesForType = function(type, data) {
         var self = this,
             manifest = self.manifestModel.getValue(),
             periodArray,
@@ -254,7 +248,7 @@
         return bitrateArray;
     };
 
-    rslt.getBitratesWithResolutionForType = function (type) {
+    rslt.getBitratesWithResolutionForType = function(type) {
         var self = this,
             manifest = self.manifestModel.getValue(),
             periodArray,
@@ -285,7 +279,11 @@
                     representationArray = adaptationSet.Representation_asArray;
                     for (representationArrayIndex = 0; representationArrayIndex < representationArray.length; representationArrayIndex = representationArrayIndex + 1) {
                         representation = representationArray[representationArrayIndex];
-                        var reso = {bitrate: representation.bandwidth, width: representation.width, height: representation.height};
+                        var reso = {
+                            bitrate: representation.bandwidth,
+                            width: representation.width,
+                            height: representation.height
+                        };
                         bitrateArray.push(reso);
                     }
                     return bitrateArray;
