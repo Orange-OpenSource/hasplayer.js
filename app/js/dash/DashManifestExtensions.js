@@ -645,10 +645,10 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                 mpd.maxSegmentDuration = manifest.maxSegmentDuration;
             }
 
-            return Q.when(mpd);
+            return mpd;
         }
 
-        return Q.when(null);
+        return null;
     },
 
     getFetchTime: function(manifest, period) {
