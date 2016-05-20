@@ -368,36 +368,35 @@ Mss.dependencies.MssFragmentController = function() {
         if (bytes !== null && bytes !== undefined && bytes.byteLength > 0) {
             result = new Uint8Array(bytes);
         } else {
-            return Q.when(null);
+            return null;
         }
 
         if (manifest && representations && (representations.length > 0)) {
             // Get adaptation containing provided representations
             // (Note: here representations is of type Dash.vo.Representation)
             adaptation = manifest.Period_asArray[representations[0].adaptation.period.index].AdaptationSet_asArray[representations[0].adaptation.index];
-            // if (request && (request.type === "Media Segment") && manifest && representations && (representations.length > 0)) {
             if (request) {
                 if (request.type === "Media Segment") {
                     try {
                         result = convertFragment.call(this, result, request, adaptation);
                     } catch (e) {
-                        return Q.reject(e);
+                        return e;
                     }
 
                     if (!result) {
-                        return Q.when(null);
+                        return null;
                     }
                 } else if (request.type === "FragmentInfo Segment") {
                     try {
                         updateSegmentsList.call(this, result, request, adaptation);
                     } catch (e) {
-                        return Q.reject(e);
+                        return e;
                     }
                 }
             }
         }
 
-        return Q.when(result);
+        return result;
     };
 
     rslt.setSampleDuration = function(state) {

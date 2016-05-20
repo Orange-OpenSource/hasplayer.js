@@ -266,51 +266,52 @@ MediaPlayer.dependencies.BufferController = function() {
         onInitializationLoaded = function(request, response) {
             var self = this,
                 initData = response.data,
-                quality = request.quality;
+                quality = request.quality,
+                data;
 
             self.debug.log("[BufferController][" + type + "] Initialization loaded ", quality);
 
-            self.fragmentController.process(initData).then(
-                function(data) {
-                    if (data !== null) {
-                        // cache the initialization data to use it next time the quality has changed
-                        initializationData[quality] = data;
-
-                        // if this is the initialization data for current quality we need to push it to the buffer
-                        self.debug.info("[BufferController][" + type + "] Buffer initialization segment ", (request.url !== null) ? request.url : request.quality);
-                        //    console.saveBinArray(data, type + "_init_" + request.quality + ".mp4");
-                        // Clear the buffer if required (language track switching)
-                        Q.when(languageChanged ? removeBuffer.call(self) : true).then(
-                            function() {
-                                languageChanged = false;
-                                appendToBuffer.call(self, data, request.quality).then(
-                                    function() {
-                                        self.debug.log("[BufferController][" + type + "] Initialization segment buffered");
-                                        // Load next media segment
-                                        if (isRunning()) {
-                                            loadNextFragment.call(self);
-                                        }
-                                    }
-                                );
-                            }
-                        );
-                    } else {
-                        self.debug.log("No " + type + " bytes to push.");
-                        // ORANGE : For HLS Stream, init segment are pushed with media (@see HlsFragmentController)
-                        loadNextFragment.call(self);
-                    }
-                }, function(e) {
+            data = self.fragmentController.process(initData);
+            if (data) {
+                if (data.error) {
                     signalSegmentBuffered.call(self);
-                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", e.message);
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", data.message);
+                } else {
+                    // cache the initialization data to use it next time the quality has changed
+                    initializationData[quality] = data;
+
+                    // if this is the initialization data for current quality we need to push it to the buffer
+                    self.debug.info("[BufferController][" + type + "] Buffer initialization segment ", (request.url !== null) ? request.url : request.quality);
+                    //    console.saveBinArray(data, type + "_init_" + request.quality + ".mp4");
+                    // Clear the buffer if required (language track switching)
+                    Q.when(languageChanged ? removeBuffer.call(self) : true).then(
+                        function() {
+                            languageChanged = false;
+                            appendToBuffer.call(self, data, request.quality).then(
+                                function() {
+                                    self.debug.log("[BufferController][" + type + "] Initialization segment buffered");
+                                    // Load next media segment
+                                    if (isRunning()) {
+                                        loadNextFragment.call(self);
+                                    }
+                                }
+                            );
+                        }
+                    );
                 }
-            );
+            } else {
+                self.debug.log("No " + type + " bytes to push.");
+                // ORANGE : For HLS Stream, init segment are pushed with media (@see HlsFragmentController)
+                loadNextFragment.call(self);
+            }
         },
 
         onMediaLoaded = function(request, response) {
             var self = this,
                 eventStreamAdaption = this.manifestExt.getEventStreamForAdaptationSet(self.getData()),
                 eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(self.getData(), _currentRepresentation),
-                segmentStartTime = null;
+                segmentStartTime = null,
+                data;
 
             segmentDuration = request.duration;
 
@@ -337,20 +338,27 @@ MediaPlayer.dependencies.BufferController = function() {
             }
 
             // ORANGE: add request and representations in function parameters, used by MssFragmentController
-            self.fragmentController.process(response.data, request, availableRepresentations).then(
-                function(data) {
-                    if (data !== null) {
-                        if (eventStreamAdaption.length > 0 || eventStreamRepresentation.length > 0) {
-                            handleInbandEvents.call(self, data, request, eventStreamAdaption, eventStreamRepresentation).then(
-                                function(events) {
-                                    self.eventController.addInbandEvents(events);
-                                }
-                            );
-                        }
+            data = self.fragmentController.process(response.data, request, availableRepresentations);
+            if (data) {
+                if (data.error) {
+                    signalSegmentBuffered.call(self);
+                    if (data.name) {
+                        self.errHandler.sendError(data.name, data.message, data.data);
+                    } else {
+                        self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", data.message);
+                    }
+                } else {
+                    if (eventStreamAdaption.length > 0 || eventStreamRepresentation.length > 0) {
+                        handleInbandEvents.call(self, data, request, eventStreamAdaption, eventStreamRepresentation).then(
+                            function(events) {
+                                self.eventController.addInbandEvents(events);
+                            }
+                        );
+                    }
 
-                        self.debug.info("[BufferController][" + type + "] Buffer segment from url ", request.url);
+                    self.debug.info("[BufferController][" + type + "] Buffer segment from url ", request.url);
 
-                        /*if (trickModeEnabled) {
+                    /*if (trickModeEnabled) {
                             var filename = type + "_" + request.index + "_" + request.quality + ".mp4",
                                 blob = new Blob([data], {
                                     type: 'data/mp4'
@@ -361,48 +369,40 @@ MediaPlayer.dependencies.BufferController = function() {
                             }
                         }*/
 
-                        //console.saveBinArray(data, type + "_" + request.index + "_" + request.quality + ".mp4");
-                        deleteInbandEvents.call(self, data).then(
-                            function(data) {
-                                appendToBuffer.call(self, data, request.quality, request.index).then(
-                                    function() {
-                                        if (isFirstMediaSegment) {
-                                            isFirstMediaSegment = false;
-                                            if (self.fragmentController.hasOwnProperty('getStartTime')) {
-                                                segmentStartTime = self.fragmentController.getStartTime();
-                                            }
-                                            if (segmentStartTime) {
-                                                self.metricsModel.addBufferedSwitch(type, segmentStartTime, _currentRepresentation.id, request.quality);
-                                            } else {
-                                                self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
-                                            }
+                    //console.saveBinArray(data, type + "_" + request.index + "_" + request.quality + ".mp4");
+                    deleteInbandEvents.call(self, data).then(
+                        function(data) {
+                            appendToBuffer.call(self, data, request.quality, request.index).then(
+                                function() {
+                                    if (isFirstMediaSegment) {
+                                        isFirstMediaSegment = false;
+                                        if (self.fragmentController.hasOwnProperty('getStartTime')) {
+                                            segmentStartTime = self.fragmentController.getStartTime();
                                         }
-
-                                        self.debug.log("[BufferController][" + type + "] Media segment buffered");
-                                        // Signal end of buffering process
-                                        signalSegmentBuffered.call(self);
-                                        // Check buffer level
-                                        checkIfSufficientBuffer.call(self);
+                                        if (segmentStartTime) {
+                                            self.metricsModel.addBufferedSwitch(type, segmentStartTime, _currentRepresentation.id, request.quality);
+                                        } else {
+                                            self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
+                                        }
                                     }
-                                );
-                            }
-                        );
-                    } else {
-                        self.debug.error("[BufferController][" + type + "] Error with segment data, no bytes to push");
-                        // Signal end of buffering process
-                        signalSegmentBuffered.call(self);
-                        // Check buffer level
-                        checkIfSufficientBuffer.call(self);
-                    }
-                }, function(e) {
-                    signalSegmentBuffered.call(self);
-                    if (e.name) {
-                        self.errHandler.sendError(e.name, e.message, e.data);
-                    } else {
-                        self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", e.message);
-                    }
+
+                                    self.debug.log("[BufferController][" + type + "] Media segment buffered");
+                                    // Signal end of buffering process
+                                    signalSegmentBuffered.call(self);
+                                    // Check buffer level
+                                    checkIfSufficientBuffer.call(self);
+                                }
+                            );
+                        }
+                    );
                 }
-            );
+            } else {
+                self.debug.error("[BufferController][" + type + "] Error with segment data, no bytes to push");
+                // Signal end of buffering process
+                signalSegmentBuffered.call(self);
+                // Check buffer level
+                checkIfSufficientBuffer.call(self);
+            }
         },
 
         appendToBuffer = function(data, quality, index) {

@@ -92,7 +92,7 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         },
 
         onBytesLoaded = function(request, response) {
-            var self = this;
+            var data;
 
             segmentDuration = request.duration;
 
@@ -100,22 +100,21 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             segmentDownloadFailed = false;
             segmentDownloadErrorCount = 0;
 
-            self.debug.log("[FragmentInfoController][" + type + "] Media loaded ", request.url);
+            this.debug.log("[FragmentInfoController][" + type + "] Media loaded ", request.url);
 
             if (!fragmentDuration && !isNaN(request.duration)) {
                 fragmentDuration = request.duration;
             }
 
             // ORANGE: add request and representations in function parameters, used by MssFragmentController
-            self.fragmentController.process(response.data, request, _bufferController.getAvailableRepresentations()).then(
-                function() {
-                    self.debug.info("[FragmentInfoController][" + type + "] Buffer segment from url ", request.url);
+            data = this.fragmentController.process(response.data, request, _bufferController.getAvailableRepresentations());
+            if (data && data.error) {
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing fragment info segment", data.message);
+            } else {
+                this.debug.info("[FragmentInfoController][" + type + "] Buffer segment from url ", request.url);
 
-                    delayLoadNextFragmentInfo.call(self, segmentDuration);
-                }, function(e) {
-                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing fragment info segment", e.message);
-                }
-            );
+                delayLoadNextFragmentInfo.call(this, segmentDuration);
+            }
         },
 
         isRunning = function() {
@@ -171,7 +170,7 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
                 self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null).then(
                     function() {
                         sendRequest.call(self);
-                });
+                    });
             } else {
                 // No more fragment in current list
                 self.debug.log("[FragmentInfoController][" + type + "] bufferFragmentInfo failed");
@@ -229,7 +228,7 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             ranges = self.sourceBufferExt.getAllRanges(_bufferController.getBuffer());
 
             if (ranges.length > 0) {
-                _fragmentInfoTime = ranges.end(ranges.length-1);
+                _fragmentInfoTime = ranges.end(ranges.length - 1);
             }
 
             self.setType(type);
