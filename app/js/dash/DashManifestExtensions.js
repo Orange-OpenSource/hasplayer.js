@@ -527,10 +527,8 @@ Dash.dependencies.DashManifestExtensions.prototype = {
     },
 
     getRegularPeriods: function(manifest, mpd) {
-        var self = this,
-            deferred = Q.defer(),
-            periods = [],
-            isDynamic = self.getIsDynamic(manifest),
+        var periods = [],
+            isDynamic = this.getIsDynamic(manifest),
             i,
             len,
             p1 = null,
@@ -595,26 +593,19 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         }
 
         if (periods.length === 0) {
-            return Q.when(periods);
+            return periods;
         }
 
-        mpd.checkTime = self.getCheckTime(manifest, periods[0]);
+        mpd.checkTime = this.getCheckTime(manifest, periods[0]);
 
         // The last Period extends until the end of the Media Presentation.
         // The difference between the PeriodStart time of the last Period
         // and the mpd duration
         if (vo1 !== null && isNaN(vo1.duration)) {
-            self.getEndTimeForLastPeriod(mpd).then(
-                function(periodEndTime) {
-                    vo1.duration = periodEndTime - vo1.start;
-                    deferred.resolve(periods);
-                }
-            );
-        } else {
-            deferred.resolve(periods);
+            vo1.duration = this.getEndTimeForLastPeriod(mpd) - vo1.start;
         }
 
-        return Q.when(deferred.promise);
+        return periods;
     },
 
     getMpd: function(manifest) {
@@ -686,10 +677,10 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             // in this case the Period End Time should match CheckTime
             periodEnd = mpd.checkTime;
         } else {
-            return Q.fail(new Error("Must have @mediaPresentationDuration or @minimumUpdatePeriod on MPD or an explicit @duration on the last period."));
+            return new Error("Must have @mediaPresentationDuration or @minimumUpdatePeriod on MPD or an explicit @duration on the last period.");
         }
 
-        return Q.when(periodEnd);
+        return periodEnd;
     },
 
     getEventsForPeriod: function(manifest, period) {

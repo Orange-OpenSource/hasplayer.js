@@ -881,11 +881,7 @@ MediaPlayer.dependencies.Stream = function() {
         updateData = function(updatedPeriodInfo) {
             var self = this,
                 videoData,
-                data,
-                deferred = Q.defer(),
-                deferredVideoUpdate = Q.defer(),
-                deferredAudioUpdate = Q.defer(),
-                deferredTextUpdate = Q.defer();
+                data;
 
             manifest = self.manifestModel.getValue();
             periodInfo = updatedPeriodInfo;
@@ -900,23 +896,16 @@ MediaPlayer.dependencies.Stream = function() {
                     data = self.manifestExt.getDataForIndex(videoTrackIndex, manifest, periodInfo.index);
                 }
                 videoController.updateData(data, periodInfo);
-                deferredVideoUpdate.resolve();
-            } else {
-                deferredVideoUpdate.resolve();
-            }
+            } 
 
             if (audioController) {
                 data = self.manifestExt.getDataForIndex(audioTrackIndex, manifest, periodInfo.index);
                 audioController.updateData(data, periodInfo);
-                deferredAudioUpdate.resolve();
-            } else {
-                deferredAudioUpdate.resolve();
             }
 
             if (textController) {
                 data = self.manifestExt.getDataForIndex(textTrackIndex, manifest, periodInfo.index);
                 textController.updateData(data, periodInfo);
-                deferredTextUpdate.resolve();
             }
 
             if (eventController) {
@@ -924,20 +913,12 @@ MediaPlayer.dependencies.Stream = function() {
                 eventController.addInlineEvents(events);
             }
 
-            Q.when(deferredVideoUpdate.promise, deferredAudioUpdate.promise, deferredTextUpdate.promise).then(
-                function() {
-                    if (isReloading && videoController) {
-                        self.system.unmapHandler("bufferUpdated");
-                        self.system.mapHandler("bufferUpdated", undefined, onBufferUpdated.bind(self));
-                        // Call load on video controller in order to get new stream start time (=live edge for live streams)
-                        videoController.load();
-                    }
-
-                    deferred.resolve();
-                }
-            );
-
-            return deferred.promise;
+            if (isReloading && videoController) {
+                self.system.unmapHandler("bufferUpdated");
+                self.system.mapHandler("bufferUpdated", undefined, onBufferUpdated.bind(self));
+                // Call load on video controller in order to get new stream start time (=live edge for live streams)
+                videoController.load();
+            }
         },
 
         streamsComposed = function() {
