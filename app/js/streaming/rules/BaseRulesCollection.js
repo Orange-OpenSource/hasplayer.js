@@ -26,9 +26,9 @@ MediaPlayer.rules.BaseRulesCollection = function () {
         getRules: function (type) {
             switch (type) {
                 case MediaPlayer.rules.BaseRulesCollection.prototype.QUALITY_SWITCH_RULES:
-                    return Q.when(rules);
+                    return rules;
                 case MediaPlayer.rules.BaseRulesCollection.prototype.ABANDON_FRAGMENT_RULES:
-                    return Q.when(adandonFragmentRules);
+                    return adandonFragmentRules;
                 default:
                     return null;
             }

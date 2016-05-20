@@ -1215,39 +1215,38 @@ MediaPlayer.dependencies.BufferController = function() {
                 type = evt.data.request.streamType,
                 metricsHttp = evt.data.httpRequestMetrics,
                 lastTraceTime = evt.data.lastTraceTime,
-                currentTime;
+                currentTime,
+                rules;
 
             //self.debug.log("[BufferController]["+type+"] Download request " + evt.data.request.url + " is in progress");
 
-            self.abrRulesCollection.getRules(MediaPlayer.rules.BaseRulesCollection.prototype.ABANDON_FRAGMENT_RULES).then(
-                function(rules) {
-                    var callback = function(switchRequest) {
+            rules = self.abrRulesCollection.getRules(MediaPlayer.rules.BaseRulesCollection.prototype.ABANDON_FRAGMENT_RULES);
+            var callback = function(switchRequest) {
 
-                        var newQuality = switchRequest.quality,
-                            abrCurrentQuality = self.abrController.getQualityFor(type);
+                var newQuality = switchRequest.quality,
+                    abrCurrentQuality = self.abrController.getQualityFor(type);
 
-                        if (newQuality < abrCurrentQuality) {
-                            self.debug.info("[BufferController][" + type + "] Abandon current fragment : " + evt.data.request.url);
+                if (newQuality < abrCurrentQuality) {
+                    self.debug.info("[BufferController][" + type + "] Abandon current fragment : " + evt.data.request.url);
 
-                            currentTime = new Date();
+                    currentTime = new Date();
 
-                            metricsHttp.tfinish = currentTime;
-                            metricsHttp.bytesLength = evt.data.request.bytesLoaded;
+                    metricsHttp.tfinish = currentTime;
+                    metricsHttp.bytesLength = evt.data.request.bytesLoaded;
 
-                            self.metricsModel.appendHttpTrace(metricsHttp,
-                                currentTime,
-                                currentTime.getTime() - lastTraceTime.getTime(), [evt.data.request.bytesLoaded ? evt.data.request.bytesLoaded : 0]);
+                    self.metricsModel.appendHttpTrace(metricsHttp,
+                        currentTime,
+                        currentTime.getTime() - lastTraceTime.getTime(), [evt.data.request.bytesLoaded ? evt.data.request.bytesLoaded : 0]);
 
-                            self.fragmentController.abortRequestsForModel(fragmentModel);
-                            self.debug.info("[BufferController][" + type + "] Segment download abandonned => Retry segment download at lowest quality");
-                            self.abrController.setQualityFor(type, newQuality);
-                        }
-                    };
+                    self.fragmentController.abortRequestsForModel(fragmentModel);
+                    self.debug.info("[BufferController][" + type + "] Segment download abandonned => Retry segment download at lowest quality");
+                    self.abrController.setQualityFor(type, newQuality);
+                }
+            };
 
-                    for (i = 0, len = rules.length; i < len; i += 1) {
-                        rules[i].execute(evt.data.request, callback);
-                    }
-                });
+            for (i = 0, len = rules.length; i < len; i += 1) {
+                rules[i].execute(evt.data.request, callback);
+            }
         },
 
         signalSegmentLoadingFailed = function() {

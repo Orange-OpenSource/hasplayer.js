@@ -78,7 +78,8 @@ MediaPlayer.dependencies.AbrController = function() {
                 funcs = [],
                 metrics,
                 req,
-                values;
+                values,
+                rules;
 
             if (!autoSwitchBitrate || !autoSwitch) {
                 self.debug.log("[AbrController][" + type + "] ABR disabled");
@@ -93,79 +94,76 @@ MediaPlayer.dependencies.AbrController = function() {
             self.debug.log("[AbrController][" + type + "] Check rules....");
 
             metrics = self.getMetricsFor(data);
-            self.abrRulesCollection.getRules(MediaPlayer.rules.BaseRulesCollection.prototype.QUALITY_SWITCH_RULES).then(
-                function(rules) {
-                    for (i = 0, len = rules.length; i < len; i += 1) {
-                        funcs.push(rules[i].checkIndex(quality, metrics, data, playerState));
-                    }
-                    Q.all(funcs).then(
-                        function(results) {
-                            values = {};
-                            values[MediaPlayer.rules.SwitchRequest.prototype.STRONG] = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE;
-                            values[MediaPlayer.rules.SwitchRequest.prototype.WEAK] = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE;
-                            values[MediaPlayer.rules.SwitchRequest.prototype.DEFAULT] = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE;
+            rules = self.abrRulesCollection.getRules(MediaPlayer.rules.BaseRulesCollection.prototype.QUALITY_SWITCH_RULES);
+            for (i = 0, len = rules.length; i < len; i += 1) {
+                funcs.push(rules[i].checkIndex(quality, metrics, data, playerState));
+            }
+            Q.all(funcs).then(
+                function(results) {
+                    values = {};
+                    values[MediaPlayer.rules.SwitchRequest.prototype.STRONG] = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE;
+                    values[MediaPlayer.rules.SwitchRequest.prototype.WEAK] = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE;
+                    values[MediaPlayer.rules.SwitchRequest.prototype.DEFAULT] = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE;
 
-                            for (i = 0, len = results.length; i < len; i += 1) {
-                                req = results[i];
-                                if (req.quality !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
-                                    self.debug.log("[AbrController][" + type + "] Request for quality " + req.quality + ", priority = " + req.priority + " (" + rules[i].name + ")");
-                                    values[req.priority] = Math.min(values[req.priority], req.quality);
-                                }
-
-                                if (req.max === true) {
-                                    qualityMax = Math.min(qualityMax, req.quality);
-                                }
-                            }
-
-                            if (values[MediaPlayer.rules.SwitchRequest.prototype.WEAK] !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
-                                newConfidence = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
-                                newQuality = values[MediaPlayer.rules.SwitchRequest.prototype.WEAK];
-                            }
-
-                            if (values[MediaPlayer.rules.SwitchRequest.prototype.DEFAULT] !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
-                                newConfidence = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
-                                newQuality = values[MediaPlayer.rules.SwitchRequest.prototype.DEFAULT];
-                            }
-
-                            if (values[MediaPlayer.rules.SwitchRequest.prototype.STRONG] !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
-                                newConfidence = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
-                                newQuality = values[MediaPlayer.rules.SwitchRequest.prototype.STRONG];
-                            }
-
-                            if (newQuality !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE && newQuality !== undefined) {
-                                quality = newQuality;
-                            }
-
-                            if (newConfidence !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE && newConfidence !== undefined) {
-                                confidence = newConfidence;
-                            }
-
-                            if (qualityMax !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
-                                qualityMaxDict[type] = qualityMax;
-                            }
-
-                            var max = self.manifestExt.getRepresentationCount(data);
-                            // Ensure valid quality index
-                            if (quality < 0) {
-                                quality = 0;
-                            }
-                            if (quality >= max) {
-                                quality = max - 1;
-                            }
-
-                            if (confidence !== MediaPlayer.rules.SwitchRequest.prototype.STRONG &&
-                                confidence !== MediaPlayer.rules.SwitchRequest.prototype.WEAK) {
-                                confidence = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
-                            }
-
-                            self.debug.info("[AbrController][" + type + "] Request quality: " + quality);
-
-                            deferred.resolve({
-                                quality: quality,
-                                confidence: confidence
-                            });
+                    for (i = 0, len = results.length; i < len; i += 1) {
+                        req = results[i];
+                        if (req.quality !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
+                            self.debug.log("[AbrController][" + type + "] Request for quality " + req.quality + ", priority = " + req.priority + " (" + rules[i].name + ")");
+                            values[req.priority] = Math.min(values[req.priority], req.quality);
                         }
-                    );
+
+                        if (req.max === true) {
+                            qualityMax = Math.min(qualityMax, req.quality);
+                        }
+                    }
+
+                    if (values[MediaPlayer.rules.SwitchRequest.prototype.WEAK] !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
+                        newConfidence = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
+                        newQuality = values[MediaPlayer.rules.SwitchRequest.prototype.WEAK];
+                    }
+
+                    if (values[MediaPlayer.rules.SwitchRequest.prototype.DEFAULT] !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
+                        newConfidence = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
+                        newQuality = values[MediaPlayer.rules.SwitchRequest.prototype.DEFAULT];
+                    }
+
+                    if (values[MediaPlayer.rules.SwitchRequest.prototype.STRONG] !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
+                        newConfidence = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
+                        newQuality = values[MediaPlayer.rules.SwitchRequest.prototype.STRONG];
+                    }
+
+                    if (newQuality !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE && newQuality !== undefined) {
+                        quality = newQuality;
+                    }
+
+                    if (newConfidence !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE && newConfidence !== undefined) {
+                        confidence = newConfidence;
+                    }
+
+                    if (qualityMax !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
+                        qualityMaxDict[type] = qualityMax;
+                    }
+
+                    var max = self.manifestExt.getRepresentationCount(data);
+                    // Ensure valid quality index
+                    if (quality < 0) {
+                        quality = 0;
+                    }
+                    if (quality >= max) {
+                        quality = max - 1;
+                    }
+
+                    if (confidence !== MediaPlayer.rules.SwitchRequest.prototype.STRONG &&
+                        confidence !== MediaPlayer.rules.SwitchRequest.prototype.WEAK) {
+                        confidence = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
+                    }
+
+                    self.debug.info("[AbrController][" + type + "] Request quality: " + quality);
+
+                    deferred.resolve({
+                        quality: quality,
+                        confidence: confidence
+                    });
                 }
             );
 
