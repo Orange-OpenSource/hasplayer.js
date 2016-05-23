@@ -139,7 +139,7 @@ Dash.dependencies.BaseURLExtensions = function () {
             }
 
             this.debug.log("Parsed SIDX box: " + segments.length + " segments.");
-            return Q.when(segments);
+            return segments;
         },
 
         findInit = function (data, info) {
@@ -441,11 +441,7 @@ Dash.dependencies.BaseURLExtensions = function () {
 
                 } else {
                     self.debug.log("Parsing segments from SIDX.");
-                    parseSegments.call(self, sidxBytes, info.url, info.range.start).then(
-                        function (segments) {
-                            deferred.resolve(segments);
-                        }
-                    );
+                    deferred.resolve(parseSegments.call(self, sidxBytes, info.url, info.range.start));
                 }
             }
 
@@ -498,11 +494,7 @@ Dash.dependencies.BaseURLExtensions = function () {
                         }
                     );
                 } else {
-                    parseSegments.call(self, request.response, info.url, info.range.start).then(
-                        function (segments) {
-                            deferred.resolve(segments);
-                        }
-                    );
+                    deferred.resolve(parseSegments.call(self, request.response, info.url, info.range.start));
                 }
             };
 
