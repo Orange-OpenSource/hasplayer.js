@@ -1063,7 +1063,8 @@ MediaPlayer.dependencies.BufferController = function() {
                 currentVideoTime = self.videoModel.getCurrentTime(),
                 manifest = self.manifestModel.getValue(),
                 quality,
-                playlistUpdated = null;
+                playlistUpdated = null,
+                result;
 
             if (deferredFragmentBuffered !== null) {
                 self.debug.error("[BufferController][" + type + "] deferredFragmentBuffered has not been resolved, create a new one is not correct.");
@@ -1077,73 +1078,71 @@ MediaPlayer.dependencies.BufferController = function() {
             // If data has been changed, then load initialization segment
             var loadInit = doUpdateData.call(self);
             // Get current quality
-            self.abrController.getPlaybackQuality(type, data).then(
-                function(result) {
+            result = self.abrController.getPlaybackQuality(type, data);
 
-                    quality = result.quality;
+            quality = result.quality;
 
-                    // Get corresponding representation
-                    _currentRepresentation = getRepresentationForQuality.call(self, quality);
+            // Get corresponding representation
+            _currentRepresentation = getRepresentationForQuality.call(self, quality);
 
-                    // Quality changed?
-                    if (quality !== currentDownloadQuality) {
-                        self.debug.log("[BufferController][" + type + "] currentDownloadQuality changed : " + quality);
-                        currentDownloadQuality = quality;
-                        // Load initialization segment
-                        loadInit = true;
+            // Quality changed?
+            if (quality !== currentDownloadQuality) {
+                self.debug.log("[BufferController][" + type + "] currentDownloadQuality changed : " + quality);
+                currentDownloadQuality = quality;
+                // Load initialization segment
+                loadInit = true;
 
-                        clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.REPRESENTATION_SWITCH_STOP_REASON);
-                        self.debug.log("[BufferController][" + type + "] Send RepresentationSwitch with quality = " + quality);
-                        self.metricsModel.addRepresentationSwitch(type, now, currentVideoTime, _currentRepresentation.id, quality);
+                clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.REPRESENTATION_SWITCH_STOP_REASON);
+                self.debug.log("[BufferController][" + type + "] Send RepresentationSwitch with quality = " + quality);
+                self.metricsModel.addRepresentationSwitch(type, now, currentVideoTime, _currentRepresentation.id, quality);
 
-                        // HLS use case => download playlist for new representation
-                        if ((manifest.name === "M3U") && (isDynamic || availableRepresentations[quality].initialization === null)) {
-                            playlistUpdated = Q.defer();
-                            updatePlayListForRepresentation.call(self, quality).then(
-                                function() {
-                                    _currentRepresentation = getRepresentationForQuality.call(self, quality);
-                                    playlistUpdated.resolve();
-                                },
-                                function(err) {
-                                    playlistUpdated.reject(err);
-                                }
-                            );
-                        }
-                    }
-
-                    Q.when(playlistUpdated ? playlistUpdated.promise : true).then(
+                // HLS use case => download playlist for new representation
+                if ((manifest.name === "M3U") && (isDynamic || availableRepresentations[quality].initialization === null)) {
+                    playlistUpdated = Q.defer();
+                    updatePlayListForRepresentation.call(self, quality).then(
                         function() {
-                            if (loadInit === true) {
-                                // Load initialization segment request
-                                loadInitialization.call(self, quality).then(
-                                    function(request) {
-                                        if (request !== null) {
-                                            self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null /*signalStreamComplete*/ );
-                                            sendRequest.call(self);
-                                        }
-                                    }, function(e) {
-                                        signalSegmentBuffered.call(self);
-                                        if (e.name === MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED) {
-                                            self.errHandler.sendError(e.name, e.message, e.data);
-                                        } else {
-                                            self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing initialization segment", e.message);
-                                        }
-                                    }
-                                );
-                            } else {
-                                // Load next fragment
-                                // Notes: 1 - Next fragment is download in // with initialization segment
-                                //        2 - Buffer level is checked once next fragment data has been pushed into buffer (@see checkIfSufficientBuffer())
-                                loadNextFragment.call(self);
-                            }
+                            _currentRepresentation = getRepresentationForQuality.call(self, quality);
+                            playlistUpdated.resolve();
                         },
                         function(err) {
-                            signalSegmentBuffered();
-                            self.errHandler.sendError(err.name, err.message, err.data);
+                            playlistUpdated.reject(err);
                         }
                     );
                 }
+            }
+
+            Q.when(playlistUpdated ? playlistUpdated.promise : true).then(
+                function() {
+                    if (loadInit === true) {
+                        // Load initialization segment request
+                        loadInitialization.call(self, quality).then(
+                            function(request) {
+                                if (request !== null) {
+                                    self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null /*signalStreamComplete*/ );
+                                    sendRequest.call(self);
+                                }
+                            }, function(e) {
+                                signalSegmentBuffered.call(self);
+                                if (e.name === MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED) {
+                                    self.errHandler.sendError(e.name, e.message, e.data);
+                                } else {
+                                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing initialization segment", e.message);
+                                }
+                            }
+                        );
+                    } else {
+                        // Load next fragment
+                        // Notes: 1 - Next fragment is download in // with initialization segment
+                        //        2 - Buffer level is checked once next fragment data has been pushed into buffer (@see checkIfSufficientBuffer())
+                        loadNextFragment.call(self);
+                    }
+                },
+                function(err) {
+                    signalSegmentBuffered();
+                    self.errHandler.sendError(err.name, err.message, err.data);
+                }
             );
+
         },
 
         updatePlayListForRepresentation = function(repIndex) {
@@ -1309,42 +1308,38 @@ MediaPlayer.dependencies.BufferController = function() {
 
             // Retreive the representation of initial quality to enable some parameters initialization
             // (@see getLiveEdgeTime() for example)
-            self.abrController.getPlaybackQuality(type, data).then(
-                function(result) {
-                    _currentRepresentation = getRepresentationForQuality.call(self, result.quality);
+            _currentRepresentation = getRepresentationForQuality.call(self, self.abrController.getPlaybackQuality(type, data).quality);
 
-                    if (_currentRepresentation) {
-                        fragmentDuration = _currentRepresentation.segmentDuration;
+            if (_currentRepresentation) {
+                fragmentDuration = _currentRepresentation.segmentDuration;
 
-                        self.indexHandler.setIsDynamic(isDynamic);
-                        if (minBufferTime === -1) {
-                            minBufferTime = self.bufferExt.decideBufferLength(manifest.minBufferTime, periodInfo.duration, waitingForBuffer);
-                        }
-                        if (type === "video") {
-                            if (isDynamic) {
-                                self.indexHandler.updateSegmentList(_currentRepresentation).then(
-                                    function() {
-                                        getLiveEdgeTime.call(self).then(
-                                            function(time) {
-                                                self.system.notify("startTimeFound", time);
-                                            }
-                                        );
-                                    }
-                                );
-                            } else {
-                                self.indexHandler.getCurrentTime(_currentRepresentation).then(
+                self.indexHandler.setIsDynamic(isDynamic);
+                if (minBufferTime === -1) {
+                    minBufferTime = self.bufferExt.decideBufferLength(manifest.minBufferTime, periodInfo.duration, waitingForBuffer);
+                }
+                if (type === "video") {
+                    if (isDynamic) {
+                        self.indexHandler.updateSegmentList(_currentRepresentation).then(
+                            function() {
+                                getLiveEdgeTime.call(self).then(
                                     function(time) {
-                                        if (time < _currentRepresentation.segmentAvailabilityRange.start) {
-                                            time = _currentRepresentation.segmentAvailabilityRange.start;
-                                        }
                                         self.system.notify("startTimeFound", time);
                                     }
                                 );
                             }
-                        }
+                        );
+                    } else {
+                        self.indexHandler.getCurrentTime(_currentRepresentation).then(
+                            function(time) {
+                                if (time < _currentRepresentation.segmentAvailabilityRange.start) {
+                                    time = _currentRepresentation.segmentAvailabilityRange.start;
+                                }
+                                self.system.notify("startTimeFound", time);
+                            }
+                        );
                     }
                 }
-            );
+            }
         },
 
         getIndexHandler: function() {

@@ -33,7 +33,7 @@ Hls.dependencies.HlsParser = function() {
         ATTR_SUBTITLES = "SUBTITLES",
         ATTR_RESOLUTION = "RESOLUTION",
         ATTR_CODECS = "CODECS",
-    /*ATTR_METHOD = "METHOD",
+        /*ATTR_METHOD = "METHOD",
         ATTR_IV = "IV",
         ATTR_URI = "URI",
         ATTR_TYPE = "TYPE",
@@ -49,7 +49,7 @@ Hls.dependencies.HlsParser = function() {
         retryInterval = DEFAULT_RETRY_INTERVAL,
         retryCount = 0,
         deferredPlaylist = null;
-        
+
 
     var playlistRequest = new XMLHttpRequest();
 
@@ -561,6 +561,7 @@ Hls.dependencies.HlsParser = function() {
             representationId = 0,
             streams = [],
             stream,
+            result,
             //requestsToDo = [],
             self = this,
             i = 0;
@@ -705,19 +706,16 @@ Hls.dependencies.HlsParser = function() {
         }*/
 
         // Get representation (variant stream) playlist
-        this.abrController.getPlaybackQuality("video", adaptationSet).then(
-            function(result) {
-                representation = adaptationSet.Representation_asArray[result.quality];
-                self.updatePlaylist(representation).then(
-                    function() {
-                        postProcess.call(self, mpd, result.quality).then(function() {
-                            deferred.resolve(mpd);
-                        });
-                    },
-                    function(error) {
-                        deferred.reject(error);
-                    }
-                );
+        result = this.abrController.getPlaybackQuality("video", adaptationSet);
+        representation = adaptationSet.Representation_asArray[result.quality];
+        self.updatePlaylist(representation).then(
+            function() {
+                postProcess.call(self, mpd, result.quality).then(function() {
+                    deferred.resolve(mpd);
+                });
+            },
+            function(error) {
+                deferred.reject(error);
             }
         );
 
@@ -747,7 +745,7 @@ Hls.dependencies.HlsParser = function() {
 
         parse: internalParse,
 
-        updatePlaylist: function (representation) {
+        updatePlaylist: function(representation) {
             retryAttempts = this.config.getParam("ManifestLoader.RetryAttempts", "number", DEFAULT_RETRY_ATTEMPTS);
             retryInterval = this.config.getParam("ManifestLoader.RetryInterval", "number", DEFAULT_RETRY_INTERVAL);
             retryCount = 0;
