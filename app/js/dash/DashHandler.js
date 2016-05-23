@@ -904,7 +904,7 @@ Dash.dependencies.DashHandler = function() {
 
         getRequestForSegment = function(segment) {
             if (segment === null || segment === undefined) {
-                return Q.when(null);
+                return null;
             }
 
             var request = new MediaPlayer.vo.SegmentRequest(),
@@ -937,7 +937,7 @@ Dash.dependencies.DashHandler = function() {
                 request.sequenceNumber = segment.sequenceNumber;
             }
 
-            return Q.when(request);
+            return request;
         },
 
         getForTime = function(representation, time) {
@@ -975,7 +975,7 @@ Dash.dependencies.DashHandler = function() {
                 }
             ).then(
                 function(finished) {
-                    var requestPromise = null;
+                    var requestForSegment = null;
 
                     //self.debug.log("Stream finished? " + finished);
                     if (finished) {
@@ -987,10 +987,10 @@ Dash.dependencies.DashHandler = function() {
                         deferred.resolve(request);
                     } else {
                         segment = getSegmentByIndex(index, representation);
-                        requestPromise = getRequestForSegment.call(self, segment);
+                        requestForSegment = getRequestForSegment.call(self, segment);
                     }
 
-                    return requestPromise;
+                    return Q.when(requestForSegment);
                 }
             ).then(
                 function(request) {
@@ -1046,7 +1046,7 @@ Dash.dependencies.DashHandler = function() {
                         //self.debug.log(segments);
                         segment = getSegmentByIndex(index, representation);
                         segmentsPromise = getRequestForSegment.call(self, segment);
-                        return segmentsPromise;
+                        return Q.when(segmentsPromise);
                     }
                 ).then(
                     function(request) {
@@ -1099,13 +1099,10 @@ Dash.dependencies.DashHandler = function() {
                             deferred.resolve(null);
                         } else {
                             index = segment.availabilityIdx;
-                            getRequestForSegment.call(self, segment).then(
-                                function(request) {
-                                    //self.debug.log("Got a request.");
-                                    //self.debug.log(request);
-                                    deferred.resolve(request);
-                                }
-                            );
+                            var requestForSegment = getRequestForSegment.call(self, segment);
+                            //self.debug.log("Got a request.");
+                            //self.debug.log(request);
+                            deferred.resolve(requestForSegment);
                         }
                     }
                 }
