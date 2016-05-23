@@ -311,6 +311,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 eventStreamAdaption = this.manifestExt.getEventStreamForAdaptationSet(self.getData()),
                 eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(self.getData(), _currentRepresentation),
                 segmentStartTime = null,
+                events,
                 data;
 
             segmentDuration = request.duration;
@@ -349,11 +350,8 @@ MediaPlayer.dependencies.BufferController = function() {
                     }
                 } else {
                     if (eventStreamAdaption.length > 0 || eventStreamRepresentation.length > 0) {
-                        handleInbandEvents.call(self, data, request, eventStreamAdaption, eventStreamRepresentation).then(
-                            function(events) {
-                                self.eventController.addInbandEvents(events);
-                            }
-                        );
+                        events = handleInbandEvents.call(self, data, request, eventStreamAdaption, eventStreamRepresentation);
+                        self.eventController.addInbandEvents(events);
                     }
 
                     self.debug.info("[BufferController][" + type + "] Buffer segment from url ", request.url);
@@ -580,7 +578,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 }
                 i += size;
             }
-            return Q.when(events);
+            return events;
         },
 
         deleteInbandEvents = function(data) {
