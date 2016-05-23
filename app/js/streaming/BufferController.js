@@ -370,29 +370,27 @@ MediaPlayer.dependencies.BufferController = function() {
                         }*/
 
                     //console.saveBinArray(data, type + "_" + request.index + "_" + request.quality + ".mp4");
-                    deleteInbandEvents.call(self, data).then(
-                        function(data) {
-                            appendToBuffer.call(self, data, request.quality, request.index).then(
-                                function() {
-                                    if (isFirstMediaSegment) {
-                                        isFirstMediaSegment = false;
-                                        if (self.fragmentController.hasOwnProperty('getStartTime')) {
-                                            segmentStartTime = self.fragmentController.getStartTime();
-                                        }
-                                        if (segmentStartTime) {
-                                            self.metricsModel.addBufferedSwitch(type, segmentStartTime, _currentRepresentation.id, request.quality);
-                                        } else {
-                                            self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
-                                        }
-                                    }
+                    data = deleteInbandEvents.call(self, data);
 
-                                    self.debug.log("[BufferController][" + type + "] Media segment buffered");
-                                    // Signal end of buffering process
-                                    signalSegmentBuffered.call(self);
-                                    // Check buffer level
-                                    checkIfSufficientBuffer.call(self);
+                    appendToBuffer.call(self, data, request.quality, request.index).then(
+                        function() {
+                            if (isFirstMediaSegment) {
+                                isFirstMediaSegment = false;
+                                if (self.fragmentController.hasOwnProperty('getStartTime')) {
+                                    segmentStartTime = self.fragmentController.getStartTime();
                                 }
-                            );
+                                if (segmentStartTime) {
+                                    self.metricsModel.addBufferedSwitch(type, segmentStartTime, _currentRepresentation.id, request.quality);
+                                } else {
+                                    self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
+                                }
+                            }
+
+                            self.debug.log("[BufferController][" + type + "] Media segment buffered");
+                            // Signal end of buffering process
+                            signalSegmentBuffered.call(self);
+                            // Check buffer level
+                            checkIfSufficientBuffer.call(self);
                         }
                     );
                 }
@@ -588,7 +586,7 @@ MediaPlayer.dependencies.BufferController = function() {
         deleteInbandEvents = function(data) {
 
             if (!inbandEventFound) {
-                return Q.when(data);
+                return data;
             }
 
             var length = data.length,
@@ -618,7 +616,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
             }
 
-            return Q.when(modData.subarray(0, j));
+            return modData.subarray(0, j);
 
         },
 
