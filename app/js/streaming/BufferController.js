@@ -1060,7 +1060,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 manifest = self.manifestModel.getValue(),
                 quality,
                 playlistUpdated = null,
-                result;
+                abrResult;
 
             if (deferredFragmentBuffered !== null) {
                 self.debug.error("[BufferController][" + type + "] deferredFragmentBuffered has not been resolved, create a new one is not correct.");
@@ -1074,9 +1074,9 @@ MediaPlayer.dependencies.BufferController = function() {
             // If data has been changed, then load initialization segment
             var loadInit = doUpdateData.call(self);
             // Get current quality
-            result = self.abrController.getPlaybackQuality(type, data);
+            abrResult = self.abrController.getPlaybackQuality(type, data);
 
-            quality = result.quality;
+            quality = abrResult.quality;
 
             // Get corresponding representation
             _currentRepresentation = getRepresentationForQuality.call(self, quality);

@@ -37,7 +37,7 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
         "use strict";
 
         videoModel.setSource(window.URL.createObjectURL(source));
-        return Q.when(true);
+        return true;
     },
 
     detachMediaSource: function (videoModel) {
@@ -45,7 +45,7 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
         // it seems that any value passed to the setSource is cast to a string when setting element.src,
         // so we cannot use null or undefined to reset the element. Use empty string instead.
         videoModel.setSource("");
-        return Q.when(true);
+        return true;
     },
 
     setDuration: function (source, value) {
@@ -58,6 +58,6 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
         "use strict";
 
         source.endOfStream();
-        return Q.when(true);
+        return true;
     }
 };
