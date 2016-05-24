@@ -299,11 +299,11 @@ MediaPlayer.dependencies.Stream = function() {
                 }
 
                 if (!this.capabilities.supportsCodec(this.videoModel.getElement(), audioCodec)) {
-                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Audio codec is not supported", {
+                    this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Audio codec is not supported", {
                         codec: audioCodec
                     });
                     initializeMediaSourceFinished = true;
-                    return true;
+                    return false;
                 }
 
                 if (mediaSource) {
