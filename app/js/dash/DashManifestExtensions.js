@@ -32,8 +32,10 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             return false;
         }
 
-        adaptation.type = null;
-
+        if (adaptation.type === undefined) {
+            adaptation.type = null;
+        }
+        
         col = adaptation.ContentComponent_asArray;
 
         if (col) {

@@ -25,8 +25,6 @@ MediaPlayer.dependencies.Stream = function() {
 
     var manifest,
         mediaSource,
-        videoCodec = null,
-        audioCodec = null,
         contentProtection = null,
         videoController = null,
         videoTrackIndex = -1,
@@ -213,9 +211,6 @@ MediaPlayer.dependencies.Stream = function() {
                             audioController = null;
                             textController = null;
 
-                            videoCodec = null;
-                            audioCodec = null;
-
                             mediaSource = null;
                             manifest = null;
 
@@ -231,9 +226,68 @@ MediaPlayer.dependencies.Stream = function() {
             return deferred.promise;
         },
 
+        createBufferController = function(data, codecOrMimeType) {
+            //var controllerObject = {},
+            var controllerObject = null,
+                buffer;
+
+            if (data.type !== 'text') {
+                if (codecOrMimeType === null) {
+                    if (data.type === 'video') {
+                        this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO, 'Video codec information not available');
+                        initializeMediaSourceFinished = true;
+                    } else if (data.type === 'audio') {
+                        this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "Audio codec information not available");
+                    }
+                    return controllerObject;
+                }
+
+                if (!this.capabilities.supportsCodec(this.videoModel.getElement(), codecOrMimeType)) {
+                    this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, data.type + ' codec is not supported', {
+                        codec: codecOrMimeType
+                    });
+                    initializeMediaSourceFinished = true;
+                    return controllerObject;
+                }
+            }
+
+            if (mediaSource) {
+                try {
+                    buffer = this.sourceBufferExt.createSourceBuffer(mediaSource, codecOrMimeType);
+                } catch (ex) {
+                    this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, 'Failed to create ' + data.type + ' source buffer',
+                        new MediaPlayer.vo.Error(ex.code, ex.name, ex.message));
+                    initializeMediaSourceFinished = true;
+                    return controllerObject;
+                }
+            } else {
+                // If MediaSource is not defined then raise DOMException 'InvalidAccessError'
+                // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer)                
+                if (data.type === 'video') {
+                    this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, 'Failed to create ' + data.type + ' source buffer',
+                        new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS, 'InvalidAccessError', 'MediaSource undefined'));
+                    initializeMediaSourceFinished = true;
+                } else {
+                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, 'Failed to create ' + data.type + ' source buffer',
+                        new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS, 'InvalidAccessError', 'MediaSource undefined'));
+                }
+                return controllerObject;
+            }
+
+            controllerObject = this.system.getObject("bufferController");
+            controllerObject.initialize(data.type, periodInfo, data, buffer, this.fragmentController, mediaSource, eventController);
+            if (data.type === 'text' && buffer.hasOwnProperty('initialize')) {
+                buffer.initialize(codecOrMimeType, controllerObject, data);
+            }
+
+            return controllerObject;
+        },
+
         initializeMediaSource = function() {
             var data,
-                buffer;
+                videoCodec,
+                audioCodec,
+                mimeType;
 
             initializeMediaSourceFinished = false;
             eventController = this.system.getObject("eventController");
@@ -241,48 +295,24 @@ MediaPlayer.dependencies.Stream = function() {
             /********** INIT VIDEO *****************/
             // Initialize video controller
             data = this.manifestExt.getVideoData(manifest, periodInfo.index);
+
             if (data === null) {
-                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO, "No Video data in manifest");
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO, 'No Video data in manifest');
                 initializeMediaSourceFinished = true;
-                return false;
+                return;
             }
+
             videoTrackIndex = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
             videoCodec = this.manifestExt.getCodec(data);
-            if (videoCodec === null) {
-                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO, "Video codec information not available");
-                initializeMediaSourceFinished = true;
-                return false;
-            }
-
-            if (!this.capabilities.supportsCodec(this.videoModel.getElement(), videoCodec)) {
-                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Video codec is not supported", {
-                    codec: videoCodec
-                });
-                initializeMediaSourceFinished = true;
-                return false;
-            }
 
             contentProtection = this.manifestExt.getContentProtectionData(data);
-            if (mediaSource) {
-                try {
-                    buffer = this.sourceBufferExt.createSourceBuffer(mediaSource, videoCodec);
-                } catch (ex) {
-                    this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create video source buffer",
-                        new MediaPlayer.vo.Error(ex.code, ex.name, ex.message));
-                    initializeMediaSourceFinished = true;
-                    return false;
-                }
-            } else {
-                // If MediaSource is not defined then raise DOMException 'InvalidAccessError'
-                // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer)                
-                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create video source buffer",
-                    new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS, "InvalidAccessError", "MediaSource undefined"));
-                initializeMediaSourceFinished = true;
-                return false;
+
+            videoController = createBufferController.call(this, data, videoCodec);
+
+            if (initializeMediaSourceFinished) {
+                return;
             }
 
-            videoController = this.system.getObject("bufferController");
-            videoController.initialize("video", periodInfo, data, buffer, this.fragmentController, mediaSource, eventController);
             /********** INIT AUDIO *****************/
             data = this.manifestExt.getSpecificAudioData(manifest, periodInfo.index, defaultAudioLang);
 
@@ -292,33 +322,11 @@ MediaPlayer.dependencies.Stream = function() {
             } else {
                 audioTrackIndex = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
                 audioCodec = this.manifestExt.getCodec(data);
-                if (audioCodec === null) {
-                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "Audio codec information not available");
-                    initializeMediaSourceFinished = true;
-                    return true;
-                }
+                audioController = createBufferController.call(this, data, audioCodec);
 
-                if (!this.capabilities.supportsCodec(this.videoModel.getElement(), audioCodec)) {
-                    this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Audio codec is not supported", {
-                        codec: audioCodec
-                    });
-                    initializeMediaSourceFinished = true;
-                    return false;
+                if (initializeMediaSourceFinished) {
+                    return;
                 }
-
-                if (mediaSource) {
-                    buffer = this.sourceBufferExt.createSourceBuffer(mediaSource, audioCodec);
-                } else {
-                    // If MediaSource is not defined then raise DOMException 'InvalidAccessError'
-                    // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer)
-                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create audio source buffer",
-                        new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS, "InvalidAccessError", "MediaSource undefined"));
-                    initializeMediaSourceFinished = true;
-                    return true;
-                }
-
-                audioController = this.system.getObject("bufferController");
-                audioController.initialize("audio", periodInfo, data, buffer, this.fragmentController, mediaSource, eventController);
             }
             /********** INIT SUBTITLES *****************/
             data = this.manifestExt.getSpecificTextData(manifest, periodInfo.index, defaultSubtitleLang);
@@ -326,31 +334,19 @@ MediaPlayer.dependencies.Stream = function() {
             if (data === null) {
                 this.debug.log("[Stream] No text tracks.");
             } else {
-
                 textTrackIndex = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
-                var mimeType = this.manifestExt.getMimeType(data);
+                mimeType = this.manifestExt.getMimeType(data);
 
                 if (mimeType === null) {
                     this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_TEXT, "Text codec information not available");
                     initializeMediaSourceFinished = true;
-                    return true;
+                    return;
                 }
 
-                if (mediaSource) {
-                    buffer = this.sourceBufferExt.createSourceBuffer(mediaSource, mimeType);
-                } else {
-                    // If MediaSource is not defined then raise DOMException 'InvalidAccessError'
-                    // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer)
-                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create audio source buffer",
-                        new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS, "InvalidAccessError", "MediaSource undefined"));
-                    initializeMediaSourceFinished = true;
-                    return true;
-                }
+                textController = createBufferController.call(this, data, mimeType);
 
-                textController = this.system.getObject("bufferController");
-                textController.initialize("text", periodInfo, data, buffer, this.fragmentController, mediaSource, eventController);
-                if (buffer.hasOwnProperty('initialize')) {
-                    buffer.initialize(mimeType, textController, data);
+                if (initializeMediaSourceFinished) {
+                    return;
                 }
             }
 
@@ -364,11 +360,11 @@ MediaPlayer.dependencies.Stream = function() {
                 // No protectionController (MediaKeys not supported/enabled) but content is protected => error
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS, "EME is not supported/enabled", null);
                 initializeMediaSourceFinished = true;
-                return false;
+                return;
             }
 
             initializeMediaSourceFinished = true;
-            return true;
+            return;
         },
 
         initializePlayback = function() {
@@ -747,11 +743,10 @@ MediaPlayer.dependencies.Stream = function() {
                 function(mediaSourceResult) {
                     mediaSource = mediaSourceResult;
                     self.debug.log("[Stream] Initialize MediaSource");
-                    if (initializeMediaSource.call(self)) {
-                        self.debug.log("[Stream] Initialize playback");
-                        initializePlayback.call(self);
-                        self.debug.log("[Stream] Playback initialized");
-                    }
+                    initializeMediaSource.call(self);
+                    self.debug.log("[Stream] Initialize playback");
+                    initializePlayback.call(self);
+                    self.debug.log("[Stream] Playback initialized");
                 }
             );
         },
@@ -896,7 +891,7 @@ MediaPlayer.dependencies.Stream = function() {
                     data = self.manifestExt.getDataForIndex(videoTrackIndex, manifest, periodInfo.index);
                 }
                 videoController.updateData(data, periodInfo);
-            } 
+            }
 
             if (audioController) {
                 data = self.manifestExt.getDataForIndex(audioTrackIndex, manifest, periodInfo.index);
