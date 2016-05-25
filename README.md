@@ -100,3 +100,13 @@ When it is all done, it should look similar to this:
     </body>
 </html>
 ```
+
+## Documentation
+
+Full [API Documentation](http://cdn.dashjs.org/latest/jsdoc/index.html) is available describing MediaPlayer public methods and events.
+
+This API documentation can be generated using following gulp command:
+
+cd build
+build doc
+
