@@ -103,7 +103,7 @@ When it is all done, it should look similar to this:
 
 ## Documentation
 
-Full [API Documentation](http://cdn.dashjs.org/latest/jsdoc/index.html) is available describing MediaPlayer public methods and events.
+Full [API Documentation](http://orange-opensource.github.io/hasplayer.js/dev/doc/index.html) is available describing MediaPlayer public methods and events.
 
 This API documentation can be generated using following gulp command:
 
