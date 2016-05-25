@@ -121,7 +121,7 @@ Mss.dependencies.MssParser = function() {
             adaptationSet.SegmentTemplate = segmentTemplate;
 
             segments = segmentTemplate.SegmentTimeline.S_asArray;
-            this.metricsModel.addDVRInfo(adaptationSet.contentType, 0, null, {
+            this.metricsModel.addDVRInfo(adaptationSet.contentType, new Date(), {
                 start: segments[0].t / segmentTemplate.timescale,
                 end: (segments[segments.length - 1].t + segments[segments.length - 1].d)  / segmentTemplate.timescale
             });
@@ -143,20 +143,26 @@ Mss.dependencies.MssParser = function() {
 
             fourCCValue = this.domParser.getAttributeValue(qualityLevel, "FourCC");
 
+            // If FourCC not defined at QualityLevel level, then get it from StreamIndex level
             if (fourCCValue === null) {
                 fourCCValue = this.domParser.getAttributeValue(streamIndex, "FourCC");
             }
+
+            // If still not defined (optionnal for audio stream, see https://msdn.microsoft.com/en-us/library/ff728116%28v=vs.95%29.aspx),
+            // then we consider the stream is an audio AAC stream
+            if (fourCCValue === null) {
+                fourCCValue = "AAC";
+            }
+
             // Do not support AACH (TODO)
             if (fourCCValue.indexOf("AACH") >= 0) {
                 return null;
             }
 
             // Get codecs value according to FourCC field
-            // Note: If empty FourCC (optionnal for audio stream, see https://msdn.microsoft.com/en-us/library/ff728116%28v=vs.95%29.aspx),
-            // then we consider the stream is an audio AAC stream
             if (fourCCValue === "H264" || fourCCValue === "AVC1") {
                 representation.codecs = getH264Codec.call(this, qualityLevel);
-            } else if ((fourCCValue.indexOf("AAC") >= 0) || (fourCCValue === "")) {
+            } else if (fourCCValue.indexOf("AAC") >= 0) {
                 representation.codecs = getAACCodec.call(this, qualityLevel, fourCCValue);
                 representation.audioSamplingRate = parseInt(this.domParser.getAttributeValue(qualityLevel, "SamplingRate"), 10);
                 representation.audioChannels = parseInt(this.domParser.getAttributeValue(qualityLevel, "Channels"), 10);
@@ -410,17 +416,7 @@ Mss.dependencies.MssParser = function() {
             return contentProtection;
         },
 
-        /*var createCENCContentProtection = function (protectionHeader) {
-
-        var contentProtection = {};
-
-        contentProtection.schemeIdUri = "urn:mpeg:dash:mp4protection:2011";
-        contentProtection.value = "cenc";
-
-        return contentProtection;
-    };*/
-
-        createWidevineContentProtection = function(protectionHeader) {
+        createWidevineContentProtection = function(/*protectionHeader*/) {
 
             var contentProtection = {},
                 keySystem = this.system.getObject("ksWidevine");
@@ -484,13 +480,10 @@ Mss.dependencies.MssParser = function() {
                 contentProtection["cenc:default_KID"] = KID;
                 contentProtections.push(contentProtection);
 
-                // For chrome, create ContentProtection for Widevine as a CENC protection
-                if (navigator.userAgent.indexOf("Chrome") >= 0) {
-                    //contentProtections.push(createCENCContentProtection(manifest.Protection.ProtectionHeader));
-                    contentProtection = createWidevineContentProtection.call(this, protectionHeader);
-                    contentProtection["cenc:default_KID"] = KID;
-                    contentProtections.push(contentProtection);
-                }
+                // Create ContentProtection for Widevine (as a CENC protection)
+                contentProtection = createWidevineContentProtection.call(this, protectionHeader);
+                contentProtection["cenc:default_KID"] = KID;
+                contentProtections.push(contentProtection);
 
                 mpd.ContentProtection = (contentProtections.length > 1) ? contentProtections : contentProtections[0];
                 mpd.ContentProtection_asArray = contentProtections;
@@ -558,7 +551,6 @@ Mss.dependencies.MssParser = function() {
     return {
         debug: undefined,
         system: undefined,
-        errHandler: undefined,
         domParser: undefined,
         metricsModel: undefined,
 

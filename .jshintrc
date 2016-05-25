@@ -1,7 +1,7 @@
 {
     "noarg": true,
     "noempty": true,
-    "latedef": true,
+    "latedef": false,
     "undef": true,
     "unused": true,
     "strict": false,
@@ -37,5 +37,9 @@
         "mpegts",
         "Custom",
         "ActiveXObject",
+        "Promise",
+        "define",
+        "fingerprint_browser",
+        "fingerprint_os",
         "DEBUG"]
 }

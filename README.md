@@ -21,24 +21,20 @@ Learn more about versions and roadmap on the [wiki](https://github.com/Orange-Op
 ### Install Dependencies
 
 1. [install nodejs](http://nodejs.org/)
-2. [install grunt](http://gruntjs.com/getting-started)
-    * npm install -g grunt-cli
+2. [install gulp](https://github.com/gulpjs/gulp/blob/master/docs/getting-started.md)
+    * npm install -g gulp
 
 ### Build / Run
 
-1. Change directories to the build folder
-    * cd build/
-2. Install all Node Modules defined in package.json 
-    * npm install
-3. Run build task for building hasplayer
-    * grunt build_hasplayer
-4. You can also check for other available targets by running:
-    * grunt help
+npm run build
 
 The build task can be configured in order to select supported protocol(s) and to integrate or not EME support.
 For example:
 
-    # grunt build_hasplayer -protocol mss -protection=false (mss support only, no EME support)
+1. No hls support, no EME support:
+    * npm build -hls=false -protection=false
+2. No hls support, no MSS support:
+    * npm build -hls=false -mss=false
 
 ## Demo
 
@@ -53,10 +49,12 @@ See LICENSE file for copyright details.
 
 
 ## Getting Started
+
 Create a video element somewhere in your html. For our purposes, make sure to set the controls property to true.
 ```
 <video id="videoPlayer" controls="true"></video>
 ```
+
 Add hasplayer.js to the end of the body.
 ```
 <body>
@@ -64,15 +62,16 @@ Add hasplayer.js to the end of the body.
   <script src="yourPathToHasplayer/hasplayer.js"></script>
 </body>
 ```
-Now comes the good stuff. We need to create a context. Then from that context we create a media player, initialize it, attach it to our "videoPlayer" and then tell it where to get the video from. We will do this in an anonymous self executing function, that way it will run as soon as the page loads. So, here is how we do it:
+
+Now comes the good stuff. We need to create an MediaPlayer. Then we need to initialize it, attach it to our "videoPlayer" and then tell it where to get the video from. We will do this in an anonymous self executing function, that way it will run as soon as the page loads. So, here is how we do it:
 ``` js
 (function(){
-    var url = "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest";
-    var context = new MediaPlayer.di.Context();
-    var player = new MediaPlayer(context);
-    player.startup();
-    player.attachView(document.querySelector("#videoPlayer"));
-    player.attachSource(url);
+    var stream = {
+        url: "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest"
+    };
+    var mediaPlayer = new MediaPlayer();
+    MediaPlayer.init(document.querySelector("#videoPlayer"));
+    MediaPlayer.load(stream);
 })();
 ```
 
@@ -81,7 +80,7 @@ When it is all done, it should look similar to this:
 <!doctype html>
 <html>
     <head>
-        <title>Hasplayer.js Rocks</title>
+        <title>hasplayer.js Rocks</title>
     </head>
     <body>
         <div>
@@ -90,14 +89,23 @@ When it is all done, it should look similar to this:
         <script src="yourPathToHasplayer/hasplayer.js"></script>
         <script>
             (function(){
-                var url = "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest";
-                var context = new MediaPlayer.di.Context();
-                var player = new MediaPlayer(context);
-                player.startup();
-                player.attachView(document.querySelector("#videoPlayer"));
-                player.attachSource(url);
+                var stream = {
+                    url: "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest"
+                };
+                var mediaPlayer = new MediaPlayer();
+                mediaPlayer.init(document.querySelector("#videoPlayer"));
+                mediaPlayer.load(stream);
             })();
         </script>
     </body>
 </html>
 ```
+
+## Documentation
+
+Full [API Documentation](http://orange-opensource.github.io/hasplayer.js/dev/doc/index.html) is available describing MediaPlayer public methods and events.
+
+This API documentation can be generated using following gulp command:
+
+npm run doc
+

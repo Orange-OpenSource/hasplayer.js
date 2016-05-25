@@ -181,7 +181,7 @@ function initChartAndSlider() {
 
 
     // Audio tracks
-    var audioDatas = player.getAudioTracks();
+    var audioDatas = player.getTracks(MediaPlayer.TRACKS_TYPE.AUDIO);
     if (audioDatas && audioDatas.length > 1) {
         var selectOptions = "";
         for (i = 0 ; i < audioDatas.length; i++) {
@@ -195,7 +195,7 @@ function initChartAndSlider() {
             var currentTrackId = $("select option:selected")[0].value;
             for (i = 0 ; i < audioDatas.length; i++) {
                 if (audioDatas[i].id == currentTrackId) {
-                    player.setAudioTrack(audioDatas[i]);
+                    player.selectTrack(MediaPlayer.TRACKS_TYPE.AUDIO,audioDatas[i]);
                 }
             }
         });
@@ -607,20 +607,20 @@ function parseUrlParams () {
 
     if (query) {
         params = query.substring(1).split('&');
+        
+        streamSource  = {};
         for (i = 0; i < params.length; i++) {
             name = params[i].split('=')[0];
             value = params[i].substr(name.length+1);
 
             if ((name === 'file') || (name === 'url')) {
-                streamSource = value + anchor;
-            } else if (name === 'metrics') {
-                enableMetrics = true;
+                streamSource.url = value + anchor;
             } else if ((name === 'debug') && (value !== 'false')) {
                 document.getElementById('debugInfos').style.visibility="visible";
             } else if (name === 'netBalancer') {
                 enableNetBalancer = true;
             } else {
-                streamSource += '&' + params[i];
+                streamSource.url += '&' + params[i];
             }
         }
     }
@@ -657,9 +657,8 @@ function metricAdded(e) {
 
 function initPlayer() {
 
-    player = new MediaPlayer(new MediaPlayer.di.Context());
-    player.startup();
-    player.attachView(video);
+    player = new MediaPlayer();
+    player.init(video);
     player.setAutoPlay(true);
     player.getDebug().setLevel(4);
     player.addEventListener("metricUpdated", metricUpdated.bind(this));
@@ -683,7 +682,7 @@ function launchPlayer() {
 
     // Open stream
     appendText("attachSource");
-    player.attachSource(streamSource);
+    player.load(streamSource);
     update();
 
     initControlBar();

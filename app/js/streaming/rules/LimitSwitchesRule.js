@@ -28,6 +28,8 @@ MediaPlayer.rules.LimitSwitchesRule = function () {
     return {
         debug: undefined,
 
+        name: "LimitSwitchesRule",
+
         checkIndex: function (current, metrics /*, data*/) {
             if (waiting > 0) {
                 waiting -= 1;

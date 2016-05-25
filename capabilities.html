@@ -1,196 +1,193 @@
 <!DOCTYPE html>
 <html>
 <head>
-	<title>Page de test de fonctionnalités</title>
-	<style type="text/css">
-	body{
-		font-family:Arial, Helvetica, sans-serif;
-	}
-	.ok {
-		display: inline-block;
-		width:25px;
-		height:25px;
-		background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAAKYSURBVHjaYvz29wf35CfrOve8Pxv65/9fVkZGxn8MFIL/DAyM////Z1LilLxaLBtewLjoxc6SiU/WdjPQCKhyylxiuvr1gRkDDcHDHy/UmZgYmf7S0hImRqa/TAx0AFSzxEvIfEm1fEyaDrfiSXQ5FmpYECHmNKlENjyfgYGBwZhX/UDY1Yarf/7/ZaWaJZFizhOLZcMKYPwvf74J/Gf4z0i14EK34NOfr0ItDxfP/vv/HwtVLEG34B/Df6aOx8un3vr+RJ+oiA8QsZnTopgcrcQheQ2bfJSY8wRkCxgYGBgWPN9euevd6Qhs6jHixEfYcmGNfGwqAwMDgza3wqniO9M23vvxXAvZB0WyYYXIeg59uOg3+/nWOqKTsDqX7HkYW5Zd7E6fSrafIofkdVgqKpINRbHg3vdn2i0PF8/+/f8PGy5LmG3z/ULufn+mAxN48eudvIOA/kZuZs5PDAwMDHws3O9NeNUOyLKL3UmV8m1kYmD8D4/ov98ES+5OX//452sVXBawMDL/xvDJ/R/PNWsfzFv87d9PHpiYEqfU1Shxl34mBkQJ/Y/hP1PHo2XTbnx7ZERWjj/7+ZZD+8OlM/79/8eMS+OiFzvLcEU00cXK9ncno2c829SETe7Ix8veM59tbqRK2TXvxfaqla/25yKLPfjxQqPt4ZKZ+CKa5AKy9/HKCVveHo9nYGBgeP/ns2j9g/kLX/3+IE1KxiVYdv1j+M/U/HDRnF3vTke8+v1B+s73p7qklg5EFZB///9jOfbpqgfZ9cn///9pWnH9Y/jPxMTKyPyLlpawMDD9YfIStljMwsj8m1aWeAqbL2H8//8/w+nPN5x2vjsd+e3vD15qNCz+M/xn/P//P5Mej/KxQBHb2YABAJuACoNlP/nrAAAAAElFTkSuQmCC');
-	}
+    <title>MSE/EME Capabilites</title>
+    <style type="text/css">
+    body{
+        font-family:Arial, Helvetica, sans-serif;
+    }
+    .ok {
+        display: inline-block;
+        width:25px;
+        height:25px;
+        background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABkAAAAZCAYAAADE6YVjAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAAKYSURBVHjaYvz29wf35CfrOve8Pxv65/9fVkZGxn8MFIL/DAyM////Z1LilLxaLBtewLjoxc6SiU/WdjPQCKhyylxiuvr1gRkDDcHDHy/UmZgYmf7S0hImRqa/TAx0AFSzxEvIfEm1fEyaDrfiSXQ5FmpYECHmNKlENjyfgYGBwZhX/UDY1Yarf/7/ZaWaJZFizhOLZcMKYPwvf74J/Gf4z0i14EK34NOfr0ItDxfP/vv/HwtVLEG34B/Df6aOx8un3vr+RJ+oiA8QsZnTopgcrcQheQ2bfJSY8wRkCxgYGBgWPN9euevd6Qhs6jHixEfYcmGNfGwqAwMDgza3wqniO9M23vvxXAvZB0WyYYXIeg59uOg3+/nWOqKTsDqX7HkYW5Zd7E6fSrafIofkdVgqKpINRbHg3vdn2i0PF8/+/f8PGy5LmG3z/ULufn+mAxN48eudvIOA/kZuZs5PDAwMDHws3O9NeNUOyLKL3UmV8m1kYmD8D4/ov98ES+5OX//452sVXBawMDL/xvDJ/R/PNWsfzFv87d9PHpiYEqfU1Shxl34mBkQJ/Y/hP1PHo2XTbnx7ZERWjj/7+ZZD+8OlM/79/8eMS+OiFzvLcEU00cXK9ncno2c829SETe7Ix8veM59tbqRK2TXvxfaqla/25yKLPfjxQqPt4ZKZ+CKa5AKy9/HKCVveHo9nYGBgeP/ns2j9g/kLX/3+IE1KxiVYdv1j+M/U/HDRnF3vTke8+v1B+s73p7qklg5EFZB///9jOfbpqgfZ9cn///9pWnH9Y/jPxMTKyPyLlpawMDD9YfIStljMwsj8m1aWeAqbL2H8//8/w+nPN5x2vjsd+e3vD15qNCz+M/xn/P//P5Mej/KxQBHb2YABAJuACoNlP/nrAAAAAElFTkSuQmCC');
+    }
 
-	.ko {
-		display: inline-block;
-		width:28px;
-		height:25px;
-		background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAZCAYAAAAiwE4nAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAALVSURBVHjavNRbSFNxHAfw38605iZT0cDLlualB0WxoWkD86FQnNrLHsRiL0oPjcALeCmIRNBUqASZD6I+lEYP9mBpGPqQhDYbGml78Fq6UrCRG7q8bt+ePHKYZxcdHvg9nPM/v9+Hc873/AkAeVx7e/7Q6bRQKsegUEyirKwVJpPMmxnkFVhV1QIicEqhmMTqaoTvwdHR607YYWm1Ot+C+/t+yM7+yAuKRNsYH7/mO7Czs5QXO6ycnA/Y2Tl/etBsDkVCwpxbkAjo7b19erC29olHGBGQmGjExkbwyUGjMRGhoWaPQSKgru7xycGiotdeYURASMhfzM5e9h4cGsoFw9i9BokAjeaFd+DWlgRK5RiIAIHAgdLSTgwP34RKNeg0PCrqF3p67qCj4y6kUiuIAKHwACMjNzwHdTotO1AstmFp6RIAgsUShIKCd+yaXL6CqakrbF9h4Vt2LTPzM/b2/N2Dq6sRkMlMbCPD2NHUVMOuWyxByM0dQnj4GiYmrrLXTSYZ4uPnOU/f1VXiHiwvf+702vz89tHefo/zbxqNiez58vJFpKZ+deqLifmB9fUL/KDBkAaRaPvYIDCMHa2tZdjdPcfpWViIQ1qagTdANTVN/GBe3nuX6YuNXYTZHMrpqax86rJHLLZhejrZGezrU7v8DeTyFej1GXA4BBxwbS0c+fkDLlG1ug92O3MEWq3SY7/BYUVH/4TBkMYi8/PxnH3TapVyEnpcBvr7bx2BDQ0PeW8OCPgHvT6Dk8aUlG8gAnQ6LSe9GRl63jkKxSRsNjFhbi4BkZG/eW8MDt7A5mYgm8b09C+86S0ufuXy1ba13Sc0Nj5wu1WpVINobq5GUtJ3pzWh8AAVFc9QX/8IYWF/XM5JTp4+2QZ9imJIIrHRWR0SiY0htfoNCYX2MwE1mpcCOBwCGhgooO7uEpqZSaatrUCfIkKhneLiFikr6xNVV7f8HwA3OhxTg0UPfwAAAABJRU5ErkJggg==');
-	}
+    .ko {
+        display: inline-block;
+        width:28px;
+        height:25px;
+        background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAZCAYAAAAiwE4nAAAACXBIWXMAAAsTAAALEwEAmpwYAAAAIGNIUk0AAHolAACAgwAA+f8AAIDpAAB1MAAA6mAAADqYAAAXb5JfxUYAAALVSURBVHjavNRbSFNxHAfw38605iZT0cDLlualB0WxoWkD86FQnNrLHsRiL0oPjcALeCmIRNBUqASZD6I+lEYP9mBpGPqQhDYbGml78Fq6UrCRG7q8bt+ePHKYZxcdHvg9nPM/v9+Hc873/AkAeVx7e/7Q6bRQKsegUEyirKwVJpPMmxnkFVhV1QIicEqhmMTqaoTvwdHR607YYWm1Ot+C+/t+yM7+yAuKRNsYH7/mO7Czs5QXO6ycnA/Y2Tl/etBsDkVCwpxbkAjo7b19erC29olHGBGQmGjExkbwyUGjMRGhoWaPQSKgru7xycGiotdeYURASMhfzM5e9h4cGsoFw9i9BokAjeaFd+DWlgRK5RiIAIHAgdLSTgwP34RKNeg0PCrqF3p67qCj4y6kUiuIAKHwACMjNzwHdTotO1AstmFp6RIAgsUShIKCd+yaXL6CqakrbF9h4Vt2LTPzM/b2/N2Dq6sRkMlMbCPD2NHUVMOuWyxByM0dQnj4GiYmrrLXTSYZ4uPnOU/f1VXiHiwvf+702vz89tHefo/zbxqNiez58vJFpKZ+deqLifmB9fUL/KDBkAaRaPvYIDCMHa2tZdjdPcfpWViIQ1qagTdANTVN/GBe3nuX6YuNXYTZHMrpqax86rJHLLZhejrZGezrU7v8DeTyFej1GXA4BBxwbS0c+fkDLlG1ug92O3MEWq3SY7/BYUVH/4TBkMYi8/PxnH3TapVyEnpcBvr7bx2BDQ0PeW8OCPgHvT6Dk8aUlG8gAnQ6LSe9GRl63jkKxSRsNjFhbi4BkZG/eW8MDt7A5mYgm8b09C+86S0ufuXy1ba13Sc0Nj5wu1WpVINobq5GUtJ3pzWh8AAVFc9QX/8IYWF/XM5JTp4+2QZ9imJIIrHRWR0SiY0htfoNCYX2MwE1mpcCOBwCGhgooO7uEpqZSaatrUCfIkKhneLiFikr6xNVV7f8HwA3OhxTg0UPfwAAAABJRU5ErkJggg==');
+    }
 
-	</style>
+    </style>
 
-	<script src="build/hasplayer.js"></script>
-
-
-	<script type="text/javascript">
-		var DEBUG = true;
-		var capablities = {
-
-			mediaKeys:null,
-			encryptedEventSent:false,
-
-		    supportsMediaSource: function () {
-		        "use strict";
-
-		        var hasWebKit = ("WebKitMediaSource" in window),
-		            hasMediaSource = ("MediaSource" in window);
-
-		        return (hasWebKit || hasMediaSource);
-		    },
-
-		    supportsMediaKeys: function () {
-		        "use strict";
-
-		        var hasWebKitMediaKeys = ("WebKitMediaKeys" in window),
-		            hasMsMediaKeys = ("MSMediaKeys" in window),
-		            hasMediaKeys = ("MediaKeys" in window);
-
-		        if (hasWebKitMediaKeys) {
-		            this.mediaKeys = window.WebKitMediaKeys;
-		        } else if (hasMsMediaKeys) {
-		            this.mediaKeys = window.MSMediaKeys
-		        } else if (hasMediaKeys) {
-		            this.mediaKeys = window.MediaKeys;
-		        }
-
-		        return (hasWebKitMediaKeys || hasMsMediaKeys || hasMediaKeys);
-		    },
-		    detectEME: function (){
-		    	"use strict";
-
-		    	var EMEVersion = document.getElementById("EMEVersion");
-
-		    	var eme = this.supportsMediaKeys();
-
-		    	var video = document.getElementById('testVideo');
-				if (eme) {
-					var onEncrypted = function(event)
-	                {
-	                	EMEVersion.innerHTML = "28-08-2014  : needkey event has been replaced by encrypted event";
-	                	this.encryptedEventSent = true;
-	                };
-
-					var onNeedKey = function(event)
-	                {
-	                	if (!this.encryptedEventSent){
-		                	if (event.type === undefined) {
-		                		EMEVersion.innerHTML = "10-05-2013 : event.type is undefined";
-		                	}
-		                	else
-		                	{	
-		                		if (this.mediaKeys.create)
-		                		{
-		                			EMEVersion.innerHTML = "28-08-2014  : create function is defined on mediaKeys object";
-		                		}
-		                		else if (this.mediaKeys.loadSession === undefined) {
-									EMEVersion.innerHTML = "22-10-2013 : loadSession on mediaKeys object is undefined";
-				    			}
-								else {
-		                			EMEVersion.innerHTML = "18-02-2014 : needkey event has been fired, not encrypted event, and loadSession is defined";
-		                		}
-		                	}
-		                }
-	                };
-
-	                var onError = function(event) {
-						alert('error');
-	                };
-
-	                video.addEventListener('error', onError.bind(this), true);
-
-			    	video.addEventListener('webkitneedkey', onNeedKey.bind(this), true);
-			    	video.addEventListener('needkey', onNeedKey.bind(this), true);
-			    	video.addEventListener('msneedkey', onNeedKey.bind(this), true);
-
-					video.addEventListener('encrypted', onEncrypted.bind(this), true);
-					video.addEventListener('webkitencrypted', onEncrypted.bind(this), true);
-			    	video.addEventListener('msencrypted', onEncrypted.bind(this), true);
-
-					var player = new MediaPlayer(new Custom.di.CustomContext());
-				    
-				    player.startup();
-				    player.attachView(video);
-				    player.setAutoPlay(true);
-				    player.attachSource("http://wams.edgesuite.net/media/SintelTrailer_Smooth_from_WAME_720p_Main_Profile_CENC/CENC/sintel_trailer-720p.ism/manifest(format=mpd-time-csf)");
-				}else {
-					EMEVersion.innerHTML = "EME not Supported."
-				}
-		    },
-		    
-		    supportsCodec: function (codec) {
-		        "use strict";
-
-		        var video = document.createElement("video");
-		        var canPlay;
-		        canPlay = video.canPlayType(codec);
-		        return (canPlay === "probably");
-		    },
-
-		    supportsFlavor: function(codec, flavor){
-		    	this.supportsMediaKeys();
-	    		
-		    	if(this.mediaKeys && this.mediaKeys.isTypeSupported){
-					return this.mediaKeys.isTypeSupported(flavor,codec);
-		    	}else{
-		    		// for chrome ... use canPlayType which is not for that
-		    		var video = document.createElement("video");
-		    		var canPlay  = video.canPlayType(codec,flavor);
-		    		return (canPlay === "probably");
-		    	}
-		    }
-
-		};
+    <script src="dist/hasplayer.js"></script>
 
 
-		function doTest(){
-			
+    <script type="text/javascript">
+        var DEBUG = true;
+        var capablities = {
 
-			var mp4Codec = 'video/mp4; codecs="avc1.640028"',
-				webMCodec = 'video/webm; codecs="vp8, vorbis"',
-				MSE=document.getElementById("MSE"),
-				EME = document.getElementById("EME"),
-				MP4 = document.getElementById("MP4"),
-				WEBM = document.getElementById("WebM"),
-				PLAYREADY = document.getElementById("MP4Pr"),
-				GPLAYREADY = document.getElementById("MP4PrG"),
-				WIDEVINE = document.getElementById("MP4Ww"),
-				CLEARKEY = document.getElementById("MP4Ck"),
-				WKCLEARKEY = document.getElementById("MP4CkWk");
+            mediaKeys:null,
+            encryptedEventSent:false,
+
+            supportsMediaSource: function () {
+                "use strict";
+
+                var hasWebKit = ("WebKitMediaSource" in window),
+                    hasMediaSource = ("MediaSource" in window);
+
+                return (hasWebKit || hasMediaSource);
+            },
+
+            supportsMediaKeys: function () {
+                "use strict";
+
+                var hasWebKitMediaKeys = ("WebKitMediaKeys" in window),
+                    hasMsMediaKeys = ("MSMediaKeys" in window),
+                    hasMediaKeys = ("MediaKeys" in window);
+
+                if (hasWebKitMediaKeys) {
+                    this.mediaKeys = window.WebKitMediaKeys;
+                } else if (hasMsMediaKeys) {
+                    this.mediaKeys = window.MSMediaKeys
+                } else if (hasMediaKeys) {
+                    this.mediaKeys = window.MediaKeys;
+                }
+
+                return (hasWebKitMediaKeys || hasMsMediaKeys || hasMediaKeys);
+            },
+            detectEME: function (){
+                "use strict";
+
+                var EMEVersion = document.getElementById("EMEVersion");
+
+                var eme = this.supportsMediaKeys();
+
+                var video = document.getElementById('testVideo');
+                if (eme) {
+                    var onEncrypted = function(event)
+                    {
+                        EMEVersion.innerHTML = "28-08-2014  : needkey event has been replaced by encrypted event";
+                        this.encryptedEventSent = true;
+                    };
+
+                    var onNeedKey = function(event)
+                    {
+                        if (!this.encryptedEventSent){
+                            if (event.type === undefined) {
+                                EMEVersion.innerHTML = "10-05-2013 : event.type is undefined";
+                            }
+                            else
+                            {    
+                                if (this.mediaKeys.create)
+                                {
+                                    EMEVersion.innerHTML = "28-08-2014  : create function is defined on mediaKeys object";
+                                }
+                                else if (this.mediaKeys.loadSession === undefined) {
+                                    EMEVersion.innerHTML = "22-10-2013 : loadSession on mediaKeys object is undefined";
+                                }
+                                else {
+                                    EMEVersion.innerHTML = "18-02-2014 : needkey event has been fired, not encrypted event, and loadSession is defined";
+                                }
+                            }
+                        }
+                    };
+
+                    var onError = function(event) {
+                        alert('error');
+                    };
+
+                    video.addEventListener('error', onError.bind(this), true);
+
+                    video.addEventListener('webkitneedkey', onNeedKey.bind(this), true);
+                    video.addEventListener('needkey', onNeedKey.bind(this), true);
+                    video.addEventListener('msneedkey', onNeedKey.bind(this), true);
+
+                    video.addEventListener('encrypted', onEncrypted.bind(this), true);
+                    video.addEventListener('webkitencrypted', onEncrypted.bind(this), true);
+                    video.addEventListener('msencrypted', onEncrypted.bind(this), true);
+
+                    var mediaPlayer = new MediaPlayer();
+                    mediaPlayer.init(video);
+                    mediaPlayer.load({url: 'http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest'});
+                } else {
+                    EMEVersion.innerHTML = "EME not Supported."
+                }
+            },
+            
+            supportsCodec: function (codec) {
+                "use strict";
+
+                var video = document.createElement("video");
+                var canPlay;
+                canPlay = video.canPlayType(codec);
+                return (canPlay === "probably");
+            },
+
+            supportsFlavor: function(codec, flavor){
+                this.supportsMediaKeys();
+                
+                if(this.mediaKeys && this.mediaKeys.isTypeSupported){
+                    return this.mediaKeys.isTypeSupported(flavor,codec);
+                }else{
+                    // for chrome ... use canPlayType which is not for that
+                    var video = document.createElement("video");
+                    var canPlay  = video.canPlayType(codec,flavor);
+                    return (canPlay === "probably");
+                }
+            }
+
+        };
+
+
+        function doTest(){
+            
+
+            var mp4Codec = 'video/mp4; codecs="avc1.640028"',
+                webMCodec = 'video/webm; codecs="vp8, vorbis"',
+                MSE=document.getElementById("MSE"),
+                EME = document.getElementById("EME"),
+                MP4 = document.getElementById("MP4"),
+                WEBM = document.getElementById("WebM"),
+                PLAYREADY = document.getElementById("MP4Pr"),
+                GPLAYREADY = document.getElementById("MP4PrG"),
+                WIDEVINE = document.getElementById("MP4Ww"),
+                CLEARKEY = document.getElementById("MP4Ck"),
+                WKCLEARKEY = document.getElementById("MP4CkWk");
 
 
 
-			MSE.className = (capablities.supportsMediaSource()? "ok" : "ko");
-			EME.className = (capablities.supportsMediaKeys()? "ok" : "ko");
-			MP4.className = (capablities.supportsCodec(mp4Codec)? "ok" : "ko");
-			WEBM.className = (capablities.supportsCodec(webMCodec)? "ok" : "ko");
-			PLAYREADY.className = (capablities.supportsFlavor(mp4Codec, "com.microsoft.playready")? "ok" : "ko");
-			GPLAYREADY.className = (capablities.supportsFlavor(mp4Codec, "com.youtube.playready")? "ok" : "ko");
-			WIDEVINE.className = (capablities.supportsFlavor(webMCodec, "com.widevine.alpha")? "ok" : "ko");
-			CLEARKEY.className = (capablities.supportsFlavor(mp4Codec, "org.w3.clearkey")? "ok" : "ko");
-			WKCLEARKEY.className = (capablities.supportsFlavor(mp4Codec, "webkit-org.w3.clearkey")? "ok" : "ko");
-			capablities.detectEME();
-		}
-	</script>
+            MSE.className = (capablities.supportsMediaSource()? "ok" : "ko");
+            EME.className = (capablities.supportsMediaKeys()? "ok" : "ko");
+            MP4.className = (capablities.supportsCodec(mp4Codec)? "ok" : "ko");
+            WEBM.className = (capablities.supportsCodec(webMCodec)? "ok" : "ko");
+            PLAYREADY.className = (capablities.supportsFlavor(mp4Codec, "com.microsoft.playready")? "ok" : "ko");
+            GPLAYREADY.className = (capablities.supportsFlavor(mp4Codec, "com.youtube.playready")? "ok" : "ko");
+            WIDEVINE.className = (capablities.supportsFlavor(webMCodec, "com.widevine.alpha")? "ok" : "ko");
+            CLEARKEY.className = (capablities.supportsFlavor(mp4Codec, "org.w3.clearkey")? "ok" : "ko");
+            WKCLEARKEY.className = (capablities.supportsFlavor(mp4Codec, "webkit-org.w3.clearkey")? "ok" : "ko");
+            capablities.detectEME();
+        }
+    </script>
 </head>
 <body onload="doTest()">
-	<h1>MSE/EME capability testing</h1>
-	<div id="userAgent"></div>
-  	<video id="testVideo" controls width=300 height=200></video>
-	<table>
-		<tr><td>MSE Extension</td><td><span id="MSE"></span></td></tr>
-		<tr><td>EME Extension</td><td><span id="EME"></span></td></tr>
-		<tr><td>MP4 format</td><td><span id="MP4"></span></td></tr>
-		<tr><td>WebM format</td><td><span id="WebM"></span></td></tr>
-		<tr><td>MP4 with PlayReady DRM</td><td><span id="MP4Pr"></span></td></tr>
-		<tr><td>MP4 with PlayReady DRM (google)</td><td><span id="MP4PrG"></span></td></tr>
-		<tr><td>MP4 with Widevine DRM</td><td><span id="MP4Ww"></span></td></tr>
-		<tr><td>MP4 with Clear Key system</td><td><span id="MP4Ck"></span></td></tr>
-		<tr><td>MP4 with Clear Key system (webkit-org)</td><td><span id="MP4CkWk"></span></td></tr>
-		<tr><td>EME Working Draft version</td><td><span id="EMEVersion"></span></td></tr>
-	</table>
+    <h1>MSE/EME capability testing</h1>
+    <div id="userAgent"></div>
+      <video id="testVideo" controls width=300 height=200></video>
+    <table>
+        <tr><td>MSE Extension</td><td><span id="MSE"></span></td></tr>
+        <tr><td>EME Extension</td><td><span id="EME"></span></td></tr>
+        <tr><td>MP4 format</td><td><span id="MP4"></span></td></tr>
+        <tr><td>WebM format</td><td><span id="WebM"></span></td></tr>
+        <tr><td>MP4 with PlayReady DRM</td><td><span id="MP4Pr"></span></td></tr>
+        <tr><td>MP4 with PlayReady DRM (google)</td><td><span id="MP4PrG"></span></td></tr>
+        <tr><td>MP4 with Widevine DRM</td><td><span id="MP4Ww"></span></td></tr>
+        <tr><td>MP4 with Clear Key system</td><td><span id="MP4Ck"></span></td></tr>
+        <tr><td>MP4 with Clear Key system (webkit-org)</td><td><span id="MP4CkWk"></span></td></tr>
+        <tr><td>EME Working Draft version</td><td><span id="EMEVersion"></span></td></tr>
+    </table>
 
 </body>
 </html>

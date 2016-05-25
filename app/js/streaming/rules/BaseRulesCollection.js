@@ -20,6 +20,7 @@ MediaPlayer.rules.BaseRulesCollection = function () {
     return {
         downloadRatioRule: undefined,
         insufficientBufferRule: undefined,
+        droppedFramesRule: undefined,
         abandonRequestRule:undefined,
  
         getRules: function (type) {
@@ -36,6 +37,7 @@ MediaPlayer.rules.BaseRulesCollection = function () {
         setup: function () {
             rules.push(this.downloadRatioRule);
             rules.push(this.insufficientBufferRule);
+            rules.push(this.droppedFramesRule);
             adandonFragmentRules.push(this.abandonRequestRule);
         }
     };

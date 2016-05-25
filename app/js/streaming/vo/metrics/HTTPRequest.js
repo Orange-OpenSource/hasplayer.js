@@ -35,7 +35,6 @@ MediaPlayer.vo.metrics.HTTPRequest = function () {
     this.interval = null;       // The duration of the throughput trace intervals (ms), for successful requests only.
     this.mediaduration = null;  // The duration of the media requests, if available, in milliseconds.
     this.trace = [];            // Throughput traces, for successful requests only.
-    // ORANGE: add request media start time, quality and bytes length
     this.startTime = null;      // the media start time of the segment
     this.quality = null;        // the quality index of the segment
     this.bytesLength = null;    // the segment bytes length

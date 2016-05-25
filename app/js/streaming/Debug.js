@@ -61,10 +61,6 @@ MediaPlayer.utils.Debug = function () {
         return this.logArray;
     };
 
-
-
-
-
     // ORANGE: add level
     var NONE  = 0,
         ERROR = 1,
@@ -141,7 +137,6 @@ MediaPlayer.utils.Debug = function () {
                 return "";
             }
         },
-
 
         getLevel = function() {
             return level;

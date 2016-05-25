@@ -268,6 +268,21 @@ Dash.dependencies.DashMetricsExtensions = function() {
             return currentDroppedFrames;
         },
 
+        getCurrentPlaybackQuality = function(metrics) {
+
+            if (metrics === null) {
+                return null;
+            }
+
+            var playbackQuality = metrics.PlaybackQuality;
+
+            if (playbackQuality === null || playbackQuality.length <= 0) {
+                return null;
+            }
+
+            return playbackQuality[playbackQuality.length-1];
+        },
+
         getCurrentDVRInfo = function(metrics) {
 
             if (metrics === null) {
@@ -321,6 +336,7 @@ Dash.dependencies.DashMetricsExtensions = function() {
         getCurrentHttpRequest: getCurrentHttpRequest,
         getHttpRequests: getHttpRequests,
         getCurrentDroppedFrames: getCurrentDroppedFrames,
+        getCurrentPlaybackQuality: getCurrentPlaybackQuality,
         getCurrentDVRInfo: getCurrentDVRInfo,
         getCurrentManifestUpdate: getCurrentManifestUpdate
     };

@@ -884,7 +884,8 @@ Dash.dependencies.DashHandler = function() {
                 segments = representation.segments,
                 upperIdx,
                 lowerIdx,
-                upperTime;
+                upperTime,
+                lowerTime;
 
             if (!segments || segments.length === 0) {
                 updateRequired = true;
@@ -894,7 +895,8 @@ Dash.dependencies.DashHandler = function() {
                 // ORANGE: check also regarding requested time (@see getForTime()), required for live use case
                 // to avoid already loaded fragments to be returned
                 upperTime = segments[segments.length - 1].presentationStartTime;
-                updateRequired = (index < lowerIdx) || (index > upperIdx) || (requestedTime > upperTime);
+                lowerTime = segments[0].presentationStartTime;
+                updateRequired = (index < lowerIdx) || (index > upperIdx) || (requestedTime > upperTime) || (requestedTime < lowerTime);
             }
 
             return updateRequired;
@@ -1176,7 +1178,11 @@ Dash.dependencies.DashHandler = function() {
             return deferred.promise;
         },
 
-        getIFrameRequest = function(request) {
+        getIFrameRequest = function(/*request*/) {
+            //TBD
+        },
+
+        getFragmentInfoRequest = function(/*request*/) {
             //TBD
         };
 
@@ -1214,7 +1220,8 @@ Dash.dependencies.DashHandler = function() {
         getCurrentTime: getCurrentTime,
         getSegmentCountForDuration: getSegmentCountForDuration,
         updateSegmentList: updateSegmentList,
-        getIFrameRequest: getIFrameRequest 
+        getIFrameRequest: getIFrameRequest,
+        getFragmentInfoRequest: getFragmentInfoRequest
     };
 };
 

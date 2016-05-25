@@ -235,12 +235,12 @@ MediaPlayer.dependencies.ProtectionController = function() {
             }
         },
 
-        sendLicenseRequestCompleteEvent = function(data) {
+        /*sendLicenseRequestCompleteEvent = function(data) {
             this.eventBus.dispatchEvent({
                 type: MediaPlayer.dependencies.ProtectionController.events.LICENSE_REQUEST_COMPLETE,
                 data: data
             });
-        },
+        },*/
 
         onKeyMessage = function(e) {
             var self = this,
@@ -249,7 +249,7 @@ MediaPlayer.dependencies.ProtectionController = function() {
                 messageType;
 
             keyMessage = e.data;
-            messageType = (keyMessage.messageType) ? keyMessage.messageType : "license-request",
+            messageType = (keyMessage.messageType) ? keyMessage.messageType : "license-request";
             this.debug.log("[DRM] Key message: type = " + messageType);
 
             // Dispatch event to applications indicating we received a key message
@@ -263,11 +263,11 @@ MediaPlayer.dependencies.ProtectionController = function() {
                 protData = getProtData(this.keySystem),
                 keySystemString = this.keySystem.systemString,
                 licenseServerData = this.protectionExt.getLicenseServer(this.keySystem, protData, messageType),
-                needFailureReport = true,
+                needFailureReport = true/*,
                 eventData = {
                     sessionToken: sessionToken,
                     messageType: messageType
-                };
+                }*/;
 
             // Message not destined for license server
             if (!licenseServerData) {
@@ -301,7 +301,9 @@ MediaPlayer.dependencies.ProtectionController = function() {
                 } else if (protData.laURL && protData.laURL !== "") { // TODO: Deprecated!
                     url = protData.laURL;
                 }
-            } else {
+            }
+
+            if (url === null) {
                 url = this.keySystem.getLicenseServerURLFromInitData(MediaPlayer.dependencies.protection.CommonEncryption.getPSSHData(sessionToken.initData));
                 if (!url) {
                     url = e.data.defaultURL;

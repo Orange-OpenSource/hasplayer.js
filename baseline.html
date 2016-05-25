@@ -2,25 +2,11 @@
 <html lang="en">
 <head>
     <meta charset="utf-8"/>
-    <title>Baseline Dash JavaScript Player</title>
+    <title>Baseline hasplayer.js Player</title>
     <meta name="description" content="" />
-    <link rel="icon" type="image/png" href="http://dashpg.com/w/2012/09/dashif.ico" />
 
-    <!-- Libraries -->
-    <!--
-    <script src="app/lib/q.js"></script>
-    <script src="app/lib/dijon.js"></script>
-    <script src="app/lib/xml2json.js"></script>
-    <script src="app/lib/objectiron.js"></script>
-    <script src="app/lib/long.js"></script>
-    <script src="app/lib/Math.js"></script>
-    -->
-
-    <!-- Minified Dash -->
-    <!--<script src="dash.min.js"></script>-->
-
-    <!-- Minified Dash & Libraries -->
-    <script src="dash.all.js"></script>
+    <!-- Minified hasplayer.js -->
+    <script src="dist/hasplayer.min.js"></script>
 
     <script>
         function getUrlVars() {
@@ -33,25 +19,19 @@
 
         function startVideo() {
             var vars = getUrlVars(),
-                url = "http://dash.edgesuite.net/envivio/dashpr/clear/Manifest.mpd",
+                url = "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest",
                 video,
-                context,
-                player;
+                mediaPlayer;
 
             if (vars && vars.hasOwnProperty("url")) {
                 url = vars.url;
             }
 
-            video = document.querySelector(".dash-video-player video");
-            context = new Dash.di.DashContext();
-            player = new MediaPlayer(context);
+            video = document.querySelector(".hasplayer-video-player video");
 
-            player.startup();
-
-            player.attachView(video);
-            player.setAutoPlay(false);
-
-            player.attachSource(url);
+            mediaPlayer = new MediaPlayer();
+            mediaPlayer.init(video);
+            mediaPlayer.load({url: url});
         }
     </script>
 
@@ -63,7 +43,7 @@
     </style>
 
     <body onload="startVideo()">
-        <div class="dash-video-player">
+        <div class="hasplayer-video-player">
             <video controls="true"></video>
         </div>
     </body>

@@ -38,6 +38,8 @@ MediaPlayer.utils.Config = function () {
             "ABR.switchUpBufferTime": -1,
             "ABR.switchUpBufferRatio": -1,
             "ABR.keepBandwidthCondition": true,
+            "ABR.droppedFramesMinRatio": -1,
+            "ABR.droppedFramesMaxRatio": -1,
             // Manifest loader parameters
             "ManifestLoader.RetryAttempts": -1,
             "ManifestLoader.RetryInterval": -1,

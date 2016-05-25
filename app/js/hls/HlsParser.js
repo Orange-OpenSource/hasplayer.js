@@ -566,7 +566,8 @@ Hls.dependencies.HlsParser = function() {
             i = 0;
 
         if (!data || data.length <= 0 || data[0].trim() !== TAG_EXTM3U) {
-            deferred.reject(new Error("Can't parse manifest"));
+            this.debug.error("[HlsParser] no stream in HLS manifest");
+            deferred.reject();
             return deferred.promise;
         }
 
@@ -652,7 +653,7 @@ Hls.dependencies.HlsParser = function() {
         }
 
         if (streams.length === 0) {
-            self.debug.error("[HlsParser] no stream in HLS manifest");
+            this.debug.error("[HlsParser] no stream in HLS manifest");
             deferred.reject();
             return deferred.promise;
         }
@@ -704,7 +705,7 @@ Hls.dependencies.HlsParser = function() {
         }*/
 
         // Get representation (variant stream) playlist
-        self.abrController.getPlaybackQuality("video", adaptationSet).then(
+        this.abrController.getPlaybackQuality("video", adaptationSet).then(
             function(result) {
                 representation = adaptationSet.Representation_asArray[result.quality];
                 self.updatePlaylist(representation).then(
@@ -713,8 +714,8 @@ Hls.dependencies.HlsParser = function() {
                             deferred.resolve(mpd);
                         });
                     },
-                    function(param) {
-                        deferred.reject(param);
+                    function(error) {
+                        deferred.reject(error);
                     }
                 );
             }

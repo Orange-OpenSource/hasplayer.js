@@ -14,8 +14,9 @@
 
 // Define Math.sign method in case it is not defined (like in IE11)
 if (!Math.sign) {
-    Math.sign = function(value) {
-        return value < 0 ? -1 : 1;
+    Math.sign = function (value) {
+        "use strict";
+        return (value < 0) ? -1 : ((value === 0) ? 0 : 1);
     };
 }
 
@@ -33,6 +34,9 @@ MediaPlayer.dependencies.Stream = function() {
         audioTrackIndex = -1,
         textController = null,
         subtitlesEnabled = false,
+        fragmentInfoVideoController = null,
+        fragmentInfoAudioController = null,
+        fragmentInfoTextController = null,
 
         textTrackIndex = -1,
         autoPlay = true,
@@ -40,7 +44,6 @@ MediaPlayer.dependencies.Stream = function() {
         errored = false,
 
         // Events listeners
-        fullScreenListener,
         endedListener,
         loadedListener,
         playListener,
@@ -81,11 +84,13 @@ MediaPlayer.dependencies.Stream = function() {
         tmSeekTimeout,
         tmSeekValue,
         tmEndDetected = false,
+        muteState = false,
 
         eventController = null,
         protectionController,
         initializedeferred = null,
 
+        reloadTimeout = null,
         isReloading = false,
 
         startClockTime = -1,
@@ -99,7 +104,6 @@ MediaPlayer.dependencies.Stream = function() {
 
         play = function() {
             if (!initialized) {
-                //this.debug.info("[Stream] (play) not initialized");
                 return;
             }
 
@@ -125,6 +129,7 @@ MediaPlayer.dependencies.Stream = function() {
                 // 1- seeks the buffer controllers at the desired time
                 // 2- once data is present in the buffers, then we can set the current time to the <video> component (see onBufferUpdated()) 
                 seekTime = time;
+                this.system.unmapHandler("bufferUpdated");
                 this.system.mapHandler("bufferUpdated", undefined, onBufferUpdated.bind(this));
                 startBuffering.call(this, seekTime);
             } else {
@@ -168,11 +173,25 @@ MediaPlayer.dependencies.Stream = function() {
                     if (!!videoController) {
                         funcs.push(videoController.reset(errored));
                     }
+
+                    if (!!fragmentInfoVideoController) {
+                        funcs.push(fragmentInfoVideoController.reset(errored));
+                    }
+
                     if (!!audioController) {
                         funcs.push(audioController.reset(errored));
                     }
+
+                    if (!!fragmentInfoAudioController) {
+                        funcs.push(fragmentInfoAudioController.reset(errored));
+                    }
+                    
                     if (!!textController) {
                         funcs.push(textController.reset(errored));
+                    }
+
+                    if (!!fragmentInfoTextController) {
+                        funcs.push(fragmentInfoTextController.reset(errored));
                     }
 
                     Q.all(funcs).then(
@@ -494,9 +513,24 @@ MediaPlayer.dependencies.Stream = function() {
             return initialize.promise;
         },
 
-        onLoaded = function() {
-            var self = this;
+        startFragmentInfoControllers = function () {
+            if (fragmentInfoVideoController === null && videoController) {
+                fragmentInfoVideoController = this.system.getObject("fragmentInfoController");
+                fragmentInfoVideoController.initialize("video", this.fragmentController, videoController);
+            }
 
+            if (fragmentInfoAudioController === null && audioController){
+                fragmentInfoAudioController = this.system.getObject("fragmentInfoController");
+                fragmentInfoAudioController.initialize("audio", this.fragmentController, audioController);
+            }
+
+            if (fragmentInfoTextController === null && textController){
+                fragmentInfoTextController = this.system.getObject("fragmentInfoController");
+                fragmentInfoTextController.initialize("text", this.fragmentController, textController);
+            }
+        },
+
+        onLoaded = function() {
             this.debug.info("[Stream] <video> loadedmetadata event");
         },
 
@@ -518,7 +552,7 @@ MediaPlayer.dependencies.Stream = function() {
 
         onPlay = function() {
             this.debug.info("[Stream] <video> play event");
-            
+
             if (tmSpeed !== 1) {
                 this.setTrickModeSpeed(1);
             } else {
@@ -532,18 +566,6 @@ MediaPlayer.dependencies.Stream = function() {
             }
 
             this.metricsModel.addPlayList("video", new Date().getTime(), this.videoModel.getCurrentTime(), "play");
-        },
-
-        // ORANGE : fullscreen event
-        onFullScreenChange = function() {
-            var videoElement = this.videoModel.getElement(),
-                isFullScreen = 0;
-
-            if (document.webkitIsFullScreen || document.msFullscreenElement || document.mozFullScreen) {
-                // browser is fullscreen
-                isFullScreen = 1;
-            }
-            this.metricsModel.addCondition(null, isFullScreen, videoElement.videoWidth, videoElement.videoHeight);
         },
 
         // ORANGE : ended event
@@ -601,6 +623,7 @@ MediaPlayer.dependencies.Stream = function() {
 
         onSeeking = function() {
             var time = this.videoModel.getCurrentTime();
+
             this.debug.info("[Stream] <video> seeking event: " + time);
 
             // Check if seeking is different from trick mode seeking, then cancel trick mode
@@ -697,6 +720,7 @@ MediaPlayer.dependencies.Stream = function() {
             // (see setVideoModelCurrentTime())
             this.videoModel.listen("seeking", seekingListener);
 
+            isReloading = false;
             startClockTime = -1;
             startStreamTime = -1;
         },
@@ -786,11 +810,25 @@ MediaPlayer.dependencies.Stream = function() {
             if (videoController) {
                 videoController.stop();
             }
+
+            if (fragmentInfoVideoController) {
+                fragmentInfoVideoController.stop();
+            }
+
             if (audioController) {
                 audioController.stop();
             }
+
+            if (fragmentInfoAudioController) {
+                fragmentInfoAudioController.stop();
+            }
+
             if (textController) {
                 textController.stop();
+            }
+
+            if (fragmentInfoTextController) {
+                fragmentInfoTextController.stop();
             }
         },
 
@@ -861,7 +899,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.setCurrentTime(time);
         },
 
-        bufferingCompleted = function() {
+        onBufferingCompleted = function() {
 
             // if there is at least one buffer controller that has not completed buffering yet do nothing
             if ((videoController && !videoController.isBufferingCompleted()) || (audioController && !audioController.isBufferingCompleted())) {
@@ -875,11 +913,6 @@ MediaPlayer.dependencies.Stream = function() {
             }
         },
 
-        segmentLoadingFailed = function() {
-            stopBuffering.call(this);
-        },
-
-
         // 'startTimeFound' event raised by video controller when start time has been found
         // startTime = video live edge for live streams
         // startTime = first video segment time for static streams
@@ -892,15 +925,14 @@ MediaPlayer.dependencies.Stream = function() {
         // ORANGE: 'bufferUpdated' event raised when some data has been appended into media buffers
         // => if not started (live use case) then check for playback start time and do play
         onBufferUpdated = function() {
-            var self = this,
-                videoRange,
+            var videoRange,
                 audioRange,
                 startTime;
 
-            self.debug.info("[Stream] Check start time");
+            this.debug.info("[Stream] Check start time");
 
             // Check if video buffer is not empty
-            videoRange = self.sourceBufferExt.getBufferRange(videoController.getBuffer(), seekTime, 2);
+            videoRange = this.sourceBufferExt.getBufferRange(videoController.getBuffer(), seekTime, 2);
             if (videoRange === null) {
                 return;
             }
@@ -915,11 +947,11 @@ MediaPlayer.dependencies.Stream = function() {
 
             if (audioController) {
                 // Check if audio buffer is not empty
-                audioRange = self.sourceBufferExt.getBufferRange(audioController.getBuffer(), seekTime, 2);
+                audioRange = this.sourceBufferExt.getBufferRange(audioController.getBuffer(), seekTime, 2);
                 if (audioRange === null) {
                     return;
                 }
-                self.debug.info("[Stream] Check start time: A[" + audioRange.start + "-" + audioRange.end + "], V[" + videoRange.start + "-" + videoRange.end + "]");
+                this.debug.info("[Stream] Check start time: A[" + audioRange.start + "-" + audioRange.end + "], V[" + videoRange.start + "-" + videoRange.end + "]");
                 // Check if audio and video can be synchronized (if some audio sample is available at returned start time)
                 if (audioRange.end < startTime) {
                     return;
@@ -929,23 +961,58 @@ MediaPlayer.dependencies.Stream = function() {
                 }
             }
 
-            self.debug.info("[Stream] Check start time: OK => " + startTime);
+            this.debug.info("[Stream] Check start time: OK => " + startTime);
 
             // Align audio and video buffers
             //self.sourceBufferExt.remove(audioController.getBuffer(), audioRange.start, videoRange.start, Infinity, mediaSource, false);
 
             // Unmap "bufferUpdated" handler
-            self.system.unmapHandler("bufferUpdated");
+            this.system.unmapHandler("bufferUpdated");
+
+            // In case of live streams and then DVR seek, then we start the fragmentInfoControllers
+            // (check if seek not due to stream loading)
+            // (check if seek not due to stream reloading)
+            if (this.manifestExt.getIsDynamic(manifest) && !isReloading && (this.videoModel.getCurrentTime() !== 0)) {
+                startFragmentInfoControllers.call(this);
+            }
 
             // Set current time on video if 'play' event has already been raised.
             // If 'play' event has not yet been raised, the the current time will be set afterwards
-            if (!self.videoModel.isPaused()) {
-                self.videoModel.setCurrentTime(startTime);
+            if (!this.videoModel.isPaused()) {
+                setVideoModelCurrentTime.call(this, startTime);
             } else {
                 playStartTime = startTime;
             }
 
-            play.call(self);
+            play.call(this);
+        },
+
+        selectTrack = function (controller, track, currentIndex) {
+            var index = -1;
+
+            if (!controller) {
+                return currentIndex;
+            }
+
+            if (currentIndex === -1) {
+                return currentIndex;
+            }
+
+            // Get data index corresponding to the new selected track
+            index = this.manifestExt.getDataIndex_(track, manifest, periodInfo.index);
+
+            // Check if different track selected
+            if (index !== currentIndex) {
+                if (this.manifestExt.getIsDynamic(manifest)) {
+                    // If live, refresh the manifest to get new selected track segments info
+                    this.system.notify("manifestUpdate");
+                } else {
+                    // Else update controller data directly
+                    controller.updateData(track, periodInfo);
+                }
+            }
+
+            return index;
         },
 
         updateData = function(updatedPeriodInfo) {
@@ -1019,7 +1086,6 @@ MediaPlayer.dependencies.Stream = function() {
             Q.when(deferredVideoUpdate.promise, deferredAudioUpdate.promise, deferredTextUpdate.promise).then(
                 function() {
                     if (isReloading && videoController) {
-                        isReloading = false;
                         self.system.unmapHandler("bufferUpdated");
                         self.system.mapHandler("bufferUpdated", undefined, onBufferUpdated.bind(self));
                         // Call load on video controller in order to get new stream start time (=live edge for live streams)
@@ -1037,6 +1103,28 @@ MediaPlayer.dependencies.Stream = function() {
             var time = this.videoModel.getCurrentTime();
             textController.seek(time);
             textController.seeked();
+        },
+
+        // Called when a BufferController failed to download or buffer a segment 
+        onSegmentLoadingFailed = function(segmentRequest) {
+            var self = this;
+
+            this.debug.log("[Stream] Segment loading failed: start time = " + segmentRequest.startTime + ", duration = " + segmentRequest.duration);
+
+            if (this.manifestExt.getIsDynamic(manifest) && !isReloading) {
+                // For Live streams, then we try to reload the session
+                isReloading = true;
+                var delay = segmentRequest.duration;
+                this.debug.info("[Stream] Reload session in " + delay + " s.");
+                reloadTimeout = setTimeout(function() {
+                    reloadTimeout = null;
+                    //pause.call(self);
+                    self.system.notify("manifestUpdate", true);
+                }, delay * 1000);
+            } else {
+                // For VOD streams, we seek at recovery time
+                seek.call(this, (segmentRequest.startTime + segmentRequest.duration));
+            }
         },
 
         onVisibilitychange = function() {
@@ -1076,16 +1164,16 @@ MediaPlayer.dependencies.Stream = function() {
         errHandler: undefined,
         timelineConverter: undefined,
         scheduleWhilePaused: undefined,
+        textTrackExtensions:undefined,
         // ORANGE : add metricsModel
         metricsModel: undefined,
         eventBus: undefined,
         notify: undefined,
 
         setup: function() {
-            this.system.mapHandler("bufferingCompleted", undefined, bufferingCompleted.bind(this));
-            this.system.mapHandler("segmentLoadingFailed", undefined, segmentLoadingFailed.bind(this));
             this.system.mapHandler("startTimeFound", undefined, onStartTimeFound.bind(this));
-            this.system.mapHandler("needForReload", undefined, onReload.bind(this));
+            this.system.mapHandler("segmentLoadingFailed", undefined, onSegmentLoadingFailed.bind(this));
+            this.system.mapHandler("bufferingCompleted", undefined, onBufferingCompleted.bind(this));
 
             /* @if PROTECTION=true */
             // Protection event handlers
@@ -1106,8 +1194,6 @@ MediaPlayer.dependencies.Stream = function() {
             playingListener = onPlaying.bind(this);
             loadstartListener = onLoadStart.bind(this);
 
-            // ORANGE : add FullScreen Event listener
-            fullScreenListener = onFullScreenChange.bind(this);
             // ORANGE : add Ended Event listener
             endedListener = onEnded.bind(this);
 
@@ -1136,76 +1222,32 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.listen("playing", playingListener);
             this.videoModel.listen("loadstart", loadstartListener);
 
-            // ORANGE : add FullScreen Event listener
-            this.videoModel.listen("webkitfullscreenchange", fullScreenListener);
-            this.videoModel.listen("fullscreenchange", fullScreenListener);
-            this.videoModel.listenOnParent("fullscreenchange", fullScreenListener);
-            this.videoModel.listenOnParent("webkitfullscreenchange", fullScreenListener);
-
             //document.addEventListener("visibilitychange", visibilitychangeListener);
         },
 
-        // ORANGE: add the capability to set audioTrack
         setAudioTrack: function(audioTrack) {
-            var manifest = this.manifestModel.getValue(),
-                self = this;
-
-            if (audioController) {
-                // Get data index corresponding to new audio track
-                self.manifestExt.getDataIndex(audioTrack, manifest, periodInfo.index).then(
-                    function(index) {
-                        // check if we are not in the same track
-                        if (audioTrackIndex !== -1 && index !== audioTrackIndex) {
-
-                            audioTrackIndex = index;
-
-                            // Update manifest
-                            self.system.notify("manifestUpdate");
-                        }
-                    });
-            }
+            audioTrackIndex = selectTrack.call(this, audioController, audioTrack, audioTrackIndex);
         },
 
         getSelectedAudioTrack: function() {
-            var self = this,
-                manifest = self.manifestModel.getValue();
+            var manifest = this.manifestModel.getValue();
 
             if (audioController) {
-                return self.manifestExt.getDataForIndex_(audioTrackIndex, manifest, periodInfo.index);
+                return this.manifestExt.getDataForIndex_(audioTrackIndex, manifest, periodInfo.index);
             }
 
             return undefined;
         },
 
-        // ORANGE: add the capability to set subtitle track
         setSubtitleTrack: function(subtitleTrack) {
-            var deferredSubtitleUpdate = Q.defer(),
-                manifest = this.manifestModel.getValue(),
-                self = this;
-
-            if (textController) {
-                // Get data index corresponding to new subtitle track
-                self.manifestExt.getDataIndex(subtitleTrack, manifest, periodInfo.index).then(
-                    function(index) {
-                        textTrackIndex = index;
-
-                        // Update manifest
-                        self.system.notify("manifestUpdate");
-                    }
-                );
-            } else {
-                deferredSubtitleUpdate.reject();
-            }
-
-            return deferredSubtitleUpdate.promise;
+            textTrackIndex = selectTrack.call(this, textController, subtitleTrack, textTrackIndex);
         },
 
         getSelectedSubtitleTrack: function() {
-            var self = this,
-                manifest = self.manifestModel.getValue();
+            var manifest = this.manifestModel.getValue();
 
             if (textController && subtitlesEnabled) {
-                return self.manifestExt.getDataForIndex_(textTrackIndex, manifest, periodInfo.index);
+                return this.manifestExt.getDataForIndex_(textTrackIndex, manifest, periodInfo.index);
             }
 
             return undefined;
@@ -1258,7 +1300,13 @@ MediaPlayer.dependencies.Stream = function() {
             // Trick mode seeking timeout
             clearTimeout(tmSeekTimeout);
 
-            self.videoModel.setMute(false);
+            // Stop reload timeout
+            clearTimeout(reloadTimeout);
+
+            //if player is in trick mode, restore mute state.
+            if (tmSpeed !== 1) {
+                this.videoModel.setMute(muteState);
+            }
 
             //document.removeEventListener("visibilityChange");
 
@@ -1277,17 +1325,11 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.unlisten("playing", playingListener);
             this.videoModel.unlisten("loadstart", loadstartListener);
 
-            this.videoModel.unlisten("webkitfullscreenchange", fullScreenListener);
-            this.videoModel.unlisten("fullscreenchange", fullScreenListener);
-            this.videoModel.unlistenOnParent("fullscreenchange", fullScreenListener);
-            this.videoModel.unlistenOnParent("webkitfullscreenchange", fullScreenListener);
+            this.system.unmapHandler("streamsComposed", undefined, streamsComposed);
 
             this.system.unmapHandler("bufferUpdated");
-            this.system.unmapHandler("liveEdgeFound");
-            this.system.unmapHandler("bufferingCompleted");
             this.system.unmapHandler("segmentLoadingFailed");
-            this.system.unmapHandler("needForReload");
-            this.system.unmapHandler("streamsComposed", undefined, streamsComposed);
+            this.system.unmapHandler("bufferingCompleted");
 
             tearDownMediaSource.call(this).then(
                 function() {
@@ -1338,10 +1380,19 @@ MediaPlayer.dependencies.Stream = function() {
                 subtitlesEnabled = enabled;
                 if (textController) {
                     if (enabled) {
-                        this.system.mapHandler("streamsComposed", undefined, streamsComposed.bind(this), true);
-                        // Update manifest
-                        this.system.notify("manifestUpdate");
+                        if (this.manifestExt.getIsDynamic(manifest)) {
+                            // In case of live streams, refresh manifest before activating subtitles
+                            this.system.mapHandler("streamsComposed", undefined, streamsComposed.bind(this), true);
+                            this.system.notify("manifestUpdate");
+                        } else {
+                            streamsComposed.call(this);
+                        }
                     } else {
+                        // hide subtitle here
+                        var track = this.textTrackExtensions.getCurrentTextTrack(this.videoModel.getElement());
+                        if(track){
+                            track.mode = "hidden";
+                        }
                         textController.stop();
                     }
                 }
@@ -1354,11 +1405,11 @@ MediaPlayer.dependencies.Stream = function() {
                 enableTrickMode = (speed !== 1) ? true : false,
                 currentVideoTime,
                 seekValue,
-                enableMute = function() {
+                restoreMute = function() {
                     if (self.videoModel.getCurrentTime() > (currentVideoTime + 1)) {
-                        self.videoModel.unlisten("timeupdate", enableMute);
-                        self.debug.info("[Stream] Set mute: false");
-                        self.videoModel.setMute(false);
+                        self.videoModel.unlisten("timeupdate", restoreMute);
+                        self.debug.info("[Stream] Set mute: "+muteState+", the mute state before using trick mode.");
+                        self.videoModel.setMute(muteState);
                     }
                 };
 
@@ -1374,7 +1425,10 @@ MediaPlayer.dependencies.Stream = function() {
 
             if (enableTrickMode && tmState === "Stopped") {
                 self.debug.info("[Stream] Set mute: true");
+                muteState = self.videoModel.getMute();
+                if (!muteState) {
                 self.videoModel.setMute(true);
+                }
                 self.videoModel.pause();
             } else if (!enableTrickMode) {
                 tmSpeed = 1;
@@ -1395,7 +1449,7 @@ MediaPlayer.dependencies.Stream = function() {
                 if (!enableTrickMode) {
                     self.debug.info("[Stream] Trick mode: Stopped, current time = " + currentVideoTime);
                     tmState = "Stopped";
-                    self.videoModel.listen("timeupdate", enableMute);
+                    self.videoModel.listen("timeupdate", restoreMute);
                     currentVideoTime = tmEndDetected ? self.getStartTime() : currentVideoTime;
                     seek.call(self, tmEndDetected ? self.getStartTime() : currentVideoTime, true);
                 } else {

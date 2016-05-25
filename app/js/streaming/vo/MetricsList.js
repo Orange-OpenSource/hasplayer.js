@@ -22,6 +22,8 @@ MediaPlayer.models.MetricsList = function () {
         BufferLevel: [],
         PlayList: [],
         DroppedFrames: [],
+        PlaybackQuality: [],
+        VideoResolution: [],
         DVRInfo: [],
         ManifestUpdate: []
     };
