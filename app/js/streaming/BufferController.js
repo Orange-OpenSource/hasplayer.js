@@ -316,10 +316,9 @@ MediaPlayer.dependencies.BufferController = function() {
 
             segmentDuration = request.duration;
 
-            // Push segment into buffer even if BufferController is stopped, since FragmentLoader would indicate this segment already loaded
-            // if (!isRunning()) {
-            //     return;
-            // }
+            if (!isRunning()) {
+                return;
+            }
 
             // Reset segment download error status
             segmentDownloadErrorCount = 0;
