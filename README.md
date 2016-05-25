@@ -29,7 +29,10 @@ Learn more about versions and roadmap on the [wiki](https://github.com/Orange-Op
 npm build
 
 The build task can be configured in order to select supported protocol(s) and to integrate or not EME support. For exemple:
-    * npm build -hls=false -protection=false (= no hls support, no EME support)
+1. No hls support, no EME support:
+    * npm build -hls=false -protection=false
+2. No hls support, no MSS support:
+    * npm build -hls=false -mss=false
 
 ## Demo
 
