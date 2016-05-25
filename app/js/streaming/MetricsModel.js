@@ -302,8 +302,6 @@
                 }
             }
 
-            //console.log("[MetricsModel] PlaybackQuality = " + JSON.stringify(vo));
-
             metrics.push(vo);
             this.metricAdded(streamType, "PlaybackQuality", vo);
 
@@ -331,8 +329,6 @@
                     return metrics[metrics.length - 1];
                 }
             }
-
-            console.log("[MetricsModel] VideoResolution = " + JSON.stringify(vo));
 
             metrics.push(vo);
             this.metricAdded(streamType, "VideoResolution", vo);

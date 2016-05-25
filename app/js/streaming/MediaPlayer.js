@@ -807,7 +807,7 @@ MediaPlayer = function () {
 
             // patch to be retro compatible with old syntax
             if (arguments && arguments.length > 0 && typeof arguments[0] !== 'object') {
-                console.warn('You are using "depreacted" call of the method load, please refer to the documentation to change prameters call');
+                console.warn('You are using "deprecated" call of the method load, please refer to the documentation to change prameters call');
                 stream = _parseLoadArguments.apply(null, arguments);
             }
 
