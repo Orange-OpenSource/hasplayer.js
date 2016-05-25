@@ -2,9 +2,7 @@
   "name": "hasplayer.js",
   "version": "1.3.0",
   "scripts": {
-    "build": "cd build && gulp",
-    "selenium": "cd testIntern/selenium && start startHub.bat && start startClient.bat",
-    "test": "node node_modules/intern/runner.js config=testIntern/testsCommon.js browsers=chrome selenium=local drm=false"
+    "build": "cd build && gulp"
   },
   "repository": {
     "type": "git",
@@ -28,7 +26,6 @@
     "gulp-umd": "^0.2.0",
     "gulp-usemin": "^0.3.22",
     "gulp-zip": "^3.2.0",
-    "intern": "^3.1.1",
     "jshint": "^2.9.2",
     "jshint-stylish": "^2.1.0",
     "nopt": "^3.0.6",
