@@ -26,7 +26,7 @@ Learn more about versions and roadmap on the [wiki](https://github.com/Orange-Op
 
 ### Build / Run
 
-npm build
+npm run build
 
 The build task can be configured in order to select supported protocol(s) and to integrate or not EME support.
 For example:
@@ -107,6 +107,5 @@ Full [API Documentation](http://orange-opensource.github.io/hasplayer.js/dev/doc
 
 This API documentation can be generated using following gulp command:
 
-cd build
-build doc
+npm run doc
 
