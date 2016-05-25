@@ -59,7 +59,7 @@
 * Configurable build process (protocol(s), EME support)
 * And many bug corrections
 
-### Release Notes v1.1.0
+### Release Notes v1.1.0 (2014/10/31)
 * Based on dash.js v1.2.0 (see dash.js release notes)
 * Simplified BufferController with sequential segments downloading
 * Optimized and simplified live edge searching
@@ -67,7 +67,7 @@
 * Quality filtering functionnality
 * Sample application (samples/DemoPlayer) with dynamic bandwidth chart
 
-### Release Notes v1.0.0
+### Release Notes v1.0.0 (2014/04/16)
 * Based on dash.js v1.1.0 (see dash.js release notes)
 * Smooth Streaming support (live and VOD)
 * Automatic protocol detection (DASH vs MSS)
