@@ -46,7 +46,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
             req.send();
         },
 
-        _load = function(request) {
+        _loadRequest = function(request) {
             var d = Q.defer(),
                 req = new XMLHttpRequest(),
                 httpRequestMetrics = null,
@@ -206,24 +206,32 @@ MediaPlayer.dependencies.FragmentLoader = function() {
             return d.promise;
         },
 
-        _retry = function(request, deferred) {
+        _load = function (request, deferred) {
             var self = this;
 
-            retryCount++;
-
-            setTimeout(function() {
-                _load.call(self, request).then(function(result) {
+            _loadRequest.call(self, request).then(function(result) {
                     retryCount = 0;
                     deferred.resolve(result);
                 }, function(reqerror) {
-                    if (retryCount < retryAttempts) {
-                        _retry.call(self, request, deferred);
-                    } else {
+                     if (reqerror.aborted) {
+                        // Request has been aborted => set status to 0
+                        request.status = 0;
+                        request.aborted = true;
+                        deferred.reject(request);
+                    } else if (retryCount >= retryAttempts) {
+                        // No (more) retry => set status and reject
                         retryCount = 0;
-                        deferred.reject(reqerror);
+                        request.status = reqerror.status;
+                        deferred.reject(request);
+                    } else {
+                        // Retry
+                        setTimeout(function() {
+                            retryCount++;
+                            _load.call(self, request, deferred);
+                        }, retryInterval);
                     }
-                });
-            }, retryInterval);
+                });           
+
         };
 
     return {
@@ -244,32 +252,15 @@ MediaPlayer.dependencies.FragmentLoader = function() {
             type = value;
         },
 
-        load: function(req) {
-            var self = this,
-                deferred = Q.defer();
+        load: function(request) {
+            var deferred = Q.defer();
 
             // MSS use case: if initialization segment and data already ready (automatically generated),
             // then do not download segment
-            if (req.type === "Initialization Segment" && req.data) {
-                deferred.resolve(req, {data: req.data});
+            if (request.type === "Initialization Segment" && request.data) {
+                deferred.resolve(request, {data: request.data});
             } else {
-                // Download fragment request
-                _load.call(this, req).then(function(result) {
-                    deferred.resolve(result);
-                }, function(reqerror) {
-                    if (reqerror.aborted) {
-                        // If request has been aborted, then do not retry
-                        req.status = 0;
-                        req.aborted = true;
-                        deferred.reject(req);
-                    } else if (retryAttempts <= 0) {
-                        // in case of error we set the requestModel status equal to xhr status
-                        req.status = reqerror.status;
-                        deferred.reject(req);
-                    } else {
-                        _retry.call(self, req, deferred);
-                    }
-                });
+                _load.call(this, request, deferred);
             }
 
             return deferred.promise;
