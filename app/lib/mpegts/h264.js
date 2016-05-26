@@ -1,19 +1,19 @@
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2014, Orange
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
+ *
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-mpegts.h264.getSequenceHeader = function (data) { // data as Uint8Array
+mpegts.h264.getSequenceHeader = function(data) { // data as Uint8Array
 
     var pos = -1,
         length = -1,
@@ -24,7 +24,7 @@ mpegts.h264.getSequenceHeader = function (data) { // data as Uint8Array
         height = 0;
 
     while (i < data.length) {
-        if ((data[i] === 0x00) && (data[i+1] === 0x00) && (data[i+2] === 0x00) && (data[i+3] === 0x01)) {
+        if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x00) && (data[i + 3] === 0x01)) {
 
             naluType = data[i + 4] & 0x1F;
 
@@ -41,8 +41,7 @@ mpegts.h264.getSequenceHeader = function (data) { // data as Uint8Array
                     width = (sps.pic_width_in_mbs_minus1 + 1) << 4;
                     height = (sps.pic_height_in_map_units_minus1 + 1) << 4;
                 }
-            }
-            else if (pos > 0) {
+            } else if (pos > 0) {
                 length = i - pos;
             }
 
@@ -51,15 +50,13 @@ mpegts.h264.getSequenceHeader = function (data) { // data as Uint8Array
                 break;
             }
 
-            i+=4;
-        }
-        else if ((data[i] === 0x00) && (data[i+1] === 0x00) && (data[i+2] === 0x01)) {
+            i += 4;
+        } else if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x01)) {
             if (pos > 0) {
                 length = i - pos;
             }
             break;
-        }
-        else {
+        } else {
             i++;
         }
     }
@@ -97,7 +94,7 @@ mpegts.h264.read_ue = function(data, ctx) {
         value = value << 1;
         ctx._bit = (ctx._byte >> ctx._bitPos) & 0x01;
         ctx._bitPos--;
-        if(ctx._bitPos < 0) {
+        if (ctx._bitPos < 0) {
             ctx._byte = data[ctx._bytePos];
             ctx._bytePos++;
             ctx._bitPos = 7;
@@ -131,7 +128,7 @@ mpegts.h264.read_flag = function(data, ctx) {
 
     ctx._bit = (ctx._byte >> ctx._bitPos) & 0x01;
     ctx._bitPos--;
-    if(ctx._bitPos < 0) {
+    if (ctx._bitPos < 0) {
         ctx._byte = data[ctx._bytePos];
         ctx._bytePos++;
         ctx._bitPos = 7;
@@ -142,7 +139,7 @@ mpegts.h264.read_flag = function(data, ctx) {
 };
 
 
-mpegts.h264.parseSPS = function (data) {
+mpegts.h264.parseSPS = function(data) {
 
     var sps = {
             profile_idc: 0,
@@ -173,7 +170,7 @@ mpegts.h264.parseSPS = function (data) {
             _bytePos: 0,
             _bitPos: 0
         };
-        
+
 
     ctx._bytePos = ctx._bitPos = 0;
 
@@ -239,11 +236,10 @@ mpegts.h264.parseSPS = function (data) {
     // pic_order_cnt_type - ue(v)
     sps.pic_order_cnt_type = mpegts.h264.read_ue(data, ctx);
 
-    if(sps.pic_order_cnt_type === 0) {
+    if (sps.pic_order_cnt_type === 0) {
         // log2_max_pic_order_cnt_lsb_minus4 - ue(v)
         sps.log2_max_pic_order_cnt_lsb_minus4 = mpegts.h264.read_ue(data, ctx);
-    }
-    else if (sps.pic_order_cnt_type === 1) {
+    } else if (sps.pic_order_cnt_type === 1) {
         // NOT IMPLEMENTED
         //console.log("H.264 SPS parsing: (log2_max_pic_order_cnt_lsb_minus4 = 1) not implemented");
     }
@@ -263,7 +259,7 @@ mpegts.h264.parseSPS = function (data) {
     return sps;
 };
 
-mpegts.h264.bytestreamToMp4 = function (data) { // data as Uint8Array
+mpegts.h264.bytestreamToMp4 = function(data) { // data as Uint8Array
 
     var i = 0,
         length = data.length,
@@ -271,14 +267,14 @@ mpegts.h264.bytestreamToMp4 = function (data) { // data as Uint8Array
         naluSize = 0;
 
     while (i < length) {
-        if ((data[i] === 0x00) && (data[i+1] === 0x00) && (data[i+2] === 0x00) && (data[i+3] === 0x01)) {
+        if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x00) && (data[i + 3] === 0x01)) {
 
             if (startCodeIndex >= 0) {
                 naluSize = (i - startCodeIndex - 4); // 4 = start code length or NALU-size field length
                 data[startCodeIndex] = (naluSize & 0xFF000000) >> 24;
-                data[startCodeIndex+1] = (naluSize & 0x00FF0000) >> 16;
-                data[startCodeIndex+2] = (naluSize & 0x0000FF00) >> 8;
-                data[startCodeIndex+3] = (naluSize & 0x000000FF);
+                data[startCodeIndex + 1] = (naluSize & 0x00FF0000) >> 16;
+                data[startCodeIndex + 2] = (naluSize & 0x0000FF00) >> 8;
+                data[startCodeIndex + 3] = (naluSize & 0x000000FF);
             }
 
             startCodeIndex = i;
@@ -291,25 +287,24 @@ mpegts.h264.bytestreamToMp4 = function (data) { // data as Uint8Array
     // Last NAL unit
     naluSize = (i - startCodeIndex - 4); // 4 = start code length or NALU-size field length
     data[startCodeIndex] = (naluSize & 0xFF000000) >> 24;
-    data[startCodeIndex+1] = (naluSize & 0x00FF0000) >> 16;
-    data[startCodeIndex+2] = (naluSize & 0x0000FF00) >> 8;
-    data[startCodeIndex+3] = (naluSize & 0x000000FF);
+    data[startCodeIndex + 1] = (naluSize & 0x00FF0000) >> 16;
+    data[startCodeIndex + 2] = (naluSize & 0x0000FF00) >> 8;
+    data[startCodeIndex + 3] = (naluSize & 0x000000FF);
 
 };
 
-mpegts.h264.isIDR = function (data) { // data as Uint8Array
+mpegts.h264.isIDR = function(data) { // data as Uint8Array
     var i = 0,
         naluType;
 
     while (i < data.length) {
-        if ((data[i] === 0x00) && (data[i+1] === 0x00) && (data[i+2] === 0x00) && (data[i+3] === 0x01)) {
+        if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x00) && (data[i + 3] === 0x01)) {
             naluType = data[i + 4] & 0x1F;
             if (naluType === mpegts.h264.NALUTYPE_IDR) {
                 return true;
             }
-            i+=4;
-        }
-        else {
+            i += 4;
+        } else {
             i++;
         }
     }
@@ -322,5 +317,3 @@ mpegts.h264.NALUTYPE_SEI = 6;
 mpegts.h264.NALUTYPE_SPS = 7;
 mpegts.h264.NALUTYPE_PPS = 8;
 mpegts.h264.NALUTYPE_AU_DELIMITER = 9;
-
-
