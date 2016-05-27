@@ -269,6 +269,13 @@ MediaPlayer.dependencies.ProtectionController = function() {
                     messageType: messageType
                 }*/;
 
+            // Ensure message from CDM is not empty
+            if (!message || message.byteLength === 0) {
+                this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
+                    new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_CHALLENGE, "Empty key message from CDM"));
+                return;
+            }
+
             // Message not destined for license server
             if (!licenseServerData) {
                 this.debug.log("[DRM] License server request not required for this message (type = " + e.data.messageType + ").  Session ID = " + sessionToken.getSessionID());
@@ -386,7 +393,7 @@ MediaPlayer.dependencies.ProtectionController = function() {
             this.debug.log("[DRM] Send license request");
             var licenseRequest = this.keySystem.getLicenseRequestFromMessage(message);
             if (licenseRequest === null) {
-                self.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
+                this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
                     new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_CHALLENGE, "No license challenge from CDM key message"));
             }
             xhrLicense.send(this.keySystem.getLicenseRequestFromMessage(message));
