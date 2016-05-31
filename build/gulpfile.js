@@ -2,24 +2,21 @@ var gulp = require('gulp'),
     // node packages
     del = require('del'),
     path = require('path'),
-    git = require('git-rev'),
     fs = require('fs'),
     runSequence = require('run-sequence'),
     // gulp packages
-    uglify = require('gulp-uglify'),
+    banner = require('gulp-banner'),
     concat = require('gulp-concat'),
+    footer = require('gulp-footer'),
+    git = require('gulp-git'),
+    htmlReplace = require('gulp-html-replace'),
+    jsdoc = require('gulp-jsdoc'),
+    jshint = require('gulp-jshint'),
     preprocess = require('gulp-preprocess'),
     rename = require('gulp-rename'),
-    umd = require('gulp-umd'),
-    jshint = require('gulp-jshint'),
-    banner = require('gulp-banner'),
-    footer = require('gulp-footer'),
-    jsdoc = require('gulp-jsdoc'),
-    replaceHtml = require('gulp-html-replace'),
-    // used to intercat with .html files
-    //usemin = require('gulp-usemin'),
-    //minifyCss = require('gulp-minify-css'),
     replace = require('gulp-replace'),
+    uglify = require('gulp-uglify'),
+    umd = require('gulp-umd'),
     zip = require('gulp-zip'),
     // custom import
     pkg = require('../package.json'),
@@ -27,7 +24,7 @@ var gulp = require('gulp'),
     sources = require('./gulp/sources.json');
 
 
-var comment = '<%= pkg.copyright %>\n\n/* Last build : <%= pkg.date %>_<%= pkg.time %> / git revision : <%= pkg.revision %> */\n\n';
+var comment = '<%= pkg.copyright %>\n\n/* Last build : <%= pkg.gitDate %>_<%= pkg.gitTime %> / git revision : <%= pkg.gitRevision %> */\n\n';
 
 var jshint_ignore_start = '/* jshint ignore:start */\n';
 var jshint_ignore_end = '\n/* jshint ignore:end */';
@@ -88,7 +85,7 @@ gulp.task('generateDoc', function() {
 
 gulp.task('doc', ['generateDoc'], function() {
     return gulp.src(['../dist/doc/index.html'])
-        .pipe(replaceHtml({
+        .pipe(htmlReplace({
             'ERRORS_TABLE': {
                 src: fs.readFileSync(config.doc.errorTable).toString(),
                 tpl: '<div src="%f".js></div>'
@@ -114,14 +111,19 @@ gulp.task('lint', function() {
 });
 
 gulp.task('package-info', function() {
-    git.short(function(str) {
-        pkg.revision = str;
+    // Get last abbreviated commit hash 
+    git.exec({args: 'log -1 --format=%h', quiet: true}, function (err, stdout) {
+        pkg.gitRevision = stdout.replace(/(\r\n|\n|\r)/gm,"");
+    });
+    // Get last commit date
+    git.exec({args: 'log -1 --format=%cD', quiet: true}, function (err, stdout) {
+        var date = new Date(stdout);
+        pkg.gitDate = (date.getFullYear()) + '-' + (date.getMonth() + 1) + '-' + (date.getDate());
+        pkg.gitTime = (date.getHours()) + ':' + (date.getMinutes()) + ':' + (date.getSeconds());
     });
     fs.readFile('../COPYRIGHT', null, function(err, _data) {
         pkg.copyright = _data;
     });
-    pkg.date = (new Date().getFullYear()) + '-' + (new Date().getMonth() + 1) + '-' + (new Date().getDate());
-    pkg.time = (new Date().getHours()) + ':' + (new Date().getMinutes()) + ':' + (new Date().getSeconds());
 });
 
 gulp.task('version', function() {
@@ -143,8 +145,8 @@ gulp.task('build', ['clean', 'package-info', 'lint'], function() {
             template: path.join(__dirname, 'gulp/umd.js')
         }))
         .pipe(replace(/VERSION[\s*]=[\s*]['\\](\d.\d.\d_dev)['\\]/g, 'VERSION = \'' + pkg.version + '\''))
-        .pipe(replace(/@@TIMESTAMP/, pkg.date + '_' + pkg.time))
-        .pipe(replace(/@@REVISION/, pkg.revision))
+        .pipe(replace(/@@TIMESTAMP/, pkg.gitDate + '_' + pkg.gitTime))
+        .pipe(replace(/@@REVISION/, pkg.gitRevision))
         .pipe(banner(comment, {
             pkg: pkg
         }))
@@ -181,7 +183,7 @@ gulp.task('build-demoplayer', function() {
 gulp.task('copy-index', ['package-info'], function() {
     return gulp.src('gulp/index.html')
         .pipe(replace(/@@VERSION/g, pkg.version))
-        .pipe(replace(/@@DATE/, pkg.date))
+        .pipe(replace(/@@DATE/, pkg.gitDate))
         .pipe(gulp.dest(config.distDir));
 });
 
