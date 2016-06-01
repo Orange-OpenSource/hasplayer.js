@@ -85,12 +85,12 @@ Dash.dependencies.DashManifestExtensions.prototype = {
     },
 
     getIsText: function(adaptation) {
-        return this.getIsType(adaptation, "text", ["vtt", "ttml"]);
+        return this.getIsType(adaptation, "text", ["vtt", "ttml", "application/mp4"]);
     },
 
     // ORANGE: added application/ttml+xml+mp4 for Smoothstreaming subtitles (ttml+xml encapsulated in mp4 binary form)
     getIsTextTrack: function(type) {
-        return (type === "text/vtt" || type === "application/ttml+xml" || type === "application/ttml+xml+mp4");
+        return (type === "text/vtt" || type === "application/ttml+xml" || type === "application/ttml+xml+mp4" || type === "application/mp4");
     },
 
     getIsMain: function( /*adaptation*/ ) {

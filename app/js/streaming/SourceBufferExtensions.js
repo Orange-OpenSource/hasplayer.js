@@ -37,7 +37,7 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
             if (this.manifestExt.getIsTextTrack(codec)) {
                 if ((codec === 'text/vtt') || (codec === 'text/ttml')) {
                     buffer = this.system.getObject("textSourceBuffer");
-                } else if (codec === 'application/ttml+xml+mp4') {
+                } else if (codec === 'application/ttml+xml+mp4' || codec === 'application/mp4') {
                     buffer = this.system.getObject("textTTMLXMLMP4SourceBuffer");
                 } else {
                     throw ex;
