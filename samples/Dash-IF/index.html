@@ -400,7 +400,7 @@
                             <div  ng-show="chromecast.audioData">
                                 <span class="panel-title">Multi - Audio</span>
                                 <div>
-                                    <select id="chormecastAudioTracksSelect" ng-model="chromecast.audioData" ng-options="track.lang +' - ' + track.id for track in chromecast.audioTracks" required="true" ng-change="chromecast.selectAudioTrack(chromecast.audioData)"></select>
+                                    <select id="chormecastAudioTracksSelect" ng-model="chromecast.audioData" ng-options="track".lang" +' - ' + track.id for track in chromecast.audioTracks" required="true" ng-change="chromecast.selectAudioTrack(chromecast.audioData)"></select>
                                 </div>
                             </div>
                         </div>
@@ -525,7 +525,7 @@
                     <div class="panel-heading panel-top">
                         <span class="panel-title">Audio</span>
                         <div ng-show="audioData">
-                            <select id="audioTracksSelect" ng-model="audioData" ng-options="track.lang +' - ' + track.id for track in audioTracks" required="true" ng-change="selectAudioTrack(audioData)"></select>
+                            <select id="audioTracksSelect" ng-model="audioData" ng-options="track.lang + (track.id ? ' - ' + track.id : '') for track in audioTracks" required="true" ng-change="selectAudioTrack(audioData)"></select>
                         </div>
                     </div>
                     <div class="panel-body panel-stats">
@@ -544,7 +544,7 @@
                     <div class="panel-heading panel-top">
                         <span class="panel-title">Text</span>
                         <div ng-show="textData">
-                            <select id="textTracksSelect" ng-model="textData" ng-options="track.lang +' - ' + track.id for track in textTracks" required="true" ng-change="selectTextTrack(textData)"></select>
+                            <select id="textTracksSelect" ng-model="textData" ng-options="track.lang + (track.id ? ' - ' + track.id : '') for track in textTracks" required="true" ng-change="selectTextTrack(textData)"></select>
                         </div>
                     </div>
                 </div>
