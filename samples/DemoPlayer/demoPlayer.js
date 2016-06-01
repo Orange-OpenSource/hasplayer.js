@@ -109,6 +109,9 @@ function initNetBalancerSlider() {
     sendNetBalancerLimit(true, (initBW * 1000));
 }
 
+function getTrackId(track) {
+    return track.id || track.lang;
+}
 
 function initChartAndSlider() {
     var metricsExt = player.getMetricsExt(),
@@ -179,13 +182,12 @@ function initChartAndSlider() {
         }
     });
 
-
     // Audio tracks
     var audioDatas = player.getTracks(MediaPlayer.TRACKS_TYPE.AUDIO);
     if (audioDatas && audioDatas.length > 1) {
         var selectOptions = "";
         for (i = 0 ; i < audioDatas.length; i++) {
-            selectOptions += '<option value="' + audioDatas[i].id + '">' + audioDatas[i].lang + ' - ' + audioDatas[i].id+'</option>';
+            selectOptions += '<option value="' + getTrackId(audioDatas[i]) + '">' + audioDatas[i].lang + (audioDatas[i].id? (' - ' + audioDatas[i].id) : '')+'</option>';
         }
         $(".audio-tracks").html(selectOptions);
         audioTracksSelectIsPresent = true;
@@ -194,7 +196,7 @@ function initChartAndSlider() {
         $(".audio-tracks").change(function(track) {
             var currentTrackId = $("select option:selected")[0].value;
             for (i = 0 ; i < audioDatas.length; i++) {
-                if (audioDatas[i].id == currentTrackId) {
+                if (getTrackId(audioDatas[i]) === currentTrackId) {
                     player.selectTrack(MediaPlayer.TRACKS_TYPE.AUDIO,audioDatas[i]);
                 }
             }
@@ -530,7 +532,6 @@ function initVideoController () {
         if (video.muted) {
             setVolumeOff(true);
         }
-        update();
         appendText("play");
     });
 
@@ -567,6 +568,7 @@ function initVideoController () {
 
     $("#videoPlayer").on("loadeddata", function () {
         appendText("loadeddata");
+        update();
         initSeekBar();
     });
 
