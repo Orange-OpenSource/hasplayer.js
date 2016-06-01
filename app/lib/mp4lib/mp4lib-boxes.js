@@ -498,15 +498,13 @@ mp4lib.boxes.ContainerFullBox.prototype.read = function(data, pos, end, isEntryC
             box.__sourceBuffer = data.subarray(this.localPos - box.size, this.localPos);
         }
 
-        this.boxes.push(box);
+        if (box.boxtype) {
+            this.boxes.push(box);
+        }
 
         if (box.size <= 0 || box.size === null) {
             throw new mp4lib.ParseException('Problem on size of box ' + box.boxtype +
                 ', parsing stopped to avoid infinite loop');
-        }
-
-        if (!box.boxtype) {
-            throw new mp4lib.ParseException('Problem on unknown box, parsing stopped to avoid infinite loop');
         }
     }
 
