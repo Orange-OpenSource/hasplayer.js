@@ -701,6 +701,8 @@ Dash.dependencies.DashHandler = function() {
                     };
                     representation.availableSegmentsNumber = len;
                     deferred.resolve(segments);
+                }, function(){
+                    deferred.reject();
                 }
             );
 
@@ -743,6 +745,8 @@ Dash.dependencies.DashHandler = function() {
                         }
 
                         deferred.resolve(segments);
+                    }, function(){
+                        deferred.reject();
                     }
                 );
             }
@@ -965,7 +969,7 @@ Dash.dependencies.DashHandler = function() {
                     //self.debug.log("Got a list of segments, so dig deeper.");
                     segmentsPromise = getIndexForSegments.call(self, time, representation);
                     return segmentsPromise;
-                }
+                }, function(){deferred.reject();}
             ).then(
                 function(newIndex) {
                     self.debug.log("[DashHandler][" + type + "] Index for time " + time + " is " + newIndex);
