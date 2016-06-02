@@ -863,6 +863,7 @@ MediaPlayer.dependencies.BufferController = function() {
             } else {
                 self.debug.log("[BufferController][" + type + "] loadNextFragment for time: " + segmentTime);
                 self.indexHandler.getSegmentRequestForTime(_currentRepresentation, segmentTime).then(onFragmentRequest.bind(self), function (){
+                    currentDownloadQuality = -1;
                     signalSegmentBuffered.call(self);
                 });
             }
