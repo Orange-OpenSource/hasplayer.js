@@ -121,7 +121,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
             Set the updating attribute to false.
             Queue a task to fire a simple event named update at this SourceBuffer object.
             Queue a task to fire a simple event named updateend at this SourceBuffer object.*/
-            if (start < 0 || start >= end) {
+           if (start < 0 || start >= end) {
                 throw "INVALID_ACCESS_ERR";
             }
 
@@ -144,6 +144,34 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                 fragmentDuration = 0,
                 encoding = 'utf-8';
 
+            //no mp4, all the subtitles are in one xml file
+            if (mimeType === 'application/ttml+xml') {
+                this.track = this.textTrackExtensions.addTextTrack(video, [], currentId, currentLang, true);
+                
+                //detect utf-16 encoding
+                if (self.isUTF16(bytes)) {
+                    encoding = 'utf-16';
+                }
+
+                this.convertUTFToString(bytes, encoding)
+                    .then(function(result) {
+                        self.ttmlParser.parse(result).then(function(cues) {
+                            if (cues) {
+
+                                self.textTrackExtensions.addCues(self.track, cues);
+
+                                self.eventBus.dispatchEvent({
+                                    type: "updateend"
+                                });
+                            }
+                        }, function(/*error*/) {
+                            //self.debug.error("[TextTTMLXMLMP4SourceBuffer] error parsing TTML "+error);
+                        });
+                    });
+
+                return;
+            }
+
             if (moov) {
                 // This must be an init segment, if it has a moov box.
                 // We need it to read the timescale, as it will be 
@@ -157,7 +185,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                 this.track = this.textTrackExtensions.addTextTrack(video, [], currentId, currentLang, true);
                 this.eventBus.dispatchEvent({
                             type: "updateend"
-                        });
+                });
                 return;
             }
 
