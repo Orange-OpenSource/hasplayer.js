@@ -2,6 +2,9 @@
 // don't disable metrics...
 var angular = angular;
 
+// add  MediaPlayer instance's global reference. Usefull to execute MediaPlayer API outside the scope of the app
+var mediaPlayer = null;
+
 angular.module('DashSourcesService', ['ngResource']).
 factory('Sources', ['$resource', function($resource){
     return $resource('json/sources.json', {}, {
@@ -533,7 +536,6 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
             }
         }
     }
-
     $scope.invalidateDisplay(true);
     $scope.safeApply();
 }
@@ -638,6 +640,8 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     video = document.querySelector(".dash-video-player video");
     player = new MediaPlayer();
 
+    // link reference between mediaPlayer and player object
+    mediaPlayer = player;
     $scope.version = player.getVersion();
     $scope.versionFull = player.getVersionFull();
     $scope.versionDashJS = player.getVersionDashJS();
