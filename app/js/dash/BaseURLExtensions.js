@@ -267,6 +267,8 @@ Dash.dependencies.BaseURLExtensions = function () {
                 findInit.call(self, request.response, info).then(
                     function (range) {
                         deferred.resolve(range);
+                    },function(){
+                        deferred.reject();
                     }
                 );
             };
@@ -491,6 +493,8 @@ Dash.dependencies.BaseURLExtensions = function () {
                     findSIDX.call(self, request.response, info).then(
                         function (segments) {
                             deferred.resolve(segments);
+                        }, function(){
+                            deferred.reject();
                         }
                     );
                 } else {
