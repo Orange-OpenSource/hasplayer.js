@@ -50,12 +50,43 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
 
     setDuration: function (source, value) {
         "use strict";
-        source.duration = value;
+        var i,
+            updating = false;
+
+        if (source.readyState !== 'open') return source.duration;
+
+        for (i = 0; i < source.sourceBuffers.length; i++) {
+            if(source.sourceBuffers[i].updating){
+                updating = true;
+                break;
+            }
+        }
+        
+        if (!updating) {
+            source.duration = value;
+        }
+
         return source.duration;
     },
 
     signalEndOfStream: function(source) {
         "use strict";
+        var buffers = source.sourceBuffers,
+            ln = buffers.length,
+            i = 0;
+
+        if (source.readyState !== 'open') {
+            return;
+        }
+
+        for (i; i < ln; i++) {
+            if (buffers[i].updating) {
+                return;
+            }
+            if (buffers[i].buffered.length === 0) {
+                return;
+            }
+        }
 
         source.endOfStream();
         return true;

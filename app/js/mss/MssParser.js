@@ -40,7 +40,7 @@ Mss.dependencies.MssParser = function() {
         xmlDoc = null,
         baseURL = null,
 
-        mapPeriod = function() {
+        mapPeriod = function(minBufferTime) {
             var period = {},
                 adaptations = [],
                 adaptation,
@@ -53,7 +53,7 @@ Mss.dependencies.MssParser = function() {
             // For each StreamIndex node, create an AdaptationSet element
             for (i = 0; i < smoothNode.childNodes.length; i++) {
                 if (smoothNode.childNodes[i].nodeName === "StreamIndex") {
-                    adaptation = mapAdaptationSet.call(this, smoothNode.childNodes[i]);
+                    adaptation = mapAdaptationSet.call(this, smoothNode.childNodes[i], minBufferTime);
                     if (adaptation !== null) {
                         adaptations.push(adaptation);
                     }
@@ -68,7 +68,7 @@ Mss.dependencies.MssParser = function() {
             return period;
         },
 
-        mapAdaptationSet = function(streamIndex) {
+        mapAdaptationSet = function(streamIndex, minBufferTime) {
 
             var adaptationSet = {},
                 representations = [],
@@ -123,7 +123,7 @@ Mss.dependencies.MssParser = function() {
             segments = segmentTemplate.SegmentTimeline.S_asArray;
             this.metricsModel.addDVRInfo(adaptationSet.contentType, new Date(), {
                 start: segments[0].t / segmentTemplate.timescale,
-                end: (segments[segments.length - 1].t + segments[segments.length - 1].d)  / segmentTemplate.timescale
+                end: (segments[segments.length - 1].t + segments[segments.length - 1].d- minBufferTime*10000000.0)  / segmentTemplate.timescale
             });
 
 
@@ -438,7 +438,9 @@ Mss.dependencies.MssParser = function() {
                 protection = this.domParser.getChildNode(smoothNode, 'Protection'),
                 protectionHeader = null,
                 KID,
+                realDuration,
                 firstSegment,
+                lastSegment,
                 adaptationTimeOffset,
                 i;
 
@@ -456,7 +458,7 @@ Mss.dependencies.MssParser = function() {
             }
 
             // Map period node to manifest root node
-            mpd.Period = mapPeriod.call(this);
+            mpd.Period = mapPeriod.call(this, mpd.minBufferTime);
             mpd.Period_asArray = [mpd.Period];
 
             // Initialize period start time
@@ -501,8 +503,17 @@ Mss.dependencies.MssParser = function() {
                 // Therefore, set period start time to the higher adaptation start time
                 if (mpd.type === "static" && adaptations[i].contentType !== 'text') {
                     firstSegment = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray[0];
+                    lastSegment = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray[adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray.length-1];
                     adaptationTimeOffset = parseFloat(firstSegment.t) / TIME_SCALE_100_NANOSECOND_UNIT;
                     period.start = (period.start === 0) ? adaptationTimeOffset : Math.max(period.start, adaptationTimeOffset);
+                    //get last segment start time, add the duration of this last segment
+                    realDuration = parseFloat(((lastSegment.t + lastSegment.d) / TIME_SCALE_100_NANOSECOND_UNIT).toFixed(3));
+                    //detect difference between announced duration (in MSS manifest) and real duration => in any case, we want that the video element sends the ended event.
+                    //set the smallest value between all the adaptations
+                    if (!isNaN(realDuration) && realDuration < mpd.mediaPresentationDuration) {
+                        mpd.mediaPresentationDuration = realDuration;
+                        period.duration = realDuration;
+                    }
                 }
 
                 // Propagate content protection information into each adaptation
