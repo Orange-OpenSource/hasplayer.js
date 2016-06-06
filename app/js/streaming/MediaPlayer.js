@@ -129,6 +129,7 @@ MediaPlayer = function () {
 
 
     var _metricAdded = function (e) {
+        var event;
         switch (e.data.metric) {
             case "ManifestReady":
                 _isPlayerInitialized();
