@@ -429,7 +429,7 @@ MediaPlayer.dependencies.BufferController = function() {
                                 function( /*appended*/ ) {
                                     self.debug.log("[BufferController][" + type + "] Segment buffered");
                                     //self.debug.log("[BufferController]["+type+"] Data has been appended for quality = "+quality+" index = "+index);
-                                    if (currentBufferedQuality != quality) {
+                                    if (currentBufferedQuality !== quality) {
                                         isFirstMediaSegment = true;
                                         self.debug.log("[BufferController][" + type + "] set currentBufferedQuality to " + quality);
                                         currentBufferedQuality = quality;
