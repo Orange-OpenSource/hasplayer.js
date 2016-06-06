@@ -32,10 +32,12 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                 downloadTime,
                 totalTime,
                 calculatedBandwidth,
+                currentBandwidth,
                 latencyInBandwidth,
                 switchUpRatioSafetyFactor,
-                deferred,
-                funcs = [],
+                currentRepresentation,
+                count,
+                bandwidths = [],
                 i,
                 q = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE,
                 totalBytesLength = 0,
@@ -49,12 +51,12 @@ MediaPlayer.rules.DownloadRatioRule = function() {
 
                 if (!metrics) {
                     self.debug.log("[DownloadRatioRule][" + data.type + "] No metrics, bailing.");
-                    return Q.when(new MediaPlayer.rules.SwitchRequest());
+                    return new MediaPlayer.rules.SwitchRequest();
                 }
 
                 if (lastRequest === null) {
                     self.debug.log("[DownloadRatioRule][" + data.type + "] No requests made for this stream yet, bailing.");
-                    return Q.when(new MediaPlayer.rules.SwitchRequest());
+                    return new MediaPlayer.rules.SwitchRequest();
                 }
 
                 totalTime = (lastRequest.tfinish.getTime() - lastRequest.trequest.getTime()) / 1000;
@@ -62,7 +64,7 @@ MediaPlayer.rules.DownloadRatioRule = function() {
 
                 if (totalTime <= 0) {
                     self.debug.log("[DownloadRatioRule][" + data.type + "] Don't know how long the download of the last fragment took, bailing.");
-                    return Q.when(new MediaPlayer.rules.SwitchRequest());
+                    return new MediaPlayer.rules.SwitchRequest();
                 }
 
                 if (lastRequest.mediaduration === null ||
@@ -70,10 +72,8 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                     lastRequest.mediaduration <= 0 ||
                     isNaN(lastRequest.mediaduration)) {
                     self.debug.log("[DownloadRatioRule][" + data.type + "] Don't know the duration of the last media fragment, bailing.");
-                    return Q.when(new MediaPlayer.rules.SwitchRequest());
+                    return new MediaPlayer.rules.SwitchRequest();
                 }
-
-                deferred = Q.defer();
 
                 self.debug.info("[DownloadRatioRule][" + data.type + "] DL: " + Number(downloadTime.toFixed(3)) + "s, Total: " + Number(totalTime.toFixed(3)) + "s");
 
@@ -98,55 +98,43 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                 self.debug.info("[DownloadRatioRule][" + data.type + "] BW = " + Math.round(calculatedBandwidth / 1000) + " kb/s");
 
                 if (isNaN(calculatedBandwidth)) {
-                    return Q.when(new MediaPlayer.rules.SwitchRequest());
+                    return new MediaPlayer.rules.SwitchRequest();
                 }
 
-                self.manifestExt.getRepresentationCount(data).then(
-                    function(count) {
-                        self.manifestExt.getRepresentationFor(current, data).then(
-                            function(currentRepresentation) {
-                                self.manifestExt.getBandwidth(currentRepresentation).then(
-                                    function(currentBandwidth) {
-                                        for (i = 0; i < count; i += 1) {
-                                            funcs.push(self.manifestExt.getRepresentationBandwidth(data, i));
-                                        }
-                                        Q.all(funcs).then(
-                                            function(bandwidths) {
-                                                if (calculatedBandwidth <= currentBandwidth) {
-                                                    for (i = current - 1; i > 0; i -= 1) {
-                                                        if (bandwidths[i] <= calculatedBandwidth) {
-                                                            break;
-                                                        }
-                                                    }
-                                                    q = i;
-                                                    p = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
+                count = self.manifestExt.getRepresentationCount(data);
+                currentRepresentation = self.manifestExt.getRepresentationFor(current, data);
+                currentBandwidth = self.manifestExt.getBandwidth(currentRepresentation);
+                for (i = 0; i < count; i += 1) {
+                    bandwidths.push(self.manifestExt.getRepresentationBandwidth(data, i));
+                }
+                if (calculatedBandwidth <= currentBandwidth) {
+                    for (i = current - 1; i > 0; i -= 1) {
+                        if (bandwidths[i] <= calculatedBandwidth) {
+                            break;
+                        }
+                    }
+                    q = i;
+                    p = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
 
-                                                    self.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count-1) + " (" + bandwidths[q] + "), p=" + p);
-                                                    deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
-                                                } else {
-                                                    for (i = count - 1; i > current; i -= 1) {
-                                                        if (calculatedBandwidth > (bandwidths[i] * switchUpRatioSafetyFactor)) {
-                                                            //self.debug.log("[DownloadRatioRule][" + data.type + "] bw = " + calculatedBandwidth + " results[i] * switchUpRatioSafetyFactor =" + (bandwidths[i] * switchUpRatioSafetyFactor) + " with i=" + i);
-                                                            break;
-                                                        }
-                                                    }
+                    self.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count - 1) + " (" + bandwidths[q] + "), p=" + p);
+                    return new MediaPlayer.rules.SwitchRequest(q, p);
+                } else {
+                    for (i = count - 1; i > current; i -= 1) {
+                        if (calculatedBandwidth > (bandwidths[i] * switchUpRatioSafetyFactor)) {
+                            //self.debug.log("[DownloadRatioRule][" + data.type + "] bw = " + calculatedBandwidth + " results[i] * switchUpRatioSafetyFactor =" + (bandwidths[i] * switchUpRatioSafetyFactor) + " with i=" + i);
+                            break;
+                        }
+                    }
 
-                                                    q = i;
-                                                    p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
+                    q = i;
+                    p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
 
-                                                    self.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count-1) + " (" + bandwidths[q] + "), p=" + p);
-                                                    deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
-                                                }
-                                            }
-                                        );
-                                    });
-                            });
-                    });
+                    self.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count - 1) + " (" + bandwidths[q] + "), p=" + p);
+                    return new MediaPlayer.rules.SwitchRequest(q, p);
+                }
             } else {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
+                return new MediaPlayer.rules.SwitchRequest();
             }
-
-            return deferred.promise;
         }
     };
 };

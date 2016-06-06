@@ -58,18 +58,18 @@ MediaPlayer.rules.DroppedFramesRule = function() {
                 ratio;
 
             if (data === null) {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
+                return new MediaPlayer.rules.SwitchRequest();
             }
 
             if (data.type !== "video") {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
+                return new MediaPlayer.rules.SwitchRequest();
             }
 
             if (playbackQuality === null) {
                 // No PlaybackQuality metric => start of a new stream => reset lastPlaybackQuality
                 lastPlaybackQuality = null;
                 currentDroppedFrames = currentTotalVideoFrames = -1;
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
+                return new MediaPlayer.rules.SwitchRequest();
             }
 
             //this.debug.info("[DroppedFramesRule]["+data.type+"] PlaybackQuality = " + JSON.stringify(playbackQuality));
@@ -78,7 +78,7 @@ MediaPlayer.rules.DroppedFramesRule = function() {
             getDroppedFrames(playbackQuality);
 
             if (currentDroppedFrames === -1) {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
+                return new MediaPlayer.rules.SwitchRequest();
             }
 
             ratio = currentDroppedFrames / currentTotalVideoFrames;
@@ -97,7 +97,7 @@ MediaPlayer.rules.DroppedFramesRule = function() {
 
             this.debug.info("[DroppedFramesRule][" + data.type + "] SwitchRequest: q=" + q + ", p=" + p);
 
-            return Q.when(new MediaPlayer.rules.SwitchRequest(q, p));
+            return new MediaPlayer.rules.SwitchRequest(q, p);
         }
     };
 };

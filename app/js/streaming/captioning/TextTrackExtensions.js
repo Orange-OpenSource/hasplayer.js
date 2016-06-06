@@ -81,7 +81,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                 track.addCue(new Cue(currentItem.start, currentItem.end, currentItem.data));
             }
 
-            return Q.when(track);
+            return track;
         },
 
         onCueEnter: function(e) {

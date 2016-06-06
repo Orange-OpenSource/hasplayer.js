@@ -154,13 +154,10 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
 
                 // Also, it is a good moment to set up a text track on videoElement
                 // TODO: set up name and language 
-                self.textTrackExtensions.addTextTrack(video, [], currentId, currentLang, true)
-                    .then(function(track) {
-                        self.track = track;
-                        self.eventBus.dispatchEvent({
+                this.track = this.textTrackExtensions.addTextTrack(video, [], currentId, currentLang, true);
+                this.eventBus.dispatchEvent({
                             type: "updateend"
                         });
-                    });
                 return;
             }
 

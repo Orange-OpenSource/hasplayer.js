@@ -21,158 +21,71 @@ Dash.dependencies.DashManifestExtensions = function() {
 Dash.dependencies.DashManifestExtensions.prototype = {
     constructor: Dash.dependencies.DashManifestExtensions,
 
-    getIsAudio: function(adaptation) {
+    getIsType: function(adaptation, type, mimeTypes) {
         "use strict";
-        var i,
-            len,
+        var i, j,
+            found = false,
             col,
-            representation,
-            result = false,
-            found = false;
+            representation;
 
-        if (adaptation) {
-            col = adaptation.ContentComponent_asArray;
+        if (!adaptation) {
+            return false;
+        }
 
-            if (col) {
-                for (i = 0, len = col.length; i < len; i += 1) {
-                    if (col[i].contentType === "audio") {
-                        result = true;
-                        found = true;
-                    }
+        if (adaptation.type === undefined) {
+            adaptation.type = null;
+        }
+        
+        col = adaptation.ContentComponent_asArray;
+
+        if (col) {
+            // Check contentType attribute at adaptation level
+            for (i = 0; i < adaptation.ContentComponent_asArray.length && !found; i++) {
+                if (adaptation.ContentComponent_asArray[i].contentType === type) {
+                    adaptation.type = type;
+                    found = true;
                 }
-            }
-
-            if (adaptation.mimeType) {
-                result = adaptation.mimeType.indexOf("audio") !== -1;
-                found = true;
-            }
-
-            // couldn't find on adaptationset, so check a representation
-            if (!found) {
-                i = 0;
-                len = adaptation.Representation_asArray.length;
-                while (!found && i < len) {
-                    representation = adaptation.Representation_asArray[i];
-
-                    if (representation.mimeType) {
-                        result = representation.mimeType.indexOf("audio") !== -1;
-                        found = true;
-                    }
-
-                    i += 1;
-                }
-            }
-
-            // TODO : Add the type here so that somebody who has access to the adapatation set can check it.
-            // THIS IS A HACK for a bug in DashMetricsExtensions.
-            // See the note in DashMetricsExtensions.adaptationIsType().
-            if (result) {
-                adaptation.type = "audio";
             }
         }
 
-        return Q.when(result);
+        // Check mimeType attribute at adaptation level
+        if (!found) {
+            if (adaptation.mimeType) {
+                for (i = 0; i < mimeTypes.length && !found; i++) {
+                    if (adaptation.mimeType.indexOf(mimeTypes[i]) !== -1) {
+                        adaptation.type = type;
+                        found = true;
+                    }
+                }
+            }
+        }
+
+        // Check mimeType attribute at representation level
+        if (!found) {
+            for (i = 0; i < adaptation.Representation_asArray.length && !found; i++) {
+                representation = adaptation.Representation_asArray[i];
+                for (j = 0; j < mimeTypes.length && !found; j++) {
+                    if (representation.mimeType.indexOf(mimeTypes[j]) !== -1) {
+                        adaptation.type = type;
+                        found = true;
+                    }
+                }
+            }
+        }
+
+        return found;
     },
 
     getIsVideo: function(adaptation) {
-        "use strict";
-        var i,
-            len,
-            col,
-            representation,
-            result = false,
-            found = false;
+        return this.getIsType(adaptation, "video", ["video"]);
+    },
 
-        if (adaptation) {
-            col = adaptation.ContentComponent_asArray;
-
-            if (col) {
-                for (i = 0, len = col.length; i < len; i += 1) {
-                    if (col[i].contentType === "video") {
-                        result = true;
-                        found = true;
-                    }
-                }
-            }
-
-            if (adaptation.mimeType) {
-                result = adaptation.mimeType.indexOf("video") !== -1;
-                found = true;
-            }
-
-            // couldn't find on adaptationset, so check a representation
-            if (!found) {
-                i = 0;
-                len = adaptation.Representation_asArray.length;
-                while (!found && i < len) {
-                    representation = adaptation.Representation_asArray[i];
-
-                    if (representation.mimeType) {
-                        result = representation.mimeType.indexOf("video") !== -1;
-                        found = true;
-                    }
-
-                    i += 1;
-                }
-            }
-
-            // TODO : Add the type here so that somebody who has access to the adapatation set can check it.
-            // THIS IS A HACK for a bug in DashMetricsExtensions.
-            // See the note in DashMetricsExtensions.adaptationIsType().
-            if (result) {
-                adaptation.type = "video";
-            }
-        }
-
-        return Q.when(result);
+    getIsAudio: function(adaptation) {
+        return this.getIsType(adaptation, "audio", ["audio"]);
     },
 
     getIsText: function(adaptation) {
-        "use strict";
-        var i,
-            len,
-            col = adaptation.ContentComponent_asArray,
-            representation,
-            result = false,
-            found = false;
-
-        if(adaptation){
-            if (col) {
-                for (i = 0, len = col.length; i < len; i += 1) {
-                    if (col[i].contentType === "text") {
-                        result = true;
-                        found = true;
-                    }
-                }
-            }
-
-            if (adaptation.mimeType) {
-                result = (adaptation.mimeType.indexOf("vtt") !== -1) || (adaptation.mimeType.indexOf("ttml") !== -1);
-                found = true;
-            }
-
-            // couldn't find on adaptationset, so check a representation
-            if (!found) {
-                i = 0;
-                len = adaptation.Representation_asArray.length;
-                while (!found && i < len) {
-                    representation = adaptation.Representation_asArray[i];
-
-                    if (representation.mimeType) {
-                        result = (representation.mimeType.indexOf("vtt") !== -1) || (representation.mimeType.indexOf("ttml") !== -1);
-                        found = true;
-                    }
-
-                    i += 1;
-                }
-            }
-
-            if(found){
-                adaptation.type = "text";
-            }
-        }
-
-        return Q.when(result);
+        return this.getIsType(adaptation, "text", ["vtt", "ttml"]);
     },
 
     // ORANGE: added application/ttml+xml+mp4 for Smoothstreaming subtitles (ttml+xml encapsulated in mp4 binary form)
@@ -184,7 +97,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         "use strict";
         // TODO : Check "Role" node.
         // TODO : Use this somewhere.
-        return Q.when(false);
+        return false;
     },
 
     processAdaptation: function(adaptation) {
@@ -206,21 +119,14 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
         for (i = 0, len = adaptations.length; i < len; i += 1) {
             if (adaptations[i].hasOwnProperty("id") && adaptations[i].id === id) {
-                return Q.when(adaptations[i]);
+                return adaptations[i];
             }
         }
 
-        return Q.when(null);
+        return null;
     },
 
     getDataForIndex: function(index, manifest, periodIndex) {
-        "use strict";
-        var adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
-
-        return Q.when(adaptations[index]);
-    },
-
-    getDataForIndex_: function(index, manifest, periodIndex) {
         "use strict";
         var adaptations;
 
@@ -267,38 +173,6 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             if (data.id) {
                 for (i = 0, len = adaptations.length; i < len; i += 1) {
                     if (adaptations[i].id && adaptations[i].id === data.id) {
-                        return Q.when(i);
-                    }
-                }
-            } else {
-                var strData = JSON.stringify(data);
-                var strAdapt;
-                for (i = 0, len = adaptations.length; i < len; i += 1) {
-                    strAdapt = JSON.stringify(adaptations[i]);
-                    if (strAdapt === strData) {
-                        return Q.when(i);
-                    }
-                }
-            }
-        }
-
-        return Q.when(-1);
-    },
-
-    getDataIndex_: function(data, manifest, periodIndex) {
-        "use strict";
-
-        var adaptations,
-            i,
-            len;
-
-        if (manifest && periodIndex >= 0) {
-            adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
-
-            // ORANGE : compare data with id or string representation to avoid reference error due to manifest refresh
-            if (data.id) {
-                for (i = 0, len = adaptations.length; i < len; i += 1) {
-                    if (adaptations[i].id && adaptations[i].id === data.id) {
                         return i;
                     }
                 }
@@ -319,284 +193,137 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
     getVideoData: function(manifest, periodIndex) {
         "use strict";
-        //return Q.when(null);
+        //return null;
         //------------------------------------
         var adaptations,
-            i,
-            len,
-            deferred = Q.defer(),
-            funcs = [];
+            i;
 
-        if (manifest && periodIndex >= 0) {
-            adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
-
-            for (i = 0, len = adaptations.length; i < len; i += 1) {
-                funcs.push(this.getIsVideo(adaptations[i]));
-            }
-            Q.all(funcs).then(
-                function(results) {
-                    var found = false;
-                    for (i = 0, len = results.length; i < len; i += 1) {
-                        if (results[i] === true) {
-                            found = true;
-                            deferred.resolve(adaptations[i]);
-                        }
-                    }
-                    if (!found) {
-                        deferred.reject();
-                    }
-                }
-            );
-        } else {
-            deferred.reject();
+        if (!manifest || periodIndex < 0) {
+            return null;
         }
 
-        return deferred.promise;
+        adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+        for (i = 0; i < adaptations.length; i += 1) {
+            if (this.getIsVideo(adaptations[i])) {
+                return adaptations[i];
+            }
+        }
+
+        return null;
     },
 
     getTextDatas: function(manifest, periodIndex) {
         "use strict";
-        //return Q.when(null);
+        //return null;
         //------------------------------------
         var adaptations,
-            i,
-            len,
-            deferred = Q.defer(),
-            funcs = [];
+            datas = [],
+            i;
 
-        if (manifest && periodIndex >= 0) {
-            adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
-            for (i = 0, len = adaptations.length; i < len; i += 1) {
-                funcs.push(this.getIsText(adaptations[i]));
-            }
-            Q.all(funcs).then(
-                function(results) {
-                    var datas = [];
-                    for (i = 0, len = results.length; i < len; i += 1) {
-                        if (results[i] === true) {
-                            datas.push(adaptations[i]);
-                        }
-                        deferred.resolve(datas);
-                    }
-                }
-            );
-        } else {
-            deferred.reject();
+        if (!manifest || periodIndex < 0) {
+            return datas;
         }
 
-        return deferred.promise;
+        adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+        for (i = 0; i < adaptations.length; i += 1) {
+            if (this.getIsText(adaptations[i])) {
+                datas.push(adaptations[i]);
+            }
+        }
+
+        return datas;
     },
 
     getAudioDatas: function(manifest, periodIndex) {
         "use strict";
-        //return Q.when(null);
+        //return null
         //------------------------------------
         var adaptations,
-            i,
-            len,
-            deferred = Q.defer(),
-            funcs = [];
+            datas = [],
+            i;
 
-        if (manifest && periodIndex >= 0) {
-            adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
-            for (i = 0, len = adaptations.length; i < len; i += 1) {
-                funcs.push(this.getIsAudio(adaptations[i]));
-            }
-
-            Q.all(funcs).then(
-                function(results) {
-                    var datas = [];
-                    for (i = 0, len = results.length; i < len; i += 1) {
-                        if (results[i] === true) {
-                            datas.push(adaptations[i]);
-                        }
-                    }
-                    deferred.resolve(datas);
-                }
-            );
-        } else {
-            deferred.reject();
+        if (!manifest || periodIndex < 0) {
+            return datas;
         }
 
-        return deferred.promise;
+        adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+        for (i = 0; i < adaptations.length; i += 1) {
+            if (this.getIsAudio(adaptations[i])) {
+                datas.push(adaptations[i]);
+            }
+        }
+
+        return datas;
     },
 
     getSpecificAudioData: function(manifest, periodIndex, language) {
         "use strict";
         var i,
-            len,
-            deferred = Q.defer(),
-            found = false,
-            self = this;
+            datas;
 
-        if (manifest && periodIndex >= 0) {
-            this.getAudioDatas(manifest, periodIndex).then(
-                function(datas) {
-                    if (!datas || datas.length === 0) {
-                        deferred.reject();
-                        return;
-                    }
 
-                    for (i = 0, len = datas.length; i < len && found !== true; i += 1) {
-                        if (datas[i].lang === language) {
-                            found = true;
-                            deferred.resolve(self.processAdaptation(datas[i]));
-                        }
-                    }
-
-                    if (!found) {
-                        //if the specific language has not been found, return the first one.
-                        deferred.resolve(datas[0]);
-                    }
-                }
-            );
-        } else {
-            deferred.reject();
+        if (!manifest || periodIndex < 0) {
+            return null;
         }
 
-        return deferred.promise;
-    },
-
-    getPrimaryAudioData: function(manifest, periodIndex) {
-        "use strict";
-        var i,
-            len,
-            deferred = Q.defer(),
-            funcs = [],
-            self = this;
-
-        if (manifest && periodIndex >= 0) {
-            this.getAudioDatas(manifest, periodIndex).then(
-                function(datas) {
-                    if (!datas || datas.length === 0) {
-                        deferred.reject();
-                        return;
-                    }
-
-                    for (i = 0, len = datas.length; i < len; i += 1) {
-                        funcs.push(self.getIsMain(datas[i]));
-                    }
-
-                    Q.all(funcs).then(
-                        function(results) {
-                            var found = false;
-                            for (i = 0, len = results.length; i < len; i += 1) {
-                                if (results[i] === true) {
-                                    found = true;
-                                    deferred.resolve(self.processAdaptation(datas[i]));
-                                }
-                            }
-                            if (!found) {
-                                //if the specific language has not been found, return the first one.
-                                deferred.resolve(datas[0]);
-                            }
-                        }
-                    );
-                }
-            );
-        } else {
-            deferred.reject();
+        datas = this.getAudioDatas(manifest, periodIndex);
+        if (datas.length === 0) {
+            return null;
         }
 
-        return deferred.promise;
-    },
-
-    getPrimaryTextData: function(manifest, periodIndex) {
-        "use strict";
-        var i,
-            len,
-            deferred = Q.defer(),
-            funcs = [],
-            self = this;
-
-        if (manifest && periodIndex >= 0) {
-            this.getTextDatas(manifest, periodIndex).then(
-                function(datas) {
-                    if (!datas || datas.length === 0) {
-                        deferred.reject();
-                        return;
-                    }
-
-                    for (i = 0, len = datas.length; i < len; i += 1) {
-                        funcs.push(self.getIsMain(datas[i]));
-                    }
-
-                    Q.all(funcs).then(
-                        function(results) {
-                            var found = false;
-                            for (i = 0, len = results.length; i < len; i += 1) {
-                                if (results[i] === true) {
-                                    found = true;
-                                    deferred.resolve(self.processAdaptation(datas[i]));
-                                }
-                            }
-                            if (!found) {
-                                deferred.resolve(datas[0]);
-                            }
-                        }
-                    );
-                }
-            );
-        } else {
-            deferred.reject();
+        for (i = 0; i < datas.length; i += 1) {
+            if (datas[i].lang === language) {
+                return this.processAdaptation(datas[i]);
+            }
         }
 
-        return deferred.promise;
+        //if the specific language has not been found, return the first one.
+        return this.processAdaptation(datas[0]);
     },
 
     getSpecificTextData: function(manifest, periodIndex, language) {
         "use strict";
         var i,
-            len,
-            deferred = Q.defer(),
-            found = false,
-            self = this;
-        if (manifest && periodIndex >= 0) {
-            this.getTextDatas(manifest, periodIndex).then(
-                function(datas) {
-                    if (!datas || datas.length === 0) {
-                        deferred.reject();
-                        return;
-                    }
+            datas;
 
-                    for (i = 0, len = datas.length; i < len && found !== true; i += 1) {
-                        if (datas[i].lang === language) {
-                            found = true;
-                            deferred.resolve(self.processAdaptation(datas[i]));
-                        }
-                    }
-
-                    if (!found) {
-                        deferred.resolve(datas[0]);
-                    }
-                });
-        } else {
-            deferred.reject();
+        if (!manifest || periodIndex < 0) {
+            return null;
         }
 
-        return deferred.promise;
+        datas = this.getTextDatas(manifest, periodIndex);
+        if (datas.length === 0) {
+            return null;
+        }
+
+        for (i = 0; i < datas.length; i += 1) {
+            if (datas[i].lang === language) {
+                return this.processAdaptation(datas[i]);
+            }
+        }
+
+        return this.processAdaptation(datas[0]);
     },
 
-    getCodec: function(data) {
+    getCodec: function(adaptation) {
         "use strict";
         var i = 0,
             representation,
             codec = null;
 
-        while ((codec === null) && (i < data.Representation_asArray.length)) {
-            representation = data.Representation_asArray[i];
+        while ((codec === null) && (i < adaptation.Representation_asArray.length)) {
+            representation = adaptation.Representation_asArray[i];
             if (representation.codecs !== null && representation.codecs !== "") {
                 codec = (representation.mimeType + ';codecs="' + representation.codecs + '"');
             }
             i++;
         }
 
-        return Q.when(codec);
+        return codec;
     },
 
     getMimeType: function(data) {
         "use strict";
-        return Q.when(data.Representation_asArray[0].mimeType);
+        return data.Representation_asArray[0].mimeType;
     },
 
     getKID: function(data) {
@@ -611,9 +338,9 @@ Dash.dependencies.DashManifestExtensions.prototype = {
     getContentProtectionData: function(data) {
         "use strict";
         if (!data || !data.hasOwnProperty("ContentProtection_asArray") || data.ContentProtection_asArray.length === 0) {
-            return Q.when(null);
+            return null;
         }
-        return Q.when(data.ContentProtection_asArray);
+        return data.ContentProtection_asArray;
     },
 
     getIsDynamic: function(manifest) {
@@ -637,7 +364,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         containsDVR = !isNaN(manifest.timeShiftBufferDepth);
         isDVR = (isDynamic && containsDVR);
 
-        return Q.when(isDVR);
+        return isDVR;
     },
 
     getIsOnDemand: function(manifest) {
@@ -648,7 +375,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             isOnDemand = (manifest.profiles.indexOf("urn:mpeg:dash:profile:isoff-on-demand:2011") !== -1);
         }
 
-        return Q.when(isOnDemand);
+        return isOnDemand;
     },
 
     getDuration: function(manifest) {
@@ -662,12 +389,12 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             mpdDuration = Number.POSITIVE_INFINITY;
         }
 
-        return Q.when(mpdDuration);
+        return mpdDuration;
     },
 
     getBandwidth: function(representation) {
         "use strict";
-        return Q.when(representation.bandwidth);
+        return representation.bandwidth;
     },
 
     getRefreshDelay: function(manifest) {
@@ -679,19 +406,10 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             delay = Math.max(parseFloat(manifest.minimumUpdatePeriod), minDelay);
         }
 
-        return Q.when(delay);
+        return delay;
     },
 
     getRepresentationCount: function(adaptation) {
-        "use strict";
-        if (adaptation) {
-            return Q.when(adaptation.Representation_asArray.length);
-        }
-
-        return Q.when(null);
-    },
-
-    getRepresentationCount_: function(adaptation) {
         "use strict";
         if (adaptation) {
             return adaptation.Representation_asArray.length;
@@ -702,21 +420,19 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
     getRepresentationFor: function(index, data) {
         "use strict";
-        return Q.when(data.Representation_asArray[index]);
+        return data.Representation_asArray[index];
     },
 
     getRepresentationsForAdaptation: function(manifest, adaptation) {
-        var self = this,
-            a,
+        var a,
             representations = [],
-            deferred = Q.defer(),
             representation,
             initialization,
             segmentInfo,
             r;
 
         if (manifest && adaptation) {
-            a = self.processAdaptation(manifest.Period_asArray[adaptation.period.index].AdaptationSet_asArray[adaptation.index]);
+            a = this.processAdaptation(manifest.Period_asArray[adaptation.period.index].AdaptationSet_asArray[adaptation.index]);
 
             for (var i = 0; i < a.Representation_asArray.length; i += 1) {
                 r = a.Representation_asArray[i];
@@ -761,7 +477,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                         representation.initialization = r.BaseURL;
                         representation.range = initialization.range;
                     }
-                } else if (r.hasOwnProperty("mimeType") && self.getIsTextTrack(r.mimeType)) {
+                } else if (r.hasOwnProperty("mimeType") && this.getIsTextTrack(r.mimeType)) {
                     representation.initialization = r.BaseURL;
                     representation.range = 0;
                 }
@@ -787,20 +503,19 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                     representation.presentationTimeOffset = segmentInfo.presentationTimeOffset / representation.timescale;
                 }
 
-                representation.MSETimeOffset = self.timelineConverter.calcMSETimeOffset(representation);
+                representation.MSETimeOffset = this.timelineConverter.calcMSETimeOffset(representation);
                 representations.push(representation);
             }
         }
 
-        deferred.resolve(representations);
-
-        return deferred.promise;
+        return representations;
     },
 
     getAdaptationsForPeriod: function(manifest, period) {
         var p = manifest === null ? null : manifest.Period_asArray[period.index],
             adaptations = [],
             adaptationSet;
+
         if (p) {
             for (var i = 0; i < p.AdaptationSet_asArray.length; i += 1) {
                 adaptationSet = new Dash.vo.AdaptationSet();
@@ -810,14 +525,12 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             }
         }
 
-        return Q.when(adaptations);
+        return adaptations;
     },
 
     getRegularPeriods: function(manifest, mpd) {
-        var self = this,
-            deferred = Q.defer(),
-            periods = [],
-            isDynamic = self.getIsDynamic(manifest),
+        var periods = [],
+            isDynamic = this.getIsDynamic(manifest),
             i,
             len,
             p1 = null,
@@ -882,30 +595,19 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         }
 
         if (periods.length === 0) {
-            return Q.when(periods);
+            return periods;
         }
 
-        self.getCheckTime(manifest, periods[0]).then(
-            function(checkTime) {
-                mpd.checkTime = checkTime;
+        mpd.checkTime = this.getCheckTime(manifest, periods[0]);
 
-                // The last Period extends until the end of the Media Presentation.
-                // The difference between the PeriodStart time of the last Period
-                // and the mpd duration
-                if (vo1 !== null && isNaN(vo1.duration)) {
-                    self.getEndTimeForLastPeriod(mpd).then(
-                        function(periodEndTime) {
-                            vo1.duration = periodEndTime - vo1.start;
-                            deferred.resolve(periods);
-                        }
-                    );
-                } else {
-                    deferred.resolve(periods);
-                }
-            }
-        );
+        // The last Period extends until the end of the Media Presentation.
+        // The difference between the PeriodStart time of the last Period
+        // and the mpd duration
+        if (vo1 !== null && isNaN(vo1.duration)) {
+            vo1.duration = this.getEndTimeForLastPeriod(mpd) - vo1.start;
+        }
 
-        return Q.when(deferred.promise);
+        return periods;
     },
 
     getMpd: function(manifest) {
@@ -936,10 +638,10 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                 mpd.maxSegmentDuration = manifest.maxSegmentDuration;
             }
 
-            return Q.when(mpd);
+            return mpd;
         }
 
-        return Q.when(null);
+        return null;
     },
 
     getFetchTime: function(manifest, period) {
@@ -949,31 +651,20 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         // either if the client obtains an updated MPD or the client verifies that the MPD has not been updated since the previous fetching.
         var fetchTime = this.timelineConverter.calcPresentationTimeFromWallTime(manifest.mpdLoadedTime, period);
 
-        return Q.when(fetchTime);
+        return fetchTime;
     },
 
     getCheckTime: function(manifest, period) {
-        var self = this,
-            deferred = Q.defer(),
-            checkTime = NaN;
+        var checkTime = NaN;
 
         // If the MPD@minimumUpdatePeriod attribute in the client is provided, then the check time is defined as the
         // sum of the fetch time of this operating MPD and the value of this attribute,
         // i.e. CheckTime = FetchTime + MPD@minimumUpdatePeriod.
         if (manifest.hasOwnProperty("minimumUpdatePeriod")) {
-            self.getFetchTime(manifest, period).then(
-                function(fetchTime) {
-                    checkTime = fetchTime + manifest.minimumUpdatePeriod;
-                    deferred.resolve(checkTime);
-                }
-            );
-        } else {
-            // TODO If the MPD@minimumUpdatePeriod attribute in the client is not provided, external means are used to
-            // determine CheckTime, such as a priori knowledge, or HTTP cache headers, etc.
-            deferred.resolve(checkTime);
+            checkTime = this.getFetchTime(manifest, period) + manifest.minimumUpdatePeriod;
         }
 
-        return deferred.promise;
+        return checkTime;
     },
 
     getEndTimeForLastPeriod: function(mpd) {
@@ -988,10 +679,10 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             // in this case the Period End Time should match CheckTime
             periodEnd = mpd.checkTime;
         } else {
-            return Q.fail(new Error("Must have @mediaPresentationDuration or @minimumUpdatePeriod on MPD or an explicit @duration on the last period."));
+            return new Error("Must have @mediaPresentationDuration or @minimumUpdatePeriod on MPD or an explicit @duration on the last period.");
         }
 
-        return Q.when(periodEnd);
+        return periodEnd;
     },
 
     getEventsForPeriod: function(manifest, period) {
@@ -1035,7 +726,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             }
         }
 
-        return Q.when(events);
+        return events;
     },
 
     getEventStreamForAdaptationSet: function(data) {
@@ -1106,20 +797,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
     },
 
     getRepresentationBandwidth: function(adaptation, index) {
-        var self = this,
-            deferred = Q.defer();
-
-        self.getRepresentationFor(index, adaptation).then(
-            function(rep) {
-                self.getBandwidth(rep).then(
-                    function(bandwidth) {
-                        deferred.resolve(bandwidth);
-                    }
-                );
-            }
-        );
-
-        return deferred.promise;
+        return this.getBandwidth(this.getRepresentationFor(index, adaptation));
     }
 
 };

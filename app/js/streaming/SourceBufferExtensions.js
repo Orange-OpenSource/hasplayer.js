@@ -23,45 +23,38 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
 
     createSourceBuffer: function (mediaSource, codec) {
         "use strict";
-        var deferred = Q.defer(),
-            self = this;
+
+        var buffer = null;
+
+        if (!mediaSource) {
+            return null;
+        }
 
         try {
-            if (mediaSource) {
-                deferred.resolve(mediaSource.addSourceBuffer(codec));
-            } else {
-                deferred.reject();
-            }
+            buffer = mediaSource.addSourceBuffer(codec);
         } catch(ex) {
             // For text track not supported by MSE, we try to create corresponding specific source buffer
-            if (self.manifestExt.getIsTextTrack(codec)) {
+            if (this.manifestExt.getIsTextTrack(codec)) {
                 if ((codec === 'text/vtt') || (codec === 'text/ttml')) {
-                    deferred.resolve(self.system.getObject("textSourceBuffer"));
+                    buffer = this.system.getObject("textSourceBuffer");
                 } else if (codec === 'application/ttml+xml+mp4') {
-                    deferred.resolve(self.system.getObject("textTTMLXMLMP4SourceBuffer"));
+                    buffer = this.system.getObject("textTTMLXMLMP4SourceBuffer");
                 } else {
-                    deferred.reject(ex);
+                    throw ex;
                 }
             } else {
-                deferred.reject(ex);
+                throw ex;
             }
         }
-        return deferred.promise;
+        return buffer;
     },
 
     removeSourceBuffer: function (mediaSource, buffer) {
         "use strict";
-        var deferred = Q.defer();
         try {
-            deferred.resolve(mediaSource.removeSourceBuffer(buffer));
-        } catch(ex){
-            if (buffer && typeof(buffer.getTextTrackExtensions) === "function") {
-                deferred.resolve();
-            } else {
-            deferred.reject(ex.description);
+            mediaSource.removeSourceBuffer(buffer);
+        } catch (ex) {
         }
-        }
-        return deferred.promise;
     },
 
     getBufferRange: function (buffer, time, tolerance) {
@@ -251,15 +244,11 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
 
     abort: function (mediaSource, buffer) {
         "use strict";
-        var deferred = Q.defer();
         try {
             if (mediaSource.readyState === "open") {
                 buffer.abort();
             }
-            deferred.resolve();
         } catch(ex){
-            deferred.reject(ex.description);
         }
-        return deferred.promise;
     }
 };

@@ -11,7 +11,7 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-MediaPlayer.dependencies.AbrController = function () {
+MediaPlayer.dependencies.AbrController = function() {
     "use strict";
 
     var autoSwitchBitrate = true,
@@ -21,18 +21,18 @@ MediaPlayer.dependencies.AbrController = function () {
         confidenceDict = {},
         playerState = "",
 
-        getInternalAutoSwitch = function (type) {
+        getInternalAutoSwitch = function(type) {
             if (!autoSwitchDic.hasOwnProperty(type)) {
                 autoSwitchDic[type] = true;
             }
             return autoSwitchDic[type];
         },
 
-        setInternalAutoSwitch = function (type, value) {
+        setInternalAutoSwitch = function(type, value) {
             autoSwitchDic[type] = value;
         },
 
-        getInternalQuality = function (type) {
+        getInternalQuality = function(type) {
             var quality;
 
             if (!qualityDict.hasOwnProperty(type)) {
@@ -44,11 +44,11 @@ MediaPlayer.dependencies.AbrController = function () {
             return quality;
         },
 
-        setInternalQuality = function (type, value) {
+        setInternalQuality = function(type, value) {
             qualityDict[type] = value;
         },
 
-        getInternalConfidence = function (type) {
+        getInternalConfidence = function(type) {
             var confidence;
 
             if (!confidenceDict.hasOwnProperty(type)) {
@@ -60,11 +60,11 @@ MediaPlayer.dependencies.AbrController = function () {
             return confidence;
         },
 
-        setInternalConfidence = function (type, value) {
+        setInternalConfidence = function(type, value) {
             confidenceDict[type] = value;
         },
 
-        getRulesRequestQuality = function (type, data) {
+        getRulesRequestQuality = function(type, data) {
             var self = this,
                 autoSwitch = getInternalAutoSwitch(type),
                 quality = getInternalQuality(type),
@@ -72,137 +72,131 @@ MediaPlayer.dependencies.AbrController = function () {
                 newQuality = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE,
                 newConfidence = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE,
                 qualityMax = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE,
-                deferred,
                 i,
                 len,
-                funcs = [],
+                results = [],
+                metrics,
                 req,
-                values;
+                values = {},
+                rules,
+                max;
 
             if (!autoSwitchBitrate || !autoSwitch) {
-                self.debug.log("[AbrController]["+type+"] ABR disabled");
-                return Q.when({quality: quality, confidence: confidence});
+                self.debug.log("[AbrController][" + type + "] ABR disabled");
+                return {
+                    quality: quality,
+                    confidence: confidence
+                };
             }
 
-            deferred = Q.defer();
+            self.debug.log("[AbrController][" + type + "] Check rules....");
 
-            self.debug.log("[AbrController]["+type+"] Check rules....");
+            metrics = self.getMetricsFor(data);
+            rules = self.abrRulesCollection.getRules(MediaPlayer.rules.BaseRulesCollection.prototype.QUALITY_SWITCH_RULES);
+            for (i = 0, len = rules.length; i < len; i += 1) {
+                results.push(rules[i].checkIndex(quality, metrics, data, playerState));
+            }
 
-            self.getMetricsFor(data).then(
-                function (metrics) {
-                    self.abrRulesCollection.getRules(MediaPlayer.rules.BaseRulesCollection.prototype.QUALITY_SWITCH_RULES).then(
-                        function (rules) {
-                            for (i = 0, len = rules.length; i < len; i += 1) {
-                                funcs.push(rules[i].checkIndex(quality, metrics, data, playerState));
-                            }
-                            Q.all(funcs).then(
-                                function (results) {
-                                    values = {};
-                                    values[MediaPlayer.rules.SwitchRequest.prototype.STRONG] = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE;
-                                    values[MediaPlayer.rules.SwitchRequest.prototype.WEAK] = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE;
-                                    values[MediaPlayer.rules.SwitchRequest.prototype.DEFAULT] = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE;
+            values[MediaPlayer.rules.SwitchRequest.prototype.STRONG] = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE;
+            values[MediaPlayer.rules.SwitchRequest.prototype.WEAK] = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE;
+            values[MediaPlayer.rules.SwitchRequest.prototype.DEFAULT] = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE;
 
-                                    for (i = 0, len = results.length; i < len; i += 1) {
-                                        req = results[i];
-                                        if (req.quality !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
-                                            self.debug.log("[AbrController]["+type+"] Request for quality " + req.quality + ", priority = " + req.priority + " (" + rules[i].name + ")");
-                                            values[req.priority] = Math.min(values[req.priority], req.quality);
-                                        }
-
-                                        if (req.max === true) {
-                                            qualityMax = Math.min(qualityMax, req.quality);
-                                        }
-                                    }
-
-                                    if (values[MediaPlayer.rules.SwitchRequest.prototype.WEAK] !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
-                                        newConfidence = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
-                                        newQuality = values[MediaPlayer.rules.SwitchRequest.prototype.WEAK];
-                                    }
-
-                                    if (values[MediaPlayer.rules.SwitchRequest.prototype.DEFAULT] !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
-                                        newConfidence = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
-                                        newQuality = values[MediaPlayer.rules.SwitchRequest.prototype.DEFAULT];
-                                    }
-
-                                    if (values[MediaPlayer.rules.SwitchRequest.prototype.STRONG] !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
-                                        newConfidence = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
-                                        newQuality = values[MediaPlayer.rules.SwitchRequest.prototype.STRONG];
-                                    }
-
-                                    if (newQuality !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE && newQuality !== undefined) {
-                                        quality = newQuality;
-                                    }
-
-                                    if (newConfidence !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE && newConfidence !== undefined) {
-                                        confidence = newConfidence;
-                                    }
-
-                                    if (qualityMax !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
-                                        qualityMaxDict[type] = qualityMax;
-                                    }
-
-                                    self.manifestExt.getRepresentationCount(data).then(
-                                        function (max) {
-                                            // Ensure valid quality index
-                                            if (quality < 0) {
-                                                quality = 0;
-                                            }
-                                            if (quality >= max) {
-                                                quality = max - 1;
-                                            }
-
-                                            if (confidence !== MediaPlayer.rules.SwitchRequest.prototype.STRONG &&
-                                                confidence !== MediaPlayer.rules.SwitchRequest.prototype.WEAK) {
-                                                confidence = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
-                                            }
-
-                                            self.debug.info("[AbrController]["+type+"] Request quality: " + quality);
-
-                                            deferred.resolve({quality: quality, confidence: confidence});
-                                        }
-                                    );
-                                }
-                            );
-                        }
-                    );
+            for (i = 0, len = results.length; i < len; i += 1) {
+                req = results[i];
+                if (req.quality !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
+                    self.debug.log("[AbrController][" + type + "] Request for quality " + req.quality + ", priority = " + req.priority + " (" + rules[i].name + ")");
+                    values[req.priority] = Math.min(values[req.priority], req.quality);
                 }
-            );
 
-            return deferred.promise;
+                if (req.max === true) {
+                    qualityMax = Math.min(qualityMax, req.quality);
+                }
+            }
+
+            if (values[MediaPlayer.rules.SwitchRequest.prototype.WEAK] !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
+                newConfidence = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
+                newQuality = values[MediaPlayer.rules.SwitchRequest.prototype.WEAK];
+            }
+
+            if (values[MediaPlayer.rules.SwitchRequest.prototype.DEFAULT] !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
+                newConfidence = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
+                newQuality = values[MediaPlayer.rules.SwitchRequest.prototype.DEFAULT];
+            }
+
+            if (values[MediaPlayer.rules.SwitchRequest.prototype.STRONG] !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
+                newConfidence = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
+                newQuality = values[MediaPlayer.rules.SwitchRequest.prototype.STRONG];
+            }
+
+            if (newQuality !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE && newQuality !== undefined) {
+                quality = newQuality;
+            }
+
+            if (newConfidence !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE && newConfidence !== undefined) {
+                confidence = newConfidence;
+            }
+
+            if (qualityMax !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
+                qualityMaxDict[type] = qualityMax;
+            }
+
+            max = self.manifestExt.getRepresentationCount(data);
+            // Ensure valid quality index
+            if (quality < 0) {
+                quality = 0;
+            }
+            if (quality >= max) {
+                quality = max - 1;
+            }
+
+            if (confidence !== MediaPlayer.rules.SwitchRequest.prototype.STRONG &&
+                confidence !== MediaPlayer.rules.SwitchRequest.prototype.WEAK) {
+                confidence = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
+            }
+
+            self.debug.info("[AbrController][" + type + "] Request quality: " + quality);
+
+            return {
+                quality: quality,
+                confidence: confidence
+            };
         },
 
         getQualityBoundaries = function(type, data) {
             var bitrates = this.metricsExt.getBitratesForType(type, data),
                 qualityMin = this.config.getParamFor(type, "ABR.minQuality", "number", -1),
-                qualityMax = this.config.getParamFor(type, "ABR.maxQuality", "number",-1),
+                qualityMax = this.config.getParamFor(type, "ABR.maxQuality", "number", -1),
                 bandwidthMin = this.config.getParamFor(type, "ABR.minBandwidth", "number", -1),
                 bandwidthMax = this.config.getParamFor(type, "ABR.maxBandwidth", "number", -1),
                 i,
-                count= bitrates.length;
+                count = bitrates.length;
 
             if (bandwidthMin !== -1) {
                 for (i = 0; i < bitrates.length; i++) {
                     if (bitrates[i] >= bandwidthMin) {
-                       qualityMin = (qualityMin === -1) ? i : Math.max(i, qualityMin);
-                       break;
+                        qualityMin = (qualityMin === -1) ? i : Math.max(i, qualityMin);
+                        break;
                     }
                 }
             }
 
             if (bandwidthMax !== -1) {
-               for (i = bitrates.length - 1; i >= 0; i--) {
+                for (i = bitrates.length - 1; i >= 0; i--) {
                     if (bitrates[i] <= bandwidthMax) {
                         qualityMax = (qualityMax === -1) ? i : Math.min(i, qualityMax);
                         break;
                     }
-               }
+                }
             }
 
             qualityMin = (qualityMin >= count) ? (count - 1) : qualityMin;
-            qualityMin = (qualityMin < 0) ? 0: qualityMin;
-            qualityMax = (qualityMax >= count || qualityMax <0) ? (count - 1) : qualityMax;
+            qualityMin = (qualityMin < 0) ? 0 : qualityMin;
+            qualityMax = (qualityMax >= count || qualityMax < 0) ? (count - 1) : qualityMax;
 
-            return {min: qualityMin, max: qualityMax};
+            return {
+                min: qualityMin,
+                max: qualityMax
+            };
 
         };
 
@@ -211,118 +205,108 @@ MediaPlayer.dependencies.AbrController = function () {
         abrRulesCollection: undefined,
         manifestExt: undefined,
         metricsModel: undefined,
-        metricsExt:undefined,
+        metricsExt: undefined,
         config: undefined,
 
-        getAutoSwitchBitrate: function () {
+        getAutoSwitchBitrate: function() {
             return autoSwitchBitrate;
         },
 
-        setAutoSwitchBitrate: function (value) {
+        setAutoSwitchBitrate: function(value) {
             this.debug.log("[AbrController] Set auto switch: " + value);
             autoSwitchBitrate = value;
         },
 
-        getMetricsFor: function (data) {
-            var deferred = Q.defer(),
-                self = this;
+        getMetricsFor: function(data) {
+            var isVideo,
+                isAudio;
 
-            self.manifestExt.getIsVideo(data).then(
-                function (isVideo) {
-                    if (isVideo) {
-                        deferred.resolve(self.metricsModel.getMetricsFor("video"));
-                    } else {
-                        self.manifestExt.getIsAudio(data).then(
-                            function (isAudio) {
-                                if (isAudio) {
-                                    deferred.resolve(self.metricsModel.getMetricsFor("audio"));
-                                } else {
-                                    deferred.resolve(self.metricsModel.getMetricsFor("stream"));
-                                }
-                            }
-                        );
-                    }
+            isVideo = this.manifestExt.getIsVideo(data);
+            if (isVideo) {
+                return this.metricsModel.getMetricsFor("video");
+            } else {
+                isAudio = this.manifestExt.getIsAudio(data);
+                if (isAudio) {
+                    return this.metricsModel.getMetricsFor("audio");
+                } else {
+                    return this.metricsModel.getMetricsFor("stream");
                 }
-            );
-
-            return deferred.promise;
+            }
         },
 
-        getPlaybackQuality: function (type, data) {
+        getPlaybackQuality: function(type, data) {
             var self = this,
-                deferred = Q.defer(),
                 previousQuality = this.getQualityFor(type),
                 qualityMin = -1,
                 qualityMax = -1,
                 quality,
                 confidence,
-                switchUpIncrementally = this.config.getParamFor(type, "ABR.switchUpIncrementally", "boolean", false);
+                switchUpIncrementally = this.config.getParamFor(type, "ABR.switchUpIncrementally", "boolean", false),
+                result;
 
-            getRulesRequestQuality.call(this, type, data).then(
-                function (result) {
-                    quality = result.quality;
-                    confidence = result.confidence;
+            result = getRulesRequestQuality.call(this, type, data);
+            quality = result.quality;
+            confidence = result.confidence;
 
-                    if (self.getAutoSwitchBitrate()) {
-                        // Check incremental switch
-                        if (switchUpIncrementally && (quality > previousQuality)) {
-                            self.debug.log("[AbrController]["+type+"] Incremental switch => quality: " + quality);
-                            quality = previousQuality + 1;
-                        }
-
-                        // Check representation boundaries
-                        var qualityBoundaries = getQualityBoundaries.call(self, type, data);
-                        qualityMin = qualityBoundaries.min;
-                        qualityMax = qualityBoundaries.max;
-
-                        if (quality < qualityMin) {
-                            quality = qualityMin;
-                            self.debug.log("[AbrController]["+type+"] New quality < min => " + quality);
-                        }
-
-                        if (quality > qualityMax) {
-                            quality = qualityMax;
-                            self.debug.log("[AbrController]["+type+"] New quality > max => " + quality);
-                        }
-
-                        // Check max quality allowed by the rules (see DroppedFramesRule for example)
-                        if (quality > qualityMaxDict[type]) {
-                            quality = qualityMaxDict[type];
-                            self.debug.log("[AbrController]["+type+"] Max allowed quality = " + quality);
-                        }
-                    }
-
-                    setInternalQuality.call(self, type, quality);
-                    setInternalConfidence.call(self, type, confidence);
-
-                    self.debug.info("[AbrController]["+type+"] Set quality: " + quality);
-                    deferred.resolve({quality: quality, confidence: confidence});
+            if (self.getAutoSwitchBitrate()) {
+                // Check incremental switch
+                if (switchUpIncrementally && (quality > previousQuality)) {
+                    self.debug.log("[AbrController][" + type + "] Incremental switch => quality: " + quality);
+                    quality = previousQuality + 1;
                 }
-            );
 
-            return deferred.promise;
+                // Check representation boundaries
+                var qualityBoundaries = getQualityBoundaries.call(self, type, data);
+                qualityMin = qualityBoundaries.min;
+                qualityMax = qualityBoundaries.max;
+
+                if (quality < qualityMin) {
+                    quality = qualityMin;
+                    self.debug.log("[AbrController][" + type + "] New quality < min => " + quality);
+                }
+
+                if (quality > qualityMax) {
+                    quality = qualityMax;
+                    self.debug.log("[AbrController][" + type + "] New quality > max => " + quality);
+                }
+
+                // Check max quality allowed by the rules (see DroppedFramesRule for example)
+                if (quality > qualityMaxDict[type]) {
+                    quality = qualityMaxDict[type];
+                    self.debug.log("[AbrController][" + type + "] Max allowed quality = " + quality);
+                }
+            }
+
+            setInternalQuality.call(self, type, quality);
+            setInternalConfidence.call(self, type, confidence);
+
+            self.debug.info("[AbrController][" + type + "] Set quality: " + quality);
+            return {
+                quality: quality,
+                confidence: confidence
+            };
         },
 
-        getAutoSwitchFor: function (type) {
+        getAutoSwitchFor: function(type) {
             return getInternalAutoSwitch(type);
         },
 
-        setAutoSwitchFor: function (type, value) {
+        setAutoSwitchFor: function(type, value) {
             var autoSwitch = getInternalAutoSwitch(type);
             if (value !== autoSwitch) {
-                this.debug.log("[AbrController]["+type+"] Set auto switch: " + value);
+                this.debug.log("[AbrController][" + type + "] Set auto switch: " + value);
                 setInternalAutoSwitch(type, value);
             }
         },
 
-        getQualityFor: function (type) {
+        getQualityFor: function(type) {
             return getInternalQuality(type);
         },
 
-        setQualityFor: function (type, value) {
+        setQualityFor: function(type, value) {
             var quality = getInternalQuality(type);
             if (value !== quality) {
-                this.debug.log("[AbrController]["+type+"] Set playback quality: " + value);
+                this.debug.log("[AbrController][" + type + "] Set playback quality: " + value);
                 setInternalQuality(type, value);
             }
         },

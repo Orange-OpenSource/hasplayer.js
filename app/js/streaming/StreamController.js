@@ -67,7 +67,7 @@ MediaPlayer.dependencies.StreamController = function() {
             detachVideoEvents.call(this, fromVideoModel);
             attachVideoEvents.call(this, toVideoModel);
 
-            return Q.when(true);
+            return true;
         },
 
         attachVideoEvents = function(videoModel) {
@@ -255,17 +255,17 @@ MediaPlayer.dependencies.StreamController = function() {
                 metrics = self.metricsModel.getMetricsFor("stream"),
                 manifestUpdateInfo = self.metricsExt.getCurrentManifestUpdate(metrics),
                 periodInfo,
-                deferred = Q.defer(),
-                updatedStreams = [],
+                periods,
                 pLen,
                 sLen,
                 pIdx,
                 sIdx,
                 period,
+                mpd,
                 stream;
 
             if (!manifest) {
-                return Q.when(false);
+                return false;
             }
 
             if (self.capabilities.supportsEncryptedMedia()) {
@@ -286,102 +286,75 @@ MediaPlayer.dependencies.StreamController = function() {
                 }
             }
 
-            self.manifestExt.getMpd(manifest).then(
-                function(mpd) {
-                    if (activeStream) {
-                        periodInfo = activeStream.getPeriodInfo();
-                        mpd.isClientServerTimeSyncCompleted = periodInfo.mpd.isClientServerTimeSyncCompleted;
-                        mpd.clientServerTimeShift = periodInfo.mpd.clientServerTimeShift;
+            mpd = self.manifestExt.getMpd(manifest);
+            if (activeStream) {
+                periodInfo = activeStream.getPeriodInfo();
+                mpd.isClientServerTimeSyncCompleted = periodInfo.mpd.isClientServerTimeSyncCompleted;
+                mpd.clientServerTimeShift = periodInfo.mpd.clientServerTimeShift;
+            }
+
+            periods = self.manifestExt.getRegularPeriods(manifest, mpd);
+            if (periods.length === 0) {
+                return false;
+            }
+
+            for (pIdx = 0, pLen = periods.length; pIdx < pLen; pIdx += 1) {
+                period = periods[pIdx];
+                for (sIdx = 0, sLen = streams.length; sIdx < sLen; sIdx += 1) {
+                    // If the stream already exists we just need to update the values we got from the updated manifest
+                    if (streams[sIdx].getId() === period.id) {
+                        stream = streams[sIdx];
+                        stream.updateData(period);
                     }
-
-                    self.manifestExt.getRegularPeriods(manifest, mpd).then(
-                        function(periods) {
-
-                            if (periods.length === 0) {
-                                return deferred.reject();
-                            }
-
-                            for (pIdx = 0, pLen = periods.length; pIdx < pLen; pIdx += 1) {
-                                period = periods[pIdx];
-                                for (sIdx = 0, sLen = streams.length; sIdx < sLen; sIdx += 1) {
-                                    // If the stream already exists we just need to update the values we got from the updated manifest
-                                    if (streams[sIdx].getId() === period.id) {
-                                        stream = streams[sIdx];
-                                        updatedStreams.push(stream.updateData(period));
-                                    }
-                                }
-                                // If the Stream object does not exist we probably loaded the manifest the first time or it was
-                                // introduced in the updated manifest, so we need to create a new Stream and perform all the initialization operations
-                                if (!stream) {
-                                    stream = self.system.getObject("stream");
-                                    stream.setVideoModel(pIdx === 0 ? self.videoModel : createVideoModel.call(self));
-                                    stream.initProtection(protectionController);
-                                    stream.setAutoPlay(autoPlay);
-                                    stream.setDefaultAudioLang(defaultAudioLang);
-                                    stream.setDefaultSubtitleLang(defaultSubtitleLang);
-                                    stream.enableSubtitles(subtitlesEnabled);
-                                    stream.load(manifest, period);
-                                    streams.push(stream);
-                                }
-
-                                self.metricsModel.addManifestUpdatePeriodInfo(manifestUpdateInfo, period.id, period.index, period.start, period.duration);
-                                stream = null;
-                            }
-
-                            // If the active stream has not been set up yet, let it be the first Stream in the list
-                            if (!activeStream) {
-                                activeStream = streams[0];
-                                attachVideoEvents.call(self, activeStream.getVideoModel());
-                            }
-
-                            self.metricsModel.updateManifestUpdateInfo(manifestUpdateInfo, {
-                                currentTime: self.videoModel.getCurrentTime(),
-                                buffered: self.videoModel.getElement().buffered,
-                                presentationStartTime: periods[0].start,
-                                clientTimeOffset: mpd.clientServerTimeShift
-                            });
-
-                            Q.all(updatedStreams).then(
-                                function() {
-                                    deferred.resolve();
-                                }
-                            );
-                        }
-                    );
                 }
-            );
+                // If the Stream object does not exist we probably loaded the manifest the first time or it was
+                // introduced in the updated manifest, so we need to create a new Stream and perform all the initialization operations
+                if (!stream) {
+                    stream = self.system.getObject("stream");
+                    stream.setVideoModel(pIdx === 0 ? self.videoModel : createVideoModel.call(self));
+                    stream.initProtection(protectionController);
+                    stream.setAutoPlay(autoPlay);
+                    stream.setDefaultAudioLang(defaultAudioLang);
+                    stream.setDefaultSubtitleLang(defaultSubtitleLang);
+                    stream.enableSubtitles(subtitlesEnabled);
+                    stream.load(manifest, period);
+                    streams.push(stream);
+                }
 
-            return deferred.promise;
+                self.metricsModel.addManifestUpdatePeriodInfo(manifestUpdateInfo, period.id, period.index, period.start, period.duration);
+                stream = null;
+            }
+
+            // If the active stream has not been set up yet, let it be the first Stream in the list
+            if (!activeStream) {
+                activeStream = streams[0];
+                attachVideoEvents.call(self, activeStream.getVideoModel());
+            }
+
+            self.metricsModel.updateManifestUpdateInfo(manifestUpdateInfo, {
+                currentTime: self.videoModel.getCurrentTime(),
+                buffered: self.videoModel.getElement().buffered,
+                presentationStartTime: periods[0].start,
+                clientTimeOffset: mpd.clientServerTimeShift
+            });
+
+            return true;
         },
 
         // ORANGE: create function to handle audiotracks
         updateAudioTracks = function() {
             if (activeStream) {
-                var self = this;
-                self.manifestExt.getAudioDatas(self.manifestModel.getValue(), activeStream.getPeriodIndex()).then(function(audiosDatas) {
-                    audioTracks = audiosDatas;
-                    // fire event to notify that audiotracks have changed
-
-                    self.system.notify("audioTracksUpdated");
-                }, function() {
-                    audioTracks = null;
-                    self.system.notify("audioTracksUpdated");
-                });
+                audioTracks = this.manifestExt.getAudioDatas(this.manifestModel.getValue(), activeStream.getPeriodIndex());
+                // fire event to notify that audiotracks have changed
+                this.system.notify("audioTracksUpdated");
             }
         },
 
         updateSubtitleTracks = function() {
             if (activeStream) {
-                var self = this;
-                self.manifestExt.getTextDatas(self.manifestModel.getValue(), activeStream.getPeriodIndex()).then(function(textDatas) {
-                    subtitleTracks = textDatas;
-                    // fire event to notify that subtitletracks have changed
-                    self.system.notify("subtitleTracksUpdated");
-                }, function() {
-                    subtitleTracks = null;
-                    // fire event to notify that subtitletracks have changed
-                    self.system.notify("subtitleTracksUpdated");
-                });
+                subtitleTracks = this.manifestExt.getTextDatas(this.manifestModel.getValue(), activeStream.getPeriodIndex());
+                // fire event to notify that subtitletracks have changed
+                this.system.notify("subtitleTracksUpdated");
             }
         },
 
@@ -393,19 +366,17 @@ MediaPlayer.dependencies.StreamController = function() {
         },
 
         manifestHasUpdated = function() {
-            var self = this;
-            composeStreams.call(self).then(
-                function() {
-                    // ORANGE: Update Audio Tracks List
-                    updateAudioTracks.call(self);
-                    // ORANGE: Update Subtitle Tracks List
-                    updateSubtitleTracks.call(self);
-                    self.system.notify("streamsComposed");
-                },
-                function() {
-                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_STREAM, "No stream/period is provided in the manifest");
-                }
-            );
+            var result = composeStreams.call(this);
+
+            if (result) {
+                // ORANGE: Update Audio Tracks List
+                updateAudioTracks.call(this);
+                // ORANGE: Update Subtitle Tracks List
+                updateSubtitleTracks.call(this);
+                this.system.notify("streamsComposed");
+            } else {
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_STREAM, "No stream/period is provided in the manifest");
+            }
         };
 
     return {
@@ -557,11 +528,11 @@ MediaPlayer.dependencies.StreamController = function() {
                         // then raise a warning and ask for refreshing the url (in case it is no more valid or expired)
                         self.errHandler.sendWarning(err.name, err.message, err.data);
                         self.eventBus.dispatchEvent({
-                                type: "manifestUrlUpdate",
-                                data: {
-                                    url: manifestUrl
-                                }
-                            });
+                            type: "manifestUrlUpdate",
+                            data: {
+                                url: manifestUrl
+                            }
+                        });
                     }
                 }
             );

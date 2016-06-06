@@ -59,15 +59,13 @@ Hls.dependencies.HlsFragmentController = function() {
     rslt.process = function(bytes, request, representations) {
         var result = null,
             InitSegmentData = null,
-            catArray = null,
-            deferred = null;
+            catArray = null;
 
         if ((bytes === null) || (bytes === undefined) || (bytes.byteLength === 0)) {
-            return Q.when(bytes);
+            return bytes;
         }
 
         try {
-            deferred = Q.defer();
             // Media segment => generate corresponding moof data segment from demultiplexed MPEG2-TS chunk
             if (request && (request.type === "Media Segment") && representations && (representations.length > 0)) {
                 if (lastRequestQuality === null || lastRequestQuality !== request.quality) {
@@ -91,12 +89,12 @@ Hls.dependencies.HlsFragmentController = function() {
 
                 rslt.sequenceNumber++;
             }
-            deferred.resolve(result);
+            return result;
         } catch (e) {
-            deferred.reject(e);
+            return e;
         }
 
-        return deferred.promise;
+        return result;
     };
 
     rslt.getStartTime = function() {
