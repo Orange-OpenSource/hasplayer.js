@@ -195,7 +195,7 @@ MediaPlayer.utils.TTMLParser = function() {
 
                         //search if others styles are referenced in the selected one
                         styleName = searchInTab(tabStyles, styleName, 'style');
-                        
+
                         while (styleName) {
                             //search in this other style
                             resu = searchInTab(tabStyles, styleName, styleElementName);
@@ -361,9 +361,12 @@ MediaPlayer.utils.TTMLParser = function() {
                 textDatas,
                 j,
                 k,
+                l,
                 cellsSize,
                 cellResolution,
-                extent;
+                extent,
+                textNodes,
+                textValue = "";
 
             try {
 
@@ -437,49 +440,41 @@ MediaPlayer.utils.TTMLParser = function() {
                                          *   5- in the main div ToDo
                                          *   6- in the style of the main div
                                          **************************************************************************************/
+                                        //search style informations once. 
+                                        if (j === 0) {
+                                            cssStyle.backgroundColor = findStyleElement.call(this, [textDatas[j], region, divBody], 'backgroundColor');
+                                            cssStyle.color = findStyleElement.call(this, [textDatas[j], region, divBody], 'color');
+                                            cssStyle.fontSize = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontSize');
+                                            cssStyle.fontFamily = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontFamily');
 
-                                        cssStyle.backgroundColor = findStyleElement.call(this, [textDatas[j], region, divBody], 'backgroundColor');
-                                        cssStyle.color = findStyleElement.call(this, [textDatas[j], region, divBody], 'color');
-                                        cssStyle.fontSize = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontSize');
-                                        cssStyle.fontFamily = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontFamily');
+                                            extent = findStyleElement.call(this, [textDatas[j], region, divBody], 'extent');
 
-                                        extent = findStyleElement.call(this, [textDatas[j], region, divBody], 'extent');
-
-                                        if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === '%' && extent) {
-                                            extent = extent.split(' ')[1];
-                                            extent = parseFloat(extent.substr(0, extent.length - 1));
-                                            cssStyle.fontSize = (parseInt(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1), 10) * extent) / 100 + "%";
-                                        } else if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === 'c' && extent) {
-                                            cellsSize = cssStyle.fontSize.replace(/\s/g, '').split('c');
-                                            cellResolution = findParameterElement.call(this, [textDatas[j], region, divBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution').split(' ');
-                                            if (cellsSize.length > 1) {
-                                                cssStyle.fontSize = cellResolution[1] / cellsSize[1] + 'px';
-                                            } else {
-                                                cssStyle.fontSize = cellResolution[1] / cellsSize[0] + 'px';
+                                            if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === '%' && extent) {
+                                                extent = extent.split(' ')[1];
+                                                extent = parseFloat(extent.substr(0, extent.length - 1));
+                                                cssStyle.fontSize = (parseInt(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1), 10) * extent) / 100 + "%";
+                                            } else if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === 'c' && extent) {
+                                                cellsSize = cssStyle.fontSize.replace(/\s/g, '').split('c');
+                                                cellResolution = findParameterElement.call(this, [textDatas[j], region, divBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution').split(' ');
+                                                if (cellsSize.length > 1) {
+                                                    cssStyle.fontSize = cellResolution[1] / cellsSize[1] + 'px';
+                                                } else {
+                                                    cssStyle.fontSize = cellResolution[1] / cellsSize[0] + 'px';
+                                                }
                                             }
                                         }
-
-                                        //line and position element have no effect on IE
-                                        //For Chrome line = 80 is a percentage workaround to reorder subtitles
-                                        if (j === 0) {
-                                            caption = {
-                                                start: startTime,
-                                                end: endTime,
-                                                data: textDatas[j].textContent,
-                                                line: 80,
-                                                style: cssStyle
-                                            };
-                                        } else {
-                                            //try to detect multi lines subtitle
-                                            caption = {
-                                                start: startTime,
-                                                end: endTime,
-                                                data: textDatas[j - 1].textContent + '\n' + textDatas[j].textContent,
-                                                line: 80,
-                                                style: cssStyle
-                                            };
-                                        }
+                                        textValue += textDatas[j].textContent + "\n";
                                     }
+                                    //line and position element have no effect on IE
+                                    //For Chrome line = 80 is a percentage workaround to reorder subtitles
+                                    caption = {
+                                        start: startTime,
+                                        end: endTime,
+                                        data: textValue,
+                                        line: 80,
+                                        style: cssStyle
+                                    };
+                                    textValue = "";
                                     captionArray.push(caption);
                                 } else {
                                     cssStyle.backgroundColor = findStyleElement.call(this, [region, divBody], 'backgroundColor');
@@ -512,13 +507,19 @@ MediaPlayer.utils.TTMLParser = function() {
                                             style: cssStyle
                                         };
                                     } else {
+                                        textNodes = this.domParser.getChildNodes(region, '#text');
+
+                                        for (l = 0; l < textNodes.length; l += 1) {
+                                            textValue += textNodes[l].textContent + "\n";
+                                        }
                                         caption = {
                                             start: startTime,
                                             end: endTime,
-                                            data: region.textContent,
+                                            data: textValue,
                                             line: 80,
                                             style: cssStyle
                                         };
+                                        textValue = "";
                                     }
                                     captionArray.push(caption);
                                 }
