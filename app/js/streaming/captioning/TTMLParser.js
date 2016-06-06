@@ -361,7 +361,6 @@ MediaPlayer.utils.TTMLParser = function() {
                 textDatas,
                 j,
                 k,
-                l,
                 cellsSize,
                 cellResolution,
                 extent,
@@ -463,6 +462,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                                 }
                                             }
                                         }
+                                        //try to detect multi lines subtitle
                                         textValue += textDatas[j].textContent + "\n";
                                     }
                                     //line and position element have no effect on IE
@@ -509,8 +509,8 @@ MediaPlayer.utils.TTMLParser = function() {
                                     } else {
                                         textNodes = this.domParser.getChildNodes(region, '#text');
 
-                                        for (l = 0; l < textNodes.length; l += 1) {
-                                            textValue += textNodes[l].textContent + "\n";
+                                        for (j = 0; j < textNodes.length; j += 1) {
+                                            textValue += textNodes[j].textContent + "\n";
                                         }
                                         caption = {
                                             start: startTime,
