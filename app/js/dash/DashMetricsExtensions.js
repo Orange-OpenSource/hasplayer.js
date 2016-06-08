@@ -230,7 +230,7 @@ Dash.dependencies.DashMetricsExtensions = function() {
             // ORANGE: if only 1 item, then was ignored
             //while (httpListLastIndex > 0) {
             while (httpListLastIndex >= 0) {
-                if (httpList[httpListLastIndex].responsecode) {
+                if (httpList[httpListLastIndex].responsecode !== null) {
                     currentHttpList = httpList[httpListLastIndex];
                     break;
                 }
