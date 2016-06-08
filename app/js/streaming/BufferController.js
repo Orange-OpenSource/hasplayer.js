@@ -1202,41 +1202,24 @@ MediaPlayer.dependencies.BufferController = function() {
 
         onFragmentLoadProgress = function(evt) {
             var self = this,
-                i = 0,
-                len = 0,
-                type = evt.data.request.streamType,
-                metricsHttp = evt.data.httpRequestMetrics,
-                lastTraceTime = evt.data.lastTraceTime,
-                currentTime,
+                currentQuality = this.abrController.getQualityFor(type),
+                i,
                 rules;
 
-            //self.debug.log("[BufferController]["+type+"] Download request " + evt.data.request.url + " is in progress");
+            // Check only if not at lowest quality
+            if (this.abrController.isMinQuality(type, data, currentQuality)) {
+                return;
+            }
 
             rules = self.abrRulesCollection.getRules(MediaPlayer.rules.BaseRulesCollection.prototype.ABANDON_FRAGMENT_RULES);
             var callback = function(switchRequest) {
-
-                var newQuality = switchRequest.quality,
-                    abrCurrentQuality = self.abrController.getQualityFor(type);
-
-                if (newQuality < abrCurrentQuality) {
-                    self.debug.info("[BufferController][" + type + "] Abandon current fragment : " + evt.data.request.url);
-
-                    currentTime = new Date();
-
-                    metricsHttp.tfinish = currentTime;
-                    metricsHttp.bytesLength = evt.data.request.bytesLoaded;
-
-                    self.metricsModel.appendHttpTrace(metricsHttp,
-                        currentTime,
-                        currentTime.getTime() - lastTraceTime.getTime(), [evt.data.request.bytesLoaded ? evt.data.request.bytesLoaded : 0]);
-
+                if (switchRequest.quality < currentQuality) {
                     self.fragmentController.abortRequestsForModel(fragmentModel);
-                    self.debug.info("[BufferController][" + type + "] Segment download abandonned => Retry segment download at lowest quality");
-                    self.abrController.setQualityFor(type, newQuality);
+                    self.debug.info("[BufferController][" + type + "] Abandon current segment download");
                 }
             };
 
-            for (i = 0, len = rules.length; i < len; i += 1) {
+            for (i = 0; i < rules.length; i++) {
                 rules[i].execute(evt.data.request, callback);
             }
         },
