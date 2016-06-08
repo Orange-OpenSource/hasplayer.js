@@ -273,9 +273,6 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                 this.debug.log("[FragmentLoader]["+type+"] Abort XHR " + (xhrs[i].responseURL ? xhrs[i].responseURL : ""));
                 xhrs[i].abort();
             }
-
-            xhrs.length = 0;
-            xhrs = [];
         },
 
         checkForExistence: function(req) {
