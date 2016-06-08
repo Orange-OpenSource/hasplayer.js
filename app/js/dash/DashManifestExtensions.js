@@ -236,11 +236,12 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
     getAudioDatas: function(manifest, periodIndex) {
         "use strict";
-        //return null
         //------------------------------------
         var adaptations,
             datas = [],
             i;
+
+        //return datas;
 
         if (!manifest || periodIndex < 0) {
             return datas;
