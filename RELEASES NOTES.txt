@@ -1,3 +1,15 @@
+### Release Notes v1.3.1 (2016/06/08)
+* - Add support for subtitles in external xml file
+* Bugs fixing:
+* - Regression on IE11 (player on failure)
+* - Correct issue for multi-lines subtitles
+* - No error raised when empty challenge received from CDM
+* - MANIFEST_ERR_NO_VIDEO/AUDIO raised even if video/audio track in manifest
+* - Regression on stream reset process that locks the player
+* - Missing HTTP status code when raising DOWNLOAD_ERR_CONTENT
+* - 'ended' event may not be raised on <video> element when reaching end of stream
+* - Byte-range requests for DASH
+
 ### Release Notes v1.3.0 (2016/05/25)
 * Refactored and enriched MediaPlayer API
 * Add MediaPlayer plugins framework
