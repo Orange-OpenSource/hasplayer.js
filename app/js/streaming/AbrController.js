@@ -311,6 +311,11 @@ MediaPlayer.dependencies.AbrController = function() {
             }
         },
 
+        isMinQuality: function(type, data, value) {
+            var qualityBoundaries = getQualityBoundaries.call(this, type, data);
+            return value <= qualityBoundaries.min;
+        },
+
         setPlayerState: function(state) {
             playerState = state;
         }
