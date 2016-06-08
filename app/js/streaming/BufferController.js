@@ -863,6 +863,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 self.debug.log("[BufferController][" + type + "] loadNextFragment for time: " + segmentTime);
                 self.indexHandler.getSegmentRequestForTime(_currentRepresentation, segmentTime).then(onFragmentRequest.bind(self), function (){
                     currentDownloadQuality = -1;
+                    doStop.call(self);
                     signalSegmentBuffered.call(self);
                 });
             }
@@ -1388,6 +1389,11 @@ MediaPlayer.dependencies.BufferController = function() {
             if (languageChanged) {
                 self.debug.log("[BufferController][" + type + "] Language changed");
                 cancelCheckBufferTimeout.call(this);
+                //for xml subtitles file, reset cues and restart buffering
+                if (type === 'text' && (data.mimeType === 'application/ttml+xml')) {
+                    buffer.abort();
+                    doStart.call(self);
+                }
             }
         },
 
