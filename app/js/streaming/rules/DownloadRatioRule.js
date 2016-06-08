@@ -79,6 +79,12 @@ MediaPlayer.rules.DownloadRatioRule = function() {
 
                 totalBytesLength = lastRequest.bytesLength;
 
+                // First check if last request has been abandonned due to bandwidth condition
+                if (lastRequest.responsecode === 0) {
+                    self.debug.info("[DownloadRatioRule][" + data.type + "] Last request abandonned ( switch to lowest quality)");
+                    return new MediaPlayer.rules.SwitchRequest(0, MediaPlayer.rules.SwitchRequest.prototype.STRONG);                    
+                }
+
                 // If we have at least 3 requests, take an average of calculated bandwidth
                 if (requests.length >= 3) {
                     for (i = requests.length - 2; i >= (requests.length - 3); i--) {
