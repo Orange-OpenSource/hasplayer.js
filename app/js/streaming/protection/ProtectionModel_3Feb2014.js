@@ -93,31 +93,41 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
         getKeyError = function(event) {
             var code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR,
                 msg = "MediakeyError";
-            switch (event.errorCode.code) {
-                case 1:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
-                    msg = "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
-                    break;
-                case 2:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_CLIENT;
-                    msg = "The Key System could not be installed or updated.";
-                    break;
-                case 3:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_SERVICE;
-                    msg = "The message passed into update indicated an error from the license service.";
-                    break;
-                case 4:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT;
-                    msg = "There is no available output device with the required characteristics for the content protection system.";
-                    break;
-                case 5:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_HARDWARECHANGE;
-                    msg += "A hardware configuration change caused a content protection error.";
-                    break;
-                case 6:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_DOMAIN;
-                    msg = "An error occurred in a multi-device domain licensing configuration. The most common error is a failure to join the domain.";
-                    break;
+
+            if (event.errorCode) {
+                switch (event.errorCode.code) {
+                    case 1:
+                        code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
+                        msg = "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
+                        break;
+                    case 2:
+                        code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_CLIENT;
+                        msg = "The Key System could not be installed or updated.";
+                        break;
+                    case 3:
+                        code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_SERVICE;
+                        msg = "The message passed into update indicated an error from the license service.";
+                        break;
+                    case 4:
+                        code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT;
+                        msg = "There is no available output device with the required characteristics for the content protection system.";
+                        break;
+                    case 5:
+                        code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_HARDWARECHANGE;
+                        msg += "A hardware configuration change caused a content protection error.";
+                        break;
+                    case 6:
+                        code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_DOMAIN;
+                        msg = "An error occurred in a multi-device domain licensing configuration. The most common error is a failure to join the domain.";
+                        break;
+                    default:
+                        code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
+                        msg = "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
+                        break;
+                }
+            } else {
+                code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
+                msg = "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";                
             }
             if (event.systemCode) {
                 msg += "  (System Code = " + event.systemCode + ")";
