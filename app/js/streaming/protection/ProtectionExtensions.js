@@ -230,7 +230,8 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
                 //this.debug.log("[DRM] Add supported key system: " + this.keySystems[ksIdx].systemString);
                 supportedKS.push({
                     ks: this.keySystems[ksIdx],
-                    initData: pssh[this.keySystems[ksIdx].uuid]
+                    initData: pssh[this.keySystems[ksIdx].uuid],
+                    cdmData: this.keySystems[ksIdx].getCDMData()
                 });
             }
         }
