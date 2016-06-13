@@ -396,7 +396,7 @@ MediaPlayer.dependencies.ProtectionController = function() {
                 this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
                     new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_CHALLENGE, "No license challenge from CDM key message"));
             }
-            xhrLicense.send(this.keySystem.getLicenseRequestFromMessage(message));
+            xhrLicense.send(licenseRequest);
         },
 
         onNeedKey = function(event) {
