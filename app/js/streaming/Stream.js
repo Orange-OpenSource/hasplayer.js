@@ -496,7 +496,8 @@ MediaPlayer.dependencies.Stream = function() {
                     if (self.videoModel.getCurrentTime() === self.getStartTime() || tmEndDetected) {
                         self.debug.log("[Stream] Trick mode (x" + tmSpeed + "): stop");
                         if (tmEndDetected) {
-                            videoEndedEvent = new Event('ended');
+                            videoEndedEvent = document.createEvent("Event");
+                            videoEndedEvent.initEvent("ended", true, true);
                             self.videoModel.getElement().dispatchEvent(videoEndedEvent);
                         }
                         return;
