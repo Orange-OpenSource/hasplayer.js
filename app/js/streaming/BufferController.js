@@ -880,16 +880,16 @@ MediaPlayer.dependencies.BufferController = function() {
             }
 
             if (request !== null) {
+                //if trick mode enbaled, get the request to get I Frame data.
+                if (trickModeEnabled) {
+                    request = self.indexHandler.getIFrameRequest(request);
+                }
+                
                 // If we have already loaded the given fragment ask for the next one. Otherwise prepare it to get loaded
                 if (self.fragmentController.isFragmentLoadedOrPending(self, request)) {
                     self.debug.log("[BufferController][" + type + "] new fragment request => already loaded or pending");
                     self.indexHandler.getNextSegmentRequest(_currentRepresentation).then(onFragmentRequest.bind(self));
                 } else {
-                    //if trick mode enbaled, get the request to get I Frame data.
-                    if (trickModeEnabled) {
-                        request = self.indexHandler.getIFrameRequest(request);
-                    }
-
                     // Download the segment
                     self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null /*signalStreamComplete*/ );
                     sendRequest.call(self);
