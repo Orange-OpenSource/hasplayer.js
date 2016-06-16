@@ -1606,10 +1606,6 @@ MediaPlayer.dependencies.BufferController = function() {
             }
             trickModeEnabled = enabled;
 
-            if (this.fragmentController.setSampleDuration) {
-                this.fragmentController.setSampleDuration(trickModeEnabled);
-            }
-
             if (trickModeEnabled) {
                 // Trick mode enabled
                 // => store current quality and auto switch state

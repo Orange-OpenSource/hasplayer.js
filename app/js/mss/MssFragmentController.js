@@ -132,6 +132,88 @@ Mss.dependencies.MssFragmentController = function() {
             }
         },
 
+        duplicateSample = function(fragment, segmentDuration) {
+            var moof = null,
+                mdat = null,
+                traf = null,
+                trun = null,
+                tfhd,
+                sepiff = null,
+                saiz = null,
+                i,
+                trunEntries,
+                trunDuration,
+                mdatData;
+
+            // This function duplicates the first sample (from KeyFrame request) to generate
+            // a full segment with the segment duration.
+
+            // Get references on boxes
+            moof = fragment.getBoxByType("moof");
+            mdat = fragment.getBoxByType("mdat");
+            traf = moof.getBoxByType("traf");
+            trun = traf.getBoxByType("trun");
+            tfhd = traf.getBoxByType("tfhd");
+
+            // We will set the sample_duration for each segment, then we do set also for first segment duration if not set
+            if (trun.samples_table[0].sample_duration === undefined) {
+                trun.samples_table[0].sample_duration = tfhd.default_sample_duration;
+            }
+
+            // Determine number of samples according to the segment duration
+            trunEntries = Math.floor(segmentDuration / trun.samples_table[0].sample_duration);
+
+            // Add samples in trun box to complete fragment ((trunEntries - 1) for not considering already existing first fragment)
+            for (i = 0; i < (trunEntries - 1); i++) {
+                trun.samples_table.push(trun.samples_table[0]);
+            }
+
+            // Patch/lengthen the last sample duration if segment not complete
+            trunDuration = trunEntries * trun.samples_table[0].sample_duration;
+            if (trunDuration < segmentDuration) {
+                trun.samples_table[trun.samples_table.length - 1].sample_duration += segmentDuration - trunDuration;
+            }
+
+            trun.sample_count = trun.samples_table.length;
+
+            // Update PIFF Sample Encryption box
+            sepiff = traf.getBoxByType("sepiff");
+            if (sepiff !== null) {
+                // sepiff box may have already all original samples encryption data definition
+                // => we keep only first sample entry
+                if (sepiff.sample_count > 1) {
+                    sepiff.entry = sepiff.entry.slice(0, 1);
+                }
+                // Then, we duplicate this first entry
+                for (i = 0; i < (trunEntries - 1); i += 1) {
+                    sepiff.entry.push(sepiff.entry[0]);
+                }
+                sepiff.sample_count = sepiff.entry.length;
+            }
+
+            // Update saiz box
+            saiz = traf.getBoxByType("saiz");
+            if (saiz !== null) {
+                if (saiz.default_sample_info_size === 0) {
+                    // Same process as for sepiff box....
+                    if (saiz.sample_count > 1) {
+                        saiz.sample_info_size = saiz.sample_info_size.slice(0, 1);
+                    }
+                    for (i = 0; i < (trunEntries - 1); i += 1) {
+                        saiz.sample_info_size.push(saiz.sample_info_size[0]);
+                    }
+                }
+                saiz.sample_count = sepiff.entry.length;
+            }
+
+            // Duplicate mdat data
+            mdatData = mdat.data;
+            mdat.data = new Uint8Array(mdatData.length * trun.sample_count);
+            for (i = 0; i < trun.sample_count; i += 1) {
+                mdat.data.set(mdatData, mdatData.length * i);
+            }                 
+        },
+
         convertFragment = function(data, request, adaptation) {
             var i = 0,
                 // Get track id corresponding to adaptation set
@@ -149,7 +231,8 @@ Mss.dependencies.MssFragmentController = function() {
                 saiz = null,
                 tfdt = null,
                 tfrf = null,
-                sizedifferent = false,
+                fragmentDuration,
+                sampleDuration,
                 pos = -1,
                 fragment_size = 0,
                 moofPosInFragment = 0,
@@ -161,65 +244,20 @@ Mss.dependencies.MssFragmentController = function() {
                 return null;
             }
 
-            // Get references en boxes
+            // Get references on boxes
             moof = fragment.getBoxByType("moof");
             mdat = fragment.getBoxByType("mdat");
             traf = moof.getBoxByType("traf");
             trun = traf.getBoxByType("trun");
             tfhd = traf.getBoxByType("tfhd");
 
-            // If protected content (sepiff box)
-            // => convert it into a senc box
-            // => create saio and saiz boxes (if not already present)
-            sepiff = traf.getBoxByType("sepiff");
-            if (sepiff !== null) {
-                sepiff.boxtype = "senc";
-                sepiff.extended_type = undefined;
-
-                saio = traf.getBoxByType("saio");
-                if (saio === null) {
-                    // Create Sample Auxiliary Information Offsets Box box (saio)
-                    saio = new mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox();
-                    saio.version = 0;
-                    saio.flags = 0;
-                    saio.entry_count = 1;
-                    saio.offset = [];
-
-                    saiz = new mp4lib.boxes.SampleAuxiliaryInformationSizesBox();
-                    saiz.version = 0;
-                    saiz.flags = 0;
-                    saiz.sample_count = sepiff.sample_count;
-                    saiz.default_sample_info_size = 0;
-
-                    saiz.sample_info_size = [];
-
-                    // get for each sample_info the size
-                    if (sepiff.flags & 2) {
-                        for (i = 0; i < sepiff.sample_count; i += 1) {
-                            saiz.sample_info_size[i] = 8 + (sepiff.entry[i].NumberOfEntries * 6) + 2;
-                            //8 (Init vector size) + NumberOfEntries*(clear (2) +crypted (4))+ 2 (numberofEntries size (2))
-                            if (i > 0) {
-                                if (saiz.sample_info_size[i] !== saiz.sample_info_size[i - 1]) {
-                                    sizedifferent = true;
-                                }
-                            }
-                        }
-
-                        //all the samples have the same size
-                        //set default size and remove the table.
-                        if (sizedifferent === false) {
-                            saiz.default_sample_info_size = saiz.sample_info_size[0];
-                            saiz.sample_info_size = [];
-                        }
-                    } else {
-                        //if flags === 0 (ex: audio data), default sample size = Init Vector size (8)
-                        saiz.default_sample_info_size = 8;
-                    }
-
-                    //add saio and saiz box
-                    traf.boxes.push(saiz);
-                    traf.boxes.push(saio);
-                }
+            // Patch trun and mdat boxes to duplicate first sample in order to have a complete fragment
+            // => use case in trick mode where we do request only Key (I) frames, while the <video> element
+            // requires continuous stream to enable playback
+            sampleDuration = trun.samples_table[0].sample_duration !== undefined ? trun.samples_table[0].sample_duration : tfhd.default_sample_duration;
+            fragmentDuration = request.duration * request.timescale;
+            if (trun.samples_table.length === 1 && sampleDuration < fragmentDuration) {
+                duplicateSample(fragment, fragmentDuration);
             }
 
             // Update tfhd.track_ID field
@@ -250,87 +288,53 @@ Mss.dependencies.MssFragmentController = function() {
                 }
             }
 
+            // If protected content (sepiff box = Sample Encryption PIFF)
+            // => convert it into a senc box
+            // => create saio and saiz boxes (if not already present)
+            sepiff = traf.getBoxByType("sepiff");
+            if (sepiff !== null) {
+                sepiff.boxtype = "senc";
+                sepiff.extended_type = undefined;
+
+                saio = traf.getBoxByType("saio");
+                if (saio === null) {
+                    // Create Sample Auxiliary Information Offsets Box box (saio)
+                    saio = new mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox();
+                    saio.version = 0;
+                    saio.flags = 0;
+                    saio.entry_count = 1;
+                    saio.offset = [];
+
+                    saiz = new mp4lib.boxes.SampleAuxiliaryInformationSizesBox();
+                    saiz.version = 0;
+                    saiz.flags = 0;
+                    saiz.sample_count = sepiff.sample_count;
+                    saiz.default_sample_info_size = 0;
+                    saiz.sample_info_size = [];
+
+                    if (sepiff.flags & 0x02) {
+                        // Sub-sample encryption => set sample_info_size for each sample
+                        for (i = 0; i < sepiff.sample_count; i += 1) {
+                            // 10 = 8 (InitializationVector field size) + 2 (subsample_count field size)
+                            // 6 = 2 (BytesOfClearData field size) + 4 (BytesOfEncryptedData field size)
+                            saiz.sample_info_size[i] = 10 + (6 * sepiff.entry[i].NumberOfEntries);
+                        }
+                    } else {
+                        // No sub-sample encryption => set default sample_info_size = InitializationVector field size (8)
+                        saiz.default_sample_info_size = 8;
+                    }
+
+                    //add saio and saiz box
+                    traf.boxes.push(saiz);
+                    traf.boxes.push(saio);
+                }
+            }
+
             // Before determining new size of the converted fragment we update some box flags related to data offset
             tfhd.flags &= 0xFFFFFE; // set tfhd.base-data-offset-present to false
             tfhd.flags |= 0x020000; // set tfhd.default-base-is-moof to true
             trun.flags |= 0x000001; // set trun.data-offset-present to true
             trun.data_offset = 0; // Set a default value for trun.data_offset
-
-            //in trickMode, we have to modify sample duration for audio and video
-            if (this.fixDuration && trun.samples_table.length === 1) {
-                var fullDuration = request.duration * request.timescale,
-                    concatDuration = 0,
-                    mdatData = mdat.data,
-                    sampleDuration;
-
-                //if sample_duration is not defined, search duration in tfhd box
-                if (trun.samples_table[0].sample_duration === undefined) {
-                    sampleDuration = tfhd.default_sample_duration;
-                } else {
-                    sampleDuration = trun.samples_table[0].sample_duration;
-                }
-                //we have to duplicate the sample from KeyFrame request to be accepted by decoder.
-                //all the samples have to have a duration equals to request.duration * request.timescale               
-                var trunEntries = Math.floor(fullDuration / sampleDuration);
-
-                for (i = 0; i < (trunEntries - 1); i++) {
-                    trun.samples_table.push({
-                        sample_duration: trun.samples_table[0].sample_duration,
-                        sample_size: trun.samples_table[0].sample_size,
-                        sample_composition_time_offset: trun.samples_table[0].sample_composition_time_offset,
-                        sample_flags: trun.samples_table[0].sample_flags
-                    });
-                }
-
-                if (trun.samples_table[0].sample_duration !== undefined) {
-                    for (i = 0; i < trun.samples_table.length; i++) {
-                        concatDuration += trun.samples_table[i].sample_duration;
-                    }
-
-                    if (concatDuration > fullDuration) {
-                        trun.samples_table[trun.samples_table.length - 1].sample_duration -= (concatDuration - fullDuration);
-                    } else {
-                        trun.samples_table[trun.samples_table.length - 1].sample_duration += (fullDuration - concatDuration);
-                    }
-                }
-
-                //update sepiff and saiz boxes with replicated datas
-                if (sepiff !== null) {
-                    //if sepiff box has all datas for the complete fragments, delete thoses informations
-                    if (sepiff.sample_count > 1) {
-                        sepiff.entry = sepiff.entry.slice(0, 1);
-                    }
-                    //replicate the first entry
-                    for (i = 0; i < (trunEntries - 1); i += 1) {
-                        sepiff.entry.push(sepiff.entry[0]);
-                    }
-
-                    //if saio box was defined in the mp4 stream, saiz was also defined : get it now!
-                    if (saiz === null) {
-                        saiz = traf.getBoxByType("saiz");
-                    }
-
-                    if (saiz.default_sample_info_size === 0) {
-                        //as for sepiff box....
-                        if (saiz.sample_count > 1) {
-                            saiz.sample_info_size = saiz.sample_info_size.slice(0, 1);
-                        }
-                        for (i = 0; i < (trunEntries - 1); i += 1) {
-                            saiz.sample_info_size.push(saiz.sample_info_size[0]);
-                        }
-                    }
-
-                    sepiff.sample_count = sepiff.entry.length;
-                    saiz.sample_count = sepiff.entry.length;
-                }
-
-                //in the same way, we have to duplicate mdat.data.
-                trun.sample_count = trun.samples_table.length;
-                mdat.data = new Uint8Array(mdatData.length * trun.sample_count);
-                for (i = 0; i < trun.sample_count; i += 1) {
-                    mdat.data.set(mdatData, mdatData.length * i);
-                }
-            }
 
             // Determine new size of the converted fragment
             // and allocate new data buffer
@@ -344,8 +348,8 @@ Mss.dependencies.MssFragmentController = function() {
                 moofPosInFragment = fragment.getBoxOffsetByType("moof");
                 trafPosInMoof = moof.getBoxOffsetByType("traf");
                 sencPosInTraf = traf.getBoxOffsetByType("senc");
-                // set offset from begin fragment to the first IV in senc box
-                saio.offset[0] = moofPosInFragment + trafPosInMoof + sencPosInTraf + 16; // box header (12) + sampleCount (4)
+                // Set offset from begin fragment to the first IV field in senc box
+                saio.offset[0] = moofPosInFragment + trafPosInMoof + sencPosInTraf + 16; // 16 = box header (12) + sample_count field size (4)
             }
 
             new_data = mp4lib.serialize(fragment);
@@ -358,7 +362,6 @@ Mss.dependencies.MssFragmentController = function() {
     rslt.manifestModel = undefined;
     rslt.manifestExt = undefined;
     rslt.metricsModel = undefined;
-    rslt.fixDuration = false;
 
     rslt.process = function(bytes, request, representations) {
         var result = null,
@@ -397,10 +400,6 @@ Mss.dependencies.MssFragmentController = function() {
         }
 
         return result;
-    };
-
-    rslt.setSampleDuration = function(state) {
-        this.fixDuration = state;
     };
 
     return rslt;
