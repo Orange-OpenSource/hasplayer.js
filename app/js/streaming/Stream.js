@@ -799,14 +799,8 @@ MediaPlayer.dependencies.Stream = function() {
             if (videoRange === null) {
                 return;
             }
-            // PATCH (+0.5) for chrome for which there is an issue for starting live streams,
-            // due to a difference (rounding?) between manifest segments times and real samples times
-            // returned by the buffer.
-            startTime = videoRange.start; // + 0.5;
-            // Do not need to take videoRange.start since in case of live streams the seekTime corresponds
-            // to the start of a video segment, then to the videoRange.start
-            // (except if theoretical segment time does not corresponds to absolute media time)
-            //startTime = seekTime;
+
+            startTime = Math.max(seekTime, videoRange.start);
 
             if (audioController) {
                 // Check if audio buffer is not empty
@@ -819,22 +813,16 @@ MediaPlayer.dependencies.Stream = function() {
                 if (audioRange.end < startTime) {
                     return;
                 }
-                if (audioRange.start > startTime) {
-                    startTime = audioRange.start;
-                }
+                startTime = Math.max(startTime, audioRange.start);
             }
 
             this.debug.info("[Stream] Check start time: OK => " + startTime);
-
-            // Align audio and video buffers
-            //self.sourceBufferExt.remove(audioController.getBuffer(), audioRange.start, videoRange.start, Infinity, mediaSource, false);
 
             // Unmap "bufferUpdated" handler
             this.system.unmapHandler("bufferUpdated");
 
             // In case of live streams and then DVR seek, then we start the fragmentInfoControllers
-            // (check if seek not due to stream loading)
-            // (check if seek not due to stream reloading)
+            // (check if seek not due to stream loading or reloading)
             if (this.manifestExt.getIsDynamic(manifest) && !isReloading && (this.videoModel.getCurrentTime() !== 0)) {
                 startFragmentInfoControllers.call(this);
             }
