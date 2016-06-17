@@ -340,9 +340,65 @@ MediaPlayer.utils.TTMLParser = function() {
             return returnTime;
         },
 
+        computeCellResolution = function(cellResolution) {
+            if (!cellResolution) {
+                //default cell resolution defined in TTML documentation
+                cellResolution = '32 15';
+            }
+
+            var computedCellResolution = cellResolution,
+                i = 0;
+           
+
+            computedCellResolution = computedCellResolution.split(' ');
+
+            for (i = 0; i < computedCellResolution.length; i += 1) {
+                computedCellResolution[i] = parseFloat(computedCellResolution[i]);
+            }
+
+            return computedCellResolution;
+        },
+
+        computeTextOutline = function(textOutline, cellResolution, defaultColor) {
+            var computedTextOutline = {
+                    color: null,
+                    width: null
+                },
+                formatTextOutlineWidth,
+                textOutlineWidthIndex = 0;
+
+            if (textOutline) {
+                textOutline = textOutline.split(' ');
+                //detect if outline color has been defined, if not outline color should be set to color value
+                if (textOutline[0] && isNaN(textOutline[0][0])) {
+                    computedTextOutline.color = textOutline[0];
+                    textOutlineWidthIndex = 1;
+                } else {
+                    computedTextOutline.color = defaultColor;
+                }
+
+                //detect text outline width, the first length value
+                if (textOutline[textOutlineWidthIndex]) {
+                    //get the last character for text Outline width definition
+                    formatTextOutlineWidth = textOutline[textOutlineWidthIndex][textOutline[textOutlineWidthIndex].length - 1];
+                    switch (formatTextOutlineWidth) {
+                        //definition in cell only...to be completed.
+                        case 'c':
+                            textOutline[textOutlineWidthIndex] = textOutline[textOutlineWidthIndex].split('c');
+                            if (textOutline[textOutlineWidthIndex][0]) {
+                                computedTextOutline.width = (parseFloat(textOutline[textOutlineWidthIndex][0] / cellResolution[1], 10) * 100).toFixed(1) + '%';
+                            }
+                            break;
+                    }
+                }
+            }
+            return computedTextOutline;
+        },
+
         computeFontSize = function(fontSize, cellResolution) {
             var formatFontSize,
                 cellsSize,
+                i,
                 computedFontSize = fontSize;
 
             if (fontSize) {
@@ -350,34 +406,31 @@ MediaPlayer.utils.TTMLParser = function() {
                 formatFontSize = fontSize[fontSize.length - 1];
             }
 
-            if (!cellResolution) 
-            {
-                //default cell resolution defined in TTML documentation
-                cellResolution = '32 15';
-            }
-            
-            cellResolution = cellResolution.split(' ');
-
-            switch(formatFontSize){
-                case '%' :
-                    computedFontSize = (parseFloat(1/cellResolution[1], 10) * 100);
+            switch (formatFontSize) {
+                case '%':
+                    computedFontSize = (parseFloat(1 / cellResolution[1], 10) * 100);
                     computedFontSize = ((parseInt(fontSize.substr(0, fontSize.length - 1), 10) * computedFontSize) / 100).toFixed(1) + "%";
                     break;
-                case 'c' :
+                case 'c':
                     //define fontSize in %
                     cellsSize = fontSize.replace(/\s/g, '').split('c');
-                    if (cellsSize.length > 1) {
-                        computedFontSize = (parseFloat(cellsSize[1]/cellResolution[1], 10) * 100).toFixed(1) + '%';
+
+                    for (i = 0; i < cellsSize.length; i += 1) {
+                        cellsSize[i] = parseFloat(cellsSize[i]);
+                    }
+
+                    if (isNaN(cellsSize[1])) {
+                        computedFontSize = (cellsSize[0] / cellResolution[1] * 100).toFixed(1) + '%';
                     } else {
-                        computedFontSize = (parseFloat(cellsSize[0]/cellResolution[1], 10) * 100).toFixed(1) + '%';
+                        computedFontSize = (cellsSize[1] / cellResolution[1] * 100).toFixed(1) + '%';
                     }
                     break;
-                case 'px' :
+                case 'px':
                     //nothing to do, fontSize has been set with an absolute value.
                     break;
-                default :
+                default:
                     //no fontSize has been defined => '1 c'
-                    computedFontSize = (parseFloat(1/cellResolution[1], 10) * 100).toFixed(1) + '%';
+                    computedFontSize = (parseFloat(1 / cellResolution[1], 10) * 100).toFixed(1) + '%';
             }
 
             return computedFontSize;
@@ -397,7 +450,10 @@ MediaPlayer.utils.TTMLParser = function() {
                     color: null,
                     fontSize: null,
                     fontFamily: null,
-                    textOutline: null
+                    textOutline: {
+                        color: null,
+                        with: null
+                    }
                 },
                 caption,
                 divBody,
@@ -408,6 +464,7 @@ MediaPlayer.utils.TTMLParser = function() {
                 cellResolution,
                 extent,
                 textNodes,
+                textOutline,
                 textValue = "";
 
             try {
@@ -492,10 +549,13 @@ MediaPlayer.utils.TTMLParser = function() {
                                             cssStyle.color = findStyleElement.call(this, [textDatas[j], region, divBody], 'color');
                                             cssStyle.fontSize = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontSize');
                                             cssStyle.fontFamily = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontFamily');
-                                            cssStyle.textOutline = findStyleElement.call(this, [textDatas[j], region, divBody], 'textOutline');
+                                            textOutline = findStyleElement.call(this, [textDatas[j], region, divBody], 'textOutline');
                                             extent = findStyleElement.call(this, [textDatas[j], region, divBody], 'extent');
 
                                             cellResolution = findParameterElement.call(this, [textDatas[j], region, divBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution');
+                                            cellResolution = computeCellResolution(cellResolution);
+
+                                            cssStyle.textOutline = computeTextOutline(textOutline, cellResolution, cssStyle.color);
                                             cssStyle.fontSize = computeFontSize(cssStyle.fontSize, cellResolution);
                                         }
                                         //try to detect multi lines subtitle
@@ -521,11 +581,14 @@ MediaPlayer.utils.TTMLParser = function() {
                                     cssStyle.color = findStyleElement.call(this, [region, divBody], 'color');
                                     cssStyle.fontSize = findStyleElement.call(this, [region, divBody], 'fontSize');
                                     cssStyle.fontFamily = findStyleElement.call(this, [region, divBody], 'fontFamily');
-                                    cssStyle.textOutline = findStyleElement.call(this, [region, divBody], 'textOutline');
+                                    textOutline = findStyleElement.call(this, [region, divBody], 'textOutline');
 
                                     extent = findStyleElement.call(this, [region, divBody], 'extent');
 
                                     cellResolution = findParameterElement.call(this, [region, divBody], globalPrefParameterNameSpace, 'cellResolution');
+                                    cellResolution = computeCellResolution(cellResolution);
+
+                                    cssStyle.textOutline = computeTextOutline(textOutline, cellResolution, cssStyle.color);
                                     cssStyle.fontSize = computeFontSize(cssStyle.fontSize, cellResolution);
 
                                     //line and position element have no effect on IE
