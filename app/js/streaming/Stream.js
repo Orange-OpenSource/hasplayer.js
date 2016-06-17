@@ -349,12 +349,8 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         initializePlayback = function() {
-            var duration;
-
-            duration = this.manifestExt.getDuration(this.manifestModel.getValue(), periodInfo);
-            this.debug.log("[Stream] Setting duration: " + duration);
-            this.mediaSourceExt.setDuration(mediaSource, duration);
-
+            this.debug.log("[Stream] Setting duration: " + periodInfo.duration);
+            this.mediaSourceExt.setDuration(mediaSource, periodInfo.duration);
             initialized = true;
         },
 
@@ -588,18 +584,15 @@ MediaPlayer.dependencies.Stream = function() {
 
         onDurationchange = function() {
             var duration = this.videoModel.getDuration(),
-                manifestDuration;
+                streamDuration = Number(periodInfo.duration.toFixed(3));
 
             this.debug.info("[Stream] <video> durationchange event: " + duration);
 
-            if (duration !== Infinity) {
-                //to be sure that the ended event is sent by the video element, truncate the manifestDuration with only three digits after the comma.
-                manifestDuration = Math.floor(this.getDuration() * 1000) / 1000;
-                //detect the real duration has been changed by a last mp4 chunck with a duration greater than the announced value
-                if (!isNaN(duration) && duration > manifestDuration) {
-                    this.debug.info("[Stream] <video> durationchange event, set real duration to " + manifestDuration);
-                    this.mediaSourceExt.setDuration(mediaSource, manifestDuration);
-                }
+            // The duration may change if the effective MSE buffer duration is greater than the initial duration set from manifest
+            // => then we update the MediaSource duration to ensure 'ended' event being sent by the video element
+            // (round durationfrom manifest to milliseconds to avoid rounding issue within MSE buffer)
+            if (!isNaN(duration) && duration !== Infinity && duration > streamDuration) {
+                this.debug.log("[Stream] Setting duration: " + streamDuration);
             }
         },
 
@@ -778,7 +771,9 @@ MediaPlayer.dependencies.Stream = function() {
         onStartTimeFound = function(startTime) {
             this.debug.info("[Stream] Start time = " + startTime);
             // Check if initial start time is set, then overload start time
-            if (initialStartTime !== -1 && !this.manifestExt.getIsDynamic(manifest)) {
+            if (initialStartTime !== -1 &&
+                !this.manifestExt.getIsDynamic(manifest) &&
+                initialStartTime < periodInfo.duration) {
                 this.debug.info("[Stream] Initial start time = " + initialStartTime);
                 startTime = initialStartTime;
             }
