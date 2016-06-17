@@ -1137,6 +1137,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.system.unmapHandler("streamsComposed", undefined, streamsComposed);
 
             this.system.unmapHandler("bufferUpdated");
+            this.system.unmapHandler("startTimeFound");
             this.system.unmapHandler("segmentLoadingFailed");
             this.system.unmapHandler("bufferingCompleted");
 
