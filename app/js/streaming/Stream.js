@@ -63,6 +63,9 @@ MediaPlayer.dependencies.Stream = function() {
 
         periodInfo = null,
 
+        // Initial start time 
+        initialStartTime = -1,
+
         // Play start time (= live edge for live streams)
         playStartTime = -1,
 
@@ -774,6 +777,11 @@ MediaPlayer.dependencies.Stream = function() {
         // => then seek every BufferController at the found start time
         onStartTimeFound = function(startTime) {
             this.debug.info("[Stream] Start time = " + startTime);
+            // Check if initial start time is set, then overload start time
+            if (initialStartTime !== -1 && !this.manifestExt.getIsDynamic(manifest)) {
+                this.debug.info("[Stream] Initial start time = " + initialStartTime);
+                startTime = initialStartTime;
+            }
             seek.call(this, startTime, (periodInfo.index === 0) && autoPlay);
         },
 
@@ -1039,17 +1047,21 @@ MediaPlayer.dependencies.Stream = function() {
             //document.addEventListener("visibilitychange", visibilitychangeListener);
         },
 
+        setInitialStartTime: function(startTime) {
+            var time = parseFloat(startTime);
+            if (!isNaN(time)) {
+                initialStartTime = time;
+            }
+        },
+
         setAudioTrack: function(audioTrack) {
             audioTrackIndex = selectTrack.call(this, audioController, audioTrack, audioTrackIndex);
         },
 
         getSelectedAudioTrack: function() {
-            var manifest = this.manifestModel.getValue();
-
             if (audioController) {
                 return this.manifestExt.getDataForIndex(audioTrackIndex, manifest, periodInfo.index);
             }
-
             return undefined;
         },
 

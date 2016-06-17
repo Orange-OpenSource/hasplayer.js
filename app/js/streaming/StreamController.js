@@ -318,6 +318,7 @@ MediaPlayer.dependencies.StreamController = function() {
                     stream.setDefaultAudioLang(defaultAudioLang);
                     stream.setDefaultSubtitleLang(defaultSubtitleLang);
                     stream.enableSubtitles(subtitlesEnabled);
+                    stream.setInitialStartTime(source.startTime);
                     stream.load(manifest, period);
                     streams.push(stream);
                 }
