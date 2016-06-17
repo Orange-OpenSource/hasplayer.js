@@ -19,7 +19,8 @@ MediaPlayer.dependencies.StreamController = function() {
      * and implements corresponding logic to switch between them.
      */
 
-    var streams = [],
+    var source,
+        streams = [],
         activeStream,
         protectionController,
         ownProtectionController = false,
@@ -467,18 +468,20 @@ MediaPlayer.dependencies.StreamController = function() {
             return undefined;
         },
 
-        load: function(url, protData) {
+        load: function(newSource) {
             var self = this;
 
-            if (protData) {
-                protectionData = protData;
+            source = newSource;
+
+            if (source.protData) {
+                protectionData = source.protData;
             }
 
-            self.debug.info("[StreamController] load url: " + url);
+            self.debug.info("[StreamController] load url: " + source.url);
 
             reloadStream = false;
 
-            self.manifestLoader.load(url).then(
+            self.manifestLoader.load(source.url).then(
                 function(manifest) {
                     self.manifestModel.setValue(manifest);
                     //ORANGE : add Metadata metric

@@ -96,7 +96,7 @@ MediaPlayer = function () {
         streamController.setDefaultSubtitleLang(defaultSubtitleLang);
         streamController.enableSubtitles(subtitlesEnabled);
         // TODO restart here !!!
-        streamController.load(source.url, source.protData);
+        streamController.load(source);
         system.mapValue("scheduleWhilePaused", scheduleWhilePaused);
         system.mapOutlet("scheduleWhilePaused", "stream");
 
