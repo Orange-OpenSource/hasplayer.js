@@ -1058,19 +1058,14 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         getSelectedSubtitleTrack: function() {
-            var manifest = this.manifestModel.getValue();
-
             if (textController && subtitlesEnabled) {
                 return this.manifestExt.getDataForIndex(textTrackIndex, manifest, periodInfo.index);
             }
-
             return undefined;
         },
 
         initProtection: function(protectionCtrl) {
             protectionController = protectionCtrl;
-
-            // Protection error handler
             if (protectionController) {
                 protectionController.subscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
             }
