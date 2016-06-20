@@ -348,7 +348,7 @@ MediaPlayer.utils.TTMLParser = function() {
 
             var computedCellResolution = cellResolution,
                 i = 0;
-           
+
 
             computedCellResolution = computedCellResolution.split(' ');
 
@@ -514,6 +514,16 @@ MediaPlayer.utils.TTMLParser = function() {
                     } else {
                         for (i = 0; i < regions.length; i += 1) {
                             caption = null;
+                            cssStyle = {
+                                backgroundColor: null,
+                                color: null,
+                                fontSize: null,
+                                fontFamily: null,
+                                textOutline: {
+                                    color: null,
+                                    with: null
+                                }
+                            };
                             region = regions[i];
 
                             globalPrefTTNameSpace = arrayUnique(globalPrefTTNameSpace.concat(getNameSpace.call(this, region, 'main')));
