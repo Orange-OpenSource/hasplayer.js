@@ -203,6 +203,11 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         }
 
         adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+
+        if (adaptations.length === 0) {
+            return null;
+        }
+
         for (i = 0; i < adaptations.length; i += 1) {
             if (this.getIsVideo(adaptations[i])) {
                 return adaptations[i];
@@ -225,6 +230,11 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         }
 
         adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+
+        if (adaptations.length === 0) {
+            return datas;
+        }
+
         for (i = 0; i < adaptations.length; i += 1) {
             if (this.getIsText(adaptations[i])) {
                 datas.push(adaptations[i]);
@@ -248,6 +258,11 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         }
 
         adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+
+        if (adaptations.length === 0) {
+            return datas;
+        }
+        
         for (i = 0; i < adaptations.length; i += 1) {
             if (this.getIsAudio(adaptations[i])) {
                 datas.push(adaptations[i]);
