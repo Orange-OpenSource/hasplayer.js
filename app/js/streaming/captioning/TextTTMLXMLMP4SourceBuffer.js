@@ -42,21 +42,21 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
             addRange: function(start, end) {
                 var i = 0,
                     rangesUpdated = false,
-                    tolerance =  0.01;
+                    tolerance = 0.01;
 
                 //detect discontinuity in ranges.
                 for (i = 0; i < this.ranges.length; i++) {
-                    if (this.ranges[i].end <= (start+tolerance) && this.ranges[i].end >= (start-tolerance)) {
+                    if (this.ranges[i].end <= (start + tolerance) && this.ranges[i].end >= (start - tolerance)) {
                         rangesUpdated = true;
                         this.ranges[i].end = end;
                     }
 
-                    if (this.ranges[i].start <= (end+tolerance) && this.ranges[i].start >= (end-tolerance)) {
+                    if (this.ranges[i].start <= (end + tolerance) && this.ranges[i].start >= (end - tolerance)) {
                         rangesUpdated = true;
                         this.ranges[i].start = start;
                     }
                 }
-                
+
                 if (!rangesUpdated) {
                     this.ranges.push({
                         start: start,
@@ -121,7 +121,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
             Set the updating attribute to false.
             Queue a task to fire a simple event named update at this SourceBuffer object.
             Queue a task to fire a simple event named updateend at this SourceBuffer object.*/
-           if (start < 0 || start >= end) {
+            if (start < 0 || start >= end) {
                 throw "INVALID_ACCESS_ERR";
             }
 
@@ -147,7 +147,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
             //no mp4, all the subtitles are in one xml file
             if (mimeType === 'application/ttml+xml') {
                 this.track = this.textTrackExtensions.addTextTrack(video, [], currentId, currentLang, true);
-                
+
                 //detect utf-16 encoding
                 if (self.isUTF16(bytes)) {
                     encoding = 'utf-16';
@@ -159,16 +159,15 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                             if (cues) {
 
                                 self.textTrackExtensions.addCues(self.track, cues);
-
+                                self.buffered.addRange(0, cues[cues.length - 1].end);
                                 self.eventBus.dispatchEvent({
                                     type: "updateend"
                                 });
                             }
-                        }, function(/*error*/) {
+                        }, function( /*error*/ ) {
                             //self.debug.error("[TextTTMLXMLMP4SourceBuffer] error parsing TTML "+error);
                         });
                     });
-
                 return;
             }
 
@@ -184,7 +183,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                 // TODO: set up name and language 
                 this.track = this.textTrackExtensions.addTextTrack(video, [], currentId, currentLang, true);
                 this.eventBus.dispatchEvent({
-                            type: "updateend"
+                    type: "updateend"
                 });
                 return;
             }
@@ -212,12 +211,12 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                 }
 
                 self.buffered.addRange(fragmentStart, fragmentStart + fragmentDuration);
-                
+
                 //detect utf-16 encoding
                 if (self.isUTF16(mdat.data)) {
                     encoding = 'utf-16';
                 }
-                 // parse data and add to cues
+                // parse data and add to cues
                 self.convertUTFToString(mdat.data, encoding)
                     .then(function(result) {
                         self.ttmlParser.parse(result).then(function(cues) {
@@ -234,7 +233,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                                     type: "updateend"
                                 });
                             }
-                        }, function(/*error*/) {
+                        }, function( /*error*/ ) {
                             //self.debug.error("[TextTTMLXMLMP4SourceBuffer] error parsing TTML "+error);
                         });
                     });

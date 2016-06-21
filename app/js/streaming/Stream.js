@@ -1180,9 +1180,12 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         enableSubtitles: function(enabled) {
+            var track;
 
             if (enabled !== subtitlesEnabled) {
                 subtitlesEnabled = enabled;
+                track = this.textTrackExtensions.getCurrentTextTrack(this.videoModel.getElement());
+
                 if (textController) {
                     if (enabled) {
                         if (this.manifestExt.getIsDynamic(manifest)) {
@@ -1192,9 +1195,12 @@ MediaPlayer.dependencies.Stream = function() {
                         } else {
                             streamsComposed.call(this);
                         }
+                        // show subtitle here => useful for full TTML file
+                        if (track && track.mode !== 'showing') {
+                            track.mode = "showing";
+                        }
                     } else {
                         // hide subtitle here
-                        var track = this.textTrackExtensions.getCurrentTextTrack(this.videoModel.getElement());
                         if (track) {
                             track.mode = "hidden";
                         }

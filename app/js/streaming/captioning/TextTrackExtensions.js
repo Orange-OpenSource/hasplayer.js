@@ -73,7 +73,9 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                 track.mode = "showing";
             }else{
                 track.default = isDefaultTrack;
-                track.mode = "showing";
+                if (track.mode !== 'showing') {
+                    track.mode = "showing";
+                }
             }
 
             for (i = 0; i < captionData.length; i += 1) {
