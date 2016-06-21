@@ -425,7 +425,7 @@ MediaPlayer.utils.TTMLParser = function() {
                         computedFontSize = (cellsSize[1] / cellResolution[1] * 100).toFixed(1) + '%';
                     }
                     break;
-                case 'px':
+                case 'x':
                     //nothing to do, fontSize has been set with an absolute value.
                     break;
                 default:
