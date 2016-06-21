@@ -1,4 +1,11 @@
 #################
+## test folder
+#################
+test/functional/test-reports/
+test/functional/selenium/
+
+
+#################
 ## Node.js
 #################
 
