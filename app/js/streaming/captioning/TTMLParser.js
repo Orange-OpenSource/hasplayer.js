@@ -382,12 +382,16 @@ MediaPlayer.utils.TTMLParser = function() {
                     //get the last character for text Outline width definition
                     formatTextOutlineWidth = textOutline[textOutlineWidthIndex][textOutline[textOutlineWidthIndex].length - 1];
                     switch (formatTextOutlineWidth) {
-                        //definition in cell only...to be completed.
+                        //definition in cell.
                         case 'c':
                             textOutline[textOutlineWidthIndex] = textOutline[textOutlineWidthIndex].split('c');
                             if (textOutline[textOutlineWidthIndex][0]) {
                                 computedTextOutline.width = (parseFloat(textOutline[textOutlineWidthIndex][0] / cellResolution[1], 10) * 100).toFixed(1) + '%';
                             }
+                            break;
+                        case 'x':
+                            //definition in pixel
+                            computedTextOutline.width = textOutline[textOutlineWidthIndex];
                             break;
                     }
                 }
