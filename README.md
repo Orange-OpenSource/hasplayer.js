@@ -1,4 +1,4 @@
-# hasplayer.js
+# hasplayer.js [![Build Status](https://travis-ci.org/Orange-OpenSource/hasplayer.js.svg?branch=development&style=flat-square)](https://travis-ci.org/Orange-OpenSource/hasplayer.js)
 
 hasplayer.js is a javascript implementation of a video player based on the W3C premium extensions, i.e. [MSE](https://dvcs.w3.org/hg/html-media/raw-file/tip/media-source/media-source.html) and [EME](https://dvcs.w3.org/hg/html-media/raw-file/tip/encrypted-media/encrypted-media.html).
 
@@ -32,9 +32,9 @@ The build task can be configured in order to select supported protocol(s) and to
 For example:
 
 1. No hls support, no EME support:
-    * npm build -hls=false -protection=false
+    * npm run build -hls=false -protection=false
 2. No hls support, no MSS support:
-    * npm build -hls=false -mss=false
+    * npm run build -hls=false -mss=false
 
 ## Demo
 
