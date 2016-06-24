@@ -444,7 +444,8 @@ Hls.dependencies.HlsDemux = function() {
 
         doGetTracks = function(data) {
             var i = 0,
-                trackIdCounter = 1; // start at 1;
+                trackIdCounter = 1, // start at 1;
+                trackType;
 
             // Parse PSI (PAT, PMT) if not yet received
             if (pat === null) {
@@ -471,10 +472,11 @@ Hls.dependencies.HlsDemux = function() {
             for (i = tracks.length - 1; i >= 0; i--) {
                 getTrackCodecInfo.call(this, data, tracks[i]);
                 if (tracks[i].codecs === "") {
+                    trackType = tracks[i].type;
                     tracks.splice(i, 1);
                     throw {
                         name: MediaPlayer.dependencies.ErrorHandler.prototype.HLS_DEMUX_ERROR,
-                        message: "Failed to get codec information for track " + tracks[i].type
+                        message: "Failed to get codec information for track " + trackType
                     };
                 }
             }
