@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env sh
 rm -rf out || exit 0;
 mkdir -p out/dev/ 
 cd out/
