@@ -8,4 +8,4 @@ git config user.email "mbrechet.ext@orange.com"
 cp  -r ../dist/ ./dev/
 git add .
 git commit -m "automatic deploy from Travis-CI"
-git push --force --quiet "https://github.com/Orange-OpenSource/hasplayer.js.git" master:gh-pages > /dev/null 2>&1
+git push --force "https://github.com/Orange-OpenSource/hasplayer.js.git" master:gh-pages
