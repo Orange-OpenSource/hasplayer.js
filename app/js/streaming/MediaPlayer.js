@@ -96,7 +96,7 @@ MediaPlayer = function () {
         streamController.setDefaultSubtitleLang(defaultSubtitleLang);
         streamController.enableSubtitles(subtitlesEnabled);
         // TODO restart here !!!
-        streamController.load(source.url, source.protData);
+        streamController.load(source);
         system.mapValue("scheduleWhilePaused", scheduleWhilePaused);
         system.mapOutlet("scheduleWhilePaused", "stream");
 
@@ -776,16 +776,17 @@ MediaPlayer = function () {
          * @method load
          * @access public
          * @memberof MediaPlayer#
-         * @param {object} stream - video stream properties object such url, prodData ...
+         * @param {object} stream - video stream properties object such url, startTime, prodData ...
             <pre>
             {
-                url : "http://..../manifest.mpd",
+                url : "[manifest url]",
+                startTime : [start time in seconds (optionnal)]
                 protData : {
                     // one entry for each key system ('com.microsoft.playready' or 'com.widevine.alpha')
                     "[key_system_name]": {
                         laURL: "[licenser url (optionnal)]",
                         pssh: "[base64 pssh box (optionnal)]"
-                        cdmData: "[custom data (optionnal)]"
+                        cdmData: "[CDM data (optionnal)]"
                     },
                     ...
                }

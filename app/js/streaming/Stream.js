@@ -63,6 +63,9 @@ MediaPlayer.dependencies.Stream = function() {
 
         periodInfo = null,
 
+        // Initial start time 
+        initialStartTime = -1,
+
         // Play start time (= live edge for live streams)
         playStartTime = -1,
 
@@ -346,12 +349,8 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         initializePlayback = function() {
-            var duration;
-
-            duration = this.manifestExt.getDuration(this.manifestModel.getValue(), periodInfo);
-            this.debug.log("[Stream] Setting duration: " + duration);
-            this.mediaSourceExt.setDuration(mediaSource, duration);
-
+            this.debug.log("[Stream] Setting duration: " + periodInfo.duration);
+            this.mediaSourceExt.setDuration(mediaSource, periodInfo.duration);
             initialized = true;
         },
 
@@ -585,18 +584,15 @@ MediaPlayer.dependencies.Stream = function() {
 
         onDurationchange = function() {
             var duration = this.videoModel.getDuration(),
-                manifestDuration;
+                streamDuration = Number(periodInfo.duration.toFixed(3));
 
             this.debug.info("[Stream] <video> durationchange event: " + duration);
 
-            if (duration !== Infinity) {
-                //to be sure that the ended event is sent by the video element, truncate the manifestDuration with only three digits after the comma.
-                manifestDuration = Math.floor(this.getDuration() * 1000) / 1000;
-                //detect the real duration has been changed by a last mp4 chunck with a duration greater than the announced value
-                if (!isNaN(duration) && duration > manifestDuration) {
-                    this.debug.info("[Stream] <video> durationchange event, set real duration to " + manifestDuration);
-                    this.mediaSourceExt.setDuration(mediaSource, manifestDuration);
-                }
+            // The duration may change if the effective MSE buffer duration is greater than the initial duration set from manifest
+            // => then we update the MediaSource duration to ensure 'ended' event being sent by the video element
+            // (round durationfrom manifest to milliseconds to avoid rounding issue within MSE buffer)
+            if (!isNaN(duration) && duration !== Infinity && duration > streamDuration) {
+                this.debug.log("[Stream] Setting duration: " + streamDuration);
             }
         },
 
@@ -774,6 +770,13 @@ MediaPlayer.dependencies.Stream = function() {
         // => then seek every BufferController at the found start time
         onStartTimeFound = function(startTime) {
             this.debug.info("[Stream] Start time = " + startTime);
+            // Check if initial start time is set, then overload start time
+            if (initialStartTime !== -1 &&
+                !this.manifestExt.getIsDynamic(manifest) &&
+                initialStartTime < periodInfo.duration) {
+                this.debug.info("[Stream] Initial start time = " + initialStartTime);
+                startTime = initialStartTime;
+            }
             seek.call(this, startTime, (periodInfo.index === 0) && autoPlay);
         },
 
@@ -791,14 +794,8 @@ MediaPlayer.dependencies.Stream = function() {
             if (videoRange === null) {
                 return;
             }
-            // PATCH (+0.5) for chrome for which there is an issue for starting live streams,
-            // due to a difference (rounding?) between manifest segments times and real samples times
-            // returned by the buffer.
-            startTime = videoRange.start; // + 0.5;
-            // Do not need to take videoRange.start since in case of live streams the seekTime corresponds
-            // to the start of a video segment, then to the videoRange.start
-            // (except if theoretical segment time does not corresponds to absolute media time)
-            //startTime = seekTime;
+
+            startTime = Math.max(seekTime, videoRange.start);
 
             if (audioController) {
                 // Check if audio buffer is not empty
@@ -811,22 +808,16 @@ MediaPlayer.dependencies.Stream = function() {
                 if (audioRange.end < startTime) {
                     return;
                 }
-                if (audioRange.start > startTime) {
-                    startTime = audioRange.start;
-                }
+                startTime = Math.max(startTime, audioRange.start);
             }
 
             this.debug.info("[Stream] Check start time: OK => " + startTime);
-
-            // Align audio and video buffers
-            //self.sourceBufferExt.remove(audioController.getBuffer(), audioRange.start, videoRange.start, Infinity, mediaSource, false);
 
             // Unmap "bufferUpdated" handler
             this.system.unmapHandler("bufferUpdated");
 
             // In case of live streams and then DVR seek, then we start the fragmentInfoControllers
-            // (check if seek not due to stream loading)
-            // (check if seek not due to stream reloading)
+            // (check if seek not due to stream loading or reloading)
             if (this.manifestExt.getIsDynamic(manifest) && !isReloading && (this.videoModel.getCurrentTime() !== 0)) {
                 startFragmentInfoControllers.call(this);
             }
@@ -1039,17 +1030,21 @@ MediaPlayer.dependencies.Stream = function() {
             //document.addEventListener("visibilitychange", visibilitychangeListener);
         },
 
+        setInitialStartTime: function(startTime) {
+            var time = parseFloat(startTime);
+            if (!isNaN(time)) {
+                initialStartTime = time;
+            }
+        },
+
         setAudioTrack: function(audioTrack) {
             audioTrackIndex = selectTrack.call(this, audioController, audioTrack, audioTrackIndex);
         },
 
         getSelectedAudioTrack: function() {
-            var manifest = this.manifestModel.getValue();
-
             if (audioController) {
                 return this.manifestExt.getDataForIndex(audioTrackIndex, manifest, periodInfo.index);
             }
-
             return undefined;
         },
 
@@ -1058,19 +1053,14 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         getSelectedSubtitleTrack: function() {
-            var manifest = this.manifestModel.getValue();
-
             if (textController && subtitlesEnabled) {
                 return this.manifestExt.getDataForIndex(textTrackIndex, manifest, periodInfo.index);
             }
-
             return undefined;
         },
 
         initProtection: function(protectionCtrl) {
             protectionController = protectionCtrl;
-
-            // Protection error handler
             if (protectionController) {
                 protectionController.subscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
             }
@@ -1142,6 +1132,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.system.unmapHandler("streamsComposed", undefined, streamsComposed);
 
             this.system.unmapHandler("bufferUpdated");
+            this.system.unmapHandler("startTimeFound");
             this.system.unmapHandler("segmentLoadingFailed");
             this.system.unmapHandler("bufferingCompleted");
 
