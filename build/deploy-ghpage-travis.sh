@@ -1,4 +1,10 @@
 #!/usr/bin/env sh
+## register ssh key
+chmod 600 key_travis
+eval `ssh-agent -s`
+ssh-add key_travis
+
+## create deploy script
 rm -rf out || exit 0;
 mkdir -p out/dev/ 
 cd out/
