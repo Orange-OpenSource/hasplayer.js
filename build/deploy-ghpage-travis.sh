@@ -1,8 +1,8 @@
 #!/usr/bin/env sh
 ## register ssh key
-chmod 600 key_travis
+chmod 600 deploy_travis
 eval `ssh-agent -s`
-ssh-add key_travis
+ssh-add deploy_travis
 
 ## create deploy script
 rm -rf out || exit 0;
