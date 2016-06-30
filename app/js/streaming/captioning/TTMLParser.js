@@ -614,14 +614,16 @@ MediaPlayer.utils.TTMLParser = function() {
                                     }
 
                                     if (startTime === previousStartTime && endTime === previousEndTime) {
-                                        captionArray.pop();
-                                        caption = {
-                                            start: startTime,
-                                            end: endTime,
-                                            data: regions[i - 1].textContent + '\n' + region.textContent,
-                                            line: 80,
-                                            style: cssStyle
-                                        };
+                                        if (region.textContent !== "") {
+                                            var lastCaption = captionArray.pop();
+                                            caption = {
+                                                start: startTime,
+                                                end: endTime,
+                                                data: lastCaption.data + '\n' + region.textContent,
+                                                line: 80,
+                                                style: cssStyle
+                                            };
+                                        }
                                     } else {
                                         textNodes = this.domParser.getChildNodes(region, '#text');
 
@@ -637,7 +639,9 @@ MediaPlayer.utils.TTMLParser = function() {
                                         };
                                         textValue = "";
                                     }
-                                    captionArray.push(caption);
+                                    if (caption !== null) {
+                                        captionArray.push(caption);
+                                    }
                                 }
                             }
                         }
