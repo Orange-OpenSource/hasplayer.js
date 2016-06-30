@@ -138,7 +138,7 @@ MediaPlayer.utils.TTMLParser = function() {
             // R001 - A document must contain a tt element.
             // R002 - A document must contain both a head and body element.
             // R003 - A document must contain both a styling and a layout element.
-            if (nodeTt && nodeHead && nodeLayout && nodeStyling && nodeBody) {
+            if (nodeTt && nodeHead && /*nodeLayout && nodeStyling &&*/ nodeBody) {
                 passed = true;
             }
 
