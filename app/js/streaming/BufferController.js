@@ -161,6 +161,9 @@ MediaPlayer.dependencies.BufferController = function() {
             }
 
             if (isBufferingCompleted) {
+                if(data.mimeType === "application/ttml+xml"){
+                    return;
+                }
                 isBufferingCompleted = false;
             }
 
@@ -851,8 +854,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 self.debug.log("[BufferController][" + type + "] loadNextFragment for time: " + segmentTime);
                 self.indexHandler.getSegmentRequestForTime(_currentRepresentation, segmentTime).then(onFragmentRequest.bind(self), function (){
                     currentDownloadQuality = -1;
-                    doStop.call(self);
-                    signalSegmentBuffered.call(self);
+                    signalStreamComplete.call(self);
                 });
             }
         },
@@ -1385,6 +1387,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 //for xml subtitles file, reset cues and restart buffering
                 if (type === 'text' && (data.mimeType === 'application/ttml+xml')) {
                     buffer.abort();
+                    isBufferingCompleted = false;
                     doStart.call(self);
                 }
             }
