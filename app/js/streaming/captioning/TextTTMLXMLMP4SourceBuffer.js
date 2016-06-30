@@ -159,7 +159,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                             if (cues) {
 
                                 self.textTrackExtensions.addCues(self.track, cues);
-                                self.buffered.addRange(0, cues[cues.length - 1].end);
+                                self.buffered.addRange(0, video.duration);
                                 self.eventBus.dispatchEvent({
                                     type: "updateend"
                                 });
