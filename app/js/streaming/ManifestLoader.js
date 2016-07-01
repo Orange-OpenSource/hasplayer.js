@@ -119,12 +119,18 @@ MediaPlayer.dependencies.ManifestLoader = function() {
 
                     self.parser.parse(_getDecodedResponseText(request.responseText), baseUrl).then(
                         function(manifest) {
-                            manifest.mpdUrl = url;
-                            manifest.mpdLoadedTime = mpdLoadedTime;
-                            self.metricsModel.addManifestUpdate("stream", manifest.type, requestTime, mpdLoadedTime, manifest.availabilityStartTime);
-                            deferred.resolve(manifest);
+                            if (manifest) {
+                                manifest.mpdUrl = url;
+                                manifest.mpdLoadedTime = mpdLoadedTime;
+                                self.metricsModel.addManifestUpdate("stream", manifest.type, requestTime, mpdLoadedTime, manifest.availabilityStartTime);
+                                deferred.resolve(manifest);
+                            } else {
+                                deferred.reject();
+                            }
                         },
                         function(error) {
+                            // Check if reject is due to other issue than manifest parsing
+                            // (for example HLS variant steam playlist download error) 
                             if (error && error.name && error.message) {
                                 deferred.reject(error);
                             } else {

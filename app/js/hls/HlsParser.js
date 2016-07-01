@@ -48,6 +48,7 @@ Hls.dependencies.HlsParser = function() {
         retryAttempts = DEFAULT_RETRY_ATTEMPTS,
         retryInterval = DEFAULT_RETRY_INTERVAL,
         retryCount = 0,
+        retryTimeout = null,
         deferredPlaylist = null;
 
 
@@ -489,6 +490,8 @@ Hls.dependencies.HlsParser = function() {
         var error = true,
             self = this;
 
+        retryTimeout = null;
+
         var onabort = function() {
             playlistRequest.aborted = true;
         };
@@ -515,14 +518,20 @@ Hls.dependencies.HlsParser = function() {
         };
 
         var onreport = function() {
-            if (!error || playlistRequest.aborted) {
+
+            if (playlistRequest.aborted) {
+                deferredPlaylist.reject();
+                return;
+            }
+
+            if (!error) {
                 deferredPlaylist.resolve();
                 return;
             }
 
             retryCount++;
             if (retryAttempts > 0 && retryCount <= retryAttempts) {
-                setTimeout(function() {
+                retryTimeout = setTimeout(function() {
                     doUpdatePlaylist.call(self, representation);
                 }, retryInterval);
             } else {
@@ -538,7 +547,8 @@ Hls.dependencies.HlsParser = function() {
         };
 
         try {
-            //this.debug.log("Start loading manifest: " + url);
+            self.debug.log("[HlsParser]", "Load playlist manifest: " + representation.url);
+            playlistRequest = new XMLHttpRequest();
             playlistRequest.onload = onload;
             playlistRequest.onloadend = onreport;
             playlistRequest.onerror = onreport;
@@ -732,6 +742,10 @@ Hls.dependencies.HlsParser = function() {
         if (playlistRequest !== null && playlistRequest.readyState > 0 && playlistRequest.readyState < 4) {
             this.debug.log("[HlsParser] Playlist manifest download abort.");
             playlistRequest.abort();
+        } else if (retryTimeout) {
+            clearTimeout(retryTimeout);
+            retryTimeout = null;
+            deferredPlaylist.reject();
         }
     };
 
