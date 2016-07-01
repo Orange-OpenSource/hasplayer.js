@@ -725,7 +725,14 @@ Hls.dependencies.HlsParser = function() {
                 });
             },
             function(error) {
-                deferred.reject(error);
+                // error undefined in case of playlist download aborted
+                if (error) {
+                    // Variant stream playlist download error
+                    deferred.reject(error);
+                } else {
+                    // Variant stream playlist download aborted
+                    deferred.resolve(null);
+                }
             }
         );
 
