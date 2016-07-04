@@ -908,7 +908,9 @@ MediaPlayer.dependencies.BufferController = function() {
                                 _currentRepresentation = getRepresentationForQuality.call(self, currentDownloadQuality);
                                 updateCheckBufferTimeout.call(self, 0);
                             }, function(err) {
-                                self.errHandler.sendError(err.name, err.message, err.data);
+                                if (err) {
+                                    self.errHandler.sendError(err.name, err.message, err.data);
+                                }
                             }
                         );
                     }
@@ -1138,7 +1140,9 @@ MediaPlayer.dependencies.BufferController = function() {
                 },
                 function(err) {
                     signalSegmentBuffered();
-                    self.errHandler.sendError(err.name, err.message, err.data);
+                    if (err) {
+                        self.errHandler.sendError(err.name, err.message, err.data);                        
+                    }
                 }
             );
 
@@ -1151,9 +1155,11 @@ MediaPlayer.dependencies.BufferController = function() {
                 representation,
                 idx;
 
+            
             // Check if running state
             if (!isRunning.call(self)) {
-                return;
+                deferred.reject();
+                return deferred.promise;
             }
 
             idx = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
