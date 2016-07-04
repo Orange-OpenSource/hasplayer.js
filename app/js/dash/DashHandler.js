@@ -951,7 +951,7 @@ Dash.dependencies.DashHandler = function() {
                 self = this;
 
             if (!representation) {
-                return Q.reject("no represenation");
+                return Q.reject("no representation");
             }
 
             requestedTime = time;
