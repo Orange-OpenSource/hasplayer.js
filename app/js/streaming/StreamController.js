@@ -20,6 +20,7 @@ MediaPlayer.dependencies.StreamController = function() {
      */
 
     var source,
+        running = false,
         streams = [],
         activeStream,
         protectionController,
@@ -42,6 +43,7 @@ MediaPlayer.dependencies.StreamController = function() {
         defaultSubtitleLang = 'und',
         subtitlesEnabled = false,
         reloadStream = false,
+        deferredLoading = null,
 
         /*
          * Replaces the currently displayed <video> with a new data and corresponding <video> element.
@@ -269,6 +271,8 @@ MediaPlayer.dependencies.StreamController = function() {
                 return false;
             }
 
+            this.debug.info("[StreamController] composeStreams");
+            
             if (self.capabilities.supportsEncryptedMedia()) {
                 if (!protectionController) {
                     protectionController = self.system.getObject("protectionController");
@@ -305,12 +309,14 @@ MediaPlayer.dependencies.StreamController = function() {
                     // If the stream already exists we just need to update the values we got from the updated manifest
                     if (streams[sIdx].getId() === period.id) {
                         stream = streams[sIdx];
+                        this.debug.info("[StreamController] update stream data");
                         stream.updateData(period);
                     }
                 }
                 // If the Stream object does not exist we probably loaded the manifest the first time or it was
                 // introduced in the updated manifest, so we need to create a new Stream and perform all the initialization operations
                 if (!stream) {
+                    this.debug.info("[StreamController] Create stream");
                     stream = self.system.getObject("stream");
                     stream.setVideoModel(pIdx === 0 ? self.videoModel : createVideoModel.call(self));
                     stream.initProtection(protectionController);
@@ -340,6 +346,11 @@ MediaPlayer.dependencies.StreamController = function() {
                 clientTimeOffset: mpd.clientServerTimeShift
             });
 
+            if (deferredLoading) {
+                deferredLoading.resolve();
+                deferredLoading = null;
+            }
+
             return true;
         },
 
@@ -368,6 +379,18 @@ MediaPlayer.dependencies.StreamController = function() {
         },
 
         manifestHasUpdated = function() {
+
+            // Check if stopping
+            if (!running) {
+                if (deferredLoading) {
+                    deferredLoading.resolve();
+                    deferredLoading = null;
+                }
+                return;
+            }
+
+            this.debug.info("[StreamController] Manifest updated");
+
             var result = composeStreams.call(this);
 
             if (result) {
@@ -379,6 +402,11 @@ MediaPlayer.dependencies.StreamController = function() {
             } else {
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_STREAM, "No stream/period is provided in the manifest");
             }
+
+            if (deferredLoading) {
+                deferredLoading.resolve();
+                deferredLoading = null;
+            }            
         };
 
     return {
@@ -479,16 +507,18 @@ MediaPlayer.dependencies.StreamController = function() {
         load: function(newSource) {
             var self = this;
 
+            running = true;
+
             source = newSource;
 
             if (source.protData) {
                 protectionData = source.protData;
             }
 
-            self.debug.info("[StreamController] load url: " + source.url);
-
             reloadStream = false;
 
+            deferredLoading = Q.defer();
+            self.debug.info("[StreamController] load url: " + source.url);
             self.manifestLoader.load(source.url).then(
                 function(manifest) {
                     self.manifestModel.setValue(manifest);
@@ -499,6 +529,8 @@ MediaPlayer.dependencies.StreamController = function() {
                     self.manifestUpdater.start();
                 },
                 function(err) {
+                    deferredLoading.resolve();
+                    deferredLoading = null;
                     // err is undefined in the case the request has been aborted
                     if (err) {
                         self.errHandler.sendError(err.name, err.message, err.data);
@@ -556,65 +588,72 @@ MediaPlayer.dependencies.StreamController = function() {
 
             this.debug.info("[StreamController] Reset");
 
-            this.metricsModel.addState('video', 'stopped', this.videoModel.getCurrentTime(), reason);
-
             if (!!activeStream) {
                 detachVideoEvents.call(this, activeStream.getVideoModel());
             }
 
-            // Pause the active stream, but reset only once protection controller and media key sessions have been resetted
-            this.pause();
+            running = false;
 
-            this.manifestUpdater.stop();
-            this.manifestLoader.abort();
-            this.parser.reset();
-            this.metricsModel.clearAllCurrentMetrics();
-            isPeriodSwitchingInProgress = false;
+            self.manifestLoader.abort();
+            self.manifestUpdater.stop();
+            self.parser.reset();
 
-            teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE] = function() {
-                var i = 0,
-                    ln,
-                    stream;
+            // Wait for current loading process (manifest download and updating) to be achieved
+            Q.when(deferredLoading ? deferredLoading.promise : true).then(function () {
 
-                // Complete teardown process
-                ownProtectionController = false;
-                protectionController = null;
-                protectionData = null;
+                console.log("STOP: StreamController resetting");
+                // Pause the active stream, but reset only once protection controller and media key sessions have been resetted
+                self.pause();
 
-                // Reset the streams
-                for (i = 0, ln = streams.length; i < ln; i += 1) {
-                    stream = streams[i];
-                    funcs.push(stream.reset());
-                    // we should not remove the video element for the active stream since it is the element users see at the page
-                    if (stream !== activeStream) {
-                        removeVideoElement(stream.getVideoModel().getElement());
+                self.metricsModel.clearAllCurrentMetrics();
+                isPeriodSwitchingInProgress = false;
+
+                teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE] = function() {
+                    var i = 0,
+                        ln,
+                        stream;
+
+                    // Complete teardown process
+                    ownProtectionController = false;
+                    protectionController = null;
+                    protectionData = null;
+
+                    // Reset the streams
+                    console.log("STOP: StreamController reset " + streams.length + " stream(s)");
+                    for (i = 0, ln = streams.length; i < ln; i += 1) {
+                        stream = streams[i];
+                        funcs.push(stream.reset());
+                        if (stream !== activeStream) {
+                            removeVideoElement(stream.getVideoModel().getElement());
+                        }
                     }
-                    delete streams[i];
+
+                    // Reset the video model (and controllers stalled states)
+                    self.videoModel.reset();
+
+                    Q.all(funcs).then(
+                        function() {
+                            streams = [];
+                            activeStream = null;
+                            console.log("STOP: StreamController reset complete");
+                            self.metricsModel.addState('video', 'stopped', self.videoModel.getCurrentTime(), reason);
+                            self.notify(MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE);
+                        });
+
+                    self.manifestModel.setValue(null);
+                };
+
+                // Teardown the protection system, if necessary
+                if (!protectionController) {
+                    teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE]();
+                } else if (ownProtectionController) {
+                    protectionController.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE, teardownComplete, undefined, true);
+                    protectionController.teardown();
+                } else {
+                    protectionController.setMediaElement(null);
+                    teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE]();
                 }
-
-                // Reset the video model (and controllers stalled states)
-                self.videoModel.reset();
-
-                Q.all(funcs).then(
-                    function() {
-                        streams = [];
-                        activeStream = null;
-                        self.notify(MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE);
-                    });
-
-                self.manifestModel.setValue(null);
-            };
-
-            // Teardown the protection system, if necessary
-            if (!protectionController) {
-                teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE]();
-            } else if (ownProtectionController) {
-                protectionController.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE, teardownComplete, undefined, true);
-                protectionController.teardown();
-            } else {
-                protectionController.setMediaElement(null);
-                teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE]();
-            }
+            });
         },
 
         setDefaultAudioLang: function(language) {
