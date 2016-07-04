@@ -816,10 +816,10 @@ MediaPlayer.dependencies.BufferController = function() {
 
             // Check if running state
             if (!isRunning.call(self)) {
-                return;
+                return Q.when(null);
             }
 
-            // Check if initialization segment for current quality has not already been stored
+            // Check if initialization segment for current quality has already been loaded and stored
             if (initializationData[quality]) {
                 self.debug.info("[BufferController][" + type + "] Buffer initialization segment, quality = ", quality);
                 appendToBuffer.call(this, initializationData[quality], quality).then(
@@ -833,7 +833,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 );
                 return Q.when(null);
             } else {
-                // if we have not loaded the init segment for the current quality, do it
+                // Get init segment request for the current
                 return this.indexHandler.getInitRequest(availableRepresentations[quality]);
             }
         },
