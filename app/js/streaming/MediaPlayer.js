@@ -484,13 +484,6 @@ MediaPlayer = function () {
 
             // create DebugController
             debugController = system.getObject('debugController');
-
-            // Initialize already loaded plugins
-            for (var plugin in plugins) {
-                plugins[plugin].init(this, function () {
-                     plugins[plugin].deferInit.resolve();
-                });
-            }
         },
 //#endregion
 
@@ -852,8 +845,8 @@ MediaPlayer = function () {
                     plugin.deferLoad = Q.defer();
                     pluginsLoadDefer.push(plugin.deferLoad.promise);
                     plugin.load(stream, function () {
-                        plugin.deferLoad.resolve();
-                    });
+                        this.deferLoad.resolve();
+                    }.bind(plugin));
                 }
 
                 Q.all(pluginsLoadDefer).then((function () {
@@ -1413,6 +1406,7 @@ MediaPlayer = function () {
          * @param {object} plugin - the plugin instance
          */
         addPlugin: function (plugin) {
+            _isPlayerInitialized();
 
             if (plugin === undefined) {
                 throw new Error('MediaPlayer.addPlugin(): plugin undefined');
@@ -1442,8 +1436,8 @@ MediaPlayer = function () {
             plugin.deferInit = Q.defer();
             if (initialized) {
                 plugin.init(this, function () {
-                    plugin.deferInit.resolve();
-                });
+                    this.deferInit.resolve();
+                }.bind(plugin));
             }
         },
 
