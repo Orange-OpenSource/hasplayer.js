@@ -41,7 +41,6 @@ MediaPlayer.dependencies.BufferController = function() {
         bufferLevel = 0,
         isQuotaExceeded = false,
         rejectedBytes = null,
-        fragmentDuration = 0,
         appendingRejectedData = false,
         mediaSource,
         type,
@@ -333,10 +332,6 @@ MediaPlayer.dependencies.BufferController = function() {
                 self.chunkMissingCount = 0;
             }
 
-            if (!fragmentDuration && !isNaN(request.duration)) {
-                fragmentDuration = request.duration;
-            }
-
             // ORANGE: add request and representations in function parameters, used by MssFragmentController
             data = self.fragmentController.process(response.data, request, availableRepresentations);
             if (data) {
@@ -617,22 +612,6 @@ MediaPlayer.dependencies.BufferController = function() {
 
         },
 
-        /*checkGapBetweenBuffers= function() {
-            var leastLevel = this.bufferExt.getLeastBufferLevel(),
-                acceptableGap = fragmentDuration * 2,
-                actualGap = bufferLevel - leastLevel;
-
-            // if the gap betweeen buffers is too big we should create a promise that prevents appending data to the current
-            // buffer and requesting new segments until the gap will be reduced to the suitable size.
-            if (actualGap > acceptableGap && !deferredBuffersFlatten) {
-                fragmentsToLoad = 0;
-                deferredBuffersFlatten = Q.defer();
-            } else if ((actualGap < acceptableGap) && deferredBuffersFlatten) {
-                deferredBuffersFlatten.resolve();
-                deferredBuffersFlatten = null;
-            }
-        },*/
-
         isRunning = function() {
             var self = this;
             if (started) {
@@ -657,6 +636,7 @@ MediaPlayer.dependencies.BufferController = function() {
             var self = this,
                 deferred = Q.defer(),
                 removedTime = 0,
+                fragmentDuration,
                 startClearing;
 
             // do not remove any data until the quota is exceeded
@@ -902,7 +882,6 @@ MediaPlayer.dependencies.BufferController = function() {
                 // If live HLS, then try to refresh playlist
                 if (isDynamic) {
                     if (manifest.name === "M3U") {
-                        // HLS use case => update current representation playlist
                         updatePlayListForRepresentation.call(self, currentDownloadQuality).then(
                             function() {
                                 _currentRepresentation = getRepresentationForQuality.call(self, currentDownloadQuality);
@@ -1299,8 +1278,6 @@ MediaPlayer.dependencies.BufferController = function() {
             currentDownloadQuality = -1;
 
             if (_currentRepresentation) {
-                fragmentDuration = _currentRepresentation.segmentDuration;
-
                 self.indexHandler.setIsDynamic(isDynamic);
                 if (minBufferTime === -1) {
                     minBufferTime = self.bufferExt.decideBufferLength(manifest.minBufferTime, periodInfo.duration, waitingForBuffer);
