@@ -1026,28 +1026,24 @@ MediaPlayer.dependencies.BufferController = function() {
                     bufferFragment.call(self);
                 } else {
                     // Determine the timeout delay before checking again the buffer
-                    delay = bufferLevel - minBufferTime;
-                    self.debug.log("[BufferController][" + type + "] Check buffer in " + delay + " seconds");
+                    delay = bufferLevel - minBufferTime + 0.5; // + 0.5 to ensure buffer level will be inferior to minBufferTime
                     updateCheckBufferTimeout.call(self, delay);
                 }
             }
         },
 
         updateCheckBufferTimeout = function(delay) {
-            var self = this,
-                delayMs = Math.max((delay * 1000), 2000);
+            var self = this;
 
-            self.debug.log("[BufferController][" + type + "] Check buffer delta = " + delayMs + " ms");
+            delay = Math.max(delay, (segmentDuration / 2));
 
-            /* if (trickModeEnabled) {
-                delayMs = 500;
-            }*/
+            this.debug.log("[BufferController][" + type + "] Check buffer in = " + delay.toFixed(3) + " ms (bufferLevel = " + bufferLevel + ")");
 
             clearTimeout(bufferTimeout);
             bufferTimeout = setTimeout(function() {
                 bufferTimeout = null;
                 checkIfSufficientBuffer.call(self);
-            }, delayMs);
+            }, (delay * 1000));
         },
 
         cancelCheckBufferTimeout = function() {
