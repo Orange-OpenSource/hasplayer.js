@@ -1,20 +1,20 @@
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2014, Orange
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
+ *
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2016-5-18_10:44:39 / git revision : 260ea02 */
+/* Last build : 2016-6-30_17:41:41 / git revision : d3ea25b */
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
@@ -4618,15 +4618,13 @@ mp4lib.boxes.ContainerFullBox.prototype.read = function(data, pos, end, isEntryC
             box.__sourceBuffer = data.subarray(this.localPos - box.size, this.localPos);
         }
 
-        this.boxes.push(box);
+        if (box.boxtype) {
+            this.boxes.push(box);
+        }
 
         if (box.size <= 0 || box.size === null) {
             throw new mp4lib.ParseException('Problem on size of box ' + box.boxtype +
                 ', parsing stopped to avoid infinite loop');
-        }
-
-        if (!box.boxtype) {
-            throw new mp4lib.ParseException('Problem on unknown box, parsing stopped to avoid infinite loop');
         }
     }
 
@@ -7120,27 +7118,27 @@ mp4lib.registerTypeBoxes();
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2014, Orange
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
+ *
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- var mpegts = (function() {
+var mpegts = (function() {
     return {
-        pes:{},
-        si:{},
-        binary:{},
-        ts:{},
-        Pts:{},
-        aac:{},
-        h264:{}
+        pes: {},
+        si: {},
+        binary: {},
+        ts: {},
+        Pts: {},
+        aac: {},
+        h264: {}
     };
 }());
 
@@ -7151,59 +7149,59 @@ mp4lib.registerTypeBoxes();
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
     module.exports = mpegts; // node.js
 else
-    window.mpegts = mpegts;  // browser
+    window.mpegts = mpegts; // browser
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2014, Orange
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
+ *
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-mpegts.si.PSISection = function(table_id){
-	this.m_table_id = table_id;
-	this.m_section_syntax_indicator = 1;
-	this.m_section_length = mpegts.si.PSISection.prototype.SECTION_LENGTH;
-	this.m_transport_stream_id = 0;
-	this.m_version_number = 0;
-	this.m_current_next_indicator = true;
-	this.m_section_number = 0;
-	this.m_last_section_number = 0;
-	this.m_bValid = null;
+mpegts.si.PSISection = function(table_id) {
+    this.m_table_id = table_id;
+    this.m_section_syntax_indicator = 1;
+    this.m_section_length = mpegts.si.PSISection.prototype.SECTION_LENGTH;
+    this.m_transport_stream_id = 0;
+    this.m_version_number = 0;
+    this.m_current_next_indicator = true;
+    this.m_section_number = 0;
+    this.m_last_section_number = 0;
+    this.m_bValid = null;
 };
 
-mpegts.si.PSISection.prototype.parse = function (data) {
-	this.m_bValid = false;
+mpegts.si.PSISection.prototype.parse = function(data) {
+    this.m_bValid = false;
 
-	var id = 0;
+    var id = 0;
 
-	var pointerField = data[id];
+    var pointerField = data[id];
 
-	//if pointerField = 0 payload data start immediately otherwise, shift pointerField value
-	id = pointerField === 0? id+1 : id+pointerField;
+    //if pointerField = 0 payload data start immediately otherwise, shift pointerField value
+    id = pointerField === 0 ? id + 1 : id + pointerField;
 
-	this.m_table_id					= data[id];
-	id++;
-	this.m_section_syntax_indicator	= mpegts.binary.getBitFromByte(data[id], 0);
-	this.m_section_length			= mpegts.binary.getValueFrom2Bytes(data.subarray(id, id+2), 4);
-	id+=2;
-	this.m_transport_stream_id		= mpegts.binary.getValueFrom2Bytes(data.subarray(id, id+2));
-	id+=2;
-	this.m_version_number			= mpegts.binary.getValueFromByte(data[id], 2, 5);
-	this.m_current_next_indicator	= mpegts.binary.getBitFromByte(data[id], 7);
-	id++;
-	this.m_section_number			= data[id];
-	id++;
-	this.m_last_section_number		= data[id];
+    this.m_table_id = data[id];
+    id++;
+    this.m_section_syntax_indicator = mpegts.binary.getBitFromByte(data[id], 0);
+    this.m_section_length = mpegts.binary.getValueFrom2Bytes(data.subarray(id, id + 2), 4);
+    id += 2;
+    this.m_transport_stream_id = mpegts.binary.getValueFrom2Bytes(data.subarray(id, id + 2));
+    id += 2;
+    this.m_version_number = mpegts.binary.getValueFromByte(data[id], 2, 5);
+    this.m_current_next_indicator = mpegts.binary.getBitFromByte(data[id], 7);
+    id++;
+    this.m_section_number = data[id];
+    id++;
+    this.m_last_section_number = data[id];
 
-	/*if (nLength < (m_section_length + 3))
+    /*if (nLength < (m_section_length + 3))
 	{
 		m_bComplete = false;
 		SAFE_DELETE(m_pBytestream);
@@ -7215,38 +7213,37 @@ mpegts.si.PSISection.prototype.parse = function (data) {
 
 	m_nSectionIndex = 0;
 	m_bComplete = true;*/
-	this.m_bValid = true;
+    this.m_bValid = true;
 
-	return id;
+    return id;
 };
 
 mpegts.si.PSISection.prototype.getSectionLength = function() {
-	return this.m_section_length;
+    return this.m_section_length;
 };
 
 mpegts.si.PSISection.prototype.SECTION_LENGTH = 9;
 mpegts.si.PSISection.prototype.HEADER_LENGTH = 8;
-
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2014, Orange
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
+ *
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 // Sampling frequency dependent on sampling_frequency_index
-mpegts.aac.SAMPLING_FREQUENCY = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025,  8000, 7350];
+mpegts.aac.SAMPLING_FREQUENCY = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
 
-mpegts.aac.getAudioSpecificConfig = function (data) { // data as Uint8Array
+mpegts.aac.getAudioSpecificConfig = function(data) { // data as Uint8Array
 
     // We need to parse the beginning of the adts_frame in order to get
     // object type, sampling frequency and channel configuration
@@ -7266,7 +7263,7 @@ mpegts.aac.getAudioSpecificConfig = function (data) { // data as Uint8Array
     // channelConfiguration
     audioSpecificConfig[1] |= channel_configuration << 3;
 
-   /*  code for HE AAC v2 to be tested
+    /*  code for HE AAC v2 to be tested
 
     var audioSpecificConfig = new Uint8Array(4);
 
@@ -7292,7 +7289,7 @@ mpegts.aac.getAudioSpecificConfig = function (data) { // data as Uint8Array
     return audioSpecificConfig;
 };
 
-mpegts.aac.parseADTS = function (data, cts) { // data as Uint8Array, cts as an array of cts for each frame index
+mpegts.aac.parseADTS = function(data, cts) { // data as Uint8Array, cts as an array of cts for each frame index
 
     var aacFrames = [],
         adtsHeader = {},
@@ -7305,23 +7302,23 @@ mpegts.aac.parseADTS = function (data, cts) { // data as Uint8Array, cts as an a
         adtsFrameIndex = i;
 
         // == adts_fixed_header
-        adtsHeader.syncword = (data[i] << 4) + ((data[i+1] & 0xF0) >> 4);
+        adtsHeader.syncword = (data[i] << 4) + ((data[i + 1] & 0xF0) >> 4);
         // adtsHeader.ID
         // adtsHeader.layer
-        adtsHeader.protection_absent = data[i+1] & 0x01;
+        adtsHeader.protection_absent = data[i + 1] & 0x01;
         // adtsHeader.profile
-        adtsHeader.sampling_frequency_index = (data[i+2] & 0x3C) >> 2;
+        adtsHeader.sampling_frequency_index = (data[i + 2] & 0x3C) >> 2;
         // adtsHeader.private_bit
-        adtsHeader.channel_configuration = ((data[i+2] & 0x01) << 1) + ((data[i+3] & 0xC0) >> 6);
+        adtsHeader.channel_configuration = ((data[i + 2] & 0x01) << 1) + ((data[i + 3] & 0xC0) >> 6);
         // adtsHeader.original_copy
         // adtsHeader.home
 
         // == adts_variable_header
         // adtsHeader.copyright_identification_bit
         // adtsHeader.copyright_identification_start
-        adtsHeader.aac_frame_length = ((data[i+3] & 0x03) << 11) + (data[i+4] << 3) + ((data[i+5] & 0xE0) >> 5);
+        adtsHeader.aac_frame_length = ((data[i + 3] & 0x03) << 11) + (data[i + 4] << 3) + ((data[i + 5] & 0xE0) >> 5);
         // adtsHeader.adts_buffer_fullness
-        adtsHeader.number_of_raw_data_blocks_in_frame = (data[i+6] & 0x03) >> 2;
+        adtsHeader.number_of_raw_data_blocks_in_frame = (data[i + 6] & 0x03) >> 2;
 
         i += 7;
 
@@ -7350,25 +7347,23 @@ mpegts.aac.parseADTS = function (data, cts) { // data as Uint8Array, cts as an a
 
     return aacFrames;
 };
-
-
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2014, Orange
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
+ *
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-mpegts.ts.AdaptationField = function(){
-	/** adaptation field fields */
+mpegts.ts.AdaptationField = function() {
+    /** adaptation field fields */
     this.m_cAFLength = null;
     this.m_bDiscontinuityInd = null;
     this.m_bRAI = null;
@@ -7383,43 +7378,42 @@ mpegts.ts.AdaptationField = function(){
 };
 
 mpegts.ts.AdaptationField.prototype.getLength = function() {
-	return (this.m_cAFLength + 1);
+    return (this.m_cAFLength + 1);
 };
 
 mpegts.ts.AdaptationField.prototype.parse = function(data) {
-	this.m_cAFLength = data[0];
+    this.m_cAFLength = data[0];
 
-	if (this.m_cAFLength === 0)
-	{
-		// = exactly 1 stuffing byte
+    if (this.m_cAFLength === 0) {
+        // = exactly 1 stuffing byte
         return;
-	}
+    }
 
-	var index = 1;
+    var index = 1;
 
-	this.m_bDiscontinuityInd		= mpegts.binary.getBitFromByte(data[index], 0);
-	this.m_bRAI						= mpegts.binary.getBitFromByte(data[index], 1);
-	this.m_bESPriority				= mpegts.binary.getBitFromByte(data[index], 2);
-	this.m_bPCRFlag					= mpegts.binary.getBitFromByte(data[index], 3);
-	this.m_bOPCRFlag				= mpegts.binary.getBitFromByte(data[index], 4);
-	this.m_bSplicingPointFlag		= mpegts.binary.getBitFromByte(data[index], 5);
-	this.m_bPrivateDataFlag			= mpegts.binary.getBitFromByte(data[index], 6);
-	this.m_bAdaptationFieldExtFlag	= mpegts.binary.getBitFromByte(data[index], 7);
+    this.m_bDiscontinuityInd = mpegts.binary.getBitFromByte(data[index], 0);
+    this.m_bRAI = mpegts.binary.getBitFromByte(data[index], 1);
+    this.m_bESPriority = mpegts.binary.getBitFromByte(data[index], 2);
+    this.m_bPCRFlag = mpegts.binary.getBitFromByte(data[index], 3);
+    this.m_bOPCRFlag = mpegts.binary.getBitFromByte(data[index], 4);
+    this.m_bSplicingPointFlag = mpegts.binary.getBitFromByte(data[index], 5);
+    this.m_bPrivateDataFlag = mpegts.binary.getBitFromByte(data[index], 6);
+    this.m_bAdaptationFieldExtFlag = mpegts.binary.getBitFromByte(data[index], 7);
 
-	//other flags are not useful for the conversion HLS => MP4
+    //other flags are not useful for the conversion HLS => MP4
 };
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2014, Orange
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
+ *
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
@@ -7434,116 +7428,110 @@ mpegts.binary.readBytes = function(buf, pos, nbBytes) {
 };
 
 /**
-* Returns a bit value from the given byte
-* @param data the input byte
-* @param bitIndex the bit index inside the byte (0=msb to 7=lsb)
-* @return the bit value as a boolean (0 => false, 1 => true)
-*/
-mpegts.binary.getBitFromByte = function(data, bitIndex)
-{
-	var cMask = 0x00;
-	cMask += (1 << (7 - bitIndex));
+ * Returns a bit value from the given byte
+ * @param data the input byte
+ * @param bitIndex the bit index inside the byte (0=msb to 7=lsb)
+ * @return the bit value as a boolean (0 => false, 1 => true)
+ */
+mpegts.binary.getBitFromByte = function(data, bitIndex) {
+    var cMask = 0x00;
+    cMask += (1 << (7 - bitIndex));
 
-	return ((data & cMask) !== 0);
+    return ((data & cMask) !== 0);
 };
 
 /**
-* Returns the value extracted from three consecutive bytes
-* @param pBytes the input bytes
-* @param msbIndex the index of the first bit to extract ( 0=msb to 15=lsb )
-* @param nbBits the number of bits to extract (if '-1' then extract up to the last bit)
-* @return the value of the extracted bits as an unsigned short, or 0xFFFFFFFF if a problem has occured
-*/
-mpegts.binary.getValueFrom3Bytes = function(pBytes, msbIndex/* = 0*/, nbBits/* = -1*/)
-{
-	if (typeof nbBits === "undefined") {
-		nbBits = -1;
-	}
-	if (typeof msbIndex === "undefined") {
-		msbIndex = 0;
-	}
-	var nbBits2 = nbBits == -1?-1:(nbBits - (16 - msbIndex));
-	var nbLsbShift = nbBits == -1?0:(8 - nbBits2);
-	var cValue0 = mpegts.binary.getValueFromByte(pBytes[0], msbIndex);
-	var cValue1 = mpegts.binary.getValueFromByte(pBytes[1]);
-	var cValue2 = mpegts.binary.getValueFromByte(pBytes[2], 0, nbBits2, false);
+ * Returns the value extracted from three consecutive bytes
+ * @param pBytes the input bytes
+ * @param msbIndex the index of the first bit to extract ( 0=msb to 15=lsb )
+ * @param nbBits the number of bits to extract (if '-1' then extract up to the last bit)
+ * @return the value of the extracted bits as an unsigned short, or 0xFFFFFFFF if a problem has occured
+ */
+mpegts.binary.getValueFrom3Bytes = function(pBytes, msbIndex /* = 0*/ , nbBits /* = -1*/ ) {
+    if (typeof nbBits === "undefined") {
+        nbBits = -1;
+    }
+    if (typeof msbIndex === "undefined") {
+        msbIndex = 0;
+    }
+    var nbBits2 = nbBits == -1 ? -1 : (nbBits - (16 - msbIndex));
+    var nbLsbShift = nbBits == -1 ? 0 : (8 - nbBits2);
+    var cValue0 = mpegts.binary.getValueFromByte(pBytes[0], msbIndex);
+    var cValue1 = mpegts.binary.getValueFromByte(pBytes[1]);
+    var cValue2 = mpegts.binary.getValueFromByte(pBytes[2], 0, nbBits2, false);
 
-	return ((((cValue0 << 16) & 0x00FF0000) | ((cValue1 << 8) & 0x0000FF00) | (cValue2 & 0x000000FF)) >> nbLsbShift);
+    return ((((cValue0 << 16) & 0x00FF0000) | ((cValue1 << 8) & 0x0000FF00) | (cValue2 & 0x000000FF)) >> nbLsbShift);
 };
 
 /**
-* Returns the value extracted from two consecutive bytes
-* @param data the input bytes
-* @param msbIndex the index of the first bit to extract ( 0=msb to 15=lsb )
-* @param nbBits the number of bits to extract (if '-1' then extract up to the last bit)
-* @return the value of the extracted bits as an unsigned short, or 0xFFFF if a problem has occured
-*/
-mpegts.binary.getValueFrom2Bytes = function(data, msbIndex/* = 0*/, nbBits/* = -1*/)
-{
-	if (typeof nbBits === "undefined") {
-		nbBits = -1;
-	}
-	if (typeof msbIndex === "undefined") {
-		msbIndex = 0;
-	}
+ * Returns the value extracted from two consecutive bytes
+ * @param data the input bytes
+ * @param msbIndex the index of the first bit to extract ( 0=msb to 15=lsb )
+ * @param nbBits the number of bits to extract (if '-1' then extract up to the last bit)
+ * @return the value of the extracted bits as an unsigned short, or 0xFFFF if a problem has occured
+ */
+mpegts.binary.getValueFrom2Bytes = function(data, msbIndex /* = 0*/ , nbBits /* = -1*/ ) {
+    if (typeof nbBits === "undefined") {
+        nbBits = -1;
+    }
+    if (typeof msbIndex === "undefined") {
+        msbIndex = 0;
+    }
 
-	var nbBits1 = nbBits == -1?-1:(nbBits - (8 - msbIndex));
-	var nbLsbShift = nbBits == -1?0:(8 - nbBits1);
-	var cValue0 = mpegts.binary.getValueFromByte(data[0], msbIndex);
-	var cValue1 = mpegts.binary.getValueFromByte(data[1], 0, nbBits1, false);
+    var nbBits1 = nbBits == -1 ? -1 : (nbBits - (8 - msbIndex));
+    var nbLsbShift = nbBits == -1 ? 0 : (8 - nbBits1);
+    var cValue0 = mpegts.binary.getValueFromByte(data[0], msbIndex);
+    var cValue1 = mpegts.binary.getValueFromByte(data[1], 0, nbBits1, false);
 
-	return ((((cValue0 << 8) & 0xFF00) | (cValue1 & 0x00FF)) >> nbLsbShift);
+    return ((((cValue0 << 8) & 0xFF00) | (cValue1 & 0x00FF)) >> nbLsbShift);
 };
 
 /**
-* Returns the value extracted from the given byte
-* @param data the input byte
-* @param msbIndex the index of the first bit to extract ( 0=msb to 7=lsb )
-* @param nbBits the number of bits to extract (if '-1' then extract up to the last bit)
-* @param bShift true if the bits have to be shifted to the right
-* @return the value of the extracted bits as an unsigned char, or 0xFF if a problem has occurred
-*/
-mpegts.binary.getValueFromByte = function(data, msbIndex/* = 0*/, nbBits/* = -1*/, bShift/* = true*/)
-{
-	var cMask = 0x00;
-	var i = 0;
+ * Returns the value extracted from the given byte
+ * @param data the input byte
+ * @param msbIndex the index of the first bit to extract ( 0=msb to 7=lsb )
+ * @param nbBits the number of bits to extract (if '-1' then extract up to the last bit)
+ * @param bShift true if the bits have to be shifted to the right
+ * @return the value of the extracted bits as an unsigned char, or 0xFF if a problem has occurred
+ */
+mpegts.binary.getValueFromByte = function(data, msbIndex /* = 0*/ , nbBits /* = -1*/ , bShift /* = true*/ ) {
+    var cMask = 0x00;
+    var i = 0;
 
-	if (typeof nbBits === "undefined") {
-		nbBits = -1;
-	}
-	if (typeof msbIndex === "undefined") {
-		msbIndex = 0;
-	}
+    if (typeof nbBits === "undefined") {
+        nbBits = -1;
+    }
+    if (typeof msbIndex === "undefined") {
+        msbIndex = 0;
+    }
 
-	var lsbIndex = (nbBits == -1)?7:(msbIndex + nbBits - 1);
-	for (i = msbIndex; i <= lsbIndex; i++)
-	{
-		cMask += (1 << (7 - i));
-	}
+    var lsbIndex = (nbBits == -1) ? 7 : (msbIndex + nbBits - 1);
+    for (i = msbIndex; i <= lsbIndex; i++) {
+        cMask += (1 << (7 - i));
+    }
 
-	var cValue = data & cMask;
-	if (bShift || typeof bShift === "undefined")
-	{
-		cValue >>= (7 - lsbIndex);
-	}
-	return cValue;
+    var cValue = data & cMask;
+    if (bShift || typeof bShift === "undefined") {
+        cValue >>= (7 - lsbIndex);
+    }
+    return cValue;
 };
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2014, Orange
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
+ *
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-mpegts.h264.getSequenceHeader = function (data) { // data as Uint8Array
+mpegts.h264.getSequenceHeader = function(data) { // data as Uint8Array
 
     var pos = -1,
         length = -1,
@@ -7554,7 +7542,7 @@ mpegts.h264.getSequenceHeader = function (data) { // data as Uint8Array
         height = 0;
 
     while (i < data.length) {
-        if ((data[i] === 0x00) && (data[i+1] === 0x00) && (data[i+2] === 0x00) && (data[i+3] === 0x01)) {
+        if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x00) && (data[i + 3] === 0x01)) {
 
             naluType = data[i + 4] & 0x1F;
 
@@ -7571,8 +7559,7 @@ mpegts.h264.getSequenceHeader = function (data) { // data as Uint8Array
                     width = (sps.pic_width_in_mbs_minus1 + 1) << 4;
                     height = (sps.pic_height_in_map_units_minus1 + 1) << 4;
                 }
-            }
-            else if (pos > 0) {
+            } else if (pos > 0) {
                 length = i - pos;
             }
 
@@ -7581,15 +7568,13 @@ mpegts.h264.getSequenceHeader = function (data) { // data as Uint8Array
                 break;
             }
 
-            i+=4;
-        }
-        else if ((data[i] === 0x00) && (data[i+1] === 0x00) && (data[i+2] === 0x01)) {
+            i += 4;
+        } else if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x01)) {
             if (pos > 0) {
                 length = i - pos;
             }
             break;
-        }
-        else {
+        } else {
             i++;
         }
     }
@@ -7627,7 +7612,7 @@ mpegts.h264.read_ue = function(data, ctx) {
         value = value << 1;
         ctx._bit = (ctx._byte >> ctx._bitPos) & 0x01;
         ctx._bitPos--;
-        if(ctx._bitPos < 0) {
+        if (ctx._bitPos < 0) {
             ctx._byte = data[ctx._bytePos];
             ctx._bytePos++;
             ctx._bitPos = 7;
@@ -7661,7 +7646,7 @@ mpegts.h264.read_flag = function(data, ctx) {
 
     ctx._bit = (ctx._byte >> ctx._bitPos) & 0x01;
     ctx._bitPos--;
-    if(ctx._bitPos < 0) {
+    if (ctx._bitPos < 0) {
         ctx._byte = data[ctx._bytePos];
         ctx._bytePos++;
         ctx._bitPos = 7;
@@ -7672,7 +7657,7 @@ mpegts.h264.read_flag = function(data, ctx) {
 };
 
 
-mpegts.h264.parseSPS = function (data) {
+mpegts.h264.parseSPS = function(data) {
 
     var sps = {
             profile_idc: 0,
@@ -7703,7 +7688,7 @@ mpegts.h264.parseSPS = function (data) {
             _bytePos: 0,
             _bitPos: 0
         };
-        
+
 
     ctx._bytePos = ctx._bitPos = 0;
 
@@ -7769,11 +7754,10 @@ mpegts.h264.parseSPS = function (data) {
     // pic_order_cnt_type - ue(v)
     sps.pic_order_cnt_type = mpegts.h264.read_ue(data, ctx);
 
-    if(sps.pic_order_cnt_type === 0) {
+    if (sps.pic_order_cnt_type === 0) {
         // log2_max_pic_order_cnt_lsb_minus4 - ue(v)
         sps.log2_max_pic_order_cnt_lsb_minus4 = mpegts.h264.read_ue(data, ctx);
-    }
-    else if (sps.pic_order_cnt_type === 1) {
+    } else if (sps.pic_order_cnt_type === 1) {
         // NOT IMPLEMENTED
         //console.log("H.264 SPS parsing: (log2_max_pic_order_cnt_lsb_minus4 = 1) not implemented");
     }
@@ -7793,7 +7777,7 @@ mpegts.h264.parseSPS = function (data) {
     return sps;
 };
 
-mpegts.h264.bytestreamToMp4 = function (data) { // data as Uint8Array
+mpegts.h264.bytestreamToMp4 = function(data) { // data as Uint8Array
 
     var i = 0,
         length = data.length,
@@ -7801,14 +7785,14 @@ mpegts.h264.bytestreamToMp4 = function (data) { // data as Uint8Array
         naluSize = 0;
 
     while (i < length) {
-        if ((data[i] === 0x00) && (data[i+1] === 0x00) && (data[i+2] === 0x00) && (data[i+3] === 0x01)) {
+        if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x00) && (data[i + 3] === 0x01)) {
 
             if (startCodeIndex >= 0) {
                 naluSize = (i - startCodeIndex - 4); // 4 = start code length or NALU-size field length
                 data[startCodeIndex] = (naluSize & 0xFF000000) >> 24;
-                data[startCodeIndex+1] = (naluSize & 0x00FF0000) >> 16;
-                data[startCodeIndex+2] = (naluSize & 0x0000FF00) >> 8;
-                data[startCodeIndex+3] = (naluSize & 0x000000FF);
+                data[startCodeIndex + 1] = (naluSize & 0x00FF0000) >> 16;
+                data[startCodeIndex + 2] = (naluSize & 0x0000FF00) >> 8;
+                data[startCodeIndex + 3] = (naluSize & 0x000000FF);
             }
 
             startCodeIndex = i;
@@ -7821,25 +7805,24 @@ mpegts.h264.bytestreamToMp4 = function (data) { // data as Uint8Array
     // Last NAL unit
     naluSize = (i - startCodeIndex - 4); // 4 = start code length or NALU-size field length
     data[startCodeIndex] = (naluSize & 0xFF000000) >> 24;
-    data[startCodeIndex+1] = (naluSize & 0x00FF0000) >> 16;
-    data[startCodeIndex+2] = (naluSize & 0x0000FF00) >> 8;
-    data[startCodeIndex+3] = (naluSize & 0x000000FF);
+    data[startCodeIndex + 1] = (naluSize & 0x00FF0000) >> 16;
+    data[startCodeIndex + 2] = (naluSize & 0x0000FF00) >> 8;
+    data[startCodeIndex + 3] = (naluSize & 0x000000FF);
 
 };
 
-mpegts.h264.isIDR = function (data) { // data as Uint8Array
+mpegts.h264.isIDR = function(data) { // data as Uint8Array
     var i = 0,
         naluType;
 
     while (i < data.length) {
-        if ((data[i] === 0x00) && (data[i+1] === 0x00) && (data[i+2] === 0x00) && (data[i+3] === 0x01)) {
+        if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x00) && (data[i + 3] === 0x01)) {
             naluType = data[i + 4] & 0x1F;
             if (naluType === mpegts.h264.NALUTYPE_IDR) {
                 return true;
             }
-            i+=4;
-        }
-        else {
+            i += 4;
+        } else {
             i++;
         }
     }
@@ -7852,337 +7835,316 @@ mpegts.h264.NALUTYPE_SEI = 6;
 mpegts.h264.NALUTYPE_SPS = 7;
 mpegts.h264.NALUTYPE_PPS = 8;
 mpegts.h264.NALUTYPE_AU_DELIMITER = 9;
-
-
-
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2014, Orange
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
+ *
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-mpegts.si.PAT = function(){
-	mpegts.si.PSISection.call(this,mpegts.si.PAT.prototype.TABLE_ID);
-	this.m_listOfProgramAssociation = [];
-	this.m_network_pid = null;
+mpegts.si.PAT = function() {
+    mpegts.si.PSISection.call(this, mpegts.si.PAT.prototype.TABLE_ID);
+    this.m_listOfProgramAssociation = [];
+    this.m_network_pid = null;
 };
 
 mpegts.si.PAT.prototype = Object.create(mpegts.si.PSISection.prototype);
 mpegts.si.PAT.prototype.constructor = mpegts.si.PAT;
 
-mpegts.si.PAT.prototype.parse = function (data) {
-	var id = mpegts.si.PSISection.prototype.parse.call(this,data);
-	id++;
+mpegts.si.PAT.prototype.parse = function(data) {
+    var id = mpegts.si.PSISection.prototype.parse.call(this, data);
+    id++;
 
-	if (!this.m_bValid)
-	{
-		//console.log("PSI Parsing Problem during PAT parsing!");
-		return;
-	}
-	this.m_bValid = false;
+    if (!this.m_bValid) {
+        //console.log("PSI Parsing Problem during PAT parsing!");
+        return;
+    }
+    this.m_bValid = false;
 
-	if(this.m_table_id != this.TABLE_ID)
-	{
-		//console.log("PAT Table ID != 0");
-		return;
-	}
+    if (this.m_table_id !== this.TABLE_ID) {
+        return;
+    }
 
-	var remainingBytes = this.getSectionLength() - this.SECTION_LENGTH;
+    var remainingBytes = this.getSectionLength() - this.SECTION_LENGTH;
 
-	while (remainingBytes >= 4)
-	{
-		var prog = new mpegts.si.ProgramAssociation(data.subarray(id,id+4));
-		
-		if(prog.getProgramNumber() === 0)
-		{
-			// Network PID
-			this.m_network_pid = prog.getProgramMapPid();
-		}
-		else
-		{
-			this.m_listOfProgramAssociation.push(prog);
-		}
-		remainingBytes -= 4;
-		id += 4;
-	}
+    while (remainingBytes >= 4) {
+        var prog = new mpegts.si.ProgramAssociation(data.subarray(id, id + 4));
 
-	this.m_bValid = true;
+        if (prog.getProgramNumber() === 0) {
+            // Network PID
+            this.m_network_pid = prog.getProgramMapPid();
+        } else {
+            this.m_listOfProgramAssociation.push(prog);
+        }
+        remainingBytes -= 4;
+        id += 4;
+    }
+
+    this.m_bValid = true;
 };
 
 /**
-* returns the PID of the PMT associated to the first program
-*
-* @return the PID of the PMT associated to the first program
-*/
-mpegts.si.PAT.prototype.getPmtPid = function()
-{
-	var pid = mpegts.ts.TsPacket.prototype.UNDEFINED_PID;
-	
-	if(this.m_listOfProgramAssociation.length >= 1){
-		var prog = this.m_listOfProgramAssociation[0];
-		pid = prog.getProgramMapPid();
-	}
-	
-	return pid;
+ * returns the PID of the PMT associated to the first program
+ *
+ * @return the PID of the PMT associated to the first program
+ */
+mpegts.si.PAT.prototype.getPmtPid = function() {
+    var pid = mpegts.ts.TsPacket.prototype.UNDEFINED_PID;
+
+    if (this.m_listOfProgramAssociation.length >= 1) {
+        var prog = this.m_listOfProgramAssociation[0];
+        pid = prog.getProgramMapPid();
+    }
+
+    return pid;
 };
 
-mpegts.si.PAT.prototype.TABLE_ID	= 0x00;
-mpegts.si.PAT.prototype.PID		= 0x00;
+mpegts.si.PAT.prototype.TABLE_ID = 0x00;
+mpegts.si.PAT.prototype.PID = 0x00;
 
 
-mpegts.si.ProgramAssociation = function(data){
-	this.m_program_number = 0;
-	this.m_program_map_pid = 0;
-	this.parse(data);
+mpegts.si.ProgramAssociation = function(data) {
+    this.m_program_number = 0;
+    this.m_program_map_pid = 0;
+    this.parse(data);
 };
 
-mpegts.si.ProgramAssociation.prototype.getProgramNumber = function () {
-	return this.m_program_number;
+mpegts.si.ProgramAssociation.prototype.getProgramNumber = function() {
+    return this.m_program_number;
 };
 
-mpegts.si.ProgramAssociation.prototype.getProgramMapPid = function () {
-	return this.m_program_map_pid;
+mpegts.si.ProgramAssociation.prototype.getProgramMapPid = function() {
+    return this.m_program_map_pid;
 };
 
-mpegts.si.ProgramAssociation.prototype.getLength = function () {
-	return 4;
+mpegts.si.ProgramAssociation.prototype.getLength = function() {
+    return 4;
 };
 
 /**
-* Parse the ProgramAssociation from given stream
-*/
-mpegts.si.ProgramAssociation.prototype.parse = function(data){
-	this.m_program_number = mpegts.binary.getValueFrom2Bytes(data.subarray(0, 2));
-	this.m_program_map_pid = mpegts.binary.getValueFrom2Bytes(data.subarray(2, 4), 3, 13);
+ * Parse the ProgramAssociation from given stream
+ */
+mpegts.si.ProgramAssociation.prototype.parse = function(data) {
+    this.m_program_number = mpegts.binary.getValueFrom2Bytes(data.subarray(0, 2));
+    this.m_program_map_pid = mpegts.binary.getValueFrom2Bytes(data.subarray(2, 4), 3, 13);
 };
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2014, Orange
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
+ *
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-mpegts.pes.PesPacket = function(){
-	this.m_cStreamID					= null;
-	this.m_nPESPacketLength				= null;
-	this.m_cPESScramblingCtrl			= null;
-	this.m_bPESpriority					= null;
-	this.m_bDataAlignement				= null;
-	this.m_bCopyright					= null;
-	this.m_bOriginalOrCopy				= null;
-	this.m_cPES_header_data_length		= null;
-	this.m_cPTS_DTS_flags				= null;
-	this.m_bESCR_flag					= null;
-	this.m_bES_rate_flag				= null;
-	this.m_bDSM_trick_mode_flag			= null;
-	this.m_bAdditional_copy_info_flag	= null;
-	this.m_bPES_CRC_flag				= null;
-	this.m_bPES_extension_flag			= null;
-	this.m_pPTS							= null;
-	this.m_pDTS							= null;
-	this.m_pESCR						= null;
-	this.m_ES_rate						= null;
-	this.m_DSM_trick_mode				= null;
-	this.m_Additional_copy_info			= null;
-	this.m_PES_CRC						= null;
-	this.m_cNbStuffingBytes				= null;
-	this.m_pPESExtension				= null;
-	this.m_pPrivateData					= null;
-	this.m_payloadArray					= null;
-	this.m_nPayloadLength				= null;
-	this.m_bDirty						= null;
-	this.m_bValid						= false;
+mpegts.pes.PesPacket = function() {
+    this.m_cStreamID = null;
+    this.m_nPESPacketLength = null;
+    this.m_cPESScramblingCtrl = null;
+    this.m_bPESpriority = null;
+    this.m_bDataAlignement = null;
+    this.m_bCopyright = null;
+    this.m_bOriginalOrCopy = null;
+    this.m_cPES_header_data_length = null;
+    this.m_cPTS_DTS_flags = null;
+    this.m_bESCR_flag = null;
+    this.m_bES_rate_flag = null;
+    this.m_bDSM_trick_mode_flag = null;
+    this.m_bAdditional_copy_info_flag = null;
+    this.m_bPES_CRC_flag = null;
+    this.m_bPES_extension_flag = null;
+    this.m_pPTS = null;
+    this.m_pDTS = null;
+    this.m_pESCR = null;
+    this.m_ES_rate = null;
+    this.m_DSM_trick_mode = null;
+    this.m_Additional_copy_info = null;
+    this.m_PES_CRC = null;
+    this.m_cNbStuffingBytes = null;
+    this.m_pPESExtension = null;
+    this.m_pPrivateData = null;
+    this.m_payloadArray = null;
+    this.m_nPayloadLength = null;
+    this.m_bDirty = null;
+    this.m_bValid = false;
 };
 
 mpegts.pes.PesPacket.prototype.parse = function(data) {
-	var index = 0;
-	this.m_nLength = data.length;
-	// packet_start_code_prefix
-	var nStartCode = mpegts.binary.getValueFrom3Bytes(data.subarray(index, index+3));
-	if (nStartCode !== this.START_CODE_PREFIX)
-	{
-		//console.log("PES Packet start code not define!");
-		return;
-	}
+    var index = 0;
+    this.m_nLength = data.length;
+    // packet_start_code_prefix
+    var nStartCode = mpegts.binary.getValueFrom3Bytes(data.subarray(index, index + 3));
+    if (nStartCode !== this.START_CODE_PREFIX) {
+        //console.log("PES Packet start code not define!");
+        return;
+    }
 
-	index = 3; // 3 = packet_start_code_prefix length
+    index = 3; // 3 = packet_start_code_prefix length
 
-	// stream_id
-	this.m_cStreamID	= data[index];
-	index++;
+    // stream_id
+    this.m_cStreamID = data[index];
+    index++;
 
-	// PES_packet_length
-	this.m_nPESPacketLength = mpegts.binary.getValueFrom2Bytes(data.subarray(index,index+2));
-	index += 2;
-	
-	// Padding bytes
-	if (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PADDING_STREAM)
-	{
-		// Padding bytes => no more field, no payload
-		this.m_bValid = true;
-		return;
-	}
+    // PES_packet_length
+    this.m_nPESPacketLength = mpegts.binary.getValueFrom2Bytes(data.subarray(index, index + 2));
+    index += 2;
 
-	// PES_packet_data_byte (no optional header)
-	if (!this.hasOptionalPESHeader()) {
-		//NAN => to Validate!!!!
-		// no more header field, only payload
-		this.m_payloadArray = data.subarray(index + mpegts.pes.PesPacket.prototype.FIXED_HEADER_LENGTH);
-		this.m_nPayloadLength = this.m_nLength - mpegts.pes.PesPacket.prototype.FIXED_HEADER_LENGTH;
-		this.m_bValid = true;
-		return;
-	}
+    // Padding bytes
+    if (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PADDING_STREAM) {
+        // Padding bytes => no more field, no payload
+        this.m_bValid = true;
+        return;
+    }
 
-	// Optional PES header
-	var reserved = mpegts.binary.getValueFromByte(data[index], 0, 2);
-	if (reserved != 0x02)
-	{
-		return;
-	}
-	this.m_cPESScramblingCtrl	= mpegts.binary.getValueFromByte(data[index], 2, 2);
-	this.m_bPESpriority			= mpegts.binary.getBitFromByte(data[index], 4);
-	this.m_bDataAlignement		= mpegts.binary.getBitFromByte(data[index], 5);
-	this.m_bCopyright			= mpegts.binary.getBitFromByte(data[index], 6);
-	this.m_bOriginalOrCopy		= mpegts.binary.getBitFromByte(data[index], 7);
-	index++;
+    // PES_packet_data_byte (no optional header)
+    if (!this.hasOptionalPESHeader()) {
+        //NAN => to Validate!!!!
+        // no more header field, only payload
+        this.m_payloadArray = data.subarray(index + mpegts.pes.PesPacket.prototype.FIXED_HEADER_LENGTH);
+        this.m_nPayloadLength = this.m_nLength - mpegts.pes.PesPacket.prototype.FIXED_HEADER_LENGTH;
+        this.m_bValid = true;
+        return;
+    }
 
-	// 7 flags
-	this.m_cPTS_DTS_flags				= mpegts.binary.getValueFromByte(data[index], 0, 2);
-	this.m_bESCR_flag					= mpegts.binary.getBitFromByte(data[index], 2);
-	this.m_bES_rate_flag				= mpegts.binary.getBitFromByte(data[index], 3);
-	this.m_bDSM_trick_mode_flag			= mpegts.binary.getBitFromByte(data[index], 4);
-	this.m_bAdditional_copy_info_flag	= mpegts.binary.getBitFromByte(data[index], 5);
-	this.m_bPES_CRC_flag				= mpegts.binary.getBitFromByte(data[index], 6);
-	this.m_bPES_extension_flag			= mpegts.binary.getBitFromByte(data[index], 7);
-	index++;
+    // Optional PES header
+    var reserved = mpegts.binary.getValueFromByte(data[index], 0, 2);
+    if (reserved !== 0x02) {
+        return;
+    }
+    this.m_cPESScramblingCtrl = mpegts.binary.getValueFromByte(data[index], 2, 2);
+    this.m_bPESpriority = mpegts.binary.getBitFromByte(data[index], 4);
+    this.m_bDataAlignement = mpegts.binary.getBitFromByte(data[index], 5);
+    this.m_bCopyright = mpegts.binary.getBitFromByte(data[index], 6);
+    this.m_bOriginalOrCopy = mpegts.binary.getBitFromByte(data[index], 7);
+    index++;
 
-	// PES_header_data_length
-	this.m_cPES_header_data_length = (data[index] & 0xFF);
-	index++;
-			
-	// PTS
-	if((this.m_cPTS_DTS_flags & mpegts.pes.PesPacket.prototype.FLAG_PTS) == mpegts.pes.PesPacket.prototype.FLAG_PTS)
-	{
-		this.m_pPTS = new mpegts.Pts(data.subarray(index, index+5));
-		index += 5;
-	}
+    // 7 flags
+    this.m_cPTS_DTS_flags = mpegts.binary.getValueFromByte(data[index], 0, 2);
+    this.m_bESCR_flag = mpegts.binary.getBitFromByte(data[index], 2);
+    this.m_bES_rate_flag = mpegts.binary.getBitFromByte(data[index], 3);
+    this.m_bDSM_trick_mode_flag = mpegts.binary.getBitFromByte(data[index], 4);
+    this.m_bAdditional_copy_info_flag = mpegts.binary.getBitFromByte(data[index], 5);
+    this.m_bPES_CRC_flag = mpegts.binary.getBitFromByte(data[index], 6);
+    this.m_bPES_extension_flag = mpegts.binary.getBitFromByte(data[index], 7);
+    index++;
 
-	// DTS
-	if((this.m_cPTS_DTS_flags & mpegts.pes.PesPacket.prototype.FLAG_DTS) == mpegts.pes.PesPacket.prototype.FLAG_DTS)
-	{
-		this.m_pDTS = new mpegts.Pts(data.subarray(index, index+5));
-		index += 5;
-	}
+    // PES_header_data_length
+    this.m_cPES_header_data_length = (data[index] & 0xFF);
+    index++;
 
-	// ESCR
-	if(this.m_bESCR_flag)
-	{
-		//NAN => to Complete
-		//this.m_pESCR = new PCR(m_pBytestream + index);
-		index += 6;
-	}
+    // PTS
+    if ((this.m_cPTS_DTS_flags & mpegts.pes.PesPacket.prototype.FLAG_PTS) == mpegts.pes.PesPacket.prototype.FLAG_PTS) {
+        this.m_pPTS = new mpegts.Pts(data.subarray(index, index + 5));
+        index += 5;
+    }
 
-	// ES_rate	
-	if(this.m_bES_rate_flag) {
-		this.m_ES_rate = mpegts.binary.getValueFrom3Bytes(data.subarray(index, index+3), 1, 22);
-		index += 3;
-	}
-	
-	// DSM_trick_mode
-	if(this.m_bDSM_trick_mode_flag)
-	{
-		this.m_DSM_trick_mode = data[index];
-		index++;
-	}
+    // DTS
+    if ((this.m_cPTS_DTS_flags & mpegts.pes.PesPacket.prototype.FLAG_DTS) == mpegts.pes.PesPacket.prototype.FLAG_DTS) {
+        this.m_pDTS = new mpegts.Pts(data.subarray(index, index + 5));
+        index += 5;
+    }
 
-	// Additional_copy_info
-	if(this.m_bAdditional_copy_info_flag)
-	{
-		this.m_Additional_copy_info = data[index];
-		index++;
-	}
+    // ESCR
+    if (this.m_bESCR_flag) {
+        //NAN => to Complete
+        //this.m_pESCR = new PCR(m_pBytestream + index);
+        index += 6;
+    }
 
-	// PES_CRC
-	if(this.m_bPES_CRC_flag)
-	{
-		this.m_PES_CRC = mpegts.binary.getValueFrom2Bytes(data.subarray(index, index+2));
-		index += 2;
-	}
+    // ES_rate	
+    if (this.m_bES_rate_flag) {
+        this.m_ES_rate = mpegts.binary.getValueFrom3Bytes(data.subarray(index, index + 3), 1, 22);
+        index += 3;
+    }
 
-	// PES_extension
-	if(this.m_bPES_extension_flag)
-	{
-		//NAN => to Complete
-		//this.m_pPESExtension = new PESExtension(m_pBytestream + index, m_cPES_header_data_length);
-		//index += m_pPESExtension->getLength();
-	}
+    // DSM_trick_mode
+    if (this.m_bDSM_trick_mode_flag) {
+        this.m_DSM_trick_mode = data[index];
+        index++;
+    }
 
-	// Stuffing bytes
-	var uiHeaderLength = mpegts.pes.PesPacket.prototype.FIXED_HEADER_LENGTH + mpegts.pes.PesPacket.prototype.FIXED_OPTIONAL_HEADER_LENGTH + this.m_cPES_header_data_length;
-	this.m_cNbStuffingBytes = uiHeaderLength - index;
-	index += this.m_cNbStuffingBytes;
+    // Additional_copy_info
+    if (this.m_bAdditional_copy_info_flag) {
+        this.m_Additional_copy_info = data[index];
+        index++;
+    }
 
-	// Payload
-	this.m_nPayloadLength = this.m_nLength - uiHeaderLength;
-	this.m_payloadArray = data.subarray(uiHeaderLength,uiHeaderLength + this.m_nPayloadLength);
+    // PES_CRC
+    if (this.m_bPES_CRC_flag) {
+        this.m_PES_CRC = mpegts.binary.getValueFrom2Bytes(data.subarray(index, index + 2));
+        index += 2;
+    }
 
-	this.m_bValid = true;
+    // PES_extension
+    if (this.m_bPES_extension_flag) {
+        //NAN => to Complete
+        //this.m_pPESExtension = new PESExtension(m_pBytestream + index, m_cPES_header_data_length);
+        //index += m_pPESExtension->getLength();
+    }
+
+    // Stuffing bytes
+    var uiHeaderLength = mpegts.pes.PesPacket.prototype.FIXED_HEADER_LENGTH + mpegts.pes.PesPacket.prototype.FIXED_OPTIONAL_HEADER_LENGTH + this.m_cPES_header_data_length;
+    this.m_cNbStuffingBytes = uiHeaderLength - index;
+    index += this.m_cNbStuffingBytes;
+
+    // Payload
+    this.m_nPayloadLength = this.m_nLength - uiHeaderLength;
+    this.m_payloadArray = data.subarray(uiHeaderLength, uiHeaderLength + this.m_nPayloadLength);
+
+    this.m_bValid = true;
 };
 
 
 /**
-* Returns true if header contains optional PES header.
-* @return true if header contains optional PES header
-*/
+ * Returns true if header contains optional PES header.
+ * @return true if header contains optional PES header
+ */
 mpegts.pes.PesPacket.prototype.hasOptionalPESHeader = function() {
-	
-	if ((this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_MAP)		||
-		(this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PADDING_STREAM)			||
-		(this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PRIVATE_STREAM_2)			||
-		(this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_ECM_STREAM)				||
-		(this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_EMM_STREAM)				||
-		(this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY)	||
-		(this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_DSMCC_STREAM)				||
-		(this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_H2221_TYPE_E_STREAM)) {
-		return false;
-	}
 
-	return true;
+    if ((this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_MAP) ||
+        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PADDING_STREAM) ||
+        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PRIVATE_STREAM_2) ||
+        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_ECM_STREAM) ||
+        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_EMM_STREAM) ||
+        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY) ||
+        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_DSMCC_STREAM) ||
+        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_H2221_TYPE_E_STREAM)) {
+        return false;
+    }
+
+    return true;
 };
 
 mpegts.pes.PesPacket.prototype.getHeaderLength = function() {
-    return 	mpegts.pes.PesPacket.prototype.FIXED_HEADER_LENGTH +
-			mpegts.pes.PesPacket.prototype.FIXED_OPTIONAL_HEADER_LENGTH + 
-			this.m_cPES_header_data_length;
+    return mpegts.pes.PesPacket.prototype.FIXED_HEADER_LENGTH +
+        mpegts.pes.PesPacket.prototype.FIXED_OPTIONAL_HEADER_LENGTH +
+        this.m_cPES_header_data_length;
 };
 
 mpegts.pes.PesPacket.prototype.getPayload = function() {
-	return this.m_payloadArray;
+    return this.m_payloadArray;
 };
 
 mpegts.pes.PesPacket.prototype.getPts = function() {
-	return this.m_pPTS;
+    return this.m_pPTS;
 };
 
 mpegts.pes.PesPacket.prototype.getDts = function() {
-	return this.m_pDTS;
+    return this.m_pDTS;
 };
 
 /** The start code prefix */
@@ -8197,274 +8159,452 @@ mpegts.pes.PesPacket.prototype.FLAG_PTS = 0x02;
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2014, Orange
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
+ *
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-mpegts.si.PMT = function(){
-	mpegts.si.PSISection.call(this,mpegts.si.PMT.prototype.TABLE_ID);
-	this.m_listOfComponents = [];
-	this.m_PCR_PID = null;
-	this.m_program_info_length = null;
+mpegts.si.PMT = function() {
+    mpegts.si.PSISection.call(this, mpegts.si.PMT.prototype.TABLE_ID);
+    this.m_listOfComponents = [];
+    this.m_PCR_PID = null;
+    this.m_program_info_length = null;
 };
 
 mpegts.si.PMT.prototype = Object.create(mpegts.si.PSISection.prototype);
 mpegts.si.PMT.prototype.constructor = mpegts.si.PMT;
 
-mpegts.si.PMT.prototype.parse = function (data) {
-	var id = mpegts.si.PSISection.prototype.parse.call(this,data);
-	id++;
+mpegts.si.PMT.prototype.parse = function(data) {
+    var id = mpegts.si.PSISection.prototype.parse.call(this, data);
+    id++;
 
-	if (!this.m_bValid)
-	{
-		//console.log("PSI Parsing Problem during PMT parsing!");
-		return;
-	}
-	this.m_bValid = false;
+    if (!this.m_bValid) {
+        //console.log("PSI Parsing Problem during PMT parsing!");
+        return;
+    }
+    this.m_bValid = false;
 
-	// Check table_id field value
-	if(this.m_table_id != this.TABLE_ID)
-	{
-		//console.log("PMT Table ID != 2");
-		return;
-	}
+    // Check table_id field value
+    if (this.m_table_id !== this.TABLE_ID) {
+        return;
+    }
 
-	var remainingBytes = this.getSectionLength() - this.SECTION_LENGTH;
+    var remainingBytes = this.getSectionLength() - this.SECTION_LENGTH;
 
-	// check if we have almost PCR_PID and program_info_length fields
-	if (remainingBytes < 4)
-	{
-		return;
-	}
+    // check if we have almost PCR_PID and program_info_length fields
+    if (remainingBytes < 4) {
+        return;
+    }
 
-	this.m_PCR_PID = mpegts.binary.getValueFrom2Bytes(data.subarray(id, id+2), 3);
-	id += 2;
-	this.m_program_info_length = mpegts.binary.getValueFrom2Bytes(data.subarray(id, id+2), 4);
-	id += 2;
-	
-	// Parse program descriptors
-	id += this.m_program_info_length;
-	
-	// Parse ES descriptions
-	remainingBytes = (this.m_section_length - this.SECTION_LENGTH - 4 - this.m_program_info_length);
-	var pESDescription = null;
-	while (remainingBytes > 0)
-	{
-		pESDescription = new mpegts.si.ESDescription(data.subarray(id, id+remainingBytes));
-		this.m_listOfComponents.push(pESDescription);
-		remainingBytes -= pESDescription.getLength();
-		id += pESDescription.getLength();
-	}
+    this.m_PCR_PID = mpegts.binary.getValueFrom2Bytes(data.subarray(id, id + 2), 3);
+    id += 2;
+    this.m_program_info_length = mpegts.binary.getValueFrom2Bytes(data.subarray(id, id + 2), 4);
+    id += 2;
 
-	this.m_bValid = true;
+    // Parse program descriptors
+    id += this.m_program_info_length;
+
+    // Parse ES descriptions
+    remainingBytes = (this.m_section_length - this.SECTION_LENGTH - 4 - this.m_program_info_length);
+    var pESDescription = null;
+    while (remainingBytes > 0) {
+        pESDescription = new mpegts.si.ESDescription(data.subarray(id, id + remainingBytes));
+        this.m_listOfComponents.push(pESDescription);
+        remainingBytes -= pESDescription.getLength();
+        id += pESDescription.getLength();
+    }
+
+    this.m_bValid = true;
 };
 
-mpegts.si.PMT.prototype.TABLE_ID	= 0x02;
+mpegts.si.PMT.prototype.TABLE_ID = 0x02;
 
 mpegts.si.PMT.prototype.gStreamTypes = [
-	/*  0 - 0x00 */ {name : "Reserved", value:0x00, desc:"ITU-T | ISO/IEC Reserved"},
-	/*  1 - 0x01 */ {name : "MPEG1-Video", value:0xE0, desc:"ISO/IEC 11172-2 Video"},
-	/*  2 - 0x02 */ {name : "MPEG2-Video", value:0xE0, desc:"ITU-T Rec. H.262 | ISO/IEC 13818-2 Video or ISO/IEC 11172-2 constrained parameter video stream"},
-	/*  3 - 0x03 */ {name : "MPEG1-Audio", value:0xC0, desc:"ISO/IEC 11172-3 Audio"},
-	/*  4 - 0x04 */ {name : "MPEG2-Audio", value:0xC0, desc:"ISO/IEC 13818-3 Audio"},
-	/*  5 - 0x05 */ {name : "PRIVATE_SECTIONS",	value:0xBD, desc:"ITU-T Rec. H.222.0 | ISO/IEC 13818-1 private_sections"},
-	/*  6 - 0x06 */ {name : "PRIVATE", value:0xBD, desc:"ITU-T Rec. H.222.0 | ISO/IEC 13818-1 PES packets containing private data"},
-	/*  7 - 0x07 */ {name : "MHEG",	value:0xF3, desc:"ISO/IEC 13522 MHEG"},
-	/*  8 - 0x08 */ {name : "MPEG1-DSM-CC",	value:0xF2, desc:"ITU-T Rec. H.222.0 | ISO/IEC 13818-1 Annex A DSM-CC"},
-	/*  9 - 0x09 */ {name : "H.222.1", value:0xF4, desc:"ITU-T Rec. H.222.1"},
-	/* 10 - 0x0A */ {name : "DSM-CC_A",	value:0xF4, desc:"ISO/IEC 13818-6 type A"},
-	/* 11 - 0x0B */ {name : "DSM-CC_B", value:0xF5, desc:"ISO/IEC 13818-6 type B"},
-	/* 12 - 0x0C */ {name : "DSM-CC_C",	value:0xF6, desc:"ISO/IEC 13818-6 type C"},
-	/* 13 - 0x0D */ {name : "DSM-CC_D",	value:0xF7, desc:"ISO/IEC 13818-6 type D"},
-	/* 14 - 0x0E */ {name : "Auxiliary", value:0x00, desc:"ITU-T Rec. H.222.0 | ISO/IEC 13818-1 auxiliary"},
-	/* 15 - 0x0F */ {name : "MPEG2-AAC-ADTS", value:0xC0, desc:"ISO/IEC 13818-7 Audio with ADTS transport syntax"},
-	/* 16 - 0x10 */ {name : "MPEG4-Video", value:0xE0, desc:"ISO/IEC 14496-2 Visual"},
-	/* 17 - 0x11 */ {name : "MPEG4-AAC-LATM", value:0xC0, desc:"ISO/IEC 14496-3 Audio with the LATM transport syntax as defined in ISO/IEC 14496-3/AMD-1"},
-	/* 18 - 0x12 */ {name : "MPEG4-SL", value:0xFA, desc:"ISO/IEC 14496-1 SL-packetized stream or FlexMux stream carried in PES packets"},
-	/* 19 - 0x13 */ {name : "MPEG4-SL",	value:0xFA, desc:"ISO/IEC 14496-1 SL-packetized stream or FlexMux stream carried in ISO/IEC14496_sections"},
-	/* 20 - 0x14 */ {name : "DSM-CC_SDP", value:0x00, desc:"ISO/IEC 13818-6 Synchronized Download Protocol"},
-	/* 21 - 0x15 */ {name : "META_PES",	value:0xFC, desc:"Metadata carried in PES packets"},
-	/* 22 - 0x16 */ {name : "META_SECTIONS", value:0xFC, desc:"Metadata carried in metadata_sections"},
-	/* 23 - 0x17 */ {name : "META_DSM-CC", value:0xFC, desc:"Metadata carried in ISO/IEC 13818-6 Data Carousel"},
-	/* 24 - 0x18 */ {name : "META_DSM-CC", value:0xFC, desc:"Metadata carried in ISO/IEC 13818-6 Object Carousel"},
-	/* 25 - 0x19 */ {name : "META_DSM-CC", value:0xFC, desc:"Metadata carried in ISO/IEC 13818-6 Synchronized Download Protocol"},
-	/* 26 - 0x1A */ {name : "MPEG2-IPMP", value:0x00, desc:"IPMP stream (defined in ISO/IEC 13818-11, MPEG-2 IPMP)"},
-	/* 27 - 0x1B */ {name : "H.264", value:0xE0, desc:"AVC video stream as defined in ITU-T Rec. H.264 | ISO/IEC 14496-10 Video"},
-	/* 28 - 0x1C */ {name : "MPEG4AAC", value:0xC0, desc:"ISO/IEC 14496-3 Audio, without using any additional transport syntax, such as DST, ALS and SLS"},
-	/* 29 - 0x1D */ {name : "MPEG4Text", value:0x00, desc:"ISO/IEC 14496-17 Text"},
-	/* 30 - 0x1E */ {name : "Aux. Video (23002-3)", value:0x1E, desc:"Auxiliary video stream as defined in ISO/IEC 23002-3"},
-	/* 31 - 0x1F */ {name : "H.264-SVC", value:0xE0, desc:"SVC video sub-bitstream of a video stream as defined in the Annex G of ITU-T Rec. H.264 | ISO/IEC 14496-10 Video"},
-	/* 32 - 0x20 */ {name : "H.264-MVC", value:0xE0, desc:"MVC video sub-bitstream of a video stream as defined in the Annex H of ITU-T Rec. H.264 | ISO/IEC 14496-10 Video"},
-	/* 33 - 0x21 */ {name : "Reserved1", value:0x00, desc:"TBC Reserved"},
-	/* 34 - 0x22 */ {name : "Reserved2", value:0x00, desc:"TBC Reserved"},
-	/* 35 - 0x23 */ {name : "Reserved3", value:0x00, desc:"TBC Reserved"},
-	/* 36 - 0x24 */ {name : "HEVC",	value:0xE0, desc:"ITU.-T Rec H.26x | ISO/IEC 23008-2 video stream"}
+    /*  0 - 0x00 */
+    {
+        name: "Reserved",
+        value: 0x00,
+        desc: "ITU-T | ISO/IEC Reserved"
+    },
+    /*  1 - 0x01 */
+    {
+        name: "MPEG1-Video",
+        value: 0xE0,
+        desc: "ISO/IEC 11172-2 Video"
+    },
+    /*  2 - 0x02 */
+    {
+        name: "MPEG2-Video",
+        value: 0xE0,
+        desc: "ITU-T Rec. H.262 | ISO/IEC 13818-2 Video or ISO/IEC 11172-2 constrained parameter video stream"
+    },
+    /*  3 - 0x03 */
+    {
+        name: "MPEG1-Audio",
+        value: 0xC0,
+        desc: "ISO/IEC 11172-3 Audio"
+    },
+    /*  4 - 0x04 */
+    {
+        name: "MPEG2-Audio",
+        value: 0xC0,
+        desc: "ISO/IEC 13818-3 Audio"
+    },
+    /*  5 - 0x05 */
+    {
+        name: "PRIVATE_SECTIONS",
+        value: 0xBD,
+        desc: "ITU-T Rec. H.222.0 | ISO/IEC 13818-1 private_sections"
+    },
+    /*  6 - 0x06 */
+    {
+        name: "PRIVATE",
+        value: 0xBD,
+        desc: "ITU-T Rec. H.222.0 | ISO/IEC 13818-1 PES packets containing private data"
+    },
+    /*  7 - 0x07 */
+    {
+        name: "MHEG",
+        value: 0xF3,
+        desc: "ISO/IEC 13522 MHEG"
+    },
+    /*  8 - 0x08 */
+    {
+        name: "MPEG1-DSM-CC",
+        value: 0xF2,
+        desc: "ITU-T Rec. H.222.0 | ISO/IEC 13818-1 Annex A DSM-CC"
+    },
+    /*  9 - 0x09 */
+    {
+        name: "H.222.1",
+        value: 0xF4,
+        desc: "ITU-T Rec. H.222.1"
+    },
+    /* 10 - 0x0A */
+    {
+        name: "DSM-CC_A",
+        value: 0xF4,
+        desc: "ISO/IEC 13818-6 type A"
+    },
+    /* 11 - 0x0B */
+    {
+        name: "DSM-CC_B",
+        value: 0xF5,
+        desc: "ISO/IEC 13818-6 type B"
+    },
+    /* 12 - 0x0C */
+    {
+        name: "DSM-CC_C",
+        value: 0xF6,
+        desc: "ISO/IEC 13818-6 type C"
+    },
+    /* 13 - 0x0D */
+    {
+        name: "DSM-CC_D",
+        value: 0xF7,
+        desc: "ISO/IEC 13818-6 type D"
+    },
+    /* 14 - 0x0E */
+    {
+        name: "Auxiliary",
+        value: 0x00,
+        desc: "ITU-T Rec. H.222.0 | ISO/IEC 13818-1 auxiliary"
+    },
+    /* 15 - 0x0F */
+    {
+        name: "MPEG2-AAC-ADTS",
+        value: 0xC0,
+        desc: "ISO/IEC 13818-7 Audio with ADTS transport syntax"
+    },
+    /* 16 - 0x10 */
+    {
+        name: "MPEG4-Video",
+        value: 0xE0,
+        desc: "ISO/IEC 14496-2 Visual"
+    },
+    /* 17 - 0x11 */
+    {
+        name: "MPEG4-AAC-LATM",
+        value: 0xC0,
+        desc: "ISO/IEC 14496-3 Audio with the LATM transport syntax as defined in ISO/IEC 14496-3/AMD-1"
+    },
+    /* 18 - 0x12 */
+    {
+        name: "MPEG4-SL",
+        value: 0xFA,
+        desc: "ISO/IEC 14496-1 SL-packetized stream or FlexMux stream carried in PES packets"
+    },
+    /* 19 - 0x13 */
+    {
+        name: "MPEG4-SL",
+        value: 0xFA,
+        desc: "ISO/IEC 14496-1 SL-packetized stream or FlexMux stream carried in ISO/IEC14496_sections"
+    },
+    /* 20 - 0x14 */
+    {
+        name: "DSM-CC_SDP",
+        value: 0x00,
+        desc: "ISO/IEC 13818-6 Synchronized Download Protocol"
+    },
+    /* 21 - 0x15 */
+    {
+        name: "META_PES",
+        value: 0xFC,
+        desc: "Metadata carried in PES packets"
+    },
+    /* 22 - 0x16 */
+    {
+        name: "META_SECTIONS",
+        value: 0xFC,
+        desc: "Metadata carried in metadata_sections"
+    },
+    /* 23 - 0x17 */
+    {
+        name: "META_DSM-CC",
+        value: 0xFC,
+        desc: "Metadata carried in ISO/IEC 13818-6 Data Carousel"
+    },
+    /* 24 - 0x18 */
+    {
+        name: "META_DSM-CC",
+        value: 0xFC,
+        desc: "Metadata carried in ISO/IEC 13818-6 Object Carousel"
+    },
+    /* 25 - 0x19 */
+    {
+        name: "META_DSM-CC",
+        value: 0xFC,
+        desc: "Metadata carried in ISO/IEC 13818-6 Synchronized Download Protocol"
+    },
+    /* 26 - 0x1A */
+    {
+        name: "MPEG2-IPMP",
+        value: 0x00,
+        desc: "IPMP stream (defined in ISO/IEC 13818-11, MPEG-2 IPMP)"
+    },
+    /* 27 - 0x1B */
+    {
+        name: "H.264",
+        value: 0xE0,
+        desc: "AVC video stream as defined in ITU-T Rec. H.264 | ISO/IEC 14496-10 Video"
+    },
+    /* 28 - 0x1C */
+    {
+        name: "MPEG4AAC",
+        value: 0xC0,
+        desc: "ISO/IEC 14496-3 Audio, without using any additional transport syntax, such as DST, ALS and SLS"
+    },
+    /* 29 - 0x1D */
+    {
+        name: "MPEG4Text",
+        value: 0x00,
+        desc: "ISO/IEC 14496-17 Text"
+    },
+    /* 30 - 0x1E */
+    {
+        name: "Aux. Video (23002-3)",
+        value: 0x1E,
+        desc: "Auxiliary video stream as defined in ISO/IEC 23002-3"
+    },
+    /* 31 - 0x1F */
+    {
+        name: "H.264-SVC",
+        value: 0xE0,
+        desc: "SVC video sub-bitstream of a video stream as defined in the Annex G of ITU-T Rec. H.264 | ISO/IEC 14496-10 Video"
+    },
+    /* 32 - 0x20 */
+    {
+        name: "H.264-MVC",
+        value: 0xE0,
+        desc: "MVC video sub-bitstream of a video stream as defined in the Annex H of ITU-T Rec. H.264 | ISO/IEC 14496-10 Video"
+    },
+    /* 33 - 0x21 */
+    {
+        name: "Reserved1",
+        value: 0x00,
+        desc: "TBC Reserved"
+    },
+    /* 34 - 0x22 */
+    {
+        name: "Reserved2",
+        value: 0x00,
+        desc: "TBC Reserved"
+    },
+    /* 35 - 0x23 */
+    {
+        name: "Reserved3",
+        value: 0x00,
+        desc: "TBC Reserved"
+    },
+    /* 36 - 0x24 */
+    {
+        name: "HEVC",
+        value: 0xE0,
+        desc: "ITU.-T Rec H.26x | ISO/IEC 23008-2 video stream"
+    }
 ];
 
-mpegts.si.PMT.prototype.MPEG2_VIDEO_STREAM_TYPE =	0x02;
-mpegts.si.PMT.prototype.AVC_VIDEO_STREAM_TYPE =		0x1B;
-mpegts.si.PMT.prototype.MPEG1_AUDIO_STREAM_TYPE =	0x03;
-mpegts.si.PMT.prototype.MPEG2_AUDIO_STREAM_TYPE =	0x04;
-mpegts.si.PMT.prototype.AAC_AUDIO_STREAM_TYPE =		0x11;
-mpegts.si.PMT.prototype.AC3_AUDIO_STREAM_TYPE =		0x06;
-mpegts.si.PMT.prototype.SUB_STREAM_TYPE =			0x06;
+mpegts.si.PMT.prototype.MPEG2_VIDEO_STREAM_TYPE = 0x02;
+mpegts.si.PMT.prototype.AVC_VIDEO_STREAM_TYPE = 0x1B;
+mpegts.si.PMT.prototype.MPEG1_AUDIO_STREAM_TYPE = 0x03;
+mpegts.si.PMT.prototype.MPEG2_AUDIO_STREAM_TYPE = 0x04;
+mpegts.si.PMT.prototype.AAC_AUDIO_STREAM_TYPE = 0x11;
+mpegts.si.PMT.prototype.AC3_AUDIO_STREAM_TYPE = 0x06;
+mpegts.si.PMT.prototype.SUB_STREAM_TYPE = 0x06;
 
-mpegts.si.PMT.prototype.STREAM_TYPE_MP1V =			0x01;
-mpegts.si.PMT.prototype.STREAM_TYPE_MP2V =			0x02;
-mpegts.si.PMT.prototype.STREAM_TYPE_MP1A =			0x03;
-mpegts.si.PMT.prototype.STREAM_TYPE_MP2A =			0x04;
-mpegts.si.PMT.prototype.STREAM_TYPE_PRIVATE	=		0x06;
-mpegts.si.PMT.prototype.STREAM_TYPE_TELETEXT =		0x06;
-mpegts.si.PMT.prototype.STREAM_TYPE_DVBSUBTITLE =	0x06;
-mpegts.si.PMT.prototype.STREAM_TYPE_AC3 =			0x06;
-mpegts.si.PMT.prototype.STREAM_TYPE_MP2AAC_ADTS =	0x0F;
-mpegts.si.PMT.prototype.STREAM_TYPE_MP4AAC_LATM	=	0x11;
-mpegts.si.PMT.prototype.STREAM_TYPE_H264 =			0x1B;
-mpegts.si.PMT.prototype.STREAM_TYPE_MP4AAC	=		0x1C;
-mpegts.si.PMT.prototype.STREAM_TYPE_AUX_23002_3 =	0x1E;
-mpegts.si.PMT.prototype.STREAM_TYPE_SVC =			0x1F;
-mpegts.si.PMT.prototype.STREAM_TYPE_MVC	=			0x20;
-mpegts.si.PMT.prototype.STREAM_TYPE_HEVC =			0x24;
+mpegts.si.PMT.prototype.STREAM_TYPE_MP1V = 0x01;
+mpegts.si.PMT.prototype.STREAM_TYPE_MP2V = 0x02;
+mpegts.si.PMT.prototype.STREAM_TYPE_MP1A = 0x03;
+mpegts.si.PMT.prototype.STREAM_TYPE_MP2A = 0x04;
+mpegts.si.PMT.prototype.STREAM_TYPE_PRIVATE = 0x06;
+mpegts.si.PMT.prototype.STREAM_TYPE_TELETEXT = 0x06;
+mpegts.si.PMT.prototype.STREAM_TYPE_DVBSUBTITLE = 0x06;
+mpegts.si.PMT.prototype.STREAM_TYPE_AC3 = 0x06;
+mpegts.si.PMT.prototype.STREAM_TYPE_MP2AAC_ADTS = 0x0F;
+mpegts.si.PMT.prototype.STREAM_TYPE_MP4AAC_LATM = 0x11;
+mpegts.si.PMT.prototype.STREAM_TYPE_H264 = 0x1B;
+mpegts.si.PMT.prototype.STREAM_TYPE_MP4AAC = 0x1C;
+mpegts.si.PMT.prototype.STREAM_TYPE_AUX_23002_3 = 0x1E;
+mpegts.si.PMT.prototype.STREAM_TYPE_SVC = 0x1F;
+mpegts.si.PMT.prototype.STREAM_TYPE_MVC = 0x20;
+mpegts.si.PMT.prototype.STREAM_TYPE_HEVC = 0x24;
 
 
-mpegts.si.ESDescription = function(data){
-	/** ES description fields */
-	this.m_stream_type = null;
-	this.m_elementary_PID = null;
-	this.m_ES_info_length = null;
-	this.parse(data);
+mpegts.si.ESDescription = function(data) {
+    /** ES description fields */
+    this.m_stream_type = null;
+    this.m_elementary_PID = null;
+    this.m_ES_info_length = null;
+    this.parse(data);
 };
 
 /**
-* Gets the stream type associated to this ES
-* @return the stream type associated to this ES
-*/
+ * Gets the stream type associated to this ES
+ * @return the stream type associated to this ES
+ */
 mpegts.si.ESDescription.prototype.getStreamType = function() {
-	return this.m_stream_type;
+    return this.m_stream_type;
 };
 
 /**
-* Gets the pid on which this ES may be found
-* @return the pid on which this ES may be found
-*/
+ * Gets the pid on which this ES may be found
+ * @return the pid on which this ES may be found
+ */
 mpegts.si.ESDescription.prototype.getPID = function() {
-	return this.m_elementary_PID;
+    return this.m_elementary_PID;
 };
 
 /**
-* Returns the elementary stream description length
-* @return the elementary stream description length
-*/
+ * Returns the elementary stream description length
+ * @return the elementary stream description length
+ */
 mpegts.si.ESDescription.prototype.getLength = function() {
-	return 5 + this.m_ES_info_length;
+    return 5 + this.m_ES_info_length;
 };
 
 /**
-* Parse the ESDescription from given bytestream
-* @param the bytestream to parse
-* @return the bytestream length
-*/
-mpegts.si.ESDescription.prototype.parse = function(data)
-{
-	this.m_stream_type = data[0];
-	this.m_elementary_PID = mpegts.binary.getValueFrom2Bytes(data.subarray(1, 3), 3);
-	this.m_ES_info_length = mpegts.binary.getValueFrom2Bytes(data.subarray(3, 5), 4);
+ * Parse the ESDescription from given bytestream
+ * @param the bytestream to parse
+ * @return the bytestream length
+ */
+mpegts.si.ESDescription.prototype.parse = function(data) {
+    this.m_stream_type = data[0];
+    this.m_elementary_PID = mpegts.binary.getValueFrom2Bytes(data.subarray(1, 3), 3);
+    this.m_ES_info_length = mpegts.binary.getValueFrom2Bytes(data.subarray(3, 5), 4);
 };
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2014, Orange
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
+ *
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
 mpegts.Pts = function(data) {
 
-	var low,
-		high;
+    var low,
+        high;
 
-	//initialize an unsigned 64 bits long number
+    //initialize an unsigned 64 bits long number
     //this.m_lPTS = goog.math.Long.fromNumber(0);
 
-	//=> PTS is defined on 33 bits
-	//=> In the first byte, bit number 2 to 4 is useful
-	var bits3230 = data[0] >> 1 & 0x7;
+    //=> PTS is defined on 33 bits
+    //=> In the first byte, bit number 2 to 4 is useful
+    var bits3230 = data[0] >> 1 & 0x7;
 
-	//thirty-third bit in the high member
-	high = bits3230 >> 2;
-	//32 and 31 bits in th low member, shift by 30 bits
-	low = ((bits3230 & 0x3) << 30) >>> 0; //=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
-	
-	//=> In the second byte, all the bits are useful
-	var bits2922 = data[1];
-	low = (low | (bits2922 << 22))>>> 0;//=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
-	
+    //thirty-third bit in the high member
+    high = bits3230 >> 2;
+    //32 and 31 bits in th low member, shift by 30 bits
+    low = ((bits3230 & 0x3) << 30) >>> 0; //=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
+
+    //=> In the second byte, all the bits are useful
+    var bits2922 = data[1];
+    low = (low | (bits2922 << 22)) >>> 0; //=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
+
     //=> In the third byte, bit number 2 to 8 is useful
-	var bits2115 = data[2] >> 1;
-	low = (low | (bits2115 << 15))>>> 0;//=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
+    var bits2115 = data[2] >> 1;
+    low = (low | (bits2115 << 15)) >>> 0; //=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
 
-	//=> In the fourth byte, all the bits are useful
+    //=> In the fourth byte, all the bits are useful
     var bits1407 = data[3];
-	low = (low | (bits1407 << 7))>>> 0;//=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
-    
+    low = (low | (bits1407 << 7)) >>> 0; //=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
+
     //=> In the fifth byte, bit number 2 to 8 is useful
-	var bits0701 = data[4] >> 1;
-	low = (low | bits0701)>>> 0;//=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
+    var bits0701 = data[4] >> 1;
+    low = (low | bits0701) >>> 0; //=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
 
     this.m_lPTS = goog.math.Long.fromBits(low, high).toNumber();
     this.m_fPTS = this.m_lPTS / mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY;
 };
 
 /**
-* Returns the PTS value in units of system clock frequency.
-* @return the PTS value in units of system clock frequency
-*/
+ * Returns the PTS value in units of system clock frequency.
+ * @return the PTS value in units of system clock frequency
+ */
 mpegts.Pts.prototype.getValue = function() {
-	return this.m_lPTS;
+    return this.m_lPTS;
 };
 
 /**
-* Returns the PTS value in seconds.
-* @return the PTS value in seconds
-*/
+ * Returns the PTS value in seconds.
+ * @return the PTS value in seconds
+ */
 mpegts.Pts.prototype.getValueInSeconds = function() {
-	return this.m_fPTS;
+    return this.m_fPTS;
 };
 
 mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY = 90000;
-
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2014, Orange
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
+ *
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-mpegts.ts.TsPacket = function(){
+mpegts.ts.TsPacket = function() {
     this.m_cSync = null;
     this.m_bTransportError = null;
     this.m_bPUSI = null;
@@ -8495,8 +8635,8 @@ mpegts.ts.TsPacket.prototype.parse = function(data) {
     this.m_bTransportError = mpegts.binary.getBitFromByte(data[byteId], 0);
     this.m_bPUSI = mpegts.binary.getBitFromByte(data[byteId], 1);
     this.m_bTransportPriority = mpegts.binary.getBitFromByte(data[byteId], 2);
-    this.m_nPID = mpegts.binary.getValueFrom2Bytes(data.subarray(byteId, byteId+2), 3, 13);
-    
+    this.m_nPID = mpegts.binary.getValueFrom2Bytes(data.subarray(byteId, byteId + 2), 3, 13);
+
     byteId += 2;
 
     this.m_cTransportScramblingCtrl = mpegts.binary.getValueFromByte(data[byteId], 0, 2);
@@ -8507,12 +8647,10 @@ mpegts.ts.TsPacket.prototype.parse = function(data) {
 
     // Adaptation field
     // NAN => to Validate
-    if(this.m_cAdaptationFieldCtrl & 0x02)
-    {
+    if (this.m_cAdaptationFieldCtrl & 0x02) {
         // Check adaptation field length before parsing
         var cAFLength = data[byteId];
-        if ((cAFLength + byteId) >= this.TS_PACKET_SIZE)
-        {
+        if ((cAFLength + byteId) >= this.TS_PACKET_SIZE) {
             //console.log("TS Packet Size Problem!");
             return;
         }
@@ -8522,17 +8660,15 @@ mpegts.ts.TsPacket.prototype.parse = function(data) {
     }
 
     // Check packet validity
-    if (this.m_cAdaptationFieldCtrl === 0x00)
-    {
+    if (this.m_cAdaptationFieldCtrl === 0x00) {
         //console.log("TS Packet is invalid!");
         return;
     }
 
     // Payload
-    if(this.m_cAdaptationFieldCtrl & 0x01)
-    {
+    if (this.m_cAdaptationFieldCtrl & 0x01) {
         this.m_cPayloadLength = this.TS_PACKET_SIZE - byteId;
-        this.m_payloadArray = data.subarray(byteId,byteId + this.m_cPayloadLength);
+        this.m_payloadArray = data.subarray(byteId, byteId + this.m_cPayloadLength);
     }
 };
 
@@ -8569,7 +8705,6 @@ mpegts.ts.TsPacket.prototype.STREAM_ID_EMM_STREAM = 0xF1;
 mpegts.ts.TsPacket.prototype.STREAM_ID_DSMCC_STREAM = 0xF2;
 mpegts.ts.TsPacket.prototype.STREAM_ID_H2221_TYPE_E_STREAM = 0xF8;
 mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 0xFF;
-
 /*   Copyright (C) 2011,2012,2013,2014 John Kula */
 
 /*
@@ -8981,9 +9116,9 @@ MediaPlayer = function () {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = "1.2.0",
-        VERSION = '1.3.0',
-        GIT_TAG = '260ea02',
-        BUILD_DATE = '2016-5-18_10:44:39',
+        VERSION = '1.3.1',
+        GIT_TAG = 'd3ea25b',
+        BUILD_DATE = '2016-6-30_17:41:41',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -9055,7 +9190,7 @@ MediaPlayer = function () {
         streamController.setDefaultSubtitleLang(defaultSubtitleLang);
         streamController.enableSubtitles(subtitlesEnabled);
         // TODO restart here !!!
-        streamController.load(source.url, source.protData);
+        streamController.load(source);
         system.mapValue("scheduleWhilePaused", scheduleWhilePaused);
         system.mapOutlet("scheduleWhilePaused", "stream");
 
@@ -9088,6 +9223,7 @@ MediaPlayer = function () {
 
 
     var _metricAdded = function (e) {
+        var event;
         switch (e.data.metric) {
             case "ManifestReady":
                 _isPlayerInitialized();
@@ -9734,16 +9870,17 @@ MediaPlayer = function () {
          * @method load
          * @access public
          * @memberof MediaPlayer#
-         * @param {object} stream - video stream properties object such url, prodData ...
+         * @param {object} stream - video stream properties object such url, startTime, prodData ...
             <pre>
             {
-                url : "http://..../manifest.mpd",
+                url : "[manifest url]",
+                startTime : [start time in seconds (optionnal)]
                 protData : {
                     // one entry for each key system ('com.microsoft.playready' or 'com.widevine.alpha')
                     "[key_system_name]": {
                         laURL: "[licenser url (optionnal)]",
                         pssh: "[base64 pssh box (optionnal)]"
-                        cdmData: "[custom data (optionnal)]"
+                        cdmData: "[CDM data (optionnal)]"
                     },
                     ...
                }
@@ -9766,7 +9903,7 @@ MediaPlayer = function () {
 
             // patch to be retro compatible with old syntax
             if (arguments && arguments.length > 0 && typeof arguments[0] !== 'object') {
-                console.warn('You are using "depreacted" call of the method load, please refer to the documentation to change prameters call');
+                console.warn('You are using "deprecated" call of the method load, please refer to the documentation to change prameters call');
                 stream = _parseLoadArguments.apply(null, arguments);
             }
 
@@ -10196,13 +10333,16 @@ MediaPlayer = function () {
 
             var selectedTrack = _getSelectedTrackFromType(type);
 
-            if (selectedTrack && ((track.id === selectedTrack.id) || (track.lang === selectedTrack.lang))) {
+            if (selectedTrack &&
+                ((track.id && track.id === selectedTrack.id) ||
+                 (track.lang && track.lang === selectedTrack.lang))) {
                 this.debug.log("[MediaPlayer] " + type + " track [" + track.id + " - " + track.lang + "] is already selected");
                 return;
             }
 
             for (var i = 0; i < _tracks.length; i += 1) {
-                if ((track.id === _tracks[i].id) || (track.lang === _tracks[i].lang)) {
+                if ((track.id && track.id === _tracks[i].id) ||
+                    (track.lang && track.lang === _tracks[i].lang)) {
                     _selectTrackFromType(type, _tracks[i]);
                     return;
                 }
@@ -10682,7 +10822,7 @@ MediaPlayer.hasMediaKeysExtension = function () {
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-MediaPlayer.dependencies.AbrController = function () {
+MediaPlayer.dependencies.AbrController = function() {
     "use strict";
 
     var autoSwitchBitrate = true,
@@ -10692,18 +10832,18 @@ MediaPlayer.dependencies.AbrController = function () {
         confidenceDict = {},
         playerState = "",
 
-        getInternalAutoSwitch = function (type) {
+        getInternalAutoSwitch = function(type) {
             if (!autoSwitchDic.hasOwnProperty(type)) {
                 autoSwitchDic[type] = true;
             }
             return autoSwitchDic[type];
         },
 
-        setInternalAutoSwitch = function (type, value) {
+        setInternalAutoSwitch = function(type, value) {
             autoSwitchDic[type] = value;
         },
 
-        getInternalQuality = function (type) {
+        getInternalQuality = function(type) {
             var quality;
 
             if (!qualityDict.hasOwnProperty(type)) {
@@ -10715,11 +10855,11 @@ MediaPlayer.dependencies.AbrController = function () {
             return quality;
         },
 
-        setInternalQuality = function (type, value) {
+        setInternalQuality = function(type, value) {
             qualityDict[type] = value;
         },
 
-        getInternalConfidence = function (type) {
+        getInternalConfidence = function(type) {
             var confidence;
 
             if (!confidenceDict.hasOwnProperty(type)) {
@@ -10731,11 +10871,11 @@ MediaPlayer.dependencies.AbrController = function () {
             return confidence;
         },
 
-        setInternalConfidence = function (type, value) {
+        setInternalConfidence = function(type, value) {
             confidenceDict[type] = value;
         },
 
-        getRulesRequestQuality = function (type, data) {
+        getRulesRequestQuality = function(type, data) {
             var self = this,
                 autoSwitch = getInternalAutoSwitch(type),
                 quality = getInternalQuality(type),
@@ -10743,137 +10883,131 @@ MediaPlayer.dependencies.AbrController = function () {
                 newQuality = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE,
                 newConfidence = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE,
                 qualityMax = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE,
-                deferred,
                 i,
                 len,
-                funcs = [],
+                results = [],
+                metrics,
                 req,
-                values;
+                values = {},
+                rules,
+                max;
 
             if (!autoSwitchBitrate || !autoSwitch) {
-                self.debug.log("[AbrController]["+type+"] ABR disabled");
-                return Q.when({quality: quality, confidence: confidence});
+                self.debug.log("[AbrController][" + type + "] ABR disabled");
+                return {
+                    quality: quality,
+                    confidence: confidence
+                };
             }
 
-            deferred = Q.defer();
+            self.debug.log("[AbrController][" + type + "] Check rules....");
 
-            self.debug.log("[AbrController]["+type+"] Check rules....");
+            metrics = self.getMetricsFor(data);
+            rules = self.abrRulesCollection.getRules(MediaPlayer.rules.BaseRulesCollection.prototype.QUALITY_SWITCH_RULES);
+            for (i = 0, len = rules.length; i < len; i += 1) {
+                results.push(rules[i].checkIndex(quality, metrics, data, playerState));
+            }
 
-            self.getMetricsFor(data).then(
-                function (metrics) {
-                    self.abrRulesCollection.getRules(MediaPlayer.rules.BaseRulesCollection.prototype.QUALITY_SWITCH_RULES).then(
-                        function (rules) {
-                            for (i = 0, len = rules.length; i < len; i += 1) {
-                                funcs.push(rules[i].checkIndex(quality, metrics, data, playerState));
-                            }
-                            Q.all(funcs).then(
-                                function (results) {
-                                    values = {};
-                                    values[MediaPlayer.rules.SwitchRequest.prototype.STRONG] = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE;
-                                    values[MediaPlayer.rules.SwitchRequest.prototype.WEAK] = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE;
-                                    values[MediaPlayer.rules.SwitchRequest.prototype.DEFAULT] = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE;
+            values[MediaPlayer.rules.SwitchRequest.prototype.STRONG] = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE;
+            values[MediaPlayer.rules.SwitchRequest.prototype.WEAK] = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE;
+            values[MediaPlayer.rules.SwitchRequest.prototype.DEFAULT] = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE;
 
-                                    for (i = 0, len = results.length; i < len; i += 1) {
-                                        req = results[i];
-                                        if (req.quality !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
-                                            self.debug.log("[AbrController]["+type+"] Request for quality " + req.quality + ", priority = " + req.priority + " (" + rules[i].name + ")");
-                                            values[req.priority] = Math.min(values[req.priority], req.quality);
-                                        }
-
-                                        if (req.max === true) {
-                                            qualityMax = Math.min(qualityMax, req.quality);
-                                        }
-                                    }
-
-                                    if (values[MediaPlayer.rules.SwitchRequest.prototype.WEAK] !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
-                                        newConfidence = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
-                                        newQuality = values[MediaPlayer.rules.SwitchRequest.prototype.WEAK];
-                                    }
-
-                                    if (values[MediaPlayer.rules.SwitchRequest.prototype.DEFAULT] !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
-                                        newConfidence = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
-                                        newQuality = values[MediaPlayer.rules.SwitchRequest.prototype.DEFAULT];
-                                    }
-
-                                    if (values[MediaPlayer.rules.SwitchRequest.prototype.STRONG] !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
-                                        newConfidence = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
-                                        newQuality = values[MediaPlayer.rules.SwitchRequest.prototype.STRONG];
-                                    }
-
-                                    if (newQuality !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE && newQuality !== undefined) {
-                                        quality = newQuality;
-                                    }
-
-                                    if (newConfidence !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE && newConfidence !== undefined) {
-                                        confidence = newConfidence;
-                                    }
-
-                                    if (qualityMax !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
-                                        qualityMaxDict[type] = qualityMax;
-                                    }
-
-                                    self.manifestExt.getRepresentationCount(data).then(
-                                        function (max) {
-                                            // Ensure valid quality index
-                                            if (quality < 0) {
-                                                quality = 0;
-                                            }
-                                            if (quality >= max) {
-                                                quality = max - 1;
-                                            }
-
-                                            if (confidence !== MediaPlayer.rules.SwitchRequest.prototype.STRONG &&
-                                                confidence !== MediaPlayer.rules.SwitchRequest.prototype.WEAK) {
-                                                confidence = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
-                                            }
-
-                                            self.debug.info("[AbrController]["+type+"] Request quality: " + quality);
-
-                                            deferred.resolve({quality: quality, confidence: confidence});
-                                        }
-                                    );
-                                }
-                            );
-                        }
-                    );
+            for (i = 0, len = results.length; i < len; i += 1) {
+                req = results[i];
+                if (req.quality !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
+                    self.debug.log("[AbrController][" + type + "] Request for quality " + req.quality + ", priority = " + req.priority + " (" + rules[i].name + ")");
+                    values[req.priority] = Math.min(values[req.priority], req.quality);
                 }
-            );
 
-            return deferred.promise;
+                if (req.max === true) {
+                    qualityMax = Math.min(qualityMax, req.quality);
+                }
+            }
+
+            if (values[MediaPlayer.rules.SwitchRequest.prototype.WEAK] !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
+                newConfidence = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
+                newQuality = values[MediaPlayer.rules.SwitchRequest.prototype.WEAK];
+            }
+
+            if (values[MediaPlayer.rules.SwitchRequest.prototype.DEFAULT] !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
+                newConfidence = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
+                newQuality = values[MediaPlayer.rules.SwitchRequest.prototype.DEFAULT];
+            }
+
+            if (values[MediaPlayer.rules.SwitchRequest.prototype.STRONG] !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
+                newConfidence = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
+                newQuality = values[MediaPlayer.rules.SwitchRequest.prototype.STRONG];
+            }
+
+            if (newQuality !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE && newQuality !== undefined) {
+                quality = newQuality;
+            }
+
+            if (newConfidence !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE && newConfidence !== undefined) {
+                confidence = newConfidence;
+            }
+
+            if (qualityMax !== MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE) {
+                qualityMaxDict[type] = qualityMax;
+            }
+
+            max = self.manifestExt.getRepresentationCount(data);
+            // Ensure valid quality index
+            if (quality < 0) {
+                quality = 0;
+            }
+            if (quality >= max) {
+                quality = max - 1;
+            }
+
+            if (confidence !== MediaPlayer.rules.SwitchRequest.prototype.STRONG &&
+                confidence !== MediaPlayer.rules.SwitchRequest.prototype.WEAK) {
+                confidence = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
+            }
+
+            self.debug.info("[AbrController][" + type + "] Request quality: " + quality);
+
+            return {
+                quality: quality,
+                confidence: confidence
+            };
         },
 
         getQualityBoundaries = function(type, data) {
             var bitrates = this.metricsExt.getBitratesForType(type, data),
                 qualityMin = this.config.getParamFor(type, "ABR.minQuality", "number", -1),
-                qualityMax = this.config.getParamFor(type, "ABR.maxQuality", "number",-1),
+                qualityMax = this.config.getParamFor(type, "ABR.maxQuality", "number", -1),
                 bandwidthMin = this.config.getParamFor(type, "ABR.minBandwidth", "number", -1),
                 bandwidthMax = this.config.getParamFor(type, "ABR.maxBandwidth", "number", -1),
                 i,
-                count= bitrates.length;
+                count = bitrates.length;
 
             if (bandwidthMin !== -1) {
                 for (i = 0; i < bitrates.length; i++) {
                     if (bitrates[i] >= bandwidthMin) {
-                       qualityMin = (qualityMin === -1) ? i : Math.max(i, qualityMin);
-                       break;
+                        qualityMin = (qualityMin === -1) ? i : Math.max(i, qualityMin);
+                        break;
                     }
                 }
             }
 
             if (bandwidthMax !== -1) {
-               for (i = bitrates.length - 1; i >= 0; i--) {
+                for (i = bitrates.length - 1; i >= 0; i--) {
                     if (bitrates[i] <= bandwidthMax) {
                         qualityMax = (qualityMax === -1) ? i : Math.min(i, qualityMax);
                         break;
                     }
-               }
+                }
             }
 
             qualityMin = (qualityMin >= count) ? (count - 1) : qualityMin;
-            qualityMin = (qualityMin < 0) ? 0: qualityMin;
-            qualityMax = (qualityMax >= count || qualityMax <0) ? (count - 1) : qualityMax;
+            qualityMin = (qualityMin < 0) ? 0 : qualityMin;
+            qualityMax = (qualityMax >= count || qualityMax < 0) ? (count - 1) : qualityMax;
 
-            return {min: qualityMin, max: qualityMax};
+            return {
+                min: qualityMin,
+                max: qualityMax
+            };
 
         };
 
@@ -10882,120 +11016,115 @@ MediaPlayer.dependencies.AbrController = function () {
         abrRulesCollection: undefined,
         manifestExt: undefined,
         metricsModel: undefined,
-        metricsExt:undefined,
+        metricsExt: undefined,
         config: undefined,
 
-        getAutoSwitchBitrate: function () {
+        getAutoSwitchBitrate: function() {
             return autoSwitchBitrate;
         },
 
-        setAutoSwitchBitrate: function (value) {
+        setAutoSwitchBitrate: function(value) {
             this.debug.log("[AbrController] Set auto switch: " + value);
             autoSwitchBitrate = value;
         },
 
-        getMetricsFor: function (data) {
-            var deferred = Q.defer(),
-                self = this;
+        getMetricsFor: function(data) {
+            var isVideo,
+                isAudio;
 
-            self.manifestExt.getIsVideo(data).then(
-                function (isVideo) {
-                    if (isVideo) {
-                        deferred.resolve(self.metricsModel.getMetricsFor("video"));
-                    } else {
-                        self.manifestExt.getIsAudio(data).then(
-                            function (isAudio) {
-                                if (isAudio) {
-                                    deferred.resolve(self.metricsModel.getMetricsFor("audio"));
-                                } else {
-                                    deferred.resolve(self.metricsModel.getMetricsFor("stream"));
-                                }
-                            }
-                        );
-                    }
+            isVideo = this.manifestExt.getIsVideo(data);
+            if (isVideo) {
+                return this.metricsModel.getMetricsFor("video");
+            } else {
+                isAudio = this.manifestExt.getIsAudio(data);
+                if (isAudio) {
+                    return this.metricsModel.getMetricsFor("audio");
+                } else {
+                    return this.metricsModel.getMetricsFor("stream");
                 }
-            );
-
-            return deferred.promise;
+            }
         },
 
-        getPlaybackQuality: function (type, data) {
+        getPlaybackQuality: function(type, data) {
             var self = this,
-                deferred = Q.defer(),
                 previousQuality = this.getQualityFor(type),
                 qualityMin = -1,
                 qualityMax = -1,
                 quality,
                 confidence,
-                switchUpIncrementally = this.config.getParamFor(type, "ABR.switchUpIncrementally", "boolean", false);
+                switchUpIncrementally = this.config.getParamFor(type, "ABR.switchUpIncrementally", "boolean", false),
+                result;
 
-            getRulesRequestQuality.call(this, type, data).then(
-                function (result) {
-                    quality = result.quality;
-                    confidence = result.confidence;
+            result = getRulesRequestQuality.call(this, type, data);
+            quality = result.quality;
+            confidence = result.confidence;
 
-                    if (self.getAutoSwitchBitrate()) {
-                        // Check incremental switch
-                        if (switchUpIncrementally && (quality > previousQuality)) {
-                            self.debug.log("[AbrController]["+type+"] Incremental switch => quality: " + quality);
-                            quality = previousQuality + 1;
-                        }
-
-                        // Check representation boundaries
-                        var qualityBoundaries = getQualityBoundaries.call(self, type, data);
-                        qualityMin = qualityBoundaries.min;
-                        qualityMax = qualityBoundaries.max;
-
-                        if (quality < qualityMin) {
-                            quality = qualityMin;
-                            self.debug.log("[AbrController]["+type+"] New quality < min => " + quality);
-                        }
-
-                        if (quality > qualityMax) {
-                            quality = qualityMax;
-                            self.debug.log("[AbrController]["+type+"] New quality > max => " + quality);
-                        }
-
-                        // Check max quality allowed by the rules (see DroppedFramesRule for example)
-                        if (quality > qualityMaxDict[type]) {
-                            quality = qualityMaxDict[type];
-                            self.debug.log("[AbrController]["+type+"] Max allowed quality = " + quality);
-                        }
-                    }
-
-                    setInternalQuality.call(self, type, quality);
-                    setInternalConfidence.call(self, type, confidence);
-
-                    self.debug.info("[AbrController]["+type+"] Set quality: " + quality);
-                    deferred.resolve({quality: quality, confidence: confidence});
+            if (self.getAutoSwitchBitrate()) {
+                // Check incremental switch
+                if (switchUpIncrementally && (quality > previousQuality)) {
+                    self.debug.log("[AbrController][" + type + "] Incremental switch => quality: " + quality);
+                    quality = previousQuality + 1;
                 }
-            );
 
-            return deferred.promise;
+                // Check representation boundaries
+                var qualityBoundaries = getQualityBoundaries.call(self, type, data);
+                qualityMin = qualityBoundaries.min;
+                qualityMax = qualityBoundaries.max;
+
+                if (quality < qualityMin) {
+                    quality = qualityMin;
+                    self.debug.log("[AbrController][" + type + "] New quality < min => " + quality);
+                }
+
+                if (quality > qualityMax) {
+                    quality = qualityMax;
+                    self.debug.log("[AbrController][" + type + "] New quality > max => " + quality);
+                }
+
+                // Check max quality allowed by the rules (see DroppedFramesRule for example)
+                if (quality > qualityMaxDict[type]) {
+                    quality = qualityMaxDict[type];
+                    self.debug.log("[AbrController][" + type + "] Max allowed quality = " + quality);
+                }
+            }
+
+            setInternalQuality.call(self, type, quality);
+            setInternalConfidence.call(self, type, confidence);
+
+            self.debug.info("[AbrController][" + type + "] Set quality: " + quality);
+            return {
+                quality: quality,
+                confidence: confidence
+            };
         },
 
-        getAutoSwitchFor: function (type) {
+        getAutoSwitchFor: function(type) {
             return getInternalAutoSwitch(type);
         },
 
-        setAutoSwitchFor: function (type, value) {
+        setAutoSwitchFor: function(type, value) {
             var autoSwitch = getInternalAutoSwitch(type);
             if (value !== autoSwitch) {
-                this.debug.log("[AbrController]["+type+"] Set auto switch: " + value);
+                this.debug.log("[AbrController][" + type + "] Set auto switch: " + value);
                 setInternalAutoSwitch(type, value);
             }
         },
 
-        getQualityFor: function (type) {
+        getQualityFor: function(type) {
             return getInternalQuality(type);
         },
 
-        setQualityFor: function (type, value) {
+        setQualityFor: function(type, value) {
             var quality = getInternalQuality(type);
             if (value !== quality) {
-                this.debug.log("[AbrController]["+type+"] Set playback quality: " + value);
+                this.debug.log("[AbrController][" + type + "] Set playback quality: " + value);
                 setInternalQuality(type, value);
             }
+        },
+
+        isMinQuality: function(type, data, value) {
+            var qualityBoundaries = getQualityBoundaries.call(this, type, data);
+            return value <= qualityBoundaries.min;
         },
 
         setPlayerState: function(state) {
@@ -11009,7 +11138,6 @@ MediaPlayer.dependencies.AbrController.prototype = {
 };
 
 MediaPlayer.dependencies.AbrController.BANDWIDTH_SAFETY = 0.9;
-
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
@@ -11278,58 +11406,59 @@ MediaPlayer.dependencies.BufferController = function() {
         onInitializationLoaded = function(request, response) {
             var self = this,
                 initData = response.data,
-                quality = request.quality;
+                quality = request.quality,
+                data;
 
             self.debug.log("[BufferController][" + type + "] Initialization loaded ", quality);
 
-            self.fragmentController.process(initData).then(
-                function(data) {
-                    if (data !== null) {
-                        // cache the initialization data to use it next time the quality has changed
-                        initializationData[quality] = data;
-
-                        // if this is the initialization data for current quality we need to push it to the buffer
-                        self.debug.info("[BufferController][" + type + "] Buffer initialization segment ", (request.url !== null) ? request.url : request.quality);
-                        //    console.saveBinArray(data, type + "_init_" + request.quality + ".mp4");
-                        // Clear the buffer if required (language track switching)
-                        Q.when(languageChanged ? removeBuffer.call(self) : true).then(
-                            function() {
-                                languageChanged = false;
-                                appendToBuffer.call(self, data, request.quality).then(
-                                    function() {
-                                        self.debug.log("[BufferController][" + type + "] Initialization segment buffered");
-                                        // Load next media segment
-                                        if (isRunning()) {
-                                            loadNextFragment.call(self);
-                                        }
-                                    }
-                                );
-                            }
-                        );
-                    } else {
-                        self.debug.log("No " + type + " bytes to push.");
-                        // ORANGE : For HLS Stream, init segment are pushed with media (@see HlsFragmentController)
-                        loadNextFragment.call(self);
-                    }
-                }, function(e) {
+            data = self.fragmentController.process(initData);
+            if (data) {
+                if (data.error) {
                     signalSegmentBuffered.call(self);
-                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", e.message);
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", data.message);
+                } else {
+                    // cache the initialization data to use it next time the quality has changed
+                    initializationData[quality] = data;
+
+                    // if this is the initialization data for current quality we need to push it to the buffer
+                    self.debug.info("[BufferController][" + type + "] Buffer initialization segment ", (request.url !== null) ? request.url : request.quality);
+                    //    console.saveBinArray(data, type + "_init_" + request.quality + ".mp4");
+                    // Clear the buffer if required (language track switching)
+                    Q.when(languageChanged ? removeBuffer.call(self) : true).then(
+                        function() {
+                            languageChanged = false;
+                            appendToBuffer.call(self, data, request.quality).then(
+                                function() {
+                                    self.debug.log("[BufferController][" + type + "] Initialization segment buffered");
+                                    // Load next media segment
+                                    if (isRunning()) {
+                                        loadNextFragment.call(self);
+                                    }
+                                }
+                            );
+                        }
+                    );
                 }
-            );
+            } else {
+                self.debug.log("No " + type + " bytes to push.");
+                // ORANGE : For HLS Stream, init segment are pushed with media (@see HlsFragmentController)
+                loadNextFragment.call(self);
+            }
         },
 
         onMediaLoaded = function(request, response) {
             var self = this,
                 eventStreamAdaption = this.manifestExt.getEventStreamForAdaptationSet(self.getData()),
                 eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(self.getData(), _currentRepresentation),
-                segmentStartTime = null;
+                segmentStartTime = null,
+                events,
+                data;
 
             segmentDuration = request.duration;
 
-            // Push segment into buffer even if BufferController is stopped, since FragmentLoader would indicate this segment already loaded
-            // if (!isRunning()) {
-            //     return;
-            // }
+            if (!isRunning()) {
+                return;
+            }
 
             // Reset segment download error status
             segmentDownloadErrorCount = 0;
@@ -11349,20 +11478,24 @@ MediaPlayer.dependencies.BufferController = function() {
             }
 
             // ORANGE: add request and representations in function parameters, used by MssFragmentController
-            self.fragmentController.process(response.data, request, availableRepresentations).then(
-                function(data) {
-                    if (data !== null) {
-                        if (eventStreamAdaption.length > 0 || eventStreamRepresentation.length > 0) {
-                            handleInbandEvents.call(self, data, request, eventStreamAdaption, eventStreamRepresentation).then(
-                                function(events) {
-                                    self.eventController.addInbandEvents(events);
-                                }
-                            );
-                        }
+            data = self.fragmentController.process(response.data, request, availableRepresentations);
+            if (data) {
+                if (data.error) {
+                    signalSegmentBuffered.call(self);
+                    if (data.name) {
+                        self.errHandler.sendError(data.name, data.message, data.data);
+                    } else {
+                        self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", data.message);
+                    }
+                } else {
+                    if (eventStreamAdaption.length > 0 || eventStreamRepresentation.length > 0) {
+                        events = handleInbandEvents.call(self, data, request, eventStreamAdaption, eventStreamRepresentation);
+                        self.eventController.addInbandEvents(events);
+                    }
 
-                        self.debug.info("[BufferController][" + type + "] Buffer segment from url ", request.url);
+                    self.debug.info("[BufferController][" + type + "] Buffer segment from url ", request.url);
 
-                        /*if (trickModeEnabled) {
+                    /*if (trickModeEnabled) {
                             var filename = type + "_" + request.index + "_" + request.quality + ".mp4",
                                 blob = new Blob([data], {
                                     type: 'data/mp4'
@@ -11373,48 +11506,38 @@ MediaPlayer.dependencies.BufferController = function() {
                             }
                         }*/
 
-                        //console.saveBinArray(data, type + "_" + request.index + "_" + request.quality + ".mp4");
-                        deleteInbandEvents.call(self, data).then(
-                            function(data) {
-                                appendToBuffer.call(self, data, request.quality, request.index).then(
-                                    function() {
-                                        if (isFirstMediaSegment) {
-                                            isFirstMediaSegment = false;
-                                            if (self.fragmentController.hasOwnProperty('getStartTime')) {
-                                                segmentStartTime = self.fragmentController.getStartTime();
-                                            }
-                                            if (segmentStartTime) {
-                                                self.metricsModel.addBufferedSwitch(type, segmentStartTime, _currentRepresentation.id, request.quality);
-                                            } else {
-                                                self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
-                                            }
-                                        }
+                    //console.saveBinArray(data, type + "_" + request.index + "_" + request.quality + ".mp4");
+                    data = deleteInbandEvents.call(self, data);
 
-                                        self.debug.log("[BufferController][" + type + "] Media segment buffered");
-                                        // Signal end of buffering process
-                                        signalSegmentBuffered.call(self);
-                                        // Check buffer level
-                                        checkIfSufficientBuffer.call(self);
-                                    }
-                                );
+                    appendToBuffer.call(self, data, request.quality, request.index).then(
+                        function() {
+                            if (isFirstMediaSegment) {
+                                isFirstMediaSegment = false;
+                                if (self.fragmentController.hasOwnProperty('getStartTime')) {
+                                    segmentStartTime = self.fragmentController.getStartTime();
+                                }
+                                if (segmentStartTime) {
+                                    self.metricsModel.addBufferedSwitch(type, segmentStartTime, _currentRepresentation.id, request.quality);
+                                } else {
+                                    self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
+                                }
                             }
-                        );
-                    } else {
-                        self.debug.error("[BufferController][" + type + "] Error with segment data, no bytes to push");
-                        // Signal end of buffering process
-                        signalSegmentBuffered.call(self);
-                        // Check buffer level
-                        checkIfSufficientBuffer.call(self);
-                    }
-                }, function(e) {
-                    signalSegmentBuffered.call(self);
-                    if (e.name) {
-                        self.errHandler.sendError(e.name, e.message, e.data);
-                    } else {
-                        self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", e.message);
-                    }
+
+                            self.debug.log("[BufferController][" + type + "] Media segment buffered");
+                            // Signal end of buffering process
+                            signalSegmentBuffered.call(self);
+                            // Check buffer level
+                            checkIfSufficientBuffer.call(self);
+                        }
+                    );
                 }
-            );
+            } else {
+                self.debug.error("[BufferController][" + type + "] Error with segment data, no bytes to push");
+                // Signal end of buffering process
+                signalSegmentBuffered.call(self);
+                // Check buffer level
+                checkIfSufficientBuffer.call(self);
+            }
         },
 
         appendToBuffer = function(data, quality, index) {
@@ -11446,7 +11569,7 @@ MediaPlayer.dependencies.BufferController = function() {
                                 function( /*appended*/ ) {
                                     self.debug.log("[BufferController][" + type + "] Segment buffered");
                                     //self.debug.log("[BufferController]["+type+"] Data has been appended for quality = "+quality+" index = "+index);
-                                    if (currentBufferedQuality != quality) {
+                                    if (currentBufferedQuality !== quality) {
                                         isFirstMediaSegment = true;
                                         self.debug.log("[BufferController][" + type + "] set currentBufferedQuality to " + quality);
                                         currentBufferedQuality = quality;
@@ -11594,13 +11717,13 @@ MediaPlayer.dependencies.BufferController = function() {
                 }
                 i += size;
             }
-            return Q.when(events);
+            return events;
         },
 
         deleteInbandEvents = function(data) {
 
             if (!inbandEventFound) {
-                return Q.when(data);
+                return data;
             }
 
             var length = data.length,
@@ -11630,7 +11753,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
             }
 
-            return Q.when(modData.subarray(0, j));
+            return modData.subarray(0, j);
 
         },
 
@@ -11878,7 +12001,11 @@ MediaPlayer.dependencies.BufferController = function() {
                 self.indexHandler.getNextSegmentRequestFromSN(_currentRepresentation, currentSequenceNumber).then(onFragmentRequest.bind(self));
             } else {
                 self.debug.log("[BufferController][" + type + "] loadNextFragment for time: " + segmentTime);
-                self.indexHandler.getSegmentRequestForTime(_currentRepresentation, segmentTime).then(onFragmentRequest.bind(self));
+                self.indexHandler.getSegmentRequestForTime(_currentRepresentation, segmentTime).then(onFragmentRequest.bind(self), function (){
+                    currentDownloadQuality = -1;
+                    doStop.call(self);
+                    signalSegmentBuffered.call(self);
+                });
             }
         },
 
@@ -11893,21 +12020,19 @@ MediaPlayer.dependencies.BufferController = function() {
             }
 
             if (request !== null) {
+                //if trick mode enbaled, get the request to get I Frame data.
+                if (trickModeEnabled) {
+                    request = self.indexHandler.getIFrameRequest(request);
+                }
+                
                 // If we have already loaded the given fragment ask for the next one. Otherwise prepare it to get loaded
                 if (self.fragmentController.isFragmentLoadedOrPending(self, request)) {
                     self.debug.log("[BufferController][" + type + "] new fragment request => already loaded or pending");
                     self.indexHandler.getNextSegmentRequest(_currentRepresentation).then(onFragmentRequest.bind(self));
                 } else {
-                    //if trick mode enbaled, get the request to get I Frame data.
-                    if (trickModeEnabled) {
-                        request = self.indexHandler.getIFrameRequest(request);
-                    }
-
                     // Download the segment
-                    self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null /*signalStreamComplete*/ ).then(
-                        function() {
-                            sendRequest.call(self);
-                        });
+                    self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null /*signalStreamComplete*/ );
+                    sendRequest.call(self);
                 }
             } else {
                 // No more fragment in current list
@@ -11927,7 +12052,8 @@ MediaPlayer.dependencies.BufferController = function() {
                             }
                         );
                     }
-                } /*else {
+                }
+                /*else {
                     // For VOD streams, signal end of stream
                     signalStreamComplete.call(self);
                 }*/
@@ -12026,11 +12152,11 @@ MediaPlayer.dependencies.BufferController = function() {
             self.debug.log("[BufferController][" + type + "] time to end = " + timeToEnd);
 
             //for trick mode, buffer needs to be filled faster
-            if(trickModeEnabled){
-                if (bufferLevel<1) {
+            if (trickModeEnabled) {
+                if (bufferLevel < 1) {
                     bufferFragment.call(self);
                 }
-            }else{
+            } else {
                 if (languageChanged ||
                     ((bufferLevel < minBufferTime) &&
                         ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted)))) {
@@ -12047,11 +12173,11 @@ MediaPlayer.dependencies.BufferController = function() {
 
         updateCheckBufferTimeout = function(delay) {
             var self = this,
-                delayMs =  Math.max((delay * 1000), 2000);
+                delayMs = Math.max((delay * 1000), 2000);
 
             self.debug.log("[BufferController][" + type + "] Check buffer delta = " + delayMs + " ms");
 
-           /* if (trickModeEnabled) {
+            /* if (trickModeEnabled) {
                 delayMs = 500;
             }*/
 
@@ -12076,7 +12202,8 @@ MediaPlayer.dependencies.BufferController = function() {
                 currentVideoTime = self.videoModel.getCurrentTime(),
                 manifest = self.manifestModel.getValue(),
                 quality,
-                playlistUpdated = null;
+                playlistUpdated = null,
+                abrResult;
 
             if (deferredFragmentBuffered !== null) {
                 self.debug.error("[BufferController][" + type + "] deferredFragmentBuffered has not been resolved, create a new one is not correct.");
@@ -12087,214 +12214,158 @@ MediaPlayer.dependencies.BufferController = function() {
             self.debug.log("[BufferController][" + type + "] Start buffering process...");
 
             // Check if data has changed
-            doUpdateData.call(self).then(
-                function(dataUpdated) {
-                    // If data has been changed, then load initialization segment
-                    var loadInit = dataUpdated;
+            // If data has been changed, then load initialization segment
+            var loadInit = doUpdateData.call(self);
+            // Get current quality
+            abrResult = self.abrController.getPlaybackQuality(type, data);
 
-                    // Get current quality
-                    self.abrController.getPlaybackQuality(type, data).then(
-                        function(result) {
+            quality = abrResult.quality;
 
-                            quality = result.quality;
+            // Get corresponding representation
+            _currentRepresentation = getRepresentationForQuality.call(self, quality);
 
-                            // Get corresponding representation
+            // Quality changed?
+            if (quality !== currentDownloadQuality) {
+                self.debug.log("[BufferController][" + type + "] currentDownloadQuality changed : " + quality);
+                currentDownloadQuality = quality;
+                // Load initialization segment
+                loadInit = true;
+
+                clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.REPRESENTATION_SWITCH_STOP_REASON);
+                self.debug.log("[BufferController][" + type + "] Send RepresentationSwitch with quality = " + quality);
+                self.metricsModel.addRepresentationSwitch(type, now, currentVideoTime, _currentRepresentation.id, quality);
+
+                // HLS use case => download playlist for new representation
+                if ((manifest.name === "M3U") && (isDynamic || availableRepresentations[quality].initialization === null)) {
+                    playlistUpdated = Q.defer();
+                    updatePlayListForRepresentation.call(self, quality).then(
+                        function() {
                             _currentRepresentation = getRepresentationForQuality.call(self, quality);
-
-                            // Quality changed?
-                            if (quality !== currentDownloadQuality) {
-                                self.debug.log("[BufferController][" + type + "] currentDownloadQuality changed : " + quality);
-                                currentDownloadQuality = quality;
-                                // Load initialization segment
-                                loadInit = true;
-
-                                clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.REPRESENTATION_SWITCH_STOP_REASON);
-                                self.debug.log("[BufferController][" + type + "] Send RepresentationSwitch with quality = " + quality);
-                                self.metricsModel.addRepresentationSwitch(type, now, currentVideoTime, _currentRepresentation.id, quality);
-
-                                // HLS use case => download playlist for new representation
-                                if ((manifest.name === "M3U") && (isDynamic || availableRepresentations[quality].initialization === null)) {
-                                    playlistUpdated = Q.defer();
-                                    updatePlayListForRepresentation.call(self, quality).then(
-                                        function() {
-                                            _currentRepresentation = getRepresentationForQuality.call(self, quality);
-                                            playlistUpdated.resolve();
-                                        },
-                                        function(err) {
-                                            playlistUpdated.reject(err);
-                                        }
-                                    );
-                                }
-                            }
-
-                            Q.when(playlistUpdated ? playlistUpdated.promise : true).then(
-                                function() {
-                                    if (loadInit === true) {
-                                        // Load initialization segment request
-                                        loadInitialization.call(self, quality).then(
-                                            function(request) {
-                                                if (request !== null) {
-                                                    self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null /*signalStreamComplete*/ ).then(
-                                                        function() {
-                                                            sendRequest.call(self);
-                                                        }
-                                                    );
-                                                }
-                                            }, function(e) {
-                                                signalSegmentBuffered.call(self);
-                                                if (e.name === MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED) {
-                                                    self.errHandler.sendError(e.name, e.message, e.data);
-                                                } else {
-                                                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing initialization segment", e.message);
-                                                }
-                                            }
-                                        );
-                                    } else {
-                                        // Load next fragment
-                                        // Notes: 1 - Next fragment is download in // with initialization segment
-                                        //        2 - Buffer level is checked once next fragment data has been pushed into buffer (@see checkIfSufficientBuffer())
-                                        loadNextFragment.call(self);
-                                    }
-                                },
-                                function(err) {
-                                    signalSegmentBuffered();
-                                    self.errHandler.sendError(err.name, err.message, err.data);
-                                }
-                            );
+                            playlistUpdated.resolve();
+                        },
+                        function(err) {
+                            playlistUpdated.reject(err);
                         }
                     );
                 }
+            }
+
+            Q.when(playlistUpdated ? playlistUpdated.promise : true).then(
+                function() {
+                    if (loadInit === true) {
+                        // Load initialization segment request
+                        loadInitialization.call(self, quality).then(
+                            function(request) {
+                                if (request !== null) {
+                                    self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null /*signalStreamComplete*/ );
+                                    sendRequest.call(self);
+                                }
+                            }, function(e) {
+                                signalSegmentBuffered.call(self);
+                                if (e.name === MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED) {
+                                    self.errHandler.sendError(e.name, e.message, e.data);
+                                } else {
+                                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing initialization segment", e.message);
+                                }
+                            }
+                        );
+                    } else {
+                        // Load next fragment
+                        // Notes: 1 - Next fragment is download in // with initialization segment
+                        //        2 - Buffer level is checked once next fragment data has been pushed into buffer (@see checkIfSufficientBuffer())
+                        loadNextFragment.call(self);
+                    }
+                },
+                function(err) {
+                    signalSegmentBuffered();
+                    self.errHandler.sendError(err.name, err.message, err.data);
+                }
             );
+
         },
 
         updatePlayListForRepresentation = function(repIndex) {
             var self = this,
                 deferred = Q.defer(),
                 manifest = self.manifestModel.getValue(),
-                representation;
+                representation,
+                idx;
 
             // Check if running state
             if (!isRunning.call(self)) {
                 return;
             }
 
-            self.manifestExt.getDataIndex(data, manifest, periodInfo.index).then(
-                function(idx) {
-                    representation = manifest.Period_asArray[periodInfo.index].AdaptationSet_asArray[idx].Representation_asArray[repIndex];
-                    self.parser.hlsParser.updatePlaylist(representation).then(
-                        function() {
-                            updateRepresentations.call(self, data, periodInfo).then(
-                                function(representations) {
-                                    availableRepresentations = representations;
-                                    deferred.resolve();
-                                }
-                            );
-                        },
-                        function(err) {
-                            deferred.reject(err);
-                        }
-                    );
+            idx = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
+            representation = manifest.Period_asArray[periodInfo.index].AdaptationSet_asArray[idx].Representation_asArray[repIndex];
+            self.parser.hlsParser.updatePlaylist(representation).then(
+                function() {
+                    availableRepresentations = updateRepresentations.call(self, data, periodInfo);
+                    deferred.resolve();
+                },
+                function(err) {
+                    deferred.reject(err);
                 }
             );
+
             return deferred.promise;
         },
 
         updateRepresentations = function(data, periodInfo) {
-            var self = this,
-                deferred = Q.defer(),
-                manifest = self.manifestModel.getValue();
-            self.manifestExt.getDataIndex(data, manifest, periodInfo.index).then(
-                function(idx) {
-                    self.manifestExt.getAdaptationsForPeriod(manifest, periodInfo).then(
-                        function(adaptations) {
-                            self.manifestExt.getRepresentationsForAdaptation(manifest, adaptations[idx]).then(
-                                function(representations) {
-                                    deferred.resolve(representations);
-                                }
-                            );
-                        }
-                    );
-                }
-            );
+            var manifest = this.manifestModel.getValue(),
+                idx,
+                adaptations;
 
-            return deferred.promise;
+            idx = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
+            adaptations = this.manifestExt.getAdaptationsForPeriod(manifest, periodInfo);
+
+            return this.manifestExt.getRepresentationsForAdaptation(manifest, adaptations[idx]);
         },
 
         doUpdateData = function() {
-            var self = this,
-                deferred = Q.defer();
-
             if (dataChanged === false) {
-                deferred.resolve(false);
-                return deferred.promise;
+                return false;
             }
 
-            self.debug.log("[BufferController][" + type + "] updateData");
+            this.debug.log("[BufferController][" + type + "] updateData");
 
             // Reset stored initialization segments
             initializationData = [];
 
             // Update representations
-            updateRepresentations.call(self, data, periodInfo).then(
-                function(representations) {
-                    availableRepresentations = representations;
+            availableRepresentations = updateRepresentations.call(this, data, periodInfo);
+            this.bufferExt.updateData(data, type);
 
-                    // Retrieve the current representation according to the current quality
-                    //_currentRepresentation = getRepresentationForQuality.call(self, result.quality);
+            dataChanged = false;
 
-                    self.bufferExt.updateData(data, type);
-                    dataChanged = false;
-
-                    deferred.resolve(true);
-                }
-            );
-
-            return deferred.promise;
+            return true;
         },
 
         onFragmentLoadProgress = function(evt) {
             var self = this,
-                i = 0,
-                len = 0,
-                type = evt.data.request.streamType,
-                metricsHttp = evt.data.httpRequestMetrics,
-                lastTraceTime = evt.data.lastTraceTime,
-                currentTime;
+                currentQuality = this.abrController.getQualityFor(type),
+                i,
+                rules;
 
-            //self.debug.log("[BufferController]["+type+"] Download request " + evt.data.request.url + " is in progress");
+            // Check only if not at lowest quality
+            if (this.abrController.isMinQuality(type, data, currentQuality)) {
+                return;
+            }
 
-            self.abrRulesCollection.getRules(MediaPlayer.rules.BaseRulesCollection.prototype.ABANDON_FRAGMENT_RULES).then(
-                function(rules) {
-                    var callback = function(switchRequest) {
+            rules = self.abrRulesCollection.getRules(MediaPlayer.rules.BaseRulesCollection.prototype.ABANDON_FRAGMENT_RULES);
+            var callback = function(switchRequest) {
+                if (switchRequest.quality < currentQuality) {
+                    self.fragmentController.abortRequestsForModel(fragmentModel);
+                    self.debug.info("[BufferController][" + type + "] Abandon current segment download");
+                }
+            };
 
-                        var newQuality = switchRequest.quality,
-                            abrCurrentQuality = self.abrController.getQualityFor(type);
-
-                        if (newQuality < abrCurrentQuality) {
-                            self.debug.info("[BufferController][" + type + "] Abandon current fragment : " + evt.data.request.url);
-
-                            currentTime = new Date();
-
-                            metricsHttp.tfinish = currentTime;
-                            metricsHttp.bytesLength = evt.data.request.bytesLoaded;
-
-                            self.metricsModel.appendHttpTrace(metricsHttp,
-                                currentTime,
-                                currentTime.getTime() - lastTraceTime.getTime(), [evt.data.request.bytesLoaded ? evt.data.request.bytesLoaded : 0]);
-
-                            self.fragmentController.abortRequestsForModel(fragmentModel);
-                            self.debug.info("[BufferController][" + type + "] Segment download abandonned => Retry segment download at lowest quality");
-                            self.abrController.setQualityFor(type, newQuality);
-                        }
-                    };
-
-                    for (i = 0, len = rules.length; i < len; i += 1) {
-                        rules[i].execute(evt.data.request, callback);
-                    }
-                });
+            for (i = 0; i < rules.length; i++) {
+                rules[i].execute(evt.data.request, callback);
+            }
         },
 
-        signalSegmentLoadingFailed = function () {
+        signalSegmentLoadingFailed = function() {
             if (segmentRequestOnError === null) {
                 return;
             }
@@ -12355,51 +12426,45 @@ MediaPlayer.dependencies.BufferController = function() {
             var self = this,
                 manifest = self.manifestModel.getValue();
 
-            doUpdateData.call(this).then(
-                function() {
-                    // Retreive the representation of initial quality to enable some parameters initialization
-                    // (@see getLiveEdgeTime() for example)
-                    self.abrController.getPlaybackQuality(type, data).then(
-                        function(result) {
-                            _currentRepresentation = getRepresentationForQuality.call(self, result.quality);
+            doUpdateData.call(this);
 
-                            if (_currentRepresentation) {
-                                fragmentDuration = _currentRepresentation.segmentDuration;
+            // Retreive the representation of initial quality to enable some parameters initialization
+            // (@see getLiveEdgeTime() for example)
+            _currentRepresentation = getRepresentationForQuality.call(self, self.abrController.getPlaybackQuality(type, data).quality);
 
-                                self.indexHandler.setIsDynamic(isDynamic);
-                                if (minBufferTime === -1) {
-                                    minBufferTime = self.bufferExt.decideBufferLength(manifest.minBufferTime, periodInfo.duration, waitingForBuffer);
-                                }
-                                if (type === "video") {
-                                    if (isDynamic) {
-                                        self.indexHandler.updateSegmentList(_currentRepresentation).then(
-                                            function() {
-                                                getLiveEdgeTime.call(self).then(
-                                                    function(time) {
-                                                        self.system.notify("startTimeFound", time);
-                                                    }
-                                                );
-                                            }
-                                        );
-                                    } else {
-                                        self.indexHandler.getCurrentTime(_currentRepresentation).then(
-                                            function(time) {
-                                                if (time < _currentRepresentation.segmentAvailabilityRange.start) {
-                                                    time = _currentRepresentation.segmentAvailabilityRange.start;
-                                                }
-                                                self.system.notify("startTimeFound", time);
-                                            }
-                                        );
-                                    }
-                                }
-                            }
-                        }
-                    );
+            if (_currentRepresentation) {
+                fragmentDuration = _currentRepresentation.segmentDuration;
+
+                self.indexHandler.setIsDynamic(isDynamic);
+                if (minBufferTime === -1) {
+                    minBufferTime = self.bufferExt.decideBufferLength(manifest.minBufferTime, periodInfo.duration, waitingForBuffer);
                 }
-            );
+                if (type === "video") {
+                    if (isDynamic) {
+                        self.indexHandler.updateSegmentList(_currentRepresentation).then(
+                            function() {
+                                getLiveEdgeTime.call(self).then(
+                                    function(time) {
+                                        self.system.notify("startTimeFound", time);
+                                    }
+                                );
+                            }
+                        );
+                    } else {
+                        self.indexHandler.getCurrentTime(_currentRepresentation).then(
+                            function(time) {
+                                if (time < _currentRepresentation.segmentAvailabilityRange.start) {
+                                    time = _currentRepresentation.segmentAvailabilityRange.start;
+                                }
+                                self.system.notify("startTimeFound", time);
+                            }
+                        );
+                    }
+                }
+            }
         },
 
-        getIndexHandler: function(){
+        getIndexHandler: function() {
             return this.indexHandler;
         },
 
@@ -12464,6 +12529,11 @@ MediaPlayer.dependencies.BufferController = function() {
             if (languageChanged) {
                 self.debug.log("[BufferController][" + type + "] Language changed");
                 cancelCheckBufferTimeout.call(this);
+                //for xml subtitles file, reset cues and restart buffering
+                if (type === 'text' && (data.mimeType === 'application/ttml+xml')) {
+                    buffer.abort();
+                    doStart.call(self);
+                }
             }
         },
 
@@ -12661,7 +12731,7 @@ MediaPlayer.dependencies.BufferController = function() {
             return deferred.promise;
         },
 
-        getSegmentDuration: function(){
+        getSegmentDuration: function() {
             return segmentDuration;
         },
 
@@ -12675,10 +12745,6 @@ MediaPlayer.dependencies.BufferController = function() {
                 return deferred.promise;
             }
             trickModeEnabled = enabled;
-
-            if (this.fragmentController.setSampleDuration) {
-                this.fragmentController.setSampleDuration(trickModeEnabled);
-            }
 
             if (trickModeEnabled) {
                 // Trick mode enabled
@@ -13913,7 +13979,7 @@ MediaPlayer.dependencies.EventController.prototype = {
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-MediaPlayer.dependencies.FragmentController = function () {
+MediaPlayer.dependencies.FragmentController = function() {
     "use strict";
 
     var fragmentModels = [],
@@ -13959,14 +14025,14 @@ MediaPlayer.dependencies.FragmentController = function () {
         system: undefined,
         debug: undefined,
 
-        process: function (bytes) {
+        process: function(bytes) {
             var result = null;
 
             if (bytes !== null && bytes !== undefined && bytes.byteLength > 0) {
                 result = new Uint8Array(bytes);
             }
 
-            return Q.when(result);
+            return result;
         },
 
         attachBufferController: function(bufferController) {
@@ -13978,7 +14044,7 @@ MediaPlayer.dependencies.FragmentController = function () {
             // Wrap the buffer controller into model and store it to track the loading state and execute the requests
             model = findModel(bufferController);
 
-            if (!model){
+            if (!model) {
                 model = this.system.getObject("fragmentModel");
                 model.setContext(bufferController);
                 fragmentModels.push(model);
@@ -14035,9 +14101,9 @@ MediaPlayer.dependencies.FragmentController = function () {
             return fragmentModel.getLoadingRequests();
         },
 
-		isInitializationRequest: function(request){
-			return (request && request.type && request.type.toLowerCase() === "initialization segment");
-		},
+        isInitializationRequest: function(request) {
+            return (request && request.type && request.type.toLowerCase() === "initialization segment");
+        },
 
         getLoadingTime: function(bufferController) {
             var fragmentModel = findModel(bufferController);
@@ -14091,13 +14157,13 @@ MediaPlayer.dependencies.FragmentController = function () {
             var fragmentModel = findModel(bufferController);
 
             if (!fragmentModel || !request) {
-                return Q.when(null);
+                return null;
             }
             // Store the request and all the necessary callbacks in the model for deferred execution
             fragmentModel.addRequest(request);
             fragmentModel.setCallbacks(startLoadingCallback, successLoadingCallback, errorLoadingCallback, streamEndCallback);
 
-            return Q.when(true);
+            return true;
         }
     };
 };
@@ -14105,7 +14171,6 @@ MediaPlayer.dependencies.FragmentController = function () {
 MediaPlayer.dependencies.FragmentController.prototype = {
     constructor: MediaPlayer.dependencies.FragmentController
 };
-
 /*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
  *
@@ -14154,7 +14219,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
             req.send();
         },
 
-        _load = function(request) {
+        _loadRequest = function(request) {
             var d = Q.defer(),
                 req = new XMLHttpRequest(),
                 httpRequestMetrics = null,
@@ -14314,24 +14379,32 @@ MediaPlayer.dependencies.FragmentLoader = function() {
             return d.promise;
         },
 
-        _retry = function(request, deferred) {
+        _load = function (request, deferred) {
             var self = this;
 
-            retryCount++;
-
-            setTimeout(function() {
-                _load.call(self, request).then(function(result) {
+            _loadRequest.call(self, request).then(function(result) {
                     retryCount = 0;
                     deferred.resolve(result);
                 }, function(reqerror) {
-                    if (retryCount < retryAttempts) {
-                        _retry.call(self, request, deferred);
-                    } else {
+                     if (reqerror.aborted) {
+                        // Request has been aborted => set status to 0
+                        request.status = 0;
+                        request.aborted = true;
+                        deferred.reject(request);
+                    } else if (retryCount >= retryAttempts) {
+                        // No (more) retry => set status and reject
                         retryCount = 0;
-                        deferred.reject(reqerror);
+                        request.status = reqerror.status;
+                        deferred.reject(request);
+                    } else {
+                        // Retry
+                        setTimeout(function() {
+                            retryCount++;
+                            _load.call(self, request, deferred);
+                        }, retryInterval);
                     }
-                });
-            }, retryInterval);
+                });           
+
         };
 
     return {
@@ -14352,32 +14425,15 @@ MediaPlayer.dependencies.FragmentLoader = function() {
             type = value;
         },
 
-        load: function(req) {
-            var self = this,
-                deferred = Q.defer();
+        load: function(request) {
+            var deferred = Q.defer();
 
             // MSS use case: if initialization segment and data already ready (automatically generated),
             // then do not download segment
-            if (req.type === "Initialization Segment" && req.data) {
-                deferred.resolve(req, {data: req.data});
+            if (request.type === "Initialization Segment" && request.data) {
+                deferred.resolve(request, {data: request.data});
             } else {
-                // Download fragment request
-                _load.call(this, req).then(function(result) {
-                    deferred.resolve(result);
-                }, function(reqerror) {
-                    if (reqerror.aborted) {
-                        // If request has been aborted, then do not retry
-                        req.status = 0;
-                        req.aborted = true;
-                        deferred.reject(req);
-                    } else if (retryAttempts <= 0) {
-                        // in case of error we set the requestModel status equal to xhr status
-                        req.status = reqerror.status;
-                        deferred.reject(req);
-                    } else {
-                        _retry.call(self, req, deferred);
-                    }
-                });
+                _load.call(this, request, deferred);
             }
 
             return deferred.promise;
@@ -14390,9 +14446,6 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                 this.debug.log("[FragmentLoader]["+type+"] Abort XHR " + (xhrs[i].responseURL ? xhrs[i].responseURL : ""));
                 xhrs[i].abort();
             }
-
-            xhrs.length = 0;
-            xhrs = [];
         },
 
         checkForExistence: function(req) {
@@ -14809,7 +14862,7 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         },
 
         onBytesLoaded = function(request, response) {
-            var self = this;
+            var data;
 
             segmentDuration = request.duration;
 
@@ -14817,22 +14870,21 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             segmentDownloadFailed = false;
             segmentDownloadErrorCount = 0;
 
-            self.debug.log("[FragmentInfoController][" + type + "] Media loaded ", request.url);
+            this.debug.log("[FragmentInfoController][" + type + "] Media loaded ", request.url);
 
             if (!fragmentDuration && !isNaN(request.duration)) {
                 fragmentDuration = request.duration;
             }
 
             // ORANGE: add request and representations in function parameters, used by MssFragmentController
-            self.fragmentController.process(response.data, request, _bufferController.getAvailableRepresentations()).then(
-                function() {
-                    self.debug.info("[FragmentInfoController][" + type + "] Buffer segment from url ", request.url);
+            data = this.fragmentController.process(response.data, request, _bufferController.getAvailableRepresentations());
+            if (data && data.error) {
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing fragment info segment", data.message);
+            } else {
+                this.debug.info("[FragmentInfoController][" + type + "] Buffer segment from url ", request.url);
 
-                    delayLoadNextFragmentInfo.call(self, segmentDuration);
-                }, function(e) {
-                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing fragment info segment", e.message);
-                }
-            );
+                delayLoadNextFragmentInfo.call(this, segmentDuration);
+            }
         },
 
         isRunning = function() {
@@ -14885,10 +14937,8 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
                 request = _bufferController.getIndexHandler().getFragmentInfoRequest(request);
 
                 // Download the fragment info segment
-                self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null).then(
-                    function() {
-                        sendRequest.call(self);
-                });
+                self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null);
+                sendRequest.call(self);
             } else {
                 // No more fragment in current list
                 self.debug.log("[FragmentInfoController][" + type + "] bufferFragmentInfo failed");
@@ -14946,7 +14996,7 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             ranges = self.sourceBufferExt.getAllRanges(_bufferController.getBuffer());
 
             if (ranges.length > 0) {
-                _fragmentInfoTime = ranges.end(ranges.length-1);
+                _fragmentInfoTime = ranges.end(ranges.length - 1);
             }
 
             self.setType(type);
@@ -15258,16 +15308,14 @@ MediaPlayer.dependencies.ManifestUpdater = function() {
         update = function() {
             var self = this,
                 manifest = self.manifestModel.getValue(),
-                timeSinceLastUpdate;
+                timeSinceLastUpdate, 
+                t;
 
             if (manifest !== undefined && manifest !== null) {
-                self.manifestExt.getRefreshDelay(manifest).then(
-                    function(t) {
-                        timeSinceLastUpdate = (new Date().getTime() - manifest.mpdLoadedTime.getTime()) / 1000;
-                        refreshDelay = Math.max(t - timeSinceLastUpdate, 0);
-                        start.call(self);
-                    }
-                );
+                t = self.manifestExt.getRefreshDelay(manifest);
+                timeSinceLastUpdate = (new Date().getTime() - manifest.mpdLoadedTime.getTime()) / 1000;
+                refreshDelay = Math.max(t - timeSinceLastUpdate, 0);
+                start.call(self);
             }
         },
 
@@ -15430,7 +15478,7 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
         "use strict";
 
         videoModel.setSource(window.URL.createObjectURL(source));
-        return Q.when(true);
+        return true;
     },
 
     detachMediaSource: function (videoModel) {
@@ -15438,20 +15486,51 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
         // it seems that any value passed to the setSource is cast to a string when setting element.src,
         // so we cannot use null or undefined to reset the element. Use empty string instead.
         videoModel.setSource("");
-        return Q.when(true);
+        return true;
     },
 
     setDuration: function (source, value) {
         "use strict";
-        source.duration = value;
-        return Q.when(source.duration);
+        var i,
+            updating = false;
+
+        if (source.readyState !== 'open') return source.duration;
+
+        for (i = 0; i < source.sourceBuffers.length; i++) {
+            if(source.sourceBuffers[i].updating){
+                updating = true;
+                break;
+            }
+        }
+        
+        if (!updating) {
+            source.duration = value;
+        }
+
+        return source.duration;
     },
 
     signalEndOfStream: function(source) {
         "use strict";
+        var buffers = source.sourceBuffers,
+            ln = buffers.length,
+            i = 0;
+
+        if (source.readyState !== 'open') {
+            return;
+        }
+
+        for (i; i < ln; i++) {
+            if (buffers[i].updating) {
+                return;
+            }
+            if (buffers[i].buffered.length === 0) {
+                return;
+            }
+        }
 
         source.endOfStream();
-        return Q.when(true);
+        return true;
     }
 };
 /*
@@ -15469,7 +15548,7 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- MediaPlayer.dependencies.MetricsExtensions = function () {
+MediaPlayer.dependencies.MetricsExtensions = function() {
     "use strict";
 
     var h264ProfileMap = {
@@ -15479,7 +15558,7 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
         "64": "High"
     };
 
-    var findRepresentionInPeriodArray = function (periodArray, representationId) {
+    var findRepresentionInPeriodArray = function(periodArray, representationId) {
         var period,
             adaptationSet,
             adaptationSetArray,
@@ -15507,7 +15586,7 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
         return null;
     };
 
-    var adaptationIsType = function (adaptation, bufferType) {
+    var adaptationIsType = function(adaptation, bufferType) {
         var found = false;
         // TODO : HACK ATTACK
         // Below we call getIsVideo and getIsAudio and then check the adaptation set for a 'type' property.
@@ -15521,20 +15600,17 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
             if (adaptation.type === "video") {
                 found = true;
             }
-        }
-        else if (bufferType === "audio") {
+        } else if (bufferType === "audio") {
             this.manifestExt.getIsAudio(adaptation);
             if (adaptation.type === "audio") {
                 found = true;
             }
-        }
-        else if(bufferType === "text"){
-             this.manifestExt.getIsText(adaptation);
-              if (adaptation.type === "text") {
+        } else if (bufferType === "text") {
+            this.manifestExt.getIsText(adaptation);
+            if (adaptation.type === "text") {
                 found = true;
             }
-        }
-        else {
+        } else {
             found = false;
         }
 
@@ -15544,11 +15620,11 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
     var rslt = MediaPlayer.utils.copyMethods(Dash.dependencies.DashMetricsExtensions);
 
     rslt.config = undefined;
-    
+
     rslt.getDuration = function() {
         var self = this,
             manifest = self.manifestModel.getValue(),
-            duration = manifest? manifest.Period.duration : null;
+            duration = manifest ? manifest.Period.duration : null;
 
         if (duration !== Infinity) {
             return duration;
@@ -15563,8 +15639,7 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
             i = 0,
             adaptation;
 
-        for(i = 0;i<manifest.Period.AdaptationSet.length;i++)
-        {
+        for (i = 0; i < manifest.Period.AdaptationSet.length; i++) {
             adaptation = manifest.Period.AdaptationSet[i];
             if (adaptation.type === type) {
                 return adaptation.mimeType;
@@ -15580,8 +15655,7 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
             i = 0,
             adaptation;
 
-        for(i = 0;i<manifest.Period.AdaptationSet.length;i++)
-        {
+        for (i = 0; i < manifest.Period.AdaptationSet.length; i++) {
             adaptation = manifest.Period.AdaptationSet[i];
             if (adaptation.type === type || adaptation.contentType === type) {
                 //return codecs of the first Representation
@@ -15592,7 +15666,7 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
         return null;
     };
 
-    rslt.getVideoWidthForRepresentation = function (representationId) {
+    rslt.getVideoWidthForRepresentation = function(representationId) {
         var self = this,
             manifest = self.manifestModel.getValue(),
             representation,
@@ -15608,12 +15682,12 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
             }
 
             return representation.width;
-        }else {
+        } else {
             return null;
         }
     };
 
-    rslt.getVideoHeightForRepresentation = function (representationId) {
+    rslt.getVideoHeightForRepresentation = function(representationId) {
         var self = this,
             manifest = self.manifestModel.getValue(),
             representation,
@@ -15629,12 +15703,12 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
             }
 
             return representation.height;
-        }else{
+        } else {
             return null;
         }
     };
 
-    rslt.getCodecsForRepresentation = function (representationId) {
+    rslt.getCodecsForRepresentation = function(representationId) {
         var self = this,
             manifest = self.manifestModel.getValue(),
             representation,
@@ -15649,10 +15723,9 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
         return representation.codecs;
     };
 
-    rslt.getH264ProfileLevel = function (codecs) {
+    rslt.getH264ProfileLevel = function(codecs) {
 
-        if (codecs.indexOf("avc1") < 0)
-        {
+        if (codecs.indexOf("avc1") < 0) {
             return "";
         }
         var profile = h264ProfileMap[codecs.substr(5, 2)],
@@ -15661,7 +15734,7 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
         return profile + "@" + level.toString();
     };
 
-    rslt.getBitratesForType = function (type, data) {
+    rslt.getBitratesForType = function(type, data) {
         var self = this,
             manifest = self.manifestModel.getValue(),
             periodArray,
@@ -15710,7 +15783,7 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
         return bitrateArray;
     };
 
-    rslt.getBitratesWithResolutionForType = function (type) {
+    rslt.getBitratesWithResolutionForType = function(type) {
         var self = this,
             manifest = self.manifestModel.getValue(),
             periodArray,
@@ -15741,7 +15814,11 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
                     representationArray = adaptationSet.Representation_asArray;
                     for (representationArrayIndex = 0; representationArrayIndex < representationArray.length; representationArrayIndex = representationArrayIndex + 1) {
                         representation = representationArray[representationArrayIndex];
-                        var reso = {bitrate: representation.bandwidth, width: representation.width, height: representation.height};
+                        var reso = {
+                            bitrate: representation.bandwidth,
+                            width: representation.width,
+                            height: representation.height
+                        };
                         bitrateArray.push(reso);
                     }
                     return bitrateArray;
@@ -15758,7 +15835,6 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
 MediaPlayer.dependencies.MetricsExtensions.prototype = {
     constructor: MediaPlayer.dependencies.MetricsExtensions
 };
-
 /*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
  *
@@ -16063,8 +16139,6 @@ MediaPlayer.dependencies.MetricsExtensions.prototype = {
                 }
             }
 
-            //console.log("[MetricsModel] PlaybackQuality = " + JSON.stringify(vo));
-
             metrics.push(vo);
             this.metricAdded(streamType, "PlaybackQuality", vo);
 
@@ -16092,8 +16166,6 @@ MediaPlayer.dependencies.MetricsExtensions.prototype = {
                     return metrics[metrics.length - 1];
                 }
             }
-
-            console.log("[MetricsModel] VideoResolution = " + JSON.stringify(vo));
 
             metrics.push(vo);
             this.metricAdded(streamType, "VideoResolution", vo);
@@ -17476,45 +17548,38 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
 
     createSourceBuffer: function (mediaSource, codec) {
         "use strict";
-        var deferred = Q.defer(),
-            self = this;
+
+        var buffer = null;
+
+        if (!mediaSource) {
+            return null;
+        }
 
         try {
-            if (mediaSource) {
-                deferred.resolve(mediaSource.addSourceBuffer(codec));
-            } else {
-                deferred.reject();
-            }
+            buffer = mediaSource.addSourceBuffer(codec);
         } catch(ex) {
             // For text track not supported by MSE, we try to create corresponding specific source buffer
-            if (self.manifestExt.getIsTextTrack(codec)) {
+            if (this.manifestExt.getIsTextTrack(codec)) {
                 if ((codec === 'text/vtt') || (codec === 'text/ttml')) {
-                    deferred.resolve(self.system.getObject("textSourceBuffer"));
-                } else if (codec === 'application/ttml+xml+mp4') {
-                    deferred.resolve(self.system.getObject("textTTMLXMLMP4SourceBuffer"));
+                    buffer = this.system.getObject("textSourceBuffer");
+                } else if (codec === 'application/ttml+xml+mp4' || codec === 'application/mp4' || codec === 'application/ttml+xml') {
+                    buffer = this.system.getObject("textTTMLXMLMP4SourceBuffer");
                 } else {
-                    deferred.reject(ex);
+                    throw ex;
                 }
             } else {
-                deferred.reject(ex);
+                throw ex;
             }
         }
-        return deferred.promise;
+        return buffer;
     },
 
     removeSourceBuffer: function (mediaSource, buffer) {
         "use strict";
-        var deferred = Q.defer();
         try {
-            deferred.resolve(mediaSource.removeSourceBuffer(buffer));
-        } catch(ex){
-            if (buffer && typeof(buffer.getTextTrackExtensions) === "function") {
-                deferred.resolve();
-            } else {
-            deferred.reject(ex.description);
+            mediaSource.removeSourceBuffer(buffer);
+        } catch (ex) {
         }
-        }
-        return deferred.promise;
     },
 
     getBufferRange: function (buffer, time, tolerance) {
@@ -17704,16 +17769,12 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
 
     abort: function (mediaSource, buffer) {
         "use strict";
-        var deferred = Q.defer();
         try {
             if (mediaSource.readyState === "open") {
                 buffer.abort();
             }
-            deferred.resolve();
         } catch(ex){
-            deferred.reject(ex.description);
         }
-        return deferred.promise;
     }
 };
 
@@ -17733,7 +17794,7 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
 
 // Define Math.sign method in case it is not defined (like in IE11)
 if (!Math.sign) {
-    Math.sign = function (value) {
+    Math.sign = function(value) {
         "use strict";
         return (value < 0) ? -1 : ((value === 0) ? 0 : 1);
     };
@@ -17744,8 +17805,6 @@ MediaPlayer.dependencies.Stream = function() {
 
     var manifest,
         mediaSource,
-        videoCodec = null,
-        audioCodec = null,
         contentProtection = null,
         videoController = null,
         videoTrackIndex = -1,
@@ -17784,6 +17843,9 @@ MediaPlayer.dependencies.Stream = function() {
 
         periodInfo = null,
 
+        // Initial start time 
+        initialStartTime = -1,
+
         // Play start time (= live edge for live streams)
         playStartTime = -1,
 
@@ -17807,7 +17869,7 @@ MediaPlayer.dependencies.Stream = function() {
 
         eventController = null,
         protectionController,
-        initializedeferred = null,
+        initializeMediaSourceFinished = true,
 
         reloadTimeout = null,
         isReloading = false,
@@ -17904,7 +17966,7 @@ MediaPlayer.dependencies.Stream = function() {
                     if (!!fragmentInfoAudioController) {
                         funcs.push(fragmentInfoAudioController.reset(errored));
                     }
-                    
+
                     if (!!textController) {
                         funcs.push(textController.reset(errored));
                     }
@@ -17932,9 +17994,6 @@ MediaPlayer.dependencies.Stream = function() {
                             audioController = null;
                             textController = null;
 
-                            videoCodec = null;
-                            audioCodec = null;
-
                             mediaSource = null;
                             manifest = null;
 
@@ -17942,308 +18001,151 @@ MediaPlayer.dependencies.Stream = function() {
                         });
                 };
 
-            Q.when(initializedeferred ? initializedeferred.promise : true).then(
+
+            Q.when(initializeMediaSourceFinished).then(
                 function() {
-                    executeReset();
-                }, function() {
                     executeReset();
                 });
             return deferred.promise;
         },
 
-        checkIfInitialized = function(videoState, audioState, textTrackState) {
-            this.debug.log("[Stream] checkIfInitialized videoState=" + videoState + " audioState=" + audioState + " textTrackState=" + textTrackState);
-            if (videoState !== null && audioState !== null && textTrackState !== null) {
-                if (videoState === "ready" && audioState === "ready" && textTrackState === "ready") {
-                    // Initialize protection controller
-                    if (protectionController) {
-                        protectionController.init(contentProtection, audioCodec, videoCodec);
-                    } else if (contentProtection && !this.capabilities.supportsEncryptedMedia()) {
-                        // No protectionController (MediaKeys not supported/enabled) but content is protected => error
-                        this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS, "EME is not supported/enabled", null);
-                        initializedeferred.reject();
-                    }
-                    initializedeferred.resolve(true);
-                } else if (videoState === "error" || audioState === "error" || textTrackState === "error") {
-                    initializedeferred.reject();
+        createBufferController = function(data, codec) {
+            var bufferController = null,
+                buffer = null;
+
+            // Check if codec is supported (applies only for video and audio)
+            if (data.type === 'video' || data.type === 'audio') {
+                if (!this.capabilities.supportsCodec(this.videoModel.getElement(), codec)) {
+                    this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, data.type + ' codec is not supported', {
+                        codec: codec
+                    });
+                    return null;
                 }
             }
+
+            // Create SourceBuffer
+            try {
+                buffer = this.sourceBufferExt.createSourceBuffer(mediaSource, codec);
+            } catch (ex) {
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, 'Failed to create ' + data.type + ' source buffer',
+                    new MediaPlayer.vo.Error(ex.code, ex.name, ex.message));
+                return null;
+            }
+
+            // Create and initialize BufferController
+            bufferController = this.system.getObject("bufferController");
+            bufferController.initialize(data.type, periodInfo, data, buffer, this.fragmentController, mediaSource, eventController);
+
+            if (data.type === 'text' && buffer.hasOwnProperty('initialize')) {
+                buffer.initialize(codec, bufferController, data);
+            }
+
+            return bufferController;
         },
 
         initializeMediaSource = function() {
-            var videoState = null,
-                audioState = null,
-                textTrackState = null,
-                self = this;
+            var data,
+                videoCodec,
+                audioCodec,
+                textMimeType;
 
-            initializedeferred = Q.defer();
+            initializeMediaSourceFinished = false;
+            eventController = this.system.getObject("eventController");
 
-            eventController = self.system.getObject("eventController");
+            // Initialize video BufferController
+            data = this.manifestExt.getVideoData(manifest, periodInfo.index);
 
-            self.manifestExt.getVideoData(manifest, periodInfo.index).then(
-                // self.manifestExt.getVideoData() succeeded
-                function(videoData) {
-                    //self.debug.log("Create video buffer.");
-                    self.manifestExt.getDataIndex(videoData, manifest, periodInfo.index).then(
-                        function(index) {
-                            videoTrackIndex = index;
-                        }
-                    );
+            if (data === null) {
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO, 'No Video data in manifest');
+            } else {
+                videoTrackIndex = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
+                videoCodec = this.manifestExt.getCodec(data);
+                contentProtection = this.manifestExt.getContentProtectionData(data);
 
-                    // Get codec of first representation
-                    self.manifestExt.getCodec(videoData).then(
-                        function(codec) {
-                            self.debug.info("[Stream] Video codec: " + codec);
-                            videoCodec = codec;
-
-                            if (!self.capabilities.supportsCodec(self.videoModel.getElement(), codec)) {
-                                // If codec is not supported by the <video> element, then raise DOMException 'NotSupportedError'
-                                // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer) 
-                                return Q.reject({
-                                    code: MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_SUPPORTED,
-                                    name: "NotSupportedError",
-                                    message: "Codec not supported"
-                                });
-                            }
-
-                            // Get and store ContentProtection data
-                            return self.manifestExt.getContentProtectionData(videoData).then(
-                                function(contentProtectionData) {
-                                    contentProtection = contentProtectionData;
-
-                                    // Create and add the SourceBuffer
-                                    if (mediaSource) {
-                                        return self.sourceBufferExt.createSourceBuffer(mediaSource, codec);
-                                    } else {
-                                        // If MediaSource is not defined then raise DOMException 'InvalidAccessError'
-                                        // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer)
-                                        return Q.reject({
-                                            code: MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS,
-                                            name: "InvalidAccessError",
-                                            message: "MediaSource undefined"
-                                        });
-                                    }
-                                }
-                            );
-                        }
-                    ).then(
-                        // self.sourceBufferExt.createSourceBuffer() succeeded
-                        function(buffer) {
-                            // TODO : How to tell index handler live/duration?
-                            // TODO : Pass to controller and then pass to each method on handler?
-                            videoController = self.system.getObject("bufferController");
-                            videoController.initialize("video", periodInfo, videoData, buffer, self.fragmentController, mediaSource, eventController);
-                            videoState = "ready";
-                            checkIfInitialized.call(self, videoState, audioState, textTrackState);
-                        },
-                        // self.sourceBufferExt.createSourceBuffer() failed
-                        function(ex) {
-                            videoState = "error";
-                            checkIfInitialized.call(self, videoState, audioState, textTrackState);
-                            if (ex.code && ex.code === MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_SUPPORTED) {
-                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Video codec is not supported", {
-                                    codec: videoCodec
-                                });
-                            } else {
-                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create video source buffer",
-                                    new MediaPlayer.vo.Error(ex.code, ex.name, ex.message));
-                            }
-                        }
-                    );
-                    return self.manifestExt.getSpecificAudioData(manifest, periodInfo.index, defaultAudioLang);
-                },
-                // self.manifestExt.getVideoData() failed
-                function() {
-                    videoState = "error";
-                    checkIfInitialized.call(self, videoState, audioState, textTrackState);
-                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO, "No Video data in manifest");
-                    // Video is required, cancel any other track initialization
-                    return Q.reject();
+                if (videoCodec === null) {
+                    this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO, 'Video codec information not available');
+                } else {
+                    videoController = createBufferController.call(this, data, videoCodec);
                 }
-            ).then(
-                // self.manifestExt.getSpecificAudioData() succeeded
-                function(specificAudioData) {
-                    self.manifestExt.getDataIndex(specificAudioData, manifest, periodInfo.index).then(
-                        function(index) {
-                            audioTrackIndex = index;
-                        }
-                    );
+            }
 
-                    self.manifestExt.getCodec(specificAudioData).then(
-                        function(codec) {
-                            self.debug.info("[Stream] Audio codec: " + codec);
-                            audioCodec = codec;
+            // Abort if no video controller
+            if (videoController === null) {
+                initializeMediaSourceFinished = true;
+                return;
+            }
 
-                            if (!self.capabilities.supportsCodec(self.videoModel.getElement(), codec)) {
-                                // If codec is not supported by the <video> element, then raise DOMException 'NotSupportedError'
-                                // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer) 
-                                return Q.reject({
-                                    code: MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_SUPPORTED,
-                                    name: "NotSupportedError",
-                                    message: "Codec not supported"
-                                });
-                            }
+            // Initialize audio BufferController
+            data = this.manifestExt.getSpecificAudioData(manifest, periodInfo.index, defaultAudioLang);
 
-                            // Create and add the SourceBuffer
-                            if (mediaSource) {
-                                return self.sourceBufferExt.createSourceBuffer(mediaSource, codec);
-                            } else {
-                                return Q.reject({
-                                    // If MediaSource is not defined then raise DOMException 'InvalidAccessError'
-                                    // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer)
-                                    code: MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS,
-                                    name: "InvalidAccessError",
-                                    message: "MediaSource undefined"
-                                });
-                            }
-                        }
-                    ).then(
-                        // self.sourceBufferExt.createSourceBuffer() succeeded
-                        function(buffer) {
-                            // TODO : How to tell index handler live/duration?
-                            // TODO : Pass to controller and then pass to each method on handler?
-                            audioController = self.system.getObject("bufferController");
-                            audioController.initialize("audio", periodInfo, specificAudioData, buffer, self.fragmentController, mediaSource, eventController);
-                            //self.debug.log("Audio is ready!");
-                            audioState = "ready";
-                            checkIfInitialized.call(self, videoState, audioState, textTrackState);
-                        },
-                        // self.sourceBufferExt.createSourceBuffer() failed
-                        function(ex) {
-                            audioState = "error";
-                            if (ex.code && ex.code === MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_SUPPORTED) {
-                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Audio codec is not supported", {
-                                    codec: audioCodec
-                                });
-                            } else {
-                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create audio source buffer",
-                                    new MediaPlayer.vo.Error(ex.code, ex.name, ex.message));
-                            }
-                            checkIfInitialized.call(self, videoState, audioState, textTrackState);
-                        }
-                    );
-                    return self.manifestExt.getSpecificTextData(manifest, periodInfo.index, defaultSubtitleLang);
-                },
-                // self.manifestExt.getSpecificAudioData() failed or no video track
-                function() {
-                    audioState = "ready";
-                    checkIfInitialized.call(self, videoState, audioState, textTrackState);
-                    if (videoState === "error") {
-                        return Q.reject();
-                    }
-                    self.debug.log("[Stream] No audio streams.");
-                    self.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "No audio data in manifest");
-                    return self.manifestExt.getSpecificTextData(manifest, periodInfo.index, defaultSubtitleLang);
-                }
-            ).then(
-                // ORANGE: added Support for fragmented subtitles
-                //         which are downloaded and handled just like Audio/Video - by a regular bufferController, fragmentController etc
-                //         (fragmented subtitles are used by MSS and live streams)
+            if (data === null) {
+                this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "No audio data in manifest");
+            } else {
+                audioTrackIndex = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
+                audioCodec = this.manifestExt.getCodec(data);
 
-                // self.manifestExt.getSpecificTextData() succeeded
-                function(specificSubtitleData) {
-                    var mimeType;
-                    self.manifestExt.getDataIndex(specificSubtitleData, manifest, periodInfo.index).then(
-                        function(index) {
-                            textTrackIndex = index;
-                        });
+                if (audioCodec === null) {
+                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "Audio codec information not available");
+                } else {
+                    audioController = createBufferController.call(this, data, audioCodec);
 
-                    self.manifestExt.getMimeType(specificSubtitleData).then(
-                        function(type) {
-                            mimeType = type;
-                            if (mediaSource) {
-                                return self.sourceBufferExt.createSourceBuffer(mediaSource, mimeType);
-                            } else {
-                                return Q.reject({
-                                    // If MediaSource is not defined then raise DOMException 'InvalidAccessError'
-                                    // as it can raised by MediaSource's addSourceBuffer() method (see https://w3c.github.io/media-source/#widl-MediaSource-addSourceBuffer)
-                                    code: MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_ACCESS,
-                                    name: "InvalidAccessError",
-                                    message: "MediaSource undefined"
-                                });
-                            }
-                        }
-                    ).then(
-                        function(buffer) {
-                            textController = self.system.getObject("bufferController");
-                            textController.initialize("text", periodInfo, specificSubtitleData, buffer, self.fragmentController, mediaSource);
-
-                            if (buffer.hasOwnProperty('initialize')) {
-                                buffer.initialize(mimeType, textController, specificSubtitleData);
-                            }
-                            //self.debug.log("Text is ready!");
-                            textTrackState = "ready";
-                            checkIfInitialized.call(self, videoState, audioState, textTrackState);
-                        },
-                        function(ex) {
-                            textTrackState = "ready";
-                            textController = null;
-                            checkIfInitialized.call(self, videoState, audioState, textTrackState);
-                            if (ex.code && ex.code === MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_NOT_SUPPORTED) {
-                                self.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Text codec is not supported", {
-                                    codec: videoCodec
-                                });
-                            } else {
-                                self.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CREATE_SOURCEBUFFER, "Failed to create text source buffer",
-                                    new MediaPlayer.vo.Error(ex.code, ex.name, ex.message));
-                            }
-                        }
-                    );
-
-                    return self.manifestExt.getEventsForPeriod(manifest, periodInfo);
-                },
-                // self.manifestExt.getSpecificTextData() failed or no video track
-                function() {
-                    textTrackState = "ready";
-                    checkIfInitialized.call(self, videoState, audioState, textTrackState);
-                    if (videoState === "error") {
-                        return Q.reject();
-                    }
-                    self.debug.log("[Stream] No text tracks.");
-                    return self.manifestExt.getEventsForPeriod(manifest, periodInfo);
-                }
-            ).then(
-                function(events) {
-                    if (eventController) {
-                        eventController.addInlineEvents(events);
+                    // Abort if audio track defined but failed to create audio controller
+                    if (audioController === null) {
+                        initializeMediaSourceFinished = true;
+                        return;
                     }
                 }
-            );
+            }
 
-            return initializedeferred.promise;
+            // Initialize text BufferController
+            data = this.manifestExt.getSpecificTextData(manifest, periodInfo.index, defaultSubtitleLang);
+
+            if (data !== null) {
+                textTrackIndex = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
+                textMimeType = this.manifestExt.getMimeType(data);
+
+                if (textMimeType === null) {
+                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_TEXT, "Text codec information not available");
+                } else {
+                    textController = createBufferController.call(this, data, textMimeType);
+                }
+            }
+
+            // Initialize EventController
+            if (eventController) {
+                eventController.addInlineEvents(this.manifestExt.getEventsForPeriod(manifest, periodInfo));
+            }
+
+            // Initialize ProtectionController
+            if (protectionController) {
+                protectionController.init(contentProtection, audioCodec, videoCodec);
+            } else if (contentProtection && !this.capabilities.supportsEncryptedMedia()) {
+                // No protectionController (MediaKeys not supported/enabled) but content is protected => error
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS, "EME is not supported/enabled", null);
+            }
+
+            initializeMediaSourceFinished = true;
+            return;
         },
 
         initializePlayback = function() {
-            var self = this,
-                initialize = Q.defer();
-
-            self.manifestExt.getDuration(self.manifestModel.getValue(), periodInfo).then(
-                function(duration) {
-                    self.debug.log("[Stream] Setting duration: " + duration);
-                    return self.mediaSourceExt.setDuration(mediaSource, duration);
-                }
-            ).then(
-                function() {
-                    initialized = true;
-                    initialize.resolve(true);
-                }
-            );
-
-            return initialize.promise;
+            this.debug.log("[Stream] Setting duration: " + periodInfo.duration);
+            this.mediaSourceExt.setDuration(mediaSource, periodInfo.duration);
+            initialized = true;
         },
 
-        startFragmentInfoControllers = function () {
+        startFragmentInfoControllers = function() {
             if (fragmentInfoVideoController === null && videoController) {
                 fragmentInfoVideoController = this.system.getObject("fragmentInfoController");
                 fragmentInfoVideoController.initialize("video", this.fragmentController, videoController);
             }
 
-            if (fragmentInfoAudioController === null && audioController){
+            if (fragmentInfoAudioController === null && audioController) {
                 fragmentInfoAudioController = this.system.getObject("fragmentInfoController");
                 fragmentInfoAudioController.initialize("audio", this.fragmentController, audioController);
             }
 
-            if (fragmentInfoTextController === null && textController){
+            if (fragmentInfoTextController === null && textController) {
                 fragmentInfoTextController = this.system.getObject("fragmentInfoController");
                 fragmentInfoTextController.initialize("text", this.fragmentController, textController);
             }
@@ -18367,10 +18269,16 @@ MediaPlayer.dependencies.Stream = function() {
                 speed,
                 ratio = 0.9,
                 seekValue,
+                videoEndedEvent,
                 delay,
-                _seek = function (delay, seekValue) {
+                _seek = function(delay, seekValue) {
                     if (self.videoModel.getCurrentTime() === self.getStartTime() || tmEndDetected) {
                         self.debug.log("[Stream] Trick mode (x" + tmSpeed + "): stop");
+                        if (tmEndDetected) {
+                            videoEndedEvent = document.createEvent("Event");
+                            videoEndedEvent.initEvent("ended", true, true);
+                            self.videoModel.getElement().dispatchEvent(videoEndedEvent);
+                        }
                         return;
                     }
                     if (seekValue < self.getStartTime()) {
@@ -18382,7 +18290,7 @@ MediaPlayer.dependencies.Stream = function() {
                     if (delay > 0) {
                         self.debug.log("[Stream] Trick mode (x" + tmSpeed + "): wait " + delay.toFixed(3) + " s");
                     }
-                    tmSeekTimeout = setTimeout(function () {
+                    tmSeekTimeout = setTimeout(function() {
                         tmSeekTime = new Date().getTime() / 1000;
                         self.debug.log("[Stream] Trick mode (x" + tmSpeed + "): seek time = " + seekValue.toFixed(3));
                         tmSeekValue = seekValue;
@@ -18420,8 +18328,8 @@ MediaPlayer.dependencies.Stream = function() {
                     delay = 0;
                 } else if (speed < (Math.abs(tmSpeed) * ratio)) {
                     // Measured speed < target speed => increase seek step
-                    var speedRatio = Math.abs(tmSpeed/speed);
-                    tmSeekStep *= Math.round(speedRatio)+Math.round(speedRatio%tmMinSeekStep);
+                    var speedRatio = Math.abs(tmSpeed / speed);
+                    tmSeekStep *= Math.round(speedRatio) + Math.round(speedRatio % tmMinSeekStep);
                     self.debug.info("[Stream] Trick mode (x" + tmSpeed + "): seek step = " + tmSeekStep);
                     seekValue = currentVideoTime + (tmSeekStep * Math.sign(tmSpeed));
                     delay = 0;
@@ -18455,7 +18363,17 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         onDurationchange = function() {
-            this.debug.info("[Stream] <video> durationchange event: " + this.videoModel.getDuration());
+            var duration = this.videoModel.getDuration(),
+                streamDuration = Number(periodInfo.duration.toFixed(3));
+
+            this.debug.info("[Stream] <video> durationchange event: " + duration);
+
+            // The duration may change if the effective MSE buffer duration is greater than the initial duration set from manifest
+            // => then we update the MediaSource duration to ensure 'ended' event being sent by the video element
+            // (round durationfrom manifest to milliseconds to avoid rounding issue within MSE buffer)
+            if (!isNaN(duration) && duration !== Infinity && duration > streamDuration) {
+                this.debug.log("[Stream] Setting duration: " + streamDuration);
+            }
         },
 
         onRatechange = function() {
@@ -18574,7 +18492,7 @@ MediaPlayer.dependencies.Stream = function() {
         doLoad = function(manifestResult) {
 
             var self = this;
- 
+
             //self.debug.log("Stream start loading.");
 
             manifest = manifestResult;
@@ -18598,15 +18516,9 @@ MediaPlayer.dependencies.Stream = function() {
                 function(mediaSourceResult) {
                     mediaSource = mediaSourceResult;
                     self.debug.log("[Stream] Initialize MediaSource");
-                    return initializeMediaSource.call(self);
-                }
-            ).then(
-                function( /*result*/ ) {
+                    initializeMediaSource.call(self);
                     self.debug.log("[Stream] Initialize playback");
-                    return initializePlayback.call(self);
-                }
-            ).then(
-                function( /*done*/ ) {
+                    initializePlayback.call(self);
                     self.debug.log("[Stream] Playback initialized");
                 }
             );
@@ -18638,6 +18550,13 @@ MediaPlayer.dependencies.Stream = function() {
         // => then seek every BufferController at the found start time
         onStartTimeFound = function(startTime) {
             this.debug.info("[Stream] Start time = " + startTime);
+            // Check if initial start time is set, then overload start time
+            if (initialStartTime !== -1 &&
+                !this.manifestExt.getIsDynamic(manifest) &&
+                initialStartTime < periodInfo.duration) {
+                this.debug.info("[Stream] Initial start time = " + initialStartTime);
+                startTime = initialStartTime;
+            }
             seek.call(this, startTime, (periodInfo.index === 0) && autoPlay);
         },
 
@@ -18655,14 +18574,8 @@ MediaPlayer.dependencies.Stream = function() {
             if (videoRange === null) {
                 return;
             }
-            // PATCH (+0.5) for chrome for which there is an issue for starting live streams,
-            // due to a difference (rounding?) between manifest segments times and real samples times
-            // returned by the buffer.
-            startTime = videoRange.start; // + 0.5;
-            // Do not need to take videoRange.start since in case of live streams the seekTime corresponds
-            // to the start of a video segment, then to the videoRange.start
-            // (except if theoretical segment time does not corresponds to absolute media time)
-            //startTime = seekTime;
+
+            startTime = Math.max(seekTime, videoRange.start);
 
             if (audioController) {
                 // Check if audio buffer is not empty
@@ -18675,22 +18588,16 @@ MediaPlayer.dependencies.Stream = function() {
                 if (audioRange.end < startTime) {
                     return;
                 }
-                if (audioRange.start > startTime) {
-                    startTime = audioRange.start;
-                }
+                startTime = Math.max(startTime, audioRange.start);
             }
 
             this.debug.info("[Stream] Check start time: OK => " + startTime);
-
-            // Align audio and video buffers
-            //self.sourceBufferExt.remove(audioController.getBuffer(), audioRange.start, videoRange.start, Infinity, mediaSource, false);
 
             // Unmap "bufferUpdated" handler
             this.system.unmapHandler("bufferUpdated");
 
             // In case of live streams and then DVR seek, then we start the fragmentInfoControllers
-            // (check if seek not due to stream loading)
-            // (check if seek not due to stream reloading)
+            // (check if seek not due to stream loading or reloading)
             if (this.manifestExt.getIsDynamic(manifest) && !isReloading && (this.videoModel.getCurrentTime() !== 0)) {
                 startFragmentInfoControllers.call(this);
             }
@@ -18706,7 +18613,7 @@ MediaPlayer.dependencies.Stream = function() {
             play.call(this);
         },
 
-        selectTrack = function (controller, track, currentIndex) {
+        selectTrack = function(controller, track, currentIndex) {
             var index = -1;
 
             if (!controller) {
@@ -18718,7 +18625,7 @@ MediaPlayer.dependencies.Stream = function() {
             }
 
             // Get data index corresponding to the new selected track
-            index = this.manifestExt.getDataIndex_(track, manifest, periodInfo.index);
+            index = this.manifestExt.getDataIndex(track, manifest, periodInfo.index);
 
             // Check if different track selected
             if (index !== currentIndex) {
@@ -18737,14 +18644,7 @@ MediaPlayer.dependencies.Stream = function() {
         updateData = function(updatedPeriodInfo) {
             var self = this,
                 videoData,
-                deferredVideoData,
-                deferredAudioData,
-                deferredTextData,
-                deferred = Q.defer(),
-                deferredVideoUpdate = Q.defer(),
-                deferredAudioUpdate = Q.defer(),
-                deferredTextUpdate = Q.defer(),
-                deferredEventUpdate = Q.defer();
+                data;
 
             manifest = self.manifestModel.getValue();
             periodInfo = updatedPeriodInfo;
@@ -18754,68 +18654,34 @@ MediaPlayer.dependencies.Stream = function() {
                 videoData = videoController.getData();
 
                 if (!!videoData && videoData.hasOwnProperty("id")) {
-                    deferredVideoData = self.manifestExt.getDataForId(videoData.id, manifest, periodInfo.index);
+                    data = self.manifestExt.getDataForId(videoData.id, manifest, periodInfo.index);
                 } else {
-                    deferredVideoData = self.manifestExt.getDataForIndex(videoTrackIndex, manifest, periodInfo.index);
+                    data = self.manifestExt.getDataForIndex(videoTrackIndex, manifest, periodInfo.index);
                 }
-
-                deferredVideoData.then(
-                    function(data) {
-                        videoController.updateData(data, periodInfo);
-                        deferredVideoUpdate.resolve();
-                    }
-                );
-            } else {
-                deferredVideoUpdate.resolve();
+                videoController.updateData(data, periodInfo);
             }
 
             if (audioController) {
-                deferredAudioData = self.manifestExt.getDataForIndex(audioTrackIndex, manifest, periodInfo.index);
-
-                deferredAudioData.then(
-                    function(data) {
-                        audioController.updateData(data, periodInfo);
-                        deferredAudioUpdate.resolve();
-                    }
-                );
-            } else {
-                deferredAudioUpdate.resolve();
+                data = self.manifestExt.getDataForIndex(audioTrackIndex, manifest, periodInfo.index);
+                audioController.updateData(data, periodInfo);
             }
 
             if (textController) {
-                deferredTextData = self.manifestExt.getDataForIndex(textTrackIndex, manifest, periodInfo.index);
-
-                deferredTextData.then(
-                    function(data) {
-                        textController.updateData(data, periodInfo);
-                        deferredTextUpdate.resolve();
-                    }
-                );
+                data = self.manifestExt.getDataForIndex(textTrackIndex, manifest, periodInfo.index);
+                textController.updateData(data, periodInfo);
             }
 
             if (eventController) {
-                self.manifestExt.getEventsForPeriod(manifest, periodInfo).then(
-                    function(events) {
-                        eventController.addInlineEvents(events);
-                        deferredEventUpdate.resolve();
-                    }
-                );
+                var events = self.manifestExt.getEventsForPeriod(manifest, periodInfo);
+                eventController.addInlineEvents(events);
             }
 
-            Q.when(deferredVideoUpdate.promise, deferredAudioUpdate.promise, deferredTextUpdate.promise).then(
-                function() {
-                    if (isReloading && videoController) {
-                        self.system.unmapHandler("bufferUpdated");
-                        self.system.mapHandler("bufferUpdated", undefined, onBufferUpdated.bind(self));
-                        // Call load on video controller in order to get new stream start time (=live edge for live streams)
-                        videoController.load();
-                    }
-
-                    deferred.resolve();
-                }
-            );
-
-            return deferred.promise;
+            if (isReloading && videoController) {
+                self.system.unmapHandler("bufferUpdated");
+                self.system.mapHandler("bufferUpdated", undefined, onBufferUpdated.bind(self));
+                // Call load on video controller in order to get new stream start time (=live edge for live streams)
+                videoController.load();
+            }
         },
 
         streamsComposed = function() {
@@ -18883,7 +18749,7 @@ MediaPlayer.dependencies.Stream = function() {
         errHandler: undefined,
         timelineConverter: undefined,
         scheduleWhilePaused: undefined,
-        textTrackExtensions:undefined,
+        textTrackExtensions: undefined,
         // ORANGE : add metricsModel
         metricsModel: undefined,
         eventBus: undefined,
@@ -18942,17 +18808,21 @@ MediaPlayer.dependencies.Stream = function() {
             //document.addEventListener("visibilitychange", visibilitychangeListener);
         },
 
+        setInitialStartTime: function(startTime) {
+            var time = parseFloat(startTime);
+            if (!isNaN(time)) {
+                initialStartTime = time;
+            }
+        },
+
         setAudioTrack: function(audioTrack) {
             audioTrackIndex = selectTrack.call(this, audioController, audioTrack, audioTrackIndex);
         },
 
         getSelectedAudioTrack: function() {
-            var manifest = this.manifestModel.getValue();
-
             if (audioController) {
-                return this.manifestExt.getDataForIndex_(audioTrackIndex, manifest, periodInfo.index);
+                return this.manifestExt.getDataForIndex(audioTrackIndex, manifest, periodInfo.index);
             }
-
             return undefined;
         },
 
@@ -18961,19 +18831,14 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         getSelectedSubtitleTrack: function() {
-            var manifest = this.manifestModel.getValue();
-
             if (textController && subtitlesEnabled) {
-                return this.manifestExt.getDataForIndex_(textTrackIndex, manifest, periodInfo.index);
+                return this.manifestExt.getDataForIndex(textTrackIndex, manifest, periodInfo.index);
             }
-
             return undefined;
         },
 
         initProtection: function(protectionCtrl) {
             protectionController = protectionCtrl;
-
-            // Protection error handler
             if (protectionController) {
                 protectionController.subscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, this);
             }
@@ -19045,6 +18910,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.system.unmapHandler("streamsComposed", undefined, streamsComposed);
 
             this.system.unmapHandler("bufferUpdated");
+            this.system.unmapHandler("startTimeFound");
             this.system.unmapHandler("segmentLoadingFailed");
             this.system.unmapHandler("bufferingCompleted");
 
@@ -19090,11 +18956,14 @@ MediaPlayer.dependencies.Stream = function() {
         resetEventController: function() {
             eventController.reset();
         },
-        
+
         enableSubtitles: function(enabled) {
+            var track;
 
             if (enabled !== subtitlesEnabled) {
                 subtitlesEnabled = enabled;
+                track = this.textTrackExtensions.getCurrentTextTrack(this.videoModel.getElement());
+
                 if (textController) {
                     if (enabled) {
                         if (this.manifestExt.getIsDynamic(manifest)) {
@@ -19104,10 +18973,13 @@ MediaPlayer.dependencies.Stream = function() {
                         } else {
                             streamsComposed.call(this);
                         }
+                        // show subtitle here => useful for full TTML file
+                        if (track && track.mode !== 'showing') {
+                            track.mode = "showing";
+                        }
                     } else {
                         // hide subtitle here
-                        var track = this.textTrackExtensions.getCurrentTextTrack(this.videoModel.getElement());
-                        if(track){
+                        if (track) {
                             track.mode = "hidden";
                         }
                         textController.stop();
@@ -19125,7 +18997,7 @@ MediaPlayer.dependencies.Stream = function() {
                 restoreMute = function() {
                     if (self.videoModel.getCurrentTime() > (currentVideoTime + 1)) {
                         self.videoModel.unlisten("timeupdate", restoreMute);
-                        self.debug.info("[Stream] Set mute: "+muteState+", the mute state before using trick mode.");
+                        self.debug.info("[Stream] Set mute: " + muteState + ", the mute state before using trick mode.");
                         self.videoModel.setMute(muteState);
                     }
                 };
@@ -19172,8 +19044,7 @@ MediaPlayer.dependencies.Stream = function() {
                 } else {
                     if (tmState === "Running") {
                         tmState = "Changed";
-                    }
-                    else if (tmState === "Stopped") {
+                    } else if (tmState === "Stopped") {
                         tmEndDetected = false;
                         tmState = "Running";
                         tmSeekStep = tmMinSeekStep = videoController.getSegmentDuration();
@@ -19225,7 +19096,8 @@ MediaPlayer.dependencies.StreamController = function() {
      * and implements corresponding logic to switch between them.
      */
 
-    var streams = [],
+    var source,
+        streams = [],
         activeStream,
         protectionController,
         ownProtectionController = false,
@@ -19273,7 +19145,7 @@ MediaPlayer.dependencies.StreamController = function() {
             detachVideoEvents.call(this, fromVideoModel);
             attachVideoEvents.call(this, toVideoModel);
 
-            return Q.when(true);
+            return true;
         },
 
         attachVideoEvents = function(videoModel) {
@@ -19461,17 +19333,17 @@ MediaPlayer.dependencies.StreamController = function() {
                 metrics = self.metricsModel.getMetricsFor("stream"),
                 manifestUpdateInfo = self.metricsExt.getCurrentManifestUpdate(metrics),
                 periodInfo,
-                deferred = Q.defer(),
-                updatedStreams = [],
+                periods,
                 pLen,
                 sLen,
                 pIdx,
                 sIdx,
                 period,
+                mpd,
                 stream;
 
             if (!manifest) {
-                return Q.when(false);
+                return false;
             }
 
             if (self.capabilities.supportsEncryptedMedia()) {
@@ -19492,102 +19364,76 @@ MediaPlayer.dependencies.StreamController = function() {
                 }
             }
 
-            self.manifestExt.getMpd(manifest).then(
-                function(mpd) {
-                    if (activeStream) {
-                        periodInfo = activeStream.getPeriodInfo();
-                        mpd.isClientServerTimeSyncCompleted = periodInfo.mpd.isClientServerTimeSyncCompleted;
-                        mpd.clientServerTimeShift = periodInfo.mpd.clientServerTimeShift;
+            mpd = self.manifestExt.getMpd(manifest);
+            if (activeStream) {
+                periodInfo = activeStream.getPeriodInfo();
+                mpd.isClientServerTimeSyncCompleted = periodInfo.mpd.isClientServerTimeSyncCompleted;
+                mpd.clientServerTimeShift = periodInfo.mpd.clientServerTimeShift;
+            }
+
+            periods = self.manifestExt.getRegularPeriods(manifest, mpd);
+            if (periods.length === 0) {
+                return false;
+            }
+
+            for (pIdx = 0, pLen = periods.length; pIdx < pLen; pIdx += 1) {
+                period = periods[pIdx];
+                for (sIdx = 0, sLen = streams.length; sIdx < sLen; sIdx += 1) {
+                    // If the stream already exists we just need to update the values we got from the updated manifest
+                    if (streams[sIdx].getId() === period.id) {
+                        stream = streams[sIdx];
+                        stream.updateData(period);
                     }
-
-                    self.manifestExt.getRegularPeriods(manifest, mpd).then(
-                        function(periods) {
-
-                            if (periods.length === 0) {
-                                return deferred.reject();
-                            }
-
-                            for (pIdx = 0, pLen = periods.length; pIdx < pLen; pIdx += 1) {
-                                period = periods[pIdx];
-                                for (sIdx = 0, sLen = streams.length; sIdx < sLen; sIdx += 1) {
-                                    // If the stream already exists we just need to update the values we got from the updated manifest
-                                    if (streams[sIdx].getId() === period.id) {
-                                        stream = streams[sIdx];
-                                        updatedStreams.push(stream.updateData(period));
-                                    }
-                                }
-                                // If the Stream object does not exist we probably loaded the manifest the first time or it was
-                                // introduced in the updated manifest, so we need to create a new Stream and perform all the initialization operations
-                                if (!stream) {
-                                    stream = self.system.getObject("stream");
-                                    stream.setVideoModel(pIdx === 0 ? self.videoModel : createVideoModel.call(self));
-                                    stream.initProtection(protectionController);
-                                    stream.setAutoPlay(autoPlay);
-                                    stream.setDefaultAudioLang(defaultAudioLang);
-                                    stream.setDefaultSubtitleLang(defaultSubtitleLang);
-                                    stream.enableSubtitles(subtitlesEnabled);
-                                    stream.load(manifest, period);
-                                    streams.push(stream);
-                                }
-
-                                self.metricsModel.addManifestUpdatePeriodInfo(manifestUpdateInfo, period.id, period.index, period.start, period.duration);
-                                stream = null;
-                            }
-
-                            // If the active stream has not been set up yet, let it be the first Stream in the list
-                            if (!activeStream) {
-                                activeStream = streams[0];
-                                attachVideoEvents.call(self, activeStream.getVideoModel());
-                            }
-
-                            self.metricsModel.updateManifestUpdateInfo(manifestUpdateInfo, {
-                                currentTime: self.videoModel.getCurrentTime(),
-                                buffered: self.videoModel.getElement().buffered,
-                                presentationStartTime: periods[0].start,
-                                clientTimeOffset: mpd.clientServerTimeShift
-                            });
-
-                            Q.all(updatedStreams).then(
-                                function() {
-                                    deferred.resolve();
-                                }
-                            );
-                        }
-                    );
                 }
-            );
+                // If the Stream object does not exist we probably loaded the manifest the first time or it was
+                // introduced in the updated manifest, so we need to create a new Stream and perform all the initialization operations
+                if (!stream) {
+                    stream = self.system.getObject("stream");
+                    stream.setVideoModel(pIdx === 0 ? self.videoModel : createVideoModel.call(self));
+                    stream.initProtection(protectionController);
+                    stream.setAutoPlay(autoPlay);
+                    stream.setDefaultAudioLang(defaultAudioLang);
+                    stream.setDefaultSubtitleLang(defaultSubtitleLang);
+                    stream.enableSubtitles(subtitlesEnabled);
+                    stream.setInitialStartTime(source.startTime);
+                    stream.load(manifest, period);
+                    streams.push(stream);
+                }
 
-            return deferred.promise;
+                self.metricsModel.addManifestUpdatePeriodInfo(manifestUpdateInfo, period.id, period.index, period.start, period.duration);
+                stream = null;
+            }
+
+            // If the active stream has not been set up yet, let it be the first Stream in the list
+            if (!activeStream) {
+                activeStream = streams[0];
+                attachVideoEvents.call(self, activeStream.getVideoModel());
+            }
+
+            self.metricsModel.updateManifestUpdateInfo(manifestUpdateInfo, {
+                currentTime: self.videoModel.getCurrentTime(),
+                buffered: self.videoModel.getElement().buffered,
+                presentationStartTime: periods[0].start,
+                clientTimeOffset: mpd.clientServerTimeShift
+            });
+
+            return true;
         },
 
         // ORANGE: create function to handle audiotracks
         updateAudioTracks = function() {
             if (activeStream) {
-                var self = this;
-                self.manifestExt.getAudioDatas(self.manifestModel.getValue(), activeStream.getPeriodIndex()).then(function(audiosDatas) {
-                    audioTracks = audiosDatas;
-                    // fire event to notify that audiotracks have changed
-
-                    self.system.notify("audioTracksUpdated");
-                }, function() {
-                    audioTracks = null;
-                    self.system.notify("audioTracksUpdated");
-                });
+                audioTracks = this.manifestExt.getAudioDatas(this.manifestModel.getValue(), activeStream.getPeriodIndex());
+                // fire event to notify that audiotracks have changed
+                this.system.notify("audioTracksUpdated");
             }
         },
 
         updateSubtitleTracks = function() {
             if (activeStream) {
-                var self = this;
-                self.manifestExt.getTextDatas(self.manifestModel.getValue(), activeStream.getPeriodIndex()).then(function(textDatas) {
-                    subtitleTracks = textDatas;
-                    // fire event to notify that subtitletracks have changed
-                    self.system.notify("subtitleTracksUpdated");
-                }, function() {
-                    subtitleTracks = null;
-                    // fire event to notify that subtitletracks have changed
-                    self.system.notify("subtitleTracksUpdated");
-                });
+                subtitleTracks = this.manifestExt.getTextDatas(this.manifestModel.getValue(), activeStream.getPeriodIndex());
+                // fire event to notify that subtitletracks have changed
+                this.system.notify("subtitleTracksUpdated");
             }
         },
 
@@ -19599,19 +19445,17 @@ MediaPlayer.dependencies.StreamController = function() {
         },
 
         manifestHasUpdated = function() {
-            var self = this;
-            composeStreams.call(self).then(
-                function() {
-                    // ORANGE: Update Audio Tracks List
-                    updateAudioTracks.call(self);
-                    // ORANGE: Update Subtitle Tracks List
-                    updateSubtitleTracks.call(self);
-                    self.system.notify("streamsComposed");
-                },
-                function() {
-                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_STREAM, "No stream/period is provided in the manifest");
-                }
-            );
+            var result = composeStreams.call(this);
+
+            if (result) {
+                // ORANGE: Update Audio Tracks List
+                updateAudioTracks.call(this);
+                // ORANGE: Update Subtitle Tracks List
+                updateSubtitleTracks.call(this);
+                this.system.notify("streamsComposed");
+            } else {
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_STREAM, "No stream/period is provided in the manifest");
+            }
         };
 
     return {
@@ -19702,18 +19546,20 @@ MediaPlayer.dependencies.StreamController = function() {
             return undefined;
         },
 
-        load: function(url, protData) {
+        load: function(newSource) {
             var self = this;
 
-            if (protData) {
-                protectionData = protData;
+            source = newSource;
+
+            if (source.protData) {
+                protectionData = source.protData;
             }
 
-            self.debug.info("[StreamController] load url: " + url);
+            self.debug.info("[StreamController] load url: " + source.url);
 
             reloadStream = false;
 
-            self.manifestLoader.load(url).then(
+            self.manifestLoader.load(source.url).then(
                 function(manifest) {
                     self.manifestModel.setValue(manifest);
                     //ORANGE : add Metadata metric
@@ -19763,11 +19609,11 @@ MediaPlayer.dependencies.StreamController = function() {
                         // then raise a warning and ask for refreshing the url (in case it is no more valid or expired)
                         self.errHandler.sendWarning(err.name, err.message, err.data);
                         self.eventBus.dispatchEvent({
-                                type: "manifestUrlUpdate",
-                                data: {
-                                    url: manifestUrl
-                                }
-                            });
+                            type: "manifestUrlUpdate",
+                            data: {
+                                url: manifestUrl
+                            }
+                        });
                     }
                 }
             );
@@ -19895,7 +19741,6 @@ MediaPlayer.dependencies.StreamController.eventList = {
     ENAME_STREAMS_COMPOSED: "streamsComposed",
     ENAME_TEARDOWN_COMPLETE: "streamTeardownComplete"
 };
-
 /*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
  *
@@ -20247,745 +20092,6 @@ MediaPlayer.dependencies.VideoModelExtensions.prototype = {
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-MediaPlayer.dependencies.TextController = function () {
-
-     var LOADING = "LOADING",
-         //LOADED = "LOADED",
-         READY = "READY",
-         initialized = false,
-         periodInfo = null,
-         mediaSource,
-         data,
-         buffer,
-         availableRepresentations,
-         state = READY,
-         setState = function (value) {
-             this.debug.log("TextController setState to:" + value);
-             state = value;
-         },
-         startPlayback = function () {
-
-             if (!initialized || state !== READY) {
-                 return;
-             }
-
-             var self = this;
-            // TODO Multiple tracks can be handled here by passing in quality level.
-            self.indexHandler.getInitRequest(availableRepresentations[0]).then(
-                 function (request) {
-                 //self.debug.log("Loading text track initialization: " + request.url);
-                 //self.debug.log(request);
-                     self.fragmentLoader.load(request).then(onBytesLoaded.bind(self, request), onBytesError.bind(self, request));
-                     setState.call(self, LOADING);
-                 }
-             );
-         },
-         doStart = function () {
-             startPlayback.call(this);
-         },
-
-         updateRepresentations = function (data, periodInfo) {
-             var self = this,
-                 deferred = Q.defer(),
-                 manifest = self.manifestModel.getValue();
-             self.manifestExt.getDataIndex(data, manifest, periodInfo.index).then(
-                 function(idx) {
-                     self.manifestExt.getAdaptationsForPeriod(manifest, periodInfo).then(
-                         function(adaptations) {
-                             self.manifestExt.getRepresentationsForAdaptation(manifest, adaptations[idx]).then(
-                                 function(representations) {
-                                     deferred.resolve(representations);
-                                 }
-                             );
-                         }
-                     );
-                 }
-             );
-
-             return deferred.promise;
-         },
-
-         onBytesLoaded = function (request, response) {
-             var self = this;
-             //self.debug.log(" Text track Bytes finished loading: " + request.url);
-            // ORANGE: add request parameter to retrieve startTime and timescale in fragmentController
-             self.fragmentController.process(response.data, request).then(
-                 function (data) {
-                     if (data !== null) {
-                         //self.debug.log("Push text track bytes: " + data.byteLength);
-                         self.sourceBufferExt.append(buffer, data, self.videoModel);
-                     }
-                 }
-             );
-         },
-
-        onBytesError = function( /*request*/ ) {};
-
-    return {
-        videoModel: undefined,
-        fragmentLoader: undefined,
-        fragmentController: undefined,
-        indexHandler: undefined,
-        sourceBufferExt: undefined,
-        manifestModel: undefined,
-        manifestExt: undefined,
-        debug: undefined,
-        initialize: function (periodInfo, data, buffer, videoModel, source) {
-            var self = this;
-
-            self.setVideoModel(videoModel);
-            self.setBuffer(buffer);
-            self.setMediaSource(source);
-
-            self.updateData(data, periodInfo).then(
-                function() {
-            initialized = true;
-                    startPlayback.call(self);
-                }
-            );
-        },
-
-        setPeriodInfo: function(value) {
-            periodInfo = value;
-        },
-
-        getPeriodIndex: function () {
-            return periodInfo.index;
-        },
-
-        getVideoModel: function () {
-            return this.videoModel;
-        },
-
-        setVideoModel: function (value) {
-            this.videoModel = value;
-        },
-
-        getData: function () {
-            return data;
-        },
-
-        setData: function (value) {
-            data = value;
-        },
-
-        getBuffer: function () {
-            return buffer;
-        },
-
-        setBuffer: function (value) {
-            buffer = value;
-        },
-
-        setMediaSource: function(value) {
-            mediaSource = value;
-        },
-
-        updateData: function (dataValue, periodInfoValue) {
-            var self = this,
-                deferred = Q.defer();
-
-            data = dataValue;
-            periodInfo = periodInfoValue;
-
-            updateRepresentations.call(self, data, periodInfo).then(
-                function(representations) {
-                    availableRepresentations = representations;
-                    setState.call(self, READY);
-                    startPlayback.call(self);
-                    deferred.resolve();
-                }
-            );
-
-            return deferred.promise;
-        },
-
-        reset: function (errored) {
-            if (!errored) {
-                this.sourceBufferExt.abort(mediaSource, buffer);
-                this.sourceBufferExt.removeSourceBuffer(mediaSource, buffer);
-            }
-        },
-
-        start: doStart
-    };
-};
-
-MediaPlayer.dependencies.TextController.prototype = {
-    constructor: MediaPlayer.dependencies.TextController
-};
-
-/*
- * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2013, Akamai Technologies
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Akamai Technologies nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-MediaPlayer.dependencies.TextSourceBuffer = function () {
-
-    var video,
-        data,
-        mimeType;
-
-    return {
-        system:undefined,
-        eventBus:undefined,
-        errHandler: undefined,
-
-        initialize: function (type, bufferController) {
-            mimeType = type;
-            video = bufferController.getVideoModel().getElement();
-            data = bufferController.getData();
-        },
-
-        append: function (bytes) {
-            var self = this,
-                ccContent = String.fromCharCode.apply(null, new Uint16Array(bytes));
-
-            self.getParser().parse(ccContent).then(
-                function(result)
-                {
-                    var label = data.Representation_asArray[0].id,
-                        lang = data.lang;
-
-                    self.getTextTrackExtensions().addTextTrack(video, result, label, lang, true).then(
-                        function(/*track*/)
-                        {
-                            self.eventBus.dispatchEvent({type:"updateend"});
-                        }
-                    );
-                },
-                function(errMsg) {
-                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CC_ERR_PARSE, errMsg, ccContent);
-                }
-            );
-        },
-
-        abort:function() {
-            this.getTextTrackExtensions().deleteCues(video);
-        },
-
-        getParser:function() {
-            var parser;
-
-            if (mimeType === "text/vtt") {
-                parser = this.system.getObject("vttParser");
-            } else if (mimeType === "application/ttml+xml") {
-                parser = this.system.getObject("ttmlParser");
-            }
-
-            return parser;
-        },
-
-        getTextTrackExtensions:function() {
-            return this.system.getObject("textTrackExtensions");
-        },
-
-        addEventListener: function (type, listener, useCapture) {
-            this.eventBus.addEventListener(type, listener, useCapture);
-        },
-
-        removeEventListener: function (type, listener, useCapture) {
-            this.eventBus.removeEventListener(type, listener, useCapture);
-        }
-    };
-};
-
-MediaPlayer.dependencies.TextSourceBuffer.prototype = {
-    constructor: MediaPlayer.dependencies.TextSourceBuffer
-};
-
-/*
- * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2013, Akamai Technologies
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Akamai Technologies nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-MediaPlayer.utils.TextTrackExtensions = function() {
-    "use strict";
-    var Cue;
-
-    return {
-        eventBus: undefined,
-        config: undefined,
-
-        setup: function() {
-            Cue = window.VTTCue || window.TextTrackCue;
-        },
-
-        cueEnter: function(subtitle_style, subtitle_text) {
-            this.eventBus.dispatchEvent({
-                type: "cueEnter",
-                data: {
-                    text: subtitle_text,
-                    style: subtitle_style,
-                }
-            });
-        },
-
-        cueExit: function(subtitle_style, subtitle_text) {
-            this.eventBus.dispatchEvent({
-                type: "cueExit",
-                data: {
-                    text: subtitle_text,
-                    style: subtitle_style,
-                }
-            });
-        },
-        
-        getCurrentTextTrack: function(video){
-            for(var i=0; i< video.textTracks.length; i++){
-                if(video.textTracks[i].label === 'hascaption'){
-                    return video.textTracks[i];
-                }
-            }
-            return null;
-        },
-
-        addTextTrack: function(video, captionData, label, scrlang, isDefaultTrack) {
-            var track = null,
-                currentItem = null,
-                subtitleDisplayMode = 'subtitles',
-                i;
-
-            //no function removeTextTrack is defined
-            //add one, only if it's necessary
-            //deleteCues will be very efficient in this case
-            track = this.getCurrentTextTrack(video);
-            if (!track) {
-                subtitleDisplayMode = this.config.getParam("TextTrackExtensions.displayModeExtern", "boolean") === true ? 'metadata' : 'subtitles';
-                //TODO: Ability to define the KIND in the MPD - ie subtitle vs caption....
-                track = video.addTextTrack(subtitleDisplayMode, 'hascaption', scrlang);
-                // track.default is an object property identifier that is a reserved word
-                // The following jshint directive is used to suppressed the warning "Expected an identifier and instead saw 'default' (a reserved word)"
-                /*jshint -W024 */
-                track.default = isDefaultTrack;
-                track.mode = "showing";
-            }else{
-                track.default = isDefaultTrack;
-                track.mode = "showing";
-            }
-
-            for (i = 0; i < captionData.length; i += 1) {
-                currentItem = captionData[i];
-                track.addCue(new Cue(currentItem.start, currentItem.end, currentItem.data));
-            }
-
-            return Q.when(track);
-        },
-
-        onCueEnter: function(e) {
-            this.cueEnter(e.currentTarget.style, e.currentTarget.text);
-        },
-
-        onCueExit: function(e) {
-            this.cueExit(e.currentTarget.style, e.currentTarget.text);
-        },
-
-        // Orange: addCues added so it is possible to add cues during playback,
-        //         not only during track initialization
-
-        addCues: function(track, captionData) {
-            var i = 0,
-                currentItem = null,
-                newCue = null;
-
-            for (i = 0; i < captionData.length; i += 1) {
-                currentItem = captionData[i];
-                if (currentItem.start < currentItem.end) {
-                    newCue = new Cue(currentItem.start, currentItem.end, currentItem.data);
-
-                    newCue.onenter = this.onCueEnter.bind(this);
-                    newCue.onexit = this.onCueExit.bind(this);
-
-                    newCue.snapToLines = false;
-
-                    newCue.line = currentItem.line;
-
-                    if (currentItem.style) {
-                        newCue.style = currentItem.style;
-                    }
-
-                    track.addCue(newCue);
-                }
-            }
-        },
-
-        deleteCues: function(video, disabled, start, end) {
-            var track = null,
-                cues = null,
-                lastIdx = null,
-                i = 0;
-
-            //when multiple tracks are supported - iterate through and delete all cues from all tracks.
-            if (video) {
-                track = video.textTracks[0];
-                if (track) {
-                    cues = track.cues;
-                    if (cues) {
-                        lastIdx = cues.length - 1;
-
-                        for (i = lastIdx; i >= 0; i -= 1) {
-                            if (((end === undefined || end === -1) || (cues[i].endTime < end)) &&
-                                ((start === undefined || start === -1) || (cues[i].startTime > start))) {
-                                track.removeCue(cues[i]);
-                            }
-                        }
-                    }
-                    //noway to delete track, just disable it
-                    //useful when player switchs between a stream with subtitles and an other one without.
-                    if (disabled) {
-                        track.mode = "disabled";
-                    }
-                }
-            }
-        }
-    };
-};
-/*
- * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2014, Orange
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Akamai Technologies nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-// Orange: This Source Buffer processes TTML+XML subtitles encapsulated in the mp4
-//         This format is used by smoothstreaming headends
-
-MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
-
-    var video,
-        mimeType,
-        currentLang,
-        currentId,
-
-        // We need to simulate TimeRanges, as defined 
-        // by Media Streaming Extensions.
-        // start() and end() functions must be provided,
-        // as player checks the buffer level using these
-
-        buffered = {
-            length: 0,
-            ranges: [],
-
-            start: function(index) {
-                return this.ranges[index].start;
-            },
-
-            end: function(index) {
-                return this.ranges[index].end;
-            },
-
-            addRange: function(start, end) {
-                var i = 0,
-                    rangesUpdated = false,
-                    tolerance =  0.01;
-
-                //detect discontinuity in ranges.
-                for (i = 0; i < this.ranges.length; i++) {
-                    if (this.ranges[i].end <= (start+tolerance) && this.ranges[i].end >= (start-tolerance)) {
-                        rangesUpdated = true;
-                        this.ranges[i].end = end;
-                    }
-
-                    if (this.ranges[i].start <= (end+tolerance) && this.ranges[i].start >= (end-tolerance)) {
-                        rangesUpdated = true;
-                        this.ranges[i].start = start;
-                    }
-                }
-                
-                if (!rangesUpdated) {
-                    this.ranges.push({
-                        start: start,
-                        end: end
-                    });
-                    this.length = this.length + 1;
-
-                    // TimeRanges must be normalized
-                    this.ranges.sort(function(a, b) {
-                        return a.start - b.start;
-                    });
-                }
-            },
-
-            removeRange: function(start, end) {
-                var i = 0;
-                for (i = this.ranges.length - 1; i >= 0; i -= 1) {
-                    if (((end === undefined || end === -1) || (this.ranges[i].end <= end)) &&
-                        ((start === undefined || start === -1) || (this.ranges[i].start >= start))) {
-                        this.ranges.splice(i, 1);
-                    }
-                }
-
-                this.length = this.ranges.length;
-            },
-
-            reset: function() {
-                this.length = 0;
-                this.ranges = [];
-            }
-        };
-
-    return {
-        updating: false,
-        system: undefined,
-        eventBus: undefined,
-        buffered: buffered,
-        textTrackExtensions: undefined,
-        ttmlParser: undefined,
-        debug: undefined,
-
-        initialize: function(type, bufferController, subtitleData) {
-            mimeType = type;
-            video = bufferController.getVideoModel().getElement();
-            buffered.reset();
-            currentLang = subtitleData.lang;
-            currentId = subtitleData.id;
-        },
-        remove: function(start, end) {
-            /*If start is negative or greater than duration, then throw an INVALID_ACCESS_ERR exception and abort these steps.
-            If end is less than or equal to start, then throw an INVALID_ACCESS_ERR exception and abort these steps.
-            If this object has been removed from the sourceBuffers attribute of the parent media source then throw an INVALID_STATE_ERR exception and abort these steps.
-            If the updating attribute equals true, then throw an INVALID_STATE_ERR exception and abort these steps.
-            If the readyState attribute of the parent media source is in the "ended" state then run the following steps:
-
-            Set the readyState attribute of the parent media source to "open"
-            Queue a task to fire a simple event named sourceopen at the parent media source .
-            Set the updating attribute to true.
-            Queue a task to fire a simple event named updatestart at this SourceBuffer object.
-            Return control to the caller and run the rest of the steps asynchronously.
-            Run the coded frame removal algorithm with start and end as the start and end of the removal range.
-            Set the updating attribute to false.
-            Queue a task to fire a simple event named update at this SourceBuffer object.
-            Queue a task to fire a simple event named updateend at this SourceBuffer object.*/
-            if (start < 0 || start >= end) {
-                throw "INVALID_ACCESS_ERR";
-            }
-
-            this.getTextTrackExtensions().deleteCues(video, false, start, end);
-            this.buffered.removeRange(start, end);
-        },
-
-        append: function(bytes) {
-            var self = this,
-                file = mp4lib.deserialize(bytes),
-                moov = file.getBoxByType('moov'),
-                mvhd,
-                moof,
-                mdat,
-                traf,
-                tfhd,
-                tfdt,
-                trun,
-                fragmentStart,
-                fragmentDuration = 0,
-                encoding = 'utf-8';
-
-            if (moov) {
-                // This must be an init segment, if it has a moov box.
-                // We need it to read the timescale, as it will be 
-                // used to compute fragments time ranges.
-
-                mvhd = moov.getBoxByType('mvhd');
-                self.timescale = mvhd.timescale;
-
-                // Also, it is a good moment to set up a text track on videoElement
-                // TODO: set up name and language 
-                self.textTrackExtensions.addTextTrack(video, [], currentId, currentLang, true)
-                    .then(function(track) {
-                        self.track = track;
-                        self.eventBus.dispatchEvent({
-                            type: "updateend"
-                        });
-                    });
-                return;
-            }
-
-            moof = file.getBoxByType('moof');
-            if (moof) {
-
-                // This is a subtitles track fragment
-                // let's decode the data and add captions to video element
-                mdat = file.getBoxByType('mdat');
-
-                // We need to update TimeRanges.                            
-                // assume that there is a single text sample in fragment
-                traf = moof.getBoxByType('traf');
-                tfhd = traf.getBoxByType('tfhd');
-                tfdt = traf.getBoxByType('tfdt');
-                trun = traf.getBoxByType('trun');
-
-                fragmentStart = tfdt.baseMediaDecodeTime / self.timescale;
-                fragmentDuration = 0;
-                if (trun.flags & 0x000100) {
-                    fragmentDuration = trun.samples_table[0].sample_duration / self.timescale;
-                } else {
-                    fragmentDuration = tfhd.default_sample_duration / self.timescale;
-                }
-
-                self.buffered.addRange(fragmentStart, fragmentStart + fragmentDuration);
-                
-                //detect utf-16 encoding
-                if (self.isUTF16(mdat.data)) {
-                    encoding = 'utf-16';
-                }
-                 // parse data and add to cues
-                self.convertUTFToString(mdat.data, encoding)
-                    .then(function(result) {
-                        self.ttmlParser.parse(result).then(function(cues) {
-                            var i;
-                            if (cues) {
-                                for (i = 0; i < cues.length; i += 1) {
-                                    cues[i].start = cues[i].start + fragmentStart;
-                                    cues[i].end = cues[i].end + fragmentStart;
-                                }
-
-                                self.textTrackExtensions.addCues(self.track, cues);
-
-                                self.eventBus.dispatchEvent({
-                                    type: "updateend"
-                                });
-                            }
-                        }, function(/*error*/) {
-                            //self.debug.error("[TextTTMLXMLMP4SourceBuffer] error parsing TTML "+error);
-                        });
-                    });
-            }
-            return;
-        },
-
-        convertUTFToString: function(buf, encoding) {
-            var deferred = Q.defer(),
-                blob = new Blob([buf], {
-                    type: "text/xml"
-                }),
-                f = new FileReader();
-
-            f.onload = function(e) {
-                deferred.resolve(e.target.result);
-            };
-            f.readAsText(blob, encoding);
-
-            return deferred.promise;
-        },
-
-        /**
-         * UTF-16 (LE or BE)
-         *
-         * RFC2781: UTF-16, an encoding of ISO 10646
-         *
-         * @link http://www.ietf.org/rfc/rfc2781.txt
-         * @private
-         * @ignore
-         */
-        isUTF16: function(data) {
-            var i = 0;
-            var len = data && data.length;
-            var pos = null;
-            var b1, b2, next, prev;
-
-            if (len < 2) {
-                if (data[0] > 0xFF) {
-                    return false;
-                }
-            } else {
-                b1 = data[0];
-                b2 = data[1];
-                if (b1 === 0xFF && // BOM (little-endian)
-                    b2 === 0xFE) {
-                    return true;
-                }
-                if (b1 === 0xFE && // BOM (big-endian)
-                    b2 === 0xFF) {
-                    return true;
-                }
-
-                for (; i < len; i++) {
-                    if (data[i] === 0x00) {
-                        pos = i;
-                        break;
-                    } else if (data[i] > 0xFF) {
-                        return false;
-                    }
-                }
-
-                if (pos === null) {
-                    return false; // Non ASCII
-                }
-
-                next = data[pos + 1]; // BE
-                if (next !== void 0 && next > 0x00 && next < 0x80) {
-                    return true;
-                }
-
-                prev = data[pos - 1]; // LE
-                if (prev !== void 0 && prev > 0x00 && prev < 0x80) {
-                    return true;
-                }
-            }
-
-            return false;
-        },
-
-        abort: function() {
-            this.getTextTrackExtensions().deleteCues(video, true);
-        },
-
-        getTextTrackExtensions: function() {
-            return this.textTrackExtensions;
-        },
-
-        addEventListener: function(type, listener, useCapture) {
-            this.eventBus.addEventListener(type, listener, useCapture);
-            if (!this.updating)
-                this.eventBus.dispatchEvent({
-                    type: "updateend"
-                });
-        },
-
-        removeEventListener: function(type, listener, useCapture) {
-            this.eventBus.removeEventListener(type, listener, useCapture);
-        }
-    };
-};
-
-MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer.prototype = {
-    constructor: MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer
-};
-/*
- * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2013, Akamai Technologies
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Akamai Technologies nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
 MediaPlayer.utils.TTMLParser = function() {
     "use strict";
 
@@ -21170,7 +20276,7 @@ MediaPlayer.utils.TTMLParser = function() {
 
                         //search if others styles are referenced in the selected one
                         styleName = searchInTab(tabStyles, styleName, 'style');
-                        
+
                         while (styleName) {
                             //search in this other style
                             resu = searchInTab(tabStyles, styleName, styleElementName);
@@ -21315,6 +20421,106 @@ MediaPlayer.utils.TTMLParser = function() {
             return returnTime;
         },
 
+        computeCellResolution = function(cellResolution) {
+            if (!cellResolution) {
+                //default cell resolution defined in TTML documentation
+                cellResolution = '32 15';
+            }
+
+            var computedCellResolution = cellResolution,
+                i = 0;
+
+
+            computedCellResolution = computedCellResolution.split(' ');
+
+            for (i = 0; i < computedCellResolution.length; i += 1) {
+                computedCellResolution[i] = parseFloat(computedCellResolution[i]);
+            }
+
+            return computedCellResolution;
+        },
+
+        computeTextOutline = function(textOutline, cellResolution, defaultColor) {
+            var computedTextOutline = {
+                    color: null,
+                    width: null
+                },
+                formatTextOutlineWidth,
+                textOutlineWidthIndex = 0;
+
+            if (textOutline) {
+                textOutline = textOutline.split(' ');
+                //detect if outline color has been defined, if not outline color should be set to color value
+                if (textOutline[0] && isNaN(textOutline[0][0])) {
+                    computedTextOutline.color = textOutline[0];
+                    textOutlineWidthIndex = 1;
+                } else {
+                    computedTextOutline.color = defaultColor;
+                }
+
+                //detect text outline width, the first length value
+                if (textOutline[textOutlineWidthIndex]) {
+                    //get the last character for text Outline width definition
+                    formatTextOutlineWidth = textOutline[textOutlineWidthIndex][textOutline[textOutlineWidthIndex].length - 1];
+                    switch (formatTextOutlineWidth) {
+                        //definition in cell.
+                        case 'c':
+                            textOutline[textOutlineWidthIndex] = textOutline[textOutlineWidthIndex].split('c');
+                            if (textOutline[textOutlineWidthIndex][0]) {
+                                computedTextOutline.width = (parseFloat(textOutline[textOutlineWidthIndex][0] / cellResolution[1], 10) * 100).toFixed(1) + '%';
+                            }
+                            break;
+                        case 'x':
+                            //definition in pixel
+                            computedTextOutline.width = textOutline[textOutlineWidthIndex];
+                            break;
+                    }
+                }
+            }
+            return computedTextOutline;
+        },
+
+        computeFontSize = function(fontSize, cellResolution) {
+            var formatFontSize,
+                cellsSize,
+                i,
+                computedFontSize = fontSize;
+
+            if (fontSize) {
+                //get the last character for font size definition
+                formatFontSize = fontSize[fontSize.length - 1];
+            }
+
+            switch (formatFontSize) {
+                case '%':
+                    computedFontSize = (parseFloat(1 / cellResolution[1], 10) * 100);
+                    computedFontSize = ((parseInt(fontSize.substr(0, fontSize.length - 1), 10) * computedFontSize) / 100).toFixed(1) + "%";
+                    break;
+                case 'c':
+                    //define fontSize in %
+                    cellsSize = fontSize.replace(/\s/g, '').split('c');
+
+                    for (i = 0; i < cellsSize.length; i += 1) {
+                        cellsSize[i] = parseFloat(cellsSize[i]);
+                    }
+
+                    if (isNaN(cellsSize[1])) {
+                        computedFontSize = (cellsSize[0] / cellResolution[1] * 100).toFixed(1) + '%';
+                    } else {
+                        computedFontSize = (cellsSize[1] / cellResolution[1] * 100).toFixed(1) + '%';
+                    }
+                    break;
+                case 'x':
+                    //nothing to do, fontSize has been set with an absolute value.
+                    break;
+                default:
+                    //no fontSize has been defined => '1 c'
+                    computedFontSize = (parseFloat(1 / cellResolution[1], 10) * 100).toFixed(1) + '%';
+            }
+
+            return computedFontSize;
+        },
+
         internalParse = function(data) {
             var captionArray = [],
                 errorMsg,
@@ -21328,7 +20534,11 @@ MediaPlayer.utils.TTMLParser = function() {
                     backgroundColor: null,
                     color: null,
                     fontSize: null,
-                    fontFamily: null
+                    fontFamily: null,
+                    textOutline: {
+                        color: null,
+                        with: null
+                    }
                 },
                 caption,
                 divBody,
@@ -21336,9 +20546,11 @@ MediaPlayer.utils.TTMLParser = function() {
                 textDatas,
                 j,
                 k,
-                cellsSize,
                 cellResolution,
-                extent;
+                extent,
+                textNodes,
+                textOutline,
+                textValue = "";
 
             try {
 
@@ -21387,6 +20599,16 @@ MediaPlayer.utils.TTMLParser = function() {
                     } else {
                         for (i = 0; i < regions.length; i += 1) {
                             caption = null;
+                            cssStyle = {
+                                backgroundColor: null,
+                                color: null,
+                                fontSize: null,
+                                fontFamily: null,
+                                textOutline: {
+                                    color: null,
+                                    with: null
+                                }
+                            };
                             region = regions[i];
 
                             globalPrefTTNameSpace = arrayUnique(globalPrefTTNameSpace.concat(getNameSpace.call(this, region, 'main')));
@@ -21412,63 +20634,58 @@ MediaPlayer.utils.TTMLParser = function() {
                                          *   5- in the main div ToDo
                                          *   6- in the style of the main div
                                          **************************************************************************************/
-
-                                        cssStyle.backgroundColor = findStyleElement.call(this, [textDatas[j], region, divBody], 'backgroundColor');
-                                        cssStyle.color = findStyleElement.call(this, [textDatas[j], region, divBody], 'color');
-                                        cssStyle.fontSize = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontSize');
-                                        cssStyle.fontFamily = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontFamily');
-
-                                        extent = findStyleElement.call(this, [textDatas[j], region, divBody], 'extent');
-
-                                        if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === '%' && extent) {
-                                            extent = extent.split(' ')[1];
-                                            extent = parseFloat(extent.substr(0, extent.length - 1));
-                                            cssStyle.fontSize = (parseInt(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1), 10) * extent) / 100 + "%";
-                                        } else if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === 'c' && extent) {
-                                            cellsSize = cssStyle.fontSize.replace(/\s/g, '').split('c');
-                                            cellResolution = findParameterElement.call(this, [textDatas[j], region, divBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution').split(' ');
-                                            if (cellsSize.length > 1) {
-                                                cssStyle.fontSize = cellResolution[1] / cellsSize[1] + 'px';
-                                            } else {
-                                                cssStyle.fontSize = cellResolution[1] / cellsSize[0] + 'px';
-                                            }
-                                        }
-
-                                        //line and position element have no effect on IE
-                                        //For Chrome line = 80 is a percentage workaround to reorder subtitles
+                                        //search style informations once. 
                                         if (j === 0) {
-                                            caption = {
-                                                start: startTime,
-                                                end: endTime,
-                                                data: textDatas[j].textContent,
-                                                line: 80,
-                                                style: cssStyle
-                                            };
-                                        } else {
-                                            //try to detect multi lines subtitle
-                                            caption = {
-                                                start: startTime,
-                                                end: endTime,
-                                                data: textDatas[j - 1].textContent + '\n' + textDatas[j].textContent,
-                                                line: 80,
-                                                style: cssStyle
-                                            };
+                                            cssStyle.backgroundColor = findStyleElement.call(this, [textDatas[j], region, divBody], 'backgroundColor');
+                                            if (cssStyle.backgroundColor === null) {
+                                                //set default TTML value
+                                                cssStyle.backgroundColor = 'transparent';
+                                            }
+                                            cssStyle.color = findStyleElement.call(this, [textDatas[j], region, divBody], 'color');
+                                            cssStyle.fontSize = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontSize');
+                                            cssStyle.fontFamily = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontFamily');
+                                            textOutline = findStyleElement.call(this, [textDatas[j], region, divBody], 'textOutline');
+                                            extent = findStyleElement.call(this, [textDatas[j], region, divBody], 'extent');
+
+                                            cellResolution = findParameterElement.call(this, [textDatas[j], region, divBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution');
+                                            cellResolution = computeCellResolution(cellResolution);
+
+                                            cssStyle.textOutline = computeTextOutline(textOutline, cellResolution, cssStyle.color);
+                                            cssStyle.fontSize = computeFontSize(cssStyle.fontSize, cellResolution);
                                         }
+                                        //try to detect multi lines subtitle
+                                        textValue += textDatas[j].textContent + "\n";
                                     }
+                                    //line and position element have no effect on IE
+                                    //For Chrome line = 80 is a percentage workaround to reorder subtitles
+                                    caption = {
+                                        start: startTime,
+                                        end: endTime,
+                                        data: textValue,
+                                        line: 80,
+                                        style: cssStyle
+                                    };
+                                    textValue = "";
                                     captionArray.push(caption);
                                 } else {
                                     cssStyle.backgroundColor = findStyleElement.call(this, [region, divBody], 'backgroundColor');
+                                    if (cssStyle.backgroundColor === null) {
+                                        //set default TTML value
+                                        cssStyle.backgroundColor = 'transparent';
+                                    }
                                     cssStyle.color = findStyleElement.call(this, [region, divBody], 'color');
                                     cssStyle.fontSize = findStyleElement.call(this, [region, divBody], 'fontSize');
                                     cssStyle.fontFamily = findStyleElement.call(this, [region, divBody], 'fontFamily');
+                                    textOutline = findStyleElement.call(this, [region, divBody], 'textOutline');
 
                                     extent = findStyleElement.call(this, [region, divBody], 'extent');
 
-                                    if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === '%' && extent) {
-                                        extent = extent.split(' ')[1];
-                                        extent = parseFloat(extent.substr(0, extent.length - 1));
-                                        cssStyle.fontSize = (parseInt(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1), 10) * extent) / 100 + "%";
-                                    }
+                                    cellResolution = findParameterElement.call(this, [region, divBody], globalPrefParameterNameSpace, 'cellResolution');
+                                    cellResolution = computeCellResolution(cellResolution);
+
+                                    cssStyle.textOutline = computeTextOutline(textOutline, cellResolution, cssStyle.color);
+                                    cssStyle.fontSize = computeFontSize(cssStyle.fontSize, cellResolution);
+
                                     //line and position element have no effect on IE
                                     //For Chrome line = 80 is a percentage workaround to reorder subtitles
                                     //try to detect multi lines subtitle
@@ -21487,13 +20704,19 @@ MediaPlayer.utils.TTMLParser = function() {
                                             style: cssStyle
                                         };
                                     } else {
+                                        textNodes = this.domParser.getChildNodes(region, '#text');
+
+                                        for (j = 0; j < textNodes.length; j += 1) {
+                                            textValue += textNodes[j].textContent + "\n";
+                                        }
                                         caption = {
                                             start: startTime,
                                             end: endTime,
-                                            data: region.textContent,
+                                            data: textValue,
                                             line: 80,
                                             style: cssStyle
                                         };
+                                        textValue = "";
                                     }
                                     captionArray.push(caption);
                                 }
@@ -21517,6 +20740,750 @@ MediaPlayer.utils.TTMLParser = function() {
         domParser: undefined,
         parse: internalParse
 
+    };
+};
+/*
+ * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2013, Akamai Technologies
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Akamai Technologies nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+MediaPlayer.dependencies.TextController = function () {
+
+     var LOADING = "LOADING",
+         //LOADED = "LOADED",
+         READY = "READY",
+         initialized = false,
+         periodInfo = null,
+         mediaSource,
+         data,
+         buffer,
+         availableRepresentations,
+         state = READY,
+         setState = function (value) {
+             this.debug.log("TextController setState to:" + value);
+             state = value;
+         },
+         startPlayback = function () {
+
+             if (!initialized || state !== READY) {
+                 return;
+             }
+
+             var self = this;
+            // TODO Multiple tracks can be handled here by passing in quality level.
+            self.indexHandler.getInitRequest(availableRepresentations[0]).then(
+                function(request) {
+                    //self.debug.log("Loading text track initialization: " + request.url);
+                    //self.debug.log(request);
+                    self.fragmentLoader.load(request).then(onBytesLoaded.bind(self, request), onBytesError.bind(self, request));
+                    setState.call(self, LOADING);
+                }
+            );
+        },
+        doStart = function() {
+            startPlayback.call(this);
+        },
+
+        updateRepresentations = function(data, periodInfo) {
+            var adaptations,
+                manifest = this.manifestModel.getValue(),
+                idx;
+
+            idx = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
+
+            adaptations = this.manifestExt.getAdaptationsForPeriod(manifest, periodInfo);
+            return this.manifestExt.getRepresentationsForAdaptation(manifest, adaptations[idx]);
+        },
+
+        onBytesLoaded = function(request, response) {
+            var self = this;
+            //self.debug.log(" Text track Bytes finished loading: " + request.url);
+            // ORANGE: add request parameter to retrieve startTime and timescale in fragmentController
+             self.fragmentController.process(response.data, request).then(
+                 function (data) {
+                     if (data !== null) {
+                         //self.debug.log("Push text track bytes: " + data.byteLength);
+                         self.sourceBufferExt.append(buffer, data, self.videoModel);
+                     }
+                 }
+             );
+         },
+
+        onBytesError = function( /*request*/ ) {};
+
+    return {
+        videoModel: undefined,
+        fragmentLoader: undefined,
+        fragmentController: undefined,
+        indexHandler: undefined,
+        sourceBufferExt: undefined,
+        manifestModel: undefined,
+        manifestExt: undefined,
+        debug: undefined,
+        initialize: function (periodInfo, data, buffer, videoModel, source) {
+            var self = this;
+
+            self.setVideoModel(videoModel);
+            self.setBuffer(buffer);
+            self.setMediaSource(source);
+
+            self.updateData(data, periodInfo);
+
+            initialized = true;
+            
+            startPlayback.call(self);
+        },
+
+        setPeriodInfo: function(value) {
+            periodInfo = value;
+        },
+
+        getPeriodIndex: function () {
+            return periodInfo.index;
+        },
+
+        getVideoModel: function () {
+            return this.videoModel;
+        },
+
+        setVideoModel: function (value) {
+            this.videoModel = value;
+        },
+
+        getData: function () {
+            return data;
+        },
+
+        setData: function (value) {
+            data = value;
+        },
+
+        getBuffer: function () {
+            return buffer;
+        },
+
+        setBuffer: function (value) {
+            buffer = value;
+        },
+
+        setMediaSource: function(value) {
+            mediaSource = value;
+        },
+
+        updateData: function(dataValue, periodInfoValue) {
+            data = dataValue;
+            periodInfo = periodInfoValue;
+
+            availableRepresentations = updateRepresentations.call(this, data, periodInfo);
+            setState.call(this, READY);
+            startPlayback.call(this);
+        },
+
+        reset: function (errored) {
+            if (!errored) {
+                this.sourceBufferExt.abort(mediaSource, buffer);
+                this.sourceBufferExt.removeSourceBuffer(mediaSource, buffer);
+            }
+        },
+
+        start: doStart
+    };
+};
+
+MediaPlayer.dependencies.TextController.prototype = {
+    constructor: MediaPlayer.dependencies.TextController
+};
+
+/*
+ * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2013, Akamai Technologies
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Akamai Technologies nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+MediaPlayer.dependencies.TextSourceBuffer = function () {
+
+    var video,
+        data,
+        mimeType;
+
+    return {
+        system:undefined,
+        eventBus:undefined,
+        errHandler: undefined,
+
+        initialize: function (type, bufferController) {
+            mimeType = type;
+            video = bufferController.getVideoModel().getElement();
+            data = bufferController.getData();
+        },
+
+        append: function (bytes) {
+            var self = this,
+                ccContent = String.fromCharCode.apply(null, new Uint16Array(bytes));
+
+            self.getParser().parse(ccContent).then(
+                function(result)
+                {
+                    var label = data.Representation_asArray[0].id,
+                        lang = data.lang;
+
+                    self.getTextTrackExtensions().addTextTrack(video, result, label, lang, true).then(
+                        function(/*track*/)
+                        {
+                            self.eventBus.dispatchEvent({type:"updateend"});
+                        }
+                    );
+                },
+                function(errMsg) {
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CC_ERR_PARSE, errMsg, ccContent);
+                }
+            );
+        },
+
+        abort:function() {
+            this.getTextTrackExtensions().deleteCues(video);
+        },
+
+        getParser:function() {
+            var parser;
+
+            if (mimeType === "text/vtt") {
+                parser = this.system.getObject("vttParser");
+            } else if (mimeType === "application/ttml+xml") {
+                parser = this.system.getObject("ttmlParser");
+            }
+
+            return parser;
+        },
+
+        getTextTrackExtensions:function() {
+            return this.system.getObject("textTrackExtensions");
+        },
+
+        addEventListener: function (type, listener, useCapture) {
+            this.eventBus.addEventListener(type, listener, useCapture);
+        },
+
+        removeEventListener: function (type, listener, useCapture) {
+            this.eventBus.removeEventListener(type, listener, useCapture);
+        }
+    };
+};
+
+MediaPlayer.dependencies.TextSourceBuffer.prototype = {
+    constructor: MediaPlayer.dependencies.TextSourceBuffer
+};
+
+/*
+ * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Akamai Technologies nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+// Orange: This Source Buffer processes TTML+XML subtitles encapsulated in the mp4
+//         This format is used by smoothstreaming headends
+
+MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
+
+    var video,
+        mimeType,
+        currentLang,
+        currentId,
+
+        // We need to simulate TimeRanges, as defined 
+        // by Media Streaming Extensions.
+        // start() and end() functions must be provided,
+        // as player checks the buffer level using these
+
+        buffered = {
+            length: 0,
+            ranges: [],
+
+            start: function(index) {
+                return this.ranges[index].start;
+            },
+
+            end: function(index) {
+                return this.ranges[index].end;
+            },
+
+            addRange: function(start, end) {
+                var i = 0,
+                    rangesUpdated = false,
+                    tolerance = 0.01;
+
+                //detect discontinuity in ranges.
+                for (i = 0; i < this.ranges.length; i++) {
+                    if (this.ranges[i].end <= (start + tolerance) && this.ranges[i].end >= (start - tolerance)) {
+                        rangesUpdated = true;
+                        this.ranges[i].end = end;
+                    }
+
+                    if (this.ranges[i].start <= (end + tolerance) && this.ranges[i].start >= (end - tolerance)) {
+                        rangesUpdated = true;
+                        this.ranges[i].start = start;
+                    }
+                }
+
+                if (!rangesUpdated) {
+                    this.ranges.push({
+                        start: start,
+                        end: end
+                    });
+                    this.length = this.length + 1;
+
+                    // TimeRanges must be normalized
+                    this.ranges.sort(function(a, b) {
+                        return a.start - b.start;
+                    });
+                }
+            },
+
+            removeRange: function(start, end) {
+                var i = 0;
+                for (i = this.ranges.length - 1; i >= 0; i -= 1) {
+                    if (((end === undefined || end === -1) || (this.ranges[i].end <= end)) &&
+                        ((start === undefined || start === -1) || (this.ranges[i].start >= start))) {
+                        this.ranges.splice(i, 1);
+                    }
+                }
+
+                this.length = this.ranges.length;
+            },
+
+            reset: function() {
+                this.length = 0;
+                this.ranges = [];
+            }
+        };
+
+    return {
+        updating: false,
+        system: undefined,
+        eventBus: undefined,
+        buffered: buffered,
+        textTrackExtensions: undefined,
+        ttmlParser: undefined,
+        debug: undefined,
+
+        initialize: function(type, bufferController, subtitleData) {
+            mimeType = type;
+            video = bufferController.getVideoModel().getElement();
+            buffered.reset();
+            currentLang = subtitleData.lang;
+            currentId = subtitleData.id;
+        },
+        remove: function(start, end) {
+            /*If start is negative or greater than duration, then throw an INVALID_ACCESS_ERR exception and abort these steps.
+            If end is less than or equal to start, then throw an INVALID_ACCESS_ERR exception and abort these steps.
+            If this object has been removed from the sourceBuffers attribute of the parent media source then throw an INVALID_STATE_ERR exception and abort these steps.
+            If the updating attribute equals true, then throw an INVALID_STATE_ERR exception and abort these steps.
+            If the readyState attribute of the parent media source is in the "ended" state then run the following steps:
+
+            Set the readyState attribute of the parent media source to "open"
+            Queue a task to fire a simple event named sourceopen at the parent media source .
+            Set the updating attribute to true.
+            Queue a task to fire a simple event named updatestart at this SourceBuffer object.
+            Return control to the caller and run the rest of the steps asynchronously.
+            Run the coded frame removal algorithm with start and end as the start and end of the removal range.
+            Set the updating attribute to false.
+            Queue a task to fire a simple event named update at this SourceBuffer object.
+            Queue a task to fire a simple event named updateend at this SourceBuffer object.*/
+            if (start < 0 || start >= end) {
+                throw "INVALID_ACCESS_ERR";
+            }
+
+            this.getTextTrackExtensions().deleteCues(video, false, start, end);
+            this.buffered.removeRange(start, end);
+        },
+
+        append: function(bytes) {
+            var self = this,
+                file = mp4lib.deserialize(bytes),
+                moov = file.getBoxByType('moov'),
+                mvhd,
+                moof,
+                mdat,
+                traf,
+                tfhd,
+                tfdt,
+                trun,
+                fragmentStart,
+                fragmentDuration = 0,
+                encoding = 'utf-8';
+
+            //no mp4, all the subtitles are in one xml file
+            if (mimeType === 'application/ttml+xml') {
+                this.track = this.textTrackExtensions.addTextTrack(video, [], currentId, currentLang, true);
+
+                //detect utf-16 encoding
+                if (self.isUTF16(bytes)) {
+                    encoding = 'utf-16';
+                }
+
+                this.convertUTFToString(bytes, encoding)
+                    .then(function(result) {
+                        self.ttmlParser.parse(result).then(function(cues) {
+                            if (cues) {
+
+                                self.textTrackExtensions.addCues(self.track, cues);
+                                self.buffered.addRange(0, cues[cues.length - 1].end);
+                                self.eventBus.dispatchEvent({
+                                    type: "updateend"
+                                });
+                            }
+                        }, function( /*error*/ ) {
+                            //self.debug.error("[TextTTMLXMLMP4SourceBuffer] error parsing TTML "+error);
+                        });
+                    });
+                return;
+            }
+
+            if (moov) {
+                // This must be an init segment, if it has a moov box.
+                // We need it to read the timescale, as it will be 
+                // used to compute fragments time ranges.
+
+                mvhd = moov.getBoxByType('mvhd');
+                self.timescale = mvhd.timescale;
+
+                // Also, it is a good moment to set up a text track on videoElement
+                // TODO: set up name and language 
+                this.track = this.textTrackExtensions.addTextTrack(video, [], currentId, currentLang, true);
+                this.eventBus.dispatchEvent({
+                    type: "updateend"
+                });
+                return;
+            }
+
+            moof = file.getBoxByType('moof');
+            if (moof) {
+
+                // This is a subtitles track fragment
+                // let's decode the data and add captions to video element
+                mdat = file.getBoxByType('mdat');
+
+                // We need to update TimeRanges.                            
+                // assume that there is a single text sample in fragment
+                traf = moof.getBoxByType('traf');
+                tfhd = traf.getBoxByType('tfhd');
+                tfdt = traf.getBoxByType('tfdt');
+                trun = traf.getBoxByType('trun');
+
+                fragmentStart = tfdt.baseMediaDecodeTime / self.timescale;
+                fragmentDuration = 0;
+                if (trun.flags & 0x000100) {
+                    fragmentDuration = trun.samples_table[0].sample_duration / self.timescale;
+                } else {
+                    fragmentDuration = tfhd.default_sample_duration / self.timescale;
+                }
+
+                self.buffered.addRange(fragmentStart, fragmentStart + fragmentDuration);
+
+                //detect utf-16 encoding
+                if (self.isUTF16(mdat.data)) {
+                    encoding = 'utf-16';
+                }
+                // parse data and add to cues
+                self.convertUTFToString(mdat.data, encoding)
+                    .then(function(result) {
+                        self.ttmlParser.parse(result).then(function(cues) {
+                            var i;
+                            if (cues) {
+                                for (i = 0; i < cues.length; i += 1) {
+                                    cues[i].start = cues[i].start + fragmentStart;
+                                    cues[i].end = cues[i].end + fragmentStart;
+                                }
+
+                                self.textTrackExtensions.addCues(self.track, cues);
+
+                                self.eventBus.dispatchEvent({
+                                    type: "updateend"
+                                });
+                            }
+                        }, function( /*error*/ ) {
+                            //self.debug.error("[TextTTMLXMLMP4SourceBuffer] error parsing TTML "+error);
+                        });
+                    });
+            }
+            return;
+        },
+
+        convertUTFToString: function(buf, encoding) {
+            var deferred = Q.defer(),
+                blob = new Blob([buf], {
+                    type: "text/xml"
+                }),
+                f = new FileReader();
+
+            f.onload = function(e) {
+                deferred.resolve(e.target.result);
+            };
+            f.readAsText(blob, encoding);
+
+            return deferred.promise;
+        },
+
+        /**
+         * UTF-16 (LE or BE)
+         *
+         * RFC2781: UTF-16, an encoding of ISO 10646
+         *
+         * @link http://www.ietf.org/rfc/rfc2781.txt
+         * @private
+         * @ignore
+         */
+        isUTF16: function(data) {
+            var i = 0;
+            var len = data && data.length;
+            var pos = null;
+            var b1, b2, next, prev;
+
+            if (len < 2) {
+                if (data[0] > 0xFF) {
+                    return false;
+                }
+            } else {
+                b1 = data[0];
+                b2 = data[1];
+                if (b1 === 0xFF && // BOM (little-endian)
+                    b2 === 0xFE) {
+                    return true;
+                }
+                if (b1 === 0xFE && // BOM (big-endian)
+                    b2 === 0xFF) {
+                    return true;
+                }
+
+                for (; i < len; i++) {
+                    if (data[i] === 0x00) {
+                        pos = i;
+                        break;
+                    } else if (data[i] > 0xFF) {
+                        return false;
+                    }
+                }
+
+                if (pos === null) {
+                    return false; // Non ASCII
+                }
+
+                next = data[pos + 1]; // BE
+                if (next !== void 0 && next > 0x00 && next < 0x80) {
+                    return true;
+                }
+
+                prev = data[pos - 1]; // LE
+                if (prev !== void 0 && prev > 0x00 && prev < 0x80) {
+                    return true;
+                }
+            }
+
+            return false;
+        },
+
+        abort: function() {
+            this.getTextTrackExtensions().deleteCues(video, true);
+        },
+
+        getTextTrackExtensions: function() {
+            return this.textTrackExtensions;
+        },
+
+        addEventListener: function(type, listener, useCapture) {
+            this.eventBus.addEventListener(type, listener, useCapture);
+            if (!this.updating)
+                this.eventBus.dispatchEvent({
+                    type: "updateend"
+                });
+        },
+
+        removeEventListener: function(type, listener, useCapture) {
+            this.eventBus.removeEventListener(type, listener, useCapture);
+        }
+    };
+};
+
+MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer.prototype = {
+    constructor: MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer
+};
+/*
+ * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2013, Akamai Technologies
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Akamai Technologies nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+MediaPlayer.utils.TextTrackExtensions = function() {
+    "use strict";
+    var Cue;
+
+    return {
+        eventBus: undefined,
+        config: undefined,
+
+        setup: function() {
+            Cue = window.VTTCue || window.TextTrackCue;
+        },
+
+        cueEnter: function(subtitle_style, subtitle_text) {
+            this.eventBus.dispatchEvent({
+                type: "cueEnter",
+                data: {
+                    text: subtitle_text,
+                    style: subtitle_style,
+                }
+            });
+        },
+
+        cueExit: function(subtitle_style, subtitle_text) {
+            this.eventBus.dispatchEvent({
+                type: "cueExit",
+                data: {
+                    text: subtitle_text,
+                    style: subtitle_style,
+                }
+            });
+        },
+        
+        getCurrentTextTrack: function(video){
+            for(var i=0; i< video.textTracks.length; i++){
+                if(video.textTracks[i].label === 'hascaption'){
+                    return video.textTracks[i];
+                }
+            }
+            return null;
+        },
+
+        addTextTrack: function(video, captionData, label, scrlang, isDefaultTrack) {
+            var track = null,
+                currentItem = null,
+                subtitleDisplayMode = 'subtitles',
+                i;
+
+            //no function removeTextTrack is defined
+            //add one, only if it's necessary
+            //deleteCues will be very efficient in this case
+            track = this.getCurrentTextTrack(video);
+            if (!track) {
+                subtitleDisplayMode = this.config.getParam("TextTrackExtensions.displayModeExtern", "boolean") === true ? 'metadata' : 'subtitles';
+                //TODO: Ability to define the KIND in the MPD - ie subtitle vs caption....
+                track = video.addTextTrack(subtitleDisplayMode, 'hascaption', scrlang);
+                // track.default is an object property identifier that is a reserved word
+                // The following jshint directive is used to suppressed the warning "Expected an identifier and instead saw 'default' (a reserved word)"
+                /*jshint -W024 */
+                track.default = isDefaultTrack;
+                track.mode = "showing";
+            }else{
+                track.default = isDefaultTrack;
+                if (track.mode !== 'showing') {
+                    track.mode = "showing";
+                }
+            }
+
+            for (i = 0; i < captionData.length; i += 1) {
+                currentItem = captionData[i];
+                track.addCue(new Cue(currentItem.start, currentItem.end, currentItem.data));
+            }
+
+            return track;
+        },
+
+        onCueEnter: function(e) {
+            this.cueEnter(e.currentTarget.style, e.currentTarget.text);
+        },
+
+        onCueExit: function(e) {
+            this.cueExit(e.currentTarget.style, e.currentTarget.text);
+        },
+
+        // Orange: addCues added so it is possible to add cues during playback,
+        //         not only during track initialization
+
+        addCues: function(track, captionData) {
+            var i = 0,
+                currentItem = null,
+                newCue = null;
+
+            for (i = 0; i < captionData.length; i += 1) {
+                currentItem = captionData[i];
+                if (currentItem.start < currentItem.end) {
+                    newCue = new Cue(currentItem.start, currentItem.end, currentItem.data);
+
+                    newCue.onenter = this.onCueEnter.bind(this);
+                    newCue.onexit = this.onCueExit.bind(this);
+
+                    newCue.snapToLines = false;
+
+                    newCue.line = currentItem.line;
+
+                    if (currentItem.style) {
+                        newCue.style = currentItem.style;
+                    }
+
+                    track.addCue(newCue);
+                }
+            }
+        },
+
+        deleteCues: function(video, disabled, start, end) {
+            var track = null,
+                cues = null,
+                lastIdx = null,
+                i = 0;
+
+            //when multiple tracks are supported - iterate through and delete all cues from all tracks.
+            if (video) {
+                track = video.textTracks[0];
+                if (track) {
+                    cues = track.cues;
+                    if (cues) {
+                        lastIdx = cues.length - 1;
+
+                        for (i = lastIdx; i >= 0; i -= 1) {
+                            if (((end === undefined || end === -1) || (cues[i].endTime < end)) &&
+                                ((start === undefined || start === -1) || (cues[i].startTime > start))) {
+                                track.removeCue(cues[i]);
+                            }
+                        }
+                    }
+                    //noway to delete track, just disable it
+                    //useful when player switchs between a stream with subtitles and an other one without.
+                    if (disabled) {
+                        track.mode = "disabled";
+                    }
+                }
+            }
+        }
     };
 };
 /*
@@ -21655,8 +21622,8 @@ MediaPlayer.rules.AbandonRequestsRule = function() {
                     //this.debug.log("[AbandonRequestsRule][" + type + "] bw = " + measuredBandwidth + " kb/s (" + estimatedTimeOfDownload + " s)");
 
                     if ((estimatedTimeOfDownload) > (request.duration * ABANDON_MULTIPLIER)) {
-                        switchRequest = new MediaPlayer.rules.SwitchRequest(this.metricsExt.getQualityBoundaries(type).min, MediaPlayer.rules.SwitchRequest.prototype.STRONG);
-                        this.debug.info("[AbandonRequestsRule][" + type + "] bw = " + measuredBandwidth + " kb/s => switch to lowest quality for " + request.url);
+                        switchRequest = new MediaPlayer.rules.SwitchRequest(0, MediaPlayer.rules.SwitchRequest.prototype.STRONG);
+                        this.debug.info("[AbandonRequestsRule][" + type + "] BW = " + measuredBandwidth.toFixed(3) + " kb/s => switch to lowest quality");
                     }
                 }
 
@@ -21696,9 +21663,9 @@ MediaPlayer.rules.BaseRulesCollection = function () {
         getRules: function (type) {
             switch (type) {
                 case MediaPlayer.rules.BaseRulesCollection.prototype.QUALITY_SWITCH_RULES:
-                    return Q.when(rules);
+                    return rules;
                 case MediaPlayer.rules.BaseRulesCollection.prototype.ABANDON_FRAGMENT_RULES:
-                    return Q.when(adandonFragmentRules);
+                    return adandonFragmentRules;
                 default:
                     return null;
             }
@@ -21753,10 +21720,12 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                 downloadTime,
                 totalTime,
                 calculatedBandwidth,
+                currentBandwidth,
                 latencyInBandwidth,
                 switchUpRatioSafetyFactor,
-                deferred,
-                funcs = [],
+                currentRepresentation,
+                count,
+                bandwidths = [],
                 i,
                 q = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE,
                 totalBytesLength = 0,
@@ -21770,12 +21739,12 @@ MediaPlayer.rules.DownloadRatioRule = function() {
 
                 if (!metrics) {
                     self.debug.log("[DownloadRatioRule][" + data.type + "] No metrics, bailing.");
-                    return Q.when(new MediaPlayer.rules.SwitchRequest());
+                    return new MediaPlayer.rules.SwitchRequest();
                 }
 
                 if (lastRequest === null) {
                     self.debug.log("[DownloadRatioRule][" + data.type + "] No requests made for this stream yet, bailing.");
-                    return Q.when(new MediaPlayer.rules.SwitchRequest());
+                    return new MediaPlayer.rules.SwitchRequest();
                 }
 
                 totalTime = (lastRequest.tfinish.getTime() - lastRequest.trequest.getTime()) / 1000;
@@ -21783,7 +21752,7 @@ MediaPlayer.rules.DownloadRatioRule = function() {
 
                 if (totalTime <= 0) {
                     self.debug.log("[DownloadRatioRule][" + data.type + "] Don't know how long the download of the last fragment took, bailing.");
-                    return Q.when(new MediaPlayer.rules.SwitchRequest());
+                    return new MediaPlayer.rules.SwitchRequest();
                 }
 
                 if (lastRequest.mediaduration === null ||
@@ -21791,14 +21760,18 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                     lastRequest.mediaduration <= 0 ||
                     isNaN(lastRequest.mediaduration)) {
                     self.debug.log("[DownloadRatioRule][" + data.type + "] Don't know the duration of the last media fragment, bailing.");
-                    return Q.when(new MediaPlayer.rules.SwitchRequest());
+                    return new MediaPlayer.rules.SwitchRequest();
                 }
-
-                deferred = Q.defer();
 
                 self.debug.info("[DownloadRatioRule][" + data.type + "] DL: " + Number(downloadTime.toFixed(3)) + "s, Total: " + Number(totalTime.toFixed(3)) + "s");
 
                 totalBytesLength = lastRequest.bytesLength;
+
+                // First check if last request has been abandonned due to bandwidth condition
+                if (lastRequest.responsecode === 0) {
+                    self.debug.info("[DownloadRatioRule][" + data.type + "] Last request abandonned ( switch to lowest quality)");
+                    return new MediaPlayer.rules.SwitchRequest(0, MediaPlayer.rules.SwitchRequest.prototype.STRONG);                    
+                }
 
                 // If we have at least 3 requests, take an average of calculated bandwidth
                 if (requests.length >= 3) {
@@ -21819,55 +21792,43 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                 self.debug.info("[DownloadRatioRule][" + data.type + "] BW = " + Math.round(calculatedBandwidth / 1000) + " kb/s");
 
                 if (isNaN(calculatedBandwidth)) {
-                    return Q.when(new MediaPlayer.rules.SwitchRequest());
+                    return new MediaPlayer.rules.SwitchRequest();
                 }
 
-                self.manifestExt.getRepresentationCount(data).then(
-                    function(count) {
-                        self.manifestExt.getRepresentationFor(current, data).then(
-                            function(currentRepresentation) {
-                                self.manifestExt.getBandwidth(currentRepresentation).then(
-                                    function(currentBandwidth) {
-                                        for (i = 0; i < count; i += 1) {
-                                            funcs.push(self.manifestExt.getRepresentationBandwidth(data, i));
-                                        }
-                                        Q.all(funcs).then(
-                                            function(bandwidths) {
-                                                if (calculatedBandwidth <= currentBandwidth) {
-                                                    for (i = current - 1; i > 0; i -= 1) {
-                                                        if (bandwidths[i] <= calculatedBandwidth) {
-                                                            break;
-                                                        }
-                                                    }
-                                                    q = i;
-                                                    p = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
+                count = self.manifestExt.getRepresentationCount(data);
+                currentRepresentation = self.manifestExt.getRepresentationFor(current, data);
+                currentBandwidth = self.manifestExt.getBandwidth(currentRepresentation);
+                for (i = 0; i < count; i += 1) {
+                    bandwidths.push(self.manifestExt.getRepresentationBandwidth(data, i));
+                }
+                if (calculatedBandwidth <= currentBandwidth) {
+                    for (i = current - 1; i > 0; i -= 1) {
+                        if (bandwidths[i] <= calculatedBandwidth) {
+                            break;
+                        }
+                    }
+                    q = i;
+                    p = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
 
-                                                    self.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count-1) + " (" + bandwidths[q] + "), p=" + p);
-                                                    deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
-                                                } else {
-                                                    for (i = count - 1; i > current; i -= 1) {
-                                                        if (calculatedBandwidth > (bandwidths[i] * switchUpRatioSafetyFactor)) {
-                                                            //self.debug.log("[DownloadRatioRule][" + data.type + "] bw = " + calculatedBandwidth + " results[i] * switchUpRatioSafetyFactor =" + (bandwidths[i] * switchUpRatioSafetyFactor) + " with i=" + i);
-                                                            break;
-                                                        }
-                                                    }
+                    self.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count - 1) + " (" + bandwidths[q] + "), p=" + p);
+                    return new MediaPlayer.rules.SwitchRequest(q, p);
+                } else {
+                    for (i = count - 1; i > current; i -= 1) {
+                        if (calculatedBandwidth > (bandwidths[i] * switchUpRatioSafetyFactor)) {
+                            //self.debug.log("[DownloadRatioRule][" + data.type + "] bw = " + calculatedBandwidth + " results[i] * switchUpRatioSafetyFactor =" + (bandwidths[i] * switchUpRatioSafetyFactor) + " with i=" + i);
+                            break;
+                        }
+                    }
 
-                                                    q = i;
-                                                    p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
+                    q = i;
+                    p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
 
-                                                    self.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count-1) + " (" + bandwidths[q] + "), p=" + p);
-                                                    deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
-                                                }
-                                            }
-                                        );
-                                    });
-                            });
-                    });
+                    self.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count - 1) + " (" + bandwidths[q] + "), p=" + p);
+                    return new MediaPlayer.rules.SwitchRequest(q, p);
+                }
             } else {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
+                return new MediaPlayer.rules.SwitchRequest();
             }
-
-            return deferred.promise;
         }
     };
 };
@@ -21935,18 +21896,18 @@ MediaPlayer.rules.DroppedFramesRule = function() {
                 ratio;
 
             if (data === null) {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
+                return new MediaPlayer.rules.SwitchRequest();
             }
 
             if (data.type !== "video") {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
+                return new MediaPlayer.rules.SwitchRequest();
             }
 
             if (playbackQuality === null) {
                 // No PlaybackQuality metric => start of a new stream => reset lastPlaybackQuality
                 lastPlaybackQuality = null;
                 currentDroppedFrames = currentTotalVideoFrames = -1;
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
+                return new MediaPlayer.rules.SwitchRequest();
             }
 
             //this.debug.info("[DroppedFramesRule]["+data.type+"] PlaybackQuality = " + JSON.stringify(playbackQuality));
@@ -21955,7 +21916,7 @@ MediaPlayer.rules.DroppedFramesRule = function() {
             getDroppedFrames(playbackQuality);
 
             if (currentDroppedFrames === -1) {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
+                return new MediaPlayer.rules.SwitchRequest();
             }
 
             ratio = currentDroppedFrames / currentTotalVideoFrames;
@@ -21974,7 +21935,7 @@ MediaPlayer.rules.DroppedFramesRule = function() {
 
             this.debug.info("[DroppedFramesRule][" + data.type + "] SwitchRequest: q=" + q + ", p=" + p);
 
-            return Q.when(new MediaPlayer.rules.SwitchRequest(q, p));
+            return new MediaPlayer.rules.SwitchRequest(q, p);
         }
     };
 };
@@ -22020,13 +21981,13 @@ MediaPlayer.rules.InsufficientBufferRule = function() {
                 switchDownBufferTime,
                 switchUpBufferRatio,
                 switchUpBufferTime,
-                deferred,
+                mpd,
                 q = current,
                 p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
 
 
             if (data === null) {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
+                return new MediaPlayer.rules.SwitchRequest();
             }
 
             // Check if we start buffering the stream. In this case we ignore the rule
@@ -22035,58 +21996,51 @@ MediaPlayer.rules.InsufficientBufferRule = function() {
             }
 
             if (bufferLevel === null) {
-                return Q.when(new MediaPlayer.rules.SwitchRequest());
+                return new MediaPlayer.rules.SwitchRequest();
             }
 
             self.debug.info("[InsufficientBufferRule][" + data.type + "] Checking buffer level ... (current = " + current +
                 ", buffer level = " + (Math.round(bufferLevel.level * 100) / 100) +
                 ", buffering = " + self.isStartBuffering[data.type] + ")");
 
-            deferred = Q.defer();
 
-            self.manifestExt.getMpd(self.manifestModel.getValue()).then(
-                function(mpd) {
-                    if (mpd) {
-                        minBufferTime = self.config.getParamFor(data.type, "BufferController.minBufferTime", "number", mpd.manifest.minBufferTime);
-                        switchLowerBufferRatio = self.config.getParamFor(data.type, "ABR.switchLowerBufferRatio", "number", 0.25);
-                        switchLowerBufferTime = self.config.getParamFor(data.type, "ABR.switchLowerBufferTime", "number", switchLowerBufferRatio * minBufferTime);
-                        switchDownBufferRatio = self.config.getParamFor(data.type, "ABR.switchDownBufferRatio", "number", 0.5);
-                        switchDownBufferTime = self.config.getParamFor(data.type, "ABR.switchDownBufferTime", "number", switchDownBufferRatio * minBufferTime);
-                        switchUpBufferRatio = self.config.getParamFor(data.type, "ABR.switchUpBufferRatio", "number", 0.75);
-                        switchUpBufferTime = self.config.getParamFor(data.type, "ABR.switchUpBufferTime", "number", switchUpBufferRatio * minBufferTime);
+            mpd = self.manifestExt.getMpd(self.manifestModel.getValue());
+            if (mpd) {
+                minBufferTime = self.config.getParamFor(data.type, "BufferController.minBufferTime", "number", mpd.manifest.minBufferTime);
+                switchLowerBufferRatio = self.config.getParamFor(data.type, "ABR.switchLowerBufferRatio", "number", 0.25);
+                switchLowerBufferTime = self.config.getParamFor(data.type, "ABR.switchLowerBufferTime", "number", switchLowerBufferRatio * minBufferTime);
+                switchDownBufferRatio = self.config.getParamFor(data.type, "ABR.switchDownBufferRatio", "number", 0.5);
+                switchDownBufferTime = self.config.getParamFor(data.type, "ABR.switchDownBufferTime", "number", switchDownBufferRatio * minBufferTime);
+                switchUpBufferRatio = self.config.getParamFor(data.type, "ABR.switchUpBufferRatio", "number", 0.75);
+                switchUpBufferTime = self.config.getParamFor(data.type, "ABR.switchUpBufferTime", "number", switchUpBufferRatio * minBufferTime);
 
-                        if ((bufferLevel.level < switchDownBufferTime) && (self.isStartBuffering[data.type])) {
-                            deferred.resolve(new MediaPlayer.rules.SwitchRequest());
-                        } else {
-                            if (bufferLevel.level >= switchDownBufferTime) {
-                                self.isStartBuffering[data.type] = false;
-                            }
-
-                            self.manifestExt.getRepresentationCount(data).then(
-                                function(max) {
-                                    max -= 1; // 0 based
-
-                                    if (bufferLevel.level <= switchLowerBufferTime) {
-                                        q = 0;
-                                        p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
-                                    } else if (bufferLevel.level <= switchDownBufferTime) {
-                                        q = (current > 0) ? (current - 1) : 0;
-                                        p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
-                                    }
-
-                                    self.debug.info("[InsufficientBufferRule][" + data.type + "] SwitchRequest: q=" + q + ", p=" + p);
-                                    deferred.resolve(new MediaPlayer.rules.SwitchRequest(q, p));
-                                }
-                            );
-                        }
-                    } else {
-                        self.debug.log("[InsufficientBufferRule][" + data.type + "] Manifest not present yet");
-                        deferred.resolve(new MediaPlayer.rules.SwitchRequest());
+                if ((bufferLevel.level < switchDownBufferTime) && (self.isStartBuffering[data.type])) {
+                    return new MediaPlayer.rules.SwitchRequest();
+                } else {
+                    if (bufferLevel.level >= switchDownBufferTime) {
+                        self.isStartBuffering[data.type] = false;
                     }
-                }
-            );
 
-            return deferred.promise;
+                    var max = self.manifestExt.getRepresentationCount(data);
+
+                    max -= 1; // 0 based
+
+                    if (bufferLevel.level <= switchLowerBufferTime) {
+                        q = 0;
+                        p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
+                    } else if (bufferLevel.level <= switchDownBufferTime) {
+                        q = (current > 0) ? (current - 1) : 0;
+                        p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
+                    }
+
+                    self.debug.info("[InsufficientBufferRule][" + data.type + "] SwitchRequest: q=" + q + ", p=" + p);
+                    return new MediaPlayer.rules.SwitchRequest(q, p);
+
+                }
+            } else {
+                self.debug.log("[InsufficientBufferRule][" + data.type + "] Manifest not present yet");
+                return new MediaPlayer.rules.SwitchRequest();
+            }
         }
     };
 };
@@ -22129,7 +22083,7 @@ MediaPlayer.rules.LimitSwitchesRule = function () {
         checkIndex: function (current, metrics /*, data*/) {
             if (waiting > 0) {
                 waiting -= 1;
-                return Q.when(new MediaPlayer.rules.SwitchRequest(current, MediaPlayer.rules.SwitchRequest.prototype.STRONG));
+                return new MediaPlayer.rules.SwitchRequest(current, MediaPlayer.rules.SwitchRequest.prototype.STRONG);
             }
 
             var self = this,
@@ -22161,9 +22115,9 @@ MediaPlayer.rules.LimitSwitchesRule = function () {
             if (panic) {
                 self.debug.log("Wait some time before allowing another switch.");
                 waiting = WAIT_COUNT;
-                return Q.when(new MediaPlayer.rules.SwitchRequest(current, MediaPlayer.rules.SwitchRequest.prototype.STRONG));
+                return new MediaPlayer.rules.SwitchRequest(current, MediaPlayer.rules.SwitchRequest.prototype.STRONG);
             } else {
-                return Q.when(new MediaPlayer.rules.SwitchRequest(MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE, MediaPlayer.rules.SwitchRequest.prototype.STRONG));
+                return new MediaPlayer.rules.SwitchRequest(MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE, MediaPlayer.rules.SwitchRequest.prototype.STRONG);
             }
         }
     };
@@ -22479,16 +22433,15 @@ MediaPlayer.vo.URIFragmentData.prototype = {
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-MediaPlayer.vo.metrics.BufferedSwitch = function () {
+MediaPlayer.vo.metrics.BufferLevel = function () {
     "use strict";
 
-    this.mt = null;     // Media-Time | The media presentation time of the earliest access unit (out of all media content components) played out from the Representation.
-    this.to = null;     // value of Representation@id identifying the switch-to Representation.
-    this.lto = null;    // If not present, this metrics concerns the Representation as a whole. If present, lto indicates the value of SubRepresentation@level within Representation identifying the switch-to level of the Representation.
+    this.t = null;      // Real-Time | Time of the measurement of the buffer level.
+    this.level = null;  // Level of the buffer in milliseconds. Indicates the playout duration for which media data of all active media components is available starting from the current playout time.
 };
 
-MediaPlayer.vo.metrics.BufferedSwitch.prototype = {
-    constructor: MediaPlayer.vo.metrics.BufferedSwitch
+MediaPlayer.vo.metrics.BufferLevel.prototype = {
+    constructor: MediaPlayer.vo.metrics.BufferLevel
 };
 /*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
@@ -22503,15 +22456,16 @@ MediaPlayer.vo.metrics.BufferedSwitch.prototype = {
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-MediaPlayer.vo.metrics.BufferLevel = function () {
+MediaPlayer.vo.metrics.BufferedSwitch = function () {
     "use strict";
 
-    this.t = null;      // Real-Time | Time of the measurement of the buffer level.
-    this.level = null;  // Level of the buffer in milliseconds. Indicates the playout duration for which media data of all active media components is available starting from the current playout time.
+    this.mt = null;     // Media-Time | The media presentation time of the earliest access unit (out of all media content components) played out from the Representation.
+    this.to = null;     // value of Representation@id identifying the switch-to Representation.
+    this.lto = null;    // If not present, this metrics concerns the Representation as a whole. If present, lto indicates the value of SubRepresentation@level within Representation identifying the switch-to level of the Representation.
 };
 
-MediaPlayer.vo.metrics.BufferLevel.prototype = {
-    constructor: MediaPlayer.vo.metrics.BufferLevel
+MediaPlayer.vo.metrics.BufferedSwitch.prototype = {
+    constructor: MediaPlayer.vo.metrics.BufferedSwitch
 };
 /*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
@@ -22542,29 +22496,6 @@ MediaPlayer.vo.metrics.Condition.prototype = {
 
 /*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
- * 
- * Copyright (c) 2013, Digital Primates
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-MediaPlayer.vo.metrics.DroppedFrames = function () {
-    "use strict";
-
-    this.time = null;      // Real-Time | Time of the measurement of the dropped frames.
-    this.droppedFrames = null;  // Number of dropped frames.
-};
-
-MediaPlayer.vo.metrics.DroppedFrames.prototype = {
-    constructor: MediaPlayer.vo.metrics.DroppedFrames
-};
-/*
- * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
  *
  * Copyright (c) 2014, Akamai Technologies
  * All rights reserved.
@@ -22585,6 +22516,29 @@ MediaPlayer.vo.metrics.DVRInfo = function () {
 
 MediaPlayer.vo.metrics.DVRInfo.prototype = {
     constructor: MediaPlayer.vo.metrics.DVRInfo
+};
+/*
+ * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
+ * 
+ * Copyright (c) 2013, Digital Primates
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+MediaPlayer.vo.metrics.DroppedFrames = function () {
+    "use strict";
+
+    this.time = null;      // Real-Time | Time of the measurement of the dropped frames.
+    this.droppedFrames = null;  // Number of dropped frames.
+};
+
+MediaPlayer.vo.metrics.DroppedFrames.prototype = {
+    constructor: MediaPlayer.vo.metrics.DroppedFrames
 };
 /*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
@@ -22711,31 +22665,6 @@ MediaPlayer.vo.metrics.ManifestUpdate.RepresentationInfo.prototype = {
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-MediaPlayer.vo.metrics.PlaybackQuality = function () {
-    "use strict";
-
-    this.t = null;                  // Real-Time | Time of the measurement of the playback quality
-    this.mt = null;                 // Media-Time | Media presentation time of the measurement of the playback quality
-    this.droppedFrames = null;      // Number of dropped frames
-    this.totalVideoFrames = null;   // Number of decoded video frames
-};
-
-MediaPlayer.vo.metrics.PlaybackQuality.prototype = {
-    constructor: MediaPlayer.vo.metrics.PlaybackQuality
-};
-/*
- * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
- * 
- * Copyright (c) 2013, Digital Primates
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
 MediaPlayer.vo.metrics.PlayList = function () {
     "use strict";
 
@@ -22795,6 +22724,31 @@ MediaPlayer.vo.metrics.PlayList.Trace.USER_REQUEST_STOP_REASON = "user_request";
 MediaPlayer.vo.metrics.PlayList.Trace.REPRESENTATION_SWITCH_STOP_REASON = "representation_switch";
 MediaPlayer.vo.metrics.PlayList.Trace.END_OF_CONTENT_STOP_REASON = "end_of_content";
 MediaPlayer.vo.metrics.PlayList.Trace.REBUFFERING_REASON = "rebuffering";
+/*
+ * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
+ * 
+ * Copyright (c) 2013, Digital Primates
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+MediaPlayer.vo.metrics.PlaybackQuality = function () {
+    "use strict";
+
+    this.t = null;                  // Real-Time | Time of the measurement of the playback quality
+    this.mt = null;                 // Media-Time | Media presentation time of the measurement of the playback quality
+    this.droppedFrames = null;      // Number of dropped frames
+    this.totalVideoFrames = null;   // Number of decoded video frames
+};
+
+MediaPlayer.vo.metrics.PlaybackQuality.prototype = {
+    constructor: MediaPlayer.vo.metrics.PlaybackQuality
+};
 /*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
  * 
@@ -23090,7 +23044,7 @@ Dash.dependencies.BaseURLExtensions = function () {
             }
 
             this.debug.log("Parsed SIDX box: " + segments.length + " segments.");
-            return Q.when(segments);
+            return segments;
         },
 
         findInit = function (data, info) {
@@ -23218,6 +23172,8 @@ Dash.dependencies.BaseURLExtensions = function () {
                 findInit.call(self, request.response, info).then(
                     function (range) {
                         deferred.resolve(range);
+                    },function(){
+                        deferred.reject();
                     }
                 );
             };
@@ -23392,11 +23348,7 @@ Dash.dependencies.BaseURLExtensions = function () {
 
                 } else {
                     self.debug.log("Parsing segments from SIDX.");
-                    parseSegments.call(self, sidxBytes, info.url, info.range.start).then(
-                        function (segments) {
-                            deferred.resolve(segments);
-                        }
-                    );
+                    deferred.resolve(parseSegments.call(self, sidxBytes, info.url, info.range.start));
                 }
             }
 
@@ -23446,14 +23398,12 @@ Dash.dependencies.BaseURLExtensions = function () {
                     findSIDX.call(self, request.response, info).then(
                         function (segments) {
                             deferred.resolve(segments);
+                        }, function(){
+                            deferred.reject();
                         }
                     );
                 } else {
-                    parseSegments.call(self, request.response, info.url, info.range.start).then(
-                        function (segments) {
-                            deferred.resolve(segments);
-                        }
-                    );
+                    deferred.resolve(parseSegments.call(self, request.response, info.url, info.range.start));
                 }
             };
 
@@ -23754,7 +23704,7 @@ Dash.dependencies.DashHandler = function() {
                 }
             }
 
-            return Q.when(isFinished);
+            return isFinished;
         },
 
         getIndexBasedSegment = function(representation, index) {
@@ -24235,6 +24185,8 @@ Dash.dependencies.DashHandler = function() {
                     };
                     representation.availableSegmentsNumber = len;
                     deferred.resolve(segments);
+                }, function(){
+                    deferred.reject();
                 }
             );
 
@@ -24277,6 +24229,8 @@ Dash.dependencies.DashHandler = function() {
                         }
 
                         deferred.resolve(segments);
+                    }, function(){
+                        deferred.reject();
                     }
                 );
             }
@@ -24438,7 +24392,7 @@ Dash.dependencies.DashHandler = function() {
 
         getRequestForSegment = function(segment) {
             if (segment === null || segment === undefined) {
-                return Q.when(null);
+                return null;
             }
 
             var request = new MediaPlayer.vo.SegmentRequest(),
@@ -24471,7 +24425,7 @@ Dash.dependencies.DashHandler = function() {
                 request.sequenceNumber = segment.sequenceNumber;
             }
 
-            return Q.when(request);
+            return request;
         },
 
         getForTime = function(representation, time) {
@@ -24499,17 +24453,17 @@ Dash.dependencies.DashHandler = function() {
                     //self.debug.log("Got a list of segments, so dig deeper.");
                     segmentsPromise = getIndexForSegments.call(self, time, representation);
                     return segmentsPromise;
-                }
+                }, function(){deferred.reject();}
             ).then(
                 function(newIndex) {
                     self.debug.log("[DashHandler][" + type + "] Index for time " + time + " is " + newIndex);
                     index = newIndex;
 
-                    return isMediaFinished.call(self, representation);
+                    return Q.when(isMediaFinished.call(self, representation));
                 }
             ).then(
                 function(finished) {
-                    var requestPromise = null;
+                    var requestForSegment = null;
 
                     //self.debug.log("Stream finished? " + finished);
                     if (finished) {
@@ -24521,10 +24475,10 @@ Dash.dependencies.DashHandler = function() {
                         deferred.resolve(request);
                     } else {
                         segment = getSegmentByIndex(index, representation);
-                        requestPromise = getRequestForSegment.call(self, segment);
+                        requestForSegment = getRequestForSegment.call(self, segment);
                     }
 
-                    return requestPromise;
+                    return Q.when(requestForSegment);
                 }
             ).then(
                 function(request) {
@@ -24541,6 +24495,7 @@ Dash.dependencies.DashHandler = function() {
             var deferred,
                 request,
                 segment,
+                finished,
                 self = this;
 
             if (!representation) {
@@ -24561,37 +24516,34 @@ Dash.dependencies.DashHandler = function() {
 
             self.debug.log("[DashHandler][" + type + "] Getting the next request => index = " + index);
 
-            isMediaFinished.call(self, representation).then(
-                function(finished) {
-                    //self.debug.log("Stream finished? " + finished);
-                    if (finished) {
-                        request = new MediaPlayer.vo.SegmentRequest();
-                        request.action = request.ACTION_COMPLETE;
-                        request.index = index;
-                        self.debug.log("[DashHandler][" + type + "] Signal complete.");
+            finished = isMediaFinished.call(self, representation);
+            //self.debug.log("Stream finished? " + finished);
+            if (finished) {
+                request = new MediaPlayer.vo.SegmentRequest();
+                request.action = request.ACTION_COMPLETE;
+                request.index = index;
+                self.debug.log("[DashHandler][" + type + "] Signal complete.");
+                //self.debug.log(request);
+                deferred.resolve(request);
+            } else {
+                getSegments.call(self, representation).then(
+                    function( /*segments*/ ) {
+                        var segmentsPromise;
+
+                        //self.debug.log("Got segments.");
+                        //self.debug.log(segments);
+                        segment = getSegmentByIndex(index, representation);
+                        segmentsPromise = getRequestForSegment.call(self, segment);
+                        return Q.when(segmentsPromise);
+                    }
+                ).then(
+                    function(request) {
+                        //self.debug.log("Got a request.");
                         //self.debug.log(request);
                         deferred.resolve(request);
-                    } else {
-                        getSegments.call(self, representation).then(
-                            function( /*segments*/ ) {
-                                var segmentsPromise;
-
-                                //self.debug.log("Got segments.");
-                                //self.debug.log(segments);
-                                segment = getSegmentByIndex(index, representation);
-                                segmentsPromise = getRequestForSegment.call(self, segment);
-                                return segmentsPromise;
-                            }
-                        ).then(
-                            function(request) {
-                                //self.debug.log("Got a request.");
-                                //self.debug.log(request);
-                                deferred.resolve(request);
-                            }
-                        );
                     }
-                }
-            );
+                );
+            }
 
             return deferred.promise;
         },
@@ -24601,6 +24553,7 @@ Dash.dependencies.DashHandler = function() {
             var deferred,
                 request,
                 segment,
+                finished,
                 self = this;
 
             if (!representation) {
@@ -24619,33 +24572,27 @@ Dash.dependencies.DashHandler = function() {
 
             getSegments.call(self, representation).then(
                 function( /*segments*/ ) {
-                    isMediaFinished.call(self, representation).then(
-                        function(finished) {
-                            //self.debug.log("Stream finished? " + finished);
-                            if (finished) {
-                                request = new MediaPlayer.vo.SegmentRequest();
-                                request.action = request.ACTION_COMPLETE;
-                                request.index = index;
-                                self.debug.log("[DashHandler][" + type + "] Signal complete.");
-                                //self.debug.log(request);
-                                deferred.resolve(request);
-                            } else {
-                                segment = getNextSegmentBySequenceNumber(sn, representation);
-                                if (segment === null) {
-                                    deferred.resolve(null);
-                                } else {
-                                    index = segment.availabilityIdx;
-                                    getRequestForSegment.call(self, segment).then(
-                                        function(request) {
-                                            //self.debug.log("Got a request.");
-                                            //self.debug.log(request);
-                                            deferred.resolve(request);
-                                        }
-                                    );
-                                }
-                            }
+                    finished = isMediaFinished.call(self, representation);
+                    //self.debug.log("Stream finished? " + finished);
+                    if (finished) {
+                        request = new MediaPlayer.vo.SegmentRequest();
+                        request.action = request.ACTION_COMPLETE;
+                        request.index = index;
+                        self.debug.log("[DashHandler][" + type + "] Signal complete.");
+                        //self.debug.log(request);
+                        deferred.resolve(request);
+                    } else {
+                        segment = getNextSegmentBySequenceNumber(sn, representation);
+                        if (segment === null) {
+                            deferred.resolve(null);
+                        } else {
+                            index = segment.availabilityIdx;
+                            var requestForSegment = getRequestForSegment.call(self, segment);
+                            //self.debug.log("Got a request.");
+                            //self.debug.log(request);
+                            deferred.resolve(requestForSegment);
                         }
-                    );
+                    }
                 }
             );
 
@@ -24712,11 +24659,11 @@ Dash.dependencies.DashHandler = function() {
             return deferred.promise;
         },
 
-        getIFrameRequest = function(/*request*/) {
+        getIFrameRequest = function( /*request*/ ) {
             //TBD
         },
 
-        getFragmentInfoRequest = function(/*request*/) {
+        getFragmentInfoRequest = function( /*request*/ ) {
             //TBD
         };
 
@@ -24787,170 +24734,83 @@ Dash.dependencies.DashManifestExtensions = function() {
 Dash.dependencies.DashManifestExtensions.prototype = {
     constructor: Dash.dependencies.DashManifestExtensions,
 
-    getIsAudio: function(adaptation) {
+    getIsType: function(adaptation, type, mimeTypes) {
         "use strict";
-        var i,
-            len,
+        var i, j,
+            found = false,
             col,
-            representation,
-            result = false,
-            found = false;
+            representation;
 
-        if (adaptation) {
-            col = adaptation.ContentComponent_asArray;
+        if (!adaptation) {
+            return false;
+        }
 
-            if (col) {
-                for (i = 0, len = col.length; i < len; i += 1) {
-                    if (col[i].contentType === "audio") {
-                        result = true;
-                        found = true;
-                    }
+        if (adaptation.type === undefined) {
+            adaptation.type = null;
+        }
+        
+        col = adaptation.ContentComponent_asArray;
+
+        if (col) {
+            // Check contentType attribute at adaptation level
+            for (i = 0; i < adaptation.ContentComponent_asArray.length && !found; i++) {
+                if (adaptation.ContentComponent_asArray[i].contentType === type) {
+                    adaptation.type = type;
+                    found = true;
                 }
-            }
-
-            if (adaptation.mimeType) {
-                result = adaptation.mimeType.indexOf("audio") !== -1;
-                found = true;
-            }
-
-            // couldn't find on adaptationset, so check a representation
-            if (!found) {
-                i = 0;
-                len = adaptation.Representation_asArray.length;
-                while (!found && i < len) {
-                    representation = adaptation.Representation_asArray[i];
-
-                    if (representation.mimeType) {
-                        result = representation.mimeType.indexOf("audio") !== -1;
-                        found = true;
-                    }
-
-                    i += 1;
-                }
-            }
-
-            // TODO : Add the type here so that somebody who has access to the adapatation set can check it.
-            // THIS IS A HACK for a bug in DashMetricsExtensions.
-            // See the note in DashMetricsExtensions.adaptationIsType().
-            if (result) {
-                adaptation.type = "audio";
             }
         }
 
-        return Q.when(result);
+        // Check mimeType attribute at adaptation level
+        if (!found) {
+            if (adaptation.mimeType) {
+                for (i = 0; i < mimeTypes.length && !found; i++) {
+                    if (adaptation.mimeType.indexOf(mimeTypes[i]) !== -1) {
+                        adaptation.type = type;
+                        found = true;
+                    }
+                }
+            }
+        }
+
+        // Check mimeType attribute at representation level
+        if (!found) {
+            for (i = 0; i < adaptation.Representation_asArray.length && !found; i++) {
+                representation = adaptation.Representation_asArray[i];
+                for (j = 0; j < mimeTypes.length && !found; j++) {
+                    if (representation.mimeType.indexOf(mimeTypes[j]) !== -1) {
+                        adaptation.type = type;
+                        found = true;
+                    }
+                }
+            }
+        }
+
+        return found;
     },
 
     getIsVideo: function(adaptation) {
-        "use strict";
-        var i,
-            len,
-            col,
-            representation,
-            result = false,
-            found = false;
+        return this.getIsType(adaptation, "video", ["video"]);
+    },
 
-        if (adaptation) {
-            col = adaptation.ContentComponent_asArray;
-
-            if (col) {
-                for (i = 0, len = col.length; i < len; i += 1) {
-                    if (col[i].contentType === "video") {
-                        result = true;
-                        found = true;
-                    }
-                }
-            }
-
-            if (adaptation.mimeType) {
-                result = adaptation.mimeType.indexOf("video") !== -1;
-                found = true;
-            }
-
-            // couldn't find on adaptationset, so check a representation
-            if (!found) {
-                i = 0;
-                len = adaptation.Representation_asArray.length;
-                while (!found && i < len) {
-                    representation = adaptation.Representation_asArray[i];
-
-                    if (representation.mimeType) {
-                        result = representation.mimeType.indexOf("video") !== -1;
-                        found = true;
-                    }
-
-                    i += 1;
-                }
-            }
-
-            // TODO : Add the type here so that somebody who has access to the adapatation set can check it.
-            // THIS IS A HACK for a bug in DashMetricsExtensions.
-            // See the note in DashMetricsExtensions.adaptationIsType().
-            if (result) {
-                adaptation.type = "video";
-            }
-        }
-
-        return Q.when(result);
+    getIsAudio: function(adaptation) {
+        return this.getIsType(adaptation, "audio", ["audio"]);
     },
 
     getIsText: function(adaptation) {
-        "use strict";
-        var i,
-            len,
-            col = adaptation.ContentComponent_asArray,
-            representation,
-            result = false,
-            found = false;
-
-        if(adaptation){
-            if (col) {
-                for (i = 0, len = col.length; i < len; i += 1) {
-                    if (col[i].contentType === "text") {
-                        result = true;
-                        found = true;
-                    }
-                }
-            }
-
-            if (adaptation.mimeType) {
-                result = (adaptation.mimeType.indexOf("vtt") !== -1) || (adaptation.mimeType.indexOf("ttml") !== -1);
-                found = true;
-            }
-
-            // couldn't find on adaptationset, so check a representation
-            if (!found) {
-                i = 0;
-                len = adaptation.Representation_asArray.length;
-                while (!found && i < len) {
-                    representation = adaptation.Representation_asArray[i];
-
-                    if (representation.mimeType) {
-                        result = (representation.mimeType.indexOf("vtt") !== -1) || (representation.mimeType.indexOf("ttml") !== -1);
-                        found = true;
-                    }
-
-                    i += 1;
-                }
-            }
-
-            if(found){
-                adaptation.type = "text";
-            }
-        }
-
-        return Q.when(result);
+        return this.getIsType(adaptation, "text", ["vtt", "ttml", "application/mp4"]);
     },
 
     // ORANGE: added application/ttml+xml+mp4 for Smoothstreaming subtitles (ttml+xml encapsulated in mp4 binary form)
     getIsTextTrack: function(type) {
-        return (type === "text/vtt" || type === "application/ttml+xml" || type === "application/ttml+xml+mp4");
+        return (type === "text/vtt" || type === "application/ttml+xml" || type === "application/ttml+xml+mp4" || type === "application/mp4");
     },
 
     getIsMain: function( /*adaptation*/ ) {
         "use strict";
         // TODO : Check "Role" node.
         // TODO : Use this somewhere.
-        return Q.when(false);
+        return false;
     },
 
     processAdaptation: function(adaptation) {
@@ -24972,21 +24832,14 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
         for (i = 0, len = adaptations.length; i < len; i += 1) {
             if (adaptations[i].hasOwnProperty("id") && adaptations[i].id === id) {
-                return Q.when(adaptations[i]);
+                return adaptations[i];
             }
         }
 
-        return Q.when(null);
+        return null;
     },
 
     getDataForIndex: function(index, manifest, periodIndex) {
-        "use strict";
-        var adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
-
-        return Q.when(adaptations[index]);
-    },
-
-    getDataForIndex_: function(index, manifest, periodIndex) {
         "use strict";
         var adaptations;
 
@@ -25033,38 +24886,6 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             if (data.id) {
                 for (i = 0, len = adaptations.length; i < len; i += 1) {
                     if (adaptations[i].id && adaptations[i].id === data.id) {
-                        return Q.when(i);
-                    }
-                }
-            } else {
-                var strData = JSON.stringify(data);
-                var strAdapt;
-                for (i = 0, len = adaptations.length; i < len; i += 1) {
-                    strAdapt = JSON.stringify(adaptations[i]);
-                    if (strAdapt === strData) {
-                        return Q.when(i);
-                    }
-                }
-            }
-        }
-
-        return Q.when(-1);
-    },
-
-    getDataIndex_: function(data, manifest, periodIndex) {
-        "use strict";
-
-        var adaptations,
-            i,
-            len;
-
-        if (manifest && periodIndex >= 0) {
-            adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
-
-            // ORANGE : compare data with id or string representation to avoid reference error due to manifest refresh
-            if (data.id) {
-                for (i = 0, len = adaptations.length; i < len; i += 1) {
-                    if (adaptations[i].id && adaptations[i].id === data.id) {
                         return i;
                     }
                 }
@@ -25085,284 +24906,153 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
     getVideoData: function(manifest, periodIndex) {
         "use strict";
-        //return Q.when(null);
+        //return null;
         //------------------------------------
         var adaptations,
-            i,
-            len,
-            deferred = Q.defer(),
-            funcs = [];
+            i;
 
-        if (manifest && periodIndex >= 0) {
-            adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
-
-            for (i = 0, len = adaptations.length; i < len; i += 1) {
-                funcs.push(this.getIsVideo(adaptations[i]));
-            }
-            Q.all(funcs).then(
-                function(results) {
-                    var found = false;
-                    for (i = 0, len = results.length; i < len; i += 1) {
-                        if (results[i] === true) {
-                            found = true;
-                            deferred.resolve(adaptations[i]);
-                        }
-                    }
-                    if (!found) {
-                        deferred.reject();
-                    }
-                }
-            );
-        } else {
-            deferred.reject();
+        if (!manifest || periodIndex < 0) {
+            return null;
         }
 
-        return deferred.promise;
+        adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+
+        if (adaptations.length === 0) {
+            return null;
+        }
+
+        for (i = 0; i < adaptations.length; i += 1) {
+            if (this.getIsVideo(adaptations[i])) {
+                return adaptations[i];
+            }
+        }
+
+        return null;
     },
 
     getTextDatas: function(manifest, periodIndex) {
         "use strict";
-        //return Q.when(null);
+        //return null;
         //------------------------------------
         var adaptations,
-            i,
-            len,
-            deferred = Q.defer(),
-            funcs = [];
+            datas = [],
+            i;
 
-        if (manifest && periodIndex >= 0) {
-            adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
-            for (i = 0, len = adaptations.length; i < len; i += 1) {
-                funcs.push(this.getIsText(adaptations[i]));
-            }
-            Q.all(funcs).then(
-                function(results) {
-                    var datas = [];
-                    for (i = 0, len = results.length; i < len; i += 1) {
-                        if (results[i] === true) {
-                            datas.push(adaptations[i]);
-                        }
-                        deferred.resolve(datas);
-                    }
-                }
-            );
-        } else {
-            deferred.reject();
+        if (!manifest || periodIndex < 0) {
+            return datas;
         }
 
-        return deferred.promise;
+        adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+
+        if (adaptations.length === 0) {
+            return datas;
+        }
+
+        for (i = 0; i < adaptations.length; i += 1) {
+            if (this.getIsText(adaptations[i])) {
+                datas.push(adaptations[i]);
+            }
+        }
+
+        return datas;
     },
 
     getAudioDatas: function(manifest, periodIndex) {
         "use strict";
-        //return Q.when(null);
         //------------------------------------
         var adaptations,
-            i,
-            len,
-            deferred = Q.defer(),
-            funcs = [];
+            datas = [],
+            i;
 
-        if (manifest && periodIndex >= 0) {
-            adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
-            for (i = 0, len = adaptations.length; i < len; i += 1) {
-                funcs.push(this.getIsAudio(adaptations[i]));
-            }
+        //return datas;
 
-            Q.all(funcs).then(
-                function(results) {
-                    var datas = [];
-                    for (i = 0, len = results.length; i < len; i += 1) {
-                        if (results[i] === true) {
-                            datas.push(adaptations[i]);
-                        }
-                    }
-                    deferred.resolve(datas);
-                }
-            );
-        } else {
-            deferred.reject();
+        if (!manifest || periodIndex < 0) {
+            return datas;
         }
 
-        return deferred.promise;
+        adaptations = manifest.Period_asArray[periodIndex].AdaptationSet_asArray;
+
+        if (adaptations.length === 0) {
+            return datas;
+        }
+        
+        for (i = 0; i < adaptations.length; i += 1) {
+            if (this.getIsAudio(adaptations[i])) {
+                datas.push(adaptations[i]);
+            }
+        }
+
+        return datas;
     },
 
     getSpecificAudioData: function(manifest, periodIndex, language) {
         "use strict";
         var i,
-            len,
-            deferred = Q.defer(),
-            found = false,
-            self = this;
+            datas;
 
-        if (manifest && periodIndex >= 0) {
-            this.getAudioDatas(manifest, periodIndex).then(
-                function(datas) {
-                    if (!datas || datas.length === 0) {
-                        deferred.reject();
-                        return;
-                    }
 
-                    for (i = 0, len = datas.length; i < len && found !== true; i += 1) {
-                        if (datas[i].lang === language) {
-                            found = true;
-                            deferred.resolve(self.processAdaptation(datas[i]));
-                        }
-                    }
-
-                    if (!found) {
-                        //if the specific language has not been found, return the first one.
-                        deferred.resolve(datas[0]);
-                    }
-                }
-            );
-        } else {
-            deferred.reject();
+        if (!manifest || periodIndex < 0) {
+            return null;
         }
 
-        return deferred.promise;
-    },
-
-    getPrimaryAudioData: function(manifest, periodIndex) {
-        "use strict";
-        var i,
-            len,
-            deferred = Q.defer(),
-            funcs = [],
-            self = this;
-
-        if (manifest && periodIndex >= 0) {
-            this.getAudioDatas(manifest, periodIndex).then(
-                function(datas) {
-                    if (!datas || datas.length === 0) {
-                        deferred.reject();
-                        return;
-                    }
-
-                    for (i = 0, len = datas.length; i < len; i += 1) {
-                        funcs.push(self.getIsMain(datas[i]));
-                    }
-
-                    Q.all(funcs).then(
-                        function(results) {
-                            var found = false;
-                            for (i = 0, len = results.length; i < len; i += 1) {
-                                if (results[i] === true) {
-                                    found = true;
-                                    deferred.resolve(self.processAdaptation(datas[i]));
-                                }
-                            }
-                            if (!found) {
-                                //if the specific language has not been found, return the first one.
-                                deferred.resolve(datas[0]);
-                            }
-                        }
-                    );
-                }
-            );
-        } else {
-            deferred.reject();
+        datas = this.getAudioDatas(manifest, periodIndex);
+        if (datas.length === 0) {
+            return null;
         }
 
-        return deferred.promise;
-    },
-
-    getPrimaryTextData: function(manifest, periodIndex) {
-        "use strict";
-        var i,
-            len,
-            deferred = Q.defer(),
-            funcs = [],
-            self = this;
-
-        if (manifest && periodIndex >= 0) {
-            this.getTextDatas(manifest, periodIndex).then(
-                function(datas) {
-                    if (!datas || datas.length === 0) {
-                        deferred.reject();
-                        return;
-                    }
-
-                    for (i = 0, len = datas.length; i < len; i += 1) {
-                        funcs.push(self.getIsMain(datas[i]));
-                    }
-
-                    Q.all(funcs).then(
-                        function(results) {
-                            var found = false;
-                            for (i = 0, len = results.length; i < len; i += 1) {
-                                if (results[i] === true) {
-                                    found = true;
-                                    deferred.resolve(self.processAdaptation(datas[i]));
-                                }
-                            }
-                            if (!found) {
-                                deferred.resolve(datas[0]);
-                            }
-                        }
-                    );
-                }
-            );
-        } else {
-            deferred.reject();
+        for (i = 0; i < datas.length; i += 1) {
+            if (datas[i].lang === language) {
+                return this.processAdaptation(datas[i]);
+            }
         }
 
-        return deferred.promise;
+        //if the specific language has not been found, return the first one.
+        return this.processAdaptation(datas[0]);
     },
 
     getSpecificTextData: function(manifest, periodIndex, language) {
         "use strict";
         var i,
-            len,
-            deferred = Q.defer(),
-            found = false,
-            self = this;
-        if (manifest && periodIndex >= 0) {
-            this.getTextDatas(manifest, periodIndex).then(
-                function(datas) {
-                    if (!datas || datas.length === 0) {
-                        deferred.reject();
-                        return;
-                    }
+            datas;
 
-                    for (i = 0, len = datas.length; i < len && found !== true; i += 1) {
-                        if (datas[i].lang === language) {
-                            found = true;
-                            deferred.resolve(self.processAdaptation(datas[i]));
-                        }
-                    }
-
-                    if (!found) {
-                        deferred.resolve(datas[0]);
-                    }
-                });
-        } else {
-            deferred.reject();
+        if (!manifest || periodIndex < 0) {
+            return null;
         }
 
-        return deferred.promise;
+        datas = this.getTextDatas(manifest, periodIndex);
+        if (datas.length === 0) {
+            return null;
+        }
+
+        for (i = 0; i < datas.length; i += 1) {
+            if (datas[i].lang === language) {
+                return this.processAdaptation(datas[i]);
+            }
+        }
+
+        return this.processAdaptation(datas[0]);
     },
 
-    getCodec: function(data) {
+    getCodec: function(adaptation) {
         "use strict";
         var i = 0,
             representation,
             codec = null;
 
-        while ((codec === null) && (i < data.Representation_asArray.length)) {
-            representation = data.Representation_asArray[i];
+        while ((codec === null) && (i < adaptation.Representation_asArray.length)) {
+            representation = adaptation.Representation_asArray[i];
             if (representation.codecs !== null && representation.codecs !== "") {
                 codec = (representation.mimeType + ';codecs="' + representation.codecs + '"');
             }
             i++;
         }
 
-        return Q.when(codec);
+        return codec;
     },
 
     getMimeType: function(data) {
         "use strict";
-        return Q.when(data.Representation_asArray[0].mimeType);
+        return data.Representation_asArray[0].mimeType;
     },
 
     getKID: function(data) {
@@ -25377,9 +25067,9 @@ Dash.dependencies.DashManifestExtensions.prototype = {
     getContentProtectionData: function(data) {
         "use strict";
         if (!data || !data.hasOwnProperty("ContentProtection_asArray") || data.ContentProtection_asArray.length === 0) {
-            return Q.when(null);
+            return null;
         }
-        return Q.when(data.ContentProtection_asArray);
+        return data.ContentProtection_asArray;
     },
 
     getIsDynamic: function(manifest) {
@@ -25403,7 +25093,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         containsDVR = !isNaN(manifest.timeShiftBufferDepth);
         isDVR = (isDynamic && containsDVR);
 
-        return Q.when(isDVR);
+        return isDVR;
     },
 
     getIsOnDemand: function(manifest) {
@@ -25414,7 +25104,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             isOnDemand = (manifest.profiles.indexOf("urn:mpeg:dash:profile:isoff-on-demand:2011") !== -1);
         }
 
-        return Q.when(isOnDemand);
+        return isOnDemand;
     },
 
     getDuration: function(manifest) {
@@ -25428,12 +25118,12 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             mpdDuration = Number.POSITIVE_INFINITY;
         }
 
-        return Q.when(mpdDuration);
+        return mpdDuration;
     },
 
     getBandwidth: function(representation) {
         "use strict";
-        return Q.when(representation.bandwidth);
+        return representation.bandwidth;
     },
 
     getRefreshDelay: function(manifest) {
@@ -25445,19 +25135,10 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             delay = Math.max(parseFloat(manifest.minimumUpdatePeriod), minDelay);
         }
 
-        return Q.when(delay);
+        return delay;
     },
 
     getRepresentationCount: function(adaptation) {
-        "use strict";
-        if (adaptation) {
-            return Q.when(adaptation.Representation_asArray.length);
-        }
-
-        return Q.when(null);
-    },
-
-    getRepresentationCount_: function(adaptation) {
         "use strict";
         if (adaptation) {
             return adaptation.Representation_asArray.length;
@@ -25468,21 +25149,19 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
     getRepresentationFor: function(index, data) {
         "use strict";
-        return Q.when(data.Representation_asArray[index]);
+        return data.Representation_asArray[index];
     },
 
     getRepresentationsForAdaptation: function(manifest, adaptation) {
-        var self = this,
-            a,
+        var a,
             representations = [],
-            deferred = Q.defer(),
             representation,
             initialization,
             segmentInfo,
             r;
 
         if (manifest && adaptation) {
-            a = self.processAdaptation(manifest.Period_asArray[adaptation.period.index].AdaptationSet_asArray[adaptation.index]);
+            a = this.processAdaptation(manifest.Period_asArray[adaptation.period.index].AdaptationSet_asArray[adaptation.index]);
 
             for (var i = 0; i < a.Representation_asArray.length; i += 1) {
                 r = a.Representation_asArray[i];
@@ -25527,7 +25206,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                         representation.initialization = r.BaseURL;
                         representation.range = initialization.range;
                     }
-                } else if (r.hasOwnProperty("mimeType") && self.getIsTextTrack(r.mimeType)) {
+                } else if (r.hasOwnProperty("mimeType") && this.getIsTextTrack(r.mimeType)) {
                     representation.initialization = r.BaseURL;
                     representation.range = 0;
                 }
@@ -25553,20 +25232,19 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                     representation.presentationTimeOffset = segmentInfo.presentationTimeOffset / representation.timescale;
                 }
 
-                representation.MSETimeOffset = self.timelineConverter.calcMSETimeOffset(representation);
+                representation.MSETimeOffset = this.timelineConverter.calcMSETimeOffset(representation);
                 representations.push(representation);
             }
         }
 
-        deferred.resolve(representations);
-
-        return deferred.promise;
+        return representations;
     },
 
     getAdaptationsForPeriod: function(manifest, period) {
         var p = manifest === null ? null : manifest.Period_asArray[period.index],
             adaptations = [],
             adaptationSet;
+
         if (p) {
             for (var i = 0; i < p.AdaptationSet_asArray.length; i += 1) {
                 adaptationSet = new Dash.vo.AdaptationSet();
@@ -25576,14 +25254,12 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             }
         }
 
-        return Q.when(adaptations);
+        return adaptations;
     },
 
     getRegularPeriods: function(manifest, mpd) {
-        var self = this,
-            deferred = Q.defer(),
-            periods = [],
-            isDynamic = self.getIsDynamic(manifest),
+        var periods = [],
+            isDynamic = this.getIsDynamic(manifest),
             i,
             len,
             p1 = null,
@@ -25648,30 +25324,19 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         }
 
         if (periods.length === 0) {
-            return Q.when(periods);
+            return periods;
         }
 
-        self.getCheckTime(manifest, periods[0]).then(
-            function(checkTime) {
-                mpd.checkTime = checkTime;
+        mpd.checkTime = this.getCheckTime(manifest, periods[0]);
 
-                // The last Period extends until the end of the Media Presentation.
-                // The difference between the PeriodStart time of the last Period
-                // and the mpd duration
-                if (vo1 !== null && isNaN(vo1.duration)) {
-                    self.getEndTimeForLastPeriod(mpd).then(
-                        function(periodEndTime) {
-                            vo1.duration = periodEndTime - vo1.start;
-                            deferred.resolve(periods);
-                        }
-                    );
-                } else {
-                    deferred.resolve(periods);
-                }
-            }
-        );
+        // The last Period extends until the end of the Media Presentation.
+        // The difference between the PeriodStart time of the last Period
+        // and the mpd duration
+        if (vo1 !== null && isNaN(vo1.duration)) {
+            vo1.duration = this.getEndTimeForLastPeriod(mpd) - vo1.start;
+        }
 
-        return Q.when(deferred.promise);
+        return periods;
     },
 
     getMpd: function(manifest) {
@@ -25702,10 +25367,10 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                 mpd.maxSegmentDuration = manifest.maxSegmentDuration;
             }
 
-            return Q.when(mpd);
+            return mpd;
         }
 
-        return Q.when(null);
+        return null;
     },
 
     getFetchTime: function(manifest, period) {
@@ -25715,31 +25380,20 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         // either if the client obtains an updated MPD or the client verifies that the MPD has not been updated since the previous fetching.
         var fetchTime = this.timelineConverter.calcPresentationTimeFromWallTime(manifest.mpdLoadedTime, period);
 
-        return Q.when(fetchTime);
+        return fetchTime;
     },
 
     getCheckTime: function(manifest, period) {
-        var self = this,
-            deferred = Q.defer(),
-            checkTime = NaN;
+        var checkTime = NaN;
 
         // If the MPD@minimumUpdatePeriod attribute in the client is provided, then the check time is defined as the
         // sum of the fetch time of this operating MPD and the value of this attribute,
         // i.e. CheckTime = FetchTime + MPD@minimumUpdatePeriod.
         if (manifest.hasOwnProperty("minimumUpdatePeriod")) {
-            self.getFetchTime(manifest, period).then(
-                function(fetchTime) {
-                    checkTime = fetchTime + manifest.minimumUpdatePeriod;
-                    deferred.resolve(checkTime);
-                }
-            );
-        } else {
-            // TODO If the MPD@minimumUpdatePeriod attribute in the client is not provided, external means are used to
-            // determine CheckTime, such as a priori knowledge, or HTTP cache headers, etc.
-            deferred.resolve(checkTime);
+            checkTime = this.getFetchTime(manifest, period) + manifest.minimumUpdatePeriod;
         }
 
-        return deferred.promise;
+        return checkTime;
     },
 
     getEndTimeForLastPeriod: function(mpd) {
@@ -25754,10 +25408,10 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             // in this case the Period End Time should match CheckTime
             periodEnd = mpd.checkTime;
         } else {
-            return Q.fail(new Error("Must have @mediaPresentationDuration or @minimumUpdatePeriod on MPD or an explicit @duration on the last period."));
+            return new Error("Must have @mediaPresentationDuration or @minimumUpdatePeriod on MPD or an explicit @duration on the last period.");
         }
 
-        return Q.when(periodEnd);
+        return periodEnd;
     },
 
     getEventsForPeriod: function(manifest, period) {
@@ -25801,7 +25455,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             }
         }
 
-        return Q.when(events);
+        return events;
     },
 
     getEventStreamForAdaptationSet: function(data) {
@@ -25872,20 +25526,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
     },
 
     getRepresentationBandwidth: function(adaptation, index) {
-        var self = this,
-            deferred = Q.defer();
-
-        self.getRepresentationFor(index, adaptation).then(
-            function(rep) {
-                self.getBandwidth(rep).then(
-                    function(bandwidth) {
-                        deferred.resolve(bandwidth);
-                    }
-                );
-            }
-        );
-
-        return deferred.promise;
+        return this.getBandwidth(this.getRepresentationFor(index, adaptation));
     }
 
 };
@@ -26121,7 +25762,7 @@ Dash.dependencies.DashMetricsExtensions = function() {
             // ORANGE: if only 1 item, then was ignored
             //while (httpListLastIndex > 0) {
             while (httpListLastIndex >= 0) {
-                if (httpList[httpListLastIndex].responsecode) {
+                if (httpList[httpListLastIndex].responsecode !== null) {
                     currentHttpList = httpList[httpListLastIndex];
                     break;
                 }
@@ -26615,8 +26256,7 @@ Dash.dependencies.FragmentExtensions = function () {
     "use strict";
 
     var parseTFDT = function (ab) {
-            var deferred = Q.defer(),
-                d = new DataView(ab),
+            var d = new DataView(ab),
                 pos = 0,
                 base_media_decode_time,
                 version,
@@ -26657,12 +26297,10 @@ Dash.dependencies.FragmentExtensions = function () {
                 base_media_decode_time = utils.Math.to64BitNumber(d.getUint32(pos + 4, false), d.getUint32(pos, false));
             }
 
-            deferred.resolve({
+            return {
                 'version' : version,
                 'base_media_decode_time' : base_media_decode_time
-            });
-
-            return deferred.promise;
+            };
         },
 
         parseSIDX = function (ab) {
@@ -28337,6 +27975,13 @@ MediaPlayer.dependencies.ProtectionController = function() {
                     messageType: messageType
                 }*/;
 
+            // Ensure message from CDM is not empty
+            if (!message || message.byteLength === 0) {
+                this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
+                    new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_CHALLENGE, "Empty key message from CDM"));
+                return;
+            }
+
             // Message not destined for license server
             if (!licenseServerData) {
                 this.debug.log("[DRM] License server request not required for this message (type = " + e.data.messageType + ").  Session ID = " + sessionToken.getSessionID());
@@ -28454,10 +28099,10 @@ MediaPlayer.dependencies.ProtectionController = function() {
             this.debug.log("[DRM] Send license request");
             var licenseRequest = this.keySystem.getLicenseRequestFromMessage(message);
             if (licenseRequest === null) {
-                self.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
+                this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
                     new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_CHALLENGE, "No license challenge from CDM key message"));
             }
-            xhrLicense.send(this.keySystem.getLicenseRequestFromMessage(message));
+            xhrLicense.send(licenseRequest);
         },
 
         onNeedKey = function(event) {
@@ -29229,7 +28874,8 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
                 //this.debug.log("[DRM] Add supported key system: " + this.keySystems[ksIdx].systemString);
                 supportedKS.push({
                     ks: this.keySystems[ksIdx],
-                    initData: pssh[this.keySystems[ksIdx].uuid]
+                    initData: pssh[this.keySystems[ksIdx].uuid],
+                    cdmData: this.keySystems[ksIdx].getCDMData()
                 });
             }
         }
@@ -29933,31 +29579,41 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
         getKeyError = function(event) {
             var code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR,
                 msg = "MediakeyError";
-            switch (event.errorCode.code) {
-                case 1:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
-                    msg = "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
-                    break;
-                case 2:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_CLIENT;
-                    msg = "The Key System could not be installed or updated.";
-                    break;
-                case 3:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_SERVICE;
-                    msg = "The message passed into update indicated an error from the license service.";
-                    break;
-                case 4:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT;
-                    msg = "There is no available output device with the required characteristics for the content protection system.";
-                    break;
-                case 5:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_HARDWARECHANGE;
-                    msg += "A hardware configuration change caused a content protection error.";
-                    break;
-                case 6:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_DOMAIN;
-                    msg = "An error occurred in a multi-device domain licensing configuration. The most common error is a failure to join the domain.";
-                    break;
+
+            if (event.errorCode) {
+                switch (event.errorCode.code) {
+                    case 1:
+                        code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
+                        msg = "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
+                        break;
+                    case 2:
+                        code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_CLIENT;
+                        msg = "The Key System could not be installed or updated.";
+                        break;
+                    case 3:
+                        code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_SERVICE;
+                        msg = "The message passed into update indicated an error from the license service.";
+                        break;
+                    case 4:
+                        code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT;
+                        msg = "There is no available output device with the required characteristics for the content protection system.";
+                        break;
+                    case 5:
+                        code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_HARDWARECHANGE;
+                        msg += "A hardware configuration change caused a content protection error.";
+                        break;
+                    case 6:
+                        code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_DOMAIN;
+                        msg = "An error occurred in a multi-device domain licensing configuration. The most common error is a failure to join the domain.";
+                        break;
+                    default:
+                        code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
+                        msg = "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
+                        break;
+                }
+            } else {
+                code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
+                msg = "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";                
             }
             if (event.systemCode) {
                 msg += "  (System Code = " + event.systemCode + ")";
@@ -31191,7 +30847,7 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
     var keySystemStr = "com.microsoft.playready",
         keySystemUUID = "9a04f079-9840-4286-ab92-e65be0885f95",
         messageFormat = "utf16",
-        PRCDMData = '<PlayReadyCDMData type="LicenseAcquisition"><LicenseAcquisition version="1.0" Proactive="true"><CustomData encoding="base64encoded">%CUSTOMDATA%</CustomData></LicenseAcquisition></PlayReadyCDMData>',
+        PRCDMData = '<PlayReadyCDMData type="LicenseAcquisition"><LicenseAcquisition version="1.0" Proactive="false"><CustomData encoding="base64encoded">%CUSTOMDATA%</CustomData></LicenseAcquisition></PlayReadyCDMData>',
         protData,
 
         getRequestHeaders = function(message) {
@@ -33328,15 +32984,13 @@ Hls.dependencies.HlsFragmentController = function() {
     rslt.process = function(bytes, request, representations) {
         var result = null,
             InitSegmentData = null,
-            catArray = null,
-            deferred = null;
+            catArray = null;
 
         if ((bytes === null) || (bytes === undefined) || (bytes.byteLength === 0)) {
-            return Q.when(bytes);
+            return bytes;
         }
 
         try {
-            deferred = Q.defer();
             // Media segment => generate corresponding moof data segment from demultiplexed MPEG2-TS chunk
             if (request && (request.type === "Media Segment") && representations && (representations.length > 0)) {
                 if (lastRequestQuality === null || lastRequestQuality !== request.quality) {
@@ -33360,12 +33014,12 @@ Hls.dependencies.HlsFragmentController = function() {
 
                 rslt.sequenceNumber++;
             }
-            deferred.resolve(result);
+            return result;
         } catch (e) {
-            deferred.reject(e);
+            return e;
         }
 
-        return deferred.promise;
+        return result;
     };
 
     rslt.getStartTime = function() {
@@ -33472,7 +33126,7 @@ Hls.dependencies.HlsParser = function() {
         ATTR_SUBTITLES = "SUBTITLES",
         ATTR_RESOLUTION = "RESOLUTION",
         ATTR_CODECS = "CODECS",
-    /*ATTR_METHOD = "METHOD",
+        /*ATTR_METHOD = "METHOD",
         ATTR_IV = "IV",
         ATTR_URI = "URI",
         ATTR_TYPE = "TYPE",
@@ -33488,7 +33142,7 @@ Hls.dependencies.HlsParser = function() {
         retryInterval = DEFAULT_RETRY_INTERVAL,
         retryCount = 0,
         deferredPlaylist = null;
-        
+
 
     var playlistRequest = new XMLHttpRequest();
 
@@ -34000,6 +33654,7 @@ Hls.dependencies.HlsParser = function() {
             representationId = 0,
             streams = [],
             stream,
+            result,
             //requestsToDo = [],
             self = this,
             i = 0;
@@ -34144,19 +33799,16 @@ Hls.dependencies.HlsParser = function() {
         }*/
 
         // Get representation (variant stream) playlist
-        this.abrController.getPlaybackQuality("video", adaptationSet).then(
-            function(result) {
-                representation = adaptationSet.Representation_asArray[result.quality];
-                self.updatePlaylist(representation).then(
-                    function() {
-                        postProcess.call(self, mpd, result.quality).then(function() {
-                            deferred.resolve(mpd);
-                        });
-                    },
-                    function(error) {
-                        deferred.reject(error);
-                    }
-                );
+        result = this.abrController.getPlaybackQuality("video", adaptationSet);
+        representation = adaptationSet.Representation_asArray[result.quality];
+        self.updatePlaylist(representation).then(
+            function() {
+                postProcess.call(self, mpd, result.quality).then(function() {
+                    deferred.resolve(mpd);
+                });
+            },
+            function(error) {
+                deferred.reject(error);
             }
         );
 
@@ -34186,7 +33838,7 @@ Hls.dependencies.HlsParser = function() {
 
         parse: internalParse,
 
-        updatePlaylist: function (representation) {
+        updatePlaylist: function(representation) {
             retryAttempts = this.config.getParam("ManifestLoader.RetryAttempts", "number", DEFAULT_RETRY_ATTEMPTS);
             retryInterval = this.config.getParam("ManifestLoader.RetryInterval", "number", DEFAULT_RETRY_INTERVAL);
             retryCount = 0;
@@ -34267,7 +33919,7 @@ Mss.dependencies.MssParser = function() {
         xmlDoc = null,
         baseURL = null,
 
-        mapPeriod = function() {
+        mapPeriod = function(minBufferTime) {
             var period = {},
                 adaptations = [],
                 adaptation,
@@ -34280,7 +33932,7 @@ Mss.dependencies.MssParser = function() {
             // For each StreamIndex node, create an AdaptationSet element
             for (i = 0; i < smoothNode.childNodes.length; i++) {
                 if (smoothNode.childNodes[i].nodeName === "StreamIndex") {
-                    adaptation = mapAdaptationSet.call(this, smoothNode.childNodes[i]);
+                    adaptation = mapAdaptationSet.call(this, smoothNode.childNodes[i], minBufferTime);
                     if (adaptation !== null) {
                         adaptations.push(adaptation);
                     }
@@ -34295,7 +33947,7 @@ Mss.dependencies.MssParser = function() {
             return period;
         },
 
-        mapAdaptationSet = function(streamIndex) {
+        mapAdaptationSet = function(streamIndex, minBufferTime) {
 
             var adaptationSet = {},
                 representations = [],
@@ -34350,7 +34002,7 @@ Mss.dependencies.MssParser = function() {
             segments = segmentTemplate.SegmentTimeline.S_asArray;
             this.metricsModel.addDVRInfo(adaptationSet.contentType, new Date(), {
                 start: segments[0].t / segmentTemplate.timescale,
-                end: (segments[segments.length - 1].t + segments[segments.length - 1].d)  / segmentTemplate.timescale
+                end: (segments[segments.length - 1].t + segments[segments.length - 1].d- minBufferTime*10000000.0)  / segmentTemplate.timescale
             });
 
 
@@ -34663,7 +34315,9 @@ Mss.dependencies.MssParser = function() {
                 protection = this.domParser.getChildNode(smoothNode, 'Protection'),
                 protectionHeader = null,
                 KID,
+                realDuration,
                 firstSegment,
+                lastSegment,
                 adaptationTimeOffset,
                 i;
 
@@ -34681,7 +34335,7 @@ Mss.dependencies.MssParser = function() {
             }
 
             // Map period node to manifest root node
-            mpd.Period = mapPeriod.call(this);
+            mpd.Period = mapPeriod.call(this, mpd.minBufferTime);
             mpd.Period_asArray = [mpd.Period];
 
             // Initialize period start time
@@ -34720,8 +34374,17 @@ Mss.dependencies.MssParser = function() {
                 // Therefore, set period start time to the higher adaptation start time
                 if (mpd.type === "static" && adaptations[i].contentType !== 'text') {
                     firstSegment = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray[0];
+                    lastSegment = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray[adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray.length-1];
                     adaptationTimeOffset = parseFloat(firstSegment.t) / TIME_SCALE_100_NANOSECOND_UNIT;
                     period.start = (period.start === 0) ? adaptationTimeOffset : Math.max(period.start, adaptationTimeOffset);
+                    //get last segment start time, add the duration of this last segment
+                    realDuration = parseFloat(((lastSegment.t + lastSegment.d) / TIME_SCALE_100_NANOSECOND_UNIT).toFixed(3));
+                    //detect difference between announced duration (in MSS manifest) and real duration => in any case, we want that the video element sends the ended event.
+                    //set the smallest value between all the adaptations
+                    if (!isNaN(realDuration) && realDuration < mpd.mediaPresentationDuration) {
+                        mpd.mediaPresentationDuration = realDuration;
+                        period.duration = realDuration;
+                    }
                 }
 
                 // Propagate content protection information into each adaptation
@@ -35013,7 +34676,7 @@ Mss.dependencies.MssFragmentController = function() {
                 for (i = 0; i < entries.length; i += 1) {
                     if (segmentId + i < segments.length) {
                         t = segments[segmentId + i].t;
-                        if ((t + segments[segmentId + i].d) != entries[i].fragment_absolute_time) {
+                        if ((t + segments[segmentId + i].d) !== entries[i].fragment_absolute_time) {
                             segments[segmentId + i].t = entries[i].fragment_absolute_time;
                             segments[segmentId + i].d = entries[i].fragment_duration;
                             this.debug.log("[MssFragmentController] Correct tfrf time  = " + entries[i].fragment_absolute_time + "and duration = " + entries[i].fragment_duration + "! ********");
@@ -35082,6 +34745,88 @@ Mss.dependencies.MssFragmentController = function() {
             }
         },
 
+        duplicateSample = function(fragment, segmentDuration) {
+            var moof = null,
+                mdat = null,
+                traf = null,
+                trun = null,
+                tfhd,
+                sepiff = null,
+                saiz = null,
+                i,
+                trunEntries,
+                trunDuration,
+                mdatData;
+
+            // This function duplicates the first sample (from KeyFrame request) to generate
+            // a full segment with the segment duration.
+
+            // Get references on boxes
+            moof = fragment.getBoxByType("moof");
+            mdat = fragment.getBoxByType("mdat");
+            traf = moof.getBoxByType("traf");
+            trun = traf.getBoxByType("trun");
+            tfhd = traf.getBoxByType("tfhd");
+
+            // We will set the sample_duration for each segment, then we do set also for first segment duration if not set
+            if (trun.samples_table[0].sample_duration === undefined) {
+                trun.samples_table[0].sample_duration = tfhd.default_sample_duration;
+            }
+
+            // Determine number of samples according to the segment duration
+            trunEntries = Math.floor(segmentDuration / trun.samples_table[0].sample_duration);
+
+            // Add samples in trun box to complete fragment ((trunEntries - 1) for not considering already existing first fragment)
+            for (i = 0; i < (trunEntries - 1); i++) {
+                trun.samples_table.push(trun.samples_table[0]);
+            }
+
+            // Patch/lengthen the last sample duration if segment not complete
+            trunDuration = trunEntries * trun.samples_table[0].sample_duration;
+            if (trunDuration < segmentDuration) {
+                trun.samples_table[trun.samples_table.length - 1].sample_duration += segmentDuration - trunDuration;
+            }
+
+            trun.sample_count = trun.samples_table.length;
+
+            // Update PIFF Sample Encryption box
+            sepiff = traf.getBoxByType("sepiff");
+            if (sepiff !== null) {
+                // sepiff box may have already all original samples encryption data definition
+                // => we keep only first sample entry
+                if (sepiff.sample_count > 1) {
+                    sepiff.entry = sepiff.entry.slice(0, 1);
+                }
+                // Then, we duplicate this first entry
+                for (i = 0; i < (trunEntries - 1); i += 1) {
+                    sepiff.entry.push(sepiff.entry[0]);
+                }
+                sepiff.sample_count = sepiff.entry.length;
+            }
+
+            // Update saiz box
+            saiz = traf.getBoxByType("saiz");
+            if (saiz !== null) {
+                if (saiz.default_sample_info_size === 0) {
+                    // Same process as for sepiff box....
+                    if (saiz.sample_count > 1) {
+                        saiz.sample_info_size = saiz.sample_info_size.slice(0, 1);
+                    }
+                    for (i = 0; i < (trunEntries - 1); i += 1) {
+                        saiz.sample_info_size.push(saiz.sample_info_size[0]);
+                    }
+                }
+                saiz.sample_count = sepiff.entry.length;
+            }
+
+            // Duplicate mdat data
+            mdatData = mdat.data;
+            mdat.data = new Uint8Array(mdatData.length * trun.sample_count);
+            for (i = 0; i < trun.sample_count; i += 1) {
+                mdat.data.set(mdatData, mdatData.length * i);
+            }                 
+        },
+
         convertFragment = function(data, request, adaptation) {
             var i = 0,
                 // Get track id corresponding to adaptation set
@@ -35099,7 +34844,8 @@ Mss.dependencies.MssFragmentController = function() {
                 saiz = null,
                 tfdt = null,
                 tfrf = null,
-                sizedifferent = false,
+                fragmentDuration,
+                sampleDuration,
                 pos = -1,
                 fragment_size = 0,
                 moofPosInFragment = 0,
@@ -35111,65 +34857,20 @@ Mss.dependencies.MssFragmentController = function() {
                 return null;
             }
 
-            // Get references en boxes
+            // Get references on boxes
             moof = fragment.getBoxByType("moof");
             mdat = fragment.getBoxByType("mdat");
             traf = moof.getBoxByType("traf");
             trun = traf.getBoxByType("trun");
             tfhd = traf.getBoxByType("tfhd");
 
-            // If protected content (sepiff box)
-            // => convert it into a senc box
-            // => create saio and saiz boxes (if not already present)
-            sepiff = traf.getBoxByType("sepiff");
-            if (sepiff !== null) {
-                sepiff.boxtype = "senc";
-                sepiff.extended_type = undefined;
-
-                saio = traf.getBoxByType("saio");
-                if (saio === null) {
-                    // Create Sample Auxiliary Information Offsets Box box (saio)
-                    saio = new mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox();
-                    saio.version = 0;
-                    saio.flags = 0;
-                    saio.entry_count = 1;
-                    saio.offset = [];
-
-                    saiz = new mp4lib.boxes.SampleAuxiliaryInformationSizesBox();
-                    saiz.version = 0;
-                    saiz.flags = 0;
-                    saiz.sample_count = sepiff.sample_count;
-                    saiz.default_sample_info_size = 0;
-
-                    saiz.sample_info_size = [];
-
-                    // get for each sample_info the size
-                    if (sepiff.flags & 2) {
-                        for (i = 0; i < sepiff.sample_count; i += 1) {
-                            saiz.sample_info_size[i] = 8 + (sepiff.entry[i].NumberOfEntries * 6) + 2;
-                            //8 (Init vector size) + NumberOfEntries*(clear (2) +crypted (4))+ 2 (numberofEntries size (2))
-                            if (i > 0) {
-                                if (saiz.sample_info_size[i] !== saiz.sample_info_size[i - 1]) {
-                                    sizedifferent = true;
-                                }
-                            }
-                        }
-
-                        //all the samples have the same size
-                        //set default size and remove the table.
-                        if (sizedifferent === false) {
-                            saiz.default_sample_info_size = saiz.sample_info_size[0];
-                            saiz.sample_info_size = [];
-                        }
-                    } else {
-                        //if flags === 0 (ex: audio data), default sample size = Init Vector size (8)
-                        saiz.default_sample_info_size = 8;
-                    }
-
-                    //add saio and saiz box
-                    traf.boxes.push(saiz);
-                    traf.boxes.push(saio);
-                }
+            // Patch trun and mdat boxes to duplicate first sample in order to have a complete fragment
+            // => use case in trick mode where we do request only Key (I) frames, while the <video> element
+            // requires continuous stream to enable playback
+            sampleDuration = trun.samples_table[0].sample_duration !== undefined ? trun.samples_table[0].sample_duration : tfhd.default_sample_duration;
+            fragmentDuration = request.duration * request.timescale;
+            if (trun.samples_table.length === 1 && sampleDuration < fragmentDuration) {
+                duplicateSample(fragment, fragmentDuration);
             }
 
             // Update tfhd.track_ID field
@@ -35200,87 +34901,53 @@ Mss.dependencies.MssFragmentController = function() {
                 }
             }
 
+            // If protected content (sepiff box = Sample Encryption PIFF)
+            // => convert it into a senc box
+            // => create saio and saiz boxes (if not already present)
+            sepiff = traf.getBoxByType("sepiff");
+            if (sepiff !== null) {
+                sepiff.boxtype = "senc";
+                sepiff.extended_type = undefined;
+
+                saio = traf.getBoxByType("saio");
+                if (saio === null) {
+                    // Create Sample Auxiliary Information Offsets Box box (saio)
+                    saio = new mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox();
+                    saio.version = 0;
+                    saio.flags = 0;
+                    saio.entry_count = 1;
+                    saio.offset = [];
+
+                    saiz = new mp4lib.boxes.SampleAuxiliaryInformationSizesBox();
+                    saiz.version = 0;
+                    saiz.flags = 0;
+                    saiz.sample_count = sepiff.sample_count;
+                    saiz.default_sample_info_size = 0;
+                    saiz.sample_info_size = [];
+
+                    if (sepiff.flags & 0x02) {
+                        // Sub-sample encryption => set sample_info_size for each sample
+                        for (i = 0; i < sepiff.sample_count; i += 1) {
+                            // 10 = 8 (InitializationVector field size) + 2 (subsample_count field size)
+                            // 6 = 2 (BytesOfClearData field size) + 4 (BytesOfEncryptedData field size)
+                            saiz.sample_info_size[i] = 10 + (6 * sepiff.entry[i].NumberOfEntries);
+                        }
+                    } else {
+                        // No sub-sample encryption => set default sample_info_size = InitializationVector field size (8)
+                        saiz.default_sample_info_size = 8;
+                    }
+
+                    //add saio and saiz box
+                    traf.boxes.push(saiz);
+                    traf.boxes.push(saio);
+                }
+            }
+
             // Before determining new size of the converted fragment we update some box flags related to data offset
             tfhd.flags &= 0xFFFFFE; // set tfhd.base-data-offset-present to false
             tfhd.flags |= 0x020000; // set tfhd.default-base-is-moof to true
             trun.flags |= 0x000001; // set trun.data-offset-present to true
             trun.data_offset = 0; // Set a default value for trun.data_offset
-
-            //in trickMode, we have to modify sample duration for audio and video
-            if (this.fixDuration && trun.samples_table.length === 1) {
-                var fullDuration = request.duration * request.timescale,
-                    concatDuration = 0,
-                    mdatData = mdat.data,
-                    sampleDuration;
-
-                //if sample_duration is not defined, search duration in tfhd box
-                if (trun.samples_table[0].sample_duration === undefined) {
-                    sampleDuration = tfhd.default_sample_duration;
-                } else {
-                    sampleDuration = trun.samples_table[0].sample_duration;
-                }
-                //we have to duplicate the sample from KeyFrame request to be accepted by decoder.
-                //all the samples have to have a duration equals to request.duration * request.timescale               
-                var trunEntries = Math.floor(fullDuration / sampleDuration);
-
-                for (i = 0; i < (trunEntries - 1); i++) {
-                    trun.samples_table.push({
-                        sample_duration: trun.samples_table[0].sample_duration,
-                        sample_size: trun.samples_table[0].sample_size,
-                        sample_composition_time_offset: trun.samples_table[0].sample_composition_time_offset,
-                        sample_flags: trun.samples_table[0].sample_flags
-                    });
-                }
-
-                if (trun.samples_table[0].sample_duration !== undefined) {
-                    for (i = 0; i < trun.samples_table.length; i++) {
-                        concatDuration += trun.samples_table[i].sample_duration;
-                    }
-
-                    if (concatDuration > fullDuration) {
-                        trun.samples_table[trun.samples_table.length - 1].sample_duration -= (concatDuration - fullDuration);
-                    } else {
-                        trun.samples_table[trun.samples_table.length - 1].sample_duration += (fullDuration - concatDuration);
-                    }
-                }
-
-                //update sepiff and saiz boxes with replicated datas
-                if (sepiff !== null) {
-                    //if sepiff box has all datas for the complete fragments, delete thoses informations
-                    if (sepiff.sample_count > 1) {
-                        sepiff.entry = sepiff.entry.slice(0, 1);
-                    }
-                    //replicate the first entry
-                    for (i = 0; i < (trunEntries - 1); i += 1) {
-                        sepiff.entry.push(sepiff.entry[0]);
-                    }
-
-                    //if saio box was defined in the mp4 stream, saiz was also defined : get it now!
-                    if (saiz === null) {
-                        saiz = traf.getBoxByType("saiz");
-                    }
-
-                    if (saiz.default_sample_info_size === 0) {
-                        //as for sepiff box....
-                        if (saiz.sample_count > 1) {
-                            saiz.sample_info_size = saiz.sample_info_size.slice(0, 1);
-                        }
-                        for (i = 0; i < (trunEntries - 1); i += 1) {
-                            saiz.sample_info_size.push(saiz.sample_info_size[0]);
-                        }
-                    }
-
-                    sepiff.sample_count = sepiff.entry.length;
-                    saiz.sample_count = sepiff.entry.length;
-                }
-
-                //in the same way, we have to duplicate mdat.data.
-                trun.sample_count = trun.samples_table.length;
-                mdat.data = new Uint8Array(mdatData.length * trun.sample_count);
-                for (i = 0; i < trun.sample_count; i += 1) {
-                    mdat.data.set(mdatData, mdatData.length * i);
-                }
-            }
 
             // Determine new size of the converted fragment
             // and allocate new data buffer
@@ -35294,8 +34961,8 @@ Mss.dependencies.MssFragmentController = function() {
                 moofPosInFragment = fragment.getBoxOffsetByType("moof");
                 trafPosInMoof = moof.getBoxOffsetByType("traf");
                 sencPosInTraf = traf.getBoxOffsetByType("senc");
-                // set offset from begin fragment to the first IV in senc box
-                saio.offset[0] = moofPosInFragment + trafPosInMoof + sencPosInTraf + 16; // box header (12) + sampleCount (4)
+                // Set offset from begin fragment to the first IV field in senc box
+                saio.offset[0] = moofPosInFragment + trafPosInMoof + sencPosInTraf + 16; // 16 = box header (12) + sample_count field size (4)
             }
 
             new_data = mp4lib.serialize(fragment);
@@ -35308,7 +34975,6 @@ Mss.dependencies.MssFragmentController = function() {
     rslt.manifestModel = undefined;
     rslt.manifestExt = undefined;
     rslt.metricsModel = undefined;
-    rslt.fixDuration = false;
 
     rslt.process = function(bytes, request, representations) {
         var result = null,
@@ -35318,40 +34984,35 @@ Mss.dependencies.MssFragmentController = function() {
         if (bytes !== null && bytes !== undefined && bytes.byteLength > 0) {
             result = new Uint8Array(bytes);
         } else {
-            return Q.when(null);
+            return null;
         }
 
         if (manifest && representations && (representations.length > 0)) {
             // Get adaptation containing provided representations
             // (Note: here representations is of type Dash.vo.Representation)
             adaptation = manifest.Period_asArray[representations[0].adaptation.period.index].AdaptationSet_asArray[representations[0].adaptation.index];
-            // if (request && (request.type === "Media Segment") && manifest && representations && (representations.length > 0)) {
             if (request) {
                 if (request.type === "Media Segment") {
                     try {
                         result = convertFragment.call(this, result, request, adaptation);
                     } catch (e) {
-                        return Q.reject(e);
+                        return e;
                     }
 
                     if (!result) {
-                        return Q.when(null);
+                        return null;
                     }
                 } else if (request.type === "FragmentInfo Segment") {
                     try {
                         updateSegmentsList.call(this, result, request, adaptation);
                     } catch (e) {
-                        return Q.reject(e);
+                        return e;
                     }
                 }
             }
         }
 
-        return Q.when(result);
-    };
-
-    rslt.setSampleDuration = function(state) {
-        this.fixDuration = state;
+        return result;
     };
 
     return rslt;

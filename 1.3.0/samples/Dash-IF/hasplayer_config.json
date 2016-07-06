@@ -1,0 +1,61 @@
+{
+    "//": "General parameters, applied to all media",
+    "//": "A value of '-1' is considered as an undefined value, thus default value from source code is used",
+
+    "// Debug.level": "The level for output debug messages (0=none, 1=error, 2=warn, 3=info, 4=debug)",
+    "Debug.level": -1,
+
+    "// BufferController.minBufferTimeForPlaying": "The minimum media buffer size (in seconds) to fill before starting playing when buffering",
+    "BufferController.minBufferTimeForPlaying": -1,
+
+    "// BufferController.minBufferTime": "The minimum media buffer size (in seconds) to fill when playing",
+    "BufferController.minBufferTime": -1,
+
+    "// ABR.minBandwidth" : "The minimum quality bandwidth to be used by ABR controller",
+    "ABR.minBandwidth": -1,
+
+    "// ABR.maxBandwidth" : "The maximum quality bandwidth to be used by ABR controller",
+    "ABR.maxBandwidth": -1,
+
+    "// ABR.minQuality" : "The minimum quality index (starting from 0) to be used by ABR controller",
+    "ABR.minQuality": -1,
+
+    "// ABR.maxQuality" : "The maximum quality index (starting from 0) to be used by ABR controller",
+    "ABR.maxQuality": -1,
+
+    "// ABR.switchUpIncrementally" : "If true, then ABR controller switches up quality incrementally",
+    "ABR.switchUpIncrementally": false,
+
+    "// ABR.switchUpRatioSafetyFactor" : "The bandwidth ratio factor to overpass before switching up quality",
+    "ABR.switchUpRatioSafetyFactor": 1.5,
+
+    "// ABR.latencyInBandwidth" : "If true, latency is counted when determining downloading bitrate",
+    "ABR.latencyInBandwidth": true,
+
+    "// ABR.switchLowerBufferRatio" : "The buffer size (ratio of BufferController.minBufferTime) lower limit before switching to lower quality",
+    "ABR.switchLowerBufferRatio": 0.25,
+
+    "// ABR.switchLowerBufferTime" : "The buffer size (in seconds) lower limit before switching to lower quality, if defined it overrides ABR.switchLowerBufferRatio",
+    "ABR.switchLowerBufferTime": -1,
+
+    "// ABR.switchDownBufferRatio" : "The buffer size (ratio of BufferController.minBufferTime) lower limit before switching down",
+    "ABR.switchDownBufferRatio": 0.5,
+
+    "// ABR.switchDownBufferTime" : "The buffer size (in seconds) lower limit before switching down, if defined it overrides ABR.switchDownBufferRatio",
+    "ABR.switchDownBufferTime": -1,
+
+    "// ABR.switchUpBufferRatio" : "The buffer size (ratio of BufferController.minBufferTime) lower limit before switching up",
+    "ABR.switchUpBufferRatio": 0.75,
+
+    "// ABR.switchUpBufferTime" : "The buffer size (in seconds) lower limit before switching up, if defined it overrides ABR.switchUpBufferRatio",
+    "ABR.switchUpBufferTime": -1,
+
+    "// video" : "Video media parameters that override general parameters",
+    "video": {
+    },
+
+    "// audio" : "Audio media parameters that override general parameters",
+    "audio": {
+    }
+}
+

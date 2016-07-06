@@ -119,7 +119,19 @@
     
     
     <div class="description">
-        The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.Copyright (c) 2014, OrangeAll rights reserved.Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:•  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.•  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.•  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+        The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+
+Copyright (c) 2014, Orange
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+•  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+•  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+•  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
     </div>
     
 
@@ -450,7 +462,15 @@
     
     
     <div class="description">
-        Registers a listener on the specified event.The possible event types are:<li>'error' (see <a href="MediaPlayer.html#event:error">error</a> event specification)<li>'warning' (see <a href="MediaPlayer.html#event:warning">warning</a> event specification)<li>'manifestUrlUpdate' (see <a href="MediaPlayer.html#event:manifestUrlUpdate">manifestUrlUpdate</a> event specification)<li>'play_bitrate' (see <a href="MediaPlayer.html#event:play_bitrate">play_bitrate</a> event specification)<li>'download_bitrate' (see <a href="MediaPlayer.html#event:download_bitrate">download_bitrate</a> event specification)<li>'bufferLevel_updated' (see <a href="MediaPlayer.html#event:bufferLevel_updated">bufferLevel_updated</a> event specification)<li>'state_changed' (see <a href="MediaPlayer.html#event:state_changed">state_changed</a> event specification)
+        Registers a listener on the specified event.
+The possible event types are:
+<li>'error' (see <a href="MediaPlayer.html#event:error">error</a> event specification)
+<li>'warning' (see <a href="MediaPlayer.html#event:warning">warning</a> event specification)
+<li>'manifestUrlUpdate' (see <a href="MediaPlayer.html#event:manifestUrlUpdate">manifestUrlUpdate</a> event specification)
+<li>'play_bitrate' (see <a href="MediaPlayer.html#event:play_bitrate">play_bitrate</a> event specification)
+<li>'download_bitrate' (see <a href="MediaPlayer.html#event:download_bitrate">download_bitrate</a> event specification)
+<li>'bufferLevel_updated' (see <a href="MediaPlayer.html#event:bufferLevel_updated">bufferLevel_updated</a> event specification)
+<li>'state_changed' (see <a href="MediaPlayer.html#event:state_changed">state_changed</a> event specification)
     </div>
     
 
@@ -2737,7 +2757,8 @@
     
     
     <div class="description">
-        Returns the list of available tracks for the stream type (as specified in the stream manifest).The tracks list can be retrieved once the video 'loadeddata' event has been fired.
+        Returns the list of available tracks for the stream type (as specified in the stream manifest).
+The tracks list can be retrieved once the video 'loadeddata' event has been fired.
     </div>
     
 
@@ -3949,16 +3970,17 @@
 
             
 
-            <td class="description last">video stream properties object such url, prodData ...
+            <td class="description last">video stream properties object such url, startTime, prodData ...
             <pre>
             {
-                url : "http://..../manifest.mpd",
+                url : "[manifest url]",
+                startTime : [start time in seconds (optionnal)]
                 protData : {
                     // one entry for each key system ('com.microsoft.playready' or 'com.widevine.alpha')
                     "[key_system_name]": {
                         laURL: "[licenser url (optionnal)]",
                         pssh: "[base64 pssh box (optionnal)]"
-                        cdmData: "[custom data (optionnal)]"
+                        cdmData: "[CDM data (optionnal)]"
                     },
                     ...
                }
@@ -4474,7 +4496,11 @@
 
             
 
-            <td class="description last">the reason for stopping the player.Possible values are:<li>0 : stop during streaming at user request<li>1 : stop when all streams are completed<li>2 : stop after an error</td>
+            <td class="description last">the reason for stopping the player.
+Possible values are:
+<li>0 : stop during streaming at user request
+<li>1 : stop when all streams are completed
+<li>2 : stop after an error</td>
         </tr>
 
 	
@@ -5259,7 +5285,8 @@
     
     
     <div class="description">
-        Sets the default audio language. If the default language is available in the stream,the corresponding audio track is selected. Otherwise, the first declared audio track in the manifest is selected.
+        Sets the default audio language. If the default language is available in the stream,
+the corresponding audio track is selected. Otherwise, the first declared audio track in the manifest is selected.
     </div>
     
 
@@ -5374,7 +5401,8 @@
     
     
     <div class="description">
-        Sets the default subtitle language. If the default language is available in the stream,the corresponding subtitle track is selected. Otherwise, the first declared subtitle track in the manifest is selected.
+        Sets the default subtitle language. If the default language is available in the stream,
+the corresponding subtitle track is selected. Otherwise, the first declared subtitle track in the manifest is selected.
     </div>
     
 
@@ -5489,7 +5517,9 @@
     
     
     <div class="description">
-        Sets the initial quality to be downloaded for the given track type.This method has to be used before each call to load() method to set the initial quality.Otherwise, the initial quality is set according to previous bandwidth condition.
+        Sets the initial quality to be downloaded for the given track type.
+This method has to be used before each call to load() method to set the initial quality.
+Otherwise, the initial quality is set according to previous bandwidth condition.
     </div>
     
 
@@ -7681,7 +7711,8 @@
     
     
     <div class="description">
-        The error event is fired when an error occurs.When the error event is fired, the application shall stop the player.
+        The error event is fired when an error occurs.
+When the error event is fired, the application shall stop the player.
     </div>
     
 
@@ -7963,7 +7994,9 @@
     
     
     <div class="description">
-        The manifestUrlUpdate event is fired when the URL of the manifest may have to be refreshed,since the player failed to download the manifest file (URL expiration for example).The application shall therefore provide an updated manifest URL by using the method refreshManifest
+        The manifestUrlUpdate event is fired when the URL of the manifest may have to be refreshed,
+since the player failed to download the manifest file (URL expiration for example).
+The application shall therefore provide an updated manifest URL by using the method refreshManifest
     </div>
     
 
@@ -9051,7 +9084,7 @@
 					
 		<span class="jsdoc-message">
 		Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha5</a>
-		on 2016-05-18T10:44:54+02:00 using the <a
+		on 2016-06-30T21:43:42+02:00 using the <a
 			href="https://github.com/terryweiss/docstrap">DocStrap template</a>.
 		</span>
 				</footer>

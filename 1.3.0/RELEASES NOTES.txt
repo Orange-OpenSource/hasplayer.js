@@ -1,0 +1,75 @@
+### Release Notes v1.3.0 (2016/05/25)
+* Refactored and enriched MediaPlayer API
+* Add MediaPlayer plugins framework
+* Add new ABR rule considering dropped frames
+* DVR mode enhancement for MSS with FrgmentInfo requests to keep DVR window up to date
+* Corrected VOD streams management (no manifest refresh while switching tracks, ...)
+* Build: use gulp framework (instead of grunt)
+* Add new errors for HLS demultiplexing errors ('HLS_DEMUX_ERROR')
+* Bugs fixing:
+* - Mute state reset when load a new stream
+* - Crash in HLS demultiplexing when no audio packet in stream
+* - MANIFEST_ERR_PARSE (instead of DOWNLOAD_ERR_MANIFEST) when failed to download HLS variant stream playlist
+* - Byte-range requests for DASH contents
+* - Support for unknown MP4 boxes
+
+### Release Notes v1.2.7 (2016/04/01)
+* Bugs fixing:
+  - HLS support on Firefox
+  - Correct seeking and live start time management (BufferController's working time handling, seek to removed buffer ranges, etc)
+  - TTML parsing and VTT cues buffering management
+  - Correct manifest download error in case of automatic session reloading 
+* Add DVR support
+* Add trick mode support (fast forward and rewind)
+* Add retry for HLS variants streams playlists requests
+* Add session type parameter in input protection data
+* Add INTERNAL_ERROR for initialization and media segments processing exceptions
+
+### Release Notes v1.2.6 (2016/01/14)
+* EME support updated from dash.js
+* Add MediaKeySession persistance within MediaPlayer instance (useful for chrome that do not support persistance natively)
+* Enhance playback startup time (zapping time)
+* Robust resetting process
+* Optimize MSS to DASH manifest transcoding
+* Add segment dowloading abandonment functionality in case of drop bandwidth
+* Refactor tracks language switching
+* Refactor error events and add warning events
+* Report HTTP status code when manifest/segment/license downloading fails
+* Report error code contained in licenser server response body
+* Segment download error robustness (automatic session reload when buffer becomes underflow)
+* Switch off/on text track downloading when subtitles are disabled/enabled
+* And many bugs fixing
+
+### Release Notes v1.2.1 (2015/09/14)
+* Enable keeping ABR bandwidth conditions when loading new stream
+* Optimized ABR rules according to buffering state of the video player
+* Add support for default audio/text language to be selected at startup
+* Autoplay management accross all platforms (mainly for Android devices)
+* Bugs fixing (seek, MSS segments processing, Edge support...)
+
+### Release Notes v1.2.0 (2015/07/01)
+* HLS support
+* EME support refactoring with multiple versions support (taken from dash.js project)
+* PlayReady to Widevine content protection conversion (requires coordination between PlayReady and Widevine licensers)
+* Configuration mechanism for streaming and ABR controllers
+* Enhanced errors handling
+* Fallback mechanism for segment download failure 
+* Optimized ABR rules
+* Enhanced TTML subtitles support
+* Configurable build process (protocol(s), EME support)
+* And many bug corrections
+
+### Release Notes v1.1.0 (2014/10/31)
+* Based on dash.js v1.2.0 (see dash.js release notes)
+* Simplified BufferController with sequential segments downloading
+* Optimized and simplified live edge searching
+* TTML subtitles support
+* Quality filtering functionnality
+* Sample application (samples/DemoPlayer) with dynamic bandwidth chart
+
+### Release Notes v1.0.0 (2014/04/16)
+* Based on dash.js v1.1.0 (see dash.js release notes)
+* Smooth Streaming support (live and VOD)
+* Automatic protocol detection (DASH vs MSS)
+* PlayReady support with CustomData and licenser back URL
+* Multi-languages audio support
