@@ -14,4 +14,4 @@ git config user.email "mbrechet.ext@orange.com"
 cp  -r ../dist/* ./dev/
 git add --all
 git commit -am "automatic deploy from Travis-CI"
-git push "git@github.com:Orange-OpenSource/hasplayer.js.git" master:gh-pages
+git push "git@github.com:Orange-OpenSource/hasplayer.js.git" gh-pages:gh-pages
