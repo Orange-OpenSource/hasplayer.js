@@ -85,6 +85,11 @@ MediaPlayer.dependencies.BufferController = function() {
 
         segmentDuration = NaN,
 
+        // Patch for Safari: do not remove past buffer in live use case
+        // since it generates MEDIA_ERROR_DECODE while appending new segment
+        isSafari = (fingerprint_browser().name === "Safari"),
+
+
         sendRequest = function() {
 
             // Check if running state
@@ -432,7 +437,10 @@ MediaPlayer.dependencies.BufferController = function() {
 
                                     isQuotaExceeded = false;
 
-                                    if (isDynamic && bufferLevel > 1) {
+                                    // Patch for Safari: do not remove past buffer in live use case
+                                    // since it generates MEDIA_ERROR_DECODE while appending new segment
+
+                                    if (isDynamic && bufferLevel > 1 && !isSafari) {
                                         // In case of live streams, remove outdated buffer parts and requests
                                         // (checking bufferLevel ensure buffer is not empty or back to current time)
                                         removeBuffer.call(self, -1, getWorkingTime.call(self) - 30).then(
