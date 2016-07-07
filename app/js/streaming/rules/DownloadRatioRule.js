@@ -39,6 +39,7 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                 count,
                 bandwidths = [],
                 i,
+                count, 
                 q = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE,
                 totalBytesLength = 0,
                 p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
@@ -79,18 +80,21 @@ MediaPlayer.rules.DownloadRatioRule = function() {
 
                 totalBytesLength = lastRequest.bytesLength;
 
-                // If we have at least 3 requests, take an average of calculated bandwidth
-                if (requests.length >= 3) {
-                    for (i = requests.length - 2; i >= (requests.length - 3); i--) {
-                        if (requests[i].tfinish && requests[i].trequest && requests[i].tresponse) {
-                            totalBytesLength += requests[i].bytesLength;
-                            totalTime += (requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1000;
-                            downloadTime += (requests[i].tfinish.getTime() - requests[i].tresponse.getTime()) / 1000;
-                        }
+                // Take average bandwidth over 3 requests
+                count = 1;
+                i = requests.length - 2;
+                while (i >= 0 && count < 3) {
+                    if (requests[i].tfinish && requests[i].trequest && requests[i].tresponse && requests[i].bytesLength > 0) {
+                        self.debug.info("[DownloadRatioRule][" + data.type + "] length: " + requests[i].bytesLength + ", time: " + ((requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1000));
+                        totalBytesLength += requests[i].bytesLength;
+                        totalTime += (requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1000;
+                        downloadTime += (requests[i].tfinish.getTime() - requests[i].tresponse.getTime()) / 1000;
+                        count += 1;
                     }
+                    i--;
                 }
 
-                //defined in bits not bytes
+                // Set length in bits
                 totalBytesLength *= 8;
 
                 calculatedBandwidth = latencyInBandwidth ? (totalBytesLength / totalTime) : (totalBytesLength / downloadTime);
