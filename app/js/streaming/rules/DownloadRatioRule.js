@@ -39,7 +39,6 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                 count,
                 bandwidths = [],
                 i,
-                count, 
                 q = MediaPlayer.rules.SwitchRequest.prototype.NO_CHANGE,
                 totalBytesLength = 0,
                 p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
