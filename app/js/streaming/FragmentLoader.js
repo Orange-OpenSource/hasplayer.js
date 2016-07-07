@@ -47,7 +47,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
         },
 
         _loadRequest = function(request) {
-            var d = Q.defer(),
+            var deferred = Q.defer(),
                 req = new XMLHttpRequest(),
                 httpRequestMetrics = null,
                 firstProgress = true,
@@ -93,7 +93,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                 var currentTime = new Date();
                 if (firstProgress) {
                     firstProgress = false;
-                    if (!event.lengthComputable || (event.lengthComputable && event.total !== event.loaPded)) {
+                    if (!event.lengthComputable || (event.lengthComputable && event.total !== event.loaded)) {
                         request.firstByteDate = currentTime;
                         httpRequestMetrics.tresponse = currentTime;
                     }
@@ -127,6 +127,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
 
                 var currentTime = new Date(),
                     bytes = req.response,
+                    bytesLength = (bytes ? bytes.byteLength : 0),
                     latency,
                     download;
 
@@ -144,23 +145,40 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                 httpRequestMetrics.tfinish = request.requestEndDate;
                 httpRequestMetrics.responsecode = req.status;
 
-                httpRequestMetrics.bytesLength = bytes ? bytes.byteLength : 0;
+                httpRequestMetrics.bytesLength = bytesLength;
 
                 self.metricsModel.appendHttpTrace(
                     httpRequestMetrics,
                     currentTime,
-                    currentTime.getTime() - lastTraceTime.getTime(), [bytes ? bytes.byteLength : 0]);
+                    currentTime.getTime() - lastTraceTime.getTime(), [bytesLength]);
 
                 lastTraceTime = currentTime;
 
-                d.resolve({
+                deferred.resolve({
                     data: bytes,
                     request: request
                 });
             };
 
             req.onabort = function() {
+                var currentTime = new Date(),
+                    lastTrace,
+                    bytes;
+
                 req.aborted = true;
+
+                if (httpRequestMetrics.trace.length === 0) {
+                    return;
+                }
+                lastTrace = httpRequestMetrics.trace[httpRequestMetrics.trace.length - 1];
+                bytes = lastTrace.b[0];
+
+                request.requestEndDate = currentTime;
+                httpRequestMetrics.tresponse = request.firstByteDate;
+                httpRequestMetrics.tfinish = request.requestEndDate;
+                httpRequestMetrics.responsecode = req.status;
+
+                httpRequestMetrics.bytesLength = bytes;
             };
 
             req.onloadend = req.onerror = function() {
@@ -175,7 +193,11 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                 }
                 needFailureReport = false;
 
-                var currentTime = new Date(),
+                httpRequestMetrics.responsecode = req.status;
+
+                // When request failed do not complete http metrics so that
+                // DownloadRatioRule does not take into account these request
+                /*var currentTime = new Date(),
                     bytes = req.response,
                     latency,
                     download;
@@ -195,15 +217,15 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                 self.metricsModel.appendHttpTrace(httpRequestMetrics,
                     currentTime,
                     currentTime.getTime() - lastTraceTime.getTime(), [bytes ? bytes.byteLength : 0]);
-                lastTraceTime = currentTime;
+                lastTraceTime = currentTime;*/
 
-                d.reject(req);
+                deferred.reject(req);
             };
 
             self.debug.log("[FragmentLoader]["+type+"] Load: " + request.url);
 
             req.send();
-            return d.promise;
+            return deferred.promise;
         },
 
         _load = function (request, deferred) {
