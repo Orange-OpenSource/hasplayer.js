@@ -27,8 +27,8 @@ MediaPlayer.rules.DownloadRatioRule = function() {
 
         checkIndex: function(current, metrics, data) {
             var self = this,
-                lastRequest = self.metricsExt.getCurrentHttpRequest(metrics),
                 requests = self.metricsExt.getHttpRequests(metrics),
+                lastRequest = null,
                 downloadTime,
                 totalTime,
                 calculatedBandwidth,
@@ -54,8 +54,17 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                     return new MediaPlayer.rules.SwitchRequest();
                 }
 
+                // Get last valid request
+                i = requests.length - 1;
+                while (i >= 0 && lastRequest === null) {
+                    if (requests[i].tfinish && requests[i].trequest && requests[i].tresponse && requests[i].bytesLength > 0) {
+                        lastRequest = requests[i];
+                    }
+                    i--;
+                }
+
                 if (lastRequest === null) {
-                    self.debug.log("[DownloadRatioRule][" + data.type + "] No requests made for this stream yet, bailing.");
+                    self.debug.log("[DownloadRatioRule][" + data.type + "] No valid requests made for this stream yet, bailing.");
                     return new MediaPlayer.rules.SwitchRequest();
                 }
 
