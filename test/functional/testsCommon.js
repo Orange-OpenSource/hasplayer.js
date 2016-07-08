@@ -25,7 +25,7 @@ define(function(require) {
         functionalSuites: [
             'test/functional/tests/play/play',
             'test/functional/tests/play/zapping',
-            /*'test/functional/tests/play/seek',
+            'test/functional/tests/play/seek'/*,
             'test/functional/tests/play/seekDVR',
             'test/functional/tests/play/pause',
             'test/functional/tests/play/stop',
