@@ -1198,6 +1198,8 @@ MediaPlayer.dependencies.BufferController = function() {
 
             dataChanged = false;
 
+            _currentRepresentation = getRepresentationForQuality.call(this, this.abrController.getPlaybackQuality(type, data).quality);
+
             return true;
         },
 
@@ -1291,6 +1293,8 @@ MediaPlayer.dependencies.BufferController = function() {
             // Retreive the representation of initial quality to enable some parameters initialization
             // (@see getLiveEdgeTime() for example)
             _currentRepresentation = getRepresentationForQuality.call(self, self.abrController.getPlaybackQuality(type, data).quality);
+
+            currentDownloadQuality = -1;
 
             if (_currentRepresentation) {
                 fragmentDuration = _currentRepresentation.segmentDuration;
