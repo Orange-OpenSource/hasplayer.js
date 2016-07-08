@@ -25,7 +25,8 @@ define(function(require) {
                     zapping: {
                         streams: [
                             streams.MSS_LIVE_1,
-                            streams.MSS_VOD_1
+                            streams.MSS_VOD_1,
+                            streams.MSS_VOD_2
                         ]
                     },
                     

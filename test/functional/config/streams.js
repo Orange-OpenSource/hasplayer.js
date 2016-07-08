@@ -16,5 +16,12 @@ define({
         "url": "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest",
         "videoBitrates": [320000,680000,1100000,1600000,2100000],
         "duration": 120
+    },
+    "MSS_VOD_2":{
+        "name": "Tears Of Steel",
+        "protocol": "MSS",
+        "type": "VOD",
+        "url":"http://amssamples.streaming.mediaservices.windows.net/bc57e088-27ec-44e0-ac20-a85ccbcd50da/TearsOfSteel.ism/manifest",
+        "duration": 734
     }
 });
