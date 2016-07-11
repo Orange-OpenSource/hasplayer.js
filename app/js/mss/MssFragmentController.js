@@ -97,6 +97,8 @@ Mss.dependencies.MssFragmentController = function() {
                     end: ((segments[segments.length - 1].t + segments[segments.length - 1].d - manifest.minBufferTime*10000000.0) / adaptation.SegmentTemplate.timescale)
                 });
             }
+
+            return segmentsUpdated;
         },
 
         updateSegmentsList = function(bytes, request, adaptation) {
@@ -367,7 +369,7 @@ Mss.dependencies.MssFragmentController = function() {
         var result = null,
             manifest = this.manifestModel.getValue(),
             adaptation = null;
-
+      
         if (bytes !== null && bytes !== undefined && bytes.byteLength > 0) {
             result = new Uint8Array(bytes);
         } else {

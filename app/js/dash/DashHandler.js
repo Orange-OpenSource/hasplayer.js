@@ -765,7 +765,7 @@ Dash.dependencies.DashHandler = function() {
             getSegments.call(self, representation).then(
                 function(segments) {
                     representation.segments = segments;
-                    deferred.resolve();
+                    deferred.resolve(segments);
                 }
             );
 

@@ -20,7 +20,6 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         ready = false,
         started = false,
         fragmentModel = null,
-        fragmentDuration = 0,
         type,
         bufferTimeout,
         _fragmentInfoTime,
@@ -30,11 +29,13 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         segmentDownloadFailed = false,
         segmentDownloadErrorCount = 0,
         reloadTimeout = null,
+        startLoadingDate = null,
+        deltaTime = 0,
 
         segmentDuration = NaN,
 
         sendRequest = function() {
-
+            this.debug.info("[FragmentInfoController][" + type + "] sendRequest");
             // Check if running state
             if (!isRunning.call(this)) {
                 return;
@@ -57,7 +58,8 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         },
 
         doStart = function() {
-            var self = this;
+            var self = this,
+                segments;
 
             if (started === true) {
                 return;
@@ -67,7 +69,19 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
 
             self.debug.info("[FragmentInfoController][" + type + "] START");
 
-            startPlayback.call(self);
+            segments = _bufferController.getCurrentRepresentation().segments;
+            if (segments) {
+                _fragmentInfoTime = segments[segments.length - 1].presentationStartTime - segments[segments.length - 1].duration;
+
+                startPlayback.call(self);
+            } else {
+                self.indexHandler.updateSegmentList(_bufferController.getCurrentRepresentation()).then(function(segmentList) {
+                    segments = segmentList;
+                    _fragmentInfoTime = segments[segments.length - 1].presentationStartTime - segments[segments.length - 1].duration;
+
+                    startPlayback.call(self);
+                });
+            }
         },
 
         doStop = function() {
@@ -102,10 +116,6 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
 
             this.debug.log("[FragmentInfoController][" + type + "] Media loaded ", request.url);
 
-            if (!fragmentDuration && !isNaN(request.duration)) {
-                fragmentDuration = request.duration;
-            }
-
             // ORANGE: add request and representations in function parameters, used by MssFragmentController
             data = this.fragmentController.process(response.data, request, _bufferController.getAvailableRepresentations());
             if (data && data.error) {
@@ -113,7 +123,9 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             } else {
                 this.debug.info("[FragmentInfoController][" + type + "] Buffer segment from url ", request.url);
 
-                delayLoadNextFragmentInfo.call(this, segmentDuration);
+                deltaTime = new Date().getTime() - startLoadingDate;
+
+                delayLoadNextFragmentInfo.call(this, (segmentDuration - (deltaTime / 1000)));
             }
         },
 
@@ -163,8 +175,14 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
 
             if (request !== null) {
                 _fragmentInfoTime = request.startTime + request.duration;
+                request = self.indexHandler.getFragmentInfoRequest(request);
 
-                request = _bufferController.getIndexHandler().getFragmentInfoRequest(request);
+                if (self.fragmentController.isFragmentLoadedOrPending(self, request)) {
+                    self.indexHandler.getNextSegmentRequest(_bufferController.getCurrentRepresentation()).then(onFragmentRequest.bind(self));
+                    return;
+                }
+
+                self.debug.log("[FragmentInfoController][" + type + "] onFragmentRequest " + request.url);
 
                 // Download the fragment info segment
                 self.fragmentController.prepareFragmentForLoading(self, request, onBytesLoadingStart, onBytesLoaded, onBytesError, null);
@@ -177,7 +195,7 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
 
         delayLoadNextFragmentInfo = function(delay) {
             var self = this,
-                delayMs = Math.max((delay * 1000), 2000);
+                delayMs = Math.round(Math.min((delay * 1000), 2000));
 
             self.debug.log("[FragmentInfoController][" + type + "] Check buffer delta = " + delayMs + " ms");
 
@@ -199,12 +217,14 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
 
             self.debug.log("[FragmentInfoController][" + type + "] Start buffering process...");
 
+            startLoadingDate = new Date().getTime();
+
             // Get next segment time
             segmentTime = _fragmentInfoTime;
 
             self.debug.log("[FragmentInfoController][" + type + "] loadNextFragment for time: " + segmentTime);
 
-            _bufferController.getIndexHandler().getSegmentRequestForTime(_bufferController.getCurrentRepresentation(), segmentTime).then(onFragmentRequest.bind(self));
+            this.indexHandler.getSegmentRequestForTime(_bufferController.getCurrentRepresentation(), segmentTime).then(onFragmentRequest.bind(this));
         };
 
     return {
@@ -214,31 +234,28 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         system: undefined,
         errHandler: undefined,
         abrRulesCollection: undefined,
+        indexHandler: undefined,
 
         initialize: function(type, fragmentController, bufferController) {
-            var self = this,
-                ranges = null;
+            var self = this;
 
             self.debug.log("[FragmentInfoController][" + type + "] Initialize");
 
             _bufferController = bufferController;
 
-            ranges = self.sourceBufferExt.getAllRanges(_bufferController.getBuffer());
-
-            if (ranges.length > 0) {
-                _fragmentInfoTime = ranges.end(ranges.length - 1);
-            }
-
             self.setType(type);
             self.setFragmentController(fragmentController);
 
             ready = true;
-
-            self.start();
         },
 
         setType: function(value) {
             type = value;
+
+            if (this.indexHandler !== undefined) {
+                this.indexHandler.setType(value);
+                this.indexHandler.setIsDynamic(true);
+            }
         },
 
         isReady: function() {
