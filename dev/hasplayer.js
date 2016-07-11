@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2016-7-8_10:21:16 / git revision : b2108a9 */
+/* Last build : 2016-7-11_9:28:35 / git revision : 87ade1f */
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
@@ -9117,8 +9117,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = "1.2.0",
         VERSION = '1.3.1',
-        GIT_TAG = 'b2108a9',
-        BUILD_DATE = '2016-7-8_10:21:16',
+        GIT_TAG = '87ade1f',
+        BUILD_DATE = '2016-7-11_9:28:35',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -12338,6 +12338,8 @@ MediaPlayer.dependencies.BufferController = function() {
 
             dataChanged = false;
 
+            _currentRepresentation = getRepresentationForQuality.call(this, this.abrController.getPlaybackQuality(type, data).quality);
+
             return true;
         },
 
@@ -12431,6 +12433,8 @@ MediaPlayer.dependencies.BufferController = function() {
             // Retreive the representation of initial quality to enable some parameters initialization
             // (@see getLiveEdgeTime() for example)
             _currentRepresentation = getRepresentationForQuality.call(self, self.abrController.getPlaybackQuality(type, data).quality);
+
+            currentDownloadQuality = -1;
 
             if (_currentRepresentation) {
                 fragmentDuration = _currentRepresentation.segmentDuration;
@@ -12626,6 +12630,10 @@ MediaPlayer.dependencies.BufferController = function() {
                         htmlVideoState = PLAYING;
                         this.debug.log("[BufferController][" + type + "] PLAYING - " + currentTime);
                         this.metricsModel.addState(type, "playing", currentTime);
+                        // Reset seeking state since on some browsers (Edge) seeked event may not be raised
+                        seeking = false;
+                        seekTarget = -1;
+
                         // Reset segment download error status
                         segmentDownloadErrorCount = 0;
                     } else if (!this.getVideoModel().isStalled()) {
@@ -14220,7 +14228,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
         },
 
         _loadRequest = function(request) {
-            var d = Q.defer(),
+            var deferred = Q.defer(),
                 req = new XMLHttpRequest(),
                 httpRequestMetrics = null,
                 firstProgress = true,
@@ -14266,7 +14274,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                 var currentTime = new Date();
                 if (firstProgress) {
                     firstProgress = false;
-                    if (!event.lengthComputable || (event.lengthComputable && event.total !== event.loaPded)) {
+                    if (!event.lengthComputable || (event.lengthComputable && event.total !== event.loaded)) {
                         request.firstByteDate = currentTime;
                         httpRequestMetrics.tresponse = currentTime;
                     }
@@ -14300,6 +14308,7 @@ MediaPlayer.dependencies.FragmentLoader = function() {
 
                 var currentTime = new Date(),
                     bytes = req.response,
+                    bytesLength = (bytes ? bytes.byteLength : 0),
                     latency,
                     download;
 
@@ -14317,23 +14326,40 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                 httpRequestMetrics.tfinish = request.requestEndDate;
                 httpRequestMetrics.responsecode = req.status;
 
-                httpRequestMetrics.bytesLength = bytes ? bytes.byteLength : 0;
+                httpRequestMetrics.bytesLength = bytesLength;
 
                 self.metricsModel.appendHttpTrace(
                     httpRequestMetrics,
                     currentTime,
-                    currentTime.getTime() - lastTraceTime.getTime(), [bytes ? bytes.byteLength : 0]);
+                    currentTime.getTime() - lastTraceTime.getTime(), [bytesLength]);
 
                 lastTraceTime = currentTime;
 
-                d.resolve({
+                deferred.resolve({
                     data: bytes,
                     request: request
                 });
             };
 
             req.onabort = function() {
+                var currentTime = new Date(),
+                    lastTrace,
+                    bytes;
+
                 req.aborted = true;
+
+                if (httpRequestMetrics.trace.length === 0) {
+                    return;
+                }
+                lastTrace = httpRequestMetrics.trace[httpRequestMetrics.trace.length - 1];
+                bytes = lastTrace.b[0];
+
+                request.requestEndDate = currentTime;
+                httpRequestMetrics.tresponse = request.firstByteDate;
+                httpRequestMetrics.tfinish = request.requestEndDate;
+                httpRequestMetrics.responsecode = req.status;
+
+                httpRequestMetrics.bytesLength = bytes;
             };
 
             req.onloadend = req.onerror = function() {
@@ -14348,7 +14374,11 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                 }
                 needFailureReport = false;
 
-                var currentTime = new Date(),
+                httpRequestMetrics.responsecode = req.status;
+
+                // When request failed do not complete http metrics so that
+                // DownloadRatioRule does not take into account these request
+                /*var currentTime = new Date(),
                     bytes = req.response,
                     latency,
                     download;
@@ -14368,15 +14398,15 @@ MediaPlayer.dependencies.FragmentLoader = function() {
                 self.metricsModel.appendHttpTrace(httpRequestMetrics,
                     currentTime,
                     currentTime.getTime() - lastTraceTime.getTime(), [bytes ? bytes.byteLength : 0]);
-                lastTraceTime = currentTime;
+                lastTraceTime = currentTime;*/
 
-                d.reject(req);
+                deferred.reject(req);
             };
 
             self.debug.log("[FragmentLoader]["+type+"] Load: " + request.url);
 
             req.send();
-            return d.promise;
+            return deferred.promise;
         },
 
         _load = function (request, deferred) {
@@ -21715,8 +21745,8 @@ MediaPlayer.rules.DownloadRatioRule = function() {
 
         checkIndex: function(current, metrics, data) {
             var self = this,
-                lastRequest = self.metricsExt.getCurrentHttpRequest(metrics),
                 requests = self.metricsExt.getHttpRequests(metrics),
+                lastRequest = null,
                 downloadTime,
                 totalTime,
                 calculatedBandwidth,
@@ -21742,8 +21772,17 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                     return new MediaPlayer.rules.SwitchRequest();
                 }
 
+                // Get last valid request
+                i = requests.length - 1;
+                while (i >= 0 && lastRequest === null) {
+                    if (requests[i].tfinish && requests[i].trequest && requests[i].tresponse && requests[i].bytesLength > 0) {
+                        lastRequest = requests[i];
+                    }
+                    i--;
+                }
+
                 if (lastRequest === null) {
-                    self.debug.log("[DownloadRatioRule][" + data.type + "] No requests made for this stream yet, bailing.");
+                    self.debug.log("[DownloadRatioRule][" + data.type + "] No valid requests made for this stream yet, bailing.");
                     return new MediaPlayer.rules.SwitchRequest();
                 }
 
@@ -21767,24 +21806,21 @@ MediaPlayer.rules.DownloadRatioRule = function() {
 
                 totalBytesLength = lastRequest.bytesLength;
 
-                // First check if last request has been abandonned due to bandwidth condition
-                if (lastRequest.responsecode === 0) {
-                    self.debug.info("[DownloadRatioRule][" + data.type + "] Last request abandonned ( switch to lowest quality)");
-                    return new MediaPlayer.rules.SwitchRequest(0, MediaPlayer.rules.SwitchRequest.prototype.STRONG);                    
-                }
-
-                // If we have at least 3 requests, take an average of calculated bandwidth
-                if (requests.length >= 3) {
-                    for (i = requests.length - 2; i >= (requests.length - 3); i--) {
-                        if (requests[i].tfinish && requests[i].trequest && requests[i].tresponse) {
-                            totalBytesLength += requests[i].bytesLength;
-                            totalTime += (requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1000;
-                            downloadTime += (requests[i].tfinish.getTime() - requests[i].tresponse.getTime()) / 1000;
-                        }
+                // Take average bandwidth over 3 requests
+                count = 1;
+                i = requests.length - 2;
+                while (i >= 0 && count < 3) {
+                    if (requests[i].tfinish && requests[i].trequest && requests[i].tresponse && requests[i].bytesLength > 0) {
+                        self.debug.info("[DownloadRatioRule][" + data.type + "] length: " + requests[i].bytesLength + ", time: " + ((requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1000));
+                        totalBytesLength += requests[i].bytesLength;
+                        totalTime += (requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1000;
+                        downloadTime += (requests[i].tfinish.getTime() - requests[i].tresponse.getTime()) / 1000;
+                        count += 1;
                     }
+                    i--;
                 }
 
-                //defined in bits not bytes
+                // Set length in bits
                 totalBytesLength *= 8;
 
                 calculatedBandwidth = latencyInBandwidth ? (totalBytesLength / totalTime) : (totalBytesLength / downloadTime);
