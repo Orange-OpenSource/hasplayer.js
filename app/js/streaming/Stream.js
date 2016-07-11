@@ -129,7 +129,6 @@ MediaPlayer.dependencies.Stream = function() {
             // In case of live streams and then DVR seek, then we start the fragmentInfoControllers
             // (check if seek not due to stream loading or reloading)
             if (this.manifestExt.getIsDynamic(manifest) && !isReloading && (this.videoModel.getCurrentTime() !== 0)) {
-                createFragmentInfoControllers.call(this);
                 startFragmentInfoControllers.call(this);
             }
 
@@ -271,6 +270,17 @@ MediaPlayer.dependencies.Stream = function() {
             return bufferController;
         },
 
+        createFragmentInfoController = function(bufferController, data) {
+            var fragmentInfoController = null;
+
+            if (bufferController && data && data.type) {
+                fragmentInfoController = this.system.getObject("fragmentInfoController");
+                fragmentInfoController.initialize(data.type, this.fragmentController, bufferController);
+            }
+
+            return fragmentInfoController;
+        },
+
         initializeMediaSource = function() {
             var data,
                 videoCodec,
@@ -294,6 +304,9 @@ MediaPlayer.dependencies.Stream = function() {
                     this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO, 'Video codec information not available');
                 } else {
                     videoController = createBufferController.call(this, data, videoCodec);
+                    if (this.manifestExt.getIsDynamic(manifest)) {
+                        fragmentInfoVideoController = createFragmentInfoController.call(this, videoController, data);
+                    }
                 }
             }
 
@@ -322,6 +335,10 @@ MediaPlayer.dependencies.Stream = function() {
                         initializeMediaSourceFinished = true;
                         return;
                     }
+
+                    if (this.manifestExt.getIsDynamic(manifest)) {
+                        fragmentInfoAudioController = createFragmentInfoController.call(this, audioController, data);
+                    }
                 }
             }
 
@@ -336,6 +353,9 @@ MediaPlayer.dependencies.Stream = function() {
                     this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_TEXT, "Text codec information not available");
                 } else {
                     textController = createBufferController.call(this, data, textMimeType);
+                    if (this.manifestExt.getIsDynamic(manifest)) {
+                        fragmentInfoTextController = createFragmentInfoController.call(this, textController, data);
+                    }
                 }
             }
 
@@ -362,23 +382,6 @@ MediaPlayer.dependencies.Stream = function() {
             initialized = true;
         },
 
-        createFragmentInfoControllers = function() {
-            if (fragmentInfoVideoController === null && videoController) {
-                fragmentInfoVideoController = this.system.getObject("fragmentInfoController");
-                fragmentInfoVideoController.initialize("video", this.fragmentController, videoController);
-            }
-
-            if (fragmentInfoAudioController === null && audioController) {
-                fragmentInfoAudioController = this.system.getObject("fragmentInfoController");
-                fragmentInfoAudioController.initialize("audio", this.fragmentController, audioController);
-            }
-
-            if (fragmentInfoTextController === null && textController && subtitlesEnabled) {
-                fragmentInfoTextController = this.system.getObject("fragmentInfoController");
-                fragmentInfoTextController.initialize("text", this.fragmentController, textController);
-            }
-        },
-
         startFragmentInfoControllers = function() {
             if (fragmentInfoVideoController && dvrStarted === false) {
                 dvrStarted = true;
@@ -389,13 +392,13 @@ MediaPlayer.dependencies.Stream = function() {
                 fragmentInfoAudioController.start();
             }
 
-            if (fragmentInfoTextController) {
+            if (fragmentInfoTextController && subtitlesEnabled) {
                 fragmentInfoTextController.start();
             }
         },
 
-        stopFragmentInfoControllers = function(totally) {
-            if (fragmentInfoVideoController && totally) {
+        stopFragmentInfoControllers = function() {
+            if (fragmentInfoVideoController) {
                 dvrStarted = false;
                 fragmentInfoVideoController.stop();
             }
@@ -407,7 +410,6 @@ MediaPlayer.dependencies.Stream = function() {
             if (fragmentInfoTextController) {
                 fragmentInfoTextController.stop();
             }
-            
         },
 
         onLoaded = function() {
@@ -462,7 +464,6 @@ MediaPlayer.dependencies.Stream = function() {
             this.metricsModel.addPlayList("video", new Date().getTime(), this.videoModel.getCurrentTime(), "pause");
             suspend.call(this);
             if (manifest.name === 'MSS' && this.manifestExt.getIsDynamic(manifest)) {
-                createFragmentInfoControllers.call(this);
                 startFragmentInfoControllers.call(this);
             }
         },
@@ -928,9 +929,6 @@ MediaPlayer.dependencies.Stream = function() {
             }
 
             if (dvrStarted) {             
-                stopFragmentInfoControllers.call(this, false);
-                //coulf be useful to start a fragmentInfo not already started => text controller for instance.
-                createFragmentInfoControllers.call(this);
                 startFragmentInfoControllers.call(this);
             }
         },
@@ -1069,6 +1067,9 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         setAudioTrack: function(audioTrack) {
+            if (fragmentInfoAudioController) {
+                fragmentInfoAudioController.stop();
+            }
             audioTrackIndex = selectTrack.call(this, audioController, audioTrack, audioTrackIndex);
         },
 
@@ -1080,6 +1081,9 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         setSubtitleTrack: function(subtitleTrack) {
+            if (fragmentInfoTextController) {
+                fragmentInfoTextController.stop();
+            }
             textTrackIndex = selectTrack.call(this, textController, subtitleTrack, textTrackIndex);
         },
 
@@ -1130,7 +1134,7 @@ MediaPlayer.dependencies.Stream = function() {
 
             stopBuffering.call(this);
 
-            stopFragmentInfoControllers.call(this, true);
+            stopFragmentInfoControllers.call(this);
 
             pause.call(this);
 
@@ -1233,6 +1237,9 @@ MediaPlayer.dependencies.Stream = function() {
                             track.mode = "showing";
                         }
                     } else {
+                        if (fragmentInfoTextController) {
+                            fragmentInfoTextController.stop();
+                        }
                         // hide subtitle here                        
                         if (track) {
                             track.mode = "hidden";
