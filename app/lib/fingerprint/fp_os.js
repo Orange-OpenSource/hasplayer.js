@@ -43,8 +43,6 @@ function fingerprint_os() {
         /* navigator.userAgent is supported by all major browsers */
         userAgent = navigator.userAgent.toLowerCase();
 
-        userAgent = "mozilla/5.0 (macintosh; intel mac os x 10_9_3) applewebkit/537.75.14 (khtml, like gecko) version/7.0.3 safari/7046a194a";
-
         if (userAgent.indexOf("windows nt 10.0") !== -1) {
             name = "Windows 10";
         } else if (userAgent.indexOf("windows nt 6.3") !== -1) {
