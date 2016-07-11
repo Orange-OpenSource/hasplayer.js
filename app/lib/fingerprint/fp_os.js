@@ -43,6 +43,8 @@ function fingerprint_os() {
         /* navigator.userAgent is supported by all major browsers */
         userAgent = navigator.userAgent.toLowerCase();
 
+        userAgent = "mozilla/5.0 (macintosh; intel mac os x 10_9_3) applewebkit/537.75.14 (khtml, like gecko) version/7.0.3 safari/7046a194a";
+
         if (userAgent.indexOf("windows nt 10.0") !== -1) {
             name = "Windows 10";
         } else if (userAgent.indexOf("windows nt 6.3") !== -1) {
@@ -112,25 +114,15 @@ function fingerprint_os() {
         } else if (userAgent.indexOf("iphone") !== -1) {
             name = "iOS (iPhone)";
         } else if (userAgent.indexOf("mac os x beta") !== -1) {
-            name = "Mac OSX Beta (Kodiak)";
-        } else if (userAgent.indexOf("mac os x 10.0") !== -1) {
-            name = "Mac OSX Cheetah";
-        } else if (userAgent.indexOf("mac os x 10.1") !== -1) {
-            name = "Mac OSX Puma";
-        } else if (userAgent.indexOf("mac os x 10.2") !== -1) {
-            name = "Mac OSX Jaguar";
-        } else if (userAgent.indexOf("mac os x 10.3") !== -1) {
-            name = "Mac OSX Panther";
-        } else if (userAgent.indexOf("mac os x 10.4") !== -1) {
-            name = "Mac OSX Tiger";
-        } else if (userAgent.indexOf("mac os x 10.5") !== -1) {
-            name = "Mac OSX Leopard";
-        } else if (userAgent.indexOf("mac os x 10.6") !== -1) {
-            name = "Mac OSX Snow Leopard";
-        } else if (userAgent.indexOf("mac os x 10.7") !== -1) {
-            name = "Mac OSX Lion";
+            name = "Mac O SX Beta";
+        } else if (userAgent.indexOf("mac os x 10") !== -1) {
+            if (/mac os x 10_(\d+)\_(\d+)/.test(userAgent)) {
+                name = "Mac OS X 10." + RegExp.$1;
+            } else {
+                name = "Mac OS X 10";
+            }
         } else if (userAgent.indexOf("mac os x") !== -1) {
-            name = "Mac OSX (Version Unknown)";
+            name = "Mac OS X";
         } else if (userAgent.indexOf("mac_68000") !== -1) {
             name = "Mac OS Classic (68000)";
         } else if (userAgent.indexOf("68K") !== -1) {
