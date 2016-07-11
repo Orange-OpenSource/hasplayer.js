@@ -1490,6 +1490,10 @@ MediaPlayer.dependencies.BufferController = function() {
                         htmlVideoState = PLAYING;
                         this.debug.log("[BufferController][" + type + "] PLAYING - " + currentTime);
                         this.metricsModel.addState(type, "playing", currentTime);
+                        // Reset seeking state since on some browsers (Edge) seeked event may not be raised
+                        seeking = false;
+                        seekTarget = -1;
+
                         // Reset segment download error status
                         segmentDownloadErrorCount = 0;
                     } else if (!this.getVideoModel().isStalled()) {
