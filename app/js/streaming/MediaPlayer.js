@@ -884,7 +884,8 @@ MediaPlayer = function () {
          * @param {number} time - the new time value in seconds
          */
         seek: function (time) {
-            var range = null;
+            var range = null,
+                minBufferTime = 0;
 
             _isPlayerInitialized();
 
@@ -900,11 +901,16 @@ MediaPlayer = function () {
                 }
             } else {
                 range = this.getDVRWindowRange();
+                minBufferTime = streamController.getMinBufferTime();
                 if (range === null) {
                     throw new Error('MediaPlayer.seek(): impossible for live stream');
                 } else if (time < range.start || time > range.end) {
                     throw new Error('MediaPlayer.seek(): seek value outside available time range');
                 } else {
+                    // Ensure we keep enough buffer
+                    if (time > (range.end - minBufferTime)) {
+                        time = range.end - minBufferTime;
+                    }
                     streamController.seek(time, true);
                 }
             }
