@@ -16,7 +16,7 @@
 Mss.dependencies.MssFragmentController = function() {
     "use strict";
 
-    var processTfrf = function(tfrf, tfdt, adaptation) {
+    var processTfrf = function(request, tfrf, tfdt, adaptation) {
             var manifest = this.manifestModel.getValue(),
                 segmentsUpdated = false,
                 // Get adaptation's segment timeline (always a SegmentTimeline in Smooth Streaming use case)
@@ -29,7 +29,8 @@ Mss.dependencies.MssFragmentController = function() {
                 i = 0,
                 j = 0,
                 segmentId = -1,
-                availabilityStartTime = null;
+                availabilityStartTime = null,
+                range;
 
             // Go through tfrf entries
             while (i < entries.length) {
@@ -73,29 +74,35 @@ Mss.dependencies.MssFragmentController = function() {
                 }
             }
 
-            // In case we have added some segments, we also check if some out of date segments
-            // may not been removed
-            if (segmentsUpdated && manifest.timeShiftBufferDepth && (manifest.timeShiftBufferDepth > 0)) {
+            //
+            if (manifest.timeShiftBufferDepth && manifest.timeShiftBufferDepth > 0) {
+                if (segmentsUpdated) {
+                    // Get timestamp of the last segment
+                    segment = segments[segments.length - 1];
+                    t = segment.t;
 
-                // Get timestamp of the last segment
-                segment = segments[segments.length - 1];
-                t = segment.t;
+                    // Determine the segments' availability start time
+                    availabilityStartTime = t - (manifest.timeShiftBufferDepth * 10000000);
 
-                // Determine the segments' availability start time
-                availabilityStartTime = t - (manifest.timeShiftBufferDepth * 10000000);
-
-                // Remove segments prior to availability start time
-                segment = segments[0];
-                while (segment.t < availabilityStartTime) {
-                    this.debug.log("[MssFragmentController] Remove segment  - t = " + (segment.t / 10000000.0));
-                    segments.splice(0, 1);
+                    // Remove segments prior to availability start time
                     segment = segments[0];
+                    while (segment.t < availabilityStartTime) {
+                        this.debug.log("[MssFragmentController] Remove segment  - t = " + (segment.t / 10000000.0));
+                        segments.splice(0, 1);
+                        segment = segments[0];
+                    }
                 }
 
-                this.metricsModel.addDVRInfo(adaptation.type, new Date(), {
+                // Update DVR window range
+                // => set range end to end time of current segment
+                range = {
                     start: segments[0].t / adaptation.SegmentTemplate.timescale,
-                    end: ((segments[segments.length - 1].t + segments[segments.length - 1].d - manifest.minBufferTime*10000000.0) / adaptation.SegmentTemplate.timescale)
-                });
+                    end: (tfdt.baseMediaDecodeTime / adaptation.SegmentTemplate.timescale) + request.duration
+                };
+                var dvrInfos = this.metricsModel.getMetricsFor(adaptation.type).DVRInfo;
+                if (dvrInfos && dvrInfos.length > 0 && range.end > dvrInfos[dvrInfos.length - 1].range.end) {
+                    this.metricsModel.addDVRInfo(adaptation.type, new Date(), range);
+                }
             }
 
             return segmentsUpdated;
@@ -129,7 +136,7 @@ Mss.dependencies.MssFragmentController = function() {
             tfrf = traf.getBoxesByType("tfrf");
             if (tfrf.length !== 0) {
                 for (i = 0; i < tfrf.length; i += 1) {
-                    processTfrf.call(this, tfrf[i], tfdt, adaptation);
+                    processTfrf.call(this, request, tfrf[i], tfdt, adaptation);
                 }
             }
         },
@@ -213,7 +220,7 @@ Mss.dependencies.MssFragmentController = function() {
             mdat.data = new Uint8Array(mdatData.length * trun.sample_count);
             for (i = 0; i < trun.sample_count; i += 1) {
                 mdat.data.set(mdatData, mdatData.length * i);
-            }                 
+            }
         },
 
         convertFragment = function(data, request, adaptation) {
@@ -285,7 +292,7 @@ Mss.dependencies.MssFragmentController = function() {
             tfrf = traf.getBoxesByType("tfrf");
             if (tfrf.length !== 0) {
                 for (i = 0; i < tfrf.length; i += 1) {
-                    processTfrf.call(this, tfrf[i], tfdt, adaptation);
+                    processTfrf.call(this, request, tfrf[i], tfdt, adaptation);
                     traf.removeBoxByType("tfrf");
                 }
             }
@@ -369,7 +376,7 @@ Mss.dependencies.MssFragmentController = function() {
         var result = null,
             manifest = this.manifestModel.getValue(),
             adaptation = null;
-      
+
         if (bytes !== null && bytes !== undefined && bytes.byteLength > 0) {
             result = new Uint8Array(bytes);
         } else {

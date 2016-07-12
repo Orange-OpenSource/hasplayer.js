@@ -76,6 +76,7 @@ Mss.dependencies.MssParser = function() {
                 segmentTemplate = {},
                 segments,
                 qualityLevels = null,
+                range,
                 i;
 
             adaptationSet.id = this.domParser.getAttributeValue(streamIndex, "Name");
@@ -121,11 +122,13 @@ Mss.dependencies.MssParser = function() {
             adaptationSet.SegmentTemplate = segmentTemplate;
 
             segments = segmentTemplate.SegmentTimeline.S_asArray;
-            this.metricsModel.addDVRInfo(adaptationSet.contentType, new Date(), {
-                start: segments[0].t / segmentTemplate.timescale,
-                end: (segments[segments.length - 1].t + segments[segments.length - 1].d- minBufferTime*10000000.0)  / segmentTemplate.timescale
-            });
 
+            range = {
+                start: segments[0].t / segmentTemplate.timescale,
+                end: (segments[segments.length - 1].t + segments[segments.length - 1].d)  / segmentTemplate.timescale
+            };
+
+            this.metricsModel.addDVRInfo(adaptationSet.contentType, new Date(), range);
 
             return adaptationSet;
         },
