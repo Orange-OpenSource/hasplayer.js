@@ -469,6 +469,13 @@ MediaPlayer.dependencies.StreamController = function() {
             return undefined;
         },
 
+        getMinBufferTime: function () {
+            if (!this.manifestModel || !this.manifestModel.getValue()) {
+                return -1;
+            }
+            return this.manifestModel.getValue().minBufferTime;
+        },
+
         load: function(newSource) {
             var self = this;
 
