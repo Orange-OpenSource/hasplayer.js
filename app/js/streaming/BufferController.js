@@ -1303,6 +1303,8 @@ MediaPlayer.dependencies.BufferController = function() {
                 if (minBufferTime === -1) {
                     minBufferTime = self.bufferExt.decideBufferLength(manifest.minBufferTime, periodInfo.duration, waitingForBuffer);
                 }
+                // Update manifest's minBufferTime value
+                manifest.minBufferTime = minBufferTime;
                 if (type === "video") {
                     if (isDynamic) {
                         self.indexHandler.updateSegmentList(_currentRepresentation).then(
