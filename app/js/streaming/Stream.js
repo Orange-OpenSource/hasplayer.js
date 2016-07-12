@@ -64,7 +64,7 @@ MediaPlayer.dependencies.Stream = function() {
 
         periodInfo = null,
 
-        // Initial start time 
+        // Initial start time
         initialStartTime = -1,
 
         // Play start time (= live edge for live streams)
@@ -135,7 +135,7 @@ MediaPlayer.dependencies.Stream = function() {
             // Stream is starting playing => fills the buffers before setting <video> current time
             if (autoplay === true) {
                 // 1- seeks the buffer controllers at the desired time
-                // 2- once data is present in the buffers, then we can set the current time to the <video> component (see onBufferUpdated()) 
+                // 2- once data is present in the buffers, then we can set the current time to the <video> component (see onBufferUpdated())
                 seekTime = time;
                 this.system.unmapHandler("bufferUpdated");
                 this.system.mapHandler("bufferUpdated", undefined, onBufferUpdated.bind(this));
@@ -637,6 +637,7 @@ MediaPlayer.dependencies.Stream = function() {
             // (round durationfrom manifest to milliseconds to avoid rounding issue within MSE buffer)
             if (!isNaN(duration) && duration !== Infinity && duration > streamDuration) {
                 this.debug.log("[Stream] Setting duration: " + streamDuration);
+                this.mediaSourceExt.setDuration(mediaSource, streamDuration);
             }
         },
 
@@ -928,7 +929,7 @@ MediaPlayer.dependencies.Stream = function() {
                 videoController.load();
             }
 
-            if (dvrStarted) {             
+            if (dvrStarted) {
                 startFragmentInfoControllers.call(this);
             }
         },
@@ -939,7 +940,7 @@ MediaPlayer.dependencies.Stream = function() {
             textController.seeked();
         },
 
-        // Called when a BufferController failed to download or buffer a segment 
+        // Called when a BufferController failed to download or buffer a segment
         onSegmentLoadingFailed = function(segmentRequest) {
             var self = this;
 
@@ -1240,7 +1241,7 @@ MediaPlayer.dependencies.Stream = function() {
                         if (fragmentInfoTextController) {
                             fragmentInfoTextController.stop();
                         }
-                        // hide subtitle here                        
+                        // hide subtitle here
                         if (track) {
                             track.mode = "hidden";
                         }
