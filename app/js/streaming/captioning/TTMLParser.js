@@ -645,16 +645,21 @@ MediaPlayer.utils.TTMLParser = function() {
                                         textNodes = this.domParser.getChildNodes(region, '#text');
 
                                         for (j = 0; j < textNodes.length; j += 1) {
-                                            textValue += textNodes[j].textContent + "\n";
+                                            if ( j > 0) {
+                                                textValue += '\n';
+                                            }
+                                            textValue += textNodes[j].textContent;
                                         }
-                                        caption = {
-                                            start: startTime,
-                                            end: endTime,
-                                            data: textValue,
-                                            line: 80,
-                                            style: cssStyle
-                                        };
-                                        textValue = "";
+                                        if (textValue !== "") {
+                                            caption = {
+                                                start: startTime,
+                                                end: endTime,
+                                                data: textValue,
+                                                line: 80,
+                                                style: cssStyle
+                                            };
+                                            textValue = "";
+                                        }
                                     }
                                     if (caption !== null) {
                                         captionArray.push(caption);
