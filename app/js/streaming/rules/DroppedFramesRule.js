@@ -29,7 +29,7 @@ MediaPlayer.rules.DroppedFramesRule = function() {
                 return;
             }
 
-            // Check sufficient elapsed media time to determine frame rate 
+            // Check sufficient elapsed media time to determine frame rate
             elapsedTime = playbackQuality.mt - lastPlaybackQuality.mt;
             if (elapsedTime < MIN_ELAPSED_TIME) {
                 return;
@@ -49,7 +49,7 @@ MediaPlayer.rules.DroppedFramesRule = function() {
 
         name: "DroppedFramesRule",
 
-        checkIndex: function(current, metrics, data) {
+        checkIndex: function(current, metrics, data, playerState) {
             var droppedFramesMaxRatio = this.config.getParamFor(data.type, "ABR.droppedFramesMaxRatio", "number", 0.30),
                 droppedFramesMinRatio = this.config.getParamFor(data.type, "ABR.droppedFramesMinRatio", "number", 0.10),
                 playbackQuality = this.metricsExt.getCurrentPlaybackQuality(metrics),
@@ -67,6 +67,13 @@ MediaPlayer.rules.DroppedFramesRule = function() {
 
             if (playbackQuality === null) {
                 // No PlaybackQuality metric => start of a new stream => reset lastPlaybackQuality
+                lastPlaybackQuality = null;
+                currentDroppedFrames = currentTotalVideoFrames = -1;
+                return new MediaPlayer.rules.SwitchRequest();
+            }
+
+            // Check if we start buffering the stream. In this case we ignore the rule and reset lastPlaybackQuality
+            if (playerState === 'buffering') {
                 lastPlaybackQuality = null;
                 currentDroppedFrames = currentTotalVideoFrames = -1;
                 return new MediaPlayer.rules.SwitchRequest();
