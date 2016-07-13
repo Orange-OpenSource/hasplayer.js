@@ -84,7 +84,7 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                     return new MediaPlayer.rules.SwitchRequest();
                 }
 
-                self.debug.info("[DownloadRatioRule][" + data.type + "] DL: " + Number(downloadTime.toFixed(3)) + "s, Total: " + Number(totalTime.toFixed(3)) + "s");
+                self.debug.log("[DownloadRatioRule][" + data.type + "] DL: " + Number(downloadTime.toFixed(3)) + "s, Total: " + Number(totalTime.toFixed(3)) + "s");
 
                 totalBytesLength = lastRequest.bytesLength;
 
@@ -93,7 +93,7 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                 i = requests.length - 2;
                 while (i >= 0 && count < 3) {
                     if (requests[i].tfinish && requests[i].trequest && requests[i].tresponse && requests[i].bytesLength > 0) {
-                        self.debug.info("[DownloadRatioRule][" + data.type + "] length: " + requests[i].bytesLength + ", time: " + ((requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1000));
+                        self.debug.log("[DownloadRatioRule][" + data.type + "] length: " + requests[i].bytesLength + ", time: " + ((requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1000));
                         totalBytesLength += requests[i].bytesLength;
                         totalTime += (requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1000;
                         downloadTime += (requests[i].tfinish.getTime() - requests[i].tresponse.getTime()) / 1000;
@@ -107,7 +107,7 @@ MediaPlayer.rules.DownloadRatioRule = function() {
 
                 calculatedBandwidth = latencyInBandwidth ? (totalBytesLength / totalTime) : (totalBytesLength / downloadTime);
 
-                self.debug.info("[DownloadRatioRule][" + data.type + "] BW = " + Math.round(calculatedBandwidth / 1000) + " kb/s");
+                self.debug.log("[DownloadRatioRule][" + data.type + "] BW = " + Math.round(calculatedBandwidth / 1000) + " kb/s");
 
                 if (isNaN(calculatedBandwidth)) {
                     return new MediaPlayer.rules.SwitchRequest();
