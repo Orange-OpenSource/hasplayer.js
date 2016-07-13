@@ -1285,6 +1285,7 @@ MediaPlayer.dependencies.Stream = function() {
             } else if (!enableTrickMode) {
                 tmSpeed = 1;
                 clearTimeout(tmSeekTimeout);
+                this.videoModel.pause();
                 stopBuffering.call(self);
             }
 
@@ -1303,7 +1304,7 @@ MediaPlayer.dependencies.Stream = function() {
                     tmState = "Stopped";
                     self.videoModel.listen("timeupdate", restoreMute);
                     currentVideoTime = tmEndDetected ? self.getStartTime() : currentVideoTime;
-                    seek.call(self, tmEndDetected ? self.getStartTime() : currentVideoTime, true);
+                    seek.call(self, currentVideoTime, true);
                 } else {
                     if (tmState === "Running") {
                         tmState = "Changed";

@@ -101,7 +101,7 @@ MediaPlayer.models.VideoModel = function () {
         },
 
         setCurrentTime: function (currentTime) {
-            this.debug.info("<video> setCurrentTime(" + currentTime + ")");
+            this.debug.info("<video> setCurrentTime (" + currentTime + ")");
             element.currentTime = currentTime;
         },
 
