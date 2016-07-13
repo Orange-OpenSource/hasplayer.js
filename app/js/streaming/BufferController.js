@@ -1457,7 +1457,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
         updateBufferState: function() {
             var self = this,
-                currentTime = getWorkingTime.call(this),
+                currentTime = this.videoModel.getCurrentTime(),//getWorkingTime.call(this),
                 previousTime = htmlVideoTime === -1 ? currentTime : htmlVideoTime,
                 progress = (currentTime - previousTime),
                 ranges;
