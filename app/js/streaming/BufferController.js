@@ -1457,7 +1457,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
         updateBufferState: function() {
             var self = this,
-                currentTime = this.videoModel.getCurrentTime(),
+                currentTime = getWorkingTime.call(this),
                 previousTime = htmlVideoTime === -1 ? currentTime : htmlVideoTime,
                 progress = (currentTime - previousTime),
                 ranges;
@@ -1482,7 +1482,7 @@ MediaPlayer.dependencies.BufferController = function() {
             switch (htmlVideoState) {
                 case INIT:
                     htmlVideoState = BUFFERING;
-                    this.debug.log("[BufferController][" + type + "] BUFFERING - " + currentTime + " - " + bufferLevel);
+                    this.debug.info("[BufferController][" + type + "] BUFFERING - " + currentTime + " - " + bufferLevel);
                     this.metricsModel.addState(type, "buffering", currentTime);
                     break;
 
@@ -1490,7 +1490,7 @@ MediaPlayer.dependencies.BufferController = function() {
                     if (!this.getVideoModel().isPaused() &&
                         ((progress > 0) && (bufferLevel >= 1))) {
                         htmlVideoState = PLAYING;
-                        this.debug.log("[BufferController][" + type + "] PLAYING - " + currentTime);
+                        this.debug.info("[BufferController][" + type + "] PLAYING - " + currentTime);
                         this.metricsModel.addState(type, "playing", currentTime);
                         // Reset seeking state since on some browsers (Edge) seeked event may not be raised
                         seeking = false;
@@ -1515,7 +1515,7 @@ MediaPlayer.dependencies.BufferController = function() {
                     if (!this.getVideoModel().isPaused() &&
                         ((progress <= 0 && bufferLevel <= 1) || (bufferLevel === 0))) {
                         htmlVideoState = BUFFERING;
-                        this.debug.log("[BufferController][" + type + "] BUFFERING - " + currentTime + " - " + bufferLevel);
+                        this.debug.info("[BufferController][" + type + "] BUFFERING - " + currentTime + " - " + bufferLevel);
                         this.metricsModel.addState(type, "buffering", currentTime);
 
                         // Check if there is a hole in the buffer (segment download failed or input stream discontinuity), then skip it
