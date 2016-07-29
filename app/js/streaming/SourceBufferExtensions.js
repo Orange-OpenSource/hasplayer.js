@@ -146,7 +146,7 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
             intervalId,
             CHECK_INTERVAL = 50,
             checkIsUpdateEnded = function() {
-                // if undating is still in progress do nothing and wait for the next check again.
+                // if updating is still in progress do nothing and wait for the next check again.
                 if (buffer.updating) {
                     return;
                 }
@@ -244,11 +244,11 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
 
     abort: function (mediaSource, buffer) {
         "use strict";
-        try {
-            if (mediaSource.readyState === "open") {
-                buffer.abort();
+            try {
+                if (mediaSource.readyState === "open") {
+                    buffer.abort();
+                }
+            } catch(ex){
             }
-        } catch(ex){
-        }
     }
 };
