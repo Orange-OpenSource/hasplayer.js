@@ -769,7 +769,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
     $scope.selectStreams = function () {
         $scope.availableStreams = $scope.streams.filter(function(item) {
-            return (item.type === $scope.streamType);
+            return (item.protocol === $scope.streamType);
         });
     };
 
@@ -858,7 +858,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     $scope.setStreamType = function (item) {
         $scope.streamType = item;
         $scope.availableStreams = $scope.streams.filter(function(item) {
-            return (item.type === $scope.streamType);
+            return (item.protocol === $scope.streamType);
         });
     };
 
@@ -957,27 +957,23 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     };
 
     // Get initial stream if it was passed in.
-    var paramUrl = null;
-
     if (vars && vars.hasOwnProperty("url")) {
-        paramUrl = vars.url;
+        $scope.selectedItem.url = vars.url;
     }
 
     if (vars && vars.hasOwnProperty("mpd")) {
-        paramUrl = vars.mpd;
+        $scope.selectedItem.url = vars.mpd;
     }
 
-    if (paramUrl !== null) {
-        var startPlayback = true;
-
-        $scope.selectedItem.url = paramUrl;
+    if (vars && vars.hasOwnProperty("stream")) {
+        try {
+            $scope.selectedItem = JSON.parse(atob(vars.stream));
         setProtectionData();
-        if (vars.hasOwnProperty("autoplay")) {
-            startPlayback = (vars.autoplay === 'true');
-        }
-
-        if (startPlayback) {
-            $scope.doLoad();
-        }
+        } catch (e) {}
     }
+
+    if (vars && vars.hasOwnProperty("autoplay") && vars.autoplay === 'true' && $scope.selectedItem.url) {
+        $scope.doLoad();
+    }
+
 }]);
