@@ -37,8 +37,6 @@ chartOptions = {series: {shadowSize: 0},yaxis: {ticks: [],color:"#FFF"},xaxis: {
 video,
 player,
 enableMetrics = false,
-metricsAgent = null,
-metricsAgentActive = false,
 currentIdToToggle = 0,
 isPlaying = false,
 isMetricsOn = !hideMetricsAtStart,
@@ -674,11 +672,6 @@ function initPlayer() {
 }
 
 function launchPlayer() {
-
-    // Create session on metrics agent
-    if (metricsAgent && metricsAgentActive) {
-        metricsAgent.createSession();
-    }
 
     startTime = new Date();
 
