@@ -13,14 +13,18 @@ var cast = window.cast || {};
 		this.castMessageBus.onMessage = this.onMessage.bind(this);
 		this.castReceiverManager.onSenderConnected = this.onSenderConnected.bind(this);
 		this.castReceiverManager.onSenderDisconnected = this.onSenderDisconnected.bind(this);
-		this.castReceiverManager.start();
+		cast.receiver.logger.setLevelValue(cast.receiver.LoggerLevel.DEBUG);
+		var appConfig = new cast.receiver.CastReceiverManager.Config();
+		appConfig.statusText="Prêt à Jouer un flux HAS";
+		this.castReceiverManager.start(appConfig);
 
 		this.videoNode.addEventListener("timeupdate",this.timeUpdated.bind(this));
 		//connect events on metrics for testing metric change
 		this.player.addEventListener("metricChanged", this.metricChanged.bind(this));
+
 	}
 
-	HasCastReceiver.PROTOCOL =  "urn:x-cast:com.google.cast.video.hasplayer";
+	HasCastReceiver.PROTOCOL =  "urn:x-cast:com.orange.cast.video.hasplayer";
 
 	HasCastReceiver.prototype.onSenderConnected = function(e) {
 		console.info("sender connected",e); 
@@ -121,7 +125,7 @@ var cast = window.cast || {};
 		console.info("receiving play message",message);
 		var drmParams = {};
 		drmParams.backUrl = message.backUrl || null;
-		drmParams.customData = message.customData || null;
+		drmParams.cdmData = message.cdmData || null;
 		this.player.attachSource(message.url, drmParams);
 		// to update controlbar set firstAccess to true
 		firstAccess = true;
