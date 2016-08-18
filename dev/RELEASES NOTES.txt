@@ -1,5 +1,23 @@
+### Release Notes v1.4.0 (2016/08/18)
+* DVR: disable seeking within buffering window before live edge
+* Add 'startTime' parameter in input stream to enable playback start at given time
+* Bugs fixing:
+* - Fix stop playing when buffer reached on IE11 and Edge
+* - Fix DVR window range update when paused
+* - Fix regression on 'ended' event firing
+* - Fast zapping error (consolidate load and reset process)
+* - Correct ABR rules in case of aborted or abandoned requests
+* - Patch for Safari which faces an issue with MSE buffer removing
+* - Correct display of subtitles on multiple lines
+* - Correct display of subtitles with no layout and style
+* - External TTML subtitles file management
+* - TTML style parsing
+* - Correct regression on abandon request rule
+* - Correct 'ended' event detection when trick mode is enabled
+* - Correct PlayReady CDM data to disable proactive (pre-delivery) license acquisition
+
 ### Release Notes v1.3.1 (2016/06/08)
-* - Add support for subtitles in external xml file
+* Add support for subtitles in external xml file
 * Bugs fixing:
 * - Regression on IE11 (player on failure)
 * - Correct issue for multi-lines subtitles
@@ -30,7 +48,7 @@
   - HLS support on Firefox
   - Correct seeking and live start time management (BufferController's working time handling, seek to removed buffer ranges, etc)
   - TTML parsing and VTT cues buffering management
-  - Correct manifest download error in case of automatic session reloading 
+  - Correct manifest download error in case of automatic session reloading
 * Add DVR support
 * Add trick mode support (fast forward and rewind)
 * Add retry for HLS variants streams playlists requests
@@ -65,7 +83,7 @@
 * PlayReady to Widevine content protection conversion (requires coordination between PlayReady and Widevine licensers)
 * Configuration mechanism for streaming and ABR controllers
 * Enhanced errors handling
-* Fallback mechanism for segment download failure 
+* Fallback mechanism for segment download failure
 * Optimized ABR rules
 * Enhanced TTML subtitles support
 * Configurable build process (protocol(s), EME support)
