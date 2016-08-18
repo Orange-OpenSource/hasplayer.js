@@ -22,7 +22,7 @@ MediaPlayer = function () {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = "1.2.0",
-        VERSION = '1.3.1_dev',
+        VERSION = '1.4.0_dev',
         GIT_TAG = '@@REVISION',
         BUILD_DATE = '@@TIMESTAMP',
         context = new MediaPlayer.di.Context(), // default context
