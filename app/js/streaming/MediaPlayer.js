@@ -968,7 +968,7 @@ MediaPlayer = function () {
 
             // Notify plugins that player is reset
             for (var plugin in plugins) {
-                plugins[plugin].stop();
+                plugins[plugin].reset();
             }
         },
 
@@ -1427,8 +1427,8 @@ MediaPlayer = function () {
             }
 
             if (plugins[plugin.getName()]) {
-                // Reset plugin already loaded
-                plugins[plugin.getName()].reset();
+                // Destroy plugin already loaded
+                plugins[plugin.getName()].destroy();
             }
 
             this.debug.log("[MediaPlayer] Add plugin '" + plugin.getName() + "' (v" + plugin.getVersion() + ")");
@@ -1471,7 +1471,7 @@ MediaPlayer = function () {
             if (plugins[name]) {
                 this.debug.log("[MediaPlayer] Remove plugin '" + name);
                 // Reset plugin
-                plugins[name].reset();
+                plugins[name].destroy();
                 // delete it
                 plugins[name] = null;
                 delete plugins[name];
