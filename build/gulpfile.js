@@ -65,7 +65,7 @@ if (gulp.option('mss', true)) {
 }
 
 gulp.task("default", function(cb) {
-    runSequence('build', ['build-samples', 'doc'],
+    runSequence('clean','build', ['build-samples', 'doc'],
         'releases-notes',
         'zip',
         'version',
@@ -130,7 +130,7 @@ gulp.task('version', function() {
     fs.writeFileSync(config.distDir + '/version.properties', 'VERSION=' + pkg.version);
 });
 
-gulp.task('build', ['clean', 'package-info', 'lint'], function() {
+gulp.task('build', ['package-info', 'lint'], function() {
     // integrate libs after doing lint
     sourcesGlob = sources.libs.concat(sourcesGlob);
     return gulp.src(sourcesGlob)
@@ -196,4 +196,10 @@ gulp.task('zip', function() {
     return gulp.src(config.distDir + '/**/*')
         .pipe(zip(pkg.name + '.zip'))
         .pipe(gulp.dest(config.distDir));
+});
+
+gulp.task('watch', function(){
+    gulp.watch(sourcesGlob, ['build']);
+    gulp.watch(['../samples/DemoPlayer/**'], ['build-demoplayer']);
+    gulp.watch(['../samples/Dash-IF/**'], ['build-dashif']);
 });
