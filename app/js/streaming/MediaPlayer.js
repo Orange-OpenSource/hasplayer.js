@@ -806,6 +806,10 @@ MediaPlayer = function () {
                 stream = _parseLoadArguments.apply(null, arguments);
             }
 
+            if(!stream || !stream.url){
+                 throw new Error('MediaPlayer.load(): stream has no url.');
+            }
+            
             videoQualityChanged = [];
             audioQualityChanged = [];
 
