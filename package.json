@@ -5,7 +5,7 @@
     "build": "cd build && gulp",
     "doc": "cd build && gulp doc",
     "deploy-dev":  "./build/deploy-ghpage-travis.sh",
-    "test": "node node_modules/intern/runner.js config=test/functional/testsCommon.js browsers=chrome selenium=local application=local",
+    "test": "node node_modules/intern/runner.js config=test/functional/testsCommon.js browsers=all selenium=remote application=development",
     "watch": "cd build && gulp watch"
   },
   "repository": {
