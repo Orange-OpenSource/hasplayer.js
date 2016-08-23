@@ -469,7 +469,8 @@ MediaPlayer.utils.TTMLParser = function() {
                 extent,
                 textNodes,
                 textOutline,
-                textValue = "";
+                textValue = "",
+                lastCaption;
 
             try {
 
@@ -618,7 +619,20 @@ MediaPlayer.utils.TTMLParser = function() {
 
                                     if (startTime === previousStartTime && endTime === previousEndTime) {
                                         if (region.textContent !== "") {
-                                            var lastCaption = captionArray.pop();
+                                            lastCaption = captionArray.pop();
+                                            caption = {
+                                                start: startTime,
+                                                end: endTime,
+                                                data: lastCaption.data + '\n' + region.textContent,
+                                                line: 80,
+                                                style: cssStyle
+                                            };
+                                        }
+                                    } //workaround to be able to show subtitles on two lines even if startTime and endTime are not equals to the previous values.
+                                    else if (startTime >= previousStartTime && endTime <= previousEndTime){
+                                        if (region.textContent !== "") {
+                                            lastCaption = captionArray[captionArray.length-1];
+                                            lastCaption.end = startTime;
                                             caption = {
                                                 start: startTime,
                                                 end: endTime,
