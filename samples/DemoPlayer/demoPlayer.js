@@ -677,7 +677,9 @@ function launchPlayer() {
 
     // Open stream
     appendText("attachSource");
-    player.load(streamSource);
+    if(streamSource && streamSource.url){
+        player.load(streamSource);
+    }
     update();
 
     initControlBar();
