@@ -17,7 +17,7 @@ define({
         "videoBitrates": [320000,680000,1100000,1600000,2100000],
         "duration": 120
     },
-    "MSS_VOD_2":{
+    MSS_VOD_2:{
         "name": "Tears Of Steel",
         "protocol": "MSS",
         "type": "VOD",
