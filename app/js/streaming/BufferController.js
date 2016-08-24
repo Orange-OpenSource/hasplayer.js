@@ -1433,7 +1433,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
         updateBufferState: function() {
             var self = this,
-                currentTime = this.videoModel.getCurrentTime(),//getWorkingTime.call(this),
+                currentTime = this.videoModel.getCurrentTime(),
                 previousTime = htmlVideoTime === -1 ? currentTime : htmlVideoTime,
                 progress = (currentTime - previousTime),
                 ranges;
@@ -1468,7 +1468,7 @@ MediaPlayer.dependencies.BufferController = function() {
                         htmlVideoState = PLAYING;
                         this.debug.info("[BufferController][" + type + "] PLAYING - " + currentTime);
                         this.metricsModel.addState(type, "playing", currentTime);
-                        // Reset seeking state since on some browsers (Edge) seeked event may not be raised
+                        // Reset seeking state since on some browsers (IE11/Edge) seeked event may not be raised
                         seeking = false;
                         seekTarget = -1;
 
@@ -1476,14 +1476,6 @@ MediaPlayer.dependencies.BufferController = function() {
                         segmentDownloadErrorCount = 0;
                     } else if (!this.getVideoModel().isStalled()) {
                         ranges = this.sourceBufferExt.getAllRanges(buffer);
-                        /*if (ranges.length > 0) {
-                            var workingTime = getWorkingTime.call(this),
-                                gap = workingTime - ranges.end(ranges.length - 1);
-                            if (gap > 4) {
-                                this.debug.log("[BufferController][" + type + "] BUFFERING - delay from current time = " + gap);
-                                signalSegmentLoadingFailed.call(this);
-                            }
-                        }*/
                     }
                     break;
 
