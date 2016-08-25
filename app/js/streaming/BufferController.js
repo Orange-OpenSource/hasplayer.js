@@ -25,7 +25,8 @@ MediaPlayer.dependencies.BufferController = function() {
         seeking = false,
         seekTarget = -1,
         dataChanged = true,
-        languageChanged = false,
+        trackChanged = false,
+        overrideBuffer = false,
         availableRepresentations,
         _currentRepresentation,
         currentBufferedQuality = -1,
@@ -160,7 +161,7 @@ MediaPlayer.dependencies.BufferController = function() {
             }
 
             if (isBufferingCompleted) {
-                if(data.mimeType === "application/ttml+xml"){
+                if (data.mimeType === "application/ttml+xml") {
                     return;
                 }
                 isBufferingCompleted = false;
@@ -283,25 +284,16 @@ MediaPlayer.dependencies.BufferController = function() {
                     signalSegmentBuffered.call(self);
                     self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", data.message);
                 } else {
-                    // cache the initialization data to use it next time the quality has changed
+                    // Cache the initialization data to use it next time the quality has changed
                     initializationData[quality] = data;
 
-                    // if this is the initialization data for current quality we need to push it to the buffer
                     self.debug.info("[BufferController][" + type + "] Buffer initialization segment ", (request.url !== null) ? request.url : request.quality);
-                    //    console.saveBinArray(data, type + "_init_" + request.quality + ".mp4");
-                    // Clear the buffer if required (language track switching)
-                    Q.when(languageChanged ? removeBuffer.call(self) : true).then(
+                    appendToBuffer.call(self, data, request.quality).then(
                         function() {
-                            languageChanged = false;
-                            appendToBuffer.call(self, data, request.quality).then(
-                                function() {
-                                    self.debug.log("[BufferController][" + type + "] Initialization segment buffered");
-                                    // Load next media segment
-                                    if (isRunning()) {
-                                        loadNextFragment.call(self);
-                                    }
-                                }
-                            );
+                            // Load next media segment
+                            if (isRunning()) {
+                                loadNextFragment.call(self);
+                            }
                         }
                     );
                 }
@@ -371,25 +363,34 @@ MediaPlayer.dependencies.BufferController = function() {
                     //console.saveBinArray(data, type + "_" + request.index + "_" + request.quality + ".mp4");
                     data = deleteInbandEvents.call(self, data);
 
-                    appendToBuffer.call(self, data, request.quality, request.index).then(
+                    // Check if we need to override the current buffered segments (in case of language switch for example)
+                    Q.when(overrideBuffer ? removeBuffer.call(self) : true).then(
                         function() {
-                            if (isFirstMediaSegment) {
-                                isFirstMediaSegment = false;
-                                if (self.fragmentController.hasOwnProperty('getStartTime')) {
-                                    segmentStartTime = self.fragmentController.getStartTime();
-                                }
-                                if (segmentStartTime) {
-                                    self.metricsModel.addBufferedSwitch(type, segmentStartTime, _currentRepresentation.id, request.quality);
-                                } else {
-                                    self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
-                                }
-                            }
+                            /*if (overrideBuffer) {
+                                debugBufferRange.call(self);
+                            }*/
+                            overrideBuffer = false;
 
-                            self.debug.log("[BufferController][" + type + "] Media segment buffered");
-                            // Signal end of buffering process
-                            signalSegmentBuffered.call(self);
-                            // Check buffer level
-                            checkIfSufficientBuffer.call(self);
+                            appendToBuffer.call(self, data, request.quality, request.index).then(
+                                function() {
+                                    if (isFirstMediaSegment) {
+                                        isFirstMediaSegment = false;
+                                        if (self.fragmentController.hasOwnProperty('getStartTime')) {
+                                            segmentStartTime = self.fragmentController.getStartTime();
+                                        }
+                                        if (segmentStartTime) {
+                                            self.metricsModel.addBufferedSwitch(type, segmentStartTime, _currentRepresentation.id, request.quality);
+                                        } else {
+                                            self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
+                                        }
+                                    }
+
+                                    // Signal end of buffering process
+                                    signalSegmentBuffered.call(self);
+                                    // Check buffer level
+                                    checkIfSufficientBuffer.call(self);
+                                }
+                            );
                         }
                     );
                 }
@@ -835,11 +836,16 @@ MediaPlayer.dependencies.BufferController = function() {
                 return;
             }
 
-            // Get buffer range that includes working time
-            range = self.sourceBufferExt.getBufferRange(buffer, time);
+            // If we override buffer (in case of language for example), then consider current video time for the next segment time
+            if (overrideBuffer) {
+                segmentTime = time;
+            } else {
+                // Get buffer range that includes working time
+                range = self.sourceBufferExt.getBufferRange(buffer, time);
 
-            // Get next segment time
-            segmentTime = range ? range.end : time;
+                // Get next segment time
+                segmentTime = range ? range.end : time;
+            }
 
             // currentSequenceNumber used in HLS
             if ((currentSequenceNumber !== -1) && !seeking) {
@@ -872,7 +878,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 
                 // If we have already loaded the given fragment ask for the next one. Otherwise prepare it to get loaded
                 if (self.fragmentController.isFragmentLoadedOrPending(self, request)) {
-                    self.debug.log("[BufferController][" + type + "] new fragment request => already loaded or pending");
+                    self.debug.log("[BufferController][" + type + "] new fragment request => already loaded or pending " + request.url);
                     self.indexHandler.getNextSegmentRequest(_currentRepresentation).then(onFragmentRequest.bind(self));
                 } else {
                     // Download the segment
@@ -997,15 +1003,15 @@ MediaPlayer.dependencies.BufferController = function() {
             timeToEnd = getTimeToEnd.call(self);
             self.debug.log("[BufferController][" + type + "] time to end = " + timeToEnd);
 
-            //for trick mode, buffer needs to be filled faster
+            // In trick mode state, always fills buffer
             if (trickModeEnabled) {
                 if (bufferLevel < 1) {
                     bufferFragment.call(self);
                 }
             } else {
-                if (languageChanged ||
+                if (trackChanged || overrideBuffer ||
                     ((bufferLevel < minBufferTime) &&
-                        ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted)))) {
+                     ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted)))) {
                     // Buffer needs to be filled
                     bufferFragment.call(self);
                 } else {
@@ -1035,6 +1041,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 now = new Date(),
                 currentVideoTime = self.videoModel.getCurrentTime(),
                 manifest = self.manifestModel.getValue(),
+                loadInit = false,
                 quality,
                 playlistUpdated = null,
                 abrResult;
@@ -1048,8 +1055,11 @@ MediaPlayer.dependencies.BufferController = function() {
             self.debug.log("[BufferController][" + type + "] Start buffering process...");
 
             // Check if data has changed
-            // If data has been changed, then load initialization segment
-            var loadInit = doUpdateData.call(self);
+            doUpdateData.call(self);
+
+            // If initialization data has been changed (track changed), then load initialization segment
+            loadInit = initializationData.length === 0;
+
             // Get current quality
             abrResult = self.abrController.getPlaybackQuality(type, data);
 
@@ -1165,20 +1175,32 @@ MediaPlayer.dependencies.BufferController = function() {
                 return false;
             }
 
-            this.debug.log("[BufferController][" + type + "] updateData");
-
-            // Reset stored initialization segments
-            initializationData = [];
+            this.debug.log("[BufferController][" + type + "] Data changed");
 
             // Update representations
             availableRepresentations = updateRepresentations.call(this, data, periodInfo);
-            this.bufferExt.updateData(data, type);
-
-            dataChanged = false;
-
             _currentRepresentation = getRepresentationForQuality.call(this, this.abrController.getPlaybackQuality(type, data).quality);
 
-            return true;
+            this.bufferExt.updateData(data, type);
+
+            if (trackChanged) {
+                // Reset stored initialization segments
+                initializationData = [];
+
+                // Clear the executed requests
+                this.fragmentController.clearExecutedRequests(fragmentModel);
+
+                // Signal to override current buffering segments to switch as soon as possible to new track
+                overrideBuffer = true;
+
+                // For xml subtitles file, reset cues since there is no media segment
+                if (type === 'text' && (data.mimeType === 'application/ttml+xml')) {
+                    removeBuffer.call(this);
+                }
+            }
+
+            dataChanged = false;
+            trackChanged = false;
         },
 
         onFragmentLoadProgress = function(evt) {
@@ -1232,32 +1254,34 @@ MediaPlayer.dependencies.BufferController = function() {
         abrRulesCollection: undefined,
 
         initialize: function(type, newPeriodInfo, newData, buffer, fragmentController, source, eventController) {
-            var self = this,
-                manifest = self.manifestModel.getValue();
+            var manifest = this.manifestModel.getValue();
 
-            self.debug.log("[BufferController][" + type + "] Initialize");
+            this.debug.log("[BufferController][" + type + "] Initialize");
 
             // PATCH for Espial browser which implements SourceBuffer appending/removing synchronoulsy
             if (navigator.userAgent.indexOf("Espial") !== -1) {
-                self.debug.log("[BufferController][" + type + "] Espial browser = sync append");
+                this.debug.log("[BufferController][" + type + "] Espial browser = sync append");
                 appendSync = true;
             }
-            self[MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS] = onFragmentLoadProgress;
+            this[MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS] = onFragmentLoadProgress;
 
-            isDynamic = self.manifestExt.getIsDynamic(manifest);
-            self.setMediaSource(source);
-            self.setType(type);
-            self.setBuffer(buffer);
-            self.setFragmentController(fragmentController);
-            self.setEventController(eventController);
-            minBufferTime = self.config.getParamFor(type, "BufferController.minBufferTime", "number", -1);
-            minBufferTimeAtStartup = self.config.getParamFor(type, "BufferController.minBufferTimeForPlaying", "number", 0);
+            isDynamic = this.manifestExt.getIsDynamic(manifest);
+            this.setMediaSource(source);
+            this.setType(type);
+            this.setBuffer(buffer);
+            this.setFragmentController(fragmentController);
+            this.setEventController(eventController);
+            minBufferTime = this.config.getParamFor(type, "BufferController.minBufferTime", "number", -1);
+            minBufferTimeAtStartup = this.config.getParamFor(type, "BufferController.minBufferTimeForPlaying", "number", 0);
 
-            data = newData;
-            periodInfo = newPeriodInfo;
-            dataChanged = true;
+            this.updateData(newData, newPeriodInfo);
 
-            self.load();
+            doUpdateData.call(this);
+            // data = newData;
+            // periodInfo = newPeriodInfo;
+            // dataChanged = true;
+
+            this.load();
 
             ready = true;
         },
@@ -1266,9 +1290,7 @@ MediaPlayer.dependencies.BufferController = function() {
             var self = this,
                 manifest = self.manifestModel.getValue();
 
-            doUpdateData.call(this);
-
-            // Retreive the representation of initial quality to enable some parameters initialization
+            // Retrieve the representation of initial quality to enable some parameters initialization
             // (@see getLiveEdgeTime() for example)
             _currentRepresentation = getRepresentationForQuality.call(self, self.abrController.getPlaybackQuality(type, data).quality);
 
@@ -1357,24 +1379,37 @@ MediaPlayer.dependencies.BufferController = function() {
 
         updateData: function(newData, newPeriodInfo) {
 
-            self.debug.log("[BufferController][" + type + "] Update data");
+            this.debug.log("[BufferController][" + type + "] Update data");
+
+            // Check if track has changed (in case of language switch for example)
+            //trackChanged = data === null ? true : (((data.lang !== null ? data.lang : data.id) !== ((newData.lang !== null ? newData.lang : newData.id))) ? true : false);
+            trackChanged = data === null ? false : (((data.lang !== null ? data.lang : data.id) !== ((newData.lang !== null ? newData.lang : newData.id))) ? true : false);
 
             // Set the new data
-            languageChanged = (data && ((data.lang !== null ? data.lang : data.id) !== ((newData.lang !== null ? newData.lang : newData.id)))) ? true : false;
             data = newData;
             periodInfo = newPeriodInfo;
             dataChanged = true;
 
-            // If data language changed (audio or text) then seek to current time
-            // in order to switch to new language as soon as possible (see appendToBuffer())
-            if (languageChanged) {
-                self.debug.log("[BufferController][" + type + "] Language changed");
-                cancelCheckBufferTimeout.call(this);
-                //for xml subtitles file, reset cues and restart buffering
-                if (type === 'text' && (data.mimeType === 'application/ttml+xml')) {
-                    buffer.abort();
-                    isBufferingCompleted = false;
-                    doStart.call(self);
+            // Check if track has changed (in case of language switch for example)
+            //if (data === null ? true : (((data.lang !== null ? data.lang : data.id) !== ((newData.lang !== null ? newData.lang : newData.id))) ? true : false);
+            if (trackChanged) {
+                this.debug.log("[BufferController][" + type + "] Track changed");
+
+                // Restart buffering process to switch as soon as possible to new track
+
+                // Reset current timeout
+                clearTimeout(bufferTimeout);
+                bufferTimeout = null;
+
+                // Reset buffering completed state
+                isBufferingCompleted = false;
+
+                // Restart controller if stopped (if buffering was already completed)
+                doStart.call(this);
+
+                // Restart buffering process
+                if (deferredFragmentBuffered === null) {
+                    checkIfSufficientBuffer.call(this);
                 }
             }
         },
