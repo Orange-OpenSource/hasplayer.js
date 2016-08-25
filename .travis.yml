@@ -8,7 +8,7 @@ before_install:
 - openssl aes-256-cbc -K $encrypted_98a7d362e1e4_key -iv $encrypted_98a7d362e1e4_iv -in travis_deploy.enc -out travis_deploy -d
 - npm install -g gulp
 install: npm install
-script: cd build && gulp
+script: npm run build
 after_success:
-- npm run-script deploy-dev
+- npm run deploy
 - npm test

@@ -4,7 +4,7 @@
   "scripts": {
     "build": "cd build && gulp",
     "doc": "cd build && gulp doc",
-    "deploy-dev":  "./build/deploy-ghpage-travis.sh",
+    "deploy": "node ./build/deploy.js",
     "test": "node node_modules/intern/runner.js config=test/functional/testsCommon.js browsers=all selenium=remote application=development",
     "watch": "cd build && gulp watch"
   },
@@ -32,6 +32,7 @@
     "gulp-usemin": "^0.3.22",
     "gulp-zip": "^3.2.0",
     "intern": "^3.2.3",
+    "jsdom": "^9.4.2",
     "jshint": "^2.9.2",
     "jshint-stylish": "^2.1.0",
     "nopt": "^3.0.6",
