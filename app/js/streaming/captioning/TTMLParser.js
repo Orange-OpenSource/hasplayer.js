@@ -538,7 +538,7 @@ MediaPlayer.utils.TTMLParser = function() {
 
                             endTime = getTimeValue.call(this, region, 'end');
 
-                            if (isNaN(startTime) || isNaN(endTime)) {
+                            if (isNaN(startTime) || isNaN(endTime) || (endTime<startTime)) {
                                 errorMsg = "TTML document has incorrect timing value";
                             } else {
                                 textDatas = this.domParser.getChildNodes(region, 'span');
