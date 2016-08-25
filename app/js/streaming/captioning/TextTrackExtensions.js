@@ -42,7 +42,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                 }
             });
         },
-        
+
         getCurrentTextTrack: function(video){
             for(var i=0; i< video.textTracks.length; i++){
                 if(video.textTracks[i].label === 'hascaption'){
@@ -138,8 +138,8 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                         lastIdx = cues.length - 1;
 
                         for (i = lastIdx; i >= 0; i -= 1) {
-                            if (((end === undefined || end === -1) || (cues[i].endTime < end)) &&
-                                ((start === undefined || start === -1) || (cues[i].startTime > start))) {
+                            if (((end === undefined || end === -1) || (cues[i].endTime <= end)) &&
+                                ((start === undefined || start === -1) || (cues[i].startTime >= start))) {
                                 track.removeCue(cues[i]);
                             }
                         }
