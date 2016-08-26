@@ -16,11 +16,6 @@ var config = {
 
 // shell commands
 var commands = {
-    ssh_travis:{
-        chmod:"chmod 600 travis_deploy",
-        evaluate:"eval `ssh-agent -s`",
-        register:"ssh-add travis_deploy"
-    },
     currentBranch: "git branch | grep \\* | cut -d ' ' -f2",
     ghPages:{
         clone:"git clone -b gh-pages https://github.com/Orange-OpenSource/hasplayer.js.git ./out",
@@ -48,14 +43,6 @@ var execCommand = function(cmd){
         });
     });
     return p;
-};
-
-
-var registerTravisSSH = function(){
-    return execCommand(commands.ssh_travis.chmod)
-            .then(execCommand.bind(null,commands.ssh_travis.evalute))
-            .then(execCommand.bind(null,commands.ssh_travis.register));
-        
 };
 
 
@@ -90,8 +77,7 @@ execCommand(commands.currentBranch).then(
         return del(config.ghPagesDir+'/**/*', {force:true, dot:true});
     }
 )
-// register travis
-.then(registerTravisSSH)
+
 // 4 - checkout gh-pages
 .then(execCommand.bind(null,commands.ghPages.clone))
 .then(function(){
