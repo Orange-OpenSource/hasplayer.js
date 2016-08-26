@@ -129,7 +129,7 @@ getBranchName().then(
 .then(execCommand.bind(null,'cd '+config.ghPagesDir + ' && '+ commands.ghPages.configEmail))
 .then(execCommand.bind(null,'cd '+config.ghPagesDir + ' && '+commands.ghPages.addAll))
 .then(execCommand.bind(null,'cd '+config.ghPagesDir + ' && '+commands.ghPages.commit))
-.then(execCommand.bind(null,commands.ghPages.push))
+.then(execCommand.bind(null,'cd '+config.ghPagesDir + ' && '+commands.ghPages.push))
 .catch(function(err){
     console.error(err);
     throw new Error(err);
