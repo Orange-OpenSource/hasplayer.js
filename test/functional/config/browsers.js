@@ -10,7 +10,7 @@ define(function () {
     var IE11_CONFIG    = { browserName: 'internet explorer', version:'11', platform: 'WINDOWS', os:'WINDOWS', os_version:'10'};
     var EDGE_CONFIG    = { browserName: 'MicrosoftEdge', platform: 'WINDOWS' };
     var FIREFOX_CONFIG    = { browserName: 'firefox', platform: 'WINDOWS', os:'WINDOWS', os_version:'7' };
-    var CHROME_ANDRDOID = {browser:'Android', device:'Google Nexus 5', os:'android'};
+    var CHROME_ANDROID = {browser:'Android', device:'Google Nexus 5', os:'android'};
 
     return {
 		all: [ CHROME_CONFIG, IE11_CONFIG, EDGE_CONFIG, FIREFOX_CONFIG ],
@@ -23,6 +23,6 @@ define(function () {
 
         firefox: [ FIREFOX_CONFIG ],
 
-        mobile: [ CHROME_ANDRDOID ]
+        mobile: [ CHROME_ANDROID ]
 	};
 });
