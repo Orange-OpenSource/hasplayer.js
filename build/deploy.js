@@ -46,6 +46,14 @@ var execCommand = function(cmd){
 };
 
 
+var getBranchName = function(){
+    if(process.env.TRAVIS_BRANCH){
+        return Promise.resolve(process.env.TRAVIS_BRANCH);
+    }else{
+        return execCommand(commands.currentBranch);
+    }
+};
+
 // sep of deploy
 // 1 - get branch name
 // 2 - if branch in on master extract foldername in version.properties
@@ -60,7 +68,7 @@ var execCommand = function(cmd){
 
 
 // 1 - get branch name
-execCommand(commands.currentBranch).then(
+getBranchName().then(
     function(branch){
         branch = branch.replace(/\s/g, '');
         console.log("branch :" + branch, branch==='master', branch.length);
@@ -117,9 +125,12 @@ execCommand(commands.currentBranch).then(
         
     }
 })
-.then(execCommand.bind(null,commands.ghPages.configUser))
-.then(execCommand.bind(null,commands.ghPages.configEmail))
+.then(execCommand.bind(null,'cd '+config.ghPagesDir + ' && '+commands.ghPages.configUser))
+.then(execCommand.bind(null,'cd '+config.ghPagesDir + ' && '+ commands.ghPages.configEmail))
 .then(execCommand.bind(null,'cd '+config.ghPagesDir + ' && '+commands.ghPages.addAll))
 .then(execCommand.bind(null,'cd '+config.ghPagesDir + ' && '+commands.ghPages.commit))
-.then(execCommand.bind(null,commands.ghPages.push))
-.catch(function(err){console.error(err);});
+//.then(execCommand.bind(null,commands.ghPages.push))
+.catch(function(err){
+    console.error(err);
+    throw new Error(err);
+    });
