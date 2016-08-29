@@ -11,7 +11,7 @@ var gitCommands = {
     configUser:     "git config user.name \"Travis-CI\"" ,
     configEmail:    "git config user.email \"bertrand.berthelot@orange.com\"",
     add:            "git add --all",
-    commit:         "git commit -am \"automatic deploy from Travis-CI\"",
+    commit:         "git commit -am \"Automatic build from Travis-CI\"",
     push:           "git push \"git@github.com:Orange-OpenSource/hasplayer.js.git\" gh-pages:gh-pages"
 };
 
@@ -57,7 +57,6 @@ var getBranchName = function() {
 getBranchName().then(
     function(branch) {
         branch = branch.replace(/\s/g, '').trim();
-        branch = 'master';
         console.info('Branch: ' + branch);
         // If 'development' branch set version to 'development'
         if (branch === 'development') {
@@ -108,7 +107,7 @@ getBranchName().then(
             // Insert new link (before 'development' version)
             console.info('Update index.html');
             index = index.substring(0, pos - 1) +
-                    '\n<a href=\"' + pkg.version + '/index.html\">Version ' + pkg.version + '</a><br/>\n' +
+                    '<a href=\"' + pkg.version + '/index.html\">Version ' + pkg.version + '</a><br/>\n' +
                     index.substring(pos, index.length - 1);
             //console.log(index);
             fs.writeFileSync(path, index);
