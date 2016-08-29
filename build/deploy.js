@@ -1,43 +1,30 @@
-// usefull require
 var exec = require('child_process').exec,
     fs = require('fs'),
     del = require('del'),
-    jsdom  = require('jsdom').jsdom,
-    serializeDocument = require("jsdom").serializeDocument;
+    pkg = require('../package.json');
 
 
-var config = {
-    versionFile:'dist/version.properties',
-    ghPagesDir : 'out',
-    versionDir: 'dev', /*default deploy directory */
-    newRelease:false
-};
-
-
-// shell commands
-var commands = {
-    currentBranch: "git branch | grep \\* | cut -d ' ' -f2",
-    ghPages:{
-        clone:"git clone -b gh-pages https://github.com/Orange-OpenSource/hasplayer.js.git ./out",
-        configUser: "git config user.name \"Travis-CI\"" ,
-        configEmail: "git config user.email \"mbrechet.ext@orange.com\"",
-        addAll: "git add --all",
-        commit: "git commit -am \"automatic deploy from Travis-CI\"",
-        push: "git push \"git@github.com:Orange-OpenSource/hasplayer.js.git\" gh-pages:gh-pages"
-    }
+// Shell gitCommands
+var gitCommands = {
+    currentBranch:  "git branch | grep \\* | cut -d ' ' -f2",
+    clone:          "git clone -b gh-pages https://github.com/Orange-OpenSource/hasplayer.js.git gh-pages",
+    configUser:     "git config user.name \"Travis-CI\"" ,
+    configEmail:    "git config user.email \"bertrand.berthelot@orange.com\"",
+    add:            "git add --all",
+    commit:         "git commit -am \"automatic deploy from Travis-CI\"",
+    push:           "git push \"git@github.com:Orange-OpenSource/hasplayer.js.git\" gh-pages:gh-pages"
 };
 
 /**
- * execute a shell command and return result in a promise
- * @return Promise a promise resolved when command is executed
+ * Executes a shell command and returns result in a promise.
+ * @return {Promise} the promise that will be resolved when command is executed
  */
-var execCommand = function(cmd){
-    var p = new Promise(function(resolve, reject){
-        exec(cmd, function(err, stdout, stderr){
-            if(!err){
-                console.log(stdout);
+var execCommand = function(cmd) {
+    var p = new Promise(function(resolve, reject) {
+        exec(cmd, function(err, stdout, stderr) {
+            if (!err) {
                 resolve(stdout);
-            }else{
+            } else {
                 reject(stderr);
             }
         });
@@ -45,92 +32,98 @@ var execCommand = function(cmd){
     return p;
 };
 
-
-var getBranchName = function(){
-    if(process.env.TRAVIS_BRANCH){
+/**
+ * Returns the current branch name.
+ * @return {String} the current branch name
+ */
+var getBranchName = function() {
+    if (process.env.TRAVIS_BRANCH) {
         return Promise.resolve(process.env.TRAVIS_BRANCH);
-    }else{
-        return execCommand(commands.currentBranch);
+    } else {
+        return execCommand(gitCommands.currentBranch);
     }
 };
 
-// sep of deploy
-// 1 - get branch name
-// 2 - if branch in on master extract foldername in version.properties
-// 3 - clean out directory
-// 4 - checkout gh-pages from github in out directory 
-// 5 - copy dist directory in appropriate folder on ghpage
-// 6 - upate index if its new release
-// 6 - add all changes
-// 7 - commit changes
-// 8 - push changes
 
+// Steps for deployment
+// 1 - Get branch name
+// 2 - Clean gh-pages directory
+// 3 - Checkout gh-pages from github
+// 4 - Copy 'dist' directory contents into corresponding subfolder of gh-pages
+// 5 - Upate home file (index.html) in case of a new release
+// 6 - Add, commit and push changes to Github
 
-
-// 1 - get branch name
+// 1 - Get branch name
 getBranchName().then(
-    function(branch){
-        branch = branch.replace(/\s/g, '');
-        console.log("branch :" + branch, branch==='master', branch.length);
-// 2 - if branch in not in develop extract foldername in version.properties
-        if(branch==='master'){
-            console.log('create new version');
-            var content = fs.readFileSync(config.versionFile, 'utf8');
-            console.info('content', content, typeof content);
-            config.versionDir = content.split('=')[1];
-            console.info('newRelease', config.versionDir);
-            config.newRelease= true;
+    function(branch) {
+        branch = branch.replace(/\s/g, '').trim();
+        branch = 'master';
+        console.info('Branch: ' + branch);
+        // If 'development' branch set version to 'development'
+        if (branch === 'development') {
+            pkg.version = 'development';
+        } else if (branch !== 'master') {
+            // For any other branch than master 'branch', do not deploy
+            return Promise.reject('Branch not deployed');
         }
- // 3 - clean out directory       
-        return del(config.ghPagesDir+'/**/*', {force:true, dot:true});
+        console.info('Version: ' + pkg.version);
+        return Promise.resolve();
     }
 )
 
-// 4 - checkout gh-pages
-.then(execCommand.bind(null,commands.ghPages.clone))
-.then(function(){
-// 5 - copy dist directory in appropriate folder on ghpage
-    if(config.newRelease){
-        console.info('create new dir', config.versionDir);
-        // test if exists 
-        var path = config.ghPagesDir+'/'+config.versionDir;
-        if(!fs.existsSync(path)){
-            fs.mkdirSync(path);
-        }else{
-            config.newRelease= false;
+// 2 - Clean gh-pages directory
+.then(function () {
+    console.info('Clean gh-pages working directory');
+    return del('gh-pages/**/*', {force:true, dot:true});
+})
+
+// 3 - Checkout gh-pages from github
+.then(function () {
+    console.info('Checkout gh-pages');
+    return execCommand(gitCommands.clone);
+})
+
+// 4 - Copy 'dist' directory contents into corresponding subfolder of gh-pages
+.then(function() {
+    var path = 'gh-pages/' + pkg.version;
+    if (!fs.existsSync(path)) {
+        console.info('Create new folder: ', path);
+        fs.mkdirSync(path);
+    }
+    console.info('Copy dist/* into ' + path);
+    return execCommand('cp -r dist/* ' + path);
+})
+
+// 5 - Upate home file (index.html) in case of a new release
+.then(function() {
+    // Open index.html file
+    var path = 'gh-pages/index.html';
+    var index = fs.readFileSync(path, 'utf-8');
+    //console.log(index);
+
+    // Check if file has to be updated
+    if (index.indexOf(pkg.version) === -1) {
+        var pos = index.indexOf('<a href=\"development');
+        if (pos !== -1) {
+            // Insert new link (before 'development' version)
+            console.info('Update index.html');
+            index = index.substring(0, pos - 1) +
+                    '\n<a href=\"' + pkg.version + '/index.html\">Version ' + pkg.version + '</a><br/>\n' +
+                    index.substring(pos, index.length - 1);
+            //console.log(index);
+            fs.writeFileSync(path, index);
         }
-        
     }
-    var command = 'cd '+ config.ghPagesDir + ' && cp  -r ../dist/* ./'+config.versionDir;
-    return command;
+    return Promise.resolve();
 })
-.then(execCommand)
-.then(function(){
-    if(config.newRelease){
-        var index = fs.readFileSync(config.ghPagesDir+'/index.html', 'utf-8');
-        console.log(index.indexOf('Version '+config.versionDir) === -1);
-        var doc = jsdom(index);
-        var links = doc.querySelectorAll('a');
-        // create new entry
-        var newLink = doc.createElement('a');
-        newLink.href = config.versionDir +  '/index.html';
-        newLink.textContent =  'Version '+config.versionDir;
-        var lastLink = links[links.length - 1];
-        doc.body.insertBefore(newLink, lastLink);
-        var br = doc.createElement('br');
-        doc.body.insertBefore(br, lastLink);
-        var serializedDocument = serializeDocument(doc);
-        console.info("modify ", serializedDocument);
-        fs.writeFileSync(config.ghPagesDir+'/index.html',serializedDocument);
-        
-    }
-})
-.then(execCommand.bind(null,'cd '+config.ghPagesDir + ' && '+commands.ghPages.configUser))
-.then(execCommand.bind(null,'cd '+config.ghPagesDir + ' && '+ commands.ghPages.configEmail))
-.then(execCommand.bind(null,'cd '+config.ghPagesDir + ' && '+commands.ghPages.addAll))
-.then(execCommand.bind(null,'cd '+config.ghPagesDir + ' && '+commands.ghPages.commit))
-.then(execCommand.bind(null,'cd '+config.ghPagesDir + ' && '+commands.ghPages.push))
+
+// 6 - Add, commit and push changes to Github
+.then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.configUser))
+.then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.configEmail))
+.then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.add))
+.then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.commit))
+.then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.push))
 .catch(function(err){
     console.error(err);
     throw new Error(err);
-    });
+});

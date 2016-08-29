@@ -33,7 +33,6 @@
     "gulp-zip": "^3.2.0",
     "intern": "^3.2.3",
     "jsdoc": "^3.4.0",
-    "jsdom": "^9.4.2",
     "jshint": "^2.9.2",
     "jshint-stylish": "^2.1.0",
     "nopt": "^3.0.6",
