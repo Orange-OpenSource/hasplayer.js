@@ -174,6 +174,18 @@ MediaPlayer.utils.TTMLParser = function() {
                     if (resu) {
                         return resu;
                     }
+
+                    //search if others styles are referenced in the selected one
+                    styleName = searchInTab(tabStyles, styleName, 'style');
+
+                    while (styleName) {
+                        //search in this other style
+                        resu = searchInTab(tabStyles, styleName, styleElementName);
+                        if (resu) {
+                            return resu;
+                        }
+                        styleName = searchInTab(tabStyles, styleName, 'style');
+                    }
                 }
 
                 //search region reference in node Element
