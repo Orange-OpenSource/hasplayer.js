@@ -4,11 +4,6 @@ env:
         - ENCRYPTION_LABEL: 98a7d362e1e4
 node_js:
     - stable
-addons:
-    browserstack:
-        username: bertrandberthelo1
-        access_key:
-            secure: IH90y7uyl2fNWxdIhaGoFJy+F51//Vx0TLPm4Ay+Co1dtupNUBc2ZqP+hBLJM/llEBBpYObAbxzM4TGUyzH6m0orpnBVCBBpzM4Yb1EID0vuUgUQTpRIirM2lICdCG7V41J+5blhk7aZDJhHRVUpVfRdmdrja7B2puf1wbmYiOE=
 before_install:
     - openssl aes-256-cbc -K $encrypted_98a7d362e1e4_key -iv $encrypted_98a7d362e1e4_iv -in travis_deploy.enc -out travis_deploy -d
     - npm install -g gulp
@@ -22,5 +17,3 @@ script:
     - npm run deploy
     - npm test
 after_success:
-dd:
-  secure: IH90y7uyl2fNWxdIhaGoFJy+F51//Vx0TLPm4Ay+Co1dtupNUBc2ZqP+hBLJM/llEBBpYObAbxzM4TGUyzH6m0orpnBVCBBpzM4Yb1EID0vuUgUQTpRIirM2lICdCG7V41J+5blhk7aZDJhHRVUpVfRdmdrja7B2puf1wbmYiOE=
