@@ -40,7 +40,7 @@ Mss.dependencies.MssParser = function() {
         xmlDoc = null,
         baseURL = null,
 
-        mapPeriod = function(minBufferTime) {
+        mapPeriod = function() {
             var period = {},
                 adaptations = [],
                 adaptation,
@@ -53,7 +53,7 @@ Mss.dependencies.MssParser = function() {
             // For each StreamIndex node, create an AdaptationSet element
             for (i = 0; i < smoothNode.childNodes.length; i++) {
                 if (smoothNode.childNodes[i].nodeName === "StreamIndex") {
-                    adaptation = mapAdaptationSet.call(this, smoothNode.childNodes[i], minBufferTime);
+                    adaptation = mapAdaptationSet.call(this, smoothNode.childNodes[i]);
                     if (adaptation !== null) {
                         adaptations.push(adaptation);
                     }
@@ -68,7 +68,7 @@ Mss.dependencies.MssParser = function() {
             return period;
         },
 
-        mapAdaptationSet = function(streamIndex, minBufferTime) {
+        mapAdaptationSet = function(streamIndex) {
 
             var adaptationSet = {},
                 representations = [],
@@ -462,7 +462,7 @@ Mss.dependencies.MssParser = function() {
             }
 
             // Map period node to manifest root node
-            mpd.Period = mapPeriod.call(this, mpd.minBufferTime);
+            mpd.Period = mapPeriod.call(this);
             mpd.Period_asArray = [mpd.Period];
 
             // Initialize period start time
