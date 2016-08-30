@@ -1,18 +1,19 @@
 language: node_js
 env:
-  global:
-  - ENCRYPTION_LABEL:"98a7d362e1e4"
+global:
+    - ENCRYPTION_LABEL: "98a7d362e1e4"
 node_js:
-- stable
+    - stable
 before_install:
-- openssl aes-256-cbc -K $encrypted_98a7d362e1e4_key -iv $encrypted_98a7d362e1e4_iv -in travis_deploy.enc -out travis_deploy -d
-- npm install -g gulp
-- chmod 600 travis_deploy
-- eval `ssh-agent -s`
-- ssh-add travis_deploy
-install: npm install
-script: 
-- npm run build
-- npm run deploy
+    - openssl aes-256-cbc -K $encrypted_98a7d362e1e4_key -iv $encrypted_98a7d362e1e4_iv -in travis_deploy.enc -out travis_deploy -d
+    - npm install -g gulp
+    - chmod 600 travis_deploy
+    - eval `ssh-agent -s`
+    - ssh-add travis_deploy
+install:
+    - npm install
+script:
+    - npm run build
+    - npm run deploy
 after_success:
-- npm test
+    - npm test
