@@ -1,9 +1,13 @@
 language: node_js
 env:
-global:
-    - ENCRYPTION_LABEL: "98a7d362e1e4"
+    global:
+        - ENCRYPTION_LABEL: "98a7d362e1e4"
 node_js:
     - stable
+addons:
+    browserstack: "bertrandberthelo1"
+    access_key:
+        secure: "AkAWdOz5gU9VokUSn0QV3/p0Y4CO4b5ZtumESCGD+xgjAUzvKbtQnJ4wYmUPMCupGaMhsprs9EWXgyjR9nZF8M61AJNMfX412iqwe1YIgXlqzJZJAmdg2eF88gaz4TQ9mm8+xb6CfV2BHSDUyDTe+M49jQFX0oa9Vf+/Xf7ppEM="
 before_install:
     - openssl aes-256-cbc -K $encrypted_98a7d362e1e4_key -iv $encrypted_98a7d362e1e4_iv -in travis_deploy.enc -out travis_deploy -d
     - npm install -g gulp
