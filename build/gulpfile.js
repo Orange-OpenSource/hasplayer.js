@@ -144,7 +144,7 @@ gulp.task('build', ['package-info', 'lint'], function() {
             },
             template: path.join(__dirname, 'gulp/umd.js')
         }))
-        .pipe(replace(/VERSION[\s*]=[\s*]['\\](\d.\d.\d_dev)['\\]/g, 'VERSION = \'' + pkg.version + '\''))
+        .pipe(replace(/VERSION[\s*]=[\s*]['\\](.*)['\\]/g, 'VERSION = \'' + pkg.version + '\''))
         .pipe(replace(/@@TIMESTAMP/, pkg.gitDate + '_' + pkg.gitTime))
         .pipe(replace(/@@REVISION/, pkg.gitRevision))
         .pipe(banner(comment, {
