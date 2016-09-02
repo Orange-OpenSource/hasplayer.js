@@ -21,8 +21,8 @@ MediaPlayer = function () {
 //#region Private attributes/properties
     ///////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
-    var VERSION_DASHJS = "1.2.0",
-        VERSION = '1.4.0_dev',
+    var VERSION_DASHJS = '1.2.0',
+        VERSION = '',
         GIT_TAG = '@@REVISION',
         BUILD_DATE = '@@TIMESTAMP',
         context = new MediaPlayer.di.Context(), // default context
@@ -809,7 +809,7 @@ MediaPlayer = function () {
             if(!stream || !stream.url){
                  throw new Error('MediaPlayer.load(): stream has no url.');
             }
-            
+
             videoQualityChanged = [];
             audioQualityChanged = [];
 
@@ -1651,7 +1651,7 @@ MediaPlayer.PUBLIC_EVENTS = {
  * @see [getTracks]{@link MediaPlayer#getTracks}
  * @see [getSelectedTrack]{@link MediaPlayer#getSelectedTrack}
  * @see [selectTrack]{@link MediaPlayer#selectTrack}
- * @enum 
+ * @enum
  */
 MediaPlayer.TRACKS_TYPE = {
     AUDIO: "audio",
@@ -1691,7 +1691,7 @@ MediaPlayer.TRACKS_TYPE = {
 //#endregion
 
 //#region Static functions
-/** 
+/**
  * Static functions
  */
 /**
