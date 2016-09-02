@@ -477,9 +477,10 @@ MediaPlayer.dependencies.ProtectionController = function() {
         onKeyStatusesChanged = function(event) {
             if (!event.error) {
                 this.debug.log("[DRM] Key statuses changed. statuses = " + event.data);
-            } /*else {
-                // TODO: handle expired session
-            }*/
+            } else {
+                this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
+                    new MediaPlayer.vo.Error(event.error.code, event.error.message, event.error.data));
+            }
         };
 
     return {

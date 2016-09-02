@@ -122,7 +122,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                             // Chrome doesn't raised error if keys don't match
                             // so the unique wy is to track this event and raise an error
                             self.debug.log("[DRM][PM_21Jan2015] 'waitingforkey' event");
-                            // Set licenseStored to false to remove the session 
+                            // Set licenseStored to false to remove the session
                             if (this.session !== null) {
                                 this.session.licenseStored = false;
                                 this.session = null;
@@ -193,6 +193,12 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                                       // Report an expired key.
                                       self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, null,
                                             new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED, "License has expired!!!", null));
+                                      break;
+                                    case "output-restricted":
+                                      self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, null,
+                                            new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT,
+                                                                     "There is no available output device with the required characteristics for the content protection system.",
+                                                                     null));
                                       break;
                                     //case "usable":
                                     //case "status-pending":
