@@ -17,6 +17,7 @@ Mss.dependencies.MssParser = function() {
     "use strict";
 
     var TIME_SCALE_100_NANOSECOND_UNIT = 10000000.0,
+        SUPPORTED_CODECS = ["AAC", "AACL", "AVC1", "H264"],
         samplingFrequencyIndex = {
             96000: 0x0,
             88200: 0x1,
@@ -157,8 +158,9 @@ Mss.dependencies.MssParser = function() {
                 fourCCValue = "AAC";
             }
 
-            // Do not support AACH (TODO)
-            if (fourCCValue.indexOf("AACH") >= 0) {
+            // Check if codec is supported
+            if (SUPPORTED_CODECS.indexOf(fourCCValue.toUpperCase()) === -1) {
+                this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Codec not supported", {codec: fourCCValue});
                 return null;
             }
 
@@ -566,6 +568,7 @@ Mss.dependencies.MssParser = function() {
     return {
         debug: undefined,
         system: undefined,
+        errHandler: undefined,
         domParser: undefined,
         metricsModel: undefined,
 

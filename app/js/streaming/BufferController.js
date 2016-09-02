@@ -1035,14 +1035,6 @@ MediaPlayer.dependencies.BufferController = function() {
             }, (delay * 1000));
         },
 
-        cancelCheckBufferTimeout = function() {
-            if (bufferTimeout) {
-                clearTimeout(bufferTimeout);
-                bufferTimeout = null;
-                checkIfSufficientBuffer.call(this);
-            }
-        },
-
         bufferFragment = function() {
             var self = this,
                 now = new Date(),
@@ -1369,7 +1361,6 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         updateData: function(newData, newPeriodInfo) {
-            var self = this;
 
             self.debug.log("[BufferController][" + type + "] Update data");
 
