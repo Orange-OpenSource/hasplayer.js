@@ -29,7 +29,7 @@ MediaPlayer = function () {
         system = new dijon.System(), // dijon system instance
         initialized = false,
         debugController = null, // use to handle key pressed and download debug file
-        videoModel, // model to manipulate hte domVideoNode
+        videoModel, // model to manipulate the domVideoNode
         videoBitrates = null, //bitrates list of video
         audioBitrates = null,
         videoQualityChanged = [],
