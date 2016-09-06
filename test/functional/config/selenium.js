@@ -18,10 +18,6 @@ define({
 
     remote: {
         tunnel: 'BrowserStackTunnel',
-        tunnelOptions: {
-            username:'bertrandberthelo1',
-            accessKey:'n1NVa67JsxQMqFN5sdJq'
-        },
         reporters: [{id: 'JUnit', filename: 'test/functional/test-reports/' + (new Date().getFullYear())+'-'+(new Date().getMonth()+1)+'-'+(new Date().getDate())+'_'+(new Date().getHours())+'-'+(new Date().getMinutes())+'-'+(new Date().getSeconds()) + '_report.xml'}],
         capabilities: {}
     }

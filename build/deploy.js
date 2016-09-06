@@ -8,7 +8,7 @@ var exec = require('child_process').exec,
 var gitCommands = {
     currentBranch:  "git branch | grep \\* | cut -d ' ' -f2",
     clone:          "git clone -b gh-pages https://github.com/Orange-OpenSource/hasplayer.js.git gh-pages",
-    configUser:     "git config user.name \"Travis-CI\"" ,
+    configUser:     "git config user.name \"Travis-CI\"",
     configEmail:    "git config user.email \"bertrand.berthelot@orange.com\"",
     add:            "git add --all",
     commit:         "git commit -am \"Automatic build from Travis-CI\"",
