@@ -16,6 +16,7 @@ MediaPlayer.models.VideoModel = function () {
 
     var element,
         stalledStreams = {},
+        TTMLRenderingDiv,
 
         isStalled = function () {
             for (var type in stalledStreams){
@@ -136,6 +137,23 @@ MediaPlayer.models.VideoModel = function () {
 
         isStalled: function () {
             return element.playbackRate === 0;
+        },
+
+        getTTMLRenderingDiv: function() {
+            return TTMLRenderingDiv;
+        },
+
+        setTTMLRenderingDiv: function(div) {
+            TTMLRenderingDiv = div;
+            // The styling will allow the captions to match the video window size and position.
+            TTMLRenderingDiv.style.position = 'absolute';
+            TTMLRenderingDiv.style.display = 'flex';
+            TTMLRenderingDiv.style.overflow = 'hidden';
+            TTMLRenderingDiv.style.pointerEvents = 'none';
+            TTMLRenderingDiv.style.top = 0;
+            TTMLRenderingDiv.style.left = 0;
+            TTMLRenderingDiv.style.width = '100%';
+            TTMLRenderingDiv.style.height = '100%';
         },
 
         stallStream: stallStream

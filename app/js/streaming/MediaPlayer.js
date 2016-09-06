@@ -1314,17 +1314,25 @@ MediaPlayer = function () {
         },
 
         /**
-         * Enables or disables subtitles display in a div outside video player.
-         * @method enableSubtitleExternDisplay
-         * @access public
-         * @memberof MediaPlayer#
-         * @param {boolean} mode - true if subtitles are displayed in a div outside video player
+         * Returns instance of Div that was attached by calling attachTTMLRenderingDiv()
+         * @returns {Object}
+         * @memberof module:MediaPlayer
+         * @instance
          */
-        enableSubtitleExternDisplay: function (value) {
-            if (typeof value !== 'boolean') {
-                throw new Error('MediaPlayer.enableSubtitleExternDisplay(): Invalid Arguments');
-            }
-            this.config.setParams({'TextTrackExtensions.displayModeExtern': value});
+        getTTMLRenderingDiv: function() {
+            return videoModel ? videoModel.getTTMLRenderingDiv() : null;
+        },
+
+        /**
+         * Use this method to attach an HTML5 div for hasplayer.js to render rich TTML subtitles.
+         *
+         * @param {HTMLDivElement} div - An unstyled div placed after the video element. It will be styled to match the video size and overlay z-order.
+         * @memberof module:MediaPlayer
+         * @instance
+         */
+        attachTTMLRenderingDiv: function(div) {
+            _isPlayerInitialized();
+            videoModel.setTTMLRenderingDiv(div);
         },
 //#endregion
 
