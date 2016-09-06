@@ -181,7 +181,7 @@ gulp.task('build-demoplayer', function() {
 });
 
 gulp.task('copy-index', ['package-info'], function() {
-    return gulp.src('gulp/index.html')
+    return gulp.src('./index.html')
         .pipe(replace(/@@VERSION/g, pkg.version))
         .pipe(replace(/@@DATE/, pkg.gitDate))
         .pipe(gulp.dest(config.distDir));
