@@ -17,7 +17,7 @@ Mss.dependencies.MssParser = function() {
     "use strict";
 
     var TIME_SCALE_100_NANOSECOND_UNIT = 10000000.0,
-        SUPPORTED_CODECS = ["AAC", "AACL", "AVC1", "H264"],
+        SUPPORTED_CODECS = ["AAC", "AACL", "AVC1", "H264", "TTML", "DFXP"],
         samplingFrequencyIndex = {
             96000: 0x0,
             88200: 0x1,
