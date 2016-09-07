@@ -30,9 +30,12 @@ MediaPlayer.utils.TTMLParser = function() {
         TTML_URI = "http://www.w3.org/ns/ttml",
         TTML_PARAMETER_URI = "http://www.w3.org/ns/ttml#parameter",
         TTML_STYLE_URI = "http://www.w3.org/ns/ttml#styling",
+        SMPTE_TT_URI = "http://www.smpte-ra.org/schemas/2052-1/2010/smpte-tt",
         globalPrefTTNameSpace = "",
         globalPrefStyleNameSpace = "",
         globalPrefParameterNameSpace = "",
+        globalPrefSMPTENameSpace = "",
+
         //regionPrefTTNameSpace = "",
         //regionPrefStyleNameSpace = "",
         // R0028 - A document must not contain a <timeExpression> value that does not conform to the subset of clock-time that
@@ -59,6 +62,7 @@ MediaPlayer.utils.TTMLParser = function() {
         frameRate = null,
         tabStyles = [],
         tabRegions = [],
+        tabImages = [],
 
         parseTimings = function(timingStr) {
 
@@ -269,6 +273,7 @@ MediaPlayer.utils.TTMLParser = function() {
             var nameSpace = null,
                 TTAFUrl = null,
                 TTMLUrl = null,
+                SMPTETTUrl = null,
                 i = 0,
                 tabReturn = [],
                 valTab;
@@ -285,6 +290,9 @@ MediaPlayer.utils.TTMLParser = function() {
                 case "main":
                     TTAFUrl = TTAF_URI;
                     TTMLUrl = TTML_URI;
+                    break;
+                case "smpte":
+                    SMPTETTUrl = SMPTE_TT_URI;
                     break;
             }
 
@@ -321,6 +329,16 @@ MediaPlayer.utils.TTMLParser = function() {
                             if (tabReturn.indexOf(valTab) < 0) {
                                 tabReturn.push(valTab);
                             }
+                        }
+                    }
+                }
+            } else if (SMPTETTUrl) {
+                nameSpace = this.domParser.getAttributeName(node, SMPTETTUrl);
+                if (nameSpace.length > 0) {
+                    for (i = 0; i < nameSpace.length; i += 1) {
+                        valTab = nameSpace[i].split(':').length > 1 ? nameSpace[i].split(':')[1] + ':' : "";
+                        if (tabReturn.indexOf(valTab) < 0) {
+                            tabReturn.push(valTab);
                         }
                     }
                 }
@@ -457,7 +475,10 @@ MediaPlayer.utils.TTMLParser = function() {
                     textOutline: {
                         color: null,
                         with: null
-                    }
+                    },
+                    origin: null,
+                    extent: null,
+                    rootExtent: null
                 },
                 caption,
                 divBody,
@@ -467,12 +488,19 @@ MediaPlayer.utils.TTMLParser = function() {
                 k,
                 cellResolution,
                 extent,
+                rootExtent,
                 textNodes,
                 textOutline,
                 textValue = "",
+                imageRef,
+                ttmlRenderingType = "",
                 lastCaption;
 
             try {
+
+                if (this.videoModel.getTTMLRenderingDiv() !== null) {
+                    ttmlRenderingType = 'html';
+                }
 
                 xmlDoc = this.domParser.createXmlTree(data);
 
@@ -481,6 +509,7 @@ MediaPlayer.utils.TTMLParser = function() {
                     return Q.reject(errorMsg);
                 }
 
+                globalPrefSMPTENameSpace = getNameSpace.call(this, nodeTt, 'smpte');
                 //define global namespace prefix for TTML
                 globalPrefTTNameSpace = getNameSpace.call(this, nodeTt, 'main');
                 //define global namespace prefix for parameter
@@ -510,8 +539,33 @@ MediaPlayer.utils.TTMLParser = function() {
                 globalPrefTTNameSpace = arrayUnique(globalPrefTTNameSpace.concat(getNameSpace.call(this, tabRegions, 'main')));
                 //search prefStyle nameSpace in tabRegions
                 globalPrefStyleNameSpace = arrayUnique(globalPrefStyleNameSpace.concat(getNameSpace.call(this, tabRegions, 'style')));
+                //get all images url
+                tabImages = this.domParser.getAllSpecificNodes(nodeTt, 'image');
+                //search if there is a root container size
+                rootExtent = findStyleElement.call(this, [nodeTt], 'extent');
+
+                cssStyle.rootExtent = rootExtent;
 
                 for (k = 0; k < divBody.length; k += 1) {
+                    //is it images subtitles?
+                    imageRef = findParameterElement.call(this, [divBody[k]], globalPrefSMPTENameSpace, 'backgroundImage');
+                    if (imageRef && tabImages[imageRef.substring(1)] !== undefined) {
+                        startTime = getTimeValue.call(this, divBody[k], 'begin');
+                        endTime = getTimeValue.call(this, divBody[k], 'end');
+
+                        cssStyle.origin = findStyleElement.call(this, [divBody[k]], 'origin');
+                        cssStyle.extent = findStyleElement.call(this, [divBody[k]], 'extent');
+
+                        caption = {
+                            start: startTime,
+                            end: endTime,
+                            type: 'image',
+                            data: 'data:image/' + tabImages[imageRef.substring(1)].imagetype.nodeValue + ';base64, ' + tabImages[imageRef.substring(1)].innerHTML,
+                            line: 80,
+                            style: cssStyle
+                        };
+                        captionArray.push(caption);
+                    }
                     regions = this.domParser.getChildNodes(divBody[k], 'p');
 
                     if (!regions || regions.length === 0) {
@@ -528,7 +582,9 @@ MediaPlayer.utils.TTMLParser = function() {
                                     color: null,
                                     with: null
                                 },
-                                origin: null
+                                origin: null,
+                                extent: null,
+                                rootExtent: rootExtent
                             };
                             region = regions[i];
 
@@ -540,7 +596,7 @@ MediaPlayer.utils.TTMLParser = function() {
 
                             endTime = getTimeValue.call(this, region, 'end');
 
-                            if (isNaN(startTime) || isNaN(endTime) || (endTime<startTime)) {
+                            if (isNaN(startTime) || isNaN(endTime) || (endTime < startTime)) {
                                 errorMsg = "TTML document has incorrect timing value";
                             } else {
                                 textDatas = this.domParser.getChildNodes(region, 'span');
@@ -616,36 +672,39 @@ MediaPlayer.utils.TTMLParser = function() {
                                         previousStartTime = getTimeValue.call(this, regions[i - 1], 'begin');
                                         previousEndTime = getTimeValue.call(this, regions[i - 1], 'end');
                                     }
-
-                                    if (startTime === previousStartTime && endTime === previousEndTime) {
+                                    //workaround to be able to show subtitles on two lines even if startTime and endTime are not equals to the previous values.
+                                    if ((startTime === previousStartTime && endTime === previousEndTime) || (startTime >= previousStartTime && endTime <= previousEndTime)) {
                                         if (region.textContent !== "") {
-                                            lastCaption = captionArray.pop();
-                                            caption = {
-                                                start: startTime,
-                                                end: endTime,
-                                                data: lastCaption.data + '\n' + region.textContent,
-                                                line: 80,
-                                                style: cssStyle
-                                            };
-                                        }
-                                    } //workaround to be able to show subtitles on two lines even if startTime and endTime are not equals to the previous values.
-                                    else if (startTime >= previousStartTime && endTime <= previousEndTime){
-                                        if (region.textContent !== "") {
-                                            lastCaption = captionArray[captionArray.length-1];
-                                            lastCaption.end = startTime;
-                                            caption = {
-                                                start: startTime,
-                                                end: endTime,
-                                                data: lastCaption.data + '\n' + region.textContent,
-                                                line: 80,
-                                                style: cssStyle
-                                            };
+                                            //if rendering is done in an external div, do not add subtitle text with the same time.
+                                            if (ttmlRenderingType === 'html') {
+                                                caption = {
+                                                    start: startTime,
+                                                    end: endTime,
+                                                    data: region.textContent,
+                                                    line: 80,
+                                                    style: cssStyle
+                                                };
+                                            } else {
+                                                if (startTime >= previousStartTime && endTime <= previousEndTime) {
+                                                    lastCaption = captionArray[captionArray.length - 1];
+                                                    lastCaption.end = startTime;
+                                                } else {
+                                                    lastCaption = captionArray.pop();
+                                                }
+                                                caption = {
+                                                    start: startTime,
+                                                    end: endTime,
+                                                    data: lastCaption.data + '\n' + region.textContent,
+                                                    line: 80,
+                                                    style: cssStyle
+                                                };
+                                            }
                                         }
                                     } else {
                                         textNodes = this.domParser.getChildNodes(region, '#text');
 
                                         for (j = 0; j < textNodes.length; j += 1) {
-                                            if ( j > 0) {
+                                            if (j > 0) {
                                                 textValue += '\n';
                                             }
                                             textValue += textNodes[j].textContent;
@@ -683,6 +742,7 @@ MediaPlayer.utils.TTMLParser = function() {
 
     return {
         domParser: undefined,
+        videoModel: undefined,
         parse: internalParse
 
     };
