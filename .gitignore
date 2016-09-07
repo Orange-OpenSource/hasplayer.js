@@ -199,3 +199,12 @@ pip-log.txt
 .DS_Store
 
 doc/Dash.js.~ml
+
+#Visual studio code
+.vscode/**
+
+# report of tests
+*_report.xml
+
+# sublime text files
+*.sublime-*
