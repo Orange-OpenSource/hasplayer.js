@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2016-9-7_7:30:10 / git revision : 63c1bfe */
+/* Last build : 2016-9-7_9:24:38 / git revision : d875f65 */
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
@@ -9105,10 +9105,10 @@ MediaPlayer = function () {
 //#region Private attributes/properties
     ///////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
-    var VERSION_DASHJS = "1.2.0",
+    var VERSION_DASHJS = '1.2.0',
         VERSION = '1.5.0',
-        GIT_TAG = '63c1bfe',
-        BUILD_DATE = '2016-9-7_7:30:10',
+        GIT_TAG = 'd875f65',
+        BUILD_DATE = '2016-9-7_9:24:38',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -9893,7 +9893,7 @@ MediaPlayer = function () {
             if(!stream || !stream.url){
                  throw new Error('MediaPlayer.load(): stream has no url.');
             }
-            
+
             videoQualityChanged = [];
             audioQualityChanged = [];
 
@@ -10052,7 +10052,7 @@ MediaPlayer = function () {
 
             // Notify plugins that player is reset
             for (var plugin in plugins) {
-                plugins[plugin].stop();
+                plugins[plugin].reset();
             }
         },
 
@@ -10511,8 +10511,8 @@ MediaPlayer = function () {
             }
 
             if (plugins[plugin.getName()]) {
-                // Reset plugin already loaded
-                plugins[plugin.getName()].reset();
+                // Destroy plugin already loaded
+                plugins[plugin.getName()].destroy();
             }
 
             this.debug.log("[MediaPlayer] Add plugin '" + plugin.getName() + "' (v" + plugin.getVersion() + ")");
@@ -10555,7 +10555,7 @@ MediaPlayer = function () {
             if (plugins[name]) {
                 this.debug.log("[MediaPlayer] Remove plugin '" + name);
                 // Reset plugin
-                plugins[name].reset();
+                plugins[name].destroy();
                 // delete it
                 plugins[name] = null;
                 delete plugins[name];
@@ -10735,7 +10735,7 @@ MediaPlayer.PUBLIC_EVENTS = {
  * @see [getTracks]{@link MediaPlayer#getTracks}
  * @see [getSelectedTrack]{@link MediaPlayer#getSelectedTrack}
  * @see [selectTrack]{@link MediaPlayer#selectTrack}
- * @enum 
+ * @enum
  */
 MediaPlayer.TRACKS_TYPE = {
     AUDIO: "audio",
@@ -10775,7 +10775,7 @@ MediaPlayer.TRACKS_TYPE = {
 //#endregion
 
 //#region Static functions
-/** 
+/**
  * Static functions
  */
 /**
@@ -11155,7 +11155,8 @@ MediaPlayer.dependencies.BufferController = function() {
         seeking = false,
         seekTarget = -1,
         dataChanged = true,
-        languageChanged = false,
+        trackChanged = false,
+        overrideBuffer = false,
         availableRepresentations,
         _currentRepresentation,
         currentBufferedQuality = -1,
@@ -11164,7 +11165,6 @@ MediaPlayer.dependencies.BufferController = function() {
         isDynamic = false,
         isBufferingCompleted = false,
         deferredRejectedDataAppend = null,
-        deferredBuffersFlatten = null,
         periodInfo = null,
         fragmentsToLoad = 0,
         fragmentModel = null,
@@ -11291,7 +11291,7 @@ MediaPlayer.dependencies.BufferController = function() {
             }
 
             if (isBufferingCompleted) {
-                if(data.mimeType === "application/ttml+xml"){
+                if (data.mimeType === "application/ttml+xml") {
                     return;
                 }
                 isBufferingCompleted = false;
@@ -11414,25 +11414,16 @@ MediaPlayer.dependencies.BufferController = function() {
                     signalSegmentBuffered.call(self);
                     self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", data.message);
                 } else {
-                    // cache the initialization data to use it next time the quality has changed
+                    // Cache the initialization data to use it next time the quality has changed
                     initializationData[quality] = data;
 
-                    // if this is the initialization data for current quality we need to push it to the buffer
                     self.debug.info("[BufferController][" + type + "] Buffer initialization segment ", (request.url !== null) ? request.url : request.quality);
-                    //    console.saveBinArray(data, type + "_init_" + request.quality + ".mp4");
-                    // Clear the buffer if required (language track switching)
-                    Q.when(languageChanged ? removeBuffer.call(self) : true).then(
+                    appendToBuffer.call(self, data, request.quality).then(
                         function() {
-                            languageChanged = false;
-                            appendToBuffer.call(self, data, request.quality).then(
-                                function() {
-                                    self.debug.log("[BufferController][" + type + "] Initialization segment buffered");
-                                    // Load next media segment
-                                    if (isRunning()) {
-                                        loadNextFragment.call(self);
-                                    }
-                                }
-                            );
+                            // Load next media segment
+                            if (isRunning()) {
+                                loadNextFragment.call(self);
+                            }
                         }
                     );
                 }
@@ -11502,25 +11493,34 @@ MediaPlayer.dependencies.BufferController = function() {
                     //console.saveBinArray(data, type + "_" + request.index + "_" + request.quality + ".mp4");
                     data = deleteInbandEvents.call(self, data);
 
-                    appendToBuffer.call(self, data, request.quality, request.index).then(
+                    // Check if we need to override the current buffered segments (in case of language switch for example)
+                    Q.when(overrideBuffer ? removeBuffer.call(self) : true).then(
                         function() {
-                            if (isFirstMediaSegment) {
-                                isFirstMediaSegment = false;
-                                if (self.fragmentController.hasOwnProperty('getStartTime')) {
-                                    segmentStartTime = self.fragmentController.getStartTime();
-                                }
-                                if (segmentStartTime) {
-                                    self.metricsModel.addBufferedSwitch(type, segmentStartTime, _currentRepresentation.id, request.quality);
-                                } else {
-                                    self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
-                                }
-                            }
+                            /*if (overrideBuffer) {
+                                debugBufferRange.call(self);
+                            }*/
+                            overrideBuffer = false;
 
-                            self.debug.log("[BufferController][" + type + "] Media segment buffered");
-                            // Signal end of buffering process
-                            signalSegmentBuffered.call(self);
-                            // Check buffer level
-                            checkIfSufficientBuffer.call(self);
+                            appendToBuffer.call(self, data, request.quality, request.index).then(
+                                function() {
+                                    if (isFirstMediaSegment) {
+                                        isFirstMediaSegment = false;
+                                        if (self.fragmentController.hasOwnProperty('getStartTime')) {
+                                            segmentStartTime = self.fragmentController.getStartTime();
+                                        }
+                                        if (segmentStartTime) {
+                                            self.metricsModel.addBufferedSwitch(type, segmentStartTime, _currentRepresentation.id, request.quality);
+                                        } else {
+                                            self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
+                                        }
+                                    }
+
+                                    // Signal end of buffering process
+                                    signalSegmentBuffered.call(self);
+                                    // Check buffer level
+                                    checkIfSufficientBuffer.call(self);
+                                }
+                            );
                         }
                     );
                 }
@@ -11552,74 +11552,70 @@ MediaPlayer.dependencies.BufferController = function() {
 
             hasEnoughSpaceToAppend.call(self).then(
                 function() {
-                    Q.when(deferredBuffersFlatten ? deferredBuffersFlatten.promise : true).then(
-                        function() {
-                            if (!hasData()) {
-                                return;
+                    if (!hasData()) {
+                        return;
+                    }
+                    self.debug.log("[BufferController][" + type + "] Buffering segment");
+                    self.sourceBufferExt.append(buffer, data, appendSync).then(
+                        function( /*appended*/ ) {
+                            self.debug.log("[BufferController][" + type + "] Segment buffered");
+                            //self.debug.log("[BufferController]["+type+"] Data has been appended for quality = "+quality+" index = "+index);
+                            if (currentBufferedQuality !== quality) {
+                                isFirstMediaSegment = true;
+                                self.debug.log("[BufferController][" + type + "] set currentBufferedQuality to " + quality);
+                                currentBufferedQuality = quality;
                             }
-                            self.debug.log("[BufferController][" + type + "] Buffering segment");
-                            self.sourceBufferExt.append(buffer, data, appendSync).then(
-                                function( /*appended*/ ) {
-                                    self.debug.log("[BufferController][" + type + "] Segment buffered");
-                                    //self.debug.log("[BufferController]["+type+"] Data has been appended for quality = "+quality+" index = "+index);
-                                    if (currentBufferedQuality !== quality) {
-                                        isFirstMediaSegment = true;
-                                        self.debug.log("[BufferController][" + type + "] set currentBufferedQuality to " + quality);
-                                        currentBufferedQuality = quality;
-                                    }
 
-                                    isQuotaExceeded = false;
+                            isQuotaExceeded = false;
 
-                                    // Patch for Safari: do not remove past buffer in live use case
-                                    // since it generates MEDIA_ERROR_DECODE while appending new segment
+                            // Patch for Safari: do not remove past buffer in live use case
+                            // since it generates MEDIA_ERROR_DECODE while appending new segment
 
-                                    if (isDynamic && bufferLevel > 1 && !isSafari) {
-                                        // In case of live streams, remove outdated buffer parts and requests
-                                        // (checking bufferLevel ensure buffer is not empty or back to current time)
-                                        removeBuffer.call(self, -1, getWorkingTime.call(self) - 30).then(
-                                            function() {
-                                                debugBufferRange.call(self);
-                                                deferred.resolve();
-                                            }
-                                        );
-                                    } else if (trickModeEnabled) {
-                                        // In case of trick play, remove outdated buffer parts according to trick play direction
-                                        var start = trickModeForward ? -1 : (getWorkingTime.call(self) + segmentDuration);
-                                        var end = trickModeForward ? (getWorkingTime.call(self) - segmentDuration) : -1;
-                                        removeBuffer.call(self, start, end).then(
-                                            function() {
-                                                debugBufferRange.call(self);
-                                                deferred.resolve();
-                                            }
-                                        );
-                                    } else {
+                            if (isDynamic && bufferLevel > 1 && !isSafari) {
+                                // In case of live streams, remove outdated buffer parts and requests
+                                // (checking bufferLevel ensure buffer is not empty or back to current time)
+                                removeBuffer.call(self, -1, getWorkingTime.call(self) - 30).then(
+                                    function() {
                                         debugBufferRange.call(self);
                                         deferred.resolve();
                                     }
-
-                                    self.system.notify("bufferUpdated");
-                                },
-                                function(result) {
-                                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_APPEND_SOURCEBUFFER, "Failed to append data into " + type + " source buffer",
-                                        new MediaPlayer.vo.Error(result.err.code, result.err.name, result.err.message));
-                                    // if the append has failed because the buffer is full we should store the data
-                                    // that has not been appended and stop request scheduling. We also need to store
-                                    // the promise for this append because the next data can be appended only after
-                                    // this promise is resolved.
-                                    if (result.err.code === MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_QUOTA_EXCEEDED) {
-                                        rejectedBytes = {
-                                            data: data,
-                                            quality: quality,
-                                            index: index
-                                        };
-                                        deferredRejectedDataAppend = deferred;
-                                        isQuotaExceeded = true;
-                                        fragmentsToLoad = 0;
-                                        // stop scheduling new requests
-                                        doStop.call(self);
+                                );
+                            } else if (trickModeEnabled) {
+                                // In case of trick play, remove outdated buffer parts according to trick play direction
+                                var start = trickModeForward ? -1 : (getWorkingTime.call(self) + segmentDuration);
+                                var end = trickModeForward ? (getWorkingTime.call(self) - segmentDuration) : -1;
+                                removeBuffer.call(self, start, end).then(
+                                    function() {
+                                        debugBufferRange.call(self);
+                                        deferred.resolve();
                                     }
-                                }
-                            );
+                                );
+                            } else {
+                                debugBufferRange.call(self);
+                                deferred.resolve();
+                            }
+
+                            self.system.notify("bufferUpdated");
+                        },
+                        function(result) {
+                            self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_APPEND_SOURCEBUFFER, "Failed to append data into " + type + " source buffer",
+                                new MediaPlayer.vo.Error(result.err.code, result.err.name, result.err.message));
+                            // if the append has failed because the buffer is full we should store the data
+                            // that has not been appended and stop request scheduling. We also need to store
+                            // the promise for this append because the next data can be appended only after
+                            // this promise is resolved.
+                            if (result.err.code === MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_QUOTA_EXCEEDED) {
+                                rejectedBytes = {
+                                    data: data,
+                                    quality: quality,
+                                    index: index
+                                };
+                                deferredRejectedDataAppend = deferred;
+                                isQuotaExceeded = true;
+                                fragmentsToLoad = 0;
+                                // stop scheduling new requests
+                                doStop.call(self);
+                            }
                         }
                     );
                 }
@@ -11970,11 +11966,16 @@ MediaPlayer.dependencies.BufferController = function() {
                 return;
             }
 
-            // Get buffer range that includes working time
-            range = self.sourceBufferExt.getBufferRange(buffer, time);
+            // If we override buffer (in case of language for example), then consider current video time for the next segment time
+            if (overrideBuffer) {
+                segmentTime = time;
+            } else {
+                // Get buffer range that includes working time
+                range = self.sourceBufferExt.getBufferRange(buffer, time);
 
-            // Get next segment time
-            segmentTime = range ? range.end : time;
+                // Get next segment time
+                segmentTime = range ? range.end : time;
+            }
 
             // currentSequenceNumber used in HLS
             if ((currentSequenceNumber !== -1) && !seeking) {
@@ -12007,7 +12008,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 
                 // If we have already loaded the given fragment ask for the next one. Otherwise prepare it to get loaded
                 if (self.fragmentController.isFragmentLoadedOrPending(self, request)) {
-                    self.debug.log("[BufferController][" + type + "] new fragment request => already loaded or pending");
+                    self.debug.log("[BufferController][" + type + "] new fragment request => already loaded or pending " + request.url);
                     self.indexHandler.getNextSegmentRequest(_currentRepresentation).then(onFragmentRequest.bind(self));
                 } else {
                     // Download the segment
@@ -12132,15 +12133,15 @@ MediaPlayer.dependencies.BufferController = function() {
             timeToEnd = getTimeToEnd.call(self);
             self.debug.log("[BufferController][" + type + "] time to end = " + timeToEnd);
 
-            //for trick mode, buffer needs to be filled faster
+            // In trick mode state, always fills buffer
             if (trickModeEnabled) {
                 if (bufferLevel < 1) {
                     bufferFragment.call(self);
                 }
             } else {
-                if (languageChanged ||
+                if (trackChanged || overrideBuffer ||
                     ((bufferLevel < minBufferTime) &&
-                        ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted)))) {
+                     ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted)))) {
                     // Buffer needs to be filled
                     bufferFragment.call(self);
                 } else {
@@ -12170,6 +12171,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 now = new Date(),
                 currentVideoTime = self.videoModel.getCurrentTime(),
                 manifest = self.manifestModel.getValue(),
+                loadInit = false,
                 quality,
                 playlistUpdated = null,
                 abrResult;
@@ -12183,8 +12185,11 @@ MediaPlayer.dependencies.BufferController = function() {
             self.debug.log("[BufferController][" + type + "] Start buffering process...");
 
             // Check if data has changed
-            // If data has been changed, then load initialization segment
-            var loadInit = doUpdateData.call(self);
+            doUpdateData.call(self);
+
+            // If initialization data has been changed (track changed), then load initialization segment
+            loadInit = initializationData.length === 0;
+
             // Get current quality
             abrResult = self.abrController.getPlaybackQuality(type, data);
 
@@ -12300,20 +12305,32 @@ MediaPlayer.dependencies.BufferController = function() {
                 return false;
             }
 
-            this.debug.log("[BufferController][" + type + "] updateData");
-
-            // Reset stored initialization segments
-            initializationData = [];
+            this.debug.log("[BufferController][" + type + "] Data changed");
 
             // Update representations
             availableRepresentations = updateRepresentations.call(this, data, periodInfo);
-            this.bufferExt.updateData(data, type);
-
-            dataChanged = false;
-
             _currentRepresentation = getRepresentationForQuality.call(this, this.abrController.getPlaybackQuality(type, data).quality);
 
-            return true;
+            this.bufferExt.updateData(data, type);
+
+            if (trackChanged) {
+                // Reset stored initialization segments
+                initializationData = [];
+
+                // Clear the executed requests
+                this.fragmentController.clearExecutedRequests(fragmentModel);
+
+                // Signal to override current buffering segments to switch as soon as possible to new track
+                overrideBuffer = true;
+
+                // For xml subtitles file, reset cues since there is no media segment
+                if (type === 'text' && (data.mimeType === 'application/ttml+xml')) {
+                    removeBuffer.call(this);
+                }
+            }
+
+            dataChanged = false;
+            trackChanged = false;
         },
 
         onFragmentLoadProgress = function(evt) {
@@ -12367,32 +12384,34 @@ MediaPlayer.dependencies.BufferController = function() {
         abrRulesCollection: undefined,
 
         initialize: function(type, newPeriodInfo, newData, buffer, fragmentController, source, eventController) {
-            var self = this,
-                manifest = self.manifestModel.getValue();
+            var manifest = this.manifestModel.getValue();
 
-            self.debug.log("[BufferController][" + type + "] Initialize");
+            this.debug.log("[BufferController][" + type + "] Initialize");
 
             // PATCH for Espial browser which implements SourceBuffer appending/removing synchronoulsy
             if (navigator.userAgent.indexOf("Espial") !== -1) {
-                self.debug.log("[BufferController][" + type + "] Espial browser = sync append");
+                this.debug.log("[BufferController][" + type + "] Espial browser = sync append");
                 appendSync = true;
             }
-            self[MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS] = onFragmentLoadProgress;
+            this[MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS] = onFragmentLoadProgress;
 
-            isDynamic = self.manifestExt.getIsDynamic(manifest);
-            self.setMediaSource(source);
-            self.setType(type);
-            self.setBuffer(buffer);
-            self.setFragmentController(fragmentController);
-            self.setEventController(eventController);
-            minBufferTime = self.config.getParamFor(type, "BufferController.minBufferTime", "number", -1);
-            minBufferTimeAtStartup = self.config.getParamFor(type, "BufferController.minBufferTimeForPlaying", "number", 0);
+            isDynamic = this.manifestExt.getIsDynamic(manifest);
+            this.setMediaSource(source);
+            this.setType(type);
+            this.setBuffer(buffer);
+            this.setFragmentController(fragmentController);
+            this.setEventController(eventController);
+            minBufferTime = this.config.getParamFor(type, "BufferController.minBufferTime", "number", -1);
+            minBufferTimeAtStartup = this.config.getParamFor(type, "BufferController.minBufferTimeForPlaying", "number", 0);
 
-            data = newData;
-            periodInfo = newPeriodInfo;
-            dataChanged = true;
+            this.updateData(newData, newPeriodInfo);
 
-            self.load();
+            doUpdateData.call(this);
+            // data = newData;
+            // periodInfo = newPeriodInfo;
+            // dataChanged = true;
+
+            this.load();
 
             ready = true;
         },
@@ -12401,9 +12420,7 @@ MediaPlayer.dependencies.BufferController = function() {
             var self = this,
                 manifest = self.manifestModel.getValue();
 
-            doUpdateData.call(this);
-
-            // Retreive the representation of initial quality to enable some parameters initialization
+            // Retrieve the representation of initial quality to enable some parameters initialization
             // (@see getLiveEdgeTime() for example)
             _currentRepresentation = getRepresentationForQuality.call(self, self.abrController.getPlaybackQuality(type, data).quality);
 
@@ -12492,24 +12509,37 @@ MediaPlayer.dependencies.BufferController = function() {
 
         updateData: function(newData, newPeriodInfo) {
 
-            self.debug.log("[BufferController][" + type + "] Update data");
+            this.debug.log("[BufferController][" + type + "] Update data");
+
+            // Check if track has changed (in case of language switch for example)
+            //trackChanged = data === null ? true : (((data.lang !== null ? data.lang : data.id) !== ((newData.lang !== null ? newData.lang : newData.id))) ? true : false);
+            trackChanged = data === null ? false : (((data.lang !== null ? data.lang : data.id) !== ((newData.lang !== null ? newData.lang : newData.id))) ? true : false);
 
             // Set the new data
-            languageChanged = (data && ((data.lang !== null ? data.lang : data.id) !== ((newData.lang !== null ? newData.lang : newData.id)))) ? true : false;
             data = newData;
             periodInfo = newPeriodInfo;
             dataChanged = true;
 
-            // If data language changed (audio or text) then seek to current time
-            // in order to switch to new language as soon as possible (see appendToBuffer())
-            if (languageChanged) {
-                self.debug.log("[BufferController][" + type + "] Language changed");
-                cancelCheckBufferTimeout.call(this);
-                //for xml subtitles file, reset cues and restart buffering
-                if (type === 'text' && (data.mimeType === 'application/ttml+xml')) {
-                    buffer.abort();
-                    isBufferingCompleted = false;
-                    doStart.call(self);
+            // Check if track has changed (in case of language switch for example)
+            //if (data === null ? true : (((data.lang !== null ? data.lang : data.id) !== ((newData.lang !== null ? newData.lang : newData.id))) ? true : false);
+            if (trackChanged) {
+                this.debug.log("[BufferController][" + type + "] Track changed");
+
+                // Restart buffering process to switch as soon as possible to new track
+
+                // Reset current timeout
+                clearTimeout(bufferTimeout);
+                bufferTimeout = null;
+
+                // Reset buffering completed state
+                isBufferingCompleted = false;
+
+                // Restart controller if stopped (if buffering was already completed)
+                doStart.call(this);
+
+                // Restart buffering process
+                if (deferredFragmentBuffered === null) {
+                    checkIfSufficientBuffer.call(this);
                 }
             }
         },
@@ -12568,7 +12598,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
         updateBufferState: function() {
             var self = this,
-                currentTime = this.videoModel.getCurrentTime(),//getWorkingTime.call(this),
+                currentTime = this.videoModel.getCurrentTime(),
                 previousTime = htmlVideoTime === -1 ? currentTime : htmlVideoTime,
                 progress = (currentTime - previousTime),
                 ranges;
@@ -12603,7 +12633,7 @@ MediaPlayer.dependencies.BufferController = function() {
                         htmlVideoState = PLAYING;
                         this.debug.info("[BufferController][" + type + "] PLAYING - " + currentTime);
                         this.metricsModel.addState(type, "playing", currentTime);
-                        // Reset seeking state since on some browsers (Edge) seeked event may not be raised
+                        // Reset seeking state since on some browsers (IE11/Edge) seeked event may not be raised
                         seeking = false;
                         seekTarget = -1;
 
@@ -12611,14 +12641,6 @@ MediaPlayer.dependencies.BufferController = function() {
                         segmentDownloadErrorCount = 0;
                     } else if (!this.getVideoModel().isStalled()) {
                         ranges = this.sourceBufferExt.getAllRanges(buffer);
-                        /*if (ranges.length > 0) {
-                            var workingTime = getWorkingTime.call(this),
-                                gap = workingTime - ranges.end(ranges.length - 1);
-                            if (gap > 4) {
-                                this.debug.log("[BufferController][" + type + "] BUFFERING - delay from current time = " + gap);
-                                signalSegmentLoadingFailed.call(this);
-                            }
-                        }*/
                     }
                     break;
 
@@ -12680,7 +12702,6 @@ MediaPlayer.dependencies.BufferController = function() {
             Q.when(deferredFragmentBuffered ? deferredFragmentBuffered.promise : true).then(
                 function() {
                     cancel(deferredRejectedDataAppend);
-                    cancel(deferredBuffersFlatten);
                     cancel(deferredFragmentBuffered);
 
                     if (fragmentModel) {
@@ -17704,7 +17725,7 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
             intervalId,
             CHECK_INTERVAL = 50,
             checkIsUpdateEnded = function() {
-                // if undating is still in progress do nothing and wait for the next check again.
+                // if updating is still in progress do nothing and wait for the next check again.
                 if (buffer.updating) {
                     return;
                 }
@@ -17802,12 +17823,12 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
 
     abort: function (mediaSource, buffer) {
         "use strict";
-        try {
-            if (mediaSource.readyState === "open") {
-                buffer.abort();
+            try {
+                if (mediaSource.readyState === "open") {
+                    buffer.abort();
+                }
+            } catch(ex){
             }
-        } catch(ex){
-        }
     }
 };
 
@@ -20668,7 +20689,8 @@ MediaPlayer.utils.TTMLParser = function() {
                 extent,
                 textNodes,
                 textOutline,
-                textValue = "";
+                textValue = "",
+                lastCaption;
 
             try {
 
@@ -20725,7 +20747,8 @@ MediaPlayer.utils.TTMLParser = function() {
                                 textOutline: {
                                     color: null,
                                     with: null
-                                }
+                                },
+                                origin: null
                             };
                             region = regions[i];
 
@@ -20737,7 +20760,7 @@ MediaPlayer.utils.TTMLParser = function() {
 
                             endTime = getTimeValue.call(this, region, 'end');
 
-                            if (isNaN(startTime) || isNaN(endTime)) {
+                            if (isNaN(startTime) || isNaN(endTime) || (endTime<startTime)) {
                                 errorMsg = "TTML document has incorrect timing value";
                             } else {
                                 textDatas = this.domParser.getChildNodes(region, 'span');
@@ -20804,6 +20827,8 @@ MediaPlayer.utils.TTMLParser = function() {
                                     cssStyle.textOutline = computeTextOutline(textOutline, cellResolution, cssStyle.color);
                                     cssStyle.fontSize = computeFontSize(cssStyle.fontSize, cellResolution);
 
+                                    cssStyle.origin = findStyleElement.call(this, [region, divBody], 'origin');
+
                                     //line and position element have no effect on IE
                                     //For Chrome line = 80 is a percentage workaround to reorder subtitles
                                     //try to detect multi lines subtitle
@@ -20814,7 +20839,20 @@ MediaPlayer.utils.TTMLParser = function() {
 
                                     if (startTime === previousStartTime && endTime === previousEndTime) {
                                         if (region.textContent !== "") {
-                                            var lastCaption = captionArray.pop();
+                                            lastCaption = captionArray.pop();
+                                            caption = {
+                                                start: startTime,
+                                                end: endTime,
+                                                data: lastCaption.data + '\n' + region.textContent,
+                                                line: 80,
+                                                style: cssStyle
+                                            };
+                                        }
+                                    } //workaround to be able to show subtitles on two lines even if startTime and endTime are not equals to the previous values.
+                                    else if (startTime >= previousStartTime && endTime <= previousEndTime){
+                                        if (region.textContent !== "") {
+                                            lastCaption = captionArray[captionArray.length-1];
+                                            lastCaption.end = startTime;
                                             caption = {
                                                 start: startTime,
                                                 end: endTime,
@@ -20827,16 +20865,21 @@ MediaPlayer.utils.TTMLParser = function() {
                                         textNodes = this.domParser.getChildNodes(region, '#text');
 
                                         for (j = 0; j < textNodes.length; j += 1) {
-                                            textValue += textNodes[j].textContent + "\n";
+                                            if ( j > 0) {
+                                                textValue += '\n';
+                                            }
+                                            textValue += textNodes[j].textContent;
                                         }
-                                        caption = {
-                                            start: startTime,
-                                            end: endTime,
-                                            data: textValue,
-                                            line: 80,
-                                            style: cssStyle
-                                        };
-                                        textValue = "";
+                                        if (textValue !== "") {
+                                            caption = {
+                                                start: startTime,
+                                                end: endTime,
+                                                data: textValue,
+                                                line: 80,
+                                                style: cssStyle
+                                            };
+                                            textValue = "";
+                                        }
                                     }
                                     if (caption !== null) {
                                         captionArray.push(caption);
@@ -21496,7 +21539,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                 }
             });
         },
-        
+
         getCurrentTextTrack: function(video){
             for(var i=0; i< video.textTracks.length; i++){
                 if(video.textTracks[i].label === 'hascaption'){
@@ -21592,8 +21635,8 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                         lastIdx = cues.length - 1;
 
                         for (i = lastIdx; i >= 0; i -= 1) {
-                            if (((end === undefined || end === -1) || (cues[i].endTime < end)) &&
-                                ((start === undefined || start === -1) || (cues[i].startTime > start))) {
+                            if (((end === undefined || end === -1) || (cues[i].endTime <= end)) &&
+                                ((start === undefined || start === -1) || (cues[i].startTime >= start))) {
                                 track.removeCue(cues[i]);
                             }
                         }
@@ -28318,9 +28361,10 @@ MediaPlayer.dependencies.ProtectionController = function() {
         onKeyStatusesChanged = function(event) {
             if (!event.error) {
                 this.debug.log("[DRM] Key statuses changed. statuses = " + event.data);
-            } /*else {
-                // TODO: handle expired session
-            }*/
+            } else {
+                this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
+                    new MediaPlayer.vo.Error(event.error.code, event.error.message, event.error.data));
+            }
         };
 
     return {
@@ -30229,7 +30273,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                             // Chrome doesn't raised error if keys don't match
                             // so the unique wy is to track this event and raise an error
                             self.debug.log("[DRM][PM_21Jan2015] 'waitingforkey' event");
-                            // Set licenseStored to false to remove the session 
+                            // Set licenseStored to false to remove the session
                             if (this.session !== null) {
                                 this.session.licenseStored = false;
                                 this.session = null;
@@ -30300,6 +30344,12 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                                       // Report an expired key.
                                       self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, null,
                                             new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED, "License has expired!!!", null));
+                                      break;
+                                    case "output-restricted":
+                                      self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, null,
+                                            new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT,
+                                                                     "There is no available output device with the required characteristics for the content protection system.",
+                                                                     null));
                                       break;
                                     //case "usable":
                                     //case "status-pending":
