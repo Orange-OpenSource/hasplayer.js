@@ -314,6 +314,11 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
             return false;
         },
 
+        UpdateLang: function(id, lang){
+            currentId = id;
+            currentLang = lang;
+        },
+
         abort: function() {
             this.getTextTrackExtensions().deleteCues(video, true);
         },

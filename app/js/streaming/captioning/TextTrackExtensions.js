@@ -66,6 +66,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                 subtitleDisplayMode = this.config.getParam("TextTrackExtensions.displayModeExtern", "boolean") === true ? 'metadata' : 'subtitles';
                 //TODO: Ability to define the KIND in the MPD - ie subtitle vs caption....
                 track = video.addTextTrack(subtitleDisplayMode, 'hascaption', scrlang);
+                currentLanguage = scrlang;
                 // track.default is an object property identifier that is a reserved word
                 // The following jshint directive is used to suppressed the warning "Expected an identifier and instead saw 'default' (a reserved word)"
                 /*jshint -W024 */
@@ -76,6 +77,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                 if (track.mode !== 'showing') {
                     track.mode = "showing";
                 }
+                currentLanguage = scrlang;
             }
 
             for (i = 0; i < captionData.length; i += 1) {
@@ -107,6 +109,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                 if (currentItem.start < currentItem.end) {
                     newCue = new Cue(currentItem.start, currentItem.end, currentItem.data);
 
+                    newCue.id = currentLanguage;
                     newCue.onenter = this.onCueEnter.bind(this);
                     newCue.onexit = this.onCueExit.bind(this);
 
