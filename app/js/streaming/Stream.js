@@ -1223,6 +1223,7 @@ MediaPlayer.dependencies.Stream = function() {
             if (enabled !== subtitlesEnabled) {
                 subtitlesEnabled = enabled;
                 track = this.textTrackExtensions.getCurrentTextTrack(this.videoModel.getElement());
+                this.textTrackExtensions.cleanSubtitles();
 
                 if (textController) {
                     if (enabled) {
