@@ -20,5 +20,5 @@ install:
 script:
     - npm run build
     - npm run deploy
-    - npm test
 after_success:
+    - npm test
