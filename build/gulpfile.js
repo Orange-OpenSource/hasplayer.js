@@ -65,7 +65,7 @@ if (gulp.option('mss', true)) {
 }
 
 gulp.task("default", function(cb) {
-    runSequence('clean','build', ['build-samples', 'doc'],
+    runSequence('build', ['build-samples', 'doc'],
         'releases-notes',
         'zip',
         'version',
@@ -130,7 +130,7 @@ gulp.task('version', function() {
     fs.writeFileSync(config.distDir + '/version.properties', 'VERSION=' + pkg.version);
 });
 
-gulp.task('build', ['package-info', 'lint'], function() {
+gulp.task('build', ['clean', 'package-info', 'lint'], function() {
     // integrate libs after doing lint
     sourcesGlob = sources.libs.concat(sourcesGlob);
     return gulp.src(sourcesGlob)
@@ -181,7 +181,7 @@ gulp.task('build-demoplayer', function() {
 });
 
 gulp.task('copy-index', ['package-info'], function() {
-    return gulp.src('./index.html')
+    return gulp.src('../index.html')
         .pipe(replace(/@@VERSION/g, pkg.version))
         .pipe(replace(/@@DATE/, pkg.gitDate))
         .pipe(gulp.dest(config.distDir));
