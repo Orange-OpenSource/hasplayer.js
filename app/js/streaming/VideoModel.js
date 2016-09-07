@@ -16,7 +16,7 @@ MediaPlayer.models.VideoModel = function () {
 
     var element,
         stalledStreams = {},
-        TTMLRenderingDiv,
+        TTMLRenderingDiv = null,
 
         isStalled = function () {
             for (var type in stalledStreams){
