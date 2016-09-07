@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2016-9-6_7:41:35 / git revision : 8f80d5e */
+/* Last build : 2016-9-7_7:30:10 / git revision : 63c1bfe */
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
@@ -9107,8 +9107,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = "1.2.0",
         VERSION = '1.5.0',
-        GIT_TAG = '8f80d5e',
-        BUILD_DATE = '2016-9-6_7:41:35',
+        GIT_TAG = '63c1bfe',
+        BUILD_DATE = '2016-9-7_7:30:10',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -12165,14 +12165,6 @@ MediaPlayer.dependencies.BufferController = function() {
             }, (delay * 1000));
         },
 
-        cancelCheckBufferTimeout = function() {
-            if (bufferTimeout) {
-                clearTimeout(bufferTimeout);
-                bufferTimeout = null;
-                checkIfSufficientBuffer.call(this);
-            }
-        },
-
         bufferFragment = function() {
             var self = this,
                 now = new Date(),
@@ -12499,7 +12491,6 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         updateData: function(newData, newPeriodInfo) {
-            var self = this;
 
             self.debug.log("[BufferController][" + type + "] Update data");
 
@@ -34061,6 +34052,7 @@ Mss.dependencies.MssParser = function() {
     "use strict";
 
     var TIME_SCALE_100_NANOSECOND_UNIT = 10000000.0,
+        SUPPORTED_CODECS = ["AAC", "AACL", "AVC1", "H264", "TTML", "DFXP"],
         samplingFrequencyIndex = {
             96000: 0x0,
             88200: 0x1,
@@ -34201,8 +34193,9 @@ Mss.dependencies.MssParser = function() {
                 fourCCValue = "AAC";
             }
 
-            // Do not support AACH (TODO)
-            if (fourCCValue.indexOf("AACH") >= 0) {
+            // Check if codec is supported
+            if (SUPPORTED_CODECS.indexOf(fourCCValue.toUpperCase()) === -1) {
+                this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Codec not supported", {codec: fourCCValue});
                 return null;
             }
 
@@ -34602,6 +34595,7 @@ Mss.dependencies.MssParser = function() {
     return {
         debug: undefined,
         system: undefined,
+        errHandler: undefined,
         domParser: undefined,
         metricsModel: undefined,
 
