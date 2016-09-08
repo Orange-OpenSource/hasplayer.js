@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2016-9-8_8:42:16 / git revision : 70770f6 */
+/* Last build : 2016-9-8_8:48:49 / git revision : 56229bb */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.5.0',
-        GIT_TAG = '70770f6',
-        BUILD_DATE = '2016-9-8_8:42:16',
+        GIT_TAG = '56229bb',
+        BUILD_DATE = '2016-9-8_8:48:49',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -3291,9 +3291,12 @@ MediaPlayer.dependencies.BufferController = function() {
                 overrideBuffer = true;
 
                 // For xml subtitles file, reset cues since there is no media segment
-                if (type === 'text' && (data.mimeType === 'application/ttml+xml')) {
+                if (type === 'text') {
+                    buffer.UpdateLang(data.id, data.lang);
+                    if (data.mimeType === 'application/ttml+xml') {
                     removeBuffer.call(this);
                 }
+            }
             }
 
             dataChanged = false;
@@ -11019,7 +11022,7 @@ MediaPlayer.models.VideoModel = function () {
 
     var element,
         stalledStreams = {},
-        TTMLRenderingDiv,
+        TTMLRenderingDiv = null,
 
         isStalled = function () {
             for (var type in stalledStreams){
@@ -11380,6 +11383,18 @@ MediaPlayer.utils.TTMLParser = function() {
                     resu = searchInTab(tabStyles, styleName, styleElementName);
                     if (resu) {
                         return resu;
+                    }
+
+                    //search if others styles are referenced in the selected one
+                    styleName = searchInTab(tabStyles, styleName, 'style');
+
+                    while (styleName) {
+                        //search in this other style
+                        resu = searchInTab(tabStyles, styleName, styleElementName);
+                        if (resu) {
+                            return resu;
+                        }
+                        styleName = searchInTab(tabStyles, styleName, 'style');
                     }
                 }
 
