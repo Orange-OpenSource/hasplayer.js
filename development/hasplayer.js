@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2016-9-7_14:59:51 / git revision : da6665e */
+/* Last build : 2016-9-8_8:15:43 / git revision : 01ae4ab */
 
 (function (root, factory) {
   if (typeof define === 'function' && define.amd) {
@@ -9107,13 +9107,13 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.5.0',
-        GIT_TAG = 'da6665e',
-        BUILD_DATE = '2016-9-7_14:59:51',
+        GIT_TAG = '01ae4ab',
+        BUILD_DATE = '2016-9-8_8:15:43',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
         debugController = null, // use to handle key pressed and download debug file
-        videoModel, // model to manipulate hte domVideoNode
+        videoModel, // model to manipulate the domVideoNode
         videoBitrates = null, //bitrates list of video
         audioBitrates = null,
         videoQualityChanged = [],
@@ -10398,17 +10398,25 @@ MediaPlayer = function () {
         },
 
         /**
-         * Enables or disables subtitles display in a div outside video player.
-         * @method enableSubtitleExternDisplay
-         * @access public
-         * @memberof MediaPlayer#
-         * @param {boolean} mode - true if subtitles are displayed in a div outside video player
+         * Returns instance of Div that was attached by calling attachTTMLRenderingDiv()
+         * @returns {Object}
+         * @memberof module:MediaPlayer
+         * @instance
          */
-        enableSubtitleExternDisplay: function (value) {
-            if (typeof value !== 'boolean') {
-                throw new Error('MediaPlayer.enableSubtitleExternDisplay(): Invalid Arguments');
-            }
-            this.config.setParams({'TextTrackExtensions.displayModeExtern': value});
+        getTTMLRenderingDiv: function() {
+            return videoModel ? videoModel.getTTMLRenderingDiv() : null;
+        },
+
+        /**
+         * Use this method to attach an HTML5 div for hasplayer.js to render rich TTML subtitles.
+         *
+         * @param {HTMLDivElement} div - An unstyled div placed after the video element. It will be styled to match the video size and overlay z-order.
+         * @memberof module:MediaPlayer
+         * @instance
+         */
+        attachTTMLRenderingDiv: function(div) {
+            _isPlayerInitialized();
+            videoModel.setTTMLRenderingDiv(div);
         },
 //#endregion
 
@@ -13208,6 +13216,7 @@ MediaPlayer.di.Context = function () {
             this.system.mapSingleton('tokenAuthentication', MediaPlayer.utils.TokenAuthentication);
             this.system.mapSingleton('vttParser', MediaPlayer.utils.VTTParser);
             this.system.mapSingleton('ttmlParser', MediaPlayer.utils.TTMLParser);
+            this.system.mapSingleton('ttmlRenderer', MediaPlayer.utils.TTMLRenderer);
 
             // MediaPlayer.models.*
             this.system.mapSingleton('manifestModel', MediaPlayer.models.ManifestModel);
@@ -19055,6 +19064,7 @@ MediaPlayer.dependencies.Stream = function() {
             if (enabled !== subtitlesEnabled) {
                 subtitlesEnabled = enabled;
                 track = this.textTrackExtensions.getCurrentTextTrack(this.videoModel.getElement());
+                this.textTrackExtensions.cleanSubtitles();
 
                 if (textController) {
                     if (enabled) {
@@ -20050,6 +20060,7 @@ MediaPlayer.models.VideoModel = function () {
 
     var element,
         stalledStreams = {},
+        TTMLRenderingDiv,
 
         isStalled = function () {
             for (var type in stalledStreams){
@@ -20172,6 +20183,23 @@ MediaPlayer.models.VideoModel = function () {
             return element.playbackRate === 0;
         },
 
+        getTTMLRenderingDiv: function() {
+            return TTMLRenderingDiv;
+        },
+
+        setTTMLRenderingDiv: function(div) {
+            TTMLRenderingDiv = div;
+            // The styling will allow the captions to match the video window size and position.
+            TTMLRenderingDiv.style.position = 'absolute';
+            TTMLRenderingDiv.style.display = 'flex';
+            TTMLRenderingDiv.style.overflow = 'hidden';
+            TTMLRenderingDiv.style.pointerEvents = 'none';
+            TTMLRenderingDiv.style.top = 0;
+            TTMLRenderingDiv.style.left = 0;
+            TTMLRenderingDiv.style.width = '100%';
+            TTMLRenderingDiv.style.height = '100%';
+        },
+
         stallStream: stallStream
     };
 };
@@ -20250,9 +20278,12 @@ MediaPlayer.utils.TTMLParser = function() {
         TTML_URI = "http://www.w3.org/ns/ttml",
         TTML_PARAMETER_URI = "http://www.w3.org/ns/ttml#parameter",
         TTML_STYLE_URI = "http://www.w3.org/ns/ttml#styling",
+        SMPTE_TT_URI = "http://www.smpte-ra.org/schemas/2052-1/2010/smpte-tt",
         globalPrefTTNameSpace = "",
         globalPrefStyleNameSpace = "",
         globalPrefParameterNameSpace = "",
+        globalPrefSMPTENameSpace = "",
+
         //regionPrefTTNameSpace = "",
         //regionPrefStyleNameSpace = "",
         // R0028 - A document must not contain a <timeExpression> value that does not conform to the subset of clock-time that
@@ -20279,6 +20310,7 @@ MediaPlayer.utils.TTMLParser = function() {
         frameRate = null,
         tabStyles = [],
         tabRegions = [],
+        tabImages = [],
 
         parseTimings = function(timingStr) {
 
@@ -20489,6 +20521,7 @@ MediaPlayer.utils.TTMLParser = function() {
             var nameSpace = null,
                 TTAFUrl = null,
                 TTMLUrl = null,
+                SMPTETTUrl = null,
                 i = 0,
                 tabReturn = [],
                 valTab;
@@ -20505,6 +20538,9 @@ MediaPlayer.utils.TTMLParser = function() {
                 case "main":
                     TTAFUrl = TTAF_URI;
                     TTMLUrl = TTML_URI;
+                    break;
+                case "smpte":
+                    SMPTETTUrl = SMPTE_TT_URI;
                     break;
             }
 
@@ -20541,6 +20577,16 @@ MediaPlayer.utils.TTMLParser = function() {
                             if (tabReturn.indexOf(valTab) < 0) {
                                 tabReturn.push(valTab);
                             }
+                        }
+                    }
+                }
+            } else if (SMPTETTUrl) {
+                nameSpace = this.domParser.getAttributeName(node, SMPTETTUrl);
+                if (nameSpace.length > 0) {
+                    for (i = 0; i < nameSpace.length; i += 1) {
+                        valTab = nameSpace[i].split(':').length > 1 ? nameSpace[i].split(':')[1] + ':' : "";
+                        if (tabReturn.indexOf(valTab) < 0) {
+                            tabReturn.push(valTab);
                         }
                     }
                 }
@@ -20677,7 +20723,10 @@ MediaPlayer.utils.TTMLParser = function() {
                     textOutline: {
                         color: null,
                         with: null
-                    }
+                    },
+                    origin: null,
+                    extent: null,
+                    rootExtent: null
                 },
                 caption,
                 divBody,
@@ -20687,12 +20736,19 @@ MediaPlayer.utils.TTMLParser = function() {
                 k,
                 cellResolution,
                 extent,
+                rootExtent,
                 textNodes,
                 textOutline,
                 textValue = "",
+                imageRef,
+                ttmlRenderingType = "",
                 lastCaption;
 
             try {
+
+                if (this.videoModel.getTTMLRenderingDiv() !== null) {
+                    ttmlRenderingType = 'html';
+                }
 
                 xmlDoc = this.domParser.createXmlTree(data);
 
@@ -20701,6 +20757,7 @@ MediaPlayer.utils.TTMLParser = function() {
                     return Q.reject(errorMsg);
                 }
 
+                globalPrefSMPTENameSpace = getNameSpace.call(this, nodeTt, 'smpte');
                 //define global namespace prefix for TTML
                 globalPrefTTNameSpace = getNameSpace.call(this, nodeTt, 'main');
                 //define global namespace prefix for parameter
@@ -20730,8 +20787,33 @@ MediaPlayer.utils.TTMLParser = function() {
                 globalPrefTTNameSpace = arrayUnique(globalPrefTTNameSpace.concat(getNameSpace.call(this, tabRegions, 'main')));
                 //search prefStyle nameSpace in tabRegions
                 globalPrefStyleNameSpace = arrayUnique(globalPrefStyleNameSpace.concat(getNameSpace.call(this, tabRegions, 'style')));
+                //get all images url
+                tabImages = this.domParser.getAllSpecificNodes(nodeTt, 'image');
+                //search if there is a root container size
+                rootExtent = findStyleElement.call(this, [nodeTt], 'extent');
+
+                cssStyle.rootExtent = rootExtent;
 
                 for (k = 0; k < divBody.length; k += 1) {
+                    //is it images subtitles?
+                    imageRef = findParameterElement.call(this, [divBody[k]], globalPrefSMPTENameSpace, 'backgroundImage');
+                    if (imageRef && tabImages[imageRef.substring(1)] !== undefined) {
+                        startTime = getTimeValue.call(this, divBody[k], 'begin');
+                        endTime = getTimeValue.call(this, divBody[k], 'end');
+
+                        cssStyle.origin = findStyleElement.call(this, [divBody[k]], 'origin');
+                        cssStyle.extent = findStyleElement.call(this, [divBody[k]], 'extent');
+
+                        caption = {
+                            start: startTime,
+                            end: endTime,
+                            type: 'image',
+                            data: 'data:image/' + tabImages[imageRef.substring(1)].imagetype.nodeValue + ';base64, ' + tabImages[imageRef.substring(1)].innerHTML,
+                            line: 80,
+                            style: cssStyle
+                        };
+                        captionArray.push(caption);
+                    }
                     regions = this.domParser.getChildNodes(divBody[k], 'p');
 
                     if (!regions || regions.length === 0) {
@@ -20748,7 +20830,9 @@ MediaPlayer.utils.TTMLParser = function() {
                                     color: null,
                                     with: null
                                 },
-                                origin: null
+                                origin: null,
+                                extent: null,
+                                rootExtent: rootExtent
                             };
                             region = regions[i];
 
@@ -20760,7 +20844,7 @@ MediaPlayer.utils.TTMLParser = function() {
 
                             endTime = getTimeValue.call(this, region, 'end');
 
-                            if (isNaN(startTime) || isNaN(endTime) || (endTime<startTime)) {
+                            if (isNaN(startTime) || isNaN(endTime) || (endTime < startTime)) {
                                 errorMsg = "TTML document has incorrect timing value";
                             } else {
                                 textDatas = this.domParser.getChildNodes(region, 'span');
@@ -20836,36 +20920,39 @@ MediaPlayer.utils.TTMLParser = function() {
                                         previousStartTime = getTimeValue.call(this, regions[i - 1], 'begin');
                                         previousEndTime = getTimeValue.call(this, regions[i - 1], 'end');
                                     }
-
-                                    if (startTime === previousStartTime && endTime === previousEndTime) {
+                                    //workaround to be able to show subtitles on two lines even if startTime and endTime are not equals to the previous values.
+                                    if ((startTime === previousStartTime && endTime === previousEndTime) || (startTime >= previousStartTime && endTime <= previousEndTime)) {
                                         if (region.textContent !== "") {
-                                            lastCaption = captionArray.pop();
-                                            caption = {
-                                                start: startTime,
-                                                end: endTime,
-                                                data: lastCaption.data + '\n' + region.textContent,
-                                                line: 80,
-                                                style: cssStyle
-                                            };
-                                        }
-                                    } //workaround to be able to show subtitles on two lines even if startTime and endTime are not equals to the previous values.
-                                    else if (startTime >= previousStartTime && endTime <= previousEndTime){
-                                        if (region.textContent !== "") {
-                                            lastCaption = captionArray[captionArray.length-1];
-                                            lastCaption.end = startTime;
-                                            caption = {
-                                                start: startTime,
-                                                end: endTime,
-                                                data: lastCaption.data + '\n' + region.textContent,
-                                                line: 80,
-                                                style: cssStyle
-                                            };
+                                            //if rendering is done in an external div, do not add subtitle text with the same time.
+                                            if (ttmlRenderingType === 'html') {
+                                                caption = {
+                                                    start: startTime,
+                                                    end: endTime,
+                                                    data: region.textContent,
+                                                    line: 80,
+                                                    style: cssStyle
+                                                };
+                                            } else {
+                                                if (startTime >= previousStartTime && endTime <= previousEndTime) {
+                                                    lastCaption = captionArray[captionArray.length - 1];
+                                                    lastCaption.end = startTime;
+                                                } else {
+                                                    lastCaption = captionArray.pop();
+                                                }
+                                                caption = {
+                                                    start: startTime,
+                                                    end: endTime,
+                                                    data: lastCaption.data + '\n' + region.textContent,
+                                                    line: 80,
+                                                    style: cssStyle
+                                                };
+                                            }
                                         }
                                     } else {
                                         textNodes = this.domParser.getChildNodes(region, '#text');
 
                                         for (j = 0; j < textNodes.length; j += 1) {
-                                            if ( j > 0) {
+                                            if (j > 0) {
                                                 textValue += '\n';
                                             }
                                             textValue += textNodes[j].textContent;
@@ -20903,8 +20990,170 @@ MediaPlayer.utils.TTMLParser = function() {
 
     return {
         domParser: undefined,
+        videoModel: undefined,
         parse: internalParse
 
+    };
+};
+/*
+ * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2013, Akamai Technologies
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Akamai Technologies nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+MediaPlayer.utils.TTMLRenderer = function() {
+    "use strict";
+    var ttmlDiv,
+        subtitleDivTab = [],
+
+    onFullScreenChange = function() {
+            var i = 0;
+
+            for (i = 0; i < subtitleDivTab.length; i++) {
+                applySubtitlesCSSStyle(subtitleDivTab[i], subtitleDivTab[i].ttmlStyle, ttmlDiv);
+            }
+        },
+
+        createSubtitleDiv= function() {
+            var subtitleDiv = document.createElement("div");
+
+            subtitleDiv.style.position = 'absolute';
+            subtitleDiv.style.display = 'flex';
+            subtitleDiv.style.overflow = 'hidden';
+            subtitleDiv.style.pointerEvents = 'none';
+
+            ttmlDiv.appendChild(subtitleDiv);
+
+            return subtitleDiv;
+        },
+
+        removeSubtitleDiv= function(div) {
+            ttmlDiv.removeChild(div);
+        },
+
+        applySubtitlesCSSStyle= function(div, cssStyle, renderingDiv) {
+            function hex2rgba_convert(hex) {
+                hex = hex.replace('#', '');
+                var r = parseInt(hex.substring(0, 2), 16),
+                    g = parseInt(hex.substring(2, 4), 16),
+                    b = parseInt(hex.substring(4, 6), 16),
+                    a = hex.length > 6 ? parseInt(hex.substring(6, 8), 16) : 255,
+                    result = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+
+                return result;
+            }
+
+            var fontSize,
+                origin,
+                extent,
+                rootExtent;
+
+            if (div) {
+                if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === '%') {
+                    fontSize = (renderingDiv.clientHeight * parseFloat(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1))) / 100 + 'px';
+                }
+
+                if (cssStyle.backgroundColor && cssStyle.backgroundColor[0] === '#') {
+                    cssStyle.backgroundColor = hex2rgba_convert(cssStyle.backgroundColor);
+                }
+
+                if (cssStyle.color && cssStyle.color[0] === '#') {
+                    cssStyle.color = hex2rgba_convert(cssStyle.color);
+                }
+
+                if (cssStyle.textOutline.color && cssStyle.textOutline.color[0] === '#') {
+                    div.style.webkitTextStroke = hex2rgba_convert(cssStyle.textOutline.color);
+                } else if (cssStyle.textOutline.color) {
+                    div.style.webkitTextStroke = cssStyle.textOutline.color;
+                }
+
+                if (cssStyle.origin && cssStyle.origin[cssStyle.origin.length - 1] === '%') {
+                    origin = cssStyle.origin.split('%');
+                    div.style.left = ((parseInt(origin[0], 10) * renderingDiv.clientWidth) / 100) + "px";
+                    div.style.bottom = renderingDiv.clientHeight - ((parseInt(origin[1], 10) * renderingDiv.clientHeight) / 100) + "px";
+                }else if (cssStyle.origin && cssStyle.origin[cssStyle.origin.length - 1] === 'x') {
+                    origin = cssStyle.origin.split('px');
+                    if (cssStyle.rootExtent && cssStyle.rootExtent[cssStyle.rootExtent.length - 1] === 'x') {
+                        rootExtent = cssStyle.rootExtent.split('px');
+                        div.style.left = ((origin[0] / rootExtent[0]) * renderingDiv.clientWidth)+ "px";
+                        div.style.bottom = renderingDiv.clientHeight - ((origin[1] / rootExtent[1]) * renderingDiv.clientHeight)+ "px";
+                        if (cssStyle.extent && cssStyle.extent[cssStyle.extent.length - 1] === 'x') {
+                            extent = cssStyle.extent.split('px');
+                            div.style.width = ((extent[0] / rootExtent[0]) * renderingDiv.clientWidth)+ "px";
+                            div.style.height = ((extent[1] / rootExtent[1]) * renderingDiv.clientHeight)+ "px";
+                        }
+                    }else{
+                        div.style.left = origin[0]+ "px";
+                        div.style.top = origin[1] + "px";
+                    }
+                }
+
+                if (cssStyle.textOutline.width &&cssStyle.textOutline.width[cssStyle.textOutline.width.length - 1] === '%') {
+                    div.style.webkitTextStrokeWidth = parseInt((renderingDiv.clientWidth * parseFloat(cssStyle.textOutline.width.substr(0, cssStyle.textOutline.width.length - 1))) / 100, 10) + 'px';
+                } else if (cssStyle.textOutline.width) {
+                    //definition is done in pixels.
+                    div.style.webkitTextStrokeWidth = cssStyle.textOutline.width;
+                }
+                div.style.backgroundColor = cssStyle.backgroundColor;
+                div.style.color = cssStyle.color;
+                div.style.fontSize = fontSize;
+                div.style.fontFamily = cssStyle.fontFamily;
+            }
+        };
+
+    return {
+        initialize: function(renderingDiv){
+            ttmlDiv = renderingDiv;
+            document.addEventListener('webkitfullscreenchange', onFullScreenChange.bind(this));
+            document.addEventListener('mozfullscreenchange', onFullScreenChange.bind(this));
+            document.addEventListener('fullscreenchange', onFullScreenChange.bind(this));
+        },
+
+        cleanSubtitles: function() {
+            var i = 0;
+
+            for (i = 0; i < subtitleDivTab.length; i++) {
+                removeSubtitleDiv(subtitleDivTab[i]); 
+            }
+            subtitleDivTab = [];
+        },
+
+        onCueEnter: function(e) {
+            var newDiv = createSubtitleDiv();
+            
+            applySubtitlesCSSStyle(newDiv, e.currentTarget.style, ttmlDiv);
+
+            newDiv.ttmlStyle = e.currentTarget.style;
+            
+            if(e.currentTarget.type !== 'image'){
+                newDiv.innerText = e.currentTarget.text;
+            }else {
+                var img = new Image();
+                img.src = e.currentTarget.text;
+                newDiv.appendChild(img);
+            }
+            
+            subtitleDivTab.push(newDiv);
+        },
+
+        onCueExit: function(e) {
+            var i = 0;
+
+            for (i = 0; i < subtitleDivTab.length; i++) {
+                if (subtitleDivTab[i].ttmlStyle === e.currentTarget.style) {
+                    break;
+                }
+            }
+            removeSubtitleDiv(subtitleDivTab[i]);
+            subtitleDivTab.splice(i, 1);
+        }
     };
 };
 /*
@@ -21470,6 +21719,11 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
             return false;
         },
 
+        UpdateLang: function(id, lang){
+            currentId = id;
+            currentLang = lang;
+        },
+
         abort: function() {
             this.getTextTrackExtensions().deleteCues(video, true);
         },
@@ -21510,11 +21764,15 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer.prototype = {
  */
 MediaPlayer.utils.TextTrackExtensions = function() {
     "use strict";
-    var Cue;
+    var Cue,
+        currentLanguage = "",
+        ttmlRenderer = null;
 
     return {
+        system: undefined,
         eventBus: undefined,
-        config: undefined,
+        videoModel: undefined,
+        debug: undefined,
 
         setup: function() {
             Cue = window.VTTCue || window.TextTrackCue;
@@ -21525,7 +21783,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                 type: "cueEnter",
                 data: {
                     text: subtitle_text,
-                    style: subtitle_style,
+                    style: subtitle_style
                 }
             });
         },
@@ -21535,7 +21793,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                 type: "cueExit",
                 data: {
                     text: subtitle_text,
-                    style: subtitle_style,
+                    style: subtitle_style
                 }
             });
         },
@@ -21553,6 +21811,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
             var track = null,
                 currentItem = null,
                 subtitleDisplayMode = 'subtitles',
+                renderingDiv = this.videoModel.getTTMLRenderingDiv(),
                 i;
 
             //no function removeTextTrack is defined
@@ -21560,19 +21819,26 @@ MediaPlayer.utils.TextTrackExtensions = function() {
             //deleteCues will be very efficient in this case
             track = this.getCurrentTextTrack(video);
             if (!track) {
-                subtitleDisplayMode = this.config.getParam("TextTrackExtensions.displayModeExtern", "boolean") === true ? 'metadata' : 'subtitles';
+                if (renderingDiv) {
+                    ttmlRenderer = this.system.getObject("ttmlRenderer");
+                    ttmlRenderer.initialize(renderingDiv);
+                }
+                subtitleDisplayMode = renderingDiv !== null ? 'metadata' : 'subtitles';
                 //TODO: Ability to define the KIND in the MPD - ie subtitle vs caption....
                 track = video.addTextTrack(subtitleDisplayMode, 'hascaption', scrlang);
+                currentLanguage = scrlang;
                 // track.default is an object property identifier that is a reserved word
                 // The following jshint directive is used to suppressed the warning "Expected an identifier and instead saw 'default' (a reserved word)"
                 /*jshint -W024 */
                 track.default = isDefaultTrack;
                 track.mode = "showing";
-            }else{
+            } else {
+                this.cleanSubtitles();
                 track.default = isDefaultTrack;
                 if (track.mode !== 'showing') {
                     track.mode = "showing";
                 }
+                currentLanguage = scrlang;
             }
 
             for (i = 0; i < captionData.length; i += 1) {
@@ -21581,13 +21847,27 @@ MediaPlayer.utils.TextTrackExtensions = function() {
             }
 
             return track;
-        },
+        },        
 
         onCueEnter: function(e) {
+            var renderingDiv = this.videoModel.getTTMLRenderingDiv();
+
+            if (e.currentTarget.type === 'image' && renderingDiv === null) {
+                this.debug.warn("[TextTrackExtensions] Rendering image subtitles without div is impossible");
+            }
+
+            if (renderingDiv) {
+                ttmlRenderer.onCueEnter(e);
+            }
             this.cueEnter(e.currentTarget.style, e.currentTarget.text);
         },
 
         onCueExit: function(e) {
+            var renderingDiv = this.videoModel.getTTMLRenderingDiv();
+
+            if (renderingDiv) {
+                ttmlRenderer.onCueExit(e);
+            }
             this.cueExit(e.currentTarget.style, e.currentTarget.text);
         },
 
@@ -21604,9 +21884,10 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                 if (currentItem.start < currentItem.end) {
                     newCue = new Cue(currentItem.start, currentItem.end, currentItem.data);
 
+                    newCue.id = currentLanguage;
                     newCue.onenter = this.onCueEnter.bind(this);
                     newCue.onexit = this.onCueExit.bind(this);
-
+                    newCue.type = currentItem.type;
                     newCue.snapToLines = false;
 
                     newCue.line = currentItem.line;
@@ -21648,7 +21929,14 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                     }
                 }
             }
-        }
+        },
+
+        cleanSubtitles: function() {
+            var renderingDiv = this.videoModel.getTTMLRenderingDiv();
+            if (renderingDiv && ttmlRenderer) {
+                ttmlRenderer.cleanSubtitles();
+            }
+        },
     };
 };
 /*
@@ -27340,6 +27628,9 @@ MediaPlayer.utils.DOMParser = function() {
                         id = this.getAttributeValue(querySelectorResult[i], 'xml:id');
                         if (id) {
                             returnTab[id] = querySelectorResult[i].attributes;
+                            if (querySelectorResult[i].innerHTML !== "" ) {
+                                returnTab[id].innerHTML = querySelectorResult[i].innerHTML;
+                            }
                         }
                     }
                 }
