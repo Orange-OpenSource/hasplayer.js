@@ -14,9074 +14,33 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2016-9-8_8:15:43 / git revision : 01ae4ab */
-
-(function (root, factory) {
-  if (typeof define === 'function' && define.amd) {
-    // AMD. Register as an anonymous module unless amdModuleId is set
-    define([], function () {
-      return root['MediaPlayer'] = factory();
-    });
-  } else if (typeof exports === 'object') {
-    // Node. Does not work with strict CommonJS, but
-    // only CommonJS-like environments that support module.exports,
-    // like Node.
-    module.exports = factory();
-  } else {
-   root['MediaPlayer'] = factory();
-  }
-}(this, function () {
-  
-   var hasplayer = {},
-        Mss = {},
-        Hls = {},
-        Dash ={},
-        MediaPlayer = {},
-        Q,
-        goog,
-        dijon;
-/* $Date: 2007-06-12 18:02:31 $ */
-
-// from: http://bannister.us/weblog/2007/06/09/simple-base64-encodedecode-javascript/
-// Handles encode/decode of ASCII and Unicode strings.
-
-var UTF8 = {};
-UTF8.encode = function(s) {
-    var u = [];
-    for (var i = 0; i < s.length; ++i) {
-        var c = s.charCodeAt(i);
-        if (c < 0x80) {
-            u.push(c);
-        } else if (c < 0x800) {
-            u.push(0xC0 | (c >> 6));
-            u.push(0x80 | (63 & c));
-        } else if (c < 0x10000) {
-            u.push(0xE0 | (c >> 12));
-            u.push(0x80 | (63 & (c >> 6)));
-            u.push(0x80 | (63 & c));
-        } else {
-            u.push(0xF0 | (c >> 18));
-            u.push(0x80 | (63 & (c >> 12)));
-            u.push(0x80 | (63 & (c >> 6)));
-            u.push(0x80 | (63 & c));
-        }
-    }
-    return u;
-};
-UTF8.decode = function(u) {
-    var a = [];
-    var i = 0;
-    while (i < u.length) {
-        var v = u[i++];
-        if (v < 0x80) {
-            // no need to mask byte
-        } else if (v < 0xE0) {
-            v = (31 & v) << 6;
-            v |= (63 & u[i++]);
-        } else if (v < 0xF0) {
-            v = (15 & v) << 12;
-            v |= (63 & u[i++]) << 6;
-            v |= (63 & u[i++]);
-        } else {
-            v = (7 & v) << 18;
-            v |= (63 & u[i++]) << 12;
-            v |= (63 & u[i++]) << 6;
-            v |= (63 & u[i++]);
-        }
-        a.push(String.fromCharCode(v));
-    }
-    return a.join('');
-};
-
-var BASE64 = {};
-(function(T){
-    var encodeArray = function(u) {
-        var i = 0;
-        var a = [];
-        var n = 0 | (u.length / 3);
-        while (0 < n--) {
-            var v = (u[i] << 16) + (u[i+1] << 8) + u[i+2];
-            i += 3;
-            a.push(T.charAt(63 & (v >> 18)));
-            a.push(T.charAt(63 & (v >> 12)));
-            a.push(T.charAt(63 & (v >> 6)));
-            a.push(T.charAt(63 & v));
-        }
-        if (2 == (u.length - i)) {
-            var v = (u[i] << 16) + (u[i+1] << 8);
-            a.push(T.charAt(63 & (v >> 18)));
-            a.push(T.charAt(63 & (v >> 12)));
-            a.push(T.charAt(63 & (v >> 6)));
-            a.push('=');
-        } else if (1 == (u.length - i)) {
-            var v = (u[i] << 16);
-            a.push(T.charAt(63 & (v >> 18)));
-            a.push(T.charAt(63 & (v >> 12)));
-            a.push('==');
-        }
-        return a.join('');
-    }
-    var R = (function(){
-        var a = [];
-        for (var i=0; i<T.length; ++i) {
-            a[T.charCodeAt(i)] = i;
-        }
-        a['='.charCodeAt(0)] = 0;
-        return a;
-    })();
-    var decodeArray = function(s) {
-        var i = 0;
-        var u = [];
-        var n = 0 | (s.length / 4);
-        while (0 < n--) {
-            var v = (R[s.charCodeAt(i)] << 18) + (R[s.charCodeAt(i+1)] << 12) + (R[s.charCodeAt(i+2)] << 6) + R[s.charCodeAt(i+3)];
-            u.push(255 & (v >> 16));
-            u.push(255 & (v >> 8));
-            u.push(255 & v);
-            i += 4;
-        }
-        if (u) {
-            if ('=' == s.charAt(i-2)) {
-                u.pop();
-                u.pop();
-            } else if ('=' == s.charAt(i-1)) {
-                u.pop();
-            }
-        }
-        return u;
-    }
-    var ASCII = {};
-    ASCII.encode = function(s) {
-        var u = [];
-        for (var i = 0; i<s.length; ++i) {
-            u.push(s.charCodeAt(i));
-        }
-        return u;
-    };
-    ASCII.decode = function(u) {
-        for (var i = 0; i<s.length; ++i) {
-            a[i] = String.fromCharCode(a[i]);
-        }
-        return a.join('');
-    };
-    BASE64.decodeArray = function(s) {
-        var u = decodeArray(s);
-        return new Uint8Array(u);
-    };
-    BASE64.encodeASCII = function(s) {
-        var u = ASCII.encode(s);
-        return encodeArray(u);
-    };
-    BASE64.decodeASCII = function(s) {
-        var a = decodeArray(s);
-        return ASCII.decode(a);
-    };
-    BASE64.encode = function(s) {
-        var u = UTF8.encode(s);
-        return encodeArray(u);
-    };
-    BASE64.decode = function(s) {
-        var u = decodeArray(s);
-        return UTF8.decode(u);
-    };
-})("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
-
-if (undefined === btoa) {
-    var btoa = BASE64.encode;
-}
-if (undefined === atob) {
-    var atob = BASE64.decode;
-}
-
-/**
- * @author <a href="http://www.creynders.be">Camille Reynders</a>
- */
-( function ( scope ) {
-
-    "use strict";
-
-    /**
-     * @namespace
-     */
-    var dijon = {
-        /**
-         * framework version number
-         * @constant
-         * @type String
-         */
-        VERSION:'0.5.3'
-    };//dijon
-
-
-    //======================================//
-    // dijon.System
-    //======================================//
-
-    /**
-     * @class dijon.System
-     * @constructor
-     */
-    dijon.System = function () {
-        /** @private */
-        this._mappings = {};
-
-        /** @private */
-        this._outlets = {};
-
-        /** @private */
-        this._handlers = {};
-
-        /**
-         * When <code>true</code> injections are made only if an object has a property with the mapped outlet name.<br/>
-         * <strong>Set to <code>false</code> at own risk</strong>, may have quite undesired side effects.
-         * @example
-         * system.strictInjections = true
-         * var o = {};
-         * system.mapSingleton( 'userModel', UserModel );
-         * system.mapOutlet( 'userModel' );
-         * system.injectInto( o );
-         *
-         * //o is unchanged
-         *
-         * system.strictInjections = false;
-         * system.injectInto( o );
-         *
-         * //o now has a member 'userModel' which holds a reference to the singleton instance
-         * //of UserModel
-         * @type Boolean
-         * @default true
-         */
-        this.strictInjections = true;
-
-        /**
-         * Enables the automatic mapping of outlets for mapped values, singletons and classes
-         * When this is true any value, singleton or class that is mapped will automatically be mapped as a global outlet
-         * using the value of <code>key</code> as outlet name
-         *
-         * @example
-         * var o = {
-         *     userModel : undefined; //inject
-         * }
-         * system.mapSingleton( 'userModel', UserModel );
-         * system.injectInto( o ):
-         * //o.userModel now holds a reference to the singleton instance of UserModel
-         * @type Boolean
-         * @default false
-         */
-        this.autoMapOutlets = false;
-
-        /**
-         * The name of the method that will be called for all instances, right after injection has occured.
-         * @type String
-         * @default 'setup'
-         */
-        this.postInjectionHook = 'setup';
-
-    };//dijon.System
-
-    dijon.System.prototype = {
-
-        /**
-         * @private
-         * @param {Class} clazz
-         */
-        _createAndSetupInstance:function ( key, Clazz ) {
-            var instance = new Clazz();
-            this.injectInto( instance, key );
-            return instance;
-        },
-
-        /**
-         * @private
-         * @param {String} key
-         * @param {Boolean} overrideRules
-         * @return {Object}
-         */
-        _retrieveFromCacheOrCreate:function ( key, overrideRules ) {
-            if ( typeof overrideRules === 'undefined' ) {
-                overrideRules = false;
-            }
-            var output;
-            if ( this._mappings.hasOwnProperty( key ) ) {
-                var config = this._mappings[ key ];
-                if ( !overrideRules && config.isSingleton ) {
-                    if ( config.object == null ) {
-                        config.object = this._createAndSetupInstance( key, config.clazz );
-                    }
-                    output = config.object;
-                } else {
-                    if ( config.clazz ) {
-                        output = this._createAndSetupInstance( key, config.clazz );
-                    } else {
-                        //TODO shouldn't this be null
-                        output = config.object;
-                    }
-                }
-            } else {
-                throw new Error( 1000 );
-            }
-            return output;
-        },
-
-
-        /**
-         * defines <code>outletName</code> as an injection point in <code>targetKey</code>for the object mapped to <code>sourceKey</code>
-         * @example
-         system.mapSingleton( 'userModel', TestClassA );
-         var o = {
-         user : undefined //inject
-         }
-         system.mapOutlet( 'userModel', 'o', 'user' );
-         system.mapValue( 'o', o );
-
-         var obj = system.getObject( 'o' );
-         * //obj.user holds a reference to the singleton instance of UserModel
-         *
-         * @example
-         system.mapSingleton( 'userModel', TestClassA );
-         var o = {
-         userModel : undefined //inject
-         }
-         system.mapOutlet( 'userModel', 'o' );
-         system.mapValue( 'o', o );
-
-         var obj = system.getObject( 'o' );
-         * //obj.userModel holds a reference to the singleton instance of UserModel
-         *
-         * @example
-         system.mapSingleton( 'userModel', TestClassA );
-         system.mapOutlet( 'userModel' );
-         var o = {
-         userModel : undefined //inject
-         }
-         system.mapValue( 'o', o );
-
-         var obj = system.getObject( 'o' );
-         * //o.userModel holds a reference to the singleton instance of userModel
-         *
-         * @param {String} sourceKey the key mapped to the object that will be injected
-         * @param {String} [targetKey='global'] the key the outlet is assigned to.
-         * @param {String} [outletName=sourceKey] the name of the property used as an outlet.<br/>
-         * @return {dijon.System}
-         * @see dijon.System#unmapOutlet
-         */
-        mapOutlet:function ( sourceKey, targetKey, outletName ) {
-            if ( typeof sourceKey === 'undefined' ) {
-                throw new Error( 1010 );
-            }
-            targetKey = targetKey || "global";
-            outletName = outletName || sourceKey;
-
-            if ( !this._outlets.hasOwnProperty( targetKey ) ) {
-                this._outlets[ targetKey ] = {};
-            }
-            this._outlets[ targetKey ][ outletName ] = sourceKey;
-
-            return this;
-        },
-
-        /**
-         * Retrieve (or create) the object mapped to <code>key</code>
-         * @example
-         * system.mapValue( 'foo', 'bar' );
-         * var b = system.getObject( 'foo' ); //now contains 'bar'
-         * @param {Object} key
-         * @return {Object}
-         */
-        getObject:function ( key ) {
-            if ( typeof key === 'undefined' ) {
-                throw new Error( 1020 );
-            }
-            return this._retrieveFromCacheOrCreate( key );
-        },
-
-        /**
-         * Maps <code>useValue</code> to <code>key</code>
-         * @example
-         * system.mapValue( 'foo', 'bar' );
-         * var b = system.getObject( 'foo' ); //now contains 'bar'
-         * @param {String} key
-         * @param {Object} useValue
-         * @return {dijon.System}
-         */
-        mapValue:function ( key, useValue ) {
-            if ( typeof key === 'undefined' ) {
-                throw new Error( 1030 );
-            }
-            this._mappings[ key ] = {
-                clazz:null,
-                object:useValue,
-                isSingleton:true
-            };
-            if ( this.autoMapOutlets ) {
-                this.mapOutlet( key );
-            }
-            if ( this.hasMapping( key )) {
-                this.injectInto( useValue, key );
-            }
-            return this;
-        },
-
-        /**
-         * Returns whether the key is mapped to an object
-         * @example
-         * system.mapValue( 'foo', 'bar' );
-         * var isMapped = system.hasMapping( 'foo' );
-         * @param {String} key
-         * @return {Boolean}
-         */
-        hasMapping:function ( key ) {
-            if ( typeof key === 'undefined' ) {
-                throw new Error( 1040 );
-            }
-            return this._mappings.hasOwnProperty( key );
-        },
-
-        /**
-         * Maps <code>clazz</code> as a factory to <code>key</code>
-         * @example
-         * var SomeClass = function(){
-         * }
-         * system.mapClass( 'o', SomeClass );
-         *
-         * var s1 = system.getObject( 'o' );
-         * var s2 = system.getObject( 'o' );
-         *
-         * //s1 and s2 reference two different instances of SomeClass
-         *
-         * @param {String} key
-         * @param {Function} clazz
-         * @return {dijon.System}
-         */
-        mapClass:function ( key, clazz ) {
-            if ( typeof key === 'undefined' ) {
-                throw new Error( 1050 );
-            }
-            if ( typeof clazz === 'undefined' ) {
-                throw new Error( 1051 );
-            }
-            this._mappings[ key ] = {
-                clazz:clazz,
-                object:null,
-                isSingleton:false
-            };
-            if ( this.autoMapOutlets ) {
-                this.mapOutlet( key );
-            }
-            return this;
-        },
-
-        /**
-         * Maps <code>clazz</code> as a singleton factory to <code>key</code>
-         * @example
-         * var SomeClass = function(){
-         * }
-         * system.mapSingleton( 'o', SomeClass );
-         *
-         * var s1 = system.getObject( 'o' );
-         * var s2 = system.getObject( 'o' );
-         *
-         * //s1 and s2 reference the same instance of SomeClass
-         *
-         * @param {String} key
-         * @param {Function} clazz
-         * @return {dijon.System}
-         */
-        mapSingleton:function ( key, clazz ) {
-            if ( typeof key === 'undefined' ) {
-                throw new Error( 1060 );
-            }
-            if ( typeof clazz === 'undefined' ) {
-                throw new Error( 1061 );
-            }
-            this._mappings[ key ] = {
-                clazz:clazz,
-                object:null,
-                isSingleton:true
-            };
-            if ( this.autoMapOutlets ) {
-                this.mapOutlet( key );
-            }
-            return this;
-        },
-
-        /**
-         * Force instantiation of the class mapped to <code>key</code>, whether it was mapped as a singleton or not.
-         * When a value was mapped, the value will be returned.
-         * TODO: should this last rule be changed?
-         * @example
-         var SomeClass = function(){
-         }
-         system.mapClass( 'o', SomeClass );
-
-         var s1 = system.getObject( 'o' );
-         var s2 = system.getObject( 'o' );
-         * //s1 and s2 reference different instances of SomeClass
-         *
-         * @param {String} key
-         * @return {Object}
-         */
-        instantiate:function ( key ) {
-            if ( typeof key === 'undefined' ) {
-                throw new Error( 1070 );
-            }
-            return this._retrieveFromCacheOrCreate( key, true );
-        },
-
-        /**
-         * Perform an injection into an object's mapped outlets, satisfying all it's dependencies
-         * @example
-         * var UserModel = function(){
-         * }
-         * system.mapSingleton( 'userModel', UserModel );
-         * var SomeClass = function(){
-         *      user = undefined; //inject
-         * }
-         * system.mapSingleton( 'o', SomeClass );
-         * system.mapOutlet( 'userModel', 'o', 'user' );
-         *
-         * var foo = {
-         *      user : undefined //inject
-         * }
-         *
-         * system.injectInto( foo, 'o' );
-         *
-         * //foo.user now holds a reference to the singleton instance of UserModel
-         * @param {Object} instance
-         * @param {String} [key] use the outlet mappings as defined for <code>key</code>, otherwise only the globally
-         * mapped outlets will be used.
-         * @return {dijon.System}
-         */
-        injectInto:function ( instance, key ) {
-            if ( typeof instance === 'undefined' ) {
-                throw new Error( 1080 );
-            }
-			if( ( typeof instance === 'object' ) ){
-				var o = [];
-				if ( this._outlets.hasOwnProperty( 'global' ) ) {
-					o.push( this._outlets[ 'global' ] );
-				}
-				if ( typeof key !== 'undefined' && this._outlets.hasOwnProperty( key ) ) {
-					o.push( this._outlets[ key ] );
-				}
-				for ( var i in o ) {
-					var l = o [ i ];
-					for ( var outlet in l ) {
-						var source = l[ outlet ];
-						//must be "in" [!]
-						if ( !this.strictInjections || outlet in instance ) {
-							instance[ outlet ] = this.getObject( source );
-						}
-					}
-				}
-				if ( "setup" in instance ) {
-					instance.setup.call( instance );
-				}
-			}
-            return this;
-        },
-
-        /**
-         * Remove the mapping of <code>key</code> from the system
-         * @param {String} key
-         * @return {dijon.System}
-         */
-        unmap:function ( key ) {
-            if ( typeof key === 'undefined' ) {
-                throw new Error( 1090 );
-            }
-            delete this._mappings[ key ];
-
-            return this;
-        },
-
-        /**
-         * removes an injection point mapping for a given object mapped to <code>key</code>
-         * @param {String} target
-         * @param {String} outlet
-         * @return {dijon.System}
-         * @see dijon.System#addOutlet
-         */
-        unmapOutlet:function ( target, outlet ) {
-            if ( typeof target === 'undefined' ) {
-                throw new Error( 1100 );
-            }
-            if ( typeof outlet === 'undefined' ) {
-                throw new Error( 1101 );
-            }
-            delete this._outlets[ target ][ outlet ];
-
-            return this;
-        },
-
-        /**
-         * maps a handler for an event/route.<br/>
-         * @example
-         var hasExecuted = false;
-         var userView = {
-         showUserProfile : function(){
-         hasExecuted = true;
-         }
-         }
-         system.mapValue( 'userView', userView );
-         system.mapHandler( 'user/profile', 'userView', 'showUserProfile' );
-         system.notify( 'user/profile' );
-         //hasExecuted is true
-         * @example
-         * var userView = {
-         *      showUserProfile : function(){
-         *          //do stuff
-         *      }
-         * }
-         * system.mapValue( 'userView', userView );
-         * <strong>system.mapHandler( 'showUserProfile', 'userView' );</strong>
-         * system.notify( 'showUserProfile' );
-         *
-         * //userView.showUserProfile is called
-         * @example
-         * var showUserProfile = function(){
-         *          //do stuff
-         * }
-         * <strong>system.mapHandler( 'user/profile', undefined, showUserProfile );</strong>
-         * system.notify( 'user/profile' );
-         *
-         * //showUserProfile is called
-         * @example
-         * var userView = {};
-         * var showUserProfile = function(){
-         *          //do stuff
-         * }
-         * system.mapValue( 'userView', userView );
-         * <strong>system.mapHandler( 'user/profile', 'userView', showUserProfile );</strong>
-         * system.notify( 'user/profile' );
-         *
-         * //showUserProfile is called within the scope of the userView object
-         * @example
-         * var userView = {
-         *      showUserProfile : function(){
-         *          //do stuff
-         *      }
-         * }
-         * system.mapValue( 'userView', userView );
-         * <strong>system.mapHandler( 'user/profile', 'userView', 'showUserProfile', true );</strong>
-         * system.notify( 'user/profile' );
-         * system.notify( 'user/profile' );
-         * system.notify( 'user/profile' );
-         *
-         * //userView.showUserProfile is called exactly once [!]
-         * @example
-         * var userView = {
-         *      showUserProfile : function( route ){
-         *          //do stuff
-         *      }
-         * }
-         * system.mapValue( 'userView', userView );
-         * <strong>system.mapHandler( 'user/profile', 'userView', 'showUserProfile', false, true );</strong>
-         * system.notify( 'user/profile' );
-         *
-         * //userView.showUserProfile is called and the route/eventName is passed to the handler
-         * @param {String} eventName/route
-         * @param {String} [key=undefined] If <code>key</code> is <code>undefined</code> the handler will be called without
-         * scope.
-         * @param {String|Function} [handler=eventName] If <code>handler</code> is <code>undefined</code> the value of
-         * <code>eventName</code> will be used as the name of the member holding the reference to the to-be-called function.
-         * <code>handler</code> accepts either a string, which will be used as the name of the member holding the reference
-         * to the to-be-called function, or a direct function reference.
-         * @param {Boolean} [oneShot=false] Defines whether the handler should be called exactly once and then automatically
-         * unmapped
-         * @param {Boolean} [passEvent=false] Defines whether the event object should be passed to the handler or not.
-         * @return {dijon.System}
-         * @see dijon.System#notify
-         * @see dijon.System#unmapHandler
-         */
-        mapHandler:function ( eventName, key, handler, oneShot, passEvent ) {
-            if ( typeof eventName === 'undefined' ) {
-                throw new Error( 1110 );
-            }
-            key = key || 'global';
-            handler = handler || eventName;
-
-            if ( typeof oneShot === 'undefined' ) {
-                oneShot = false;
-            }
-            if ( typeof passEvent === 'undefined' ) {
-                passEvent = false;
-            }
-            if ( !this._handlers.hasOwnProperty( eventName ) ) {
-                this._handlers[ eventName ] = {};
-            }
-            if ( !this._handlers[eventName].hasOwnProperty( key ) ) {
-                this._handlers[eventName][key] = [];
-            }
-            this._handlers[ eventName ][ key ].push( {
-                handler:handler,
-                oneShot:oneShot,
-                passEvent:passEvent
-            } );
-
-            return this;
-        },
-
-        /**
-         * Unmaps the handler for a specific event/route.
-         * @param {String} eventName Name of the event/route
-         * @param {String} [key=undefined] If <code>key</code> is <code>undefined</code> the handler is removed from the
-         * global mapping space. (If the same event is mapped globally and specifically for an object, then
-         * only the globally mapped one will be removed)
-         * @param {String | Function} [handler=eventName]
-         * @return {dijon.System}
-         * @see dijon.System#mapHandler
-         */
-        unmapHandler:function ( eventName, key, handler ) {
-            if ( typeof eventName === 'undefined' ) {
-                throw new Error( 1120 );
-            }
-            key = key || 'global';
-            //handler = handler || eventName;
-
-            if ( this._handlers.hasOwnProperty( eventName ) && this._handlers[ eventName ].hasOwnProperty( key ) ) {
-                var handlers = this._handlers[ eventName ][ key ];
-                for ( var i in handlers ) {
-                    var config = handlers[ i ];
-                    if ( (!handler) || (config.handler === handler) ) {
-                        handlers.splice( i, 1 );
-                        break;
-                    }
-                }
-            }
-            return this;
-        },
-
-        /**
-         * calls all handlers mapped to <code>eventName/route</code>
-         * @param {String} eventName/route
-         * @return {dijon.System}
-         * @see dijon.System#mapHandler
-         */
-        notify:function ( eventName ) {
-            if ( typeof eventName === 'undefined' ) {
-                throw new Error( 1130 );
-            }
-            var argsWithEvent = Array.prototype.slice.call( arguments );
-            var argsClean = argsWithEvent.slice( 1 );
-            if ( this._handlers.hasOwnProperty( eventName ) ) {
-                var handlers = this._handlers[ eventName ];
-                for ( var key in handlers ) {
-                    var configs = handlers[ key ];
-                    var instance;
-                    if ( key !== 'global' ) {
-                        instance = this.getObject( key );
-                    }
-                    var toBeDeleted = [];
-                    var i, n;
-                    for ( i = 0, n = configs.length ; i < n ; i++ ) {
-                        var handler;
-                        var config = configs[ i ];
-                        if ( instance && typeof config.handler === "string" ) {
-                            handler = instance[ config.handler ];
-                        } else {
-                            handler = config.handler;
-                        }
-
-                        //see deletion below
-                        if ( config.oneShot ) {
-                            toBeDeleted.unshift( i );
-                        }
-
-                        if ( config.passEvent ) {
-                            handler.apply( instance, argsWithEvent );
-                        } else {
-                            handler.apply( instance, argsClean );
-                        }
-                    }
-
-                    //items should be deleted in reverse order
-                    //either use push above and decrement here
-                    //or use unshift above and increment here
-                    for ( i = 0, n = toBeDeleted.length ; i < n ; i++ ) {
-                        configs.splice( toBeDeleted[ i ], 1 );
-                    }
-                }
-            }
-
-            return this;
-        }
-
-    };//dijon.System.prototype
-
-    scope.dijon = dijon;
-}( this ));
-
-
-
-// Copyright 2009 The Closure Library Authors. All Rights Reserved.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//      http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS-IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-goog = {};
-goog.math = {};
-
-/**
- * @fileoverview Defines a Long class for representing a 64-bit two's-complement
- * integer value, which faithfully simulates the behavior of a Java "long". This
- * implementation is derived from LongLib in GWT.
- *
- */
-
-//goog.provide('goog.math.Long');
-
-
-
-/**
- * Constructs a 64-bit two's-complement integer, given its low and high 32-bit
- * values as *signed* integers.  See the from* functions below for more
- * convenient ways of constructing Longs.
- *
- * The internal representation of a long is the two given signed, 32-bit values.
- * We use 32-bit pieces because these are the size of integers on which
- * Javascript performs bit-operations.  For operations like addition and
- * multiplication, we split each number into 16-bit pieces, which can easily be
- * multiplied within Javascript's floating-point representation without overflow
- * or change in sign.
- *
- * In the algorithms below, we frequently reduce the negative case to the
- * positive case by negating the input(s) and then post-processing the result.
- * Note that we must ALWAYS check specially whether those values are MIN_VALUE
- * (-2^63) because -MIN_VALUE == MIN_VALUE (since 2^63 cannot be represented as
- * a positive number, it overflows back into a negative).  Not handling this
- * case would often result in infinite recursion.
- *
- * @param {number} low  The low (signed) 32 bits of the long.
- * @param {number} high  The high (signed) 32 bits of the long.
- * @constructor
- */
-goog.math.Long = function(low, high) {
-  /**
-   * @type {number}
-   * @private
-   */
-  this.low_ = low | 0;  // force into 32 signed bits.
-
-  /**
-   * @type {number}
-   * @private
-   */
-  this.high_ = high | 0;  // force into 32 signed bits.
-};
-
-
-// NOTE: Common constant values ZERO, ONE, NEG_ONE, etc. are defined below the
-// from* methods on which they depend.
-
-
-/**
- * A cache of the Long representations of small integer values.
- * @type {!Object}
- * @private
- */
-goog.math.Long.IntCache_ = {};
-
-
-/**
- * Returns a Long representing the given (32-bit) integer value.
- * @param {number} value The 32-bit integer in question.
- * @return {!goog.math.Long} The corresponding Long value.
- */
-goog.math.Long.fromInt = function(value) {
-  if (-128 <= value && value < 128) {
-    var cachedObj = goog.math.Long.IntCache_[value];
-    if (cachedObj) {
-      return cachedObj;
-    }
-  }
-
-  var obj = new goog.math.Long(value | 0, value < 0 ? -1 : 0);
-  if (-128 <= value && value < 128) {
-    goog.math.Long.IntCache_[value] = obj;
-  }
-  return obj;
-};
-
-
-/**
- * Returns a Long representing the given value, provided that it is a finite
- * number.  Otherwise, zero is returned.
- * @param {number} value The number in question.
- * @return {!goog.math.Long} The corresponding Long value.
- */
-goog.math.Long.fromNumber = function(value) {
-  if (isNaN(value) || !isFinite(value)) {
-    return goog.math.Long.ZERO;
-  } else if (value <= -goog.math.Long.TWO_PWR_63_DBL_) {
-    return goog.math.Long.MIN_VALUE;
-  } else if (value + 1 >= goog.math.Long.TWO_PWR_63_DBL_) {
-    return goog.math.Long.MAX_VALUE;
-  } else if (value < 0) {
-    return goog.math.Long.fromNumber(-value).negate();
-  } else {
-    return new goog.math.Long(
-        (value % goog.math.Long.TWO_PWR_32_DBL_) | 0,
-        (value / goog.math.Long.TWO_PWR_32_DBL_) | 0);
-  }
-};
-
-
-/**
- * Returns a Long representing the 64-bit integer that comes by concatenating
- * the given high and low bits.  Each is assumed to use 32 bits.
- * @param {number} lowBits The low 32-bits.
- * @param {number} highBits The high 32-bits.
- * @return {!goog.math.Long} The corresponding Long value.
- */
-goog.math.Long.fromBits = function(lowBits, highBits) {
-  return new goog.math.Long(lowBits, highBits);
-};
-
-
-/**
- * Returns a Long representation of the given string, written using the given
- * radix.
- * @param {string} str The textual representation of the Long.
- * @param {number=} opt_radix The radix in which the text is written.
- * @return {!goog.math.Long} The corresponding Long value.
- */
-goog.math.Long.fromString = function(str, opt_radix) {
-  if (str.length == 0) {
-    throw Error('number format error: empty string');
-  }
-
-  var radix = opt_radix || 10;
-  if (radix < 2 || 36 < radix) {
-    throw Error('radix out of range: ' + radix);
-  }
-
-  if (str.charAt(0) == '-') {
-    return goog.math.Long.fromString(str.substring(1), radix).negate();
-  } else if (str.indexOf('-') >= 0) {
-    throw Error('number format error: interior "-" character: ' + str);
-  }
-
-  // Do several (8) digits each time through the loop, so as to
-  // minimize the calls to the very expensive emulated div.
-  var radixToPower = goog.math.Long.fromNumber(Math.pow(radix, 8));
-
-  var result = goog.math.Long.ZERO;
-  for (var i = 0; i < str.length; i += 8) {
-    var size = Math.min(8, str.length - i);
-    var value = parseInt(str.substring(i, i + size), radix);
-    if (size < 8) {
-      var power = goog.math.Long.fromNumber(Math.pow(radix, size));
-      result = result.multiply(power).add(goog.math.Long.fromNumber(value));
-    } else {
-      result = result.multiply(radixToPower);
-      result = result.add(goog.math.Long.fromNumber(value));
-    }
-  }
-  return result;
-};
-
-
-// NOTE: the compiler should inline these constant values below and then remove
-// these variables, so there should be no runtime penalty for these.
-
-
-/**
- * Number used repeated below in calculations.  This must appear before the
- * first call to any from* function below.
- * @type {number}
- * @private
- */
-goog.math.Long.TWO_PWR_16_DBL_ = 1 << 16;
-
-
-/**
- * @type {number}
- * @private
- */
-goog.math.Long.TWO_PWR_24_DBL_ = 1 << 24;
-
-
-/**
- * @type {number}
- * @private
- */
-goog.math.Long.TWO_PWR_32_DBL_ =
-    goog.math.Long.TWO_PWR_16_DBL_ * goog.math.Long.TWO_PWR_16_DBL_;
-
-
-/**
- * @type {number}
- * @private
- */
-goog.math.Long.TWO_PWR_31_DBL_ =
-    goog.math.Long.TWO_PWR_32_DBL_ / 2;
-
-
-/**
- * @type {number}
- * @private
- */
-goog.math.Long.TWO_PWR_48_DBL_ =
-    goog.math.Long.TWO_PWR_32_DBL_ * goog.math.Long.TWO_PWR_16_DBL_;
-
-
-/**
- * @type {number}
- * @private
- */
-goog.math.Long.TWO_PWR_64_DBL_ =
-    goog.math.Long.TWO_PWR_32_DBL_ * goog.math.Long.TWO_PWR_32_DBL_;
-
-
-/**
- * @type {number}
- * @private
- */
-goog.math.Long.TWO_PWR_63_DBL_ =
-    goog.math.Long.TWO_PWR_64_DBL_ / 2;
-
-
-/** @type {!goog.math.Long} */
-goog.math.Long.ZERO = goog.math.Long.fromInt(0);
-
-
-/** @type {!goog.math.Long} */
-goog.math.Long.ONE = goog.math.Long.fromInt(1);
-
-
-/** @type {!goog.math.Long} */
-goog.math.Long.NEG_ONE = goog.math.Long.fromInt(-1);
-
-
-/** @type {!goog.math.Long} */
-goog.math.Long.MAX_VALUE =
-    goog.math.Long.fromBits(0xFFFFFFFF | 0, 0x7FFFFFFF | 0);
-
-
-/** @type {!goog.math.Long} */
-goog.math.Long.MIN_VALUE = goog.math.Long.fromBits(0, 0x80000000 | 0);
-
-
-/**
- * @type {!goog.math.Long}
- * @private
- */
-goog.math.Long.TWO_PWR_24_ = goog.math.Long.fromInt(1 << 24);
-
-
-/** @return {number} The value, assuming it is a 32-bit integer. */
-goog.math.Long.prototype.toInt = function() {
-  return this.low_;
-};
-
-
-/** @return {number} The closest floating-point representation to this value. */
-goog.math.Long.prototype.toNumber = function() {
-  return this.high_ * goog.math.Long.TWO_PWR_32_DBL_ +
-         this.getLowBitsUnsigned();
-};
-
-
-/**
- * @param {number=} opt_radix The radix in which the text should be written.
- * @return {string} The textual representation of this value.
- * @override
- */
-goog.math.Long.prototype.toString = function(opt_radix) {
-  var radix = opt_radix || 10;
-  if (radix < 2 || 36 < radix) {
-    throw Error('radix out of range: ' + radix);
-  }
-
-  if (this.isZero()) {
-    return '0';
-  }
-
-  if (this.isNegative()) {
-    if (this.equals(goog.math.Long.MIN_VALUE)) {
-      // We need to change the Long value before it can be negated, so we remove
-      // the bottom-most digit in this base and then recurse to do the rest.
-      var radixLong = goog.math.Long.fromNumber(radix);
-      var div = this.div(radixLong);
-      var rem = div.multiply(radixLong).subtract(this);
-      return div.toString(radix) + rem.toInt().toString(radix);
-    } else {
-      return '-' + this.negate().toString(radix);
-    }
-  }
-
-  // Do several (6) digits each time through the loop, so as to
-  // minimize the calls to the very expensive emulated div.
-  var radixToPower = goog.math.Long.fromNumber(Math.pow(radix, 6));
-
-  var rem = this;
-  var result = '';
-  while (true) {
-    var remDiv = rem.div(radixToPower);
-    var intval = rem.subtract(remDiv.multiply(radixToPower)).toInt();
-    var digits = intval.toString(radix);
-
-    rem = remDiv;
-    if (rem.isZero()) {
-      return digits + result;
-    } else {
-      while (digits.length < 6) {
-        digits = '0' + digits;
-      }
-      result = '' + digits + result;
-    }
-  }
-};
-
-
-/** @return {number} The high 32-bits as a signed value. */
-goog.math.Long.prototype.getHighBits = function() {
-  return this.high_;
-};
-
-
-/** @return {number} The low 32-bits as a signed value. */
-goog.math.Long.prototype.getLowBits = function() {
-  return this.low_;
-};
-
-
-/** @return {number} The low 32-bits as an unsigned value. */
-goog.math.Long.prototype.getLowBitsUnsigned = function() {
-  return (this.low_ >= 0) ?
-      this.low_ : goog.math.Long.TWO_PWR_32_DBL_ + this.low_;
-};
-
-
-/**
- * @return {number} Returns the number of bits needed to represent the absolute
- *     value of this Long.
- */
-goog.math.Long.prototype.getNumBitsAbs = function() {
-  if (this.isNegative()) {
-    if (this.equals(goog.math.Long.MIN_VALUE)) {
-      return 64;
-    } else {
-      return this.negate().getNumBitsAbs();
-    }
-  } else {
-    var val = this.high_ != 0 ? this.high_ : this.low_;
-    for (var bit = 31; bit > 0; bit--) {
-      if ((val & (1 << bit)) != 0) {
-        break;
-      }
-    }
-    return this.high_ != 0 ? bit + 33 : bit + 1;
-  }
-};
-
-
-/** @return {boolean} Whether this value is zero. */
-goog.math.Long.prototype.isZero = function() {
-  return this.high_ == 0 && this.low_ == 0;
-};
-
-
-/** @return {boolean} Whether this value is negative. */
-goog.math.Long.prototype.isNegative = function() {
-  return this.high_ < 0;
-};
-
-
-/** @return {boolean} Whether this value is odd. */
-goog.math.Long.prototype.isOdd = function() {
-  return (this.low_ & 1) == 1;
-};
-
-
-/**
- * @param {goog.math.Long} other Long to compare against.
- * @return {boolean} Whether this Long equals the other.
- */
-goog.math.Long.prototype.equals = function(other) {
-  return (this.high_ == other.high_) && (this.low_ == other.low_);
-};
-
-
-/**
- * @param {goog.math.Long} other Long to compare against.
- * @return {boolean} Whether this Long does not equal the other.
- */
-goog.math.Long.prototype.notEquals = function(other) {
-  return (this.high_ != other.high_) || (this.low_ != other.low_);
-};
-
-
-/**
- * @param {goog.math.Long} other Long to compare against.
- * @return {boolean} Whether this Long is less than the other.
- */
-goog.math.Long.prototype.lessThan = function(other) {
-  return this.compare(other) < 0;
-};
-
-
-/**
- * @param {goog.math.Long} other Long to compare against.
- * @return {boolean} Whether this Long is less than or equal to the other.
- */
-goog.math.Long.prototype.lessThanOrEqual = function(other) {
-  return this.compare(other) <= 0;
-};
-
-
-/**
- * @param {goog.math.Long} other Long to compare against.
- * @return {boolean} Whether this Long is greater than the other.
- */
-goog.math.Long.prototype.greaterThan = function(other) {
-  return this.compare(other) > 0;
-};
-
-
-/**
- * @param {goog.math.Long} other Long to compare against.
- * @return {boolean} Whether this Long is greater than or equal to the other.
- */
-goog.math.Long.prototype.greaterThanOrEqual = function(other) {
-  return this.compare(other) >= 0;
-};
-
-
-/**
- * Compares this Long with the given one.
- * @param {goog.math.Long} other Long to compare against.
- * @return {number} 0 if they are the same, 1 if the this is greater, and -1
- *     if the given one is greater.
- */
-goog.math.Long.prototype.compare = function(other) {
-  if (this.equals(other)) {
-    return 0;
-  }
-
-  var thisNeg = this.isNegative();
-  var otherNeg = other.isNegative();
-  if (thisNeg && !otherNeg) {
-    return -1;
-  }
-  if (!thisNeg && otherNeg) {
-    return 1;
-  }
-
-  // at this point, the signs are the same, so subtraction will not overflow
-  if (this.subtract(other).isNegative()) {
-    return -1;
-  } else {
-    return 1;
-  }
-};
-
-
-/** @return {!goog.math.Long} The negation of this value. */
-goog.math.Long.prototype.negate = function() {
-  if (this.equals(goog.math.Long.MIN_VALUE)) {
-    return goog.math.Long.MIN_VALUE;
-  } else {
-    return this.not().add(goog.math.Long.ONE);
-  }
-};
-
-
-/**
- * Returns the sum of this and the given Long.
- * @param {goog.math.Long} other Long to add to this one.
- * @return {!goog.math.Long} The sum of this and the given Long.
- */
-goog.math.Long.prototype.add = function(other) {
-  // Divide each number into 4 chunks of 16 bits, and then sum the chunks.
-
-  var a48 = this.high_ >>> 16;
-  var a32 = this.high_ & 0xFFFF;
-  var a16 = this.low_ >>> 16;
-  var a00 = this.low_ & 0xFFFF;
-
-  var b48 = other.high_ >>> 16;
-  var b32 = other.high_ & 0xFFFF;
-  var b16 = other.low_ >>> 16;
-  var b00 = other.low_ & 0xFFFF;
-
-  var c48 = 0, c32 = 0, c16 = 0, c00 = 0;
-  c00 += a00 + b00;
-  c16 += c00 >>> 16;
-  c00 &= 0xFFFF;
-  c16 += a16 + b16;
-  c32 += c16 >>> 16;
-  c16 &= 0xFFFF;
-  c32 += a32 + b32;
-  c48 += c32 >>> 16;
-  c32 &= 0xFFFF;
-  c48 += a48 + b48;
-  c48 &= 0xFFFF;
-  return goog.math.Long.fromBits((c16 << 16) | c00, (c48 << 16) | c32);
-};
-
-
-/**
- * Returns the difference of this and the given Long.
- * @param {goog.math.Long} other Long to subtract from this.
- * @return {!goog.math.Long} The difference of this and the given Long.
- */
-goog.math.Long.prototype.subtract = function(other) {
-  return this.add(other.negate());
-};
-
-
-/**
- * Returns the product of this and the given long.
- * @param {goog.math.Long} other Long to multiply with this.
- * @return {!goog.math.Long} The product of this and the other.
- */
-goog.math.Long.prototype.multiply = function(other) {
-  if (this.isZero()) {
-    return goog.math.Long.ZERO;
-  } else if (other.isZero()) {
-    return goog.math.Long.ZERO;
-  }
-
-  if (this.equals(goog.math.Long.MIN_VALUE)) {
-    return other.isOdd() ? goog.math.Long.MIN_VALUE : goog.math.Long.ZERO;
-  } else if (other.equals(goog.math.Long.MIN_VALUE)) {
-    return this.isOdd() ? goog.math.Long.MIN_VALUE : goog.math.Long.ZERO;
-  }
-
-  if (this.isNegative()) {
-    if (other.isNegative()) {
-      return this.negate().multiply(other.negate());
-    } else {
-      return this.negate().multiply(other).negate();
-    }
-  } else if (other.isNegative()) {
-    return this.multiply(other.negate()).negate();
-  }
-
-  // If both longs are small, use float multiplication
-  if (this.lessThan(goog.math.Long.TWO_PWR_24_) &&
-      other.lessThan(goog.math.Long.TWO_PWR_24_)) {
-    return goog.math.Long.fromNumber(this.toNumber() * other.toNumber());
-  }
-
-  // Divide each long into 4 chunks of 16 bits, and then add up 4x4 products.
-  // We can skip products that would overflow.
-
-  var a48 = this.high_ >>> 16;
-  var a32 = this.high_ & 0xFFFF;
-  var a16 = this.low_ >>> 16;
-  var a00 = this.low_ & 0xFFFF;
-
-  var b48 = other.high_ >>> 16;
-  var b32 = other.high_ & 0xFFFF;
-  var b16 = other.low_ >>> 16;
-  var b00 = other.low_ & 0xFFFF;
-
-  var c48 = 0, c32 = 0, c16 = 0, c00 = 0;
-  c00 += a00 * b00;
-  c16 += c00 >>> 16;
-  c00 &= 0xFFFF;
-  c16 += a16 * b00;
-  c32 += c16 >>> 16;
-  c16 &= 0xFFFF;
-  c16 += a00 * b16;
-  c32 += c16 >>> 16;
-  c16 &= 0xFFFF;
-  c32 += a32 * b00;
-  c48 += c32 >>> 16;
-  c32 &= 0xFFFF;
-  c32 += a16 * b16;
-  c48 += c32 >>> 16;
-  c32 &= 0xFFFF;
-  c32 += a00 * b32;
-  c48 += c32 >>> 16;
-  c32 &= 0xFFFF;
-  c48 += a48 * b00 + a32 * b16 + a16 * b32 + a00 * b48;
-  c48 &= 0xFFFF;
-  return goog.math.Long.fromBits((c16 << 16) | c00, (c48 << 16) | c32);
-};
-
-
-/**
- * Returns this Long divided by the given one.
- * @param {goog.math.Long} other Long by which to divide.
- * @return {!goog.math.Long} This Long divided by the given one.
- */
-goog.math.Long.prototype.div = function(other) {
-  if (other.isZero()) {
-    throw Error('division by zero');
-  } else if (this.isZero()) {
-    return goog.math.Long.ZERO;
-  }
-
-  if (this.equals(goog.math.Long.MIN_VALUE)) {
-    if (other.equals(goog.math.Long.ONE) ||
-        other.equals(goog.math.Long.NEG_ONE)) {
-      return goog.math.Long.MIN_VALUE;  // recall that -MIN_VALUE == MIN_VALUE
-    } else if (other.equals(goog.math.Long.MIN_VALUE)) {
-      return goog.math.Long.ONE;
-    } else {
-      // At this point, we have |other| >= 2, so |this/other| < |MIN_VALUE|.
-      var halfThis = this.shiftRight(1);
-      var approx = halfThis.div(other).shiftLeft(1);
-      if (approx.equals(goog.math.Long.ZERO)) {
-        return other.isNegative() ? goog.math.Long.ONE : goog.math.Long.NEG_ONE;
-      } else {
-        var rem = this.subtract(other.multiply(approx));
-        var result = approx.add(rem.div(other));
-        return result;
-      }
-    }
-  } else if (other.equals(goog.math.Long.MIN_VALUE)) {
-    return goog.math.Long.ZERO;
-  }
-
-  if (this.isNegative()) {
-    if (other.isNegative()) {
-      return this.negate().div(other.negate());
-    } else {
-      return this.negate().div(other).negate();
-    }
-  } else if (other.isNegative()) {
-    return this.div(other.negate()).negate();
-  }
-
-  // Repeat the following until the remainder is less than other:  find a
-  // floating-point that approximates remainder / other *from below*, add this
-  // into the result, and subtract it from the remainder.  It is critical that
-  // the approximate value is less than or equal to the real value so that the
-  // remainder never becomes negative.
-  var res = goog.math.Long.ZERO;
-  var rem = this;
-  while (rem.greaterThanOrEqual(other)) {
-    // Approximate the result of division. This may be a little greater or
-    // smaller than the actual value.
-    var approx = Math.max(1, Math.floor(rem.toNumber() / other.toNumber()));
-
-    // We will tweak the approximate result by changing it in the 48-th digit or
-    // the smallest non-fractional digit, whichever is larger.
-    var log2 = Math.ceil(Math.log(approx) / Math.LN2);
-    var delta = (log2 <= 48) ? 1 : Math.pow(2, log2 - 48);
-
-    // Decrease the approximation until it is smaller than the remainder.  Note
-    // that if it is too large, the product overflows and is negative.
-    var approxRes = goog.math.Long.fromNumber(approx);
-    var approxRem = approxRes.multiply(other);
-    while (approxRem.isNegative() || approxRem.greaterThan(rem)) {
-      approx -= delta;
-      approxRes = goog.math.Long.fromNumber(approx);
-      approxRem = approxRes.multiply(other);
-    }
-
-    // We know the answer can't be zero... and actually, zero would cause
-    // infinite recursion since we would make no progress.
-    if (approxRes.isZero()) {
-      approxRes = goog.math.Long.ONE;
-    }
-
-    res = res.add(approxRes);
-    rem = rem.subtract(approxRem);
-  }
-  return res;
-};
-
-
-/**
- * Returns this Long modulo the given one.
- * @param {goog.math.Long} other Long by which to mod.
- * @return {!goog.math.Long} This Long modulo the given one.
- */
-goog.math.Long.prototype.modulo = function(other) {
-  return this.subtract(this.div(other).multiply(other));
-};
-
-
-/** @return {!goog.math.Long} The bitwise-NOT of this value. */
-goog.math.Long.prototype.not = function() {
-  return goog.math.Long.fromBits(~this.low_, ~this.high_);
-};
-
-
-/**
- * Returns the bitwise-AND of this Long and the given one.
- * @param {goog.math.Long} other The Long with which to AND.
- * @return {!goog.math.Long} The bitwise-AND of this and the other.
- */
-goog.math.Long.prototype.and = function(other) {
-  return goog.math.Long.fromBits(this.low_ & other.low_,
-                                 this.high_ & other.high_);
-};
-
-
-/**
- * Returns the bitwise-OR of this Long and the given one.
- * @param {goog.math.Long} other The Long with which to OR.
- * @return {!goog.math.Long} The bitwise-OR of this and the other.
- */
-goog.math.Long.prototype.or = function(other) {
-  return goog.math.Long.fromBits(this.low_ | other.low_,
-                                 this.high_ | other.high_);
-};
-
-
-/**
- * Returns the bitwise-XOR of this Long and the given one.
- * @param {goog.math.Long} other The Long with which to XOR.
- * @return {!goog.math.Long} The bitwise-XOR of this and the other.
- */
-goog.math.Long.prototype.xor = function(other) {
-  return goog.math.Long.fromBits(this.low_ ^ other.low_,
-                                 this.high_ ^ other.high_);
-};
-
-
-/**
- * Returns this Long with bits shifted to the left by the given amount.
- * @param {number} numBits The number of bits by which to shift.
- * @return {!goog.math.Long} This shifted to the left by the given amount.
- */
-goog.math.Long.prototype.shiftLeft = function(numBits) {
-  numBits &= 63;
-  if (numBits == 0) {
-    return this;
-  } else {
-    var low = this.low_;
-    if (numBits < 32) {
-      var high = this.high_;
-      return goog.math.Long.fromBits(
-          low << numBits,
-          (high << numBits) | (low >>> (32 - numBits)));
-    } else {
-      return goog.math.Long.fromBits(0, low << (numBits - 32));
-    }
-  }
-};
-
-
-/**
- * Returns this Long with bits shifted to the right by the given amount.
- * @param {number} numBits The number of bits by which to shift.
- * @return {!goog.math.Long} This shifted to the right by the given amount.
- */
-goog.math.Long.prototype.shiftRight = function(numBits) {
-  numBits &= 63;
-  if (numBits == 0) {
-    return this;
-  } else {
-    var high = this.high_;
-    if (numBits < 32) {
-      var low = this.low_;
-      return goog.math.Long.fromBits(
-          (low >>> numBits) | (high << (32 - numBits)),
-          high >> numBits);
-    } else {
-      return goog.math.Long.fromBits(
-          high >> (numBits - 32),
-          high >= 0 ? 0 : -1);
-    }
-  }
-};
-
-
-/**
- * Returns this Long with bits shifted to the right by the given amount, with
- * the new top bits matching the current sign bit.
- * @param {number} numBits The number of bits by which to shift.
- * @return {!goog.math.Long} This shifted to the right by the given amount, with
- *     zeros placed into the new leading bits.
- */
-goog.math.Long.prototype.shiftRightUnsigned = function(numBits) {
-  numBits &= 63;
-  if (numBits == 0) {
-    return this;
-  } else {
-    var high = this.high_;
-    if (numBits < 32) {
-      var low = this.low_;
-      return goog.math.Long.fromBits(
-          (low >>> numBits) | (high << (32 - numBits)),
-          high >>> numBits);
-    } else if (numBits == 32) {
-      return goog.math.Long.fromBits(high, 0);
-    } else {
-      return goog.math.Long.fromBits(high >>> (numBits - 32), 0);
-    }
-  }
-};
-/*
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * author Digital Primates
- * copyright dash-if 2012
- */ 
- if(typeof(utils) == "undefined"){
- 	var utils = {};
- }
- 
- if(typeof(utils.Math) == "undefined"){
- 	utils.Math = {};
- }
- 
- utils.Math.to64BitNumber = function(low, high) {
-	var highNum, lowNum, expected;
-
-	highNum = new goog.math.Long(0, high);
-	lowNum = new goog.math.Long(low, 0);
-	expected = highNum.add(lowNum);
-
-	return expected.toNumber();
-}
-/*
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * author Digital Primates
- * copyright dash-if 2012
- */
-
-/*
- * var parent,
- *     child,
- *     properties = [
-                    {
-                        name: 'profiles',
-                        merge: false
-                    }
-                ];
- *
- * parent = {};
- * parent.name = "ParentNode";
- * parent.isRoor = false;
- * parent.isArray = false;
- * parent.parent = null;
- * parent.children = [];
- * parent.properties = properties;
- *
- * child = {};
- * child.name = "ChildNode";
- * child.isRoor = false;
- * child.isArray = true;
- * child.parent = parent;
- * child.children = null;
- * child.properties = properties;
- * parent.children.push(child);
- *
- */
-
-function ObjectIron(map) {
-
-    var lookup;
-
-    // create a list of top level items to search for
-    lookup = [];
-    for (i = 0, len = map.length; i < len; i += 1) {
-        if (map[i].isRoot) {
-            lookup.push("root");
-        } else {
-            lookup.push(map[i].name);
-        }
-    }
-
-    var mergeValues = function (parentItem, childItem) {
-            var name,
-                parentValue,
-                childValue;
-
-            if (parentItem === null || childItem === null) {
-                return;
-            }
-
-            for (name in parentItem) {
-                if (parentItem.hasOwnProperty(name)) {
-                    if (!childItem.hasOwnProperty(name)) {
-                        childItem[name] = parentItem[name];
-                    }
-                }
-            }
-        },
-
-        mapProperties = function (properties, parent, child) {
-            var i,
-                len,
-                property,
-                parentValue,
-                childValue;
-
-            if (properties === null || properties.length === 0) {
-                return;
-            }
-
-            for (i = 0, len = properties.length; i < len; i += 1) {
-                property = properties[i];
-
-                if (parent.hasOwnProperty(property.name)) {
-                    if (child.hasOwnProperty(property.name)) {
-                        // check to see if we should merge
-                        if (property.merge) {
-                           parentValue = parent[property.name];
-                           childValue = child[property.name];
-
-                            // complex objects; merge properties
-                            if (typeof parentValue === 'object' && typeof childValue === 'object') {
-                                mergeValues(parentValue, childValue);
-                            }
-                            // simple objects; merge them together
-                            else {
-                                if (property.mergeFunction != null) {
-                                    child[property.name] = property.mergeFunction(parentValue, childValue);
-                                } else {
-                                    child[property.name] = parentValue + childValue;
-                                }
-                            }
-                        }
-                    } else {
-                        // just add the property
-                        child[property.name] = parent[property.name];
-                    }
-                }
-            }
-        },
-
-        mapItem = function (obj, node) {
-            var item = obj,
-                i,
-                len,
-                v,
-                len2,
-                array,
-                childItem,
-                childNode,
-                property;
-
-            if (item.children === null || item.children.length === 0) {
-                return;
-            }
-
-            for (i = 0, len = item.children.length; i < len; i += 1) {
-                childItem = item.children[i];
-
-                if (node.hasOwnProperty(childItem.name)) {
-                    if (childItem.isArray) {
-                        array = node[childItem.name + "_asArray"];
-                        for (v = 0, len2 = array.length; v < len2; v += 1) {
-                            childNode = array[v];
-                            mapProperties(item.properties, node, childNode);
-                            mapItem(childItem, childNode);
-                        }
-                    } else {
-                        childNode = node[childItem.name];
-                        mapProperties(item.properties, node, childNode);
-                        mapItem(childItem, childNode);
-                    }
-                }
-            }
-        },
-
-        performMapping = function (source) {
-            var i,
-                len,
-                pi,
-                pp,
-                item,
-                node,
-                array;
-
-            if (source === null) {
-                return source;
-            }
-
-            if (typeof source !== 'object') {
-                return source;
-            }
-
-            // first look to see if anything cares about the root node
-            for (i = 0, len = lookup.length; i < len; i += 1) {
-                if (lookup[i] === "root") {
-                    item = map[i];
-                    node = source;
-                    mapItem(item, node);
-                }
-            }
-
-            // iterate over the objects and look for any of the items we care about
-            for (pp in source) {
-                if (source.hasOwnProperty(pp)) {
-                    pi = lookup.indexOf(pp);
-                    if (pi !== -1) {
-                        item = map[pi];
-
-                        if (item.isArray) {
-                            array = source[pp + "_asArray"];
-                            for (i = 0, len = array.length; i < len; i += 1) {
-                                node = array[i];
-                                mapItem(item, node);
-                            }
-                        } else {
-                            node = source[pp];
-                            mapItem(item, node);
-                        }
-                    }
-                    // now check this to see if he has any of the properties we care about
-                    performMapping(source[pp]);
-                }
-            }
-
-            return source;
-        };
-
-    return {
-        run: performMapping
-    };
-}
-// vim:ts=4:sts=4:sw=4:
-/*!
- *
- * Copyright 2009-2012 Kris Kowal under the terms of the MIT
- * license found at http://github.com/kriskowal/q/raw/master/LICENSE
- *
- * With parts by Tyler Close
- * Copyright 2007-2009 Tyler Close under the terms of the MIT X license found
- * at http://www.opensource.org/licenses/mit-license.html
- * Forked at ref_send.js version: 2009-05-11
- *
- * With parts by Mark Miller
- * Copyright (C) 2011 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
-(function (definition) {
-    // Turn off strict mode for this function so we can assign to global.Q
-    /*jshint strict: false*/
-    Q = definition();
-})(function () {
-"use strict";
-
-// All code after this point will be filtered from stack traces reported
-// by Q.
-var qStartingLine = captureLine();
-var qFileName;
-
-// shims
-
-// used for fallback in "allResolved"
-var noop = function () {};
-
-// use the fastest possible means to execute a task in a future turn
-// of the event loop.
-var nextTick;
-if (typeof process !== "undefined") {
-    // node
-    nextTick = process.nextTick;
-} else if (typeof setImmediate === "function") {
-    // In IE10, or use https://github.com/NobleJS/setImmediate
-    if (typeof window !== "undefined") {
-        nextTick = setImmediate.bind(window);
-    } else {
-        nextTick = setImmediate;
-    }
-} else {
-    (function () {
-        // linked list of tasks (single, with head node)
-        var head = {task: void 0, next: null}, tail = head,
-            maxPendingTicks = 2, pendingTicks = 0, queuedTasks = 0, usedTicks = 0,
-            requestTick;
-
-        function onTick() {
-            // In case of multiple tasks ensure at least one subsequent tick
-            // to handle remaining tasks in case one throws.
-            --pendingTicks;
-
-            if (++usedTicks >= maxPendingTicks) {
-                // Amortize latency after thrown exceptions.
-                usedTicks = 0;
-                maxPendingTicks *= 4; // fast grow!
-                var expectedTicks = queuedTasks && Math.min(queuedTasks - 1, maxPendingTicks);
-                while (pendingTicks < expectedTicks) {
-                    ++pendingTicks;
-                    requestTick();
-                }
-            }
-
-            while (queuedTasks) {
-                --queuedTasks; // decrement here to ensure it's never negative
-                head = head.next;
-                var task = head.task;
-                head.task = void 0;
-                task();
-            }
-
-            usedTicks = 0;
-        }
-
-        nextTick = function (task) {
-            tail = tail.next = {task: task, next: null};
-            if (pendingTicks < ++queuedTasks && pendingTicks < maxPendingTicks) {
-                ++pendingTicks;
-                requestTick();
-            }
-        };
-
-        if (typeof MessageChannel !== "undefined") {
-            // modern browsers
-            // http://www.nonblocking.io/2011/06/windownexttick.html
-            var channel = new MessageChannel();
-            channel.port1.onmessage = onTick;
-            requestTick = function () {
-                channel.port2.postMessage(0);
-            };
-
-        } else {
-            // old browsers
-            requestTick = function () {
-                setTimeout(onTick, 0);
-            };
-        }
-    })();
-}
-
-// Attempt to make generics safe in the face of downstream
-// modifications.
-// There is no situation where this is necessary.
-// If you need a security guarantee, these primordials need to be
-// deeply frozen anyway, and if you don’t need a security guarantee,
-// this is just plain paranoid.
-// However, this does have the nice side-effect of reducing the size
-// of the code by reducing x.call() to merely x(), eliminating many
-// hard-to-minify characters.
-// See Mark Miller’s explanation of what this does.
-// http://wiki.ecmascript.org/doku.php?id=conventions:safe_meta_programming
-function uncurryThis(f) {
-    var call = Function.call;
-    return function () {
-        return call.apply(f, arguments);
-    };
-}
-// This is equivalent, but slower:
-// uncurryThis = Function_bind.bind(Function_bind.call);
-// http://jsperf.com/uncurrythis
-
-var array_slice = uncurryThis(Array.prototype.slice);
-
-var array_reduce = uncurryThis(
-    Array.prototype.reduce || function (callback, basis) {
-        var index = 0,
-            length = this.length;
-        // concerning the initial value, if one is not provided
-        if (arguments.length === 1) {
-            // seek to the first value in the array, accounting
-            // for the possibility that is is a sparse array
-            do {
-                if (index in this) {
-                    basis = this[index++];
-                    break;
-                }
-                if (++index >= length) {
-                    throw new TypeError();
-                }
-            } while (1);
-        }
-        // reduce
-        for (; index < length; index++) {
-            // account for the possibility that the array is sparse
-            if (index in this) {
-                basis = callback(basis, this[index], index);
-            }
-        }
-        return basis;
-    }
-);
-
-var array_indexOf = uncurryThis(
-    Array.prototype.indexOf || function (value) {
-        // not a very good shim, but good enough for our one use of it
-        for (var i = 0; i < this.length; i++) {
-            if (this[i] === value) {
-                return i;
-            }
-        }
-        return -1;
-    }
-);
-
-var array_map = uncurryThis(
-    Array.prototype.map || function (callback, thisp) {
-        var self = this;
-        var collect = [];
-        array_reduce(self, function (undefined, value, index) {
-            collect.push(callback.call(thisp, value, index, self));
-        }, void 0);
-        return collect;
-    }
-);
-
-var object_create = Object.create || function (prototype) {
-    function Type() { }
-    Type.prototype = prototype;
-    return new Type();
-};
-
-var object_hasOwnProperty = uncurryThis(Object.prototype.hasOwnProperty);
-
-var object_keys = Object.keys || function (object) {
-    var keys = [];
-    for (var key in object) {
-        if (object_hasOwnProperty(object, key)) {
-            keys.push(key);
-        }
-    }
-    return keys;
-};
-
-var object_toString = uncurryThis(Object.prototype.toString);
-
-// generator related shims
-
-function isStopIteration(exception) {
-    return (
-        object_toString(exception) === "[object StopIteration]" ||
-        exception instanceof QReturnValue
-    );
-}
-
-var QReturnValue;
-if (typeof ReturnValue !== "undefined") {
-    QReturnValue = ReturnValue;
-} else {
-    QReturnValue = function (value) {
-        this.value = value;
-    };
-}
-
-// long stack traces
-
-Q.longStackJumpLimit = 1;
-
-var STACK_JUMP_SEPARATOR = "From previous event:";
-
-function makeStackTraceLong(error, promise) {
-    // If possible (that is, if in V8), transform the error stack
-    // trace by removing Node and Q cruft, then concatenating with
-    // the stack trace of the promise we are ``done``ing. See #57.
-    if (promise.stack &&
-        typeof error === "object" &&
-        error !== null &&
-        error.stack &&
-        error.stack.indexOf(STACK_JUMP_SEPARATOR) === -1
-    ) {
-        error.stack = filterStackString(error.stack) +
-            "\n" + STACK_JUMP_SEPARATOR + "\n" +
-            filterStackString(promise.stack);
-    }
-}
-
-function filterStackString(stackString) {
-    var lines = stackString.split("\n");
-    var desiredLines = [];
-    for (var i = 0; i < lines.length; ++i) {
-        var line = lines[i];
-
-        if (!isInternalFrame(line) && !isNodeFrame(line)) {
-            desiredLines.push(line);
-        }
-    }
-    return desiredLines.join("\n");
-}
-
-function isNodeFrame(stackLine) {
-    return stackLine.indexOf("(module.js:") !== -1 ||
-           stackLine.indexOf("(node.js:") !== -1;
-}
-
-function isInternalFrame(stackLine) {
-    var pieces = /at .+ \((.*):(\d+):\d+\)/.exec(stackLine);
-
-    if (!pieces) {
-        return false;
-    }
-
-    var fileName = pieces[1];
-    var lineNumber = pieces[2];
-
-    return fileName === qFileName &&
-        lineNumber >= qStartingLine &&
-        lineNumber <= qEndingLine;
-}
-
-// discover own file name and line number range for filtering stack
-// traces
-function captureLine() {
-    if (Error.captureStackTrace) {
-        var fileName, lineNumber;
-
-        var oldPrepareStackTrace = Error.prepareStackTrace;
-
-        Error.prepareStackTrace = function (error, frames) {
-            fileName = frames[1].getFileName();
-            lineNumber = frames[1].getLineNumber();
-        };
-
-        // teases call of temporary prepareStackTrace
-        // JSHint and Closure Compiler generate known warnings here
-        /*jshint expr: true */
-        new Error().stack;
-
-        Error.prepareStackTrace = oldPrepareStackTrace;
-        qFileName = fileName;
-        return lineNumber;
-    }
-}
-
-function deprecate(callback, name, alternative) {
-    return function () {
-        if (typeof console !== "undefined" && typeof console.warn === "function") {
-            console.warn(name + " is deprecated, use " + alternative + " instead.", new Error("").stack);
-        }
-        return callback.apply(callback, arguments);
-    };
-}
-
-// end of shims
-// beginning of real work
-
-/**
- * Creates fulfilled promises from non-promises,
- * Passes Q promises through,
- * Coerces CommonJS/Promises/A+ promises to Q promises.
- */
-function Q(value) {
-    return resolve(value);
-}
-
-/**
- * Performs a task in a future turn of the event loop.
- * @param {Function} task
- */
-Q.nextTick = nextTick;
-
-/**
- * Constructs a {promise, resolve} object.
- *
- * The resolver is a callback to invoke with a more resolved value for the
- * promise. To fulfill the promise, invoke the resolver with any value that is
- * not a function. To reject the promise, invoke the resolver with a rejection
- * object. To put the promise in the same state as another promise, invoke the
- * resolver with that other promise.
- */
-Q.defer = defer;
-function defer() {
-    // if "pending" is an "Array", that indicates that the promise has not yet
-    // been resolved.  If it is "undefined", it has been resolved.  Each
-    // element of the pending array is itself an array of complete arguments to
-    // forward to the resolved promise.  We coerce the resolution value to a
-    // promise using the ref promise because it handles both fully
-    // resolved values and other promises gracefully.
-    var pending = [], progressListeners = [], value;
-
-    var deferred = object_create(defer.prototype);
-    var promise = object_create(makePromise.prototype);
-
-    promise.promiseDispatch = function (resolve, op, operands) {
-        var args = array_slice(arguments);
-        if (pending) {
-            pending.push(args);
-            if (op === "when" && operands[1]) { // progress operand
-                progressListeners.push(operands[1]);
-            }
-        } else {
-            nextTick(function () {
-                value.promiseDispatch.apply(value, args);
-            });
-        }
-    };
-
-    promise.valueOf = function () {
-        if (pending) {
-            return promise;
-        }
-        value = valueOf(value); // shorten chain
-        return value;
-    };
-
-    if (Error.captureStackTrace && Q.longStackJumpLimit > 0) {
-        Error.captureStackTrace(promise, defer);
-
-        // Reify the stack into a string by using the accessor; this prevents
-        // memory leaks as per GH-111. At the same time, cut off the first line;
-        // it's always just "[object Promise]\n", as per the `toString`.
-        promise.stack = promise.stack.substring(promise.stack.indexOf("\n") + 1);
-    }
-
-    function become(resolvedValue) {
-        if (!pending) {
-            return;
-        }
-        value = resolve(resolvedValue);
-        array_reduce(pending, function (undefined, pending) {
-            nextTick(function () {
-                value.promiseDispatch.apply(value, pending);
-            });
-        }, void 0);
-        pending = void 0;
-        progressListeners = void 0;
-    }
-
-    deferred.promise = promise;
-    deferred.resolve = become;
-    deferred.fulfill = function (value) {
-        become(fulfill(value));
-    };
-    deferred.reject = function (exception) {
-        become(reject(exception));
-    };
-    deferred.notify = function (progress) {
-        if (pending) {
-            array_reduce(progressListeners, function (undefined, progressListener) {
-                nextTick(function () {
-                    progressListener(progress);
-                });
-            }, void 0);
-        }
-    };
-
-    return deferred;
-}
-
-/**
- * Creates a Node-style callback that will resolve or reject the deferred
- * promise.
- * @returns a nodeback
- */
-defer.prototype.makeNodeResolver = function () {
-    var self = this;
-    return function (error, value) {
-        if (error) {
-            self.reject(error);
-        } else if (arguments.length > 2) {
-            self.resolve(array_slice(arguments, 1));
-        } else {
-            self.resolve(value);
-        }
-    };
-};
-
-/**
- * @param makePromise {Function} a function that returns nothing and accepts
- * the resolve, reject, and notify functions for a deferred.
- * @returns a promise that may be resolved with the given resolve and reject
- * functions, or rejected by a thrown exception in makePromise
- */
-Q.promise = promise;
-function promise(makePromise) {
-    var deferred = defer();
-    fcall(
-        makePromise,
-        deferred.resolve,
-        deferred.reject,
-        deferred.notify
-    ).fail(deferred.reject);
-    return deferred.promise;
-}
-
-/**
- * Constructs a Promise with a promise descriptor object and optional fallback
- * function.  The descriptor contains methods like when(rejected), get(name),
- * put(name, value), post(name, args), and delete(name), which all
- * return either a value, a promise for a value, or a rejection.  The fallback
- * accepts the operation name, a resolver, and any further arguments that would
- * have been forwarded to the appropriate method above had a method been
- * provided with the proper name.  The API makes no guarantees about the nature
- * of the returned object, apart from that it is usable whereever promises are
- * bought and sold.
- */
-Q.makePromise = makePromise;
-function makePromise(descriptor, fallback, valueOf, exception, isException) {
-    if (fallback === void 0) {
-        fallback = function (op) {
-            return reject(new Error("Promise does not support operation: " + op));
-        };
-    }
-
-    var promise = object_create(makePromise.prototype);
-
-    promise.promiseDispatch = function (resolve, op, args) {
-        var result;
-        try {
-            if (descriptor[op]) {
-                result = descriptor[op].apply(promise, args);
-            } else {
-                result = fallback.call(promise, op, args);
-            }
-        } catch (exception) {
-            result = reject(exception);
-        }
-        if (resolve) {
-            resolve(result);
-        }
-    };
-
-    if (valueOf) {
-        promise.valueOf = valueOf;
-    }
-
-    if (isException) {
-        promise.exception = exception;
-    }
-
-    return promise;
-}
-
-// provide thenables, CommonJS/Promises/A
-makePromise.prototype.then = function (fulfilled, rejected, progressed) {
-    return when(this, fulfilled, rejected, progressed);
-};
-
-makePromise.prototype.thenResolve = function (value) {
-    return when(this, function () { return value; });
-};
-
-// Chainable methods
-array_reduce(
-    [
-        "isFulfilled", "isRejected", "isPending",
-        "dispatch",
-        "when", "spread",
-        "get", "put", "set", "del", "delete",
-        "post", "send", "invoke",
-        "keys",
-        "fapply", "fcall", "fbind",
-        "all", "allResolved",
-        "timeout", "delay",
-        "catch", "finally", "fail", "fin", "progress", "done",
-        "nfcall", "nfapply", "nfbind", "denodeify", "nbind",
-        "ncall", "napply", "nbind",
-        "npost", "nsend", "ninvoke",
-        "nodeify"
-    ],
-    function (undefined, name) {
-        makePromise.prototype[name] = function () {
-            return Q[name].apply(
-                Q,
-                [this].concat(array_slice(arguments))
-            );
-        };
-    },
-    void 0
-);
-
-makePromise.prototype.toSource = function () {
-    return this.toString();
-};
-
-makePromise.prototype.toString = function () {
-    return "[object Promise]";
-};
-
-/**
- * If an object is not a promise, it is as "near" as possible.
- * If a promise is rejected, it is as "near" as possible too.
- * If it’s a fulfilled promise, the fulfillment value is nearer.
- * If it’s a deferred promise and the deferred has been resolved, the
- * resolution is "nearer".
- * @param object
- * @returns most resolved (nearest) form of the object
- */
-Q.nearer = valueOf;
-function valueOf(value) {
-    if (isPromise(value)) {
-        return value.valueOf();
-    }
-    return value;
-}
-
-/**
- * @returns whether the given object is a promise.
- * Otherwise it is a fulfilled value.
- */
-Q.isPromise = isPromise;
-function isPromise(object) {
-    return object && typeof object.promiseDispatch === "function";
-}
-
-Q.isPromiseAlike = isPromiseAlike;
-function isPromiseAlike(object) {
-    return object && typeof object.then === "function";
-}
-
-/**
- * @returns whether the given object is a pending promise, meaning not
- * fulfilled or rejected.
- */
-Q.isPending = isPending;
-function isPending(object) {
-    return !isFulfilled(object) && !isRejected(object);
-}
-
-/**
- * @returns whether the given object is a value or fulfilled
- * promise.
- */
-Q.isFulfilled = isFulfilled;
-function isFulfilled(object) {
-    return !isPromiseAlike(valueOf(object));
-}
-
-/**
- * @returns whether the given object is a rejected promise.
- */
-Q.isRejected = isRejected;
-function isRejected(object) {
-    object = valueOf(object);
-    return isPromise(object) && 'exception' in object;
-}
-
-var rejections = [];
-var errors = [];
-var errorsDisplayed;
-function displayErrors() {
-    
-    /* 
-      HACK MGA :  remove !window.Touch in the condition
-      because window.Touch is defined in Chrome, so errors are never displayed... 
-    */
-
-    if (
-        !errorsDisplayed &&
-        typeof window !== "undefined" &&
-        window.console
-    ) {
-        // This promise library consumes exceptions thrown in handlers so
-        // they can be handled by a subsequent promise.  The rejected
-        // promises get added to this array when they are created, and
-        // removed when they are handled.
-
-        //HACK MGA : change log level (log to error)
-        console.error("Should be empty:", errors);
-    }
-    // HACK MGA : remove this affectation to display ALL errors
-    // errorsDisplayed = true;
-}
-
-// Show unhandled rejection if Node exits without handling an outstanding
-// rejection.  (Note that Browserify presently produces a process global
-// without the Emitter on interface)
-if (typeof process !== "undefined" && process.on) {
-    process.on("exit", function () {
-        for (var i = 0; i < errors.length; i++) {
-            var error = errors[i];
-            if (error && typeof error.stack !== "undefined") {
-                console.warn("Unhandled rejected promise:", error.stack);
-            } else {
-                console.warn("Unhandled rejected promise (no stack):", error);
-            }
-        }
-    });
-}
-
-/**
- * Constructs a rejected promise.
- * @param exception value describing the failure
- */
-Q.reject = reject;
-function reject(exception) {
-    var rejection = makePromise({
-        "when": function (rejected) {
-            // note that the error has been handled
-            if (rejected) {
-                var at = array_indexOf(rejections, this);
-                if (at !== -1) {
-                    errors.splice(at, 1);
-                    rejections.splice(at, 1);
-                }
-            }
-            return rejected ? rejected(exception) : this;
-        }
-    }, function fallback() {
-        return reject(exception);
-    }, function valueOf() {
-        return this;
-    }, exception, true);
-    rejections.push(rejection);
-    errors.push(exception);
-    // note that the error has not been handled
-    // HACK MGA : change call order because in disaplyErrors, we use errors...
-    //displayErrors();
-    return rejection;
-}
-
-/**
- * Constructs a fulfilled promise for an immediate reference.
- * @param value immediate reference
- */
-Q.fulfill = fulfill;
-function fulfill(object) {
-    return makePromise({
-        "when": function () {
-            return object;
-        },
-        "get": function (name) {
-            return object[name];
-        },
-        "set": function (name, value) {
-            object[name] = value;
-        },
-        "delete": function (name) {
-            delete object[name];
-        },
-        "post": function (name, args) {
-            // Mark Miller proposes that post with no name should apply a
-            // promised function.
-            if (name == null) { // iff name is null or undefined
-                return object.apply(void 0, args);
-            } else {
-                return object[name].apply(object, args);
-            }
-        },
-        "apply": function (thisP, args) {
-            return object.apply(thisP, args);
-        },
-        "keys": function () {
-            return object_keys(object);
-        }
-    }, void 0, function valueOf() {
-        return object;
-    });
-}
-
-/**
- * Constructs a promise for an immediate reference, passes promises through, or
- * coerces promises from different systems.
- * @param value immediate reference or promise
- */
-Q.resolve = resolve;
-function resolve(value) {
-    // If the object is already a Promise, return it directly.  This enables
-    // the resolve function to both be used to created references from objects,
-    // but to tolerably coerce non-promises to promises.
-    if (isPromise(value)) {
-        return value;
-    }
-    // In order to break infinite recursion or loops between `then` and
-    // `resolve`, it is necessary to attempt to extract fulfilled values
-    // out of foreign promise implementations before attempting to wrap
-    // them as unresolved promises.  It is my hope that other
-    // implementations will implement `valueOf` to synchronously extract
-    // the fulfillment value from their fulfilled promises.  If the
-    // other promise library does not implement `valueOf`, the
-    // implementations on primordial prototypes are harmless.
-    value = valueOf(value);
-    // assimilate thenables, CommonJS/Promises/A+
-    if (isPromiseAlike(value)) {
-        return coerce(value);
-    } else {
-        return fulfill(value);
-    }
-}
-
-/**
- * Converts thenables to Q promises.
- * @param promise thenable promise
- * @returns a Q promise
- */
-function coerce(promise) {
-    var deferred = defer();
-    nextTick(function () {
-        try {
-            promise.then(deferred.resolve, deferred.reject, deferred.notify);
-        } catch (exception) {
-            deferred.reject(exception);
-        }
-    });
-    return deferred.promise;
-}
-
-/**
- * Annotates an object such that it will never be
- * transferred away from this process over any promise
- * communication channel.
- * @param object
- * @returns promise a wrapping of that object that
- * additionally responds to the "isDef" message
- * without a rejection.
- */
-Q.master = master;
-function master(object) {
-    return makePromise({
-        "isDef": function () {}
-    }, function fallback(op, args) {
-        return dispatch(object, op, args);
-    }, function () {
-        return valueOf(object);
-    });
-}
-
-/**
- * Registers an observer on a promise.
- *
- * Guarantees:
- *
- * 1. that fulfilled and rejected will be called only once.
- * 2. that either the fulfilled callback or the rejected callback will be
- *    called, but not both.
- * 3. that fulfilled and rejected will not be called in this turn.
- *
- * @param value      promise or immediate reference to observe
- * @param fulfilled  function to be called with the fulfilled value
- * @param rejected   function to be called with the rejection exception
- * @param progressed function to be called on any progress notifications
- * @return promise for the return value from the invoked callback
- */
-Q.when = when;
-function when(value, fulfilled, rejected, progressed) {
-    var deferred = defer();
-    var done = false;   // ensure the untrusted promise makes at most a
-                        // single call to one of the callbacks
-
-    function _fulfilled(value) {
-        try {
-            return typeof fulfilled === "function" ? fulfilled(value) : value;
-        } catch (exception) {
-            return reject(exception);
-        }
-    }
-
-    function _rejected(exception) {
-        if (typeof rejected === "function") {
-            makeStackTraceLong(exception, resolvedValue);
-            try {
-                return rejected(exception);
-            } catch (newException) {
-                return reject(newException);
-            }
-        }
-        return reject(exception);
-    }
-
-    function _progressed(value) {
-        return typeof progressed === "function" ? progressed(value) : value;
-    }
-
-    var resolvedValue = resolve(value);
-    nextTick(function () {
-        resolvedValue.promiseDispatch(function (value) {
-            if (done) {
-                return;
-            }
-            done = true;
-
-            deferred.resolve(_fulfilled(value));
-        }, "when", [function (exception) {
-            if (done) {
-                return;
-            }
-            done = true;
-
-            deferred.resolve(_rejected(exception));
-        }]);
-    });
-
-    // Progress propagator need to be attached in the current tick.
-    resolvedValue.promiseDispatch(void 0, "when", [void 0, function (value) {
-        var newValue;
-        var threw = false;
-        try {
-            newValue = _progressed(value);
-        } catch (e) {
-            threw = true;
-            if (Q.onerror) {
-                Q.onerror(e);
-            } else {
-                throw e;
-            }
-        }
-
-        if (!threw) {
-            deferred.notify(newValue);
-        }
-    }]);
-
-    return deferred.promise;
-}
-
-/**
- * Spreads the values of a promised array of arguments into the
- * fulfillment callback.
- * @param fulfilled callback that receives variadic arguments from the
- * promised array
- * @param rejected callback that receives the exception if the promise
- * is rejected.
- * @returns a promise for the return value or thrown exception of
- * either callback.
- */
-Q.spread = spread;
-function spread(promise, fulfilled, rejected) {
-    return when(promise, function (valuesOrPromises) {
-        return all(valuesOrPromises).then(function (values) {
-            return fulfilled.apply(void 0, values);
-        }, rejected);
-    }, rejected);
-}
-
-/**
- * The async function is a decorator for generator functions, turning
- * them into asynchronous generators.  This presently only works in
- * Firefox/Spidermonkey, however, this code does not cause syntax
- * errors in older engines.  This code should continue to work and
- * will in fact improve over time as the language improves.
- *
- * Decorates a generator function such that:
- *  - it may yield promises
- *  - execution will continue when that promise is fulfilled
- *  - the value of the yield expression will be the fulfilled value
- *  - it returns a promise for the return value (when the generator
- *    stops iterating)
- *  - the decorated function returns a promise for the return value
- *    of the generator or the first rejected promise among those
- *    yielded.
- *  - if an error is thrown in the generator, it propagates through
- *    every following yield until it is caught, or until it escapes
- *    the generator function altogether, and is translated into a
- *    rejection for the promise returned by the decorated generator.
- *  - in present implementations of generators, when a generator
- *    function is complete, it throws ``StopIteration``, ``return`` is
- *    a syntax error in the presence of ``yield``, so there is no
- *    observable return value. There is a proposal[1] to add support
- *    for ``return``, which would permit the value to be carried by a
- *    ``StopIteration`` instance, in which case it would fulfill the
- *    promise returned by the asynchronous generator.  This can be
- *    emulated today by throwing StopIteration explicitly with a value
- *    property.
- *
- *  [1]: http://wiki.ecmascript.org/doku.php?id=strawman:async_functions#reference_implementation
- *
- */
-Q.async = async;
-function async(makeGenerator) {
-    return function () {
-        // when verb is "send", arg is a value
-        // when verb is "throw", arg is an exception
-        function continuer(verb, arg) {
-            var result;
-            try {
-                result = generator[verb](arg);
-            } catch (exception) {
-                if (isStopIteration(exception)) {
-                    return exception.value;
-                } else {
-                    return reject(exception);
-                }
-            }
-            return when(result, callback, errback);
-        }
-        var generator = makeGenerator.apply(this, arguments);
-        var callback = continuer.bind(continuer, "send");
-        var errback = continuer.bind(continuer, "throw");
-        return callback();
-    };
-}
-
-/**
- * Throws a ReturnValue exception to stop an asynchronous generator.
- * Only useful presently in Firefox/SpiderMonkey since generators are
- * implemented.
- * @param value the return value for the surrounding generator
- * @throws ReturnValue exception with the value.
- * @example
- * Q.async(function () {
- *      var foo = yield getFooPromise();
- *      var bar = yield getBarPromise();
- *      Q.return(foo + bar);
- * })
- */
-Q['return'] = _return;
-function _return(value) {
-    throw new QReturnValue(value);
-}
-
-/**
- * The promised function decorator ensures that any promise arguments
- * are resolved and passed as values (`this` is also resolved and passed
- * as a value).  It will also ensure that the result of a function is
- * always a promise.
- *
- * @example
- * var add = Q.promised(function (a, b) {
- *     return a + b;
- * });
- * add(Q.resolve(a), Q.resolve(B));
- *
- * @param {function} callback The function to decorate
- * @returns {function} a function that has been decorated.
- */
-Q.promised = promised;
-function promised(callback) {
-    return function () {
-        return spread([this, all(arguments)], function (self, args) {
-            return callback.apply(self, args);
+/* Last build : 2016-9-8_8:42:16 / git revision : 70770f6 */
+
+(function(root, factory) {
+    if (typeof define === 'function' && define.amd) {
+        // AMD. Register as an anonymous module unless amdModuleId is set
+        define([], function() {
+            return (root['MediaPlayer'] = factory());
         });
-    };
-}
-
-/**
- * sends a message to a value in a future turn
- * @param object* the recipient
- * @param op the name of the message operation, e.g., "when",
- * @param args further arguments to be forwarded to the operation
- * @returns result {Promise} a promise for the result of the operation
- */
-Q.dispatch = dispatch;
-function dispatch(object, op, args) {
-    var deferred = defer();
-    nextTick(function () {
-        resolve(object).promiseDispatch(deferred.resolve, op, args);
-    });
-    return deferred.promise;
-}
-
-/**
- * Constructs a promise method that can be used to safely observe resolution of
- * a promise for an arbitrarily named method like "propfind" in a future turn.
- *
- * "dispatcher" constructs methods like "get(promise, name)" and "put(promise)".
- */
-Q.dispatcher = dispatcher;
-function dispatcher(op) {
-    return function (object) {
-        var args = array_slice(arguments, 1);
-        return dispatch(object, op, args);
-    };
-}
-
-/**
- * Gets the value of a property in a future turn.
- * @param object    promise or immediate reference for target object
- * @param name      name of property to get
- * @return promise for the property value
- */
-Q.get = dispatcher("get");
-
-/**
- * Sets the value of a property in a future turn.
- * @param object    promise or immediate reference for object object
- * @param name      name of property to set
- * @param value     new value of property
- * @return promise for the return value
- */
-Q.set = dispatcher("set");
-
-/**
- * Deletes a property in a future turn.
- * @param object    promise or immediate reference for target object
- * @param name      name of property to delete
- * @return promise for the return value
- */
-Q["delete"] = // XXX experimental
-Q.del = dispatcher("delete");
-
-/**
- * Invokes a method in a future turn.
- * @param object    promise or immediate reference for target object
- * @param name      name of method to invoke
- * @param value     a value to post, typically an array of
- *                  invocation arguments for promises that
- *                  are ultimately backed with `resolve` values,
- *                  as opposed to those backed with URLs
- *                  wherein the posted value can be any
- *                  JSON serializable object.
- * @return promise for the return value
- */
-// bound locally because it is used by other methods
-var post = Q.post = dispatcher("post");
-
-/**
- * Invokes a method in a future turn.
- * @param object    promise or immediate reference for target object
- * @param name      name of method to invoke
- * @param ...args   array of invocation arguments
- * @return promise for the return value
- */
-Q.send = send;
-Q.invoke = send; // synonyms
-function send(value, name) {
-    var args = array_slice(arguments, 2);
-    return post(value, name, args);
-}
-
-/**
- * Applies the promised function in a future turn.
- * @param object    promise or immediate reference for target function
- * @param args      array of application arguments
- */
-Q.fapply = fapply;
-function fapply(value, args) {
-    return dispatch(value, "apply", [void 0, args]);
-}
-
-/**
- * Calls the promised function in a future turn.
- * @param object    promise or immediate reference for target function
- * @param ...args   array of application arguments
- */
-Q["try"] = fcall; // XXX experimental
-Q.fcall = fcall;
-function fcall(value) {
-    var args = array_slice(arguments, 1);
-    return fapply(value, args);
-}
-
-/**
- * Binds the promised function, transforming return values into a fulfilled
- * promise and thrown errors into a rejected one.
- * @param object    promise or immediate reference for target function
- * @param ...args   array of application arguments
- */
-Q.fbind = fbind;
-function fbind(value) {
-    var args = array_slice(arguments, 1);
-    return function fbound() {
-        var allArgs = args.concat(array_slice(arguments));
-        return dispatch(value, "apply", [this, allArgs]);
-    };
-}
-
-/**
- * Requests the names of the owned properties of a promised
- * object in a future turn.
- * @param object    promise or immediate reference for target object
- * @return promise for the keys of the eventually resolved object
- */
-Q.keys = dispatcher("keys");
-
-/**
- * Turns an array of promises into a promise for an array.  If any of
- * the promises gets rejected, the whole array is rejected immediately.
- * @param {Array*} an array (or promise for an array) of values (or
- * promises for values)
- * @returns a promise for an array of the corresponding values
- */
-// By Mark Miller
-// http://wiki.ecmascript.org/doku.php?id=strawman:concurrency&rev=1308776521#allfulfilled
-Q.all = all;
-function all(promises) {
-    return when(promises, function (promises) {
-        var countDown = promises.length;
-        if (countDown === 0) {
-            return resolve(promises);
-        }
-        var deferred = defer();
-        array_reduce(promises, function (undefined, promise, index) {
-            if (isFulfilled(promise)) {
-                promises[index] = valueOf(promise);
-                if (--countDown === 0) {
-                    deferred.resolve(promises);
-                }
-            } else {
-                when(promise, function (value) {
-                    promises[index] = value;
-                    if (--countDown === 0) {
-                        deferred.resolve(promises);
-                    }
-                })
-                .fail(deferred.reject);
-            }
-        }, void 0);
-        return deferred.promise;
-    });
-}
-
-/**
- * Waits for all promises to be resolved, either fulfilled or
- * rejected.  This is distinct from `all` since that would stop
- * waiting at the first rejection.  The promise returned by
- * `allResolved` will never be rejected.
- * @param promises a promise for an array (or an array) of promises
- * (or values)
- * @return a promise for an array of promises
- */
-Q.allResolved = allResolved;
-function allResolved(promises) {
-    return when(promises, function (promises) {
-        promises = array_map(promises, resolve);
-        return when(all(array_map(promises, function (promise) {
-            return when(promise, noop, noop);
-        })), function () {
-            return promises;
-        });
-    });
-}
-
-/**
- * Captures the failure of a promise, giving an oportunity to recover
- * with a callback.  If the given promise is fulfilled, the returned
- * promise is fulfilled.
- * @param {Any*} promise for something
- * @param {Function} callback to fulfill the returned promise if the
- * given promise is rejected
- * @returns a promise for the return value of the callback
- */
-Q["catch"] = // XXX experimental
-Q.fail = fail;
-function fail(promise, rejected) {
-    return when(promise, void 0, rejected);
-}
-
-/**
- * Attaches a listener that can respond to progress notifications from a
- * promise's originating deferred. This listener receives the exact arguments
- * passed to ``deferred.notify``.
- * @param {Any*} promise for something
- * @param {Function} callback to receive any progress notifications
- * @returns the given promise, unchanged
- */
-Q.progress = progress;
-function progress(promise, progressed) {
-    return when(promise, void 0, void 0, progressed);
-}
-
-/**
- * Provides an opportunity to observe the rejection of a promise,
- * regardless of whether the promise is fulfilled or rejected.  Forwards
- * the resolution to the returned promise when the callback is done.
- * The callback can return a promise to defer completion.
- * @param {Any*} promise
- * @param {Function} callback to observe the resolution of the given
- * promise, takes no arguments.
- * @returns a promise for the resolution of the given promise when
- * ``fin`` is done.
- */
-Q["finally"] = // XXX experimental
-Q.fin = fin;
-function fin(promise, callback) {
-    return when(promise, function (value) {
-        return when(callback(), function () {
-            return value;
-        });
-    }, function (exception) {
-        return when(callback(), function () {
-            return reject(exception);
-        });
-    });
-}
-
-/**
- * Terminates a chain of promises, forcing rejections to be
- * thrown as exceptions.
- * @param {Any*} promise at the end of a chain of promises
- * @returns nothing
- */
-Q.done = done;
-function done(promise, fulfilled, rejected, progress) {
-    var onUnhandledError = function (error) {
-        // forward to a future turn so that ``when``
-        // does not catch it and turn it into a rejection.
-        nextTick(function () {
-            makeStackTraceLong(error, promise);
-
-            if (Q.onerror) {
-                Q.onerror(error);
-            } else {
-                throw error;
-            }
-        });
-    };
-
-    // Avoid unnecessary `nextTick`ing via an unnecessary `when`.
-    var promiseToHandle = fulfilled || rejected || progress ?
-        when(promise, fulfilled, rejected, progress) :
-        promise;
-
-    if (typeof process === "object" && process && process.domain) {
-        onUnhandledError = process.domain.bind(onUnhandledError);
-    }
-    fail(promiseToHandle, onUnhandledError);
-}
-
-/**
- * Causes a promise to be rejected if it does not get fulfilled before
- * some milliseconds time out.
- * @param {Any*} promise
- * @param {Number} milliseconds timeout
- * @returns a promise for the resolution of the given promise if it is
- * fulfilled before the timeout, otherwise rejected.
- */
-Q.timeout = timeout;
-function timeout(promise, ms) {
-    var deferred = defer();
-    var timeoutId = setTimeout(function () {
-        deferred.reject(new Error("Timed out after " + ms + " ms"));
-    }, ms);
-
-    when(promise, function (value) {
-        clearTimeout(timeoutId);
-        deferred.resolve(value);
-    }, function (exception) {
-        clearTimeout(timeoutId);
-        deferred.reject(exception);
-    });
-
-    return deferred.promise;
-}
-
-/**
- * Returns a promise for the given value (or promised value) after some
- * milliseconds.
- * @param {Any*} promise
- * @param {Number} milliseconds
- * @returns a promise for the resolution of the given promise after some
- * time has elapsed.
- */
-Q.delay = delay;
-function delay(promise, timeout) {
-    if (timeout === void 0) {
-        timeout = promise;
-        promise = void 0;
-    }
-    var deferred = defer();
-    setTimeout(function () {
-        deferred.resolve(promise);
-    }, timeout);
-    return deferred.promise;
-}
-
-/**
- * Passes a continuation to a Node function, which is called with the given
- * arguments provided as an array, and returns a promise.
- *
- *      Q.nfapply(FS.readFile, [__filename])
- *      .then(function (content) {
- *      })
- *
- */
-Q.nfapply = nfapply;
-function nfapply(callback, args) {
-    var nodeArgs = array_slice(args);
-    var deferred = defer();
-    nodeArgs.push(deferred.makeNodeResolver());
-
-    fapply(callback, nodeArgs).fail(deferred.reject);
-    return deferred.promise;
-}
-
-/**
- * Passes a continuation to a Node function, which is called with the given
- * arguments provided individually, and returns a promise.
- *
- *      Q.nfcall(FS.readFile, __filename)
- *      .then(function (content) {
- *      })
- *
- */
-Q.nfcall = nfcall;
-function nfcall(callback/*, ...args */) {
-    var nodeArgs = array_slice(arguments, 1);
-    var deferred = defer();
-    nodeArgs.push(deferred.makeNodeResolver());
-
-    fapply(callback, nodeArgs).fail(deferred.reject);
-    return deferred.promise;
-}
-
-/**
- * Wraps a NodeJS continuation passing function and returns an equivalent
- * version that returns a promise.
- *
- *      Q.nfbind(FS.readFile, __filename)("utf-8")
- *      .then(console.log)
- *      .done()
- *
- */
-Q.nfbind = nfbind;
-Q.denodeify = Q.nfbind; // synonyms
-function nfbind(callback/*, ...args */) {
-    var baseArgs = array_slice(arguments, 1);
-    return function () {
-        var nodeArgs = baseArgs.concat(array_slice(arguments));
-        var deferred = defer();
-        nodeArgs.push(deferred.makeNodeResolver());
-
-        fapply(callback, nodeArgs).fail(deferred.reject);
-        return deferred.promise;
-    };
-}
-
-Q.nbind = nbind;
-function nbind(callback/*, ... args*/) {
-    var baseArgs = array_slice(arguments, 1);
-    return function () {
-        var nodeArgs = baseArgs.concat(array_slice(arguments));
-        var deferred = defer();
-        nodeArgs.push(deferred.makeNodeResolver());
-
-        var thisArg = this;
-        function bound() {
-            return callback.apply(thisArg, arguments);
-        }
-
-        fapply(bound, nodeArgs).fail(deferred.reject);
-        return deferred.promise;
-    };
-}
-
-/**
- * Calls a method of a Node-style object that accepts a Node-style
- * callback with a given array of arguments, plus a provided callback.
- * @param object an object that has the named method
- * @param {String} name name of the method of object
- * @param {Array} args arguments to pass to the method; the callback
- * will be provided by Q and appended to these arguments.
- * @returns a promise for the value or error
- */
-Q.npost = npost;
-function npost(object, name, args) {
-    var nodeArgs = array_slice(args || []);
-    var deferred = defer();
-    nodeArgs.push(deferred.makeNodeResolver());
-
-    post(object, name, nodeArgs).fail(deferred.reject);
-    return deferred.promise;
-}
-
-/**
- * Calls a method of a Node-style object that accepts a Node-style
- * callback, forwarding the given variadic arguments, plus a provided
- * callback argument.
- * @param object an object that has the named method
- * @param {String} name name of the method of object
- * @param ...args arguments to pass to the method; the callback will
- * be provided by Q and appended to these arguments.
- * @returns a promise for the value or error
- */
-Q.nsend = nsend;
-Q.ninvoke = Q.nsend; // synonyms
-function nsend(object, name /*, ...args*/) {
-    var nodeArgs = array_slice(arguments, 2);
-    var deferred = defer();
-    nodeArgs.push(deferred.makeNodeResolver());
-    post(object, name, nodeArgs).fail(deferred.reject);
-    return deferred.promise;
-}
-
-Q.nodeify = nodeify;
-function nodeify(promise, nodeback) {
-    if (nodeback) {
-        promise.then(function (value) {
-            nextTick(function () {
-                nodeback(null, value);
-            });
-        }, function (error) {
-            nextTick(function () {
-                nodeback(error);
-            });
-        });
+    } else if (typeof exports === 'object') {
+        // Node. Does not work with strict CommonJS, but
+        // only CommonJS-like environments that support module.exports,
+        // like Node.
+        module.exports = factory();
     } else {
-        return promise;
-    }
-}
-
-// All code before this point will be filtered from stack traces.
-var qEndingLine = captureLine();
-
-return Q;
-
-});
-
-/*
- Copyright 2011 Abdulla Abdurakhmanov
- Original sources are available at https://code.google.com/p/x2js/
-
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
-
- http://www.apache.org/licenses/LICENSE-2.0
-
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
- */
-
-function X2JS(matchers, attrPrefix, ignoreRoot) {
-    if (attrPrefix === null || attrPrefix === undefined) {
-        attrPrefix = "_";
-    }
-    
-    if (ignoreRoot === null || ignoreRoot === undefined) {
-        ignoreRoot = false;
-    }
-    
-	var VERSION = "1.0.11";
-	var escapeMode = false;
-
-	var DOMNodeTypes = {
-		ELEMENT_NODE 	   : 1,
-		TEXT_NODE    	   : 3,
-		CDATA_SECTION_NODE : 4,
-		COMMENT_NODE       : 8,
-		DOCUMENT_NODE 	   : 9
-	};
-	
-	function getNodeLocalName( node ) {
-		var nodeLocalName = node.localName;			
-		if(nodeLocalName == null) // Yeah, this is IE!! 
-			nodeLocalName = node.baseName;
-		if(nodeLocalName == null || nodeLocalName=="") // =="" is IE too
-			nodeLocalName = node.nodeName;
-		return nodeLocalName;
-	}
-	
-	function getNodePrefix(node) {
-		return node.prefix;
-	}
-		
-	function escapeXmlChars(str) {
-		if(typeof(str) == "string")
-			return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g, '&#x2F;');
-		else
-			return str;
-	}
-
-	function unescapeXmlChars(str) {
-		return str.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&#x2F;/g, '\/')
-	}	
-
-	function parseDOMChildren( node ) {
-		if(node.nodeType == DOMNodeTypes.DOCUMENT_NODE) {
-			var result,
-			    child = node.firstChild,
-			    i,
-			    len; 
-			
-			// get the first node that isn't a comment
-			for(i = 0, len = node.childNodes.length; i < len; i += 1) {
-			   if (node.childNodes[i].nodeType !== DOMNodeTypes.COMMENT_NODE) {
-			       child = node.childNodes[i];
-			       break;
-			   } 
-			}
-			
-			if ( ignoreRoot ) {
-			    result = parseDOMChildren(child);
-			} else {
-			    result = {};
-			    var childName = getNodeLocalName(child);
-                result[childName] = parseDOMChildren(child);
-			}
-			
-			return result;
-		}
-		else
-		if(node.nodeType == DOMNodeTypes.ELEMENT_NODE) {
-			var result = new Object;
-			result.__cnt=0;
-			
-			var nodeChildren = node.childNodes;
-			
-			// Children nodes
-			for(var cidx=0; cidx <nodeChildren.length; cidx++) {
-				var child = nodeChildren.item(cidx); // nodeChildren[cidx];
-				var childName = getNodeLocalName(child);
-				
-				result.__cnt++;
-				if(result[childName] == null) {
-					result[childName] = parseDOMChildren(child);
-					result[childName+"_asArray"] = new Array(1);
-					result[childName+"_asArray"][0] = result[childName];
-				}
-				else {
-					if(result[childName] != null) {
-						if( !(result[childName] instanceof Array)) {
-							var tmpObj = result[childName];
-							result[childName] = new Array();
-							result[childName][0] = tmpObj;
-							
-							result[childName+"_asArray"] = result[childName];
-						}
-					}
-					var aridx = 0;
-					while(result[childName][aridx]!=null) aridx++;
-					(result[childName])[aridx] = parseDOMChildren(child);
-				}			
-			}
-			
-			// Attributes
-			for(var aidx=0; aidx <node.attributes.length; aidx++) {
-				var attr = node.attributes.item(aidx); // [aidx];
-				result.__cnt++;
-				
-				var value2 = attr.value;
-				for(var m=0, ml=matchers.length; m < ml; m++) {
-				    var matchobj = matchers[m];
-				    if (matchobj.test.call(this, attr.value))
-				        value2 = matchobj.converter.call(this, attr.value);
-				}
-				
-				result[attrPrefix+attr.name]=value2;
-			}
-			
-			// Node namespace prefix
-			var nodePrefix = getNodePrefix(node);
-			if(nodePrefix!=null && nodePrefix!="") {
-				result.__cnt++;
-				result.__prefix=nodePrefix;
-			}
-			
-			if( result.__cnt == 1 && result["#text"]!=null  ) {
-				result = result["#text"];
-			} 
-			
-			if(result["#text"]!=null) {
-				result.__text = result["#text"];
-				if(escapeMode)
-					result.__text = unescapeXmlChars(result.__text)
-				delete result["#text"];
-				delete result["#text_asArray"];
-			}
-			if(result["#cdata-section"]!=null) {
-				result.__cdata = result["#cdata-section"];
-				delete result["#cdata-section"];
-				delete result["#cdata-section_asArray"];
-			}
-			
-			if(result.__text!=null || result.__cdata!=null) {
-				result.toString = function() {
-					return (this.__text!=null? this.__text:'')+( this.__cdata!=null ? this.__cdata:'');
-				}
-			}
-			return result;
-		}
-		else
-		if(node.nodeType == DOMNodeTypes.TEXT_NODE || node.nodeType == DOMNodeTypes.CDATA_SECTION_NODE) {
-			return node.nodeValue;
-		}	
-		else
-		if(node.nodeType == DOMNodeTypes.COMMENT_NODE) {
-		    return null;
-		}
-	}
-	
-	function startTag(jsonObj, element, attrList, closed) {
-		var resultStr = "<"+ ( (jsonObj!=null && jsonObj.__prefix!=null)? (jsonObj.__prefix+":"):"") + element;
-		if(attrList!=null) {
-			for(var aidx = 0; aidx < attrList.length; aidx++) {
-				var attrName = attrList[aidx];
-				var attrVal = jsonObj[attrName];
-				resultStr+=" "+attrName.substr(1)+"='"+attrVal+"'";
-			}
-		}
-		if(!closed)
-			resultStr+=">";
-		else
-			resultStr+="/>";
-		return resultStr;
-	}
-	
-	function endTag(jsonObj,elementName) {
-		return "</"+ (jsonObj.__prefix!=null? (jsonObj.__prefix+":"):"")+elementName+">";
-	}
-	
-	function endsWith(str, suffix) {
-	    return str.indexOf(suffix, str.length - suffix.length) !== -1;
-	}
-	
-	function jsonXmlSpecialElem ( jsonObj, jsonObjField ) {
-		if(endsWith(jsonObjField.toString(),("_asArray")) 
-				|| jsonObjField.toString().indexOf("_")==0 
-				|| (jsonObj[jsonObjField] instanceof Function) )
-			return true;
-		else
-			return false;
-	}
-	
-	function jsonXmlElemCount ( jsonObj ) {
-		var elementsCnt = 0;
-		if(jsonObj instanceof Object ) {
-			for( var it in jsonObj  ) {
-				if(jsonXmlSpecialElem ( jsonObj, it) )
-					continue;			
-				elementsCnt++;
-			}
-		}
-		return elementsCnt;
-	}
-	
-	function parseJSONAttributes ( jsonObj ) {
-		var attrList = [];
-		if(jsonObj instanceof Object ) {
-			for( var ait in jsonObj  ) {
-				if(ait.toString().indexOf("__")== -1 && ait.toString().indexOf("_")==0) {
-					attrList.push(ait);
-				}
-			}
-		}
-		return attrList;
-	}
-	
-	function parseJSONTextAttrs ( jsonTxtObj ) {
-		var result ="";
-		
-		if(jsonTxtObj.__cdata!=null) {										
-			result+="<![CDATA["+jsonTxtObj.__cdata+"]]>";					
-		}
-		
-		if(jsonTxtObj.__text!=null) {			
-			if(escapeMode)
-				result+=escapeXmlChars(jsonTxtObj.__text);
-			else
-				result+=jsonTxtObj.__text;
-		}
-		return result
-	}
-	
-	function parseJSONTextObject ( jsonTxtObj ) {
-		var result ="";
-
-		if( jsonTxtObj instanceof Object ) {
-			result+=parseJSONTextAttrs ( jsonTxtObj )
-		}
-		else
-			if(jsonTxtObj!=null) {
-				if(escapeMode)
-					result+=escapeXmlChars(jsonTxtObj);
-				else
-					result+=jsonTxtObj;
-			}
-		
-		return result;
-	}
-	
-	function parseJSONArray ( jsonArrRoot, jsonArrObj, attrList ) {
-		var result = ""; 
-		if(jsonArrRoot.length == 0) {
-			result+=startTag(jsonArrRoot, jsonArrObj, attrList, true);
-		}
-		else {
-			for(var arIdx = 0; arIdx < jsonArrRoot.length; arIdx++) {
-				result+=startTag(jsonArrRoot[arIdx], jsonArrObj, parseJSONAttributes(jsonArrRoot[arIdx]), false);
-				result+=parseJSONObject(jsonArrRoot[arIdx]);
-				result+=endTag(jsonArrRoot[arIdx],jsonArrObj);						
-			}
-		}
-		return result;
-	}
-	
-	function parseJSONObject ( jsonObj ) {
-		var result = "";	
-
-		var elementsCnt = jsonXmlElemCount ( jsonObj );
-		
-		if(elementsCnt > 0) {
-			for( var it in jsonObj ) {
-				
-				if(jsonXmlSpecialElem ( jsonObj, it) )
-					continue;			
-				
-				var subObj = jsonObj[it];						
-				
-				var attrList = parseJSONAttributes( subObj )
-				
-				if(subObj == null || subObj == undefined) {
-					result+=startTag(subObj, it, attrList, true)
-				}
-				else
-				if(subObj instanceof Object) {
-					
-					if(subObj instanceof Array) {					
-						result+=parseJSONArray( subObj, it, attrList )					
-					}
-					else {
-						var subObjElementsCnt = jsonXmlElemCount ( subObj );
-						if(subObjElementsCnt > 0 || subObj.__text!=null || subObj.__cdata!=null) {
-							result+=startTag(subObj, it, attrList, false);
-							result+=parseJSONObject(subObj);
-							result+=endTag(subObj,it);
-						}
-						else {
-							result+=startTag(subObj, it, attrList, true);
-						}
-					}
-				}
-				else {
-					result+=startTag(subObj, it, attrList, false);
-					result+=parseJSONTextObject(subObj);
-					result+=endTag(subObj,it);
-				}
-			}
-		}
-		result+=parseJSONTextObject(jsonObj);
-		
-		return result;
-	}
-	
-	this.parseXmlString = function(xmlDocStr) {
-		var xmlDoc;
-		if (window.DOMParser) {
-			// ORANGE: XML parsing management
-			try
-			{
-				var parser=new window.DOMParser();
-				xmlDoc = parser.parseFromString( xmlDocStr, "text/xml" );
-				if(xmlDoc.getElementsByTagName('parsererror').length > 0) {
-					  throw new Error('Error parsing XML');
-				}
-				//var parsererrorNS = parser.parseFromString('INVALID', 'text/xml').childNodes[0].namespaceURI;
-			    //if(xmlDoc.getElementsByTagNameNS(parsererrorNS, 'parsererror').length > 0) {
-			    //    throw new Error('Error parsing XML');
-			    //}		
-			}
-			catch (e)
-			{
-				return null;
-			}
-		}
-		return xmlDoc;
-	}
-
-	this.xml2json = function (xmlDoc) {
-		return parseDOMChildren ( xmlDoc );
-	}
-	
-	this.xml_str2json = function (xmlDocStr) {
-		var xmlDoc = this.parseXmlString(xmlDocStr);	
-		return xmlDoc === null ? xmlDoc : this.xml2json(xmlDoc);
-	}
-
-	this.json2xml_str = function (jsonObj) {
-		return parseJSONObject ( jsonObj );
-	}
-
-	this.json2xml = function (jsonObj) {
-		var xmlDocStr = this.json2xml_str (jsonObj);
-		return this.parseXmlString(xmlDocStr);
-	}
-	
-	this.getVersion = function () {
-		return VERSION;
-	}		
-	
-	this.escapeMode = function(enabled) {
-		escapeMode = enabled;
-	}
-}
-/*
- * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
- * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
- * Copyright (c) 2014, Orange
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-var mp4lib = (function() {
-    var mp4lib = {
-        boxes:{},
-        fields:{},
-
-        // In debug mode, source data buffer is kept for each of deserialized box so any 
-        // structural deserialization problems can be traced by serializing each box
-        // and comparing the resulting buffer with the source buffer.
-        // This greatly increases memory consumption, so it is turned off by default.
-        debug:false,
-
-        // A handler function may be hooked up to display warnings.
-        // A warning is typically non-critical issue, like unknown box in data buffer.
-        warningHandler:function(message){
-            //console.log(message);
-        }
-    };
-
-    var boxTypeArray = {};
-
-    mp4lib.registerTypeBoxes = function() {
-        boxTypeArray["moov"] = mp4lib.boxes.MovieBox;
-        boxTypeArray["moof"] = mp4lib.boxes.MovieFragmentBox;
-        boxTypeArray["ftyp"] = mp4lib.boxes.FileTypeBox;
-        boxTypeArray["mfhd"] = mp4lib.boxes.MovieFragmentHeaderBox;
-        boxTypeArray["mfra"] = mp4lib.boxes.MovieFragmentRandomAccessBox;
-        boxTypeArray["udta"] = mp4lib.boxes.UserDataBox;
-        boxTypeArray["trak"] = mp4lib.boxes.TrackBox;
-        boxTypeArray["edts"] = mp4lib.boxes.EditBox;
-        boxTypeArray["mdia"] = mp4lib.boxes.MediaBox;
-        boxTypeArray["minf"] = mp4lib.boxes.MediaInformationBox;
-        boxTypeArray["dinf"] = mp4lib.boxes.DataInformationBox;
-        boxTypeArray["stbl"] = mp4lib.boxes.SampleTableBox;
-        boxTypeArray["mvex"] = mp4lib.boxes.MovieExtendsBox;
-        boxTypeArray["traf"] = mp4lib.boxes.TrackFragmentBox;
-        boxTypeArray["meta"] = mp4lib.boxes.MetaBox;
-        boxTypeArray["mvhd"] = mp4lib.boxes.MovieHeaderBox;
-        boxTypeArray["mdat"] = mp4lib.boxes.MediaDataBox;
-        boxTypeArray["free"] = mp4lib.boxes.FreeSpaceBox;
-        boxTypeArray["sidx"] = mp4lib.boxes.SegmentIndexBox;
-        boxTypeArray["tkhd"] = mp4lib.boxes.TrackHeaderBox;
-        boxTypeArray["mdhd"] = mp4lib.boxes.MediaHeaderBox;
-        boxTypeArray["mehd"] = mp4lib.boxes.MovieExtendsHeaderBox;
-        boxTypeArray["hdlr"] = mp4lib.boxes.HandlerBox;
-        boxTypeArray["stts"] = mp4lib.boxes.TimeToSampleBox;
-        boxTypeArray["stsc"] = mp4lib.boxes.SampleToChunkBox;
-        boxTypeArray["stco"] = mp4lib.boxes.ChunkOffsetBox;
-        boxTypeArray["trex"] = mp4lib.boxes.TrackExtendsBox;
-        boxTypeArray["vmhd"] = mp4lib.boxes.VideoMediaHeaderBox;
-        boxTypeArray["smhd"] = mp4lib.boxes.SoundMediaHeaderBox;
-        boxTypeArray["dref"] = mp4lib.boxes.DataReferenceBox;
-        boxTypeArray["url "] = mp4lib.boxes.DataEntryUrlBox;
-        boxTypeArray["urn "] = mp4lib.boxes.DataEntryUrnBox;
-        boxTypeArray["tfhd"] = mp4lib.boxes.TrackFragmentHeaderBox;
-        boxTypeArray["tfdt"] = mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox;
-        boxTypeArray["trun"] = mp4lib.boxes.TrackFragmentRunBox;
-        boxTypeArray["stsd"] = mp4lib.boxes.SampleDescriptionBox;
-        boxTypeArray["sdtp"] = mp4lib.boxes.SampleDependencyTableBox;
-        boxTypeArray["avc1"] = mp4lib.boxes.AVC1VisualSampleEntryBox;
-        boxTypeArray["encv"] = mp4lib.boxes.EncryptedVideoBox;
-        boxTypeArray["avcC"] = mp4lib.boxes.AVCConfigurationBox;
-        boxTypeArray["pasp"] = mp4lib.boxes.PixelAspectRatioBox;
-        boxTypeArray["mp4a"] = mp4lib.boxes.MP4AudioSampleEntryBox;
-        boxTypeArray["enca"] = mp4lib.boxes.EncryptedAudioBox;
-        boxTypeArray["esds"] = mp4lib.boxes.ESDBox;
-        boxTypeArray["stsz"] = mp4lib.boxes.SampleSizeBox;
-        boxTypeArray["pssh"] = mp4lib.boxes.ProtectionSystemSpecificHeaderBox;
-        boxTypeArray["saiz"] = mp4lib.boxes.SampleAuxiliaryInformationSizesBox;
-        boxTypeArray["saio"] = mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox;
-        boxTypeArray["sinf"] = mp4lib.boxes.ProtectionSchemeInformationBox;
-        boxTypeArray["schi"] = mp4lib.boxes.SchemeInformationBox;
-        boxTypeArray["tenc"] = mp4lib.boxes.TrackEncryptionBox;
-        boxTypeArray["schm"] = mp4lib.boxes.SchemeTypeBox;
-        boxTypeArray["elst"] = mp4lib.boxes.EditListBox;
-        boxTypeArray["hmhd"] = mp4lib.boxes.HintMediaHeaderBox;
-        boxTypeArray["nmhd"] = mp4lib.boxes.NullMediaHeaderBox;
-        boxTypeArray["ctts"] = mp4lib.boxes.CompositionOffsetBox;
-        boxTypeArray["cslg"] = mp4lib.boxes.CompositionToDecodeBox;
-        boxTypeArray["stss"] = mp4lib.boxes.SyncSampleBox;
-        boxTypeArray["tref"] = mp4lib.boxes.TrackReferenceBox;
-        boxTypeArray["frma"] = mp4lib.boxes.OriginalFormatBox;
-        //extended types
-        boxTypeArray[JSON.stringify([0x6D, 0x1D, 0x9B, 0x05, 0x42, 0xD5, 0x44, 0xE6, 0x80, 0xE2, 0x14, 0x1D, 0xAF, 0xF7, 0x57, 0xB2])] = mp4lib.boxes.TfxdBox;
-        boxTypeArray[JSON.stringify([0xD4, 0x80, 0x7E, 0xF2, 0xCA, 0x39, 0x46, 0x95, 0x8E, 0x54, 0x26, 0xCB, 0x9E, 0x46, 0xA7, 0x9F])] = mp4lib.boxes.TfrfBox;
-        boxTypeArray[JSON.stringify([0xD0, 0x8A, 0x4F, 0x18, 0x10, 0xF3, 0x4A, 0x82, 0xB6, 0xC8, 0x32, 0xD8, 0xAB, 0xA1, 0x83, 0xD3])] = mp4lib.boxes.PiffProtectionSystemSpecificHeaderBox;
-        boxTypeArray[JSON.stringify([0x89, 0x74, 0xDB, 0xCE, 0x7B, 0xE7, 0x4C, 0x51, 0x84, 0xF9, 0x71, 0x48, 0xF9, 0x88, 0x25, 0x54])] = mp4lib.boxes.PiffTrackEncryptionBox;
-        boxTypeArray[JSON.stringify([0xA2, 0x39, 0x4F, 0x52, 0x5A, 0x9B, 0x4F, 0x14, 0xA2, 0x44, 0x6C, 0x42, 0x7C, 0x64, 0x8D, 0xF4])] = mp4lib.boxes.PiffSampleEncryptionBox;
-    };
-    
-
-    mp4lib.constructorTypeBox = function (type) {
-        var obj, args;
-        obj = Object.create(type.prototype);
-        args = Array.prototype.slice.call(arguments, 1);
-        type.apply(obj, args);
-        return obj;
-    };
-
-    mp4lib.searchBox = function ( boxtype, uuid ){
-        var boxType;
-
-        if (uuid) {
-            boxType = boxTypeArray[uuid];
-        }
-        else {
-            boxType = boxTypeArray[boxtype];
-        }
-        
-        if (!boxType){
-            boxType = mp4lib.boxes.UnknownBox;
-        }
-
-        return boxType;
-    };
-           
-    mp4lib.createBox = function( boxtype,size, uuid) {
-        return mp4lib.constructorTypeBox.apply(null, [mp4lib.searchBox(boxtype, uuid),size]);
-    };
-    
-    /**
-    deserialize binary data (uint8array) into mp4lib.File object
-    */
-    mp4lib.deserialize = function(uint8array) {
-        var f = new mp4lib.boxes.File();
-        try{
-            f.read(uint8array);
-        }catch(e){
-            mp4lib.warningHandler(e.message);
-            return null;
-        }
-        return f;
-    };
-
-    /**
-    serialize box (or mp4lib.File) into binary data (uint8array)
-    */
-    mp4lib.serialize = function(f) {
-        var file_size = f.getLength(),
-            uint8array = new Uint8Array(file_size);
-        f.write(uint8array);
-        return uint8array;
-    };
-
-    /**
-    exception thrown when binary data is malformed
-    it is thrown typically during deserialization
-    */
-    mp4lib.ParseException = function(message) {
-        this.message = message;
-        this.name = "ParseException";
-    };
-
-    /**
-    exception thrown when box objects contains invalid data, 
-    ex. flag field is are not coherent with fields etc.
-    it is thrown typically during object manipulation or serialization
-    */
-    mp4lib.DataIntegrityException = function(message) {
-        this.message = message;
-        this.name = "DataIntegrityException";
-    };
-
-    return mp4lib;
-})();
-
-// This module is intended to work both on node.js and inside browser.
-// Since these environments differ in a way modules are stored/accessed,
-// we need to export the module in the environment-dependant way
-
-if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
-    module.exports = mp4lib; // node.js
-else
-    window.mp4lib = mp4lib;  // browser
-
-
-/*
- * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
- * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2014, Orange
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- *
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-mp4lib.fields.readBytes = function(buf, pos, nbBytes) {
-    var value = 0,
-        i = 0;
-    for (i = 0; i < nbBytes; i++) {
-        value = value << 8;
-        value = value + buf[pos];
-        pos++;
-    }
-    return value;
-};
-
-mp4lib.fields.writeBytes = function(buf, pos, nbBytes, value) {
-    var i = 0;
-    for (i = 0; i < nbBytes; i++) {
-        buf[pos + nbBytes - i - 1] = value & 0xFF;
-        value = value >> 8;
-    }
-};
-
-mp4lib.fields.readString = function(buf, pos, count) {
-    var res = "",
-        i;
-    for (i = pos; i < pos + count; i++) {
-        res += String.fromCharCode(buf[i]);
-    }
-    return res;
-};
-
-//------------------------------- NumberField -------------------------------
-
-mp4lib.fields.NumberField = function(bits, signed) {
-    this.bits = bits;
-    this.signed = signed;
-};
-
-mp4lib.fields.NumberField.prototype.read = function(buf, pos) {
-    return mp4lib.fields.readBytes(buf, pos, this.bits / 8);
-};
-
-mp4lib.fields.NumberField.prototype.write = function(buf, pos, val) {
-    mp4lib.fields.writeBytes(buf, pos, this.bits / 8, val);
-};
-
-mp4lib.fields.NumberField.prototype.getLength = function() {
-    return this.bits / 8;
-};
-
-//------------------------------- 64BitsNumberField -------------------------------
-
-mp4lib.fields.LongNumberField = function() {};
-
-mp4lib.fields.LongNumberField.prototype.read = function(buf, pos) {
-    var high = mp4lib.fields.readBytes(buf, pos, 4),
-        low = mp4lib.fields.readBytes(buf, pos + 4, 4);
-    return goog.math.Long.fromBits(low, high).toNumber();
-};
-
-mp4lib.fields.LongNumberField.prototype.write = function(buf, pos, val) {
-    var longNumber = goog.math.Long.fromNumber(val),
-        low = longNumber.getLowBits(),
-        high = longNumber.getHighBits();
-    mp4lib.fields.writeBytes(buf, pos, 4, high);
-    mp4lib.fields.writeBytes(buf, pos + 4, 4, low);
-};
-
-mp4lib.fields.LongNumberField.prototype.getLength = function() {
-    return 8;
-};
-
-//------------------------------- FixedLenStringField -------------------------------
-
-mp4lib.fields.FixedLenStringField = function(size) {
-    this.size = size;
-};
-
-mp4lib.fields.FixedLenStringField.prototype.read = function(buf, pos) {
-    var res = "",
-        i = 0;
-    for (i = 0; i < this.size; i++) {
-        res = res + String.fromCharCode(buf[pos + i]);
-    }
-    return res;
-};
-
-mp4lib.fields.FixedLenStringField.prototype.write = function(buf, pos, val) {
-    var i = 0;
-    for (i = 0; i < this.size; i++) {
-        buf[pos + i] = val.charCodeAt(i);
-    }
-};
-
-mp4lib.fields.FixedLenStringField.prototype.getLength = function() {
-    return this.size;
-};
-
-//------------------------------- BoxTypeField -------------------------------
-
-mp4lib.fields.BoxTypeField = function() {};
-
-mp4lib.fields.BoxTypeField.prototype.read = function(buf, pos) {
-    var res = "",
-        i = 0;
-    for (i = 0; i < 4; i++) {
-        res = res + String.fromCharCode(buf[pos + i]);
-    }
-    return res;
-};
-
-mp4lib.fields.BoxTypeField.prototype.write = function(buf, pos, val) {
-    var i = 0;
-    for (i = 0; i < 4; i++) {
-        buf[pos + i] = val.charCodeAt(i);
-    }
-};
-
-mp4lib.fields.BoxTypeField.prototype.getLength = function() {
-    return 4;
-};
-
-
-//------------------------------- StringField -------------------------------
-
-mp4lib.fields.StringField = function() {};
-
-
-mp4lib.fields.StringField.prototype.read = function(buf, pos, end) {
-    var res = "",
-        i = 0;
-
-    for (i = pos; i < end; i++) {
-        res = res + String.fromCharCode(buf[i]);
-        if (buf[i] === 0) {
-            return res;
-        }
-    }
-
-    if ((end - pos < 255) && (buf[0] == String.fromCharCode(end - pos))) {
-        res = res.substr(1, end - pos);
-        mp4lib.warningHandler('null-terminated string expected, ' +
-            'but found a string "' + res + '", which seems to be ' +
-            'length-prefixed instead. Conversion done.');
-        return res;
-    }
-
-    throw new mp4lib.ParseException('expected null-terminated string, ' +
-        'but end of field reached without termination. ' +
-        'Read so far:"' + res + '"');
-};
-
-mp4lib.fields.StringField.prototype.write = function(buf, pos, val) {
-    var i = 0;
-
-    for (i = 0; i < val.length; i++) {
-        buf[pos + i] = val.charCodeAt(i);
-    }
-    buf[pos + val.length] = 0;
-};
-
-mp4lib.fields.StringField.prototype.getLength = function(val) {
-    return val.length;
-};
-
-//------------------------------- ArrayField -------------------------------
-
-mp4lib.fields.ArrayField = function(innerField, size) {
-    this.innerField = innerField;
-    this.size = size;
-};
-
-mp4lib.fields.ArrayField.prototype.read = function(buf, pos) {
-    var innerFieldLength = -1,
-        res = [],
-        i = 0;
-    for (i = 0; i < this.size; i++) {
-
-        res.push(this.innerField.read(buf, pos));
-
-        if (innerFieldLength == -1) {
-            innerFieldLength = this.innerField.getLength(res[i]);
-        }
-        // it may happen that the size of field depends on the box flags, 
-        // we need to count is having box and first structure constructed
-
-        pos += innerFieldLength;
-    }
-    return res;
-};
-
-// pre-defined shortcuts for common fields 
-// ( it is recommended to use these shortcuts to avoid constructors 
-//   being called for every field processing action )
-mp4lib.fields.FIELD_INT8 = new mp4lib.fields.NumberField(8, true);
-mp4lib.fields.FIELD_INT16 = new mp4lib.fields.NumberField(16, true);
-mp4lib.fields.FIELD_INT32 = new mp4lib.fields.NumberField(32, true);
-mp4lib.fields.FIELD_INT64 = new mp4lib.fields.LongNumberField();
-mp4lib.fields.FIELD_UINT8 = new mp4lib.fields.NumberField(8, false);
-mp4lib.fields.FIELD_UINT16 = new mp4lib.fields.NumberField(16, false);
-mp4lib.fields.FIELD_UINT32 = new mp4lib.fields.NumberField(32, false);
-mp4lib.fields.FIELD_UINT64 = new mp4lib.fields.LongNumberField();
-mp4lib.fields.FIELD_BIT8 = new mp4lib.fields.NumberField(8, false);
-mp4lib.fields.FIELD_BIT16 = new mp4lib.fields.NumberField(16, false);
-mp4lib.fields.FIELD_BIT24 = new mp4lib.fields.NumberField(24, false);
-mp4lib.fields.FIELD_BIT32 = new mp4lib.fields.NumberField(32, false);
-mp4lib.fields.FIELD_ID = new mp4lib.fields.BoxTypeField(4);
-mp4lib.fields.FIELD_STRING = new mp4lib.fields.StringField();
-/*
- * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
- * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2014, Orange
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- *
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-// ---------- File (treated similarly to box in terms of processing) ----------
-mp4lib.boxes.File = function() {
-    this.boxes = [];
-};
-
-mp4lib.boxes.File.prototype.getBoxByType = function(boxType) {
-    var i = 0;
-
-    for (i = 0; i < this.boxes.length; i++) {
-        if (this.boxes[i].boxtype === boxType) {
-            return this.boxes[i];
-        }
-    }
-    return null;
-};
-
-mp4lib.boxes.File.prototype.getLength = function() {
-    var length = 0,
-        i = 0;
-
-    for (i = 0; i < this.boxes.length; i++) {
-        this.boxes[i].computeLength();
-        length += this.boxes[i].size;
-    }
-
-    return length;
-};
-
-mp4lib.boxes.File.prototype.write = function(data) {
-    var pos = 0,
-        i = 0;
-
-    for (i = 0; i < this.boxes.length; i++) {
-        pos = this.boxes[i].write(data, pos);
-    }
-};
-
-mp4lib.boxes.File.prototype.read = function(data) {
-    var size = 0,
-        boxtype = null,
-        uuidFieldPos = 0,
-        uuid = null,
-        pos = 0,
-        end = data.length,
-        box;
-
-    while (pos < end) {
-        // Read box size
-        size = mp4lib.fields.FIELD_UINT32.read(data, pos);
-
-        // Read boxtype
-        boxtype = mp4lib.fields.readString(data, pos + 4, 4);
-
-        // Extented type?
-        if (boxtype == "uuid") {
-            uuidFieldPos = (size == 1) ? 16 : 8;
-            uuid = new mp4lib.fields.ArrayField(mp4lib.fields.FIELD_INT8, 16).read(data, pos + uuidFieldPos, pos + uuidFieldPos + 16);
-            uuid = JSON.stringify(uuid);
-        }
-
-        box = mp4lib.createBox(boxtype, size, uuid);
-        if (boxtype === "uuid") {
-            pos = box.read(data, pos + mp4lib.fields.FIELD_INT8.getLength() * 16 + 8, pos + size);
-            uuid = null;
-        } else {
-            pos = box.read(data, pos + 8, pos + size);
-        }
-
-        // in debug mode, sourcebuffer is copied to each box,
-        // so any invalid deserializations may be found by comparing
-        // source buffer with serialized box
-        if (mp4lib.debug) {
-            box.__sourceBuffer = data.subarray(pos - box.size, pos);
-        }
-
-        //if boxtype is unknown, don't add it to the list box
-        if (box.boxtype) {
-            this.boxes.push(box);
-        }
-
-        if (box.size <= 0 || box.size === null) {
-            throw new mp4lib.ParseException('Problem on size of box ' + box.boxtype +
-                ', parsing stopped to avoid infinite loop');
-        }
-    }
-};
-
-/**
-find child position
-*/
-mp4lib.boxes.File.prototype.getBoxOffsetByType = function(boxType) {
-    var offset = 0,
-        i = 0;
-
-    for (i = 0; i < this.boxes.length; i++) {
-        if (this.boxes[i].boxtype === boxType) {
-            return offset;
-        }
-        offset += this.boxes[i].size;
-    }
-    return -1;
-};
-
-mp4lib.boxes.File.prototype.getBoxIndexByType = function(boxType) {
-    var index = 0,
-        i = 0;
-
-    for (i = 0; i < this.boxes.length; i++) {
-        if (this.boxes[i].boxtype === boxType) {
-            return index;
-        }
-        index++;
-    }
-    return -1;
-};
-
-
-// ---------- Generic Box -------------------------------
-mp4lib.boxes.Box = function(boxType, size, uuid, largesize) {
-    this.size = size || null;
-    this.boxtype = boxType;
-    //large size management to do...
-    if (this.size === 1 && largesize) {
-        this.largesize = largesize;
-    }
-
-    if (uuid) {
-        this.extended_type = uuid;
-    }
-
-    this.localPos = 0;
-    this.localEnd = 0;
-};
-
-mp4lib.boxes.Box.prototype.write = function(data, pos) {
-    this.localPos = pos;
-    var i = 0;
-
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.size);
-    //if extended_type is not defined, boxtype must have this.boxtype value
-    if (!this.extended_type) {
-        this._writeData(data, mp4lib.fields.FIELD_ID, this.boxtype);
-    } else { //if extended_type is defined, boxtype must have 'uuid' value
-        this._writeData(data, mp4lib.fields.FIELD_ID, 'uuid');
-    }
-
-    if (this.size === 1) {
-        this._writeData(data, mp4lib.fields.FIELD_INT64, this.largesize);
-    }
-
-    if (this.extended_type) {
-        for (i = 0; i < 16; i++) {
-            this._writeData(data, mp4lib.fields.FIELD_INT8, this.extended_type[i]);
-        }
-    }
-};
-
-mp4lib.boxes.Box.prototype.getBoxByType = function(boxType) {
-    var i = 0;
-    if (this.hasOwnProperty('boxes')) {
-        for (i = 0; i < this.boxes.length; i++) {
-            if (this.boxes[i].boxtype === boxType) {
-                return this.boxes[i];
-            }
-        }
-    }
-    return null;
-};
-
-
-mp4lib.boxes.Box.prototype.getBoxesByType = function(boxType) {
-    var resu = [],
-        i = 0;
-    if (this.hasOwnProperty('boxes')) {
-        for (i = 0; i < this.boxes.length; i++) {
-            if (this.boxes[i].boxtype === boxType) {
-                resu.push(this.boxes[i]);
-            }
-        }
-    }
-    return resu;
-};
-
-/**
-remove child from a box
-*/
-mp4lib.boxes.Box.prototype.removeBoxByType = function(boxType) {
-    var i = 0;
-
-    if (this.hasOwnProperty('boxes')) {
-        for (i = 0; i < this.boxes.length; i++) {
-            if (this.boxes[i].boxtype === boxType) {
-                this.boxes.splice(i, 1);
-            }
-        }
-    } else {
-        mp4lib.warningHandler('' + this.boxtype + 'does not have ' + boxType + ' box, impossible to remove it');
-    }
-};
-
-/**
-find child position
-*/
-mp4lib.boxes.Box.prototype.getBoxOffsetByType = function(boxType) {
-    var offset = 8,
-        i = 0;
-
-    if (this.hasOwnProperty('boxes')) {
-        for (i = 0; i < this.boxes.length; i++) {
-            if (this.boxes[i].boxtype === boxType) {
-                return offset;
-            }
-            offset += this.boxes[i].size;
-        }
-    }
-    return null;
-};
-
-mp4lib.boxes.Box.prototype.getBoxIndexByType = function(boxType) {
-    var index = 0,
-        i = 0;
-
-    if (this.hasOwnProperty('boxes')) {
-        for (i = 0; i < this.boxes.length; i++) {
-            if (this.boxes[i].boxtype === boxType) {
-                return index;
-            }
-            index++;
-        }
-    }
-    return null;
-};
-
-mp4lib.boxes.Box.prototype.computeLength = function() {
-    this.size = mp4lib.fields.FIELD_UINT32.getLength() + mp4lib.fields.FIELD_ID.getLength(); //size and boxtype length
-
-    /*if (this.size === 1) {
-        this.size += mp4lib.fields.FIELD_INT64.getLength(); //add large_size length
-    }*/
-    if (this.extended_type) {
-        this.size += mp4lib.fields.FIELD_INT8.getLength() * 16; //add extended_type length.
-    }
-};
-
-mp4lib.boxes.Box.prototype._readData = function(data, dataType) {
-    var resu = dataType.read(data, this.localPos, this.localEnd);
-    this.localPos += dataType.getLength(resu);
-    return resu;
-};
-
-mp4lib.boxes.Box.prototype._writeData = function(data, dataType, dataField) {
-    if (dataField === undefined || dataField === null) {
-        throw new mp4lib.ParseException('a field to write is null or undefined for box : ' + this.boxtype);
-    } else {
-        dataType.write(data, this.localPos, dataField);
-        this.localPos += dataType.getLength(dataField);
-    }
-};
-
-mp4lib.boxes.Box.prototype._writeBuffer = function(data, dataField, size) {
-    data.set(dataField, this.localPos);
-    this.localPos += size;
-};
-
-mp4lib.boxes.Box.prototype._writeArrayData = function(data, dataArrayType, array) {
-    var i = 0;
-
-    if (array === undefined || array === null || array.length === 0) {
-        throw new mp4lib.ParseException('an array to write is null, undefined or length = 0 for box : ' + this.boxtype);
-    }
-
-    for (i = 0; i < array.length; i++) {
-        this._writeData(data, dataArrayType, array[i]);
-    }
-};
-
-mp4lib.boxes.Box.prototype._readArrayData = function(data, dataArrayType) {
-    var array = [],
-        dataArrayTypeLength = dataArrayType.getLength(),
-        size = (this.localEnd - this.localPos) / dataArrayTypeLength,
-        i = 0;
-
-    for (i = 0; i < size; i++) {
-        array.push(dataArrayType.read(data, this.localPos));
-        this.localPos += dataArrayTypeLength;
-    }
-    return array;
-};
-
-mp4lib.boxes.Box.prototype._readArrayFieldData = function(data, dataArrayType, arraySize) {
-    var innerFieldLength = -1,
-        array = [],
-        i = 0;
-
-    for (i = 0; i < arraySize; i++) {
-
-        array.push(dataArrayType.read(data, this.localPos));
-
-        if (innerFieldLength === -1) {
-            innerFieldLength = dataArrayType.getLength(array[i]);
-        }
-        // it may happen that the size of field depends on the box flags,
-        // we need to count is having box and first structure constructed
-
-        this.localPos += innerFieldLength;
-    }
-    return array;
-};
-
-// ---------- Abstract Container Box -------------------------------
-mp4lib.boxes.ContainerBox = function(boxType, size) {
-    mp4lib.boxes.Box.call(this, boxType, size);
-    this.boxes = [];
-};
-
-mp4lib.boxes.ContainerBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
-mp4lib.boxes.ContainerBox.prototype.constructor = mp4lib.boxes.ContainerBox;
-
-mp4lib.boxes.ContainerBox.prototype.computeLength = function() {
-    mp4lib.boxes.Box.prototype.computeLength.call(this);
-    var i = 0;
-    for (i = 0; i < this.boxes.length; i++) {
-        this.boxes[i].computeLength();
-        this.size += this.boxes[i].size;
-    }
-};
-
-mp4lib.boxes.ContainerBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
-    var i = 0;
-
-    for (i = 0; i < this.boxes.length; i++) {
-        this.localPos = this.boxes[i].write(data, this.localPos);
-    }
-
-    return this.localPos;
-};
-
-mp4lib.boxes.ContainerBox.prototype.read = function(data, pos, end) {
-    var size = 0,
-        uuidFieldPos = 0,
-        uuid = null,
-        boxtype,
-        box;
-
-    while (pos < end) {
-        // Read box size
-        size = mp4lib.fields.FIELD_UINT32.read(data, pos);
-
-        // Read boxtype
-        boxtype = mp4lib.fields.readString(data, pos + 4, 4);
-
-        // Extented type?
-        if (boxtype === "uuid") {
-            uuidFieldPos = (size == 1) ? 16 : 8;
-            uuid = new mp4lib.fields.ArrayField(mp4lib.fields.FIELD_INT8, 16).read(data, pos + uuidFieldPos, pos + uuidFieldPos + 16);
-            uuid = JSON.stringify(uuid);
-        }
-
-        box = mp4lib.createBox(boxtype, size, uuid);
-        if (boxtype === "uuid") {
-            pos = box.read(data, pos + mp4lib.fields.FIELD_INT8.getLength() * 16 + 8, pos + size);
-            uuid = null;
-        } else {
-            pos = box.read(data, pos + 8, pos + size);
-        }
-
-        // in debug mode, sourcebuffer is copied to each box,
-        // so any invalid deserializations may be found by comparing
-        // source buffer with serialized box
-        if (mp4lib.debug) {
-            box.__sourceBuffer = data.subarray(pos - box.size, pos);
-        }
-        
-        //if boxtype is unknown, don't add it to the list box
-        if (box.boxtype) {
-            this.boxes.push(box);
-        }
-
-        if (box.size <= 0 || box.size === null) {
-            throw new mp4lib.ParseException('Problem on size of box ' + box.boxtype +
-                ', parsing stopped to avoid infinite loop');
-        }
-    }
-
-    return pos;
-};
-
-// ---------- Full Box -------------------------------
-mp4lib.boxes.FullBox = function(boxType, size, uuid) {
-    mp4lib.boxes.Box.call(this, boxType, size, uuid);
-    this.version = null;
-    this.flags = null;
-};
-
-mp4lib.boxes.FullBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
-mp4lib.boxes.FullBox.prototype.constructor = mp4lib.boxes.FullBox;
-
-mp4lib.boxes.FullBox.prototype.read = function(data, pos, end) {
-    this.localPos = pos;
-    this.localEnd = end;
-    this.version = this._readData(data, mp4lib.fields.FIELD_INT8);
-    this.flags = this._readData(data, mp4lib.fields.FIELD_BIT24);
-};
-
-mp4lib.boxes.FullBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
-
-    this._writeData(data, mp4lib.fields.FIELD_INT8, this.version);
-    this._writeData(data, mp4lib.fields.FIELD_BIT24, this.flags);
-};
-
-mp4lib.boxes.FullBox.prototype.getFullBoxAttributesLength = function() {
-    this.size += mp4lib.fields.FIELD_INT8.getLength() + mp4lib.fields.FIELD_BIT24.getLength(); //version and flags size
-};
-
-mp4lib.boxes.FullBox.prototype.computeLength = function() {
-    mp4lib.boxes.Box.prototype.computeLength.call(this);
-    mp4lib.boxes.FullBox.prototype.getFullBoxAttributesLength.call(this);
-};
-
-// ---------- Abstract Container FullBox -------------------------------
-mp4lib.boxes.ContainerFullBox = function(boxType, size) {
-    mp4lib.boxes.FullBox.call(this, boxType, size);
-    this.boxes = [];
-};
-
-mp4lib.boxes.ContainerFullBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.ContainerFullBox.prototype.constructor = mp4lib.boxes.ContainerFullBox;
-
-mp4lib.boxes.ContainerFullBox.prototype.computeLength = function(isEntryCount) {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    var i = 0;
-
-    if (isEntryCount) {
-        this.size += mp4lib.fields.FIELD_UINT32.getLength();
-    }
-
-    for (i = 0; i < this.boxes.length; i++) {
-        this.boxes[i].computeLength();
-        this.size += this.boxes[i].size;
-    }
-};
-
-mp4lib.boxes.ContainerFullBox.prototype.read = function(data, pos, end, isEntryCount) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-    var size = 0,
-        uuidFieldPos = 0,
-        uuid = null,
-        boxtype, box;
-
-    if (isEntryCount) {
-        this.entry_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    }
-
-    while (this.localPos < this.localEnd) {
-        // Read box size
-        size = mp4lib.fields.FIELD_UINT32.read(data, this.localPos);
-
-        // Read boxtype
-        boxtype = mp4lib.fields.readString(data, this.localPos + 4, 4);
-
-        // Extented type?
-        if (boxtype == "uuid") {
-            uuidFieldPos = (size == 1) ? 16 : 8;
-            uuid = new mp4lib.fields.ArrayField(mp4lib.fields.FIELD_INT8, 16).read(data, this.localPos + uuidFieldPos, this.localPos + uuidFieldPos + 16);
-            uuid = JSON.stringify(uuid);
-        }
-
-        box = mp4lib.createBox(boxtype, size, uuid);
-        if (boxtype === "uuid") {
-            this.localPos = box.read(data, this.localPos + mp4lib.fields.FIELD_INT8.getLength() * 16 + 8, this.localPos + size);
-            uuid = null;
-        } else {
-            this.localPos = box.read(data, this.localPos + 8, this.localPos + size);
-        }
-
-        // in debug mode, sourcebuffer is copied to each box,
-        // so any invalid deserializations may be found by comparing
-        // source buffer with serialized box
-        if (mp4lib.debug) {
-            box.__sourceBuffer = data.subarray(this.localPos - box.size, this.localPos);
-        }
-
-        if (box.boxtype) {
-            this.boxes.push(box);
-        }
-
-        if (box.size <= 0 || box.size === null) {
-            throw new mp4lib.ParseException('Problem on size of box ' + box.boxtype +
-                ', parsing stopped to avoid infinite loop');
-        }
-    }
-
-    return this.localPos;
-};
-
-mp4lib.boxes.ContainerFullBox.prototype.write = function(data, pos, isEntryCount) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-    var i = 0;
-
-    if (isEntryCount === true) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
-    }
-
-    for (i = 0; i < this.boxes.length; i++) {
-        this.localPos = this.boxes[i].write(data, this.localPos);
-    }
-
-    return this.localPos;
-};
-
-// ----------- Unknown Box -----------------------------
-
-mp4lib.boxes.UnknownBox = function(size) {
-    mp4lib.boxes.Box.call(this, null, size);
-};
-
-mp4lib.boxes.UnknownBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
-mp4lib.boxes.UnknownBox.prototype.constructor = mp4lib.boxes.UnknownBox;
-
-mp4lib.boxes.UnknownBox.prototype.read = function(data, pos, end) {
-    this.localPos = pos;
-    this.localEnd = end;
-
-    this.unrecognized_data = data.subarray(this.localPos, this.localEnd);
-
-    return this.localEnd;
-};
-
-mp4lib.boxes.UnknownBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
-
-    this._writeBuffer(data, this.unrecognized_data, this.unrecognized_data.length);
-
-    return this.localPos;
-};
-
-mp4lib.boxes.UnknownBox.prototype.computeLength = function() {
-    mp4lib.boxes.Box.prototype.computeLength.call(this);
-    this.size += this.unrecognized_data.length;
-};
-
-// --------------------------- ftyp ----------------------------------
-
-mp4lib.boxes.FileTypeBox = function(size) {
-    mp4lib.boxes.Box.call(this, 'ftyp', size);
-};
-
-mp4lib.boxes.FileTypeBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
-mp4lib.boxes.FileTypeBox.prototype.constructor = mp4lib.boxes.FileTypeBox;
-
-mp4lib.boxes.FileTypeBox.prototype.computeLength = function() {
-    mp4lib.boxes.Box.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_INT32.getLength() * 2 + mp4lib.fields.FIELD_INT32.getLength() * this.compatible_brands.length;
-};
-
-mp4lib.boxes.FileTypeBox.prototype.read = function(data, pos, end) {
-    this.localPos = pos;
-    this.localEnd = end;
-
-    this.major_brand = this._readData(data, mp4lib.fields.FIELD_INT32);
-    this.minor_brand = this._readData(data, mp4lib.fields.FIELD_INT32);
-    this.compatible_brands = this._readArrayData(data, mp4lib.fields.FIELD_INT32);
-
-    return this.localPos;
-};
-
-mp4lib.boxes.FileTypeBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
-
-    this._writeData(data, mp4lib.fields.FIELD_INT32, this.major_brand);
-    this._writeData(data, mp4lib.fields.FIELD_INT32, this.minor_brand);
-    this._writeArrayData(data, mp4lib.fields.FIELD_INT32, this.compatible_brands);
-
-    return this.localPos;
-};
-// --------------------------- moov ----------------------------------
-
-mp4lib.boxes.MovieBox = function(size) {
-    mp4lib.boxes.ContainerBox.call(this, 'moov', size);
-};
-
-mp4lib.boxes.MovieBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
-mp4lib.boxes.MovieBox.prototype.constructor = mp4lib.boxes.MovieBox;
-
-// --------------------------- moof ----------------------------------
-mp4lib.boxes.MovieFragmentBox = function(size) {
-    mp4lib.boxes.ContainerBox.call(this, 'moof', size);
-};
-
-mp4lib.boxes.MovieFragmentBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
-mp4lib.boxes.MovieFragmentBox.prototype.constructor = mp4lib.boxes.MovieFragmentBox;
-
-// --------------------------- mfra ----------------------------------
-mp4lib.boxes.MovieFragmentRandomAccessBox = function(size) {
-    mp4lib.boxes.ContainerBox.call(this, 'mfra', size);
-};
-
-mp4lib.boxes.MovieFragmentRandomAccessBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
-mp4lib.boxes.MovieFragmentRandomAccessBox.prototype.constructor = mp4lib.boxes.MovieFragmentRandomAccessBox;
-
-// --------------------------- udta ----------------------------------
-mp4lib.boxes.UserDataBox = function(size) {
-    mp4lib.boxes.ContainerBox.call(this, 'udta', size);
-};
-
-mp4lib.boxes.UserDataBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
-mp4lib.boxes.UserDataBox.prototype.constructor = mp4lib.boxes.UserDataBox;
-
-// --------------------------- trak ----------------------------------
-mp4lib.boxes.TrackBox = function(size) {
-    mp4lib.boxes.ContainerBox.call(this, 'trak', size);
-};
-
-mp4lib.boxes.TrackBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
-mp4lib.boxes.TrackBox.prototype.constructor = mp4lib.boxes.TrackBox;
-
-// --------------------------- edts ----------------------------------
-mp4lib.boxes.EditBox = function(size) {
-    mp4lib.boxes.ContainerBox.call(this, 'edts', size);
-};
-
-mp4lib.boxes.EditBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
-mp4lib.boxes.EditBox.prototype.constructor = mp4lib.boxes.EditBox;
-
-// --------------------------- mdia ----------------------------------
-mp4lib.boxes.MediaBox = function(size) {
-    mp4lib.boxes.ContainerBox.call(this, 'mdia', size);
-};
-
-mp4lib.boxes.MediaBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
-mp4lib.boxes.MediaBox.prototype.constructor = mp4lib.boxes.MediaBox;
-
-// --------------------------- minf ----------------------------------
-mp4lib.boxes.MediaInformationBox = function(size) {
-    mp4lib.boxes.ContainerBox.call(this, 'minf', size);
-};
-
-mp4lib.boxes.MediaInformationBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
-mp4lib.boxes.MediaInformationBox.prototype.constructor = mp4lib.boxes.MediaInformationBox;
-
-// --------------------------- dinf ----------------------------------
-mp4lib.boxes.DataInformationBox = function(size) {
-    mp4lib.boxes.ContainerBox.call(this, 'dinf', size);
-};
-
-mp4lib.boxes.DataInformationBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
-mp4lib.boxes.DataInformationBox.prototype.constructor = mp4lib.boxes.DataInformationBox;
-
-// --------------------------- stbl ----------------------------------
-mp4lib.boxes.SampleTableBox = function(size) {
-    mp4lib.boxes.ContainerBox.call(this, 'stbl', size);
-};
-
-mp4lib.boxes.SampleTableBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
-mp4lib.boxes.SampleTableBox.prototype.constructor = mp4lib.boxes.SampleTableBox;
-
-// --------------------------- mvex ----------------------------------
-mp4lib.boxes.MovieExtendsBox = function(size) {
-    mp4lib.boxes.ContainerBox.call(this, 'mvex', size);
-};
-
-mp4lib.boxes.MovieExtendsBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
-mp4lib.boxes.MovieExtendsBox.prototype.constructor = mp4lib.boxes.MovieExtendsBox;
-
-// --------------------------- traf ----------------------------------
-mp4lib.boxes.TrackFragmentBox = function(size) {
-    mp4lib.boxes.ContainerBox.call(this, 'traf', size);
-};
-
-mp4lib.boxes.TrackFragmentBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
-mp4lib.boxes.TrackFragmentBox.prototype.constructor = mp4lib.boxes.TrackFragmentBox;
-
-// --------------------------- meta -----------------------------
-mp4lib.boxes.MetaBox = function(size) {
-    mp4lib.boxes.ContainerFullBox.call(this, 'meta', size);
-};
-
-mp4lib.boxes.MetaBox.prototype = Object.create(mp4lib.boxes.ContainerFullBox.prototype);
-mp4lib.boxes.MetaBox.prototype.constructor = mp4lib.boxes.MetaBox;
-
-mp4lib.boxes.MetaBox.prototype.computeLength = function() {
-    mp4lib.boxes.ContainerFullBox.prototype.computeLength.call(this, false);
-};
-
-mp4lib.boxes.MetaBox.prototype.read = function(data, pos, end) {
-    return mp4lib.boxes.ContainerFullBox.prototype.read.call(this, data, pos, end, false);
-};
-
-mp4lib.boxes.MetaBox.prototype.write = function(data, pos) {
-    return mp4lib.boxes.ContainerFullBox.prototype.write.call(this, data, pos, false);
-};
-
-// --------------------------- mvhd ----------------------------------
-mp4lib.boxes.MovieHeaderBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'mvhd', size);
-};
-
-mp4lib.boxes.MovieHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.MovieHeaderBox.prototype.constructor = mp4lib.boxes.MovieHeaderBox;
-
-mp4lib.boxes.MovieHeaderBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-
-    this.size += mp4lib.fields.FIELD_INT32.getLength() /*rate size*/ + mp4lib.fields.FIELD_INT16.getLength() * 2 /*volume size and reserved size*/ ;
-    this.size += mp4lib.fields.FIELD_INT32.getLength() * 2 /*reserved_2 size*/ + mp4lib.fields.FIELD_INT32.getLength() * 9 /*matrix size*/ ;
-    this.size += mp4lib.fields.FIELD_BIT32.getLength() * 6 /*pre_defined size*/ + mp4lib.fields.FIELD_UINT32.getLength() /*next_track_ID size*/ ;
-    if (this.version === 1) {
-        this.size += mp4lib.fields.FIELD_UINT64.getLength() * 3 + mp4lib.fields.FIELD_UINT32.getLength();
-    } else {
-        this.size += mp4lib.fields.FIELD_UINT32.getLength() * 4;
-    }
-};
-
-mp4lib.boxes.MovieHeaderBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    if (this.version === 1) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.creation_time);
-        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.modification_time);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.timescale);
-        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.duration);
-    } else {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.creation_time);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.modification_time);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.timescale);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.duration);
-    }
-
-    this._writeData(data, mp4lib.fields.FIELD_INT32, this.rate);
-    this._writeData(data, mp4lib.fields.FIELD_INT16, this.volume);
-    this._writeData(data, mp4lib.fields.FIELD_INT16, this.reserved);
-    this._writeArrayData(data, mp4lib.fields.FIELD_INT32, this.reserved_2);
-    this._writeArrayData(data, mp4lib.fields.FIELD_INT32, this.matrix);
-    this._writeArrayData(data, mp4lib.fields.FIELD_BIT32, this.pre_defined);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.next_track_ID);
-
-    return this.localPos;
-};
-
-mp4lib.boxes.MovieHeaderBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    if (this.version == 1) {
-        this.creation_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
-        this.modification_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
-        this.timescale = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.duration = this._readData(data, mp4lib.fields.FIELD_UINT64);
-    } else {
-        this.creation_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.modification_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.timescale = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    }
-
-    this.rate = this._readData(data, mp4lib.fields.FIELD_INT32);
-    this.volume = this._readData(data, mp4lib.fields.FIELD_INT16);
-    this.reserved = this._readData(data, mp4lib.fields.FIELD_INT16);
-    this.reserved_2 = this._readArrayFieldData(data, mp4lib.fields.FIELD_INT32, 2);
-    this.matrix = this._readArrayFieldData(data, mp4lib.fields.FIELD_INT32, 9);
-    this.pre_defined = this._readArrayFieldData(data, mp4lib.fields.FIELD_BIT32, 6);
-    this.next_track_ID = this._readData(data, mp4lib.fields.FIELD_UINT32);
-
-    return this.localPos;
-};
-
-// --------------------------- mdat ----------------------------------
-mp4lib.boxes.MediaDataBox = function(size) {
-    mp4lib.boxes.Box.call(this, 'mdat', size);
-};
-
-mp4lib.boxes.MediaDataBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
-mp4lib.boxes.MediaDataBox.prototype.constructor = mp4lib.boxes.MediaDataBox;
-
-mp4lib.boxes.MediaDataBox.prototype.computeLength = function() {
-    mp4lib.boxes.Box.prototype.computeLength.call(this);
-    this.size += this.data.length;
-};
-
-mp4lib.boxes.MediaDataBox.prototype.read = function(data, pos, end) {
-    this.data = data.subarray(pos, end);
-
-    return end;
-};
-
-mp4lib.boxes.MediaDataBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
-
-    this._writeBuffer(data, this.data, this.data.length);
-
-    return this.localPos;
-};
-
-// --------------------------- free ----------------------------------
-mp4lib.boxes.FreeSpaceBox = function(size) {
-    mp4lib.boxes.Box.call(this, 'free', size);
-};
-
-mp4lib.boxes.FreeSpaceBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
-mp4lib.boxes.FreeSpaceBox.prototype.constructor = mp4lib.boxes.FreeSpaceBox;
-
-mp4lib.boxes.FreeSpaceBox.prototype.computeLength = function() {
-    mp4lib.boxes.Box.prototype.computeLength.call(this);
-    this.size += this.data.length;
-};
-
-mp4lib.boxes.FreeSpaceBox.prototype.read = function(data, pos, end) {
-    this.localPos = pos;
-    this.localEnd = end;
-    this.data = data.subarray(this.localPos, this.localEnd);
-    return this.localEnd;
-};
-
-mp4lib.boxes.FreeSpaceBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
-
-    this._writeBuffer(data, this.data, this.data.length);
-
-    return this.localPos;
-};
-
-// --------------------------- sidx ----------------------------------
-mp4lib.boxes.SegmentIndexBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'sidx', size);
-};
-
-mp4lib.boxes.SegmentIndexBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.SegmentIndexBox.prototype.constructor = mp4lib.boxes.SegmentIndexBox;
-
-mp4lib.boxes.SegmentIndexBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-
-    this.size += mp4lib.fields.FIELD_UINT32.getLength() * 2; /* reference_ID and timescale size*/
-    if (this.version === 1) {
-        this.size += mp4lib.fields.FIELD_UINT64.getLength() * 2; /* earliest_presentation_time and first_offset size*/
-    } else {
-        this.size += mp4lib.fields.FIELD_UINT32.getLength() * 2; /* earliest_presentation_time and first_offset size*/
-    }
-    this.size += mp4lib.fields.FIELD_UINT16.getLength(); /* reserved size*/
-    this.size += mp4lib.fields.FIELD_UINT16.getLength(); /* reference_count size*/
-    this.size += (mp4lib.fields.FIELD_UINT64.getLength() /* reference_info size*/ + mp4lib.fields.FIELD_UINT32.getLength() /* SAP size*/ ) * this.reference_count;
-};
-
-
-mp4lib.boxes.SegmentIndexBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    var i = 0,
-        struct = {};
-
-    this.reference_ID = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    this.timescale = this._readData(data, mp4lib.fields.FIELD_UINT32);
-
-    if (this.version === 1) {
-        this.earliest_presentation_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
-        this.first_offset = this._readData(data, mp4lib.fields.FIELD_UINT64);
-    } else {
-        this.earliest_presentation_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.first_offset = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    }
-    this.reserved = this._readData(data, mp4lib.fields.FIELD_UINT16);
-    this.reference_count = this._readData(data, mp4lib.fields.FIELD_UINT16);
-
-    this.references = [];
-
-    for (i = 0; i < this.reference_count; i++) {
-        struct = {};
-
-        struct.reference_info = this._readData(data, mp4lib.fields.FIELD_UINT64);
-        struct.SAP = this._readData(data, mp4lib.fields.FIELD_UINT32);
-
-        this.references.push(struct);
-    }
-
-    return this.localPos;
-};
-
-mp4lib.boxes.SegmentIndexBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-    var i = 0;
-
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.reference_ID);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.timescale);
-
-    if (this.version === 1) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.earliest_presentation_time);
-        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.first_offset);
-    } else {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.earliest_presentation_time);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.first_offset);
-    }
-
-    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.reserved);
-    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.reference_count);
-
-    for (i = 0; i < this.reference_count; i++) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.references[i].reference_info);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.references[i].SAP);
-    }
-    return this.localPos;
-};
-
-// --------------------------- tkhd ----------------------------------
-mp4lib.boxes.TrackHeaderBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'tkhd', size);
-};
-
-mp4lib.boxes.TrackHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.TrackHeaderBox.prototype.constructor = mp4lib.boxes.TrackHeaderBox;
-
-mp4lib.boxes.TrackHeaderBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_INT16.getLength() * 4 + mp4lib.fields.FIELD_INT32.getLength() * 2 + mp4lib.fields.FIELD_UINT32.getLength() * 2 + mp4lib.fields.FIELD_INT32.getLength() * 9;
-    if (this.version == 1) {
-        this.size += mp4lib.fields.FIELD_UINT64.getLength() * 3 + mp4lib.fields.FIELD_UINT32.getLength() * 2;
-    } else {
-        this.size += mp4lib.fields.FIELD_UINT32.getLength() * 5;
-    }
-};
-
-mp4lib.boxes.TrackHeaderBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    if (this.version === 1) {
-        this.creation_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
-        this.modification_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
-        this.track_id = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.reserved = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.duration = this._readData(data, mp4lib.fields.FIELD_UINT64);
-    } else {
-        this.creation_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.modification_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.track_id = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.reserved = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    }
-
-    this.reserved_2 = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT32, 2);
-    this.layer = this._readData(data, mp4lib.fields.FIELD_INT16);
-    this.alternate_group = this._readData(data, mp4lib.fields.FIELD_INT16);
-    this.volume = this._readData(data, mp4lib.fields.FIELD_INT16);
-    this.reserved_3 = this._readData(data, mp4lib.fields.FIELD_INT16);
-    this.matrix = this._readArrayFieldData(data, mp4lib.fields.FIELD_INT32, 9);
-    this.width = this._readData(data, mp4lib.fields.FIELD_INT32);
-    this.height = this._readData(data, mp4lib.fields.FIELD_INT32);
-    return this.localPos;
-};
-
-mp4lib.boxes.TrackHeaderBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    if (this.version === 1) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.creation_time);
-        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.modification_time);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.track_id);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.reserved);
-        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.duration);
-    } else {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.creation_time);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.modification_time);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.track_id);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.reserved);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.duration);
-    }
-
-    this._writeArrayData(data, mp4lib.fields.FIELD_UINT32, this.reserved_2);
-    this._writeData(data, mp4lib.fields.FIELD_INT16, this.layer);
-    this._writeData(data, mp4lib.fields.FIELD_INT16, this.alternate_group);
-    this._writeData(data, mp4lib.fields.FIELD_INT16, this.volume);
-    this._writeData(data, mp4lib.fields.FIELD_INT16, this.reserved_3);
-    this._writeArrayData(data, mp4lib.fields.FIELD_INT32, this.matrix);
-    this._writeData(data, mp4lib.fields.FIELD_INT32, this.width);
-    this._writeData(data, mp4lib.fields.FIELD_INT32, this.height);
-    return this.localPos;
-};
-
-// --------------------------- mdhd ----------------------------------
-mp4lib.boxes.MediaHeaderBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'mdhd', size);
-};
-
-mp4lib.boxes.MediaHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.MediaHeaderBox.prototype.constructor = mp4lib.boxes.MediaHeaderBox;
-
-mp4lib.boxes.MediaHeaderBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT16.getLength() * 2;
-    if (this.version == 1) {
-        this.size += mp4lib.fields.FIELD_UINT64.getLength() * 3 + mp4lib.fields.FIELD_UINT32.getLength();
-    } else {
-        this.size += mp4lib.fields.FIELD_UINT32.getLength() * 4;
-    }
-};
-
-mp4lib.boxes.MediaHeaderBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    if (this.version === 1) {
-        this.creation_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
-        this.modification_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
-        this.timescale = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.duration = this._readData(data, mp4lib.fields.FIELD_UINT64);
-    } else {
-        this.creation_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.modification_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.timescale = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    }
-
-    this.language = this._readData(data, mp4lib.fields.FIELD_UINT16);
-    this.pre_defined = this._readData(data, mp4lib.fields.FIELD_UINT16);
-    return this.localPos;
-};
-
-mp4lib.boxes.MediaHeaderBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    if (this.version === 1) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.creation_time);
-        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.modification_time);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.timescale);
-        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.duration);
-    } else {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.creation_time);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.modification_time);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.timescale);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.duration);
-    }
-
-    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.language);
-    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.pre_defined);
-    return this.localPos;
-};
-
-// --------------------------- mehd ----------------------------------
-mp4lib.boxes.MovieExtendsHeaderBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'mehd', size);
-};
-
-mp4lib.boxes.MovieExtendsHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.MovieExtendsHeaderBox.prototype.constructor = mp4lib.boxes.MovieExtendsHeaderBox;
-
-mp4lib.boxes.MovieExtendsHeaderBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    if (this.version == 1) {
-        this.size += mp4lib.fields.FIELD_UINT64.getLength();
-    } else {
-        this.size += mp4lib.fields.FIELD_UINT32.getLength();
-    }
-};
-
-mp4lib.boxes.MovieExtendsHeaderBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    if (this.version === 1) {
-        this.fragment_duration = this._readData(data, mp4lib.fields.FIELD_UINT64);
-    } else {
-        this.fragment_duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    }
-    return this.localPos;
-};
-
-mp4lib.boxes.MovieExtendsHeaderBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    if (this.version === 1) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.fragment_duration);
-    } else {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.fragment_duration);
-    }
-    return this.localPos;
-};
-
-// --------------------------- hdlr --------------------------------
-mp4lib.boxes.HandlerBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'hdlr', size);
-};
-
-mp4lib.boxes.HandlerBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.HandlerBox.prototype.constructor = mp4lib.boxes.HandlerBox;
-
-//add NAN
-mp4lib.boxes.HandlerBox.prototype.HANDLERTYPEVIDEO = "vide";
-mp4lib.boxes.HandlerBox.prototype.HANDLERTYPEAUDIO = "soun";
-mp4lib.boxes.HandlerBox.prototype.HANDLERTYPETEXT = "meta";
-mp4lib.boxes.HandlerBox.prototype.HANDLERVIDEONAME = "Video Track";
-mp4lib.boxes.HandlerBox.prototype.HANDLERAUDIONAME = "Audio Track";
-mp4lib.boxes.HandlerBox.prototype.HANDLERTEXTNAME = "Text Track";
-
-mp4lib.boxes.HandlerBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT32.getLength() * 2 + mp4lib.fields.FIELD_UINT32.getLength() * 3 +
-        mp4lib.fields.FIELD_STRING.getLength(this.name);
-};
-
-mp4lib.boxes.HandlerBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    this.pre_defined = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    this.handler_type = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    this.reserved = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT32, 3);
-    this.name = this._readData(data, mp4lib.fields.FIELD_STRING);
-    return this.localPos;
-};
-
-mp4lib.boxes.HandlerBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.pre_defined);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.handler_type);
-    this._writeArrayData(data, mp4lib.fields.FIELD_UINT32, this.reserved);
-    this._writeData(data, mp4lib.fields.FIELD_STRING, this.name);
-    return this.localPos;
-};
-
-// --------------------------- stts ----------------------------------
-mp4lib.boxes.TimeToSampleBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'stts', size);
-};
-
-mp4lib.boxes.TimeToSampleBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.TimeToSampleBox.prototype.constructor = mp4lib.boxes.TimeToSampleBox;
-
-mp4lib.boxes.TimeToSampleBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT32.getLength();
-    this.size += this.entry_count * (mp4lib.fields.FIELD_UINT32.getLength() * 2);
-};
-
-mp4lib.boxes.TimeToSampleBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-    var i = 0,
-        struct = {};
-
-    this.entry_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
-
-    this.entry = [];
-
-    for (i = 0; i < this.entry_count; i++) {
-        struct = {};
-
-        struct.sample_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        struct.sample_delta = this._readData(data, mp4lib.fields.FIELD_UINT32);
-
-        this.entry.push(struct);
-    }
-    return this.localPos;
-};
-
-mp4lib.boxes.TimeToSampleBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-    var i = 0;
-
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
-
-    for (i = 0; i < this.entry_count; i++) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].sample_count);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].sample_delta);
-    }
-    return this.localPos;
-};
-
-// --------------------------- stsc ----------------------------------
-mp4lib.boxes.SampleToChunkBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'stsc', size);
-};
-
-mp4lib.boxes.SampleToChunkBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.SampleToChunkBox.prototype.constructor = mp4lib.boxes.SampleToChunkBox;
-
-mp4lib.boxes.SampleToChunkBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT32.getLength();
-    this.size += this.entry_count * (mp4lib.fields.FIELD_UINT32.getLength() * 3);
-};
-
-mp4lib.boxes.SampleToChunkBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-    var i = 0,
-        struct = {};
-
-    this.entry_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
-
-    this.entry = [];
-
-    for (i = 0; i < this.entry_count; i++) {
-        struct = {};
-
-        struct.first_chunk = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        struct.samples_per_chunk = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        struct.samples_description_index = this._readData(data, mp4lib.fields.FIELD_UINT32);
-
-        this.entry.push(struct);
-    }
-    return this.localPos;
-};
-
-mp4lib.boxes.SampleToChunkBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-    var i = 0;
-
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
-    for (i = 0; i < this.entry_count; i++) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].first_chunk);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].samples_per_chunk);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].samples_description_index);
-    }
-    return this.localPos;
-};
-
-// --------------------------- stco ----------------------------------
-mp4lib.boxes.ChunkOffsetBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'stco', size);
-};
-
-mp4lib.boxes.ChunkOffsetBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.ChunkOffsetBox.prototype.constructor = mp4lib.boxes.ChunkOffsetBox;
-
-mp4lib.boxes.ChunkOffsetBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT32.getLength() + this.entry_count * mp4lib.fields.FIELD_UINT32.getLength();
-};
-
-mp4lib.boxes.ChunkOffsetBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    this.entry_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    this.chunk_offset = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
-    return this.localPos;
-};
-
-mp4lib.boxes.ChunkOffsetBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-    var i = 0;
-
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
-
-    for (i = 0; i < this.entry_count; i++) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.chunk_offset[i]);
-    }
-    return this.localPos;
-};
-
-// --------------------------- trex ----------------------------------
-mp4lib.boxes.TrackExtendsBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'trex', size);
-};
-
-mp4lib.boxes.TrackExtendsBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.TrackExtendsBox.prototype.constructor = mp4lib.boxes.TrackExtendsBox;
-
-mp4lib.boxes.TrackExtendsBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT32.getLength() * 5;
-};
-
-mp4lib.boxes.TrackExtendsBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    this.track_ID = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    this.default_sample_description_index = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    this.default_sample_duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    this.default_sample_size = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    this.default_sample_flags = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    return this.localPos;
-};
-
-mp4lib.boxes.TrackExtendsBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.track_ID);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.default_sample_description_index);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.default_sample_duration);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.default_sample_size);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.default_sample_flags);
-    return this.localPos;
-};
-
-// --------------------------- vmhd ----------------------------------
-mp4lib.boxes.VideoMediaHeaderBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'vmhd', size);
-};
-
-mp4lib.boxes.VideoMediaHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.VideoMediaHeaderBox.prototype.constructor = mp4lib.boxes.VideoMediaHeaderBox;
-
-mp4lib.boxes.VideoMediaHeaderBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_INT16.getLength() + mp4lib.fields.FIELD_UINT16.getLength() * 3;
-};
-
-mp4lib.boxes.VideoMediaHeaderBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    this.graphicsmode = this._readData(data, mp4lib.fields.FIELD_INT16);
-    this.opcolor = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT16, 3);
-    return this.localPos;
-};
-
-mp4lib.boxes.VideoMediaHeaderBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    this._writeData(data, mp4lib.fields.FIELD_INT16, this.graphicsmode);
-    this._writeArrayData(data, mp4lib.fields.FIELD_UINT16, this.opcolor);
-    return this.localPos;
-};
-
-// --------------------------- smhd ----------------------------------
-mp4lib.boxes.SoundMediaHeaderBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'smhd', size);
-};
-
-mp4lib.boxes.SoundMediaHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.SoundMediaHeaderBox.prototype.constructor = mp4lib.boxes.SoundMediaHeaderBox;
-
-mp4lib.boxes.SoundMediaHeaderBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_INT16.getLength() + mp4lib.fields.FIELD_UINT16.getLength();
-};
-
-mp4lib.boxes.SoundMediaHeaderBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    this.balance = this._readData(data, mp4lib.fields.FIELD_INT16);
-    this.reserved = this._readData(data, mp4lib.fields.FIELD_UINT16);
-    return this.localPos;
-};
-
-mp4lib.boxes.SoundMediaHeaderBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    this._writeData(data, mp4lib.fields.FIELD_INT16, this.balance);
-    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.reserved);
-    return this.localPos;
-};
-
-// --------------------------- dref ----------------------------------
-mp4lib.boxes.DataReferenceBox = function(size) {
-    mp4lib.boxes.ContainerFullBox.call(this, 'dref', size);
-};
-
-mp4lib.boxes.DataReferenceBox.prototype = Object.create(mp4lib.boxes.ContainerFullBox.prototype);
-mp4lib.boxes.DataReferenceBox.prototype.constructor = mp4lib.boxes.DataReferenceBox;
-
-mp4lib.boxes.DataReferenceBox.prototype.computeLength = function() {
-    mp4lib.boxes.ContainerFullBox.prototype.computeLength.call(this, true);
-};
-
-mp4lib.boxes.DataReferenceBox.prototype.read = function(data, pos, end) {
-    return mp4lib.boxes.ContainerFullBox.prototype.read.call(this, data, pos, end, true);
-};
-
-mp4lib.boxes.DataReferenceBox.prototype.write = function(data, pos) {
-    if (!this.entry_count) {
-        //if entry_count has not been set, set it to boxes array length
-        this.entry_count = this.boxes.length;
-    }
-    return mp4lib.boxes.ContainerFullBox.prototype.write.call(this, data, pos, true);
-};
-
-// --------------------------- url  ----------------------------------
-mp4lib.boxes.DataEntryUrlBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'url ', size);
-};
-
-mp4lib.boxes.DataEntryUrlBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.DataEntryUrlBox.prototype.constructor = mp4lib.boxes.DataEntryUrlBox;
-
-mp4lib.boxes.DataEntryUrlBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    //NAN : test on location value, not definition, probleme in IE
-    if (this.location !== undefined /*&& this.location !==""*/ ) {
-        //this.flags = this.flags | 1;
-        this.size += mp4lib.fields.FIELD_STRING.getLength(this.location);
-    }
-};
-
-mp4lib.boxes.DataEntryUrlBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    if (this.flags & '0x000001' === 0) {
-        this.location = this._readData(data, mp4lib.fields.FIELD_STRING);
-    }
-
-    return this.localPos;
-};
-
-mp4lib.boxes.DataEntryUrlBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    if (this.location !== undefined /* && this.location !== ""*/ ) {
-        this._writeData(data, mp4lib.fields.FIELD_STRING, this.location);
-    }
-    return this.localPos;
-};
-
-// --------------------------- urn  ----------------------------------
-mp4lib.boxes.DataEntryUrnBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'urn ', size);
-};
-
-mp4lib.boxes.DataEntryUrnBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.DataEntryUrnBox.prototype.constructor = mp4lib.boxes.DataEntryUrnBox;
-
-mp4lib.boxes.DataEntryUrnBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    if (this.flags & '0x000001' === 0) {
-        this.size += mp4lib.fields.FIELD_STRING.getLength(this.name) + mp4lib.fields.FIELD_STRING.getLength(this.location);
-    }
-};
-
-mp4lib.boxes.DataEntryUrnBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    if (this.flags & '0x000001' === 0) {
-        this.name = this._readData(data, mp4lib.fields.FIELD_STRING);
-        this.location = this._readData(data, mp4lib.fields.FIELD_STRING);
-    }
-    return this.localPos;
-};
-
-mp4lib.boxes.DataEntryUrnBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    if (this.flags & '0x000001' === 0) {
-        this._writeData(data, mp4lib.fields.FIELD_STRING, this.name);
-        this._writeData(data, mp4lib.fields.FIELD_STRING, this.location);
-    }
-    return this.localPos;
-};
-
-// --------------------------- mfhd ----------------------------------
-mp4lib.boxes.MovieFragmentHeaderBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'mfhd', size);
-};
-
-mp4lib.boxes.MovieFragmentHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.MovieFragmentHeaderBox.prototype.constructor = mp4lib.boxes.MovieFragmentHeaderBox;
-
-mp4lib.boxes.MovieFragmentHeaderBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT32.getLength();
-};
-
-mp4lib.boxes.MovieFragmentHeaderBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-    this.sequence_number = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    return this.localPos;
-};
-
-mp4lib.boxes.MovieFragmentHeaderBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.sequence_number);
-    return this.localPos;
-};
-
-// --------------------------- tfhd ----------------------------------
-mp4lib.boxes.TrackFragmentHeaderBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'tfhd', size);
-};
-
-mp4lib.boxes.TrackFragmentHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.TrackFragmentHeaderBox.prototype.constructor = mp4lib.boxes.TrackFragmentHeaderBox;
-
-mp4lib.boxes.TrackFragmentHeaderBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT32.getLength();
-    //even if, for example base_data_offset is defined, test the flags value
-    //to know if base_data_offset size should be added to global size.
-    if ((this.flags & 0x000001) !== 0 && this.base_data_offset !== undefined) {
-        this.size += mp4lib.fields.FIELD_UINT64.getLength();
-    }
-    if ((this.flags & 0x000002) !== 0 && this.sample_description_index !== undefined) {
-        this.size += mp4lib.fields.FIELD_UINT32.getLength();
-    }
-    if ((this.flags & 0x000008) !== 0 && this.default_sample_duration !== undefined) {
-        this.size += mp4lib.fields.FIELD_UINT32.getLength();
-    }
-    if ((this.flags & 0x000010) !== 0 && this.default_sample_size !== undefined) {
-        this.size += mp4lib.fields.FIELD_UINT32.getLength();
-    }
-    if ((this.flags & 0x000020) !== 0 && this.default_sample_flags !== undefined) {
-        this.size += mp4lib.fields.FIELD_UINT32.getLength();
-    }
-};
-
-mp4lib.boxes.TrackFragmentHeaderBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    this.track_ID = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    if ((this.flags & 0x000001) !== 0) {
-        this.base_data_offset = this._readData(data, mp4lib.fields.FIELD_UINT64);
-    }
-    if ((this.flags & 0x000002) !== 0) {
-        this.sample_description_index = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    }
-    if ((this.flags & 0x000008) !== 0) {
-        this.default_sample_duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    }
-    if ((this.flags & 0x000010) !== 0) {
-        this.default_sample_size = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    }
-    if ((this.flags & 0x000020) !== 0) {
-        this.default_sample_flags = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    }
-    return this.localPos;
-};
-
-mp4lib.boxes.TrackFragmentHeaderBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.track_ID);
-
-    if ((this.flags & 0x000001) !== 0) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.base_data_offset);
-    }
-    if ((this.flags & 0x000002) !== 0) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.sample_description_index);
-    }
-    if ((this.flags & 0x000008) !== 0) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.default_sample_duration);
-    }
-    if ((this.flags & 0x000010) !== 0) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.default_sample_size);
-    }
-    if ((this.flags & 0x000020) !== 0) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.default_sample_flags);
-    }
-    return this.localPos;
-};
-
-// --------------------------- tfdt ----------------------------------
-mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'tfdt', size);
-};
-
-mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox.prototype.constructor = mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox;
-
-mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    if (this.version === 1) {
-        this.size += mp4lib.fields.FIELD_UINT64.getLength();
-    } else {
-        this.size += mp4lib.fields.FIELD_UINT32.getLength();
-    }
-};
-
-mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    if (this.version === 1) {
-        this.baseMediaDecodeTime = this._readData(data, mp4lib.fields.FIELD_UINT64);
-    } else {
-        this.baseMediaDecodeTime = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    }
-    return this.localPos;
-};
-
-mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    if (this.version === 1) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.baseMediaDecodeTime);
-    } else {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.baseMediaDecodeTime);
-    }
-    return this.localPos;
-};
-
-// --------------------------- trun ----------------------------------
-mp4lib.boxes.TrackFragmentRunBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'trun', size);
-};
-
-mp4lib.boxes.TrackFragmentRunBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.TrackFragmentRunBox.prototype.constructor = mp4lib.boxes.TrackFragmentRunBox;
-
-mp4lib.boxes.TrackFragmentRunBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    var i = 0;
-    this.size += mp4lib.fields.FIELD_UINT32.getLength(); //sample_count size
-    if ((this.flags & 0x000001) !== 0 && this.data_offset !== undefined) {
-        this.size += mp4lib.fields.FIELD_INT32.getLength();
-    }
-    if ((this.flags & 0x000004) !== 0 && this.first_sample_flags !== undefined) {
-        this.size += mp4lib.fields.FIELD_UINT32.getLength();
-    }
-
-    for (i = 0; i < this.sample_count; i++) {
-        if ((this.flags & 0x000100) !== 0 && this.samples_table[i].sample_duration !== undefined) {
-            this.size += mp4lib.fields.FIELD_UINT32.getLength();
-        }
-        if ((this.flags & 0x000200) !== 0 && this.samples_table[i].sample_size !== undefined) {
-            this.size += mp4lib.fields.FIELD_UINT32.getLength();
-        }
-        if ((this.flags & 0x000400) !== 0 && this.samples_table[i].sample_flags !== undefined) {
-            this.size += mp4lib.fields.FIELD_UINT32.getLength();
-        }
-
-        if (this.version === 1) {
-            if ((this.flags & 0x000800) !== 0 && this.samples_table[i].sample_composition_time_offset !== undefined) {
-                this.size += mp4lib.fields.FIELD_INT32.getLength();
-            }
-        } else {
-            if ((this.flags & 0x000800) !== 0 && this.samples_table[i].sample_composition_time_offset !== undefined) {
-                this.size += mp4lib.fields.FIELD_UINT32.getLength();
-            }
-        }
-    }
-};
-
-mp4lib.boxes.TrackFragmentRunBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-    var i = 0,
-        struct = {};
-
-    this.sample_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
-
-    if ((this.flags & 0x000001) !== 0) {
-        this.data_offset = this._readData(data, mp4lib.fields.FIELD_INT32);
-    }
-    if ((this.flags & 0x000004) !== 0) {
-        this.first_sample_flags = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    }
-
-    this.samples_table = [];
-
-    for (i = 0; i < this.sample_count; i++) {
-        struct = {};
-        if ((this.flags & 0x000100) !== 0) {
-            struct.sample_duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        }
-        if ((this.flags & 0x000200) !== 0) {
-            struct.sample_size = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        }
-        if ((this.flags & 0x000400) !== 0) {
-            struct.sample_flags = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        }
-
-        if (this.version === 1) {
-            if ((this.flags & 0x000800) !== 0) {
-                struct.sample_composition_time_offset = this._readData(data, mp4lib.fields.FIELD_INT32);
-            }
-        } else {
-            if ((this.flags & 0x000800) !== 0) {
-                struct.sample_composition_time_offset = this._readData(data, mp4lib.fields.FIELD_UINT32);
-            }
-        }
-        this.samples_table.push(struct);
-    }
-    return this.localPos;
-};
-
-mp4lib.boxes.TrackFragmentRunBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-    var i = 0;
-
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.sample_count);
-
-    if ((this.flags & 0x000001) !== 0) {
-        this._writeData(data, mp4lib.fields.FIELD_INT32, this.data_offset);
-    }
-    if ((this.flags & 0x000004) !== 0) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.first_sample_flags);
-    }
-
-    for (i = 0; i < this.sample_count; i++) {
-
-        if ((this.flags & 0x000100) !== 0) {
-            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.samples_table[i].sample_duration);
-        }
-        if ((this.flags & 0x000200) !== 0) {
-            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.samples_table[i].sample_size);
-        }
-        if ((this.flags & 0x000400) !== 0) {
-            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.samples_table[i].sample_flags);
-        }
-
-        if (this.version === 1) {
-            if ((this.flags & 0x000800) !== 0) {
-                this._writeData(data, mp4lib.fields.FIELD_INT32, this.samples_table[i].sample_composition_time_offset);
-            }
-        } else {
-            if ((this.flags & 0x000800) !== 0) {
-                this._writeData(data, mp4lib.fields.FIELD_UINT32, this.samples_table[i].sample_composition_time_offset);
-            }
-        }
-    }
-    return this.localPos;
-};
-
-// --------------------------- stsd ----------------------------------
-mp4lib.boxes.SampleDescriptionBox = function(size) {
-    mp4lib.boxes.ContainerFullBox.call(this, 'stsd', size);
-};
-
-mp4lib.boxes.SampleDescriptionBox.prototype = Object.create(mp4lib.boxes.ContainerFullBox.prototype);
-mp4lib.boxes.SampleDescriptionBox.prototype.constructor = mp4lib.boxes.SampleDescriptionBox;
-
-mp4lib.boxes.SampleDescriptionBox.prototype.computeLength = function() {
-    mp4lib.boxes.ContainerFullBox.prototype.computeLength.call(this, true);
-};
-
-mp4lib.boxes.SampleDescriptionBox.prototype.read = function(data, pos, end) {
-    return mp4lib.boxes.ContainerFullBox.prototype.read.call(this, data, pos, end, true);
-};
-
-mp4lib.boxes.SampleDescriptionBox.prototype.write = function(data, pos) {
-    this.entry_count = this.boxes.length;
-    return mp4lib.boxes.ContainerFullBox.prototype.write.call(this, data, pos, true);
-};
-
-// --------------------------- sdtp ----------------------------------
-mp4lib.boxes.SampleDependencyTableBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'sdtp', size);
-};
-
-mp4lib.boxes.SampleDependencyTableBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.SampleDependencyTableBox.prototype.constructor = mp4lib.boxes.SampleDependencyTableBox;
-
-mp4lib.boxes.SampleDependencyTableBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT8.getLength() * this.sample_dependency_table.length;
-};
-
-mp4lib.boxes.SampleDependencyTableBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-    this.sample_dependency_table = this._readArrayData(data, mp4lib.fields.FIELD_UINT8);
-    return this.localPos;
-};
-
-mp4lib.boxes.SampleDependencyTableBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    this._writeArrayData(data, mp4lib.fields.FIELD_UINT8, this.sample_dependency_table);
-    return this.localPos;
-};
-
-// --------------------------- abstract SampleEntry ----------------------------------
-mp4lib.boxes.SampleEntryBox = function(boxType, size) {
-    mp4lib.boxes.Box.call(this, boxType, size);
-};
-
-mp4lib.boxes.SampleEntryBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
-mp4lib.boxes.SampleEntryBox.prototype.constructor = mp4lib.boxes.SampleEntryBox;
-
-mp4lib.boxes.SampleEntryBox.prototype.computeLength = function() {
-    mp4lib.boxes.Box.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT16.getLength() + mp4lib.fields.FIELD_UINT8.getLength() * 6;
-};
-
-mp4lib.boxes.SampleEntryBox.prototype.read = function(data, pos, end) {
-    this.localPos = pos;
-    this.localEnd = end;
-
-    this.reserved = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT8, 6);
-    this.data_reference_index = this._readData(data, mp4lib.fields.FIELD_UINT16);
-    return this.localPos;
-};
-
-mp4lib.boxes.SampleEntryBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
-
-    this._writeArrayData(data, mp4lib.fields.FIELD_UINT8, this.reserved);
-    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.data_reference_index);
-    return this.localPos;
-};
-
-// --------------------------- abstract VisualSampleEntry ----------------------------------
-mp4lib.boxes.VisualSampleEntryBox = function(boxType, size) {
-    mp4lib.boxes.SampleEntryBox.call(this, boxType, size);
-};
-
-mp4lib.boxes.VisualSampleEntryBox.prototype = Object.create(mp4lib.boxes.SampleEntryBox.prototype);
-mp4lib.boxes.VisualSampleEntryBox.prototype.constructor = mp4lib.boxes.VisualSampleEntryBox;
-
-mp4lib.boxes.VisualSampleEntryBox.prototype.computeLength = function() {
-    mp4lib.boxes.SampleEntryBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT16.getLength() * 7 + mp4lib.fields.FIELD_UINT32.getLength() * 3;
-    this.size += mp4lib.fields.FIELD_UINT32.getLength() * 3;
-    this.size += 32; //compressorname size
-};
-
-mp4lib.boxes.VisualSampleEntryBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.SampleEntryBox.prototype.read.call(this, data, pos, end);
-    this.pre_defined = this._readData(data, mp4lib.fields.FIELD_UINT16);
-    this.reserved_2 = this._readData(data, mp4lib.fields.FIELD_UINT16);
-    // there is already field called reserved from SampleEntry, so we need to call it reserved_2
-    this.pre_defined_2 = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT32, 3);
-    this.width = this._readData(data, mp4lib.fields.FIELD_UINT16);
-    this.height = this._readData(data, mp4lib.fields.FIELD_UINT16);
-    this.horizresolution = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    this.vertresolution = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    this.reserved_3 = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    this.frame_count = this._readData(data, mp4lib.fields.FIELD_UINT16);
-    this.compressorname = new mp4lib.fields.FixedLenStringField(32);
-    this.compressorname = this.compressorname.read(data, this.localPos);
-    this.localPos += 32;
-    this.depth = this._readData(data, mp4lib.fields.FIELD_UINT16);
-    this.pre_defined_3 = this._readData(data, mp4lib.fields.FIELD_INT16);
-    return this.localPos;
-};
-
-mp4lib.boxes.VisualSampleEntryBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.SampleEntryBox.prototype.write.call(this, data, pos);
-    var i = 0;
-
-    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.pre_defined);
-    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.reserved_2);
-    // there is already field called reserved from SampleEntry, so we need to call it reserved_2
-    this._writeArrayData(data, mp4lib.fields.FIELD_UINT32, this.pre_defined_2);
-    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.width);
-    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.height);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.horizresolution);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.vertresolution);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.reserved_3);
-    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.frame_count);
-    for (i = 0; i < 32; i++) {
-        data[this.localPos + i] = this.compressorname.charCodeAt(i);
-    }
-    this.localPos += 32;
-    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.depth);
-    this._writeData(data, mp4lib.fields.FIELD_INT16, this.pre_defined_3);
-    return this.localPos;
-};
-
-// --------------------------- abstract VisualSampleEntryContainer ----------------------------------
-mp4lib.boxes.VisualSampleEntryContainerBox = function(boxType, size) {
-    mp4lib.boxes.VisualSampleEntryBox.call(this, boxType, size);
-    this.boxes = [];
-};
-
-mp4lib.boxes.VisualSampleEntryContainerBox.prototype = Object.create(mp4lib.boxes.VisualSampleEntryBox.prototype);
-mp4lib.boxes.VisualSampleEntryContainerBox.prototype.constructor = mp4lib.boxes.VisualSampleEntryContainerBox;
-
-mp4lib.boxes.VisualSampleEntryContainerBox.prototype.computeLength = function() {
-    mp4lib.boxes.VisualSampleEntryBox.prototype.computeLength.call(this);
-    var i = 0;
-    for (i = 0; i < this.boxes.length; i++) {
-        this.boxes[i].computeLength();
-        this.size += this.boxes[i].size;
-    }
-};
-
-mp4lib.boxes.VisualSampleEntryContainerBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.VisualSampleEntryBox.prototype.read.call(this, data, pos, end);
-
-    var size = 0,
-        uuidFieldPos = 0,
-        uuid = null,
-        boxtype,
-        box;
-
-    while (this.localPos < this.localEnd) {
-        // Read box size
-        size = mp4lib.fields.FIELD_UINT32.read(data, this.localPos);
-
-        // Read boxtype
-        boxtype = mp4lib.fields.readString(data, this.localPos + 4, 4);
-
-        // Extented type?
-        if (boxtype == "uuid") {
-            uuidFieldPos = (size == 1) ? 16 : 8;
-            uuid = new mp4lib.fields.ArrayField(mp4lib.fields.FIELD_INT8, 16).read(data, this.localPos + uuidFieldPos, this.localPos + uuidFieldPos + 16);
-            uuid = JSON.stringify(uuid);
-        }
-
-        box = mp4lib.createBox(boxtype, size, uuid);
-        if (boxtype === "uuid") {
-            this.localPos = box.read(data, this.localPos + mp4lib.fields.FIELD_INT8.getLength() * 16 + 8, this.localPos + size);
-        } else {
-            this.localPos = box.read(data, this.localPos + 8, this.localPos + size);
-        }
-
-        // in debug mode, sourcebuffer is copied to each box,
-        // so any invalid deserializations may be found by comparing
-        // source buffer with serialized box
-        if (mp4lib.debug) {
-            box.__sourceBuffer = data.subarray(this.localPos - box.size, this.localPos);
-        }
-
-        this.boxes.push(box);
-
-        if (box.size <= 0 || box.size === null) {
-            throw new mp4lib.ParseException('Problem on size of box ' + box.boxtype +
-                ', parsing stopped to avoid infinite loop');
-        }
-
-        if (!box.boxtype) {
-            throw new mp4lib.ParseException('Problem on unknown box, parsing stopped to avoid infinite loop');
-        }
-    }
-    return this.localPos;
-};
-
-mp4lib.boxes.VisualSampleEntryContainerBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.VisualSampleEntryBox.prototype.write.call(this, data, pos);
-    var i = 0;
-
-    for (i = 0; i < this.boxes.length; i++) {
-        this.localPos = this.boxes[i].write(data, this.localPos);
-    }
-    return this.localPos;
-};
-
-// --------------------------- avc1 ----------------------------------
-mp4lib.boxes.AVC1VisualSampleEntryBox = function(size) {
-    mp4lib.boxes.VisualSampleEntryContainerBox.call(this, 'avc1', size);
-};
-
-mp4lib.boxes.AVC1VisualSampleEntryBox.prototype = Object.create(mp4lib.boxes.VisualSampleEntryContainerBox.prototype);
-mp4lib.boxes.AVC1VisualSampleEntryBox.prototype.constructor = mp4lib.boxes.AVC1VisualSampleEntryBox;
-
-//-------------------------- encv ------------------------------------
-mp4lib.boxes.EncryptedVideoBox = function(size) {
-    mp4lib.boxes.VisualSampleEntryContainerBox.call(this, 'encv', size);
-};
-
-mp4lib.boxes.EncryptedVideoBox.prototype = Object.create(mp4lib.boxes.VisualSampleEntryContainerBox.prototype);
-mp4lib.boxes.EncryptedVideoBox.prototype.constructor = mp4lib.boxes.EncryptedVideoBox;
-
-// --------------------------- avcc ----------------------------------
-mp4lib.boxes.AVCConfigurationBox = function(size) {
-    mp4lib.boxes.Box.call(this, 'avcC', size);
-};
-
-mp4lib.boxes.AVCConfigurationBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
-mp4lib.boxes.AVCConfigurationBox.prototype.constructor = mp4lib.boxes.AVCConfigurationBox;
-
-mp4lib.boxes.AVCConfigurationBox.prototype.computeLength = function() {
-    mp4lib.boxes.Box.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT8.getLength() * 4 + mp4lib.fields.FIELD_UINT8.getLength() * 3;
-    this.size += this._getNALLength(this.numOfSequenceParameterSets, this.SPS_NAL);
-    this.size += this._getNALLength(this.numOfPictureParameterSets, this.PPS_NAL);
-};
-
-mp4lib.boxes.AVCConfigurationBox.prototype._getNALLength = function(nbElements, nalArray) {
-    var size_NAL = 0,
-        i = 0;
-
-    for (i = 0; i < nbElements; i++) {
-        size_NAL += mp4lib.fields.FIELD_UINT16.getLength() + nalArray[i].NAL_length;
-    }
-
-    return size_NAL;
-};
-
-mp4lib.boxes.AVCConfigurationBox.prototype.read = function(data, pos, end) {
-    this.localPos = pos;
-    this.localEnd = end;
-    this.configurationVersion = this._readData(data, mp4lib.fields.FIELD_UINT8);
-    this.AVCProfileIndication = this._readData(data, mp4lib.fields.FIELD_UINT8);
-    this.profile_compatibility = this._readData(data, mp4lib.fields.FIELD_UINT8);
-    this.AVCLevelIndication = this._readData(data, mp4lib.fields.FIELD_UINT8);
-
-    this.temp = this._readData(data, mp4lib.fields.FIELD_UINT8);
-    // 6 bits for reserved =63 and two bits for NAL length = 2-bit length byte size type
-    this.lengthSizeMinusOne = this.temp & 3;
-    this.numOfSequenceParameterSets_tmp = this._readData(data, mp4lib.fields.FIELD_UINT8);
-    this.numOfSequenceParameterSets = this.numOfSequenceParameterSets_tmp & 31;
-
-    this.SPS_NAL = this._readNAL(data, this.numOfSequenceParameterSets);
-
-    this.numOfPictureParameterSets = this._readData(data, mp4lib.fields.FIELD_UINT8);
-
-    this.PPS_NAL = this._readNAL(data, this.numOfPictureParameterSets);
-    return this.localPos;
-};
-
-mp4lib.boxes.AVCConfigurationBox.prototype._readNAL = function(data, nbElements) {
-    var nalArray = [],
-        i = 0,
-        struct = {};
-
-    for (i = 0; i < nbElements; i++) {
-        struct = {};
-
-        struct.NAL_length = this._readData(data, mp4lib.fields.FIELD_UINT16);
-        struct.NAL = data.subarray(this.localPos, this.localPos + struct.NAL_length);
-        this.localPos += struct.NAL_length;
-        nalArray.push(struct);
-    }
-    return nalArray;
-};
-
-mp4lib.boxes.AVCConfigurationBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
-
-    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.configurationVersion);
-    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.AVCProfileIndication);
-    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.profile_compatibility);
-    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.AVCLevelIndication);
-
-    this.temp = this.lengthSizeMinusOne | 252;
-    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.temp);
-    this.numOfSequenceParameterSets = this.SPS_NAL.length;
-    this.numOfSequenceParameterSets_tmp = this.numOfSequenceParameterSets | 224;
-    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.numOfSequenceParameterSets_tmp);
-    this._writeNAL(data, this.numOfSequenceParameterSets, this.SPS_NAL);
-    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.numOfPictureParameterSets);
-    this._writeNAL(data, this.numOfPictureParameterSets, this.PPS_NAL);
-    return this.localPos;
-};
-
-mp4lib.boxes.AVCConfigurationBox.prototype._writeNAL = function(data, nbElements, nalArray) {
-    var i = 0;
-
-    for (i = 0; i < nbElements; i++) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT16, nalArray[i].NAL_length);
-        this._writeBuffer(data, nalArray[i].NAL, nalArray[i].NAL_length);
-    }
-};
-
-// --------------------------- pasp ----------------------------------
-mp4lib.boxes.PixelAspectRatioBox = function(size) {
-    mp4lib.boxes.Box.call(this, 'pasp', size);
-};
-
-mp4lib.boxes.PixelAspectRatioBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
-mp4lib.boxes.PixelAspectRatioBox.prototype.constructor = mp4lib.boxes.PixelAspectRatioBox;
-
-mp4lib.boxes.PixelAspectRatioBox.prototype.computeLength = function() {
-    mp4lib.boxes.Box.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_INT32.getLength() * 2;
-};
-
-mp4lib.boxes.PixelAspectRatioBox.prototype.read = function(data, pos, end) {
-    this.localPos = pos;
-    this.localEnd = end;
-
-    this.hSpacing = this._readData(data, mp4lib.fields.FIELD_INT32);
-    this.vSpacing = this._readData(data, mp4lib.fields.FIELD_INT32);
-    return this.localPos;
-};
-
-mp4lib.boxes.PixelAspectRatioBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
-
-    this._writeData(data, mp4lib.fields.FIELD_INT32, this.hSpacing);
-    this._writeData(data, mp4lib.fields.FIELD_INT32, this.vSpacing);
-    return this.localPos;
-};
-
-// --------------------------- abstract VisualSampleEntry ----------------------------------
-mp4lib.boxes.AudioSampleEntryBox = function(boxType, size) {
-    mp4lib.boxes.SampleEntryBox.call(this, boxType, size);
-};
-
-mp4lib.boxes.AudioSampleEntryBox.prototype = Object.create(mp4lib.boxes.SampleEntryBox.prototype);
-mp4lib.boxes.AudioSampleEntryBox.prototype.constructor = mp4lib.boxes.AudioSampleEntryBox;
-
-mp4lib.boxes.AudioSampleEntryBox.prototype.computeLength = function() {
-    mp4lib.boxes.SampleEntryBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT16.getLength() * 4 + mp4lib.fields.FIELD_UINT32.getLength() * 3;
-};
-
-mp4lib.boxes.AudioSampleEntryBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.SampleEntryBox.prototype.read.call(this, data, pos, end);
-
-    this.reserved_2 = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT32, 2);
-    this.channelcount = this._readData(data, mp4lib.fields.FIELD_UINT16);
-    this.samplesize = this._readData(data, mp4lib.fields.FIELD_UINT16);
-    this.pre_defined = this._readData(data, mp4lib.fields.FIELD_UINT16);
-    this.reserved_3 = this._readData(data, mp4lib.fields.FIELD_UINT16);
-    this.samplerate = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    return this.localPos;
-};
-
-mp4lib.boxes.AudioSampleEntryBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.SampleEntryBox.prototype.write.call(this, data, pos);
-
-    this._writeArrayData(data, mp4lib.fields.FIELD_UINT32, this.reserved_2);
-    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.channelcount);
-    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.samplesize);
-    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.pre_defined);
-    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.reserved_3);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.samplerate);
-    return this.localPos;
-};
-
-// --------------------------- abstract AudioSampleEntryContainer ----------------------------------
-mp4lib.boxes.AudioSampleEntryContainerBox = function(boxType, size) {
-    mp4lib.boxes.AudioSampleEntryBox.call(this, boxType, size);
-    this.boxes = [];
-};
-
-mp4lib.boxes.AudioSampleEntryContainerBox.prototype = Object.create(mp4lib.boxes.AudioSampleEntryBox.prototype);
-mp4lib.boxes.AudioSampleEntryContainerBox.prototype.constructor = mp4lib.boxes.AudioSampleEntryContainerBox;
-
-mp4lib.boxes.AudioSampleEntryContainerBox.prototype.computeLength = function() {
-    mp4lib.boxes.AudioSampleEntryBox.prototype.computeLength.call(this);
-    var i = 0;
-    for (i = 0; i < this.boxes.length; i++) {
-        this.boxes[i].computeLength();
-        this.size += this.boxes[i].size;
-    }
-};
-
-mp4lib.boxes.AudioSampleEntryContainerBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.AudioSampleEntryBox.prototype.read.call(this, data, pos, end);
-
-    var size = 0,
-        uuidFieldPos = 0,
-        uuid = null,
-        boxtype,
-        box;
-
-    while (this.localPos < this.localEnd) {
-        // Read box size
-        size = mp4lib.fields.FIELD_UINT32.read(data, this.localPos);
-
-        // Read boxtype
-        boxtype = mp4lib.fields.readString(data, this.localPos + 4, 4);
-
-        // Extented type?
-        if (boxtype == "uuid") {
-            uuidFieldPos = (size == 1) ? 16 : 8;
-            uuid = new mp4lib.fields.ArrayField(mp4lib.fields.FIELD_INT8, 16).read(data, this.localPos + uuidFieldPos, this.localPos + uuidFieldPos + 16);
-            uuid = JSON.stringify(uuid);
-        }
-
-        box = mp4lib.createBox(boxtype, size, uuid);
-        if (boxtype === "uuid") {
-            this.localPos = box.read(data, this.localPos + mp4lib.fields.FIELD_INT8.getLength() * 16 + 8, this.localPos + size);
-        } else {
-            this.localPos = box.read(data, this.localPos + 8, this.localPos + size);
-        }
-
-        // in debug mode, sourcebuffer is copied to each box,
-        // so any invalid deserializations may be found by comparing
-        // source buffer with serialized box
-        if (mp4lib.debug) {
-            box.__sourceBuffer = data.subarray(this.localPos - box.size, this.localPos);
-        }
-
-        this.boxes.push(box);
-
-        if (box.size <= 0 || box.size === null) {
-            throw new mp4lib.ParseException('Problem on size of box ' + box.boxtype +
-                ', parsing stopped to avoid infinite loop');
-        }
-
-        if (!box.boxtype) {
-            throw new mp4lib.ParseException('Problem on unknown box, parsing stopped to avoid infinite loop');
-        }
-    }
-    return this.localPos;
-};
-
-mp4lib.boxes.AudioSampleEntryContainerBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.AudioSampleEntryBox.prototype.write.call(this, data, pos);
-    var i = 0;
-
-    for (i = 0; i < this.boxes.length; i++) {
-        this.localPos = this.boxes[i].write(data, this.localPos);
-    }
-    return this.localPos;
-};
-
-// --------------------------- mp4a ----------------------------------
-mp4lib.boxes.MP4AudioSampleEntryBox = function(size) {
-    mp4lib.boxes.AudioSampleEntryContainerBox.call(this, 'mp4a', size);
-};
-
-mp4lib.boxes.MP4AudioSampleEntryBox.prototype = Object.create(mp4lib.boxes.AudioSampleEntryContainerBox.prototype);
-mp4lib.boxes.MP4AudioSampleEntryBox.prototype.constructor = mp4lib.boxes.MP4AudioSampleEntryBox;
-
-//-------------------------- enca ------------------------------------
-mp4lib.boxes.EncryptedAudioBox = function(size) {
-    mp4lib.boxes.AudioSampleEntryContainerBox.call(this, 'enca', size);
-};
-
-mp4lib.boxes.EncryptedAudioBox.prototype = Object.create(mp4lib.boxes.AudioSampleEntryContainerBox.prototype);
-mp4lib.boxes.EncryptedAudioBox.prototype.constructor = mp4lib.boxes.EncryptedAudioBox;
-
-// --------------------------- esds ----------------------------
-mp4lib.boxes.ESDBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'esds', size);
-};
-
-mp4lib.boxes.ESDBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.ESDBox.prototype.constructor = mp4lib.boxes.ESDBox;
-
-mp4lib.boxes.ESDBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT8.getLength() * 2 + this.ES_length;
-};
-
-mp4lib.boxes.ESDBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    this.ES_tag = this._readData(data, mp4lib.fields.FIELD_UINT8);
-    this.ES_length = this._readData(data, mp4lib.fields.FIELD_UINT8);
-    this.ES_data = data.subarray(this.localPos, this.localPos + this.ES_length);
-    this.localPos += this.ES_length;
-    return this.localPos;
-};
-
-mp4lib.boxes.ESDBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.ES_tag);
-    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.ES_length);
-    this._writeBuffer(data, this.ES_data, this.ES_length);
-    return this.localPos;
-};
-
-// --------------------------- stsz ----------------------------------
-mp4lib.boxes.SampleSizeBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'stsz', size);
-};
-
-mp4lib.boxes.SampleSizeBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.SampleSizeBox.prototype.constructor = mp4lib.boxes.SampleSizeBox;
-
-mp4lib.boxes.SampleSizeBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT32.getLength() * 2 + mp4lib.fields.FIELD_UINT32.getLength() * this.sample_count;
-};
-
-mp4lib.boxes.SampleSizeBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    this.sample_size = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    this.sample_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    this.entries = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT32, this.sample_count);
-    return this.localPos;
-};
-
-mp4lib.boxes.SampleSizeBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-    var i = 0;
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.sample_size);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.sample_count);
-    for (i = 0; i < this.sample_count; i++) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entries[i]);
-    }
-    return this.localPos;
-};
-
-// ------------------------- pssh ------------------------------------
-mp4lib.boxes.ProtectionSystemSpecificHeaderBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'pssh', size);
-};
-
-mp4lib.boxes.ProtectionSystemSpecificHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.ProtectionSystemSpecificHeaderBox.prototype.constructor = mp4lib.boxes.ProtectionSystemSpecificHeaderBox;
-
-mp4lib.boxes.ProtectionSystemSpecificHeaderBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-
-    this.size += mp4lib.fields.FIELD_UINT8.getLength() * 16;
-    this.size += mp4lib.fields.FIELD_UINT32.getLength();
-    this.size += mp4lib.fields.FIELD_UINT8.getLength() * this.DataSize;
-};
-
-mp4lib.boxes.ProtectionSystemSpecificHeaderBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    this.SystemID = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT8, 16);
-    this.DataSize = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    this.Data = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT8, this.DataSize);
-    return this.localPos;
-};
-
-mp4lib.boxes.ProtectionSystemSpecificHeaderBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-    var i = 0;
-
-    for (i = 0; i < 16; i++) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT8, this.SystemID[i]);
-    }
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.DataSize);
-    for (i = 0; i < this.DataSize; i++) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT8, this.Data[i]);
-    }
-    return this.localPos;
-};
-
-// ------------------------- saiz ------------------------------------
-mp4lib.boxes.SampleAuxiliaryInformationSizesBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'saiz', size);
-};
-
-mp4lib.boxes.SampleAuxiliaryInformationSizesBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.SampleAuxiliaryInformationSizesBox.prototype.constructor = mp4lib.boxes.SampleAuxiliaryInformationSizesBox;
-
-mp4lib.boxes.SampleAuxiliaryInformationSizesBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-
-    if (this.flags & 1) {
-        this.size += mp4lib.fields.FIELD_UINT32.getLength() * 2;
-    }
-
-    this.size += mp4lib.fields.FIELD_UINT8.getLength() + mp4lib.fields.FIELD_UINT32.getLength();
-
-    if (this.default_sample_info_size === 0) {
-        this.size += mp4lib.fields.FIELD_UINT8.getLength() * this.sample_count;
-    }
-};
-
-mp4lib.boxes.SampleAuxiliaryInformationSizesBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    if (this.flags & 1) {
-        this.aux_info_type = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.aux_info_type_parameter = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    }
-    this.default_sample_info_size = this._readData(data, mp4lib.fields.FIELD_UINT8);
-    this.sample_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
-
-    if (this.default_sample_info_size === 0) {
-        this.sample_info_size = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT8, this.sample_count);
-    }
-    return this.localPos;
-};
-
-mp4lib.boxes.SampleAuxiliaryInformationSizesBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-    var i = 0;
-    if (this.flags & 1) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.aux_info_type);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.aux_info_type_parameter);
-    }
-    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.default_sample_info_size);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.sample_count);
-    if (this.default_sample_info_size === 0) {
-        for (i = 0; i < this.sample_count; i++) {
-            this._writeData(data, mp4lib.fields.FIELD_UINT8, this.sample_info_size[i]);
-        }
-    }
-    return this.localPos;
-};
-
-//------------------------- saio ------------------------------------
-mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'saio', size);
-};
-
-mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox.prototype.constructor = mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox;
-
-mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    if (this.flags & 1) {
-        this.size += mp4lib.fields.FIELD_UINT32.getLength() * 2;
-    }
-    this.size += mp4lib.fields.FIELD_UINT32.getLength(); /*entry_count size */
-    if (this.version === 0) {
-        this.size += mp4lib.fields.FIELD_UINT32.getLength() * this.entry_count;
-    } else {
-        this.size += mp4lib.fields.FIELD_UINT64.getLength() * this.entry_count;
-    }
-};
-
-mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    if (this.flags & 1) {
-        this.aux_info_type = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.aux_info_type_parameter = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    }
-
-    this.entry_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
-
-    if (this.version === 0) {
-        this.offset = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
-    } else {
-        this.offset = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT64, this.entry_count);
-    }
-    return this.localPos;
-};
-
-mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    var i = 0;
-    if (this.flags & 1) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.aux_info_type);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.aux_info_type_parameter);
-    }
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
-    if (this.version === 0) {
-        for (i = 0; i < this.entry_count; i++) {
-            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.offset[i]);
-        }
-    } else {
-        for (i = 0; i < this.entry_count; i++) {
-            this._writeData(data, mp4lib.fields.FIELD_UINT64, this.offset[i]);
-        }
-    }
-    return this.localPos;
-};
-
-//------------------------- sinf ------------------------------------
-mp4lib.boxes.ProtectionSchemeInformationBox = function(size) {
-    mp4lib.boxes.ContainerBox.call(this, 'sinf', size);
-};
-
-mp4lib.boxes.ProtectionSchemeInformationBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
-mp4lib.boxes.ProtectionSchemeInformationBox.prototype.constructor = mp4lib.boxes.ProtectionSchemeInformationBox;
-
-//------------------------ schi --------------------------------------
-mp4lib.boxes.SchemeInformationBox = function(size) {
-    mp4lib.boxes.ContainerBox.call(this, 'schi', size);
-};
-
-mp4lib.boxes.SchemeInformationBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
-mp4lib.boxes.SchemeInformationBox.prototype.constructor = mp4lib.boxes.SchemeInformationBox;
-
-//------------------------ tenc --------------------------------------
-mp4lib.boxes.TrackEncryptionBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'tenc', size);
-};
-
-mp4lib.boxes.TrackEncryptionBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.TrackEncryptionBox.prototype.constructor = mp4lib.boxes.TrackEncryptionBox;
-
-mp4lib.boxes.TrackEncryptionBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-
-    this.size += mp4lib.fields.FIELD_BIT24.getLength();
-    this.size += mp4lib.fields.FIELD_UINT8.getLength();
-    this.size += mp4lib.fields.FIELD_UINT8.getLength() * 16;
-};
-
-mp4lib.boxes.TrackEncryptionBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    this.default_IsEncrypted = this._readData(data, mp4lib.fields.FIELD_BIT24);
-    this.default_IV_size = this._readData(data, mp4lib.fields.FIELD_UINT8);
-    this.default_KID = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT8, 16);
-    return this.localPos;
-};
-
-mp4lib.boxes.TrackEncryptionBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    this._writeData(data, mp4lib.fields.FIELD_BIT24, this.default_IsEncrypted);
-    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.default_IV_size);
-    this._writeArrayData(data, mp4lib.fields.FIELD_UINT8, this.default_KID);
-    return this.localPos;
-};
-
-//------------------------- schm -------------------------------------
-mp4lib.boxes.SchemeTypeBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'schm', size);
-};
-
-mp4lib.boxes.SchemeTypeBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.SchemeTypeBox.prototype.constructor = mp4lib.boxes.SchemeTypeBox;
-
-mp4lib.boxes.SchemeTypeBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-
-    this.size += mp4lib.fields.FIELD_UINT32.getLength() * 2;
-    if (this.flags & 0x000001) {
-        this.size += mp4lib.fields.FIELD_STRING.getLength(this.scheme_uri);
-    }
-};
-
-mp4lib.boxes.SchemeTypeBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    this.scheme_type = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    this.scheme_version = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    if (this.flags & 0x000001) {
-        this.scheme_uri = this._readData(data, mp4lib.fields.FIELD_STRING);
-    }
-    return this.localPos;
-};
-
-mp4lib.boxes.SchemeTypeBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.scheme_type);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.scheme_version);
-    if (this.flags & 0x000001) {
-        this._writeData(data, mp4lib.fields.FIELD_STRING, this.scheme_uri);
-    }
-    return this.localPos;
-};
-
-// --------------------------- elst ----------------------------------
-mp4lib.boxes.EditListBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'elst', size);
-    this.entries = [];
-};
-
-mp4lib.boxes.EditListBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.EditListBox.prototype.constructor = mp4lib.boxes.EditListBox;
-
-mp4lib.boxes.EditListBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-
-    this.size += mp4lib.fields.FIELD_UINT32.getLength(); //entry_count size
-
-    if (this.version === 1) {
-        this.size += (mp4lib.fields.FIELD_UINT64.getLength() * 2 /*segment_duration and media_time size*/ +
-            mp4lib.fields.FIELD_UINT16.getLength() * 2 /*media_rate_integer and media_rate_fraction size)*/ ) * this.entry_count;
-    } else { // version==0
-        this.size += (mp4lib.fields.FIELD_UINT32.getLength() * 2 /*segment_duration and media_time size*/ +
-            mp4lib.fields.FIELD_UINT16.getLength() * 2 /*media_rate_integer and media_rate_fraction size)*/ ) * this.entry_count;
-    }
-};
-
-mp4lib.boxes.EditListBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-    var i = 0,
-        struct = {};
-    this.entry_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
-
-    for (i = 0; i < this.entry_count; i++) {
-        struct = {};
-        if (this.version === 1) {
-            struct.segment_duration = this._readData(data, mp4lib.fields.FIELD_UINT64);
-            struct.media_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
-        } else { // version==0
-            struct.segment_duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
-            struct.media_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        }
-        struct.media_rate_integer = this._readData(data, mp4lib.fields.FIELD_UINT16);
-        struct.media_rate_fraction = this._readData(data, mp4lib.fields.FIELD_UINT16);
-        this.entries.push(struct);
-    }
-    return this.localPos;
-};
-
-mp4lib.boxes.EditListBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-    var i = 0;
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
-    for (i = 0; i < this.entry_count; i++) {
-
-        if (this.version === 1) {
-            this._writeData(data, mp4lib.fields.FIELD_UINT64, this.entries[i].segment_duration);
-            this._writeData(data, mp4lib.fields.FIELD_UINT64, this.entries[i].media_time);
-        } else { // version==0
-            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entries[i].segment_duration);
-            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entries[i].media_time);
-        }
-        this._writeData(data, mp4lib.fields.FIELD_UINT16, this.entries[i].media_rate_integer);
-        this._writeData(data, mp4lib.fields.FIELD_UINT16, this.entries[i].media_rate_fraction);
-    }
-    return this.localPos;
-};
-
-// --------------------------- hmhd ----------------------------------
-mp4lib.boxes.HintMediaHeaderBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'hmhd', size);
-};
-
-mp4lib.boxes.HintMediaHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.HintMediaHeaderBox.prototype.constructor = mp4lib.boxes.HintMediaHeaderBox;
-
-mp4lib.boxes.HintMediaHeaderBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-
-    this.size += mp4lib.fields.FIELD_UINT16.getLength() * 2; //maxPDUsize and avgPDUsize size
-    this.size += mp4lib.fields.FIELD_UINT32.getLength() * 3; //maxbitrate, avgbitrate and reserved size
-};
-
-mp4lib.boxes.HintMediaHeaderBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    this.maxPDUsize = this._readData(data, mp4lib.fields.FIELD_UINT16);
-    this.avgPDUsize = this._readData(data, mp4lib.fields.FIELD_UINT16);
-    this.maxbitrate = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    this.avgbitrate = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    this.reserved = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    return this.localPos;
-};
-
-mp4lib.boxes.HintMediaHeaderBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.maxPDUsize);
-    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.avgPDUsize);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.maxbitrate);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.avgbitrate);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.reserved);
-    return this.localPos;
-};
-
-// --------------------------- nmhd ----------------------------------
-mp4lib.boxes.NullMediaHeaderBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'nmhd', size);
-};
-
-mp4lib.boxes.NullMediaHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.NullMediaHeaderBox.prototype.constructor = mp4lib.boxes.NullMediaHeaderBox;
-
-// --------------------------- ctts ----------------------------------
-mp4lib.boxes.CompositionOffsetBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'ctts', size);
-    this.entries = [];
-};
-
-mp4lib.boxes.CompositionOffsetBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.CompositionOffsetBox.prototype.constructor = mp4lib.boxes.CompositionOffsetBox;
-
-mp4lib.boxes.CompositionOffsetBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-
-    this.size += mp4lib.fields.FIELD_UINT32.getLength(); //entry_count size
-
-    if (this.version === 0) {
-        this.size += (mp4lib.fields.FIELD_UINT32.getLength() * 2 /*sample_count and sample_offset size*/ ) * this.entry_count;
-    } else { // version===1
-        this.size += (mp4lib.fields.FIELD_UINT32.getLength() /*sample_count size*/ + mp4lib.fields.FIELD_INT32.getLength()
-            /*sample_offset size*/
-        ) * this.entry_count;
-    }
-};
-
-mp4lib.boxes.CompositionOffsetBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-    var i = 0,
-        struct = {};
-    this.entry_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    for (i = 0; i < this.entry_count; i++) {
-        struct = {};
-
-        if (this.version === 0) {
-            struct.sample_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
-            struct.sample_offset = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        } else { // version==1
-            struct.sample_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
-            struct.sample_offset = this._readData(data, mp4lib.fields.FIELD_INT32);
-        }
-        this.entries.push(struct);
-    }
-    return this.localPos;
-};
-
-mp4lib.boxes.CompositionOffsetBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-    var i = 0;
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
-    for (i = 0; i < this.entry_count; i++) {
-        if (this.version === 0) {
-            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entries[i].sample_count);
-            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entries[i].sample_offset);
-        } else { // version==1
-            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entries[i].sample_count);
-            this._writeData(data, mp4lib.fields.FIELD_INT32, this.entries[i].sample_offset);
-        }
-    }
-    return this.localPos;
-};
-
-// --------------------------- cslg ----------------------------------
-mp4lib.boxes.CompositionToDecodeBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'cslg', size);
-};
-
-mp4lib.boxes.CompositionToDecodeBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.CompositionToDecodeBox.prototype.constructor = mp4lib.boxes.CompositionToDecodeBox;
-
-mp4lib.boxes.CompositionToDecodeBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_INT32.getLength() * 5;
-};
-
-mp4lib.boxes.CompositionToDecodeBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    this.compositionToDTSShift = this._readData(data, mp4lib.fields.FIELD_INT32);
-    this.leastDecodeToDisplayDelta = this._readData(data, mp4lib.fields.FIELD_INT32);
-    this.greatestDecodeToDisplayDelta = this._readData(data, mp4lib.fields.FIELD_INT32);
-    this.compositionStartTime = this._readData(data, mp4lib.fields.FIELD_INT32);
-    this.compositionEndTime = this._readData(data, mp4lib.fields.FIELD_INT32);
-    return this.localPos;
-};
-
-mp4lib.boxes.CompositionToDecodeBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    this._writeData(data, mp4lib.fields.FIELD_INT32, this.compositionToDTSShift);
-    this._writeData(data, mp4lib.fields.FIELD_INT32, this.leastDecodeToDisplayDelta);
-    this._writeData(data, mp4lib.fields.FIELD_INT32, this.greatestDecodeToDisplayDelta);
-    this._writeData(data, mp4lib.fields.FIELD_INT32, this.compositionStartTime);
-    this._writeData(data, mp4lib.fields.FIELD_INT32, this.compositionEndTime);
-    return this.localPos;
-};
-
-// --------------------------- stss ----------------------------------
-mp4lib.boxes.SyncSampleBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'stss', size);
-    this.entries = [];
-};
-
-mp4lib.boxes.SyncSampleBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.SyncSampleBox.prototype.constructor = mp4lib.boxes.SyncSampleBox;
-
-mp4lib.boxes.SyncSampleBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT32.getLength(); //entry_count size
-    this.size += mp4lib.fields.FIELD_UINT32.getLength() * this.entry_count; //entries size
-};
-
-mp4lib.boxes.SyncSampleBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-    var i = 0,
-        struct = {};
-
-    this.entry_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    for (i = 0; i < this.entry_count; i++) {
-        struct = {};
-        struct.sample_number = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.entries.push(struct);
-    }
-    return this.localPos;
-};
-
-mp4lib.boxes.SyncSampleBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-    var i = 0;
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
-    for (i = 0; i < this.entry_count; i++) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entries[i].sample_number);
-    }
-    return this.localPos;
-};
-
-// --------------------------- tref ----------------------------------
-mp4lib.boxes.TrackReferenceBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'tref', size);
-};
-
-mp4lib.boxes.TrackReferenceBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.TrackReferenceBox.prototype.constructor = mp4lib.boxes.TrackReferenceBox;
-
-mp4lib.boxes.TrackReferenceBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT32.getLength() * this.track_IDs.length;
-};
-
-mp4lib.boxes.TrackReferenceBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-    this.track_IDs = this._readArrayData(data, mp4lib.fields.FIELD_UINT32);
-    return this.localPos;
-};
-
-mp4lib.boxes.TrackReferenceBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-    this._writeArrayData(data, mp4lib.fields.FIELD_UINT32, this.track_IDs);
-    return this.localPos;
-};
-
-//---------------------------- frma ----------------------------------
-mp4lib.boxes.OriginalFormatBox = function(size) {
-    mp4lib.boxes.Box.call(this, 'frma', size);
-};
-
-mp4lib.boxes.OriginalFormatBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
-mp4lib.boxes.OriginalFormatBox.prototype.constructor = mp4lib.boxes.OriginalFormatBox;
-
-mp4lib.boxes.OriginalFormatBox.prototype.computeLength = function() {
-    mp4lib.boxes.Box.prototype.computeLength.call(this);
-    this.size += mp4lib.fields.FIELD_UINT32.getLength();
-};
-
-mp4lib.boxes.OriginalFormatBox.prototype.read = function(data, pos, end) {
-    this.localPos = pos;
-    this.localEnd = end;
-    this.data_format = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    return this.localPos;
-};
-
-mp4lib.boxes.OriginalFormatBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.data_format);
-    return this.localPos;
-};
-
-// -------------------------------------------------------------------
-// Microsoft Smooth Streaming specific boxes
-// -------------------------------------------------------------------
-
-// --------------------------- piff ----------------------------------
-//PIFF Sample Encryption box
-mp4lib.boxes.PiffSampleEncryptionBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'sepiff', size, [0xA2, 0x39, 0x4F, 0x52, 0x5A, 0x9B, 0x4F, 0x14, 0xA2, 0x44, 0x6C, 0x42, 0x7C, 0x64, 0x8D, 0xF4]);
-};
-
-mp4lib.boxes.PiffSampleEncryptionBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.PiffSampleEncryptionBox.prototype.constructor = mp4lib.boxes.PiffSampleEncryptionBox;
-
-mp4lib.boxes.PiffSampleEncryptionBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    var i = 0,
-        j = 0;
-
-    this.size += mp4lib.fields.FIELD_UINT32.getLength(); //sample_count size
-    if (this.flags & 1) {
-        this.size += mp4lib.fields.FIELD_UINT8.getLength(); //IV_size size
-    }
-    for (i = 0; i < this.sample_count; i++) {
-        this.size += 8; // InitializationVector size
-        if (this.flags & 2) {
-            this.size += mp4lib.fields.FIELD_UINT16.getLength(); // NumberOfEntries size
-            for (j = 0; j < this.entry[i].NumberOfEntries; j++) {
-                this.size += mp4lib.fields.FIELD_UINT16.getLength(); //BytesOfClearData size
-                this.size += mp4lib.fields.FIELD_UINT32.getLength(); //BytesOfEncryptedData size
-            }
-        }
-    }
-};
-
-mp4lib.boxes.PiffSampleEncryptionBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-    var i = 0,
-        j = 0;
-    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.sample_count);
-    if (this.flags & 1) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT8, this.IV_size);
-    }
-    for (i = 0; i < this.sample_count; i++) {
-        this._writeBuffer(data, this.entry[i].InitializationVector, 8);
-
-        if (this.flags & 2) {
-            this._writeData(data, mp4lib.fields.FIELD_UINT16, this.entry[i].NumberOfEntries); // NumberOfEntries
-
-            for (j = 0; j < this.entry[i].NumberOfEntries; j++) {
-                this._writeData(data, mp4lib.fields.FIELD_UINT16, this.entry[i].clearAndCryptedData[j].BytesOfClearData); //BytesOfClearData
-                this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].clearAndCryptedData[j].BytesOfEncryptedData); //BytesOfEncryptedData size
-            }
-        }
-    }
-    return this.localPos;
-};
-
-mp4lib.boxes.PiffSampleEncryptionBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-    var i = 0,
-        j = 0,
-        clearAndCryptedStruct = {},
-        struct = {};
-    this.sample_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    if (this.flags & 1) {
-        this.IV_size = this._readData(data, mp4lib.fields.FIELD_UINT8);
-    }
-    this.entry = [];
-    for (i = 0; i < this.sample_count; i++) {
-        struct = {};
-        struct.InitializationVector = data.subarray(this.localPos, this.localPos + 8);
-        this.localPos += 8; //InitializationVector size
-
-        if (this.flags & 2) {
-            struct.NumberOfEntries = this._readData(data, mp4lib.fields.FIELD_UINT16); // NumberOfEntries
-            struct.clearAndCryptedData = [];
-            for (j = 0; j < struct.NumberOfEntries; j++) {
-                clearAndCryptedStruct = {};
-                clearAndCryptedStruct.BytesOfClearData = this._readData(data, mp4lib.fields.FIELD_UINT16); //BytesOfClearData
-                clearAndCryptedStruct.BytesOfEncryptedData = this._readData(data, mp4lib.fields.FIELD_UINT32); //BytesOfEncryptedData size
-                struct.clearAndCryptedData.push(clearAndCryptedStruct);
-            }
-        }
-        this.entry.push(struct);
-    }
-    return this.localPos;
-};
-
-//PIFF Track Encryption Box
-mp4lib.boxes.PiffTrackEncryptionBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'tepiff', size, [0x89, 0x74, 0xDB, 0xCE, 0x7B, 0xE7, 0x4C, 0x51, 0x84, 0xF9, 0x71, 0x48, 0xF9, 0x88, 0x25, 0x54]);
-};
-
-mp4lib.boxes.PiffTrackEncryptionBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.PiffTrackEncryptionBox.prototype.constructor = mp4lib.boxes.PiffTrackEncryptionBox;
-
-//PIFF Protection System Specific Header Box
-mp4lib.boxes.PiffProtectionSystemSpecificHeaderBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'psshpiff', size, [0xD0, 0x8A, 0x4F, 0x18, 0x10, 0xF3, 0x4A, 0x82, 0xB6, 0xC8, 0x32, 0xD8, 0xAB, 0xA1, 0x83, 0xD3]);
-};
-
-mp4lib.boxes.PiffProtectionSystemSpecificHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.PiffProtectionSystemSpecificHeaderBox.prototype.constructor = mp4lib.boxes.PiffProtectionSystemSpecificHeaderBox;
-
-// --------------------------- tfdx -----------------------------
-mp4lib.boxes.TfxdBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'tfxd', size, [0x6D, 0x1D, 0x9B, 0x05, 0x42, 0xD5, 0x44, 0xE6, 0x80, 0xE2, 0x14, 0x1D, 0xAF, 0xF7, 0x57, 0xB2]);
-};
-
-mp4lib.boxes.TfxdBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.TfxdBox.prototype.constructor = mp4lib.boxes.TfxdBox;
-
-mp4lib.boxes.TfxdBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    if (this.version === 1) {
-        this.size += mp4lib.fields.FIELD_UINT64.getLength() * 2;
-    } else {
-        this.size += mp4lib.fields.FIELD_UINT32.getLength() * 2;
-    }
-};
-
-mp4lib.boxes.TfxdBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-
-    if (this.version === 1) {
-        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.fragment_absolute_time);
-        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.fragment_duration);
-    } else {
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.fragment_absolute_time);
-        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.fragment_duration);
-    }
-    return this.localPos;
-};
-
-mp4lib.boxes.TfxdBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-
-    if (this.version === 1) {
-        this.fragment_absolute_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
-        this.fragment_duration = this._readData(data, mp4lib.fields.FIELD_UINT64);
-    } else {
-        this.fragment_absolute_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        this.fragment_duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
-    }
-    return this.localPos;
-};
-
-// --------------------------- tfrf -----------------------------
-mp4lib.boxes.TfrfBox = function(size) {
-    mp4lib.boxes.FullBox.call(this, 'tfrf', size, [0xD4, 0x80, 0x7E, 0xF2, 0xCA, 0x39, 0x46, 0x95, 0x8E, 0x54, 0x26, 0xCB, 0x9E, 0x46, 0xA7, 0x9F]);
-};
-
-mp4lib.boxes.TfrfBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
-mp4lib.boxes.TfrfBox.prototype.constructor = mp4lib.boxes.TfrfBox;
-
-mp4lib.boxes.TfrfBox.prototype.computeLength = function() {
-    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-
-    this.size += mp4lib.fields.FIELD_UINT8.getLength(); //fragment_count size
-    if (this.version === 1) {
-        this.size += (mp4lib.fields.FIELD_UINT64.getLength() * 2 /*fragment_absolute_time and fragment_duration size*/ ) * this.fragment_count;
-    } else {
-        this.size += (mp4lib.fields.FIELD_UINT32.getLength() * 2 /*fragment_absolute_time and fragment_duration size*/ ) * this.fragment_count;
-    }
-};
-
-mp4lib.boxes.TfrfBox.prototype.write = function(data, pos) {
-    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-    var i = 0;
-    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.fragment_count);
-    for (i = 0; i < this.fragment_count; i++) {
-        if (this.version === 1) {
-            this._writeData(data, mp4lib.fields.FIELD_UINT64, this.entry[i].fragment_absolute_time);
-            this._writeData(data, mp4lib.fields.FIELD_UINT64, this.entry[i].fragment_duration);
-        } else {
-            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].fragment_absolute_time);
-            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].fragment_duration);
-        }
-    }
-    return this.localPos;
-};
-
-mp4lib.boxes.TfrfBox.prototype.read = function(data, pos, end) {
-    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
-    var i = 0,
-        struct = {};
-    this.fragment_count = this._readData(data, mp4lib.fields.FIELD_UINT8);
-    this.entry = [];
-    for (i = 0; i < this.fragment_count; i++) {
-        struct = {};
-        if (this.version === 1) {
-            struct.fragment_absolute_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
-            struct.fragment_duration = this._readData(data, mp4lib.fields.FIELD_UINT64);
-        } else {
-            struct.fragment_absolute_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
-            struct.fragment_duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
-        }
-        this.entry.push(struct);
-    }
-    return this.localPos;
-};
-
-mp4lib.registerTypeBoxes();
-/*
- * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
- * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2014, Orange
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- *
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-var mpegts = (function() {
-    return {
-        pes: {},
-        si: {},
-        binary: {},
-        ts: {},
-        Pts: {},
-        aac: {},
-        h264: {}
-    };
-}());
-
-// This module is intended to work both on node.js and inside browser.
-// Since these environments differ in a way modules are stored/accessed,
-// we need to export the module in the environment-dependant way
-
-if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
-    module.exports = mpegts; // node.js
-else
-    window.mpegts = mpegts; // browser
-/*
- * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
- * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2014, Orange
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- *
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-mpegts.si.PSISection = function(table_id) {
-    this.m_table_id = table_id;
-    this.m_section_syntax_indicator = 1;
-    this.m_section_length = mpegts.si.PSISection.prototype.SECTION_LENGTH;
-    this.m_transport_stream_id = 0;
-    this.m_version_number = 0;
-    this.m_current_next_indicator = true;
-    this.m_section_number = 0;
-    this.m_last_section_number = 0;
-    this.m_bValid = null;
-};
-
-mpegts.si.PSISection.prototype.parse = function(data) {
-    this.m_bValid = false;
-
-    var id = 0;
-
-    var pointerField = data[id];
-
-    //if pointerField = 0 payload data start immediately otherwise, shift pointerField value
-    id = pointerField === 0 ? id + 1 : id + pointerField;
-
-    this.m_table_id = data[id];
-    id++;
-    this.m_section_syntax_indicator = mpegts.binary.getBitFromByte(data[id], 0);
-    this.m_section_length = mpegts.binary.getValueFrom2Bytes(data.subarray(id, id + 2), 4);
-    id += 2;
-    this.m_transport_stream_id = mpegts.binary.getValueFrom2Bytes(data.subarray(id, id + 2));
-    id += 2;
-    this.m_version_number = mpegts.binary.getValueFromByte(data[id], 2, 5);
-    this.m_current_next_indicator = mpegts.binary.getBitFromByte(data[id], 7);
-    id++;
-    this.m_section_number = data[id];
-    id++;
-    this.m_last_section_number = data[id];
-
-    /*if (nLength < (m_section_length + 3))
-	{
-		m_bComplete = false;
-		SAFE_DELETE(m_pBytestream);
-		m_pBytestream = new unsigned char[m_section_length + 3];
-		memcpy(m_pBytestream, pBytestream, nLength);
-		m_nSectionIndex = nLength;
-		return;
-	}
-
-	m_nSectionIndex = 0;
-	m_bComplete = true;*/
-    this.m_bValid = true;
-
-    return id;
-};
-
-mpegts.si.PSISection.prototype.getSectionLength = function() {
-    return this.m_section_length;
-};
-
-mpegts.si.PSISection.prototype.SECTION_LENGTH = 9;
-mpegts.si.PSISection.prototype.HEADER_LENGTH = 8;
-/*
- * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
- * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2014, Orange
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- *
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-// Sampling frequency dependent on sampling_frequency_index
-mpegts.aac.SAMPLING_FREQUENCY = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
-
-mpegts.aac.getAudioSpecificConfig = function(data) { // data as Uint8Array
-
-    // We need to parse the beginning of the adts_frame in order to get
-    // object type, sampling frequency and channel configuration
-    var profile = mpegts.binary.getValueFromByte(data[2], 0, 2);
-    var sampling_frequency_index = mpegts.binary.getValueFromByte(data[2], 2, 4);
-    var channel_configuration = mpegts.binary.getValueFrom2Bytes(data.subarray(2, 5), 7, 3);
-
-    var audioSpecificConfig = new Uint8Array(2);
-
-    // audioObjectType = profile = MPEG-4 Audio Object Type minus 1
-    audioSpecificConfig[0] = (profile + 1) << 3;
-
-    // samplingFrequencyIndex
-    audioSpecificConfig[0] |= (sampling_frequency_index & 0x0E) >> 1;
-    audioSpecificConfig[1] |= (sampling_frequency_index & 0x01) << 7;
-
-    // channelConfiguration
-    audioSpecificConfig[1] |= channel_configuration << 3;
-
-    /*  code for HE AAC v2 to be tested
-
-    var audioSpecificConfig = new Uint8Array(4);
-
-    // audioObjectType = profile => profile, the MPEG-4 Audio Object Type minus 1
-    audioSpecificConfig[0] = 29 << 3;
-
-    // samplingFrequencyIndex
-    audioSpecificConfig[0] |= (sampling_frequency_index & 0x0E) >> 1;
-    audioSpecificConfig[1] |= (sampling_frequency_index & 0x01) << 7;
-
-    // channelConfiguration
-    audioSpecificConfig[1] |= channel_configuration << 3;
-    
-    var extensionSamplingFrequencyIndex = 5;// in HE AAC Extension Sampling frequence
-
-    audioSpecificConfig[1] |= extensionSamplingFrequencyIndex >> 1;
-       
-    audioSpecificConfig[2] = (extensionSamplingFrequencyIndex << 7) | ((profile+1) << 2);// origin object type equals to 2 => AAC Main Low Complexity
-    audioSpecificConfig[3] = 0x0; //alignment bits
-
-   */
-
-    return audioSpecificConfig;
-};
-
-mpegts.aac.parseADTS = function(data, cts) { // data as Uint8Array, cts as an array of cts for each frame index
-
-    var aacFrames = [],
-        adtsHeader = {},
-        aacFrame,
-        adtsFrameIndex,
-        i = 0;
-
-    while (i < data.length) {
-        // = adts_frame
-        adtsFrameIndex = i;
-
-        // == adts_fixed_header
-        adtsHeader.syncword = (data[i] << 4) + ((data[i + 1] & 0xF0) >> 4);
-        // adtsHeader.ID
-        // adtsHeader.layer
-        adtsHeader.protection_absent = data[i + 1] & 0x01;
-        // adtsHeader.profile
-        adtsHeader.sampling_frequency_index = (data[i + 2] & 0x3C) >> 2;
-        // adtsHeader.private_bit
-        adtsHeader.channel_configuration = ((data[i + 2] & 0x01) << 1) + ((data[i + 3] & 0xC0) >> 6);
-        // adtsHeader.original_copy
-        // adtsHeader.home
-
-        // == adts_variable_header
-        // adtsHeader.copyright_identification_bit
-        // adtsHeader.copyright_identification_start
-        adtsHeader.aac_frame_length = ((data[i + 3] & 0x03) << 11) + (data[i + 4] << 3) + ((data[i + 5] & 0xE0) >> 5);
-        // adtsHeader.adts_buffer_fullness
-        adtsHeader.number_of_raw_data_blocks_in_frame = (data[i + 6] & 0x03) >> 2;
-
-        i += 7;
-
-        if (adtsHeader.number_of_raw_data_blocks_in_frame === 0) {
-            // == adts_error_check()
-            if (adtsHeader.protection_absent === 0) {
-                i += 2;
-            }
-
-            // == raw_data_block() => create AAC frame
-            aacFrame = {};
-            aacFrame.offset = i;
-            aacFrame.length = adtsHeader.aac_frame_length - (i - adtsFrameIndex);
-
-            if (cts && cts[adtsFrameIndex]) {
-                aacFrame.cts = cts[adtsFrameIndex];
-            }
-
-            aacFrames.push(aacFrame);
-
-            i += aacFrame.length;
-        } else {
-            // == adts_header_error_check
-        }
-    }
-
-    return aacFrames;
-};
-/*
- * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
- * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2014, Orange
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- *
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-mpegts.ts.AdaptationField = function() {
-    /** adaptation field fields */
-    this.m_cAFLength = null;
-    this.m_bDiscontinuityInd = null;
-    this.m_bRAI = null;
-    this.m_bESPriority = null;
-
-    /** Optional fields flags */
-    this.m_bPCRFlag = null;
-    this.m_bOPCRFlag = null;
-    this.m_bSplicingPointFlag = null;
-    this.m_bPrivateDataFlag = null;
-    this.m_bAdaptationFieldExtFlag = null;
-};
-
-mpegts.ts.AdaptationField.prototype.getLength = function() {
-    return (this.m_cAFLength + 1);
-};
-
-mpegts.ts.AdaptationField.prototype.parse = function(data) {
-    this.m_cAFLength = data[0];
-
-    if (this.m_cAFLength === 0) {
-        // = exactly 1 stuffing byte
-        return;
-    }
-
-    var index = 1;
-
-    this.m_bDiscontinuityInd = mpegts.binary.getBitFromByte(data[index], 0);
-    this.m_bRAI = mpegts.binary.getBitFromByte(data[index], 1);
-    this.m_bESPriority = mpegts.binary.getBitFromByte(data[index], 2);
-    this.m_bPCRFlag = mpegts.binary.getBitFromByte(data[index], 3);
-    this.m_bOPCRFlag = mpegts.binary.getBitFromByte(data[index], 4);
-    this.m_bSplicingPointFlag = mpegts.binary.getBitFromByte(data[index], 5);
-    this.m_bPrivateDataFlag = mpegts.binary.getBitFromByte(data[index], 6);
-    this.m_bAdaptationFieldExtFlag = mpegts.binary.getBitFromByte(data[index], 7);
-
-    //other flags are not useful for the conversion HLS => MP4
-};
-/*
- * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
- * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2014, Orange
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- *
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-mpegts.binary.readBytes = function(buf, pos, nbBytes) {
-    var value = 0;
-    for (var i = 0; i < nbBytes; i++) {
-        value = value << 8;
-        value = value + buf[pos];
-        pos++;
-    }
-    return value;
-};
-
-/**
- * Returns a bit value from the given byte
- * @param data the input byte
- * @param bitIndex the bit index inside the byte (0=msb to 7=lsb)
- * @return the bit value as a boolean (0 => false, 1 => true)
- */
-mpegts.binary.getBitFromByte = function(data, bitIndex) {
-    var cMask = 0x00;
-    cMask += (1 << (7 - bitIndex));
-
-    return ((data & cMask) !== 0);
-};
-
-/**
- * Returns the value extracted from three consecutive bytes
- * @param pBytes the input bytes
- * @param msbIndex the index of the first bit to extract ( 0=msb to 15=lsb )
- * @param nbBits the number of bits to extract (if '-1' then extract up to the last bit)
- * @return the value of the extracted bits as an unsigned short, or 0xFFFFFFFF if a problem has occured
- */
-mpegts.binary.getValueFrom3Bytes = function(pBytes, msbIndex /* = 0*/ , nbBits /* = -1*/ ) {
-    if (typeof nbBits === "undefined") {
-        nbBits = -1;
-    }
-    if (typeof msbIndex === "undefined") {
-        msbIndex = 0;
-    }
-    var nbBits2 = nbBits == -1 ? -1 : (nbBits - (16 - msbIndex));
-    var nbLsbShift = nbBits == -1 ? 0 : (8 - nbBits2);
-    var cValue0 = mpegts.binary.getValueFromByte(pBytes[0], msbIndex);
-    var cValue1 = mpegts.binary.getValueFromByte(pBytes[1]);
-    var cValue2 = mpegts.binary.getValueFromByte(pBytes[2], 0, nbBits2, false);
-
-    return ((((cValue0 << 16) & 0x00FF0000) | ((cValue1 << 8) & 0x0000FF00) | (cValue2 & 0x000000FF)) >> nbLsbShift);
-};
-
-/**
- * Returns the value extracted from two consecutive bytes
- * @param data the input bytes
- * @param msbIndex the index of the first bit to extract ( 0=msb to 15=lsb )
- * @param nbBits the number of bits to extract (if '-1' then extract up to the last bit)
- * @return the value of the extracted bits as an unsigned short, or 0xFFFF if a problem has occured
- */
-mpegts.binary.getValueFrom2Bytes = function(data, msbIndex /* = 0*/ , nbBits /* = -1*/ ) {
-    if (typeof nbBits === "undefined") {
-        nbBits = -1;
-    }
-    if (typeof msbIndex === "undefined") {
-        msbIndex = 0;
-    }
-
-    var nbBits1 = nbBits == -1 ? -1 : (nbBits - (8 - msbIndex));
-    var nbLsbShift = nbBits == -1 ? 0 : (8 - nbBits1);
-    var cValue0 = mpegts.binary.getValueFromByte(data[0], msbIndex);
-    var cValue1 = mpegts.binary.getValueFromByte(data[1], 0, nbBits1, false);
-
-    return ((((cValue0 << 8) & 0xFF00) | (cValue1 & 0x00FF)) >> nbLsbShift);
-};
-
-/**
- * Returns the value extracted from the given byte
- * @param data the input byte
- * @param msbIndex the index of the first bit to extract ( 0=msb to 7=lsb )
- * @param nbBits the number of bits to extract (if '-1' then extract up to the last bit)
- * @param bShift true if the bits have to be shifted to the right
- * @return the value of the extracted bits as an unsigned char, or 0xFF if a problem has occurred
- */
-mpegts.binary.getValueFromByte = function(data, msbIndex /* = 0*/ , nbBits /* = -1*/ , bShift /* = true*/ ) {
-    var cMask = 0x00;
-    var i = 0;
-
-    if (typeof nbBits === "undefined") {
-        nbBits = -1;
-    }
-    if (typeof msbIndex === "undefined") {
-        msbIndex = 0;
-    }
-
-    var lsbIndex = (nbBits == -1) ? 7 : (msbIndex + nbBits - 1);
-    for (i = msbIndex; i <= lsbIndex; i++) {
-        cMask += (1 << (7 - i));
-    }
-
-    var cValue = data & cMask;
-    if (bShift || typeof bShift === "undefined") {
-        cValue >>= (7 - lsbIndex);
-    }
-    return cValue;
-};
-/*
- * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
- * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2014, Orange
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- *
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-mpegts.h264.getSequenceHeader = function(data) { // data as Uint8Array
-
-    var pos = -1,
-        length = -1,
-        i = 0,
-        naluType,
-        sequenceHeader = null,
-        width = 0,
-        height = 0;
-
-    while (i < data.length) {
-        if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x00) && (data[i + 3] === 0x01)) {
-
-            naluType = data[i + 4] & 0x1F;
-
-            // Start of SPS or PPS
-            if ((naluType >= mpegts.h264.NALUTYPE_SPS) && (naluType <= mpegts.h264.NALUTYPE_PPS)) {
-                // First NALU of this type => we start storing the sequence header
-                if (pos === -1) {
-                    pos = i;
-                }
-
-                // SPS => parse to get width and height
-                if (naluType === mpegts.h264.NALUTYPE_SPS) {
-                    var sps = mpegts.h264.parseSPS(data.subarray(i + 5)); // +5 => after nal_unit_type byte
-                    width = (sps.pic_width_in_mbs_minus1 + 1) << 4;
-                    height = (sps.pic_height_in_map_units_minus1 + 1) << 4;
-                }
-            } else if (pos > 0) {
-                length = i - pos;
-            }
-
-            // Start of coded picture NALU
-            if ((naluType === mpegts.h264.NALUTYPE_IDR) || (naluType === mpegts.h264.NALUTYPE_NONIDR)) {
-                break;
-            }
-
-            i += 4;
-        } else if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x01)) {
-            if (pos > 0) {
-                length = i - pos;
-            }
-            break;
-        } else {
-            i++;
-        }
-    }
-
-    if ((pos === -1) || (length === -1)) {
-        return null;
-    }
-
-    sequenceHeader = new Uint8Array(length);
-    sequenceHeader.set(data.subarray(pos, pos + length));
-
-    return {
-        bytes: sequenceHeader,
-        width: width,
-        height: height
-    };
-};
-
-mpegts.h264.read_ue = function(data, ctx) {
-
-    var value = 1,
-        temp = 0,
-        numZeros = 0;
-
-    ctx._bit = (ctx._byte >> ctx._bitPos) & 0x01;
-    ctx._bitPos--;
-    if (ctx._bitPos < 0) {
-        ctx._byte = data[ctx._bytePos];
-        ctx._bytePos++;
-        ctx._bitPos = 7;
-    }
-
-    while (ctx._bit === 0) {
-        numZeros++;
-        value = value << 1;
-        ctx._bit = (ctx._byte >> ctx._bitPos) & 0x01;
-        ctx._bitPos--;
-        if (ctx._bitPos < 0) {
-            ctx._byte = data[ctx._bytePos];
-            ctx._bytePos++;
-            ctx._bitPos = 7;
-        }
-    }
-
-
-    value -= 1;
-    temp = 0;
-    if (numZeros) {
-        while (numZeros > 0) {
-            ctx._bit = (ctx._byte >> ctx._bitPos) & 0x01;
-            ctx._bitPos--;
-            temp = (temp << 1) + ctx._bit;
-            numZeros--;
-            if (ctx._bitPos < 0) {
-                ctx._byte = data[ctx._bytePos];
-                ctx._bytePos++;
-                ctx._bitPos = 7;
-            }
-        }
-    }
-    value = value + temp;
-
-    return value;
-};
-
-mpegts.h264.read_flag = function(data, ctx) {
-
-    var value = 0;
-
-    ctx._bit = (ctx._byte >> ctx._bitPos) & 0x01;
-    ctx._bitPos--;
-    if (ctx._bitPos < 0) {
-        ctx._byte = data[ctx._bytePos];
-        ctx._bytePos++;
-        ctx._bitPos = 7;
-    }
-    value = ctx._bit;
-
-    return value;
-};
-
-
-mpegts.h264.parseSPS = function(data) {
-
-    var sps = {
-            profile_idc: 0,
-            constraint_set0_flag: 0,
-            constraint_set1_flag: 0,
-            constraint_set2_flag: 0,
-            constraint_set3_flag: 0,
-            level_idc: 0,
-            seq_parameter_set_id: 0,
-            chroma_format_idc: 0,
-            separate_colour_plane_flag: 0,
-            bit_depth_luma_minus8: 0,
-            bit_depth_chroma_minus8: 0,
-            qpprime_y_zero_transform_bypass_flag: 0,
-            seq_scaling_matrix_present_flag: 0,
-            log2_max_frame_num_minus4: 0,
-            pic_order_cnt_type: 0,
-            log2_max_pic_order_cnt_lsb_minus4: 0,
-            num_ref_frames: 0,
-            gaps_in_frame_num_value_allowed_flag: 0,
-            pic_width_in_mbs_minus1: 0,
-            pic_height_in_map_units_minus1: 0
-        },
-
-        ctx = {
-            _byte: 0,
-            _bit: 0,
-            _bytePos: 0,
-            _bitPos: 0
-        };
-
-
-    ctx._bytePos = ctx._bitPos = 0;
-
-    // profile_idc - u(8)
-    ctx._byte = data[ctx._bytePos];
-    ctx._bytePos++;
-    sps.profile_idc = ctx._byte;
-
-    // constraint_set_flag (0/1/2/3 + reserved bits) - u(8)
-    ctx._byte = data[ctx._bytePos];
-    ctx._bytePos++;
-    sps.constraint_set0_flag = (ctx._byte & 0x80) >> 7;
-    sps.constraint_set1_flag = (ctx._byte & 0x40) >> 6;
-    sps.constraint_set2_flag = (ctx._byte & 0x20) >> 5;
-    sps.constraint_set3_flag = (ctx._byte & 0x10) >> 4;
-
-    // level_idc - u(8)
-    ctx._byte = data[ctx._bytePos];
-    ctx._bytePos++;
-    sps.level_idc = ctx._byte;
-
-    // sps_id - ue(v)
-    ctx._bitPos = 7;
-    sps.seq_parameter_set_id = mpegts.h264.read_ue(data, ctx);
-
-    if ((sps.profileIdc == 100) ||
-        (sps.profileIdc == 110) ||
-        (sps.profileIdc == 122) ||
-        (sps.profileIdc == 244) ||
-        (sps.profileIdc == 44) ||
-        (sps.profileIdc == 83) ||
-        (sps.profileIdc == 86)) {
-
-        // chroma_format_idc - ue(v) 
-        sps.chroma_format_idc = mpegts.h264.read_ue(data, ctx);
-
-        if (sps.chroma_format_idc === 3) {
-            // separate_colour_plane_flag - u(1)
-            sps.separate_colour_plane_flag = mpegts.h264.read_flag(data, ctx);
-        }
-
-        // bit_depth_luma_minus8 - ue(v)
-        sps.bit_depth_luma_minus8 = mpegts.h264.read_ue(data, ctx);
-
-        // bit_depth_chroma_minus8 - ue(v)
-        sps.bit_depth_chroma_minus8 = mpegts.h264.read_ue(data, ctx);
-
-        // qpprime_y_zero_transform_bypass_flag - u(1)
-        sps.qpprime_y_zero_transform_bypass_flag = mpegts.h264.read_flag(data, ctx);
-
-        // seq_scaling_matrix - u(1)
-        sps.seq_scaling_matrix_present_flag = mpegts.h264.read_flag(data, ctx);
-
-        if (sps.seq_scaling_matrix_present_flag === 1) {
-            // NOT IMPLEMENTED
-            //console.log("H.264 SPS parsing: (seq_scaling_matrix_present_flag = 1) not implemented");
-        }
-    }
-
-    // log2_max_frame_num_minus4 - ue(v)
-    sps.log2_max_frame_num_minus4 = mpegts.h264.read_ue(data, ctx);
-
-    // pic_order_cnt_type - ue(v)
-    sps.pic_order_cnt_type = mpegts.h264.read_ue(data, ctx);
-
-    if (sps.pic_order_cnt_type === 0) {
-        // log2_max_pic_order_cnt_lsb_minus4 - ue(v)
-        sps.log2_max_pic_order_cnt_lsb_minus4 = mpegts.h264.read_ue(data, ctx);
-    } else if (sps.pic_order_cnt_type === 1) {
-        // NOT IMPLEMENTED
-        //console.log("H.264 SPS parsing: (log2_max_pic_order_cnt_lsb_minus4 = 1) not implemented");
-    }
-
-    // num_ref_frames - ue(v)
-    sps.num_ref_frames = mpegts.h264.read_ue(data, ctx);
-
-    // gaps_in_frame_num_value_allowed_flag - u(1)
-    sps.gaps_in_frame_num_value_allowed_flag = mpegts.h264.read_flag(data, ctx);
-
-    // pic_width_in_mbs_minus1 - ue(v)
-    sps.pic_width_in_mbs_minus1 = mpegts.h264.read_ue(data, ctx);
-
-    // pic_height_in_map_units_minus1 - ue(v)
-    sps.pic_height_in_map_units_minus1 = mpegts.h264.read_ue(data, ctx);
-
-    return sps;
-};
-
-mpegts.h264.bytestreamToMp4 = function(data) { // data as Uint8Array
-
-    var i = 0,
-        length = data.length,
-        startCodeIndex = -1,
-        naluSize = 0;
-
-    while (i < length) {
-        if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x00) && (data[i + 3] === 0x01)) {
-
-            if (startCodeIndex >= 0) {
-                naluSize = (i - startCodeIndex - 4); // 4 = start code length or NALU-size field length
-                data[startCodeIndex] = (naluSize & 0xFF000000) >> 24;
-                data[startCodeIndex + 1] = (naluSize & 0x00FF0000) >> 16;
-                data[startCodeIndex + 2] = (naluSize & 0x0000FF00) >> 8;
-                data[startCodeIndex + 3] = (naluSize & 0x000000FF);
-            }
-
-            startCodeIndex = i;
-            i += 4;
-        } else {
-            i++;
-        }
-    }
-
-    // Last NAL unit
-    naluSize = (i - startCodeIndex - 4); // 4 = start code length or NALU-size field length
-    data[startCodeIndex] = (naluSize & 0xFF000000) >> 24;
-    data[startCodeIndex + 1] = (naluSize & 0x00FF0000) >> 16;
-    data[startCodeIndex + 2] = (naluSize & 0x0000FF00) >> 8;
-    data[startCodeIndex + 3] = (naluSize & 0x000000FF);
-
-};
-
-mpegts.h264.isIDR = function(data) { // data as Uint8Array
-    var i = 0,
-        naluType;
-
-    while (i < data.length) {
-        if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x00) && (data[i + 3] === 0x01)) {
-            naluType = data[i + 4] & 0x1F;
-            if (naluType === mpegts.h264.NALUTYPE_IDR) {
-                return true;
-            }
-            i += 4;
-        } else {
-            i++;
-        }
-    }
-    return false;
-};
-
-mpegts.h264.NALUTYPE_NONIDR = 1;
-mpegts.h264.NALUTYPE_IDR = 5;
-mpegts.h264.NALUTYPE_SEI = 6;
-mpegts.h264.NALUTYPE_SPS = 7;
-mpegts.h264.NALUTYPE_PPS = 8;
-mpegts.h264.NALUTYPE_AU_DELIMITER = 9;
-/*
- * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
- * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2014, Orange
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- *
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-mpegts.si.PAT = function() {
-    mpegts.si.PSISection.call(this, mpegts.si.PAT.prototype.TABLE_ID);
-    this.m_listOfProgramAssociation = [];
-    this.m_network_pid = null;
-};
-
-mpegts.si.PAT.prototype = Object.create(mpegts.si.PSISection.prototype);
-mpegts.si.PAT.prototype.constructor = mpegts.si.PAT;
-
-mpegts.si.PAT.prototype.parse = function(data) {
-    var id = mpegts.si.PSISection.prototype.parse.call(this, data);
-    id++;
-
-    if (!this.m_bValid) {
-        //console.log("PSI Parsing Problem during PAT parsing!");
-        return;
-    }
-    this.m_bValid = false;
-
-    if (this.m_table_id !== this.TABLE_ID) {
-        return;
-    }
-
-    var remainingBytes = this.getSectionLength() - this.SECTION_LENGTH;
-
-    while (remainingBytes >= 4) {
-        var prog = new mpegts.si.ProgramAssociation(data.subarray(id, id + 4));
-
-        if (prog.getProgramNumber() === 0) {
-            // Network PID
-            this.m_network_pid = prog.getProgramMapPid();
-        } else {
-            this.m_listOfProgramAssociation.push(prog);
-        }
-        remainingBytes -= 4;
-        id += 4;
-    }
-
-    this.m_bValid = true;
-};
-
-/**
- * returns the PID of the PMT associated to the first program
- *
- * @return the PID of the PMT associated to the first program
- */
-mpegts.si.PAT.prototype.getPmtPid = function() {
-    var pid = mpegts.ts.TsPacket.prototype.UNDEFINED_PID;
-
-    if (this.m_listOfProgramAssociation.length >= 1) {
-        var prog = this.m_listOfProgramAssociation[0];
-        pid = prog.getProgramMapPid();
-    }
-
-    return pid;
-};
-
-mpegts.si.PAT.prototype.TABLE_ID = 0x00;
-mpegts.si.PAT.prototype.PID = 0x00;
-
-
-mpegts.si.ProgramAssociation = function(data) {
-    this.m_program_number = 0;
-    this.m_program_map_pid = 0;
-    this.parse(data);
-};
-
-mpegts.si.ProgramAssociation.prototype.getProgramNumber = function() {
-    return this.m_program_number;
-};
-
-mpegts.si.ProgramAssociation.prototype.getProgramMapPid = function() {
-    return this.m_program_map_pid;
-};
-
-mpegts.si.ProgramAssociation.prototype.getLength = function() {
-    return 4;
-};
-
-/**
- * Parse the ProgramAssociation from given stream
- */
-mpegts.si.ProgramAssociation.prototype.parse = function(data) {
-    this.m_program_number = mpegts.binary.getValueFrom2Bytes(data.subarray(0, 2));
-    this.m_program_map_pid = mpegts.binary.getValueFrom2Bytes(data.subarray(2, 4), 3, 13);
-};
-/*
- * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
- * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2014, Orange
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- *
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-mpegts.pes.PesPacket = function() {
-    this.m_cStreamID = null;
-    this.m_nPESPacketLength = null;
-    this.m_cPESScramblingCtrl = null;
-    this.m_bPESpriority = null;
-    this.m_bDataAlignement = null;
-    this.m_bCopyright = null;
-    this.m_bOriginalOrCopy = null;
-    this.m_cPES_header_data_length = null;
-    this.m_cPTS_DTS_flags = null;
-    this.m_bESCR_flag = null;
-    this.m_bES_rate_flag = null;
-    this.m_bDSM_trick_mode_flag = null;
-    this.m_bAdditional_copy_info_flag = null;
-    this.m_bPES_CRC_flag = null;
-    this.m_bPES_extension_flag = null;
-    this.m_pPTS = null;
-    this.m_pDTS = null;
-    this.m_pESCR = null;
-    this.m_ES_rate = null;
-    this.m_DSM_trick_mode = null;
-    this.m_Additional_copy_info = null;
-    this.m_PES_CRC = null;
-    this.m_cNbStuffingBytes = null;
-    this.m_pPESExtension = null;
-    this.m_pPrivateData = null;
-    this.m_payloadArray = null;
-    this.m_nPayloadLength = null;
-    this.m_bDirty = null;
-    this.m_bValid = false;
-};
-
-mpegts.pes.PesPacket.prototype.parse = function(data) {
-    var index = 0;
-    this.m_nLength = data.length;
-    // packet_start_code_prefix
-    var nStartCode = mpegts.binary.getValueFrom3Bytes(data.subarray(index, index + 3));
-    if (nStartCode !== this.START_CODE_PREFIX) {
-        //console.log("PES Packet start code not define!");
-        return;
-    }
-
-    index = 3; // 3 = packet_start_code_prefix length
-
-    // stream_id
-    this.m_cStreamID = data[index];
-    index++;
-
-    // PES_packet_length
-    this.m_nPESPacketLength = mpegts.binary.getValueFrom2Bytes(data.subarray(index, index + 2));
-    index += 2;
-
-    // Padding bytes
-    if (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PADDING_STREAM) {
-        // Padding bytes => no more field, no payload
-        this.m_bValid = true;
-        return;
-    }
-
-    // PES_packet_data_byte (no optional header)
-    if (!this.hasOptionalPESHeader()) {
-        //NAN => to Validate!!!!
-        // no more header field, only payload
-        this.m_payloadArray = data.subarray(index + mpegts.pes.PesPacket.prototype.FIXED_HEADER_LENGTH);
-        this.m_nPayloadLength = this.m_nLength - mpegts.pes.PesPacket.prototype.FIXED_HEADER_LENGTH;
-        this.m_bValid = true;
-        return;
-    }
-
-    // Optional PES header
-    var reserved = mpegts.binary.getValueFromByte(data[index], 0, 2);
-    if (reserved !== 0x02) {
-        return;
-    }
-    this.m_cPESScramblingCtrl = mpegts.binary.getValueFromByte(data[index], 2, 2);
-    this.m_bPESpriority = mpegts.binary.getBitFromByte(data[index], 4);
-    this.m_bDataAlignement = mpegts.binary.getBitFromByte(data[index], 5);
-    this.m_bCopyright = mpegts.binary.getBitFromByte(data[index], 6);
-    this.m_bOriginalOrCopy = mpegts.binary.getBitFromByte(data[index], 7);
-    index++;
-
-    // 7 flags
-    this.m_cPTS_DTS_flags = mpegts.binary.getValueFromByte(data[index], 0, 2);
-    this.m_bESCR_flag = mpegts.binary.getBitFromByte(data[index], 2);
-    this.m_bES_rate_flag = mpegts.binary.getBitFromByte(data[index], 3);
-    this.m_bDSM_trick_mode_flag = mpegts.binary.getBitFromByte(data[index], 4);
-    this.m_bAdditional_copy_info_flag = mpegts.binary.getBitFromByte(data[index], 5);
-    this.m_bPES_CRC_flag = mpegts.binary.getBitFromByte(data[index], 6);
-    this.m_bPES_extension_flag = mpegts.binary.getBitFromByte(data[index], 7);
-    index++;
-
-    // PES_header_data_length
-    this.m_cPES_header_data_length = (data[index] & 0xFF);
-    index++;
-
-    // PTS
-    if ((this.m_cPTS_DTS_flags & mpegts.pes.PesPacket.prototype.FLAG_PTS) == mpegts.pes.PesPacket.prototype.FLAG_PTS) {
-        this.m_pPTS = new mpegts.Pts(data.subarray(index, index + 5));
-        index += 5;
-    }
-
-    // DTS
-    if ((this.m_cPTS_DTS_flags & mpegts.pes.PesPacket.prototype.FLAG_DTS) == mpegts.pes.PesPacket.prototype.FLAG_DTS) {
-        this.m_pDTS = new mpegts.Pts(data.subarray(index, index + 5));
-        index += 5;
-    }
-
-    // ESCR
-    if (this.m_bESCR_flag) {
-        //NAN => to Complete
-        //this.m_pESCR = new PCR(m_pBytestream + index);
-        index += 6;
-    }
-
-    // ES_rate	
-    if (this.m_bES_rate_flag) {
-        this.m_ES_rate = mpegts.binary.getValueFrom3Bytes(data.subarray(index, index + 3), 1, 22);
-        index += 3;
-    }
-
-    // DSM_trick_mode
-    if (this.m_bDSM_trick_mode_flag) {
-        this.m_DSM_trick_mode = data[index];
-        index++;
-    }
-
-    // Additional_copy_info
-    if (this.m_bAdditional_copy_info_flag) {
-        this.m_Additional_copy_info = data[index];
-        index++;
-    }
-
-    // PES_CRC
-    if (this.m_bPES_CRC_flag) {
-        this.m_PES_CRC = mpegts.binary.getValueFrom2Bytes(data.subarray(index, index + 2));
-        index += 2;
-    }
-
-    // PES_extension
-    if (this.m_bPES_extension_flag) {
-        //NAN => to Complete
-        //this.m_pPESExtension = new PESExtension(m_pBytestream + index, m_cPES_header_data_length);
-        //index += m_pPESExtension->getLength();
-    }
-
-    // Stuffing bytes
-    var uiHeaderLength = mpegts.pes.PesPacket.prototype.FIXED_HEADER_LENGTH + mpegts.pes.PesPacket.prototype.FIXED_OPTIONAL_HEADER_LENGTH + this.m_cPES_header_data_length;
-    this.m_cNbStuffingBytes = uiHeaderLength - index;
-    index += this.m_cNbStuffingBytes;
-
-    // Payload
-    this.m_nPayloadLength = this.m_nLength - uiHeaderLength;
-    this.m_payloadArray = data.subarray(uiHeaderLength, uiHeaderLength + this.m_nPayloadLength);
-
-    this.m_bValid = true;
-};
-
-
-/**
- * Returns true if header contains optional PES header.
- * @return true if header contains optional PES header
- */
-mpegts.pes.PesPacket.prototype.hasOptionalPESHeader = function() {
-
-    if ((this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_MAP) ||
-        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PADDING_STREAM) ||
-        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PRIVATE_STREAM_2) ||
-        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_ECM_STREAM) ||
-        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_EMM_STREAM) ||
-        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY) ||
-        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_DSMCC_STREAM) ||
-        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_H2221_TYPE_E_STREAM)) {
-        return false;
-    }
-
-    return true;
-};
-
-mpegts.pes.PesPacket.prototype.getHeaderLength = function() {
-    return mpegts.pes.PesPacket.prototype.FIXED_HEADER_LENGTH +
-        mpegts.pes.PesPacket.prototype.FIXED_OPTIONAL_HEADER_LENGTH +
-        this.m_cPES_header_data_length;
-};
-
-mpegts.pes.PesPacket.prototype.getPayload = function() {
-    return this.m_payloadArray;
-};
-
-mpegts.pes.PesPacket.prototype.getPts = function() {
-    return this.m_pPTS;
-};
-
-mpegts.pes.PesPacket.prototype.getDts = function() {
-    return this.m_pDTS;
-};
-
-/** The start code prefix */
-mpegts.pes.PesPacket.prototype.START_CODE_PREFIX = 0x000001;
-/** The first fixed header fields length (start_code + stream_id + PES_packet_length fields) **/
-mpegts.pes.PesPacket.prototype.FIXED_HEADER_LENGTH = 6;
-/** The first optional fixed header fields length **/
-mpegts.pes.PesPacket.prototype.FIXED_OPTIONAL_HEADER_LENGTH = 3;
-/** PTS_DTS_flags possible values */
-mpegts.pes.PesPacket.prototype.FLAG_DTS = 0x01;
-mpegts.pes.PesPacket.prototype.FLAG_PTS = 0x02;
-/*
- * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
- * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2014, Orange
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- *
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-mpegts.si.PMT = function() {
-    mpegts.si.PSISection.call(this, mpegts.si.PMT.prototype.TABLE_ID);
-    this.m_listOfComponents = [];
-    this.m_PCR_PID = null;
-    this.m_program_info_length = null;
-};
-
-mpegts.si.PMT.prototype = Object.create(mpegts.si.PSISection.prototype);
-mpegts.si.PMT.prototype.constructor = mpegts.si.PMT;
-
-mpegts.si.PMT.prototype.parse = function(data) {
-    var id = mpegts.si.PSISection.prototype.parse.call(this, data);
-    id++;
-
-    if (!this.m_bValid) {
-        //console.log("PSI Parsing Problem during PMT parsing!");
-        return;
-    }
-    this.m_bValid = false;
-
-    // Check table_id field value
-    if (this.m_table_id !== this.TABLE_ID) {
-        return;
-    }
-
-    var remainingBytes = this.getSectionLength() - this.SECTION_LENGTH;
-
-    // check if we have almost PCR_PID and program_info_length fields
-    if (remainingBytes < 4) {
-        return;
-    }
-
-    this.m_PCR_PID = mpegts.binary.getValueFrom2Bytes(data.subarray(id, id + 2), 3);
-    id += 2;
-    this.m_program_info_length = mpegts.binary.getValueFrom2Bytes(data.subarray(id, id + 2), 4);
-    id += 2;
-
-    // Parse program descriptors
-    id += this.m_program_info_length;
-
-    // Parse ES descriptions
-    remainingBytes = (this.m_section_length - this.SECTION_LENGTH - 4 - this.m_program_info_length);
-    var pESDescription = null;
-    while (remainingBytes > 0) {
-        pESDescription = new mpegts.si.ESDescription(data.subarray(id, id + remainingBytes));
-        this.m_listOfComponents.push(pESDescription);
-        remainingBytes -= pESDescription.getLength();
-        id += pESDescription.getLength();
-    }
-
-    this.m_bValid = true;
-};
-
-mpegts.si.PMT.prototype.TABLE_ID = 0x02;
-
-mpegts.si.PMT.prototype.gStreamTypes = [
-    /*  0 - 0x00 */
-    {
-        name: "Reserved",
-        value: 0x00,
-        desc: "ITU-T | ISO/IEC Reserved"
-    },
-    /*  1 - 0x01 */
-    {
-        name: "MPEG1-Video",
-        value: 0xE0,
-        desc: "ISO/IEC 11172-2 Video"
-    },
-    /*  2 - 0x02 */
-    {
-        name: "MPEG2-Video",
-        value: 0xE0,
-        desc: "ITU-T Rec. H.262 | ISO/IEC 13818-2 Video or ISO/IEC 11172-2 constrained parameter video stream"
-    },
-    /*  3 - 0x03 */
-    {
-        name: "MPEG1-Audio",
-        value: 0xC0,
-        desc: "ISO/IEC 11172-3 Audio"
-    },
-    /*  4 - 0x04 */
-    {
-        name: "MPEG2-Audio",
-        value: 0xC0,
-        desc: "ISO/IEC 13818-3 Audio"
-    },
-    /*  5 - 0x05 */
-    {
-        name: "PRIVATE_SECTIONS",
-        value: 0xBD,
-        desc: "ITU-T Rec. H.222.0 | ISO/IEC 13818-1 private_sections"
-    },
-    /*  6 - 0x06 */
-    {
-        name: "PRIVATE",
-        value: 0xBD,
-        desc: "ITU-T Rec. H.222.0 | ISO/IEC 13818-1 PES packets containing private data"
-    },
-    /*  7 - 0x07 */
-    {
-        name: "MHEG",
-        value: 0xF3,
-        desc: "ISO/IEC 13522 MHEG"
-    },
-    /*  8 - 0x08 */
-    {
-        name: "MPEG1-DSM-CC",
-        value: 0xF2,
-        desc: "ITU-T Rec. H.222.0 | ISO/IEC 13818-1 Annex A DSM-CC"
-    },
-    /*  9 - 0x09 */
-    {
-        name: "H.222.1",
-        value: 0xF4,
-        desc: "ITU-T Rec. H.222.1"
-    },
-    /* 10 - 0x0A */
-    {
-        name: "DSM-CC_A",
-        value: 0xF4,
-        desc: "ISO/IEC 13818-6 type A"
-    },
-    /* 11 - 0x0B */
-    {
-        name: "DSM-CC_B",
-        value: 0xF5,
-        desc: "ISO/IEC 13818-6 type B"
-    },
-    /* 12 - 0x0C */
-    {
-        name: "DSM-CC_C",
-        value: 0xF6,
-        desc: "ISO/IEC 13818-6 type C"
-    },
-    /* 13 - 0x0D */
-    {
-        name: "DSM-CC_D",
-        value: 0xF7,
-        desc: "ISO/IEC 13818-6 type D"
-    },
-    /* 14 - 0x0E */
-    {
-        name: "Auxiliary",
-        value: 0x00,
-        desc: "ITU-T Rec. H.222.0 | ISO/IEC 13818-1 auxiliary"
-    },
-    /* 15 - 0x0F */
-    {
-        name: "MPEG2-AAC-ADTS",
-        value: 0xC0,
-        desc: "ISO/IEC 13818-7 Audio with ADTS transport syntax"
-    },
-    /* 16 - 0x10 */
-    {
-        name: "MPEG4-Video",
-        value: 0xE0,
-        desc: "ISO/IEC 14496-2 Visual"
-    },
-    /* 17 - 0x11 */
-    {
-        name: "MPEG4-AAC-LATM",
-        value: 0xC0,
-        desc: "ISO/IEC 14496-3 Audio with the LATM transport syntax as defined in ISO/IEC 14496-3/AMD-1"
-    },
-    /* 18 - 0x12 */
-    {
-        name: "MPEG4-SL",
-        value: 0xFA,
-        desc: "ISO/IEC 14496-1 SL-packetized stream or FlexMux stream carried in PES packets"
-    },
-    /* 19 - 0x13 */
-    {
-        name: "MPEG4-SL",
-        value: 0xFA,
-        desc: "ISO/IEC 14496-1 SL-packetized stream or FlexMux stream carried in ISO/IEC14496_sections"
-    },
-    /* 20 - 0x14 */
-    {
-        name: "DSM-CC_SDP",
-        value: 0x00,
-        desc: "ISO/IEC 13818-6 Synchronized Download Protocol"
-    },
-    /* 21 - 0x15 */
-    {
-        name: "META_PES",
-        value: 0xFC,
-        desc: "Metadata carried in PES packets"
-    },
-    /* 22 - 0x16 */
-    {
-        name: "META_SECTIONS",
-        value: 0xFC,
-        desc: "Metadata carried in metadata_sections"
-    },
-    /* 23 - 0x17 */
-    {
-        name: "META_DSM-CC",
-        value: 0xFC,
-        desc: "Metadata carried in ISO/IEC 13818-6 Data Carousel"
-    },
-    /* 24 - 0x18 */
-    {
-        name: "META_DSM-CC",
-        value: 0xFC,
-        desc: "Metadata carried in ISO/IEC 13818-6 Object Carousel"
-    },
-    /* 25 - 0x19 */
-    {
-        name: "META_DSM-CC",
-        value: 0xFC,
-        desc: "Metadata carried in ISO/IEC 13818-6 Synchronized Download Protocol"
-    },
-    /* 26 - 0x1A */
-    {
-        name: "MPEG2-IPMP",
-        value: 0x00,
-        desc: "IPMP stream (defined in ISO/IEC 13818-11, MPEG-2 IPMP)"
-    },
-    /* 27 - 0x1B */
-    {
-        name: "H.264",
-        value: 0xE0,
-        desc: "AVC video stream as defined in ITU-T Rec. H.264 | ISO/IEC 14496-10 Video"
-    },
-    /* 28 - 0x1C */
-    {
-        name: "MPEG4AAC",
-        value: 0xC0,
-        desc: "ISO/IEC 14496-3 Audio, without using any additional transport syntax, such as DST, ALS and SLS"
-    },
-    /* 29 - 0x1D */
-    {
-        name: "MPEG4Text",
-        value: 0x00,
-        desc: "ISO/IEC 14496-17 Text"
-    },
-    /* 30 - 0x1E */
-    {
-        name: "Aux. Video (23002-3)",
-        value: 0x1E,
-        desc: "Auxiliary video stream as defined in ISO/IEC 23002-3"
-    },
-    /* 31 - 0x1F */
-    {
-        name: "H.264-SVC",
-        value: 0xE0,
-        desc: "SVC video sub-bitstream of a video stream as defined in the Annex G of ITU-T Rec. H.264 | ISO/IEC 14496-10 Video"
-    },
-    /* 32 - 0x20 */
-    {
-        name: "H.264-MVC",
-        value: 0xE0,
-        desc: "MVC video sub-bitstream of a video stream as defined in the Annex H of ITU-T Rec. H.264 | ISO/IEC 14496-10 Video"
-    },
-    /* 33 - 0x21 */
-    {
-        name: "Reserved1",
-        value: 0x00,
-        desc: "TBC Reserved"
-    },
-    /* 34 - 0x22 */
-    {
-        name: "Reserved2",
-        value: 0x00,
-        desc: "TBC Reserved"
-    },
-    /* 35 - 0x23 */
-    {
-        name: "Reserved3",
-        value: 0x00,
-        desc: "TBC Reserved"
-    },
-    /* 36 - 0x24 */
-    {
-        name: "HEVC",
-        value: 0xE0,
-        desc: "ITU.-T Rec H.26x | ISO/IEC 23008-2 video stream"
-    }
-];
-
-mpegts.si.PMT.prototype.MPEG2_VIDEO_STREAM_TYPE = 0x02;
-mpegts.si.PMT.prototype.AVC_VIDEO_STREAM_TYPE = 0x1B;
-mpegts.si.PMT.prototype.MPEG1_AUDIO_STREAM_TYPE = 0x03;
-mpegts.si.PMT.prototype.MPEG2_AUDIO_STREAM_TYPE = 0x04;
-mpegts.si.PMT.prototype.AAC_AUDIO_STREAM_TYPE = 0x11;
-mpegts.si.PMT.prototype.AC3_AUDIO_STREAM_TYPE = 0x06;
-mpegts.si.PMT.prototype.SUB_STREAM_TYPE = 0x06;
-
-mpegts.si.PMT.prototype.STREAM_TYPE_MP1V = 0x01;
-mpegts.si.PMT.prototype.STREAM_TYPE_MP2V = 0x02;
-mpegts.si.PMT.prototype.STREAM_TYPE_MP1A = 0x03;
-mpegts.si.PMT.prototype.STREAM_TYPE_MP2A = 0x04;
-mpegts.si.PMT.prototype.STREAM_TYPE_PRIVATE = 0x06;
-mpegts.si.PMT.prototype.STREAM_TYPE_TELETEXT = 0x06;
-mpegts.si.PMT.prototype.STREAM_TYPE_DVBSUBTITLE = 0x06;
-mpegts.si.PMT.prototype.STREAM_TYPE_AC3 = 0x06;
-mpegts.si.PMT.prototype.STREAM_TYPE_MP2AAC_ADTS = 0x0F;
-mpegts.si.PMT.prototype.STREAM_TYPE_MP4AAC_LATM = 0x11;
-mpegts.si.PMT.prototype.STREAM_TYPE_H264 = 0x1B;
-mpegts.si.PMT.prototype.STREAM_TYPE_MP4AAC = 0x1C;
-mpegts.si.PMT.prototype.STREAM_TYPE_AUX_23002_3 = 0x1E;
-mpegts.si.PMT.prototype.STREAM_TYPE_SVC = 0x1F;
-mpegts.si.PMT.prototype.STREAM_TYPE_MVC = 0x20;
-mpegts.si.PMT.prototype.STREAM_TYPE_HEVC = 0x24;
-
-
-mpegts.si.ESDescription = function(data) {
-    /** ES description fields */
-    this.m_stream_type = null;
-    this.m_elementary_PID = null;
-    this.m_ES_info_length = null;
-    this.parse(data);
-};
-
-/**
- * Gets the stream type associated to this ES
- * @return the stream type associated to this ES
- */
-mpegts.si.ESDescription.prototype.getStreamType = function() {
-    return this.m_stream_type;
-};
-
-/**
- * Gets the pid on which this ES may be found
- * @return the pid on which this ES may be found
- */
-mpegts.si.ESDescription.prototype.getPID = function() {
-    return this.m_elementary_PID;
-};
-
-/**
- * Returns the elementary stream description length
- * @return the elementary stream description length
- */
-mpegts.si.ESDescription.prototype.getLength = function() {
-    return 5 + this.m_ES_info_length;
-};
-
-/**
- * Parse the ESDescription from given bytestream
- * @param the bytestream to parse
- * @return the bytestream length
- */
-mpegts.si.ESDescription.prototype.parse = function(data) {
-    this.m_stream_type = data[0];
-    this.m_elementary_PID = mpegts.binary.getValueFrom2Bytes(data.subarray(1, 3), 3);
-    this.m_ES_info_length = mpegts.binary.getValueFrom2Bytes(data.subarray(3, 5), 4);
-};
-/*
- * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
- * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2014, Orange
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- *
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-
-mpegts.Pts = function(data) {
-
-    var low,
-        high;
-
-    //initialize an unsigned 64 bits long number
-    //this.m_lPTS = goog.math.Long.fromNumber(0);
-
-    //=> PTS is defined on 33 bits
-    //=> In the first byte, bit number 2 to 4 is useful
-    var bits3230 = data[0] >> 1 & 0x7;
-
-    //thirty-third bit in the high member
-    high = bits3230 >> 2;
-    //32 and 31 bits in th low member, shift by 30 bits
-    low = ((bits3230 & 0x3) << 30) >>> 0; //=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
-
-    //=> In the second byte, all the bits are useful
-    var bits2922 = data[1];
-    low = (low | (bits2922 << 22)) >>> 0; //=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
-
-    //=> In the third byte, bit number 2 to 8 is useful
-    var bits2115 = data[2] >> 1;
-    low = (low | (bits2115 << 15)) >>> 0; //=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
-
-    //=> In the fourth byte, all the bits are useful
-    var bits1407 = data[3];
-    low = (low | (bits1407 << 7)) >>> 0; //=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
-
-    //=> In the fifth byte, bit number 2 to 8 is useful
-    var bits0701 = data[4] >> 1;
-    low = (low | bits0701) >>> 0; //=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
-
-    this.m_lPTS = goog.math.Long.fromBits(low, high).toNumber();
-    this.m_fPTS = this.m_lPTS / mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY;
-};
-
-/**
- * Returns the PTS value in units of system clock frequency.
- * @return the PTS value in units of system clock frequency
- */
-mpegts.Pts.prototype.getValue = function() {
-    return this.m_lPTS;
-};
-
-/**
- * Returns the PTS value in seconds.
- * @return the PTS value in seconds
- */
-mpegts.Pts.prototype.getValueInSeconds = function() {
-    return this.m_fPTS;
-};
-
-mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY = 90000;
-/*
- * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
- * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2014, Orange
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- *
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-mpegts.ts.TsPacket = function() {
-    this.m_cSync = null;
-    this.m_bTransportError = null;
-    this.m_bPUSI = null;
-    this.m_bTransportPriority = null;
-    this.m_nPID = null;
-    this.m_cTransportScramblingCtrl = null;
-    this.m_cAdaptationFieldCtrl = null;
-    this.m_cContinuityCounter = null;
-    this.m_pAdaptationField = null;
-    this.m_payloadArray = null;
-    this.m_cPayloadLength = null;
-    this.m_bDirty = null;
-    this.m_time = null;
-    this.m_arrivalTime = null;
-    this.m_bIgnored = null;
-};
-
-mpegts.ts.TsPacket.prototype.parse = function(data) {
-    var byteId = 0;
-    this.m_cSync = data[byteId];
-    if (this.m_cSync !== this.SYNC_WORD) {
-        //console.log("TS Packet Malformed!");
-        return;
-    }
-
-    byteId++;
-
-    this.m_bTransportError = mpegts.binary.getBitFromByte(data[byteId], 0);
-    this.m_bPUSI = mpegts.binary.getBitFromByte(data[byteId], 1);
-    this.m_bTransportPriority = mpegts.binary.getBitFromByte(data[byteId], 2);
-    this.m_nPID = mpegts.binary.getValueFrom2Bytes(data.subarray(byteId, byteId + 2), 3, 13);
-
-    byteId += 2;
-
-    this.m_cTransportScramblingCtrl = mpegts.binary.getValueFromByte(data[byteId], 0, 2);
-    this.m_cAdaptationFieldCtrl = mpegts.binary.getValueFromByte(data[byteId], 2, 2);
-    this.m_cContinuityCounter = mpegts.binary.getValueFromByte(data[byteId], 4, 4);
-
-    byteId++;
-
-    // Adaptation field
-    // NAN => to Validate
-    if (this.m_cAdaptationFieldCtrl & 0x02) {
-        // Check adaptation field length before parsing
-        var cAFLength = data[byteId];
-        if ((cAFLength + byteId) >= this.TS_PACKET_SIZE) {
-            //console.log("TS Packet Size Problem!");
-            return;
-        }
-        this.m_pAdaptationField = new mpegts.ts.AdaptationField();
-        this.m_pAdaptationField.parse(data.subarray(byteId));
-        byteId += this.m_pAdaptationField.getLength();
-    }
-
-    // Check packet validity
-    if (this.m_cAdaptationFieldCtrl === 0x00) {
-        //console.log("TS Packet is invalid!");
-        return;
-    }
-
-    // Payload
-    if (this.m_cAdaptationFieldCtrl & 0x01) {
-        this.m_cPayloadLength = this.TS_PACKET_SIZE - byteId;
-        this.m_payloadArray = data.subarray(byteId, byteId + this.m_cPayloadLength);
-    }
-};
-
-mpegts.ts.TsPacket.prototype.getPid = function() {
-    return this.m_nPID;
-};
-
-mpegts.ts.TsPacket.prototype.getPayload = function() {
-    return this.m_payloadArray;
-};
-
-mpegts.ts.TsPacket.prototype.getPayloadLength = function() {
-    return this.m_cPayloadLength;
-};
-
-mpegts.ts.TsPacket.prototype.getPusi = function() {
-    return this.m_bPUSI;
-};
-
-mpegts.ts.TsPacket.prototype.hasAdaptationFieldOnly = function() {
-    return (this.m_cAdaptationFieldCtrl === 0x02);
-};
-
-mpegts.ts.TsPacket.prototype.SYNC_WORD = 0x47;
-mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE = 188;
-mpegts.ts.TsPacket.prototype.UNDEFINED_PID = 0xFFFF;
-mpegts.ts.TsPacket.prototype.PAT_PID = 0;
-mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_MAP = 0xBC;
-mpegts.ts.TsPacket.prototype.STREAM_ID_PADDING_STREAM = 0xBE;
-mpegts.ts.TsPacket.prototype.STREAM_ID_PADDING_STREAM = 0xBE;
-mpegts.ts.TsPacket.prototype.STREAM_ID_PRIVATE_STREAM_2 = 0xBF;
-mpegts.ts.TsPacket.prototype.STREAM_ID_ECM_STREAM = 0xF0;
-mpegts.ts.TsPacket.prototype.STREAM_ID_EMM_STREAM = 0xF1;
-mpegts.ts.TsPacket.prototype.STREAM_ID_DSMCC_STREAM = 0xF2;
-mpegts.ts.TsPacket.prototype.STREAM_ID_H2221_TYPE_E_STREAM = 0xF8;
-mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 0xFF;
-/*   Copyright (C) 2011,2012,2013,2014 John Kula */
-
-/*
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-    All trademarks and service marks contained within this document are
-    property of their respective owners.
-
-    Version 2014.07.23
-
-    Updates may be found at: http:\\www.darkwavetech.com
-
-*/
-
-/*jslint browser:true */
-
-/* This function returns the browser and version number by using the navigator.useragent object */
-
-function fingerprint_browser() {
-    "use strict";
-    var userAgent,
-        name,
-        version;
-
-    try {
-
-        userAgent = navigator.userAgent.toLowerCase();
-
-        if (/msie (\d+\.\d+);/.test(userAgent)) { //test for MSIE x.x;
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            if (userAgent.indexOf("trident/6") > -1) {
-                version = 10;
-            }
-            if (userAgent.indexOf("trident/5") > -1) {
-                version = 9;
-            }
-            if (userAgent.indexOf("trident/4") > -1) {
-                version = 8;
-            }
-            name = "Internet Explorer";
-        } else if (userAgent.indexOf("trident/7") > -1) { //IE 11+ gets rid of the legacy 'MSIE' in the user-agent string;
-            version = 11;
-            name = "Internet Explorer";
-        }  else if (/edge[\/\s](\d+\.\d+)/.test(userAgent)) { //test for Firefox/x.x or Firefox x.x (ignoring remaining digits);
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Edge";
-        }  else if (/firefox[\/\s](\d+\.\d+)/.test(userAgent)) { //test for Firefox/x.x or Firefox x.x (ignoring remaining digits);
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Firefox";
-        } else if (/opera[\/\s](\d+\.\d+)/.test(userAgent)) { //test for Opera/x.x or Opera x.x (ignoring remaining decimal places);
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Opera";
-        } else if (/chrome[\/\s](\d+\.\d+)/.test(userAgent)) { //test for Chrome/x.x or Chrome x.x (ignoring remaining digits);
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Chrome";
-        } else if (/version[\/\s](\d+\.\d+)/.test(userAgent)) { //test for Version/x.x or Version x.x (ignoring remaining digits);
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Safari";
-        } else if (/rv[\/\s](\d+\.\d+)/.test(userAgent)) { //test for rv/x.x or rv x.x (ignoring remaining digits);
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Mozilla";
-        } else if (/mozilla[\/\s](\d+\.\d+)/.test(userAgent)) { //test for Mozilla/x.x or Mozilla x.x (ignoring remaining digits);
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Mozilla";
-        } else if (/binget[\/\s](\d+\.\d+)/.test(userAgent)) { //test for BinGet/x.x or BinGet x.x (ignoring remaining digits);
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Library (BinGet)";
-        } else if (/curl[\/\s](\d+\.\d+)/.test(userAgent)) { //test for Curl/x.x or Curl x.x (ignoring remaining digits);
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Library (cURL)";
-        } else if (/java[\/\s](\d+\.\d+)/.test(userAgent)) { //test for Java/x.x or Java x.x (ignoring remaining digits);
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Library (Java)";
-        } else if (/libwww-perl[\/\s](\d+\.\d+)/.test(userAgent)) { //test for libwww-perl/x.x or libwww-perl x.x (ignoring remaining digits);
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Library (libwww-perl)";
-        } else if (/microsoft url control -[\s](\d+\.\d+)/.test(userAgent)) { //test for Microsoft URL Control - x.x (ignoring remaining digits);
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Library (Microsoft URL Control)";
-        } else if (/peach[\/\s](\d+\.\d+)/.test(userAgent)) { //test for Peach/x.x or Peach x.x (ignoring remaining digits);
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Library (Peach)";
-        } else if (/php[\/\s](\d+\.\d+)/.test(userAgent)) { //test for PHP/x.x or PHP x.x (ignoring remaining digits);
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Library (PHP)";
-        } else if (/pxyscand[\/\s](\d+\.\d+)/.test(userAgent)) { //test for pxyscand/x.x or pxyscand x.x (ignoring remaining digits);
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Library (pxyscand)";
-        } else if (/pycurl[\/\s](\d+\.\d+)/.test(userAgent)) { //test for pycurl/x.x or pycurl x.x (ignoring remaining digits);
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Library (PycURL)";
-        } else if (/python-urllib[\/\s](\d+\.\d+)/.test(userAgent)) { //test for python-urllib/x.x or python-urllib x.x (ignoring remaining digits);
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Library (Python URLlib)";
-        } else if (/appengine-google/.test(userAgent)) { //test for AppEngine-Google;
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Cloud (Google AppEngine)";
-        } else if (/trident/.test(userAgent)) { //test for Trident;
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Trident";
-        } else if (/adventurer/.test(userAgent)) { //test for Orange Adventurer;
-            version = Number(RegExp.$1); // capture x.x portion and store as a number
-            name = "Adventurer";
-        } else {
-            version = "unknown";
-            name = "unknown";
-        }
-    } catch (err) {
-        name = "error";
-        version = "error";
-    }
-
-    return {
-        name: name.replace(/\s+/g, ''),
-        version: version
-    };
-}
-/*   Copyright (C) 2011,2012,2013,2014 John Kula */
-
-/*
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-    All trademarks and service marks contained within this document are
-    property of their respective owners.
-
-    Version 2014.07.23
-
-    Updates may be found at: http:\\www.darkwavetech.com
-
-*/
-
-/*jslint browser:true */
-
-/* This function returns the operating system and number of bits by looking at the navigator.useragent and navigator.platform objects */
-
-function fingerprint_os() {
-    "use strict";
-
-    var userAgent,
-        platform,
-        name,
-        bits,
-        os = {
-            name: "",
-            bits: ""
-        };
-
-    try {
-        /* navigator.userAgent is supported by all major browsers */
-        userAgent = navigator.userAgent.toLowerCase();
-
-        if (userAgent.indexOf("windows nt 10.0") !== -1) {
-            name = "Windows 10";
-        } else if (userAgent.indexOf("windows nt 6.3") !== -1) {
-            name = "Windows 8.1";
-        } else if (userAgent.indexOf("windows nt 6.2") !== -1) {
-            name = "Windows 8";
-        } else if (userAgent.indexOf("windows nt 6.1") !== -1) {
-            name = "Windows 7";
-        } else if (userAgent.indexOf("windows nt 6.0") !== -1) {
-            name = "Windows Vista/Windows Server 2008";
-        } else if (userAgent.indexOf("windows nt 5.2") !== -1) {
-            name = "Windows XP x64/Windows Server 2003";
-        } else if (userAgent.indexOf("windows nt 5.1") !== -1) {
-            name = "Windows XP";
-        } else if (userAgent.indexOf("windows nt 5.01") !== -1) {
-            name = "Windows 2000, Service Pack 1 (SP1)";
-        } else if (userAgent.indexOf("windows xp") !== -1) {
-            name = "Windows XP";
-        } else if (userAgent.indexOf("windows 2000") !== -1) {
-            name = "Windows 2000";
-        } else if (userAgent.indexOf("windows nt 5.0") !== -1) {
-            name = "Windows 2000";
-        } else if (userAgent.indexOf("windows nt 4.0") !== -1) {
-            name = "Windows NT 4.0";
-        } else if (userAgent.indexOf("windows nt") !== -1) {
-            name = "Windows NT 4.0";
-        } else if (userAgent.indexOf("winnt4.0") !== -1) {
-            name = "Windows NT 4.0";
-        } else if (userAgent.indexOf("winnt") !== -1) {
-            name = "Windows NT 4.0";
-        } else if (userAgent.indexOf("windows me") !== -1) {
-            name = "Windows ME";
-        } else if (userAgent.indexOf("win 9x 4.90") !== -1) {
-            name = "Windows ME";
-        } else if (userAgent.indexOf("windows 98") !== -1) {
-            name = "Windows 98";
-        } else if (userAgent.indexOf("win98") !== -1) {
-            name = "Windows 98";
-        } else if (userAgent.indexOf("windows 95") !== -1) {
-            name = "Windows 95";
-        } else if (userAgent.indexOf("windows_95") !== -1) {
-            name = "Windows 95";
-        } else if (userAgent.indexOf("win95") !== -1) {
-            name = "Windows 95";
-        } else if (userAgent.indexOf("ce") !== -1) {
-            name = "Windows CE";
-        } else if (userAgent.indexOf("win16") !== -1) {
-            name = "Windows 3.11";
-        } else if (userAgent.indexOf("iemobile") !== -1) {
-            name = "Windows Mobile";
-        } else if (userAgent.indexOf("wm5 pie") !== -1) {
-            name = "Windows Mobile";
-        } else if (userAgent.indexOf("windows phone 10.0") !== -1) {
-            name = "Windows Phone 10";
-        } else if (userAgent.indexOf("windows") !== -1) {
-            name = "Windows (Unknown Version)";
-        } else if (userAgent.indexOf("openbsd") !== -1) {
-            name = "Open BSD";
-        } else if (userAgent.indexOf("sunos") !== -1) {
-            name = "Sun OS";
-        } else if (userAgent.indexOf("ubuntu") !== -1) {
-            name = "Ubuntu";
-        } else if (userAgent.indexOf("ipad") !== -1) {
-            name = "iOS (iPad)";
-        } else if (userAgent.indexOf("ipod") !== -1) {
-            name = "iOS (iTouch)";
-        } else if (userAgent.indexOf("iphone") !== -1) {
-            name = "iOS (iPhone)";
-        } else if (userAgent.indexOf("mac os x beta") !== -1) {
-            name = "Mac O SX Beta";
-        } else if (userAgent.indexOf("mac os x 10") !== -1) {
-            if (/mac os x 10_(\d+)\_(\d+)/.test(userAgent)) {
-                name = "Mac OS X 10." + RegExp.$1;
-            } else {
-                name = "Mac OS X 10";
-            }
-        } else if (userAgent.indexOf("mac os x") !== -1) {
-            name = "Mac OS X";
-        } else if (userAgent.indexOf("mac_68000") !== -1) {
-            name = "Mac OS Classic (68000)";
-        } else if (userAgent.indexOf("68K") !== -1) {
-            name = "Mac OS Classic (68000)";
-        } else if (userAgent.indexOf("mac_powerpc") !== -1) {
-            name = "Mac OS Classic (PowerPC)";
-        } else if (userAgent.indexOf("ppc mac") !== -1) {
-            name = "Mac OS Classic (PowerPC)";
-        } else if (userAgent.indexOf("macintosh") !== -1) {
-            name = "Mac OS Classic";
-        } else if (userAgent.indexOf("googletv") !== -1) {
-            name = "Android (GoogleTV)";
-        } else if (userAgent.indexOf("xoom") !== -1) {
-            name = "Android (Xoom)";
-        } else if (userAgent.indexOf("htc_flyer") !== -1) {
-            name = "Android (HTC Flyer)";
-        } else if (userAgent.indexOf("android") !== -1) {
-            name = "Android";
-        } else if (userAgent.indexOf("symbian") !== -1) {
-            name = "Symbian";
-        } else if (userAgent.indexOf("series60") !== -1) {
-            name = "Symbian (Series 60)";
-        } else if (userAgent.indexOf("series70") !== -1) {
-            name = "Symbian (Series 70)";
-        } else if (userAgent.indexOf("series80") !== -1) {
-            name = "Symbian (Series 80)";
-        } else if (userAgent.indexOf("series90") !== -1) {
-            name = "Symbian (Series 90)";
-        } else if (userAgent.indexOf("x11") !== -1) {
-            name = "UNIX";
-        } else if (userAgent.indexOf("nix") !== -1) {
-            name = "UNIX";
-        } else if (userAgent.indexOf("linux") !== -1) {
-            name = "Linux";
-        } else if (userAgent.indexOf("qnx") !== -1) {
-            name = "QNX";
-        } else if (userAgent.indexOf("os/2") !== -1) {
-            name = "IBM OS/2";
-        } else if (userAgent.indexOf("beos") !== -1) {
-            name = "BeOS";
-        } else if (userAgent.indexOf("blackberry95") !== -1) {
-            name = "Blackberry (Storm 1/2)";
-        } else if (userAgent.indexOf("blackberry97") !== -1) {
-            name = "Blackberry (Bold)";
-        } else if (userAgent.indexOf("blackberry96") !== -1) {
-            name = "Blackberry (Tour)";
-        } else if (userAgent.indexOf("blackberry89") !== -1) {
-            name = "Blackberry (Curve 2)";
-        } else if (userAgent.indexOf("blackberry98") !== -1) {
-            name = "Blackberry (Torch)";
-        } else if (userAgent.indexOf("playbook") !== -1) {
-            name = "Blackberry (Playbook)";
-        } else if (userAgent.indexOf("wnd.rim") !== -1) {
-            name = "Blackberry (IE/FF Emulator)";
-        } else if (userAgent.indexOf("blackberry") !== -1) {
-            name = "Blackberry";
-        } else if (userAgent.indexOf("palm") !== -1) {
-            name = "Palm OS";
-        } else if (userAgent.indexOf("webos") !== -1) {
-            name = "WebOS";
-        } else if (userAgent.indexOf("hpwos") !== -1) {
-            name = "WebOS (HP)";
-        } else if (userAgent.indexOf("blazer") !== -1) {
-            name = "Palm OS (Blazer)";
-        } else if (userAgent.indexOf("xiino") !== -1) {
-            name = "Palm OS (Xiino)";
-        } else if (userAgent.indexOf("kindle") !== -1) {
-            name = "Kindle";
-        } else if (userAgent.indexOf("wii") !== -1) {
-            name = "Nintendo (Wii)";
-        } else if (userAgent.indexOf("nintendo ds") !== -1) {
-            name = "Nintendo (DS)";
-        } else if (userAgent.indexOf("playstation 3") !== -1) {
-            name = "Sony (Playstation Console)";
-        } else if (userAgent.indexOf("playstation portable") !== -1) {
-            name = "Sony (Playstation Portable)";
-        } else if (userAgent.indexOf("webtv") !== -1) {
-            name = "MSN TV (WebTV)";
-        } else if (userAgent.indexOf("inferno") !== -1) {
-            name = "Inferno";
-        } else {
-            name = "Unknown";
-        }
-
-        /* navigator.platform is supported by all major browsers */
-        platform = navigator.platform.toLowerCase();
-
-        if (platform.indexOf("x64") !== -1) {
-            bits = "64";
-        } else if (userAgent.indexOf("x86_64") !== -1) {
-            bits = "64";
-        } else if (userAgent.indexOf("x86-64") !== -1) {
-            bits = "64";
-        } else if (userAgent.indexOf("win64") !== -1) {
-            bits = "64";
-        } else if (userAgent.indexOf("x64;") !== -1) {
-            bits = "64";
-        } else if (userAgent.indexOf("amd64") !== -1) {
-            bits = "64";
-        } else if (userAgent.indexOf("wow64") !== -1) {
-            bits = "64";
-        } else if (userAgent.indexOf("x64_64") !== -1) {
-            bits = "64";
-        } else if (userAgent.indexOf("ia65") !== -1) {
-            bits = "64";
-        } else if (userAgent.indexOf("sparc64") !== -1) {
-            bits = "64";
-        } else if (userAgent.indexOf("ppc64") !== -1) {
-            bits = "64";
-        } else if (userAgent.indexOf("irix64") !== -1) {
-            bits = "64";
-        } else if (userAgent.indexOf("irix64") !== -1) {
-            bits = "64";
-        } else {
-            bits = "32";
-        }
-    } catch (err) {
-        name = "error";
-        bits = "error";
-    }
+        root['MediaPlayer'] = factory();
+    }
+}(this, function() {
+
+var hasplayer = {},
+    Mss = {},
+    Hls = {},
+    Dash = {},
+    MediaPlayer = {},
+    Q,
+    goog,
+    dijon;
 
-    return {
-        name: name.replace(/\s+/g, ''),
-        bits: "x" + bits
-    };
-}
 /**
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
@@ -9107,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.5.0',
-        GIT_TAG = '01ae4ab',
-        BUILD_DATE = '2016-9-8_8:15:43',
+        GIT_TAG = '70770f6',
+        BUILD_DATE = '2016-9-8_8:42:16',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -35534,7 +26493,9050 @@ Mss.dependencies.MssFragmentController = function() {
 Mss.dependencies.MssFragmentController.prototype = {
     constructor: Mss.dependencies.MssFragmentController
 };
-  dijon = this.dijon;
-return MediaPlayer;
+/* $Date: 2007-06-12 18:02:31 $ */
+
+// from: http://bannister.us/weblog/2007/06/09/simple-base64-encodedecode-javascript/
+// Handles encode/decode of ASCII and Unicode strings.
+
+var UTF8 = {};
+UTF8.encode = function(s) {
+    var u = [];
+    for (var i = 0; i < s.length; ++i) {
+        var c = s.charCodeAt(i);
+        if (c < 0x80) {
+            u.push(c);
+        } else if (c < 0x800) {
+            u.push(0xC0 | (c >> 6));
+            u.push(0x80 | (63 & c));
+        } else if (c < 0x10000) {
+            u.push(0xE0 | (c >> 12));
+            u.push(0x80 | (63 & (c >> 6)));
+            u.push(0x80 | (63 & c));
+        } else {
+            u.push(0xF0 | (c >> 18));
+            u.push(0x80 | (63 & (c >> 12)));
+            u.push(0x80 | (63 & (c >> 6)));
+            u.push(0x80 | (63 & c));
+        }
+    }
+    return u;
+};
+UTF8.decode = function(u) {
+    var a = [];
+    var i = 0;
+    while (i < u.length) {
+        var v = u[i++];
+        if (v < 0x80) {
+            // no need to mask byte
+        } else if (v < 0xE0) {
+            v = (31 & v) << 6;
+            v |= (63 & u[i++]);
+        } else if (v < 0xF0) {
+            v = (15 & v) << 12;
+            v |= (63 & u[i++]) << 6;
+            v |= (63 & u[i++]);
+        } else {
+            v = (7 & v) << 18;
+            v |= (63 & u[i++]) << 12;
+            v |= (63 & u[i++]) << 6;
+            v |= (63 & u[i++]);
+        }
+        a.push(String.fromCharCode(v));
+    }
+    return a.join('');
+};
+
+var BASE64 = {};
+(function(T){
+    var encodeArray = function(u) {
+        var i = 0;
+        var a = [];
+        var n = 0 | (u.length / 3);
+        while (0 < n--) {
+            var v = (u[i] << 16) + (u[i+1] << 8) + u[i+2];
+            i += 3;
+            a.push(T.charAt(63 & (v >> 18)));
+            a.push(T.charAt(63 & (v >> 12)));
+            a.push(T.charAt(63 & (v >> 6)));
+            a.push(T.charAt(63 & v));
+        }
+        if (2 == (u.length - i)) {
+            var v = (u[i] << 16) + (u[i+1] << 8);
+            a.push(T.charAt(63 & (v >> 18)));
+            a.push(T.charAt(63 & (v >> 12)));
+            a.push(T.charAt(63 & (v >> 6)));
+            a.push('=');
+        } else if (1 == (u.length - i)) {
+            var v = (u[i] << 16);
+            a.push(T.charAt(63 & (v >> 18)));
+            a.push(T.charAt(63 & (v >> 12)));
+            a.push('==');
+        }
+        return a.join('');
+    }
+    var R = (function(){
+        var a = [];
+        for (var i=0; i<T.length; ++i) {
+            a[T.charCodeAt(i)] = i;
+        }
+        a['='.charCodeAt(0)] = 0;
+        return a;
+    })();
+    var decodeArray = function(s) {
+        var i = 0;
+        var u = [];
+        var n = 0 | (s.length / 4);
+        while (0 < n--) {
+            var v = (R[s.charCodeAt(i)] << 18) + (R[s.charCodeAt(i+1)] << 12) + (R[s.charCodeAt(i+2)] << 6) + R[s.charCodeAt(i+3)];
+            u.push(255 & (v >> 16));
+            u.push(255 & (v >> 8));
+            u.push(255 & v);
+            i += 4;
+        }
+        if (u) {
+            if ('=' == s.charAt(i-2)) {
+                u.pop();
+                u.pop();
+            } else if ('=' == s.charAt(i-1)) {
+                u.pop();
+            }
+        }
+        return u;
+    }
+    var ASCII = {};
+    ASCII.encode = function(s) {
+        var u = [];
+        for (var i = 0; i<s.length; ++i) {
+            u.push(s.charCodeAt(i));
+        }
+        return u;
+    };
+    ASCII.decode = function(u) {
+        for (var i = 0; i<s.length; ++i) {
+            a[i] = String.fromCharCode(a[i]);
+        }
+        return a.join('');
+    };
+    BASE64.decodeArray = function(s) {
+        var u = decodeArray(s);
+        return new Uint8Array(u);
+    };
+    BASE64.encodeASCII = function(s) {
+        var u = ASCII.encode(s);
+        return encodeArray(u);
+    };
+    BASE64.decodeASCII = function(s) {
+        var a = decodeArray(s);
+        return ASCII.decode(a);
+    };
+    BASE64.encode = function(s) {
+        var u = UTF8.encode(s);
+        return encodeArray(u);
+    };
+    BASE64.decode = function(s) {
+        var u = decodeArray(s);
+        return UTF8.decode(u);
+    };
+})("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
+
+if (undefined === btoa) {
+    var btoa = BASE64.encode;
+}
+if (undefined === atob) {
+    var atob = BASE64.decode;
+}
+
+/**
+ * @author <a href="http://www.creynders.be">Camille Reynders</a>
+ */
+( function ( scope ) {
+
+    "use strict";
+
+    /**
+     * @namespace
+     */
+    var dijon = {
+        /**
+         * framework version number
+         * @constant
+         * @type String
+         */
+        VERSION:'0.5.3'
+    };//dijon
+
+
+    //======================================//
+    // dijon.System
+    //======================================//
+
+    /**
+     * @class dijon.System
+     * @constructor
+     */
+    dijon.System = function () {
+        /** @private */
+        this._mappings = {};
+
+        /** @private */
+        this._outlets = {};
+
+        /** @private */
+        this._handlers = {};
+
+        /**
+         * When <code>true</code> injections are made only if an object has a property with the mapped outlet name.<br/>
+         * <strong>Set to <code>false</code> at own risk</strong>, may have quite undesired side effects.
+         * @example
+         * system.strictInjections = true
+         * var o = {};
+         * system.mapSingleton( 'userModel', UserModel );
+         * system.mapOutlet( 'userModel' );
+         * system.injectInto( o );
+         *
+         * //o is unchanged
+         *
+         * system.strictInjections = false;
+         * system.injectInto( o );
+         *
+         * //o now has a member 'userModel' which holds a reference to the singleton instance
+         * //of UserModel
+         * @type Boolean
+         * @default true
+         */
+        this.strictInjections = true;
+
+        /**
+         * Enables the automatic mapping of outlets for mapped values, singletons and classes
+         * When this is true any value, singleton or class that is mapped will automatically be mapped as a global outlet
+         * using the value of <code>key</code> as outlet name
+         *
+         * @example
+         * var o = {
+         *     userModel : undefined; //inject
+         * }
+         * system.mapSingleton( 'userModel', UserModel );
+         * system.injectInto( o ):
+         * //o.userModel now holds a reference to the singleton instance of UserModel
+         * @type Boolean
+         * @default false
+         */
+        this.autoMapOutlets = false;
+
+        /**
+         * The name of the method that will be called for all instances, right after injection has occured.
+         * @type String
+         * @default 'setup'
+         */
+        this.postInjectionHook = 'setup';
+
+    };//dijon.System
+
+    dijon.System.prototype = {
+
+        /**
+         * @private
+         * @param {Class} clazz
+         */
+        _createAndSetupInstance:function ( key, Clazz ) {
+            var instance = new Clazz();
+            this.injectInto( instance, key );
+            return instance;
+        },
+
+        /**
+         * @private
+         * @param {String} key
+         * @param {Boolean} overrideRules
+         * @return {Object}
+         */
+        _retrieveFromCacheOrCreate:function ( key, overrideRules ) {
+            if ( typeof overrideRules === 'undefined' ) {
+                overrideRules = false;
+            }
+            var output;
+            if ( this._mappings.hasOwnProperty( key ) ) {
+                var config = this._mappings[ key ];
+                if ( !overrideRules && config.isSingleton ) {
+                    if ( config.object == null ) {
+                        config.object = this._createAndSetupInstance( key, config.clazz );
+                    }
+                    output = config.object;
+                } else {
+                    if ( config.clazz ) {
+                        output = this._createAndSetupInstance( key, config.clazz );
+                    } else {
+                        //TODO shouldn't this be null
+                        output = config.object;
+                    }
+                }
+            } else {
+                throw new Error( 1000 );
+            }
+            return output;
+        },
+
+
+        /**
+         * defines <code>outletName</code> as an injection point in <code>targetKey</code>for the object mapped to <code>sourceKey</code>
+         * @example
+         system.mapSingleton( 'userModel', TestClassA );
+         var o = {
+         user : undefined //inject
+         }
+         system.mapOutlet( 'userModel', 'o', 'user' );
+         system.mapValue( 'o', o );
+
+         var obj = system.getObject( 'o' );
+         * //obj.user holds a reference to the singleton instance of UserModel
+         *
+         * @example
+         system.mapSingleton( 'userModel', TestClassA );
+         var o = {
+         userModel : undefined //inject
+         }
+         system.mapOutlet( 'userModel', 'o' );
+         system.mapValue( 'o', o );
+
+         var obj = system.getObject( 'o' );
+         * //obj.userModel holds a reference to the singleton instance of UserModel
+         *
+         * @example
+         system.mapSingleton( 'userModel', TestClassA );
+         system.mapOutlet( 'userModel' );
+         var o = {
+         userModel : undefined //inject
+         }
+         system.mapValue( 'o', o );
+
+         var obj = system.getObject( 'o' );
+         * //o.userModel holds a reference to the singleton instance of userModel
+         *
+         * @param {String} sourceKey the key mapped to the object that will be injected
+         * @param {String} [targetKey='global'] the key the outlet is assigned to.
+         * @param {String} [outletName=sourceKey] the name of the property used as an outlet.<br/>
+         * @return {dijon.System}
+         * @see dijon.System#unmapOutlet
+         */
+        mapOutlet:function ( sourceKey, targetKey, outletName ) {
+            if ( typeof sourceKey === 'undefined' ) {
+                throw new Error( 1010 );
+            }
+            targetKey = targetKey || "global";
+            outletName = outletName || sourceKey;
+
+            if ( !this._outlets.hasOwnProperty( targetKey ) ) {
+                this._outlets[ targetKey ] = {};
+            }
+            this._outlets[ targetKey ][ outletName ] = sourceKey;
+
+            return this;
+        },
+
+        /**
+         * Retrieve (or create) the object mapped to <code>key</code>
+         * @example
+         * system.mapValue( 'foo', 'bar' );
+         * var b = system.getObject( 'foo' ); //now contains 'bar'
+         * @param {Object} key
+         * @return {Object}
+         */
+        getObject:function ( key ) {
+            if ( typeof key === 'undefined' ) {
+                throw new Error( 1020 );
+            }
+            return this._retrieveFromCacheOrCreate( key );
+        },
+
+        /**
+         * Maps <code>useValue</code> to <code>key</code>
+         * @example
+         * system.mapValue( 'foo', 'bar' );
+         * var b = system.getObject( 'foo' ); //now contains 'bar'
+         * @param {String} key
+         * @param {Object} useValue
+         * @return {dijon.System}
+         */
+        mapValue:function ( key, useValue ) {
+            if ( typeof key === 'undefined' ) {
+                throw new Error( 1030 );
+            }
+            this._mappings[ key ] = {
+                clazz:null,
+                object:useValue,
+                isSingleton:true
+            };
+            if ( this.autoMapOutlets ) {
+                this.mapOutlet( key );
+            }
+            if ( this.hasMapping( key )) {
+                this.injectInto( useValue, key );
+            }
+            return this;
+        },
+
+        /**
+         * Returns whether the key is mapped to an object
+         * @example
+         * system.mapValue( 'foo', 'bar' );
+         * var isMapped = system.hasMapping( 'foo' );
+         * @param {String} key
+         * @return {Boolean}
+         */
+        hasMapping:function ( key ) {
+            if ( typeof key === 'undefined' ) {
+                throw new Error( 1040 );
+            }
+            return this._mappings.hasOwnProperty( key );
+        },
+
+        /**
+         * Maps <code>clazz</code> as a factory to <code>key</code>
+         * @example
+         * var SomeClass = function(){
+         * }
+         * system.mapClass( 'o', SomeClass );
+         *
+         * var s1 = system.getObject( 'o' );
+         * var s2 = system.getObject( 'o' );
+         *
+         * //s1 and s2 reference two different instances of SomeClass
+         *
+         * @param {String} key
+         * @param {Function} clazz
+         * @return {dijon.System}
+         */
+        mapClass:function ( key, clazz ) {
+            if ( typeof key === 'undefined' ) {
+                throw new Error( 1050 );
+            }
+            if ( typeof clazz === 'undefined' ) {
+                throw new Error( 1051 );
+            }
+            this._mappings[ key ] = {
+                clazz:clazz,
+                object:null,
+                isSingleton:false
+            };
+            if ( this.autoMapOutlets ) {
+                this.mapOutlet( key );
+            }
+            return this;
+        },
+
+        /**
+         * Maps <code>clazz</code> as a singleton factory to <code>key</code>
+         * @example
+         * var SomeClass = function(){
+         * }
+         * system.mapSingleton( 'o', SomeClass );
+         *
+         * var s1 = system.getObject( 'o' );
+         * var s2 = system.getObject( 'o' );
+         *
+         * //s1 and s2 reference the same instance of SomeClass
+         *
+         * @param {String} key
+         * @param {Function} clazz
+         * @return {dijon.System}
+         */
+        mapSingleton:function ( key, clazz ) {
+            if ( typeof key === 'undefined' ) {
+                throw new Error( 1060 );
+            }
+            if ( typeof clazz === 'undefined' ) {
+                throw new Error( 1061 );
+            }
+            this._mappings[ key ] = {
+                clazz:clazz,
+                object:null,
+                isSingleton:true
+            };
+            if ( this.autoMapOutlets ) {
+                this.mapOutlet( key );
+            }
+            return this;
+        },
+
+        /**
+         * Force instantiation of the class mapped to <code>key</code>, whether it was mapped as a singleton or not.
+         * When a value was mapped, the value will be returned.
+         * TODO: should this last rule be changed?
+         * @example
+         var SomeClass = function(){
+         }
+         system.mapClass( 'o', SomeClass );
+
+         var s1 = system.getObject( 'o' );
+         var s2 = system.getObject( 'o' );
+         * //s1 and s2 reference different instances of SomeClass
+         *
+         * @param {String} key
+         * @return {Object}
+         */
+        instantiate:function ( key ) {
+            if ( typeof key === 'undefined' ) {
+                throw new Error( 1070 );
+            }
+            return this._retrieveFromCacheOrCreate( key, true );
+        },
+
+        /**
+         * Perform an injection into an object's mapped outlets, satisfying all it's dependencies
+         * @example
+         * var UserModel = function(){
+         * }
+         * system.mapSingleton( 'userModel', UserModel );
+         * var SomeClass = function(){
+         *      user = undefined; //inject
+         * }
+         * system.mapSingleton( 'o', SomeClass );
+         * system.mapOutlet( 'userModel', 'o', 'user' );
+         *
+         * var foo = {
+         *      user : undefined //inject
+         * }
+         *
+         * system.injectInto( foo, 'o' );
+         *
+         * //foo.user now holds a reference to the singleton instance of UserModel
+         * @param {Object} instance
+         * @param {String} [key] use the outlet mappings as defined for <code>key</code>, otherwise only the globally
+         * mapped outlets will be used.
+         * @return {dijon.System}
+         */
+        injectInto:function ( instance, key ) {
+            if ( typeof instance === 'undefined' ) {
+                throw new Error( 1080 );
+            }
+			if( ( typeof instance === 'object' ) ){
+				var o = [];
+				if ( this._outlets.hasOwnProperty( 'global' ) ) {
+					o.push( this._outlets[ 'global' ] );
+				}
+				if ( typeof key !== 'undefined' && this._outlets.hasOwnProperty( key ) ) {
+					o.push( this._outlets[ key ] );
+				}
+				for ( var i in o ) {
+					var l = o [ i ];
+					for ( var outlet in l ) {
+						var source = l[ outlet ];
+						//must be "in" [!]
+						if ( !this.strictInjections || outlet in instance ) {
+							instance[ outlet ] = this.getObject( source );
+						}
+					}
+				}
+				if ( "setup" in instance ) {
+					instance.setup.call( instance );
+				}
+			}
+            return this;
+        },
+
+        /**
+         * Remove the mapping of <code>key</code> from the system
+         * @param {String} key
+         * @return {dijon.System}
+         */
+        unmap:function ( key ) {
+            if ( typeof key === 'undefined' ) {
+                throw new Error( 1090 );
+            }
+            delete this._mappings[ key ];
+
+            return this;
+        },
+
+        /**
+         * removes an injection point mapping for a given object mapped to <code>key</code>
+         * @param {String} target
+         * @param {String} outlet
+         * @return {dijon.System}
+         * @see dijon.System#addOutlet
+         */
+        unmapOutlet:function ( target, outlet ) {
+            if ( typeof target === 'undefined' ) {
+                throw new Error( 1100 );
+            }
+            if ( typeof outlet === 'undefined' ) {
+                throw new Error( 1101 );
+            }
+            delete this._outlets[ target ][ outlet ];
+
+            return this;
+        },
+
+        /**
+         * maps a handler for an event/route.<br/>
+         * @example
+         var hasExecuted = false;
+         var userView = {
+         showUserProfile : function(){
+         hasExecuted = true;
+         }
+         }
+         system.mapValue( 'userView', userView );
+         system.mapHandler( 'user/profile', 'userView', 'showUserProfile' );
+         system.notify( 'user/profile' );
+         //hasExecuted is true
+         * @example
+         * var userView = {
+         *      showUserProfile : function(){
+         *          //do stuff
+         *      }
+         * }
+         * system.mapValue( 'userView', userView );
+         * <strong>system.mapHandler( 'showUserProfile', 'userView' );</strong>
+         * system.notify( 'showUserProfile' );
+         *
+         * //userView.showUserProfile is called
+         * @example
+         * var showUserProfile = function(){
+         *          //do stuff
+         * }
+         * <strong>system.mapHandler( 'user/profile', undefined, showUserProfile );</strong>
+         * system.notify( 'user/profile' );
+         *
+         * //showUserProfile is called
+         * @example
+         * var userView = {};
+         * var showUserProfile = function(){
+         *          //do stuff
+         * }
+         * system.mapValue( 'userView', userView );
+         * <strong>system.mapHandler( 'user/profile', 'userView', showUserProfile );</strong>
+         * system.notify( 'user/profile' );
+         *
+         * //showUserProfile is called within the scope of the userView object
+         * @example
+         * var userView = {
+         *      showUserProfile : function(){
+         *          //do stuff
+         *      }
+         * }
+         * system.mapValue( 'userView', userView );
+         * <strong>system.mapHandler( 'user/profile', 'userView', 'showUserProfile', true );</strong>
+         * system.notify( 'user/profile' );
+         * system.notify( 'user/profile' );
+         * system.notify( 'user/profile' );
+         *
+         * //userView.showUserProfile is called exactly once [!]
+         * @example
+         * var userView = {
+         *      showUserProfile : function( route ){
+         *          //do stuff
+         *      }
+         * }
+         * system.mapValue( 'userView', userView );
+         * <strong>system.mapHandler( 'user/profile', 'userView', 'showUserProfile', false, true );</strong>
+         * system.notify( 'user/profile' );
+         *
+         * //userView.showUserProfile is called and the route/eventName is passed to the handler
+         * @param {String} eventName/route
+         * @param {String} [key=undefined] If <code>key</code> is <code>undefined</code> the handler will be called without
+         * scope.
+         * @param {String|Function} [handler=eventName] If <code>handler</code> is <code>undefined</code> the value of
+         * <code>eventName</code> will be used as the name of the member holding the reference to the to-be-called function.
+         * <code>handler</code> accepts either a string, which will be used as the name of the member holding the reference
+         * to the to-be-called function, or a direct function reference.
+         * @param {Boolean} [oneShot=false] Defines whether the handler should be called exactly once and then automatically
+         * unmapped
+         * @param {Boolean} [passEvent=false] Defines whether the event object should be passed to the handler or not.
+         * @return {dijon.System}
+         * @see dijon.System#notify
+         * @see dijon.System#unmapHandler
+         */
+        mapHandler:function ( eventName, key, handler, oneShot, passEvent ) {
+            if ( typeof eventName === 'undefined' ) {
+                throw new Error( 1110 );
+            }
+            key = key || 'global';
+            handler = handler || eventName;
+
+            if ( typeof oneShot === 'undefined' ) {
+                oneShot = false;
+            }
+            if ( typeof passEvent === 'undefined' ) {
+                passEvent = false;
+            }
+            if ( !this._handlers.hasOwnProperty( eventName ) ) {
+                this._handlers[ eventName ] = {};
+            }
+            if ( !this._handlers[eventName].hasOwnProperty( key ) ) {
+                this._handlers[eventName][key] = [];
+            }
+            this._handlers[ eventName ][ key ].push( {
+                handler:handler,
+                oneShot:oneShot,
+                passEvent:passEvent
+            } );
+
+            return this;
+        },
+
+        /**
+         * Unmaps the handler for a specific event/route.
+         * @param {String} eventName Name of the event/route
+         * @param {String} [key=undefined] If <code>key</code> is <code>undefined</code> the handler is removed from the
+         * global mapping space. (If the same event is mapped globally and specifically for an object, then
+         * only the globally mapped one will be removed)
+         * @param {String | Function} [handler=eventName]
+         * @return {dijon.System}
+         * @see dijon.System#mapHandler
+         */
+        unmapHandler:function ( eventName, key, handler ) {
+            if ( typeof eventName === 'undefined' ) {
+                throw new Error( 1120 );
+            }
+            key = key || 'global';
+            //handler = handler || eventName;
+
+            if ( this._handlers.hasOwnProperty( eventName ) && this._handlers[ eventName ].hasOwnProperty( key ) ) {
+                var handlers = this._handlers[ eventName ][ key ];
+                for ( var i in handlers ) {
+                    var config = handlers[ i ];
+                    if ( (!handler) || (config.handler === handler) ) {
+                        handlers.splice( i, 1 );
+                        break;
+                    }
+                }
+            }
+            return this;
+        },
+
+        /**
+         * calls all handlers mapped to <code>eventName/route</code>
+         * @param {String} eventName/route
+         * @return {dijon.System}
+         * @see dijon.System#mapHandler
+         */
+        notify:function ( eventName ) {
+            if ( typeof eventName === 'undefined' ) {
+                throw new Error( 1130 );
+            }
+            var argsWithEvent = Array.prototype.slice.call( arguments );
+            var argsClean = argsWithEvent.slice( 1 );
+            if ( this._handlers.hasOwnProperty( eventName ) ) {
+                var handlers = this._handlers[ eventName ];
+                for ( var key in handlers ) {
+                    var configs = handlers[ key ];
+                    var instance;
+                    if ( key !== 'global' ) {
+                        instance = this.getObject( key );
+                    }
+                    var toBeDeleted = [];
+                    var i, n;
+                    for ( i = 0, n = configs.length ; i < n ; i++ ) {
+                        var handler;
+                        var config = configs[ i ];
+                        if ( instance && typeof config.handler === "string" ) {
+                            handler = instance[ config.handler ];
+                        } else {
+                            handler = config.handler;
+                        }
+
+                        //see deletion below
+                        if ( config.oneShot ) {
+                            toBeDeleted.unshift( i );
+                        }
+
+                        if ( config.passEvent ) {
+                            handler.apply( instance, argsWithEvent );
+                        } else {
+                            handler.apply( instance, argsClean );
+                        }
+                    }
+
+                    //items should be deleted in reverse order
+                    //either use push above and decrement here
+                    //or use unshift above and increment here
+                    for ( i = 0, n = toBeDeleted.length ; i < n ; i++ ) {
+                        configs.splice( toBeDeleted[ i ], 1 );
+                    }
+                }
+            }
+
+            return this;
+        }
+
+    };//dijon.System.prototype
+
+    scope.dijon = dijon;
+}( this ));
+
+
+
+// Copyright 2009 The Closure Library Authors. All Rights Reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS-IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+goog = {};
+goog.math = {};
+
+/**
+ * @fileoverview Defines a Long class for representing a 64-bit two's-complement
+ * integer value, which faithfully simulates the behavior of a Java "long". This
+ * implementation is derived from LongLib in GWT.
+ *
+ */
+
+//goog.provide('goog.math.Long');
+
+
+
+/**
+ * Constructs a 64-bit two's-complement integer, given its low and high 32-bit
+ * values as *signed* integers.  See the from* functions below for more
+ * convenient ways of constructing Longs.
+ *
+ * The internal representation of a long is the two given signed, 32-bit values.
+ * We use 32-bit pieces because these are the size of integers on which
+ * Javascript performs bit-operations.  For operations like addition and
+ * multiplication, we split each number into 16-bit pieces, which can easily be
+ * multiplied within Javascript's floating-point representation without overflow
+ * or change in sign.
+ *
+ * In the algorithms below, we frequently reduce the negative case to the
+ * positive case by negating the input(s) and then post-processing the result.
+ * Note that we must ALWAYS check specially whether those values are MIN_VALUE
+ * (-2^63) because -MIN_VALUE == MIN_VALUE (since 2^63 cannot be represented as
+ * a positive number, it overflows back into a negative).  Not handling this
+ * case would often result in infinite recursion.
+ *
+ * @param {number} low  The low (signed) 32 bits of the long.
+ * @param {number} high  The high (signed) 32 bits of the long.
+ * @constructor
+ */
+goog.math.Long = function(low, high) {
+  /**
+   * @type {number}
+   * @private
+   */
+  this.low_ = low | 0;  // force into 32 signed bits.
+
+  /**
+   * @type {number}
+   * @private
+   */
+  this.high_ = high | 0;  // force into 32 signed bits.
+};
+
+
+// NOTE: Common constant values ZERO, ONE, NEG_ONE, etc. are defined below the
+// from* methods on which they depend.
+
+
+/**
+ * A cache of the Long representations of small integer values.
+ * @type {!Object}
+ * @private
+ */
+goog.math.Long.IntCache_ = {};
+
+
+/**
+ * Returns a Long representing the given (32-bit) integer value.
+ * @param {number} value The 32-bit integer in question.
+ * @return {!goog.math.Long} The corresponding Long value.
+ */
+goog.math.Long.fromInt = function(value) {
+  if (-128 <= value && value < 128) {
+    var cachedObj = goog.math.Long.IntCache_[value];
+    if (cachedObj) {
+      return cachedObj;
+    }
+  }
+
+  var obj = new goog.math.Long(value | 0, value < 0 ? -1 : 0);
+  if (-128 <= value && value < 128) {
+    goog.math.Long.IntCache_[value] = obj;
+  }
+  return obj;
+};
+
+
+/**
+ * Returns a Long representing the given value, provided that it is a finite
+ * number.  Otherwise, zero is returned.
+ * @param {number} value The number in question.
+ * @return {!goog.math.Long} The corresponding Long value.
+ */
+goog.math.Long.fromNumber = function(value) {
+  if (isNaN(value) || !isFinite(value)) {
+    return goog.math.Long.ZERO;
+  } else if (value <= -goog.math.Long.TWO_PWR_63_DBL_) {
+    return goog.math.Long.MIN_VALUE;
+  } else if (value + 1 >= goog.math.Long.TWO_PWR_63_DBL_) {
+    return goog.math.Long.MAX_VALUE;
+  } else if (value < 0) {
+    return goog.math.Long.fromNumber(-value).negate();
+  } else {
+    return new goog.math.Long(
+        (value % goog.math.Long.TWO_PWR_32_DBL_) | 0,
+        (value / goog.math.Long.TWO_PWR_32_DBL_) | 0);
+  }
+};
+
+
+/**
+ * Returns a Long representing the 64-bit integer that comes by concatenating
+ * the given high and low bits.  Each is assumed to use 32 bits.
+ * @param {number} lowBits The low 32-bits.
+ * @param {number} highBits The high 32-bits.
+ * @return {!goog.math.Long} The corresponding Long value.
+ */
+goog.math.Long.fromBits = function(lowBits, highBits) {
+  return new goog.math.Long(lowBits, highBits);
+};
+
+
+/**
+ * Returns a Long representation of the given string, written using the given
+ * radix.
+ * @param {string} str The textual representation of the Long.
+ * @param {number=} opt_radix The radix in which the text is written.
+ * @return {!goog.math.Long} The corresponding Long value.
+ */
+goog.math.Long.fromString = function(str, opt_radix) {
+  if (str.length == 0) {
+    throw Error('number format error: empty string');
+  }
+
+  var radix = opt_radix || 10;
+  if (radix < 2 || 36 < radix) {
+    throw Error('radix out of range: ' + radix);
+  }
+
+  if (str.charAt(0) == '-') {
+    return goog.math.Long.fromString(str.substring(1), radix).negate();
+  } else if (str.indexOf('-') >= 0) {
+    throw Error('number format error: interior "-" character: ' + str);
+  }
+
+  // Do several (8) digits each time through the loop, so as to
+  // minimize the calls to the very expensive emulated div.
+  var radixToPower = goog.math.Long.fromNumber(Math.pow(radix, 8));
+
+  var result = goog.math.Long.ZERO;
+  for (var i = 0; i < str.length; i += 8) {
+    var size = Math.min(8, str.length - i);
+    var value = parseInt(str.substring(i, i + size), radix);
+    if (size < 8) {
+      var power = goog.math.Long.fromNumber(Math.pow(radix, size));
+      result = result.multiply(power).add(goog.math.Long.fromNumber(value));
+    } else {
+      result = result.multiply(radixToPower);
+      result = result.add(goog.math.Long.fromNumber(value));
+    }
+  }
+  return result;
+};
+
+
+// NOTE: the compiler should inline these constant values below and then remove
+// these variables, so there should be no runtime penalty for these.
+
+
+/**
+ * Number used repeated below in calculations.  This must appear before the
+ * first call to any from* function below.
+ * @type {number}
+ * @private
+ */
+goog.math.Long.TWO_PWR_16_DBL_ = 1 << 16;
+
+
+/**
+ * @type {number}
+ * @private
+ */
+goog.math.Long.TWO_PWR_24_DBL_ = 1 << 24;
+
+
+/**
+ * @type {number}
+ * @private
+ */
+goog.math.Long.TWO_PWR_32_DBL_ =
+    goog.math.Long.TWO_PWR_16_DBL_ * goog.math.Long.TWO_PWR_16_DBL_;
+
+
+/**
+ * @type {number}
+ * @private
+ */
+goog.math.Long.TWO_PWR_31_DBL_ =
+    goog.math.Long.TWO_PWR_32_DBL_ / 2;
+
+
+/**
+ * @type {number}
+ * @private
+ */
+goog.math.Long.TWO_PWR_48_DBL_ =
+    goog.math.Long.TWO_PWR_32_DBL_ * goog.math.Long.TWO_PWR_16_DBL_;
+
+
+/**
+ * @type {number}
+ * @private
+ */
+goog.math.Long.TWO_PWR_64_DBL_ =
+    goog.math.Long.TWO_PWR_32_DBL_ * goog.math.Long.TWO_PWR_32_DBL_;
+
+
+/**
+ * @type {number}
+ * @private
+ */
+goog.math.Long.TWO_PWR_63_DBL_ =
+    goog.math.Long.TWO_PWR_64_DBL_ / 2;
+
+
+/** @type {!goog.math.Long} */
+goog.math.Long.ZERO = goog.math.Long.fromInt(0);
+
+
+/** @type {!goog.math.Long} */
+goog.math.Long.ONE = goog.math.Long.fromInt(1);
+
+
+/** @type {!goog.math.Long} */
+goog.math.Long.NEG_ONE = goog.math.Long.fromInt(-1);
+
+
+/** @type {!goog.math.Long} */
+goog.math.Long.MAX_VALUE =
+    goog.math.Long.fromBits(0xFFFFFFFF | 0, 0x7FFFFFFF | 0);
+
+
+/** @type {!goog.math.Long} */
+goog.math.Long.MIN_VALUE = goog.math.Long.fromBits(0, 0x80000000 | 0);
+
+
+/**
+ * @type {!goog.math.Long}
+ * @private
+ */
+goog.math.Long.TWO_PWR_24_ = goog.math.Long.fromInt(1 << 24);
+
+
+/** @return {number} The value, assuming it is a 32-bit integer. */
+goog.math.Long.prototype.toInt = function() {
+  return this.low_;
+};
+
+
+/** @return {number} The closest floating-point representation to this value. */
+goog.math.Long.prototype.toNumber = function() {
+  return this.high_ * goog.math.Long.TWO_PWR_32_DBL_ +
+         this.getLowBitsUnsigned();
+};
+
+
+/**
+ * @param {number=} opt_radix The radix in which the text should be written.
+ * @return {string} The textual representation of this value.
+ * @override
+ */
+goog.math.Long.prototype.toString = function(opt_radix) {
+  var radix = opt_radix || 10;
+  if (radix < 2 || 36 < radix) {
+    throw Error('radix out of range: ' + radix);
+  }
+
+  if (this.isZero()) {
+    return '0';
+  }
+
+  if (this.isNegative()) {
+    if (this.equals(goog.math.Long.MIN_VALUE)) {
+      // We need to change the Long value before it can be negated, so we remove
+      // the bottom-most digit in this base and then recurse to do the rest.
+      var radixLong = goog.math.Long.fromNumber(radix);
+      var div = this.div(radixLong);
+      var rem = div.multiply(radixLong).subtract(this);
+      return div.toString(radix) + rem.toInt().toString(radix);
+    } else {
+      return '-' + this.negate().toString(radix);
+    }
+  }
+
+  // Do several (6) digits each time through the loop, so as to
+  // minimize the calls to the very expensive emulated div.
+  var radixToPower = goog.math.Long.fromNumber(Math.pow(radix, 6));
+
+  var rem = this;
+  var result = '';
+  while (true) {
+    var remDiv = rem.div(radixToPower);
+    var intval = rem.subtract(remDiv.multiply(radixToPower)).toInt();
+    var digits = intval.toString(radix);
+
+    rem = remDiv;
+    if (rem.isZero()) {
+      return digits + result;
+    } else {
+      while (digits.length < 6) {
+        digits = '0' + digits;
+      }
+      result = '' + digits + result;
+    }
+  }
+};
+
+
+/** @return {number} The high 32-bits as a signed value. */
+goog.math.Long.prototype.getHighBits = function() {
+  return this.high_;
+};
+
+
+/** @return {number} The low 32-bits as a signed value. */
+goog.math.Long.prototype.getLowBits = function() {
+  return this.low_;
+};
+
+
+/** @return {number} The low 32-bits as an unsigned value. */
+goog.math.Long.prototype.getLowBitsUnsigned = function() {
+  return (this.low_ >= 0) ?
+      this.low_ : goog.math.Long.TWO_PWR_32_DBL_ + this.low_;
+};
+
+
+/**
+ * @return {number} Returns the number of bits needed to represent the absolute
+ *     value of this Long.
+ */
+goog.math.Long.prototype.getNumBitsAbs = function() {
+  if (this.isNegative()) {
+    if (this.equals(goog.math.Long.MIN_VALUE)) {
+      return 64;
+    } else {
+      return this.negate().getNumBitsAbs();
+    }
+  } else {
+    var val = this.high_ != 0 ? this.high_ : this.low_;
+    for (var bit = 31; bit > 0; bit--) {
+      if ((val & (1 << bit)) != 0) {
+        break;
+      }
+    }
+    return this.high_ != 0 ? bit + 33 : bit + 1;
+  }
+};
+
+
+/** @return {boolean} Whether this value is zero. */
+goog.math.Long.prototype.isZero = function() {
+  return this.high_ == 0 && this.low_ == 0;
+};
+
+
+/** @return {boolean} Whether this value is negative. */
+goog.math.Long.prototype.isNegative = function() {
+  return this.high_ < 0;
+};
+
+
+/** @return {boolean} Whether this value is odd. */
+goog.math.Long.prototype.isOdd = function() {
+  return (this.low_ & 1) == 1;
+};
+
+
+/**
+ * @param {goog.math.Long} other Long to compare against.
+ * @return {boolean} Whether this Long equals the other.
+ */
+goog.math.Long.prototype.equals = function(other) {
+  return (this.high_ == other.high_) && (this.low_ == other.low_);
+};
+
+
+/**
+ * @param {goog.math.Long} other Long to compare against.
+ * @return {boolean} Whether this Long does not equal the other.
+ */
+goog.math.Long.prototype.notEquals = function(other) {
+  return (this.high_ != other.high_) || (this.low_ != other.low_);
+};
+
+
+/**
+ * @param {goog.math.Long} other Long to compare against.
+ * @return {boolean} Whether this Long is less than the other.
+ */
+goog.math.Long.prototype.lessThan = function(other) {
+  return this.compare(other) < 0;
+};
+
+
+/**
+ * @param {goog.math.Long} other Long to compare against.
+ * @return {boolean} Whether this Long is less than or equal to the other.
+ */
+goog.math.Long.prototype.lessThanOrEqual = function(other) {
+  return this.compare(other) <= 0;
+};
+
+
+/**
+ * @param {goog.math.Long} other Long to compare against.
+ * @return {boolean} Whether this Long is greater than the other.
+ */
+goog.math.Long.prototype.greaterThan = function(other) {
+  return this.compare(other) > 0;
+};
+
+
+/**
+ * @param {goog.math.Long} other Long to compare against.
+ * @return {boolean} Whether this Long is greater than or equal to the other.
+ */
+goog.math.Long.prototype.greaterThanOrEqual = function(other) {
+  return this.compare(other) >= 0;
+};
+
+
+/**
+ * Compares this Long with the given one.
+ * @param {goog.math.Long} other Long to compare against.
+ * @return {number} 0 if they are the same, 1 if the this is greater, and -1
+ *     if the given one is greater.
+ */
+goog.math.Long.prototype.compare = function(other) {
+  if (this.equals(other)) {
+    return 0;
+  }
+
+  var thisNeg = this.isNegative();
+  var otherNeg = other.isNegative();
+  if (thisNeg && !otherNeg) {
+    return -1;
+  }
+  if (!thisNeg && otherNeg) {
+    return 1;
+  }
+
+  // at this point, the signs are the same, so subtraction will not overflow
+  if (this.subtract(other).isNegative()) {
+    return -1;
+  } else {
+    return 1;
+  }
+};
+
+
+/** @return {!goog.math.Long} The negation of this value. */
+goog.math.Long.prototype.negate = function() {
+  if (this.equals(goog.math.Long.MIN_VALUE)) {
+    return goog.math.Long.MIN_VALUE;
+  } else {
+    return this.not().add(goog.math.Long.ONE);
+  }
+};
+
+
+/**
+ * Returns the sum of this and the given Long.
+ * @param {goog.math.Long} other Long to add to this one.
+ * @return {!goog.math.Long} The sum of this and the given Long.
+ */
+goog.math.Long.prototype.add = function(other) {
+  // Divide each number into 4 chunks of 16 bits, and then sum the chunks.
+
+  var a48 = this.high_ >>> 16;
+  var a32 = this.high_ & 0xFFFF;
+  var a16 = this.low_ >>> 16;
+  var a00 = this.low_ & 0xFFFF;
+
+  var b48 = other.high_ >>> 16;
+  var b32 = other.high_ & 0xFFFF;
+  var b16 = other.low_ >>> 16;
+  var b00 = other.low_ & 0xFFFF;
+
+  var c48 = 0, c32 = 0, c16 = 0, c00 = 0;
+  c00 += a00 + b00;
+  c16 += c00 >>> 16;
+  c00 &= 0xFFFF;
+  c16 += a16 + b16;
+  c32 += c16 >>> 16;
+  c16 &= 0xFFFF;
+  c32 += a32 + b32;
+  c48 += c32 >>> 16;
+  c32 &= 0xFFFF;
+  c48 += a48 + b48;
+  c48 &= 0xFFFF;
+  return goog.math.Long.fromBits((c16 << 16) | c00, (c48 << 16) | c32);
+};
+
+
+/**
+ * Returns the difference of this and the given Long.
+ * @param {goog.math.Long} other Long to subtract from this.
+ * @return {!goog.math.Long} The difference of this and the given Long.
+ */
+goog.math.Long.prototype.subtract = function(other) {
+  return this.add(other.negate());
+};
+
+
+/**
+ * Returns the product of this and the given long.
+ * @param {goog.math.Long} other Long to multiply with this.
+ * @return {!goog.math.Long} The product of this and the other.
+ */
+goog.math.Long.prototype.multiply = function(other) {
+  if (this.isZero()) {
+    return goog.math.Long.ZERO;
+  } else if (other.isZero()) {
+    return goog.math.Long.ZERO;
+  }
+
+  if (this.equals(goog.math.Long.MIN_VALUE)) {
+    return other.isOdd() ? goog.math.Long.MIN_VALUE : goog.math.Long.ZERO;
+  } else if (other.equals(goog.math.Long.MIN_VALUE)) {
+    return this.isOdd() ? goog.math.Long.MIN_VALUE : goog.math.Long.ZERO;
+  }
+
+  if (this.isNegative()) {
+    if (other.isNegative()) {
+      return this.negate().multiply(other.negate());
+    } else {
+      return this.negate().multiply(other).negate();
+    }
+  } else if (other.isNegative()) {
+    return this.multiply(other.negate()).negate();
+  }
+
+  // If both longs are small, use float multiplication
+  if (this.lessThan(goog.math.Long.TWO_PWR_24_) &&
+      other.lessThan(goog.math.Long.TWO_PWR_24_)) {
+    return goog.math.Long.fromNumber(this.toNumber() * other.toNumber());
+  }
+
+  // Divide each long into 4 chunks of 16 bits, and then add up 4x4 products.
+  // We can skip products that would overflow.
+
+  var a48 = this.high_ >>> 16;
+  var a32 = this.high_ & 0xFFFF;
+  var a16 = this.low_ >>> 16;
+  var a00 = this.low_ & 0xFFFF;
+
+  var b48 = other.high_ >>> 16;
+  var b32 = other.high_ & 0xFFFF;
+  var b16 = other.low_ >>> 16;
+  var b00 = other.low_ & 0xFFFF;
+
+  var c48 = 0, c32 = 0, c16 = 0, c00 = 0;
+  c00 += a00 * b00;
+  c16 += c00 >>> 16;
+  c00 &= 0xFFFF;
+  c16 += a16 * b00;
+  c32 += c16 >>> 16;
+  c16 &= 0xFFFF;
+  c16 += a00 * b16;
+  c32 += c16 >>> 16;
+  c16 &= 0xFFFF;
+  c32 += a32 * b00;
+  c48 += c32 >>> 16;
+  c32 &= 0xFFFF;
+  c32 += a16 * b16;
+  c48 += c32 >>> 16;
+  c32 &= 0xFFFF;
+  c32 += a00 * b32;
+  c48 += c32 >>> 16;
+  c32 &= 0xFFFF;
+  c48 += a48 * b00 + a32 * b16 + a16 * b32 + a00 * b48;
+  c48 &= 0xFFFF;
+  return goog.math.Long.fromBits((c16 << 16) | c00, (c48 << 16) | c32);
+};
+
+
+/**
+ * Returns this Long divided by the given one.
+ * @param {goog.math.Long} other Long by which to divide.
+ * @return {!goog.math.Long} This Long divided by the given one.
+ */
+goog.math.Long.prototype.div = function(other) {
+  if (other.isZero()) {
+    throw Error('division by zero');
+  } else if (this.isZero()) {
+    return goog.math.Long.ZERO;
+  }
+
+  if (this.equals(goog.math.Long.MIN_VALUE)) {
+    if (other.equals(goog.math.Long.ONE) ||
+        other.equals(goog.math.Long.NEG_ONE)) {
+      return goog.math.Long.MIN_VALUE;  // recall that -MIN_VALUE == MIN_VALUE
+    } else if (other.equals(goog.math.Long.MIN_VALUE)) {
+      return goog.math.Long.ONE;
+    } else {
+      // At this point, we have |other| >= 2, so |this/other| < |MIN_VALUE|.
+      var halfThis = this.shiftRight(1);
+      var approx = halfThis.div(other).shiftLeft(1);
+      if (approx.equals(goog.math.Long.ZERO)) {
+        return other.isNegative() ? goog.math.Long.ONE : goog.math.Long.NEG_ONE;
+      } else {
+        var rem = this.subtract(other.multiply(approx));
+        var result = approx.add(rem.div(other));
+        return result;
+      }
+    }
+  } else if (other.equals(goog.math.Long.MIN_VALUE)) {
+    return goog.math.Long.ZERO;
+  }
+
+  if (this.isNegative()) {
+    if (other.isNegative()) {
+      return this.negate().div(other.negate());
+    } else {
+      return this.negate().div(other).negate();
+    }
+  } else if (other.isNegative()) {
+    return this.div(other.negate()).negate();
+  }
+
+  // Repeat the following until the remainder is less than other:  find a
+  // floating-point that approximates remainder / other *from below*, add this
+  // into the result, and subtract it from the remainder.  It is critical that
+  // the approximate value is less than or equal to the real value so that the
+  // remainder never becomes negative.
+  var res = goog.math.Long.ZERO;
+  var rem = this;
+  while (rem.greaterThanOrEqual(other)) {
+    // Approximate the result of division. This may be a little greater or
+    // smaller than the actual value.
+    var approx = Math.max(1, Math.floor(rem.toNumber() / other.toNumber()));
+
+    // We will tweak the approximate result by changing it in the 48-th digit or
+    // the smallest non-fractional digit, whichever is larger.
+    var log2 = Math.ceil(Math.log(approx) / Math.LN2);
+    var delta = (log2 <= 48) ? 1 : Math.pow(2, log2 - 48);
+
+    // Decrease the approximation until it is smaller than the remainder.  Note
+    // that if it is too large, the product overflows and is negative.
+    var approxRes = goog.math.Long.fromNumber(approx);
+    var approxRem = approxRes.multiply(other);
+    while (approxRem.isNegative() || approxRem.greaterThan(rem)) {
+      approx -= delta;
+      approxRes = goog.math.Long.fromNumber(approx);
+      approxRem = approxRes.multiply(other);
+    }
+
+    // We know the answer can't be zero... and actually, zero would cause
+    // infinite recursion since we would make no progress.
+    if (approxRes.isZero()) {
+      approxRes = goog.math.Long.ONE;
+    }
+
+    res = res.add(approxRes);
+    rem = rem.subtract(approxRem);
+  }
+  return res;
+};
+
+
+/**
+ * Returns this Long modulo the given one.
+ * @param {goog.math.Long} other Long by which to mod.
+ * @return {!goog.math.Long} This Long modulo the given one.
+ */
+goog.math.Long.prototype.modulo = function(other) {
+  return this.subtract(this.div(other).multiply(other));
+};
+
+
+/** @return {!goog.math.Long} The bitwise-NOT of this value. */
+goog.math.Long.prototype.not = function() {
+  return goog.math.Long.fromBits(~this.low_, ~this.high_);
+};
+
+
+/**
+ * Returns the bitwise-AND of this Long and the given one.
+ * @param {goog.math.Long} other The Long with which to AND.
+ * @return {!goog.math.Long} The bitwise-AND of this and the other.
+ */
+goog.math.Long.prototype.and = function(other) {
+  return goog.math.Long.fromBits(this.low_ & other.low_,
+                                 this.high_ & other.high_);
+};
+
+
+/**
+ * Returns the bitwise-OR of this Long and the given one.
+ * @param {goog.math.Long} other The Long with which to OR.
+ * @return {!goog.math.Long} The bitwise-OR of this and the other.
+ */
+goog.math.Long.prototype.or = function(other) {
+  return goog.math.Long.fromBits(this.low_ | other.low_,
+                                 this.high_ | other.high_);
+};
+
+
+/**
+ * Returns the bitwise-XOR of this Long and the given one.
+ * @param {goog.math.Long} other The Long with which to XOR.
+ * @return {!goog.math.Long} The bitwise-XOR of this and the other.
+ */
+goog.math.Long.prototype.xor = function(other) {
+  return goog.math.Long.fromBits(this.low_ ^ other.low_,
+                                 this.high_ ^ other.high_);
+};
+
+
+/**
+ * Returns this Long with bits shifted to the left by the given amount.
+ * @param {number} numBits The number of bits by which to shift.
+ * @return {!goog.math.Long} This shifted to the left by the given amount.
+ */
+goog.math.Long.prototype.shiftLeft = function(numBits) {
+  numBits &= 63;
+  if (numBits == 0) {
+    return this;
+  } else {
+    var low = this.low_;
+    if (numBits < 32) {
+      var high = this.high_;
+      return goog.math.Long.fromBits(
+          low << numBits,
+          (high << numBits) | (low >>> (32 - numBits)));
+    } else {
+      return goog.math.Long.fromBits(0, low << (numBits - 32));
+    }
+  }
+};
+
+
+/**
+ * Returns this Long with bits shifted to the right by the given amount.
+ * @param {number} numBits The number of bits by which to shift.
+ * @return {!goog.math.Long} This shifted to the right by the given amount.
+ */
+goog.math.Long.prototype.shiftRight = function(numBits) {
+  numBits &= 63;
+  if (numBits == 0) {
+    return this;
+  } else {
+    var high = this.high_;
+    if (numBits < 32) {
+      var low = this.low_;
+      return goog.math.Long.fromBits(
+          (low >>> numBits) | (high << (32 - numBits)),
+          high >> numBits);
+    } else {
+      return goog.math.Long.fromBits(
+          high >> (numBits - 32),
+          high >= 0 ? 0 : -1);
+    }
+  }
+};
+
+
+/**
+ * Returns this Long with bits shifted to the right by the given amount, with
+ * the new top bits matching the current sign bit.
+ * @param {number} numBits The number of bits by which to shift.
+ * @return {!goog.math.Long} This shifted to the right by the given amount, with
+ *     zeros placed into the new leading bits.
+ */
+goog.math.Long.prototype.shiftRightUnsigned = function(numBits) {
+  numBits &= 63;
+  if (numBits == 0) {
+    return this;
+  } else {
+    var high = this.high_;
+    if (numBits < 32) {
+      var low = this.low_;
+      return goog.math.Long.fromBits(
+          (low >>> numBits) | (high << (32 - numBits)),
+          high >>> numBits);
+    } else if (numBits == 32) {
+      return goog.math.Long.fromBits(high, 0);
+    } else {
+      return goog.math.Long.fromBits(high >>> (numBits - 32), 0);
+    }
+  }
+};
+/*
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * author Digital Primates
+ * copyright dash-if 2012
+ */ 
+ if(typeof(utils) == "undefined"){
+ 	var utils = {};
+ }
+ 
+ if(typeof(utils.Math) == "undefined"){
+ 	utils.Math = {};
+ }
+ 
+ utils.Math.to64BitNumber = function(low, high) {
+	var highNum, lowNum, expected;
+
+	highNum = new goog.math.Long(0, high);
+	lowNum = new goog.math.Long(low, 0);
+	expected = highNum.add(lowNum);
+
+	return expected.toNumber();
+}
+/*
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * author Digital Primates
+ * copyright dash-if 2012
+ */
+
+/*
+ * var parent,
+ *     child,
+ *     properties = [
+                    {
+                        name: 'profiles',
+                        merge: false
+                    }
+                ];
+ *
+ * parent = {};
+ * parent.name = "ParentNode";
+ * parent.isRoor = false;
+ * parent.isArray = false;
+ * parent.parent = null;
+ * parent.children = [];
+ * parent.properties = properties;
+ *
+ * child = {};
+ * child.name = "ChildNode";
+ * child.isRoor = false;
+ * child.isArray = true;
+ * child.parent = parent;
+ * child.children = null;
+ * child.properties = properties;
+ * parent.children.push(child);
+ *
+ */
+
+function ObjectIron(map) {
+
+    var lookup;
+
+    // create a list of top level items to search for
+    lookup = [];
+    for (i = 0, len = map.length; i < len; i += 1) {
+        if (map[i].isRoot) {
+            lookup.push("root");
+        } else {
+            lookup.push(map[i].name);
+        }
+    }
+
+    var mergeValues = function (parentItem, childItem) {
+            var name,
+                parentValue,
+                childValue;
+
+            if (parentItem === null || childItem === null) {
+                return;
+            }
+
+            for (name in parentItem) {
+                if (parentItem.hasOwnProperty(name)) {
+                    if (!childItem.hasOwnProperty(name)) {
+                        childItem[name] = parentItem[name];
+                    }
+                }
+            }
+        },
+
+        mapProperties = function (properties, parent, child) {
+            var i,
+                len,
+                property,
+                parentValue,
+                childValue;
+
+            if (properties === null || properties.length === 0) {
+                return;
+            }
+
+            for (i = 0, len = properties.length; i < len; i += 1) {
+                property = properties[i];
+
+                if (parent.hasOwnProperty(property.name)) {
+                    if (child.hasOwnProperty(property.name)) {
+                        // check to see if we should merge
+                        if (property.merge) {
+                           parentValue = parent[property.name];
+                           childValue = child[property.name];
+
+                            // complex objects; merge properties
+                            if (typeof parentValue === 'object' && typeof childValue === 'object') {
+                                mergeValues(parentValue, childValue);
+                            }
+                            // simple objects; merge them together
+                            else {
+                                if (property.mergeFunction != null) {
+                                    child[property.name] = property.mergeFunction(parentValue, childValue);
+                                } else {
+                                    child[property.name] = parentValue + childValue;
+                                }
+                            }
+                        }
+                    } else {
+                        // just add the property
+                        child[property.name] = parent[property.name];
+                    }
+                }
+            }
+        },
+
+        mapItem = function (obj, node) {
+            var item = obj,
+                i,
+                len,
+                v,
+                len2,
+                array,
+                childItem,
+                childNode,
+                property;
+
+            if (item.children === null || item.children.length === 0) {
+                return;
+            }
+
+            for (i = 0, len = item.children.length; i < len; i += 1) {
+                childItem = item.children[i];
+
+                if (node.hasOwnProperty(childItem.name)) {
+                    if (childItem.isArray) {
+                        array = node[childItem.name + "_asArray"];
+                        for (v = 0, len2 = array.length; v < len2; v += 1) {
+                            childNode = array[v];
+                            mapProperties(item.properties, node, childNode);
+                            mapItem(childItem, childNode);
+                        }
+                    } else {
+                        childNode = node[childItem.name];
+                        mapProperties(item.properties, node, childNode);
+                        mapItem(childItem, childNode);
+                    }
+                }
+            }
+        },
+
+        performMapping = function (source) {
+            var i,
+                len,
+                pi,
+                pp,
+                item,
+                node,
+                array;
+
+            if (source === null) {
+                return source;
+            }
+
+            if (typeof source !== 'object') {
+                return source;
+            }
+
+            // first look to see if anything cares about the root node
+            for (i = 0, len = lookup.length; i < len; i += 1) {
+                if (lookup[i] === "root") {
+                    item = map[i];
+                    node = source;
+                    mapItem(item, node);
+                }
+            }
+
+            // iterate over the objects and look for any of the items we care about
+            for (pp in source) {
+                if (source.hasOwnProperty(pp)) {
+                    pi = lookup.indexOf(pp);
+                    if (pi !== -1) {
+                        item = map[pi];
+
+                        if (item.isArray) {
+                            array = source[pp + "_asArray"];
+                            for (i = 0, len = array.length; i < len; i += 1) {
+                                node = array[i];
+                                mapItem(item, node);
+                            }
+                        } else {
+                            node = source[pp];
+                            mapItem(item, node);
+                        }
+                    }
+                    // now check this to see if he has any of the properties we care about
+                    performMapping(source[pp]);
+                }
+            }
+
+            return source;
+        };
+
+    return {
+        run: performMapping
+    };
+}
+// vim:ts=4:sts=4:sw=4:
+/*!
+ *
+ * Copyright 2009-2012 Kris Kowal under the terms of the MIT
+ * license found at http://github.com/kriskowal/q/raw/master/LICENSE
+ *
+ * With parts by Tyler Close
+ * Copyright 2007-2009 Tyler Close under the terms of the MIT X license found
+ * at http://www.opensource.org/licenses/mit-license.html
+ * Forked at ref_send.js version: 2009-05-11
+ *
+ * With parts by Mark Miller
+ * Copyright (C) 2011 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+(function (definition) {
+    // Turn off strict mode for this function so we can assign to global.Q
+    /*jshint strict: false*/
+    Q = definition();
+})(function () {
+"use strict";
+
+// All code after this point will be filtered from stack traces reported
+// by Q.
+var qStartingLine = captureLine();
+var qFileName;
+
+// shims
+
+// used for fallback in "allResolved"
+var noop = function () {};
+
+// use the fastest possible means to execute a task in a future turn
+// of the event loop.
+var nextTick;
+if (typeof process !== "undefined") {
+    // node
+    nextTick = process.nextTick;
+} else if (typeof setImmediate === "function") {
+    // In IE10, or use https://github.com/NobleJS/setImmediate
+    if (typeof window !== "undefined") {
+        nextTick = setImmediate.bind(window);
+    } else {
+        nextTick = setImmediate;
+    }
+} else {
+    (function () {
+        // linked list of tasks (single, with head node)
+        var head = {task: void 0, next: null}, tail = head,
+            maxPendingTicks = 2, pendingTicks = 0, queuedTasks = 0, usedTicks = 0,
+            requestTick;
+
+        function onTick() {
+            // In case of multiple tasks ensure at least one subsequent tick
+            // to handle remaining tasks in case one throws.
+            --pendingTicks;
+
+            if (++usedTicks >= maxPendingTicks) {
+                // Amortize latency after thrown exceptions.
+                usedTicks = 0;
+                maxPendingTicks *= 4; // fast grow!
+                var expectedTicks = queuedTasks && Math.min(queuedTasks - 1, maxPendingTicks);
+                while (pendingTicks < expectedTicks) {
+                    ++pendingTicks;
+                    requestTick();
+                }
+            }
+
+            while (queuedTasks) {
+                --queuedTasks; // decrement here to ensure it's never negative
+                head = head.next;
+                var task = head.task;
+                head.task = void 0;
+                task();
+            }
+
+            usedTicks = 0;
+        }
+
+        nextTick = function (task) {
+            tail = tail.next = {task: task, next: null};
+            if (pendingTicks < ++queuedTasks && pendingTicks < maxPendingTicks) {
+                ++pendingTicks;
+                requestTick();
+            }
+        };
+
+        if (typeof MessageChannel !== "undefined") {
+            // modern browsers
+            // http://www.nonblocking.io/2011/06/windownexttick.html
+            var channel = new MessageChannel();
+            channel.port1.onmessage = onTick;
+            requestTick = function () {
+                channel.port2.postMessage(0);
+            };
+
+        } else {
+            // old browsers
+            requestTick = function () {
+                setTimeout(onTick, 0);
+            };
+        }
+    })();
+}
+
+// Attempt to make generics safe in the face of downstream
+// modifications.
+// There is no situation where this is necessary.
+// If you need a security guarantee, these primordials need to be
+// deeply frozen anyway, and if you don’t need a security guarantee,
+// this is just plain paranoid.
+// However, this does have the nice side-effect of reducing the size
+// of the code by reducing x.call() to merely x(), eliminating many
+// hard-to-minify characters.
+// See Mark Miller’s explanation of what this does.
+// http://wiki.ecmascript.org/doku.php?id=conventions:safe_meta_programming
+function uncurryThis(f) {
+    var call = Function.call;
+    return function () {
+        return call.apply(f, arguments);
+    };
+}
+// This is equivalent, but slower:
+// uncurryThis = Function_bind.bind(Function_bind.call);
+// http://jsperf.com/uncurrythis
+
+var array_slice = uncurryThis(Array.prototype.slice);
+
+var array_reduce = uncurryThis(
+    Array.prototype.reduce || function (callback, basis) {
+        var index = 0,
+            length = this.length;
+        // concerning the initial value, if one is not provided
+        if (arguments.length === 1) {
+            // seek to the first value in the array, accounting
+            // for the possibility that is is a sparse array
+            do {
+                if (index in this) {
+                    basis = this[index++];
+                    break;
+                }
+                if (++index >= length) {
+                    throw new TypeError();
+                }
+            } while (1);
+        }
+        // reduce
+        for (; index < length; index++) {
+            // account for the possibility that the array is sparse
+            if (index in this) {
+                basis = callback(basis, this[index], index);
+            }
+        }
+        return basis;
+    }
+);
+
+var array_indexOf = uncurryThis(
+    Array.prototype.indexOf || function (value) {
+        // not a very good shim, but good enough for our one use of it
+        for (var i = 0; i < this.length; i++) {
+            if (this[i] === value) {
+                return i;
+            }
+        }
+        return -1;
+    }
+);
+
+var array_map = uncurryThis(
+    Array.prototype.map || function (callback, thisp) {
+        var self = this;
+        var collect = [];
+        array_reduce(self, function (undefined, value, index) {
+            collect.push(callback.call(thisp, value, index, self));
+        }, void 0);
+        return collect;
+    }
+);
+
+var object_create = Object.create || function (prototype) {
+    function Type() { }
+    Type.prototype = prototype;
+    return new Type();
+};
+
+var object_hasOwnProperty = uncurryThis(Object.prototype.hasOwnProperty);
+
+var object_keys = Object.keys || function (object) {
+    var keys = [];
+    for (var key in object) {
+        if (object_hasOwnProperty(object, key)) {
+            keys.push(key);
+        }
+    }
+    return keys;
+};
+
+var object_toString = uncurryThis(Object.prototype.toString);
+
+// generator related shims
+
+function isStopIteration(exception) {
+    return (
+        object_toString(exception) === "[object StopIteration]" ||
+        exception instanceof QReturnValue
+    );
+}
+
+var QReturnValue;
+if (typeof ReturnValue !== "undefined") {
+    QReturnValue = ReturnValue;
+} else {
+    QReturnValue = function (value) {
+        this.value = value;
+    };
+}
+
+// long stack traces
+
+Q.longStackJumpLimit = 1;
+
+var STACK_JUMP_SEPARATOR = "From previous event:";
+
+function makeStackTraceLong(error, promise) {
+    // If possible (that is, if in V8), transform the error stack
+    // trace by removing Node and Q cruft, then concatenating with
+    // the stack trace of the promise we are ``done``ing. See #57.
+    if (promise.stack &&
+        typeof error === "object" &&
+        error !== null &&
+        error.stack &&
+        error.stack.indexOf(STACK_JUMP_SEPARATOR) === -1
+    ) {
+        error.stack = filterStackString(error.stack) +
+            "\n" + STACK_JUMP_SEPARATOR + "\n" +
+            filterStackString(promise.stack);
+    }
+}
+
+function filterStackString(stackString) {
+    var lines = stackString.split("\n");
+    var desiredLines = [];
+    for (var i = 0; i < lines.length; ++i) {
+        var line = lines[i];
+
+        if (!isInternalFrame(line) && !isNodeFrame(line)) {
+            desiredLines.push(line);
+        }
+    }
+    return desiredLines.join("\n");
+}
+
+function isNodeFrame(stackLine) {
+    return stackLine.indexOf("(module.js:") !== -1 ||
+           stackLine.indexOf("(node.js:") !== -1;
+}
+
+function isInternalFrame(stackLine) {
+    var pieces = /at .+ \((.*):(\d+):\d+\)/.exec(stackLine);
+
+    if (!pieces) {
+        return false;
+    }
+
+    var fileName = pieces[1];
+    var lineNumber = pieces[2];
+
+    return fileName === qFileName &&
+        lineNumber >= qStartingLine &&
+        lineNumber <= qEndingLine;
+}
+
+// discover own file name and line number range for filtering stack
+// traces
+function captureLine() {
+    if (Error.captureStackTrace) {
+        var fileName, lineNumber;
+
+        var oldPrepareStackTrace = Error.prepareStackTrace;
+
+        Error.prepareStackTrace = function (error, frames) {
+            fileName = frames[1].getFileName();
+            lineNumber = frames[1].getLineNumber();
+        };
+
+        // teases call of temporary prepareStackTrace
+        // JSHint and Closure Compiler generate known warnings here
+        /*jshint expr: true */
+        new Error().stack;
+
+        Error.prepareStackTrace = oldPrepareStackTrace;
+        qFileName = fileName;
+        return lineNumber;
+    }
+}
+
+function deprecate(callback, name, alternative) {
+    return function () {
+        if (typeof console !== "undefined" && typeof console.warn === "function") {
+            console.warn(name + " is deprecated, use " + alternative + " instead.", new Error("").stack);
+        }
+        return callback.apply(callback, arguments);
+    };
+}
+
+// end of shims
+// beginning of real work
+
+/**
+ * Creates fulfilled promises from non-promises,
+ * Passes Q promises through,
+ * Coerces CommonJS/Promises/A+ promises to Q promises.
+ */
+function Q(value) {
+    return resolve(value);
+}
+
+/**
+ * Performs a task in a future turn of the event loop.
+ * @param {Function} task
+ */
+Q.nextTick = nextTick;
+
+/**
+ * Constructs a {promise, resolve} object.
+ *
+ * The resolver is a callback to invoke with a more resolved value for the
+ * promise. To fulfill the promise, invoke the resolver with any value that is
+ * not a function. To reject the promise, invoke the resolver with a rejection
+ * object. To put the promise in the same state as another promise, invoke the
+ * resolver with that other promise.
+ */
+Q.defer = defer;
+function defer() {
+    // if "pending" is an "Array", that indicates that the promise has not yet
+    // been resolved.  If it is "undefined", it has been resolved.  Each
+    // element of the pending array is itself an array of complete arguments to
+    // forward to the resolved promise.  We coerce the resolution value to a
+    // promise using the ref promise because it handles both fully
+    // resolved values and other promises gracefully.
+    var pending = [], progressListeners = [], value;
+
+    var deferred = object_create(defer.prototype);
+    var promise = object_create(makePromise.prototype);
+
+    promise.promiseDispatch = function (resolve, op, operands) {
+        var args = array_slice(arguments);
+        if (pending) {
+            pending.push(args);
+            if (op === "when" && operands[1]) { // progress operand
+                progressListeners.push(operands[1]);
+            }
+        } else {
+            nextTick(function () {
+                value.promiseDispatch.apply(value, args);
+            });
+        }
+    };
+
+    promise.valueOf = function () {
+        if (pending) {
+            return promise;
+        }
+        value = valueOf(value); // shorten chain
+        return value;
+    };
+
+    if (Error.captureStackTrace && Q.longStackJumpLimit > 0) {
+        Error.captureStackTrace(promise, defer);
+
+        // Reify the stack into a string by using the accessor; this prevents
+        // memory leaks as per GH-111. At the same time, cut off the first line;
+        // it's always just "[object Promise]\n", as per the `toString`.
+        promise.stack = promise.stack.substring(promise.stack.indexOf("\n") + 1);
+    }
+
+    function become(resolvedValue) {
+        if (!pending) {
+            return;
+        }
+        value = resolve(resolvedValue);
+        array_reduce(pending, function (undefined, pending) {
+            nextTick(function () {
+                value.promiseDispatch.apply(value, pending);
+            });
+        }, void 0);
+        pending = void 0;
+        progressListeners = void 0;
+    }
+
+    deferred.promise = promise;
+    deferred.resolve = become;
+    deferred.fulfill = function (value) {
+        become(fulfill(value));
+    };
+    deferred.reject = function (exception) {
+        become(reject(exception));
+    };
+    deferred.notify = function (progress) {
+        if (pending) {
+            array_reduce(progressListeners, function (undefined, progressListener) {
+                nextTick(function () {
+                    progressListener(progress);
+                });
+            }, void 0);
+        }
+    };
+
+    return deferred;
+}
+
+/**
+ * Creates a Node-style callback that will resolve or reject the deferred
+ * promise.
+ * @returns a nodeback
+ */
+defer.prototype.makeNodeResolver = function () {
+    var self = this;
+    return function (error, value) {
+        if (error) {
+            self.reject(error);
+        } else if (arguments.length > 2) {
+            self.resolve(array_slice(arguments, 1));
+        } else {
+            self.resolve(value);
+        }
+    };
+};
+
+/**
+ * @param makePromise {Function} a function that returns nothing and accepts
+ * the resolve, reject, and notify functions for a deferred.
+ * @returns a promise that may be resolved with the given resolve and reject
+ * functions, or rejected by a thrown exception in makePromise
+ */
+Q.promise = promise;
+function promise(makePromise) {
+    var deferred = defer();
+    fcall(
+        makePromise,
+        deferred.resolve,
+        deferred.reject,
+        deferred.notify
+    ).fail(deferred.reject);
+    return deferred.promise;
+}
+
+/**
+ * Constructs a Promise with a promise descriptor object and optional fallback
+ * function.  The descriptor contains methods like when(rejected), get(name),
+ * put(name, value), post(name, args), and delete(name), which all
+ * return either a value, a promise for a value, or a rejection.  The fallback
+ * accepts the operation name, a resolver, and any further arguments that would
+ * have been forwarded to the appropriate method above had a method been
+ * provided with the proper name.  The API makes no guarantees about the nature
+ * of the returned object, apart from that it is usable whereever promises are
+ * bought and sold.
+ */
+Q.makePromise = makePromise;
+function makePromise(descriptor, fallback, valueOf, exception, isException) {
+    if (fallback === void 0) {
+        fallback = function (op) {
+            return reject(new Error("Promise does not support operation: " + op));
+        };
+    }
+
+    var promise = object_create(makePromise.prototype);
+
+    promise.promiseDispatch = function (resolve, op, args) {
+        var result;
+        try {
+            if (descriptor[op]) {
+                result = descriptor[op].apply(promise, args);
+            } else {
+                result = fallback.call(promise, op, args);
+            }
+        } catch (exception) {
+            result = reject(exception);
+        }
+        if (resolve) {
+            resolve(result);
+        }
+    };
+
+    if (valueOf) {
+        promise.valueOf = valueOf;
+    }
+
+    if (isException) {
+        promise.exception = exception;
+    }
+
+    return promise;
+}
+
+// provide thenables, CommonJS/Promises/A
+makePromise.prototype.then = function (fulfilled, rejected, progressed) {
+    return when(this, fulfilled, rejected, progressed);
+};
+
+makePromise.prototype.thenResolve = function (value) {
+    return when(this, function () { return value; });
+};
+
+// Chainable methods
+array_reduce(
+    [
+        "isFulfilled", "isRejected", "isPending",
+        "dispatch",
+        "when", "spread",
+        "get", "put", "set", "del", "delete",
+        "post", "send", "invoke",
+        "keys",
+        "fapply", "fcall", "fbind",
+        "all", "allResolved",
+        "timeout", "delay",
+        "catch", "finally", "fail", "fin", "progress", "done",
+        "nfcall", "nfapply", "nfbind", "denodeify", "nbind",
+        "ncall", "napply", "nbind",
+        "npost", "nsend", "ninvoke",
+        "nodeify"
+    ],
+    function (undefined, name) {
+        makePromise.prototype[name] = function () {
+            return Q[name].apply(
+                Q,
+                [this].concat(array_slice(arguments))
+            );
+        };
+    },
+    void 0
+);
+
+makePromise.prototype.toSource = function () {
+    return this.toString();
+};
+
+makePromise.prototype.toString = function () {
+    return "[object Promise]";
+};
+
+/**
+ * If an object is not a promise, it is as "near" as possible.
+ * If a promise is rejected, it is as "near" as possible too.
+ * If it’s a fulfilled promise, the fulfillment value is nearer.
+ * If it’s a deferred promise and the deferred has been resolved, the
+ * resolution is "nearer".
+ * @param object
+ * @returns most resolved (nearest) form of the object
+ */
+Q.nearer = valueOf;
+function valueOf(value) {
+    if (isPromise(value)) {
+        return value.valueOf();
+    }
+    return value;
+}
+
+/**
+ * @returns whether the given object is a promise.
+ * Otherwise it is a fulfilled value.
+ */
+Q.isPromise = isPromise;
+function isPromise(object) {
+    return object && typeof object.promiseDispatch === "function";
+}
+
+Q.isPromiseAlike = isPromiseAlike;
+function isPromiseAlike(object) {
+    return object && typeof object.then === "function";
+}
+
+/**
+ * @returns whether the given object is a pending promise, meaning not
+ * fulfilled or rejected.
+ */
+Q.isPending = isPending;
+function isPending(object) {
+    return !isFulfilled(object) && !isRejected(object);
+}
+
+/**
+ * @returns whether the given object is a value or fulfilled
+ * promise.
+ */
+Q.isFulfilled = isFulfilled;
+function isFulfilled(object) {
+    return !isPromiseAlike(valueOf(object));
+}
+
+/**
+ * @returns whether the given object is a rejected promise.
+ */
+Q.isRejected = isRejected;
+function isRejected(object) {
+    object = valueOf(object);
+    return isPromise(object) && 'exception' in object;
+}
+
+var rejections = [];
+var errors = [];
+var errorsDisplayed;
+function displayErrors() {
+    
+    /* 
+      HACK MGA :  remove !window.Touch in the condition
+      because window.Touch is defined in Chrome, so errors are never displayed... 
+    */
+
+    if (
+        !errorsDisplayed &&
+        typeof window !== "undefined" &&
+        window.console
+    ) {
+        // This promise library consumes exceptions thrown in handlers so
+        // they can be handled by a subsequent promise.  The rejected
+        // promises get added to this array when they are created, and
+        // removed when they are handled.
+
+        //HACK MGA : change log level (log to error)
+        console.error("Should be empty:", errors);
+    }
+    // HACK MGA : remove this affectation to display ALL errors
+    // errorsDisplayed = true;
+}
+
+// Show unhandled rejection if Node exits without handling an outstanding
+// rejection.  (Note that Browserify presently produces a process global
+// without the Emitter on interface)
+if (typeof process !== "undefined" && process.on) {
+    process.on("exit", function () {
+        for (var i = 0; i < errors.length; i++) {
+            var error = errors[i];
+            if (error && typeof error.stack !== "undefined") {
+                console.warn("Unhandled rejected promise:", error.stack);
+            } else {
+                console.warn("Unhandled rejected promise (no stack):", error);
+            }
+        }
+    });
+}
+
+/**
+ * Constructs a rejected promise.
+ * @param exception value describing the failure
+ */
+Q.reject = reject;
+function reject(exception) {
+    var rejection = makePromise({
+        "when": function (rejected) {
+            // note that the error has been handled
+            if (rejected) {
+                var at = array_indexOf(rejections, this);
+                if (at !== -1) {
+                    errors.splice(at, 1);
+                    rejections.splice(at, 1);
+                }
+            }
+            return rejected ? rejected(exception) : this;
+        }
+    }, function fallback() {
+        return reject(exception);
+    }, function valueOf() {
+        return this;
+    }, exception, true);
+    rejections.push(rejection);
+    errors.push(exception);
+    // note that the error has not been handled
+    // HACK MGA : change call order because in disaplyErrors, we use errors...
+    //displayErrors();
+    return rejection;
+}
+
+/**
+ * Constructs a fulfilled promise for an immediate reference.
+ * @param value immediate reference
+ */
+Q.fulfill = fulfill;
+function fulfill(object) {
+    return makePromise({
+        "when": function () {
+            return object;
+        },
+        "get": function (name) {
+            return object[name];
+        },
+        "set": function (name, value) {
+            object[name] = value;
+        },
+        "delete": function (name) {
+            delete object[name];
+        },
+        "post": function (name, args) {
+            // Mark Miller proposes that post with no name should apply a
+            // promised function.
+            if (name == null) { // iff name is null or undefined
+                return object.apply(void 0, args);
+            } else {
+                return object[name].apply(object, args);
+            }
+        },
+        "apply": function (thisP, args) {
+            return object.apply(thisP, args);
+        },
+        "keys": function () {
+            return object_keys(object);
+        }
+    }, void 0, function valueOf() {
+        return object;
+    });
+}
+
+/**
+ * Constructs a promise for an immediate reference, passes promises through, or
+ * coerces promises from different systems.
+ * @param value immediate reference or promise
+ */
+Q.resolve = resolve;
+function resolve(value) {
+    // If the object is already a Promise, return it directly.  This enables
+    // the resolve function to both be used to created references from objects,
+    // but to tolerably coerce non-promises to promises.
+    if (isPromise(value)) {
+        return value;
+    }
+    // In order to break infinite recursion or loops between `then` and
+    // `resolve`, it is necessary to attempt to extract fulfilled values
+    // out of foreign promise implementations before attempting to wrap
+    // them as unresolved promises.  It is my hope that other
+    // implementations will implement `valueOf` to synchronously extract
+    // the fulfillment value from their fulfilled promises.  If the
+    // other promise library does not implement `valueOf`, the
+    // implementations on primordial prototypes are harmless.
+    value = valueOf(value);
+    // assimilate thenables, CommonJS/Promises/A+
+    if (isPromiseAlike(value)) {
+        return coerce(value);
+    } else {
+        return fulfill(value);
+    }
+}
+
+/**
+ * Converts thenables to Q promises.
+ * @param promise thenable promise
+ * @returns a Q promise
+ */
+function coerce(promise) {
+    var deferred = defer();
+    nextTick(function () {
+        try {
+            promise.then(deferred.resolve, deferred.reject, deferred.notify);
+        } catch (exception) {
+            deferred.reject(exception);
+        }
+    });
+    return deferred.promise;
+}
+
+/**
+ * Annotates an object such that it will never be
+ * transferred away from this process over any promise
+ * communication channel.
+ * @param object
+ * @returns promise a wrapping of that object that
+ * additionally responds to the "isDef" message
+ * without a rejection.
+ */
+Q.master = master;
+function master(object) {
+    return makePromise({
+        "isDef": function () {}
+    }, function fallback(op, args) {
+        return dispatch(object, op, args);
+    }, function () {
+        return valueOf(object);
+    });
+}
+
+/**
+ * Registers an observer on a promise.
+ *
+ * Guarantees:
+ *
+ * 1. that fulfilled and rejected will be called only once.
+ * 2. that either the fulfilled callback or the rejected callback will be
+ *    called, but not both.
+ * 3. that fulfilled and rejected will not be called in this turn.
+ *
+ * @param value      promise or immediate reference to observe
+ * @param fulfilled  function to be called with the fulfilled value
+ * @param rejected   function to be called with the rejection exception
+ * @param progressed function to be called on any progress notifications
+ * @return promise for the return value from the invoked callback
+ */
+Q.when = when;
+function when(value, fulfilled, rejected, progressed) {
+    var deferred = defer();
+    var done = false;   // ensure the untrusted promise makes at most a
+                        // single call to one of the callbacks
+
+    function _fulfilled(value) {
+        try {
+            return typeof fulfilled === "function" ? fulfilled(value) : value;
+        } catch (exception) {
+            return reject(exception);
+        }
+    }
+
+    function _rejected(exception) {
+        if (typeof rejected === "function") {
+            makeStackTraceLong(exception, resolvedValue);
+            try {
+                return rejected(exception);
+            } catch (newException) {
+                return reject(newException);
+            }
+        }
+        return reject(exception);
+    }
+
+    function _progressed(value) {
+        return typeof progressed === "function" ? progressed(value) : value;
+    }
+
+    var resolvedValue = resolve(value);
+    nextTick(function () {
+        resolvedValue.promiseDispatch(function (value) {
+            if (done) {
+                return;
+            }
+            done = true;
+
+            deferred.resolve(_fulfilled(value));
+        }, "when", [function (exception) {
+            if (done) {
+                return;
+            }
+            done = true;
+
+            deferred.resolve(_rejected(exception));
+        }]);
+    });
+
+    // Progress propagator need to be attached in the current tick.
+    resolvedValue.promiseDispatch(void 0, "when", [void 0, function (value) {
+        var newValue;
+        var threw = false;
+        try {
+            newValue = _progressed(value);
+        } catch (e) {
+            threw = true;
+            if (Q.onerror) {
+                Q.onerror(e);
+            } else {
+                throw e;
+            }
+        }
+
+        if (!threw) {
+            deferred.notify(newValue);
+        }
+    }]);
+
+    return deferred.promise;
+}
+
+/**
+ * Spreads the values of a promised array of arguments into the
+ * fulfillment callback.
+ * @param fulfilled callback that receives variadic arguments from the
+ * promised array
+ * @param rejected callback that receives the exception if the promise
+ * is rejected.
+ * @returns a promise for the return value or thrown exception of
+ * either callback.
+ */
+Q.spread = spread;
+function spread(promise, fulfilled, rejected) {
+    return when(promise, function (valuesOrPromises) {
+        return all(valuesOrPromises).then(function (values) {
+            return fulfilled.apply(void 0, values);
+        }, rejected);
+    }, rejected);
+}
+
+/**
+ * The async function is a decorator for generator functions, turning
+ * them into asynchronous generators.  This presently only works in
+ * Firefox/Spidermonkey, however, this code does not cause syntax
+ * errors in older engines.  This code should continue to work and
+ * will in fact improve over time as the language improves.
+ *
+ * Decorates a generator function such that:
+ *  - it may yield promises
+ *  - execution will continue when that promise is fulfilled
+ *  - the value of the yield expression will be the fulfilled value
+ *  - it returns a promise for the return value (when the generator
+ *    stops iterating)
+ *  - the decorated function returns a promise for the return value
+ *    of the generator or the first rejected promise among those
+ *    yielded.
+ *  - if an error is thrown in the generator, it propagates through
+ *    every following yield until it is caught, or until it escapes
+ *    the generator function altogether, and is translated into a
+ *    rejection for the promise returned by the decorated generator.
+ *  - in present implementations of generators, when a generator
+ *    function is complete, it throws ``StopIteration``, ``return`` is
+ *    a syntax error in the presence of ``yield``, so there is no
+ *    observable return value. There is a proposal[1] to add support
+ *    for ``return``, which would permit the value to be carried by a
+ *    ``StopIteration`` instance, in which case it would fulfill the
+ *    promise returned by the asynchronous generator.  This can be
+ *    emulated today by throwing StopIteration explicitly with a value
+ *    property.
+ *
+ *  [1]: http://wiki.ecmascript.org/doku.php?id=strawman:async_functions#reference_implementation
+ *
+ */
+Q.async = async;
+function async(makeGenerator) {
+    return function () {
+        // when verb is "send", arg is a value
+        // when verb is "throw", arg is an exception
+        function continuer(verb, arg) {
+            var result;
+            try {
+                result = generator[verb](arg);
+            } catch (exception) {
+                if (isStopIteration(exception)) {
+                    return exception.value;
+                } else {
+                    return reject(exception);
+                }
+            }
+            return when(result, callback, errback);
+        }
+        var generator = makeGenerator.apply(this, arguments);
+        var callback = continuer.bind(continuer, "send");
+        var errback = continuer.bind(continuer, "throw");
+        return callback();
+    };
+}
+
+/**
+ * Throws a ReturnValue exception to stop an asynchronous generator.
+ * Only useful presently in Firefox/SpiderMonkey since generators are
+ * implemented.
+ * @param value the return value for the surrounding generator
+ * @throws ReturnValue exception with the value.
+ * @example
+ * Q.async(function () {
+ *      var foo = yield getFooPromise();
+ *      var bar = yield getBarPromise();
+ *      Q.return(foo + bar);
+ * })
+ */
+Q['return'] = _return;
+function _return(value) {
+    throw new QReturnValue(value);
+}
+
+/**
+ * The promised function decorator ensures that any promise arguments
+ * are resolved and passed as values (`this` is also resolved and passed
+ * as a value).  It will also ensure that the result of a function is
+ * always a promise.
+ *
+ * @example
+ * var add = Q.promised(function (a, b) {
+ *     return a + b;
+ * });
+ * add(Q.resolve(a), Q.resolve(B));
+ *
+ * @param {function} callback The function to decorate
+ * @returns {function} a function that has been decorated.
+ */
+Q.promised = promised;
+function promised(callback) {
+    return function () {
+        return spread([this, all(arguments)], function (self, args) {
+            return callback.apply(self, args);
+        });
+    };
+}
+
+/**
+ * sends a message to a value in a future turn
+ * @param object* the recipient
+ * @param op the name of the message operation, e.g., "when",
+ * @param args further arguments to be forwarded to the operation
+ * @returns result {Promise} a promise for the result of the operation
+ */
+Q.dispatch = dispatch;
+function dispatch(object, op, args) {
+    var deferred = defer();
+    nextTick(function () {
+        resolve(object).promiseDispatch(deferred.resolve, op, args);
+    });
+    return deferred.promise;
+}
+
+/**
+ * Constructs a promise method that can be used to safely observe resolution of
+ * a promise for an arbitrarily named method like "propfind" in a future turn.
+ *
+ * "dispatcher" constructs methods like "get(promise, name)" and "put(promise)".
+ */
+Q.dispatcher = dispatcher;
+function dispatcher(op) {
+    return function (object) {
+        var args = array_slice(arguments, 1);
+        return dispatch(object, op, args);
+    };
+}
+
+/**
+ * Gets the value of a property in a future turn.
+ * @param object    promise or immediate reference for target object
+ * @param name      name of property to get
+ * @return promise for the property value
+ */
+Q.get = dispatcher("get");
+
+/**
+ * Sets the value of a property in a future turn.
+ * @param object    promise or immediate reference for object object
+ * @param name      name of property to set
+ * @param value     new value of property
+ * @return promise for the return value
+ */
+Q.set = dispatcher("set");
+
+/**
+ * Deletes a property in a future turn.
+ * @param object    promise or immediate reference for target object
+ * @param name      name of property to delete
+ * @return promise for the return value
+ */
+Q["delete"] = // XXX experimental
+Q.del = dispatcher("delete");
+
+/**
+ * Invokes a method in a future turn.
+ * @param object    promise or immediate reference for target object
+ * @param name      name of method to invoke
+ * @param value     a value to post, typically an array of
+ *                  invocation arguments for promises that
+ *                  are ultimately backed with `resolve` values,
+ *                  as opposed to those backed with URLs
+ *                  wherein the posted value can be any
+ *                  JSON serializable object.
+ * @return promise for the return value
+ */
+// bound locally because it is used by other methods
+var post = Q.post = dispatcher("post");
+
+/**
+ * Invokes a method in a future turn.
+ * @param object    promise or immediate reference for target object
+ * @param name      name of method to invoke
+ * @param ...args   array of invocation arguments
+ * @return promise for the return value
+ */
+Q.send = send;
+Q.invoke = send; // synonyms
+function send(value, name) {
+    var args = array_slice(arguments, 2);
+    return post(value, name, args);
+}
+
+/**
+ * Applies the promised function in a future turn.
+ * @param object    promise or immediate reference for target function
+ * @param args      array of application arguments
+ */
+Q.fapply = fapply;
+function fapply(value, args) {
+    return dispatch(value, "apply", [void 0, args]);
+}
+
+/**
+ * Calls the promised function in a future turn.
+ * @param object    promise or immediate reference for target function
+ * @param ...args   array of application arguments
+ */
+Q["try"] = fcall; // XXX experimental
+Q.fcall = fcall;
+function fcall(value) {
+    var args = array_slice(arguments, 1);
+    return fapply(value, args);
+}
+
+/**
+ * Binds the promised function, transforming return values into a fulfilled
+ * promise and thrown errors into a rejected one.
+ * @param object    promise or immediate reference for target function
+ * @param ...args   array of application arguments
+ */
+Q.fbind = fbind;
+function fbind(value) {
+    var args = array_slice(arguments, 1);
+    return function fbound() {
+        var allArgs = args.concat(array_slice(arguments));
+        return dispatch(value, "apply", [this, allArgs]);
+    };
+}
+
+/**
+ * Requests the names of the owned properties of a promised
+ * object in a future turn.
+ * @param object    promise or immediate reference for target object
+ * @return promise for the keys of the eventually resolved object
+ */
+Q.keys = dispatcher("keys");
+
+/**
+ * Turns an array of promises into a promise for an array.  If any of
+ * the promises gets rejected, the whole array is rejected immediately.
+ * @param {Array*} an array (or promise for an array) of values (or
+ * promises for values)
+ * @returns a promise for an array of the corresponding values
+ */
+// By Mark Miller
+// http://wiki.ecmascript.org/doku.php?id=strawman:concurrency&rev=1308776521#allfulfilled
+Q.all = all;
+function all(promises) {
+    return when(promises, function (promises) {
+        var countDown = promises.length;
+        if (countDown === 0) {
+            return resolve(promises);
+        }
+        var deferred = defer();
+        array_reduce(promises, function (undefined, promise, index) {
+            if (isFulfilled(promise)) {
+                promises[index] = valueOf(promise);
+                if (--countDown === 0) {
+                    deferred.resolve(promises);
+                }
+            } else {
+                when(promise, function (value) {
+                    promises[index] = value;
+                    if (--countDown === 0) {
+                        deferred.resolve(promises);
+                    }
+                })
+                .fail(deferred.reject);
+            }
+        }, void 0);
+        return deferred.promise;
+    });
+}
+
+/**
+ * Waits for all promises to be resolved, either fulfilled or
+ * rejected.  This is distinct from `all` since that would stop
+ * waiting at the first rejection.  The promise returned by
+ * `allResolved` will never be rejected.
+ * @param promises a promise for an array (or an array) of promises
+ * (or values)
+ * @return a promise for an array of promises
+ */
+Q.allResolved = allResolved;
+function allResolved(promises) {
+    return when(promises, function (promises) {
+        promises = array_map(promises, resolve);
+        return when(all(array_map(promises, function (promise) {
+            return when(promise, noop, noop);
+        })), function () {
+            return promises;
+        });
+    });
+}
+
+/**
+ * Captures the failure of a promise, giving an oportunity to recover
+ * with a callback.  If the given promise is fulfilled, the returned
+ * promise is fulfilled.
+ * @param {Any*} promise for something
+ * @param {Function} callback to fulfill the returned promise if the
+ * given promise is rejected
+ * @returns a promise for the return value of the callback
+ */
+Q["catch"] = // XXX experimental
+Q.fail = fail;
+function fail(promise, rejected) {
+    return when(promise, void 0, rejected);
+}
+
+/**
+ * Attaches a listener that can respond to progress notifications from a
+ * promise's originating deferred. This listener receives the exact arguments
+ * passed to ``deferred.notify``.
+ * @param {Any*} promise for something
+ * @param {Function} callback to receive any progress notifications
+ * @returns the given promise, unchanged
+ */
+Q.progress = progress;
+function progress(promise, progressed) {
+    return when(promise, void 0, void 0, progressed);
+}
+
+/**
+ * Provides an opportunity to observe the rejection of a promise,
+ * regardless of whether the promise is fulfilled or rejected.  Forwards
+ * the resolution to the returned promise when the callback is done.
+ * The callback can return a promise to defer completion.
+ * @param {Any*} promise
+ * @param {Function} callback to observe the resolution of the given
+ * promise, takes no arguments.
+ * @returns a promise for the resolution of the given promise when
+ * ``fin`` is done.
+ */
+Q["finally"] = // XXX experimental
+Q.fin = fin;
+function fin(promise, callback) {
+    return when(promise, function (value) {
+        return when(callback(), function () {
+            return value;
+        });
+    }, function (exception) {
+        return when(callback(), function () {
+            return reject(exception);
+        });
+    });
+}
+
+/**
+ * Terminates a chain of promises, forcing rejections to be
+ * thrown as exceptions.
+ * @param {Any*} promise at the end of a chain of promises
+ * @returns nothing
+ */
+Q.done = done;
+function done(promise, fulfilled, rejected, progress) {
+    var onUnhandledError = function (error) {
+        // forward to a future turn so that ``when``
+        // does not catch it and turn it into a rejection.
+        nextTick(function () {
+            makeStackTraceLong(error, promise);
+
+            if (Q.onerror) {
+                Q.onerror(error);
+            } else {
+                throw error;
+            }
+        });
+    };
+
+    // Avoid unnecessary `nextTick`ing via an unnecessary `when`.
+    var promiseToHandle = fulfilled || rejected || progress ?
+        when(promise, fulfilled, rejected, progress) :
+        promise;
+
+    if (typeof process === "object" && process && process.domain) {
+        onUnhandledError = process.domain.bind(onUnhandledError);
+    }
+    fail(promiseToHandle, onUnhandledError);
+}
+
+/**
+ * Causes a promise to be rejected if it does not get fulfilled before
+ * some milliseconds time out.
+ * @param {Any*} promise
+ * @param {Number} milliseconds timeout
+ * @returns a promise for the resolution of the given promise if it is
+ * fulfilled before the timeout, otherwise rejected.
+ */
+Q.timeout = timeout;
+function timeout(promise, ms) {
+    var deferred = defer();
+    var timeoutId = setTimeout(function () {
+        deferred.reject(new Error("Timed out after " + ms + " ms"));
+    }, ms);
+
+    when(promise, function (value) {
+        clearTimeout(timeoutId);
+        deferred.resolve(value);
+    }, function (exception) {
+        clearTimeout(timeoutId);
+        deferred.reject(exception);
+    });
+
+    return deferred.promise;
+}
+
+/**
+ * Returns a promise for the given value (or promised value) after some
+ * milliseconds.
+ * @param {Any*} promise
+ * @param {Number} milliseconds
+ * @returns a promise for the resolution of the given promise after some
+ * time has elapsed.
+ */
+Q.delay = delay;
+function delay(promise, timeout) {
+    if (timeout === void 0) {
+        timeout = promise;
+        promise = void 0;
+    }
+    var deferred = defer();
+    setTimeout(function () {
+        deferred.resolve(promise);
+    }, timeout);
+    return deferred.promise;
+}
+
+/**
+ * Passes a continuation to a Node function, which is called with the given
+ * arguments provided as an array, and returns a promise.
+ *
+ *      Q.nfapply(FS.readFile, [__filename])
+ *      .then(function (content) {
+ *      })
+ *
+ */
+Q.nfapply = nfapply;
+function nfapply(callback, args) {
+    var nodeArgs = array_slice(args);
+    var deferred = defer();
+    nodeArgs.push(deferred.makeNodeResolver());
+
+    fapply(callback, nodeArgs).fail(deferred.reject);
+    return deferred.promise;
+}
+
+/**
+ * Passes a continuation to a Node function, which is called with the given
+ * arguments provided individually, and returns a promise.
+ *
+ *      Q.nfcall(FS.readFile, __filename)
+ *      .then(function (content) {
+ *      })
+ *
+ */
+Q.nfcall = nfcall;
+function nfcall(callback/*, ...args */) {
+    var nodeArgs = array_slice(arguments, 1);
+    var deferred = defer();
+    nodeArgs.push(deferred.makeNodeResolver());
+
+    fapply(callback, nodeArgs).fail(deferred.reject);
+    return deferred.promise;
+}
+
+/**
+ * Wraps a NodeJS continuation passing function and returns an equivalent
+ * version that returns a promise.
+ *
+ *      Q.nfbind(FS.readFile, __filename)("utf-8")
+ *      .then(console.log)
+ *      .done()
+ *
+ */
+Q.nfbind = nfbind;
+Q.denodeify = Q.nfbind; // synonyms
+function nfbind(callback/*, ...args */) {
+    var baseArgs = array_slice(arguments, 1);
+    return function () {
+        var nodeArgs = baseArgs.concat(array_slice(arguments));
+        var deferred = defer();
+        nodeArgs.push(deferred.makeNodeResolver());
+
+        fapply(callback, nodeArgs).fail(deferred.reject);
+        return deferred.promise;
+    };
+}
+
+Q.nbind = nbind;
+function nbind(callback/*, ... args*/) {
+    var baseArgs = array_slice(arguments, 1);
+    return function () {
+        var nodeArgs = baseArgs.concat(array_slice(arguments));
+        var deferred = defer();
+        nodeArgs.push(deferred.makeNodeResolver());
+
+        var thisArg = this;
+        function bound() {
+            return callback.apply(thisArg, arguments);
+        }
+
+        fapply(bound, nodeArgs).fail(deferred.reject);
+        return deferred.promise;
+    };
+}
+
+/**
+ * Calls a method of a Node-style object that accepts a Node-style
+ * callback with a given array of arguments, plus a provided callback.
+ * @param object an object that has the named method
+ * @param {String} name name of the method of object
+ * @param {Array} args arguments to pass to the method; the callback
+ * will be provided by Q and appended to these arguments.
+ * @returns a promise for the value or error
+ */
+Q.npost = npost;
+function npost(object, name, args) {
+    var nodeArgs = array_slice(args || []);
+    var deferred = defer();
+    nodeArgs.push(deferred.makeNodeResolver());
+
+    post(object, name, nodeArgs).fail(deferred.reject);
+    return deferred.promise;
+}
+
+/**
+ * Calls a method of a Node-style object that accepts a Node-style
+ * callback, forwarding the given variadic arguments, plus a provided
+ * callback argument.
+ * @param object an object that has the named method
+ * @param {String} name name of the method of object
+ * @param ...args arguments to pass to the method; the callback will
+ * be provided by Q and appended to these arguments.
+ * @returns a promise for the value or error
+ */
+Q.nsend = nsend;
+Q.ninvoke = Q.nsend; // synonyms
+function nsend(object, name /*, ...args*/) {
+    var nodeArgs = array_slice(arguments, 2);
+    var deferred = defer();
+    nodeArgs.push(deferred.makeNodeResolver());
+    post(object, name, nodeArgs).fail(deferred.reject);
+    return deferred.promise;
+}
+
+Q.nodeify = nodeify;
+function nodeify(promise, nodeback) {
+    if (nodeback) {
+        promise.then(function (value) {
+            nextTick(function () {
+                nodeback(null, value);
+            });
+        }, function (error) {
+            nextTick(function () {
+                nodeback(error);
+            });
+        });
+    } else {
+        return promise;
+    }
+}
+
+// All code before this point will be filtered from stack traces.
+var qEndingLine = captureLine();
+
+return Q;
+
+});
+
+/*
+ Copyright 2011 Abdulla Abdurakhmanov
+ Original sources are available at https://code.google.com/p/x2js/
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+ http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+ */
+
+function X2JS(matchers, attrPrefix, ignoreRoot) {
+    if (attrPrefix === null || attrPrefix === undefined) {
+        attrPrefix = "_";
+    }
+    
+    if (ignoreRoot === null || ignoreRoot === undefined) {
+        ignoreRoot = false;
+    }
+    
+	var VERSION = "1.0.11";
+	var escapeMode = false;
+
+	var DOMNodeTypes = {
+		ELEMENT_NODE 	   : 1,
+		TEXT_NODE    	   : 3,
+		CDATA_SECTION_NODE : 4,
+		COMMENT_NODE       : 8,
+		DOCUMENT_NODE 	   : 9
+	};
+	
+	function getNodeLocalName( node ) {
+		var nodeLocalName = node.localName;			
+		if(nodeLocalName == null) // Yeah, this is IE!! 
+			nodeLocalName = node.baseName;
+		if(nodeLocalName == null || nodeLocalName=="") // =="" is IE too
+			nodeLocalName = node.nodeName;
+		return nodeLocalName;
+	}
+	
+	function getNodePrefix(node) {
+		return node.prefix;
+	}
+		
+	function escapeXmlChars(str) {
+		if(typeof(str) == "string")
+			return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g, '&#x2F;');
+		else
+			return str;
+	}
+
+	function unescapeXmlChars(str) {
+		return str.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#x27;/g, "'").replace(/&#x2F;/g, '\/')
+	}	
+
+	function parseDOMChildren( node ) {
+		if(node.nodeType == DOMNodeTypes.DOCUMENT_NODE) {
+			var result,
+			    child = node.firstChild,
+			    i,
+			    len; 
+			
+			// get the first node that isn't a comment
+			for(i = 0, len = node.childNodes.length; i < len; i += 1) {
+			   if (node.childNodes[i].nodeType !== DOMNodeTypes.COMMENT_NODE) {
+			       child = node.childNodes[i];
+			       break;
+			   } 
+			}
+			
+			if ( ignoreRoot ) {
+			    result = parseDOMChildren(child);
+			} else {
+			    result = {};
+			    var childName = getNodeLocalName(child);
+                result[childName] = parseDOMChildren(child);
+			}
+			
+			return result;
+		}
+		else
+		if(node.nodeType == DOMNodeTypes.ELEMENT_NODE) {
+			var result = new Object;
+			result.__cnt=0;
+			
+			var nodeChildren = node.childNodes;
+			
+			// Children nodes
+			for(var cidx=0; cidx <nodeChildren.length; cidx++) {
+				var child = nodeChildren.item(cidx); // nodeChildren[cidx];
+				var childName = getNodeLocalName(child);
+				
+				result.__cnt++;
+				if(result[childName] == null) {
+					result[childName] = parseDOMChildren(child);
+					result[childName+"_asArray"] = new Array(1);
+					result[childName+"_asArray"][0] = result[childName];
+				}
+				else {
+					if(result[childName] != null) {
+						if( !(result[childName] instanceof Array)) {
+							var tmpObj = result[childName];
+							result[childName] = new Array();
+							result[childName][0] = tmpObj;
+							
+							result[childName+"_asArray"] = result[childName];
+						}
+					}
+					var aridx = 0;
+					while(result[childName][aridx]!=null) aridx++;
+					(result[childName])[aridx] = parseDOMChildren(child);
+				}			
+			}
+			
+			// Attributes
+			for(var aidx=0; aidx <node.attributes.length; aidx++) {
+				var attr = node.attributes.item(aidx); // [aidx];
+				result.__cnt++;
+				
+				var value2 = attr.value;
+				for(var m=0, ml=matchers.length; m < ml; m++) {
+				    var matchobj = matchers[m];
+				    if (matchobj.test.call(this, attr.value))
+				        value2 = matchobj.converter.call(this, attr.value);
+				}
+				
+				result[attrPrefix+attr.name]=value2;
+			}
+			
+			// Node namespace prefix
+			var nodePrefix = getNodePrefix(node);
+			if(nodePrefix!=null && nodePrefix!="") {
+				result.__cnt++;
+				result.__prefix=nodePrefix;
+			}
+			
+			if( result.__cnt == 1 && result["#text"]!=null  ) {
+				result = result["#text"];
+			} 
+			
+			if(result["#text"]!=null) {
+				result.__text = result["#text"];
+				if(escapeMode)
+					result.__text = unescapeXmlChars(result.__text)
+				delete result["#text"];
+				delete result["#text_asArray"];
+			}
+			if(result["#cdata-section"]!=null) {
+				result.__cdata = result["#cdata-section"];
+				delete result["#cdata-section"];
+				delete result["#cdata-section_asArray"];
+			}
+			
+			if(result.__text!=null || result.__cdata!=null) {
+				result.toString = function() {
+					return (this.__text!=null? this.__text:'')+( this.__cdata!=null ? this.__cdata:'');
+				}
+			}
+			return result;
+		}
+		else
+		if(node.nodeType == DOMNodeTypes.TEXT_NODE || node.nodeType == DOMNodeTypes.CDATA_SECTION_NODE) {
+			return node.nodeValue;
+		}	
+		else
+		if(node.nodeType == DOMNodeTypes.COMMENT_NODE) {
+		    return null;
+		}
+	}
+	
+	function startTag(jsonObj, element, attrList, closed) {
+		var resultStr = "<"+ ( (jsonObj!=null && jsonObj.__prefix!=null)? (jsonObj.__prefix+":"):"") + element;
+		if(attrList!=null) {
+			for(var aidx = 0; aidx < attrList.length; aidx++) {
+				var attrName = attrList[aidx];
+				var attrVal = jsonObj[attrName];
+				resultStr+=" "+attrName.substr(1)+"='"+attrVal+"'";
+			}
+		}
+		if(!closed)
+			resultStr+=">";
+		else
+			resultStr+="/>";
+		return resultStr;
+	}
+	
+	function endTag(jsonObj,elementName) {
+		return "</"+ (jsonObj.__prefix!=null? (jsonObj.__prefix+":"):"")+elementName+">";
+	}
+	
+	function endsWith(str, suffix) {
+	    return str.indexOf(suffix, str.length - suffix.length) !== -1;
+	}
+	
+	function jsonXmlSpecialElem ( jsonObj, jsonObjField ) {
+		if(endsWith(jsonObjField.toString(),("_asArray")) 
+				|| jsonObjField.toString().indexOf("_")==0 
+				|| (jsonObj[jsonObjField] instanceof Function) )
+			return true;
+		else
+			return false;
+	}
+	
+	function jsonXmlElemCount ( jsonObj ) {
+		var elementsCnt = 0;
+		if(jsonObj instanceof Object ) {
+			for( var it in jsonObj  ) {
+				if(jsonXmlSpecialElem ( jsonObj, it) )
+					continue;			
+				elementsCnt++;
+			}
+		}
+		return elementsCnt;
+	}
+	
+	function parseJSONAttributes ( jsonObj ) {
+		var attrList = [];
+		if(jsonObj instanceof Object ) {
+			for( var ait in jsonObj  ) {
+				if(ait.toString().indexOf("__")== -1 && ait.toString().indexOf("_")==0) {
+					attrList.push(ait);
+				}
+			}
+		}
+		return attrList;
+	}
+	
+	function parseJSONTextAttrs ( jsonTxtObj ) {
+		var result ="";
+		
+		if(jsonTxtObj.__cdata!=null) {										
+			result+="<![CDATA["+jsonTxtObj.__cdata+"]]>";					
+		}
+		
+		if(jsonTxtObj.__text!=null) {			
+			if(escapeMode)
+				result+=escapeXmlChars(jsonTxtObj.__text);
+			else
+				result+=jsonTxtObj.__text;
+		}
+		return result
+	}
+	
+	function parseJSONTextObject ( jsonTxtObj ) {
+		var result ="";
+
+		if( jsonTxtObj instanceof Object ) {
+			result+=parseJSONTextAttrs ( jsonTxtObj )
+		}
+		else
+			if(jsonTxtObj!=null) {
+				if(escapeMode)
+					result+=escapeXmlChars(jsonTxtObj);
+				else
+					result+=jsonTxtObj;
+			}
+		
+		return result;
+	}
+	
+	function parseJSONArray ( jsonArrRoot, jsonArrObj, attrList ) {
+		var result = ""; 
+		if(jsonArrRoot.length == 0) {
+			result+=startTag(jsonArrRoot, jsonArrObj, attrList, true);
+		}
+		else {
+			for(var arIdx = 0; arIdx < jsonArrRoot.length; arIdx++) {
+				result+=startTag(jsonArrRoot[arIdx], jsonArrObj, parseJSONAttributes(jsonArrRoot[arIdx]), false);
+				result+=parseJSONObject(jsonArrRoot[arIdx]);
+				result+=endTag(jsonArrRoot[arIdx],jsonArrObj);						
+			}
+		}
+		return result;
+	}
+	
+	function parseJSONObject ( jsonObj ) {
+		var result = "";	
+
+		var elementsCnt = jsonXmlElemCount ( jsonObj );
+		
+		if(elementsCnt > 0) {
+			for( var it in jsonObj ) {
+				
+				if(jsonXmlSpecialElem ( jsonObj, it) )
+					continue;			
+				
+				var subObj = jsonObj[it];						
+				
+				var attrList = parseJSONAttributes( subObj )
+				
+				if(subObj == null || subObj == undefined) {
+					result+=startTag(subObj, it, attrList, true)
+				}
+				else
+				if(subObj instanceof Object) {
+					
+					if(subObj instanceof Array) {					
+						result+=parseJSONArray( subObj, it, attrList )					
+					}
+					else {
+						var subObjElementsCnt = jsonXmlElemCount ( subObj );
+						if(subObjElementsCnt > 0 || subObj.__text!=null || subObj.__cdata!=null) {
+							result+=startTag(subObj, it, attrList, false);
+							result+=parseJSONObject(subObj);
+							result+=endTag(subObj,it);
+						}
+						else {
+							result+=startTag(subObj, it, attrList, true);
+						}
+					}
+				}
+				else {
+					result+=startTag(subObj, it, attrList, false);
+					result+=parseJSONTextObject(subObj);
+					result+=endTag(subObj,it);
+				}
+			}
+		}
+		result+=parseJSONTextObject(jsonObj);
+		
+		return result;
+	}
+	
+	this.parseXmlString = function(xmlDocStr) {
+		var xmlDoc;
+		if (window.DOMParser) {
+			// ORANGE: XML parsing management
+			try
+			{
+				var parser=new window.DOMParser();
+				xmlDoc = parser.parseFromString( xmlDocStr, "text/xml" );
+				if(xmlDoc.getElementsByTagName('parsererror').length > 0) {
+					  throw new Error('Error parsing XML');
+				}
+				//var parsererrorNS = parser.parseFromString('INVALID', 'text/xml').childNodes[0].namespaceURI;
+			    //if(xmlDoc.getElementsByTagNameNS(parsererrorNS, 'parsererror').length > 0) {
+			    //    throw new Error('Error parsing XML');
+			    //}		
+			}
+			catch (e)
+			{
+				return null;
+			}
+		}
+		return xmlDoc;
+	}
+
+	this.xml2json = function (xmlDoc) {
+		return parseDOMChildren ( xmlDoc );
+	}
+	
+	this.xml_str2json = function (xmlDocStr) {
+		var xmlDoc = this.parseXmlString(xmlDocStr);	
+		return xmlDoc === null ? xmlDoc : this.xml2json(xmlDoc);
+	}
+
+	this.json2xml_str = function (jsonObj) {
+		return parseJSONObject ( jsonObj );
+	}
+
+	this.json2xml = function (jsonObj) {
+		var xmlDocStr = this.json2xml_str (jsonObj);
+		return this.parseXmlString(xmlDocStr);
+	}
+	
+	this.getVersion = function () {
+		return VERSION;
+	}		
+	
+	this.escapeMode = function(enabled) {
+		escapeMode = enabled;
+	}
+}
+/*
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+ * 
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+ * 
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+var mp4lib = (function() {
+    var mp4lib = {
+        boxes:{},
+        fields:{},
+
+        // In debug mode, source data buffer is kept for each of deserialized box so any 
+        // structural deserialization problems can be traced by serializing each box
+        // and comparing the resulting buffer with the source buffer.
+        // This greatly increases memory consumption, so it is turned off by default.
+        debug:false,
+
+        // A handler function may be hooked up to display warnings.
+        // A warning is typically non-critical issue, like unknown box in data buffer.
+        warningHandler:function(message){
+            //console.log(message);
+        }
+    };
+
+    var boxTypeArray = {};
+
+    mp4lib.registerTypeBoxes = function() {
+        boxTypeArray["moov"] = mp4lib.boxes.MovieBox;
+        boxTypeArray["moof"] = mp4lib.boxes.MovieFragmentBox;
+        boxTypeArray["ftyp"] = mp4lib.boxes.FileTypeBox;
+        boxTypeArray["mfhd"] = mp4lib.boxes.MovieFragmentHeaderBox;
+        boxTypeArray["mfra"] = mp4lib.boxes.MovieFragmentRandomAccessBox;
+        boxTypeArray["udta"] = mp4lib.boxes.UserDataBox;
+        boxTypeArray["trak"] = mp4lib.boxes.TrackBox;
+        boxTypeArray["edts"] = mp4lib.boxes.EditBox;
+        boxTypeArray["mdia"] = mp4lib.boxes.MediaBox;
+        boxTypeArray["minf"] = mp4lib.boxes.MediaInformationBox;
+        boxTypeArray["dinf"] = mp4lib.boxes.DataInformationBox;
+        boxTypeArray["stbl"] = mp4lib.boxes.SampleTableBox;
+        boxTypeArray["mvex"] = mp4lib.boxes.MovieExtendsBox;
+        boxTypeArray["traf"] = mp4lib.boxes.TrackFragmentBox;
+        boxTypeArray["meta"] = mp4lib.boxes.MetaBox;
+        boxTypeArray["mvhd"] = mp4lib.boxes.MovieHeaderBox;
+        boxTypeArray["mdat"] = mp4lib.boxes.MediaDataBox;
+        boxTypeArray["free"] = mp4lib.boxes.FreeSpaceBox;
+        boxTypeArray["sidx"] = mp4lib.boxes.SegmentIndexBox;
+        boxTypeArray["tkhd"] = mp4lib.boxes.TrackHeaderBox;
+        boxTypeArray["mdhd"] = mp4lib.boxes.MediaHeaderBox;
+        boxTypeArray["mehd"] = mp4lib.boxes.MovieExtendsHeaderBox;
+        boxTypeArray["hdlr"] = mp4lib.boxes.HandlerBox;
+        boxTypeArray["stts"] = mp4lib.boxes.TimeToSampleBox;
+        boxTypeArray["stsc"] = mp4lib.boxes.SampleToChunkBox;
+        boxTypeArray["stco"] = mp4lib.boxes.ChunkOffsetBox;
+        boxTypeArray["trex"] = mp4lib.boxes.TrackExtendsBox;
+        boxTypeArray["vmhd"] = mp4lib.boxes.VideoMediaHeaderBox;
+        boxTypeArray["smhd"] = mp4lib.boxes.SoundMediaHeaderBox;
+        boxTypeArray["dref"] = mp4lib.boxes.DataReferenceBox;
+        boxTypeArray["url "] = mp4lib.boxes.DataEntryUrlBox;
+        boxTypeArray["urn "] = mp4lib.boxes.DataEntryUrnBox;
+        boxTypeArray["tfhd"] = mp4lib.boxes.TrackFragmentHeaderBox;
+        boxTypeArray["tfdt"] = mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox;
+        boxTypeArray["trun"] = mp4lib.boxes.TrackFragmentRunBox;
+        boxTypeArray["stsd"] = mp4lib.boxes.SampleDescriptionBox;
+        boxTypeArray["sdtp"] = mp4lib.boxes.SampleDependencyTableBox;
+        boxTypeArray["avc1"] = mp4lib.boxes.AVC1VisualSampleEntryBox;
+        boxTypeArray["encv"] = mp4lib.boxes.EncryptedVideoBox;
+        boxTypeArray["avcC"] = mp4lib.boxes.AVCConfigurationBox;
+        boxTypeArray["pasp"] = mp4lib.boxes.PixelAspectRatioBox;
+        boxTypeArray["mp4a"] = mp4lib.boxes.MP4AudioSampleEntryBox;
+        boxTypeArray["enca"] = mp4lib.boxes.EncryptedAudioBox;
+        boxTypeArray["esds"] = mp4lib.boxes.ESDBox;
+        boxTypeArray["stsz"] = mp4lib.boxes.SampleSizeBox;
+        boxTypeArray["pssh"] = mp4lib.boxes.ProtectionSystemSpecificHeaderBox;
+        boxTypeArray["saiz"] = mp4lib.boxes.SampleAuxiliaryInformationSizesBox;
+        boxTypeArray["saio"] = mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox;
+        boxTypeArray["sinf"] = mp4lib.boxes.ProtectionSchemeInformationBox;
+        boxTypeArray["schi"] = mp4lib.boxes.SchemeInformationBox;
+        boxTypeArray["tenc"] = mp4lib.boxes.TrackEncryptionBox;
+        boxTypeArray["schm"] = mp4lib.boxes.SchemeTypeBox;
+        boxTypeArray["elst"] = mp4lib.boxes.EditListBox;
+        boxTypeArray["hmhd"] = mp4lib.boxes.HintMediaHeaderBox;
+        boxTypeArray["nmhd"] = mp4lib.boxes.NullMediaHeaderBox;
+        boxTypeArray["ctts"] = mp4lib.boxes.CompositionOffsetBox;
+        boxTypeArray["cslg"] = mp4lib.boxes.CompositionToDecodeBox;
+        boxTypeArray["stss"] = mp4lib.boxes.SyncSampleBox;
+        boxTypeArray["tref"] = mp4lib.boxes.TrackReferenceBox;
+        boxTypeArray["frma"] = mp4lib.boxes.OriginalFormatBox;
+        //extended types
+        boxTypeArray[JSON.stringify([0x6D, 0x1D, 0x9B, 0x05, 0x42, 0xD5, 0x44, 0xE6, 0x80, 0xE2, 0x14, 0x1D, 0xAF, 0xF7, 0x57, 0xB2])] = mp4lib.boxes.TfxdBox;
+        boxTypeArray[JSON.stringify([0xD4, 0x80, 0x7E, 0xF2, 0xCA, 0x39, 0x46, 0x95, 0x8E, 0x54, 0x26, 0xCB, 0x9E, 0x46, 0xA7, 0x9F])] = mp4lib.boxes.TfrfBox;
+        boxTypeArray[JSON.stringify([0xD0, 0x8A, 0x4F, 0x18, 0x10, 0xF3, 0x4A, 0x82, 0xB6, 0xC8, 0x32, 0xD8, 0xAB, 0xA1, 0x83, 0xD3])] = mp4lib.boxes.PiffProtectionSystemSpecificHeaderBox;
+        boxTypeArray[JSON.stringify([0x89, 0x74, 0xDB, 0xCE, 0x7B, 0xE7, 0x4C, 0x51, 0x84, 0xF9, 0x71, 0x48, 0xF9, 0x88, 0x25, 0x54])] = mp4lib.boxes.PiffTrackEncryptionBox;
+        boxTypeArray[JSON.stringify([0xA2, 0x39, 0x4F, 0x52, 0x5A, 0x9B, 0x4F, 0x14, 0xA2, 0x44, 0x6C, 0x42, 0x7C, 0x64, 0x8D, 0xF4])] = mp4lib.boxes.PiffSampleEncryptionBox;
+    };
+    
+
+    mp4lib.constructorTypeBox = function (type) {
+        var obj, args;
+        obj = Object.create(type.prototype);
+        args = Array.prototype.slice.call(arguments, 1);
+        type.apply(obj, args);
+        return obj;
+    };
+
+    mp4lib.searchBox = function ( boxtype, uuid ){
+        var boxType;
+
+        if (uuid) {
+            boxType = boxTypeArray[uuid];
+        }
+        else {
+            boxType = boxTypeArray[boxtype];
+        }
+        
+        if (!boxType){
+            boxType = mp4lib.boxes.UnknownBox;
+        }
+
+        return boxType;
+    };
+           
+    mp4lib.createBox = function( boxtype,size, uuid) {
+        return mp4lib.constructorTypeBox.apply(null, [mp4lib.searchBox(boxtype, uuid),size]);
+    };
+    
+    /**
+    deserialize binary data (uint8array) into mp4lib.File object
+    */
+    mp4lib.deserialize = function(uint8array) {
+        var f = new mp4lib.boxes.File();
+        try{
+            f.read(uint8array);
+        }catch(e){
+            mp4lib.warningHandler(e.message);
+            return null;
+        }
+        return f;
+    };
+
+    /**
+    serialize box (or mp4lib.File) into binary data (uint8array)
+    */
+    mp4lib.serialize = function(f) {
+        var file_size = f.getLength(),
+            uint8array = new Uint8Array(file_size);
+        f.write(uint8array);
+        return uint8array;
+    };
+
+    /**
+    exception thrown when binary data is malformed
+    it is thrown typically during deserialization
+    */
+    mp4lib.ParseException = function(message) {
+        this.message = message;
+        this.name = "ParseException";
+    };
+
+    /**
+    exception thrown when box objects contains invalid data, 
+    ex. flag field is are not coherent with fields etc.
+    it is thrown typically during object manipulation or serialization
+    */
+    mp4lib.DataIntegrityException = function(message) {
+        this.message = message;
+        this.name = "DataIntegrityException";
+    };
+
+    return mp4lib;
+})();
+
+// This module is intended to work both on node.js and inside browser.
+// Since these environments differ in a way modules are stored/accessed,
+// we need to export the module in the environment-dependant way
+
+if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
+    module.exports = mp4lib; // node.js
+else
+    window.mp4lib = mp4lib;  // browser
+
+
+/*
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+ *
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+mp4lib.fields.readBytes = function(buf, pos, nbBytes) {
+    var value = 0,
+        i = 0;
+    for (i = 0; i < nbBytes; i++) {
+        value = value << 8;
+        value = value + buf[pos];
+        pos++;
+    }
+    return value;
+};
+
+mp4lib.fields.writeBytes = function(buf, pos, nbBytes, value) {
+    var i = 0;
+    for (i = 0; i < nbBytes; i++) {
+        buf[pos + nbBytes - i - 1] = value & 0xFF;
+        value = value >> 8;
+    }
+};
+
+mp4lib.fields.readString = function(buf, pos, count) {
+    var res = "",
+        i;
+    for (i = pos; i < pos + count; i++) {
+        res += String.fromCharCode(buf[i]);
+    }
+    return res;
+};
+
+//------------------------------- NumberField -------------------------------
+
+mp4lib.fields.NumberField = function(bits, signed) {
+    this.bits = bits;
+    this.signed = signed;
+};
+
+mp4lib.fields.NumberField.prototype.read = function(buf, pos) {
+    return mp4lib.fields.readBytes(buf, pos, this.bits / 8);
+};
+
+mp4lib.fields.NumberField.prototype.write = function(buf, pos, val) {
+    mp4lib.fields.writeBytes(buf, pos, this.bits / 8, val);
+};
+
+mp4lib.fields.NumberField.prototype.getLength = function() {
+    return this.bits / 8;
+};
+
+//------------------------------- 64BitsNumberField -------------------------------
+
+mp4lib.fields.LongNumberField = function() {};
+
+mp4lib.fields.LongNumberField.prototype.read = function(buf, pos) {
+    var high = mp4lib.fields.readBytes(buf, pos, 4),
+        low = mp4lib.fields.readBytes(buf, pos + 4, 4);
+    return goog.math.Long.fromBits(low, high).toNumber();
+};
+
+mp4lib.fields.LongNumberField.prototype.write = function(buf, pos, val) {
+    var longNumber = goog.math.Long.fromNumber(val),
+        low = longNumber.getLowBits(),
+        high = longNumber.getHighBits();
+    mp4lib.fields.writeBytes(buf, pos, 4, high);
+    mp4lib.fields.writeBytes(buf, pos + 4, 4, low);
+};
+
+mp4lib.fields.LongNumberField.prototype.getLength = function() {
+    return 8;
+};
+
+//------------------------------- FixedLenStringField -------------------------------
+
+mp4lib.fields.FixedLenStringField = function(size) {
+    this.size = size;
+};
+
+mp4lib.fields.FixedLenStringField.prototype.read = function(buf, pos) {
+    var res = "",
+        i = 0;
+    for (i = 0; i < this.size; i++) {
+        res = res + String.fromCharCode(buf[pos + i]);
+    }
+    return res;
+};
+
+mp4lib.fields.FixedLenStringField.prototype.write = function(buf, pos, val) {
+    var i = 0;
+    for (i = 0; i < this.size; i++) {
+        buf[pos + i] = val.charCodeAt(i);
+    }
+};
+
+mp4lib.fields.FixedLenStringField.prototype.getLength = function() {
+    return this.size;
+};
+
+//------------------------------- BoxTypeField -------------------------------
+
+mp4lib.fields.BoxTypeField = function() {};
+
+mp4lib.fields.BoxTypeField.prototype.read = function(buf, pos) {
+    var res = "",
+        i = 0;
+    for (i = 0; i < 4; i++) {
+        res = res + String.fromCharCode(buf[pos + i]);
+    }
+    return res;
+};
+
+mp4lib.fields.BoxTypeField.prototype.write = function(buf, pos, val) {
+    var i = 0;
+    for (i = 0; i < 4; i++) {
+        buf[pos + i] = val.charCodeAt(i);
+    }
+};
+
+mp4lib.fields.BoxTypeField.prototype.getLength = function() {
+    return 4;
+};
+
+
+//------------------------------- StringField -------------------------------
+
+mp4lib.fields.StringField = function() {};
+
+
+mp4lib.fields.StringField.prototype.read = function(buf, pos, end) {
+    var res = "",
+        i = 0;
+
+    for (i = pos; i < end; i++) {
+        res = res + String.fromCharCode(buf[i]);
+        if (buf[i] === 0) {
+            return res;
+        }
+    }
+
+    if ((end - pos < 255) && (buf[0] == String.fromCharCode(end - pos))) {
+        res = res.substr(1, end - pos);
+        mp4lib.warningHandler('null-terminated string expected, ' +
+            'but found a string "' + res + '", which seems to be ' +
+            'length-prefixed instead. Conversion done.');
+        return res;
+    }
+
+    throw new mp4lib.ParseException('expected null-terminated string, ' +
+        'but end of field reached without termination. ' +
+        'Read so far:"' + res + '"');
+};
+
+mp4lib.fields.StringField.prototype.write = function(buf, pos, val) {
+    var i = 0;
+
+    for (i = 0; i < val.length; i++) {
+        buf[pos + i] = val.charCodeAt(i);
+    }
+    buf[pos + val.length] = 0;
+};
+
+mp4lib.fields.StringField.prototype.getLength = function(val) {
+    return val.length;
+};
+
+//------------------------------- ArrayField -------------------------------
+
+mp4lib.fields.ArrayField = function(innerField, size) {
+    this.innerField = innerField;
+    this.size = size;
+};
+
+mp4lib.fields.ArrayField.prototype.read = function(buf, pos) {
+    var innerFieldLength = -1,
+        res = [],
+        i = 0;
+    for (i = 0; i < this.size; i++) {
+
+        res.push(this.innerField.read(buf, pos));
+
+        if (innerFieldLength == -1) {
+            innerFieldLength = this.innerField.getLength(res[i]);
+        }
+        // it may happen that the size of field depends on the box flags, 
+        // we need to count is having box and first structure constructed
+
+        pos += innerFieldLength;
+    }
+    return res;
+};
+
+// pre-defined shortcuts for common fields 
+// ( it is recommended to use these shortcuts to avoid constructors 
+//   being called for every field processing action )
+mp4lib.fields.FIELD_INT8 = new mp4lib.fields.NumberField(8, true);
+mp4lib.fields.FIELD_INT16 = new mp4lib.fields.NumberField(16, true);
+mp4lib.fields.FIELD_INT32 = new mp4lib.fields.NumberField(32, true);
+mp4lib.fields.FIELD_INT64 = new mp4lib.fields.LongNumberField();
+mp4lib.fields.FIELD_UINT8 = new mp4lib.fields.NumberField(8, false);
+mp4lib.fields.FIELD_UINT16 = new mp4lib.fields.NumberField(16, false);
+mp4lib.fields.FIELD_UINT32 = new mp4lib.fields.NumberField(32, false);
+mp4lib.fields.FIELD_UINT64 = new mp4lib.fields.LongNumberField();
+mp4lib.fields.FIELD_BIT8 = new mp4lib.fields.NumberField(8, false);
+mp4lib.fields.FIELD_BIT16 = new mp4lib.fields.NumberField(16, false);
+mp4lib.fields.FIELD_BIT24 = new mp4lib.fields.NumberField(24, false);
+mp4lib.fields.FIELD_BIT32 = new mp4lib.fields.NumberField(32, false);
+mp4lib.fields.FIELD_ID = new mp4lib.fields.BoxTypeField(4);
+mp4lib.fields.FIELD_STRING = new mp4lib.fields.StringField();
+/*
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+ *
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+// ---------- File (treated similarly to box in terms of processing) ----------
+mp4lib.boxes.File = function() {
+    this.boxes = [];
+};
+
+mp4lib.boxes.File.prototype.getBoxByType = function(boxType) {
+    var i = 0;
+
+    for (i = 0; i < this.boxes.length; i++) {
+        if (this.boxes[i].boxtype === boxType) {
+            return this.boxes[i];
+        }
+    }
+    return null;
+};
+
+mp4lib.boxes.File.prototype.getLength = function() {
+    var length = 0,
+        i = 0;
+
+    for (i = 0; i < this.boxes.length; i++) {
+        this.boxes[i].computeLength();
+        length += this.boxes[i].size;
+    }
+
+    return length;
+};
+
+mp4lib.boxes.File.prototype.write = function(data) {
+    var pos = 0,
+        i = 0;
+
+    for (i = 0; i < this.boxes.length; i++) {
+        pos = this.boxes[i].write(data, pos);
+    }
+};
+
+mp4lib.boxes.File.prototype.read = function(data) {
+    var size = 0,
+        boxtype = null,
+        uuidFieldPos = 0,
+        uuid = null,
+        pos = 0,
+        end = data.length,
+        box;
+
+    while (pos < end) {
+        // Read box size
+        size = mp4lib.fields.FIELD_UINT32.read(data, pos);
+
+        // Read boxtype
+        boxtype = mp4lib.fields.readString(data, pos + 4, 4);
+
+        // Extented type?
+        if (boxtype == "uuid") {
+            uuidFieldPos = (size == 1) ? 16 : 8;
+            uuid = new mp4lib.fields.ArrayField(mp4lib.fields.FIELD_INT8, 16).read(data, pos + uuidFieldPos, pos + uuidFieldPos + 16);
+            uuid = JSON.stringify(uuid);
+        }
+
+        box = mp4lib.createBox(boxtype, size, uuid);
+        if (boxtype === "uuid") {
+            pos = box.read(data, pos + mp4lib.fields.FIELD_INT8.getLength() * 16 + 8, pos + size);
+            uuid = null;
+        } else {
+            pos = box.read(data, pos + 8, pos + size);
+        }
+
+        // in debug mode, sourcebuffer is copied to each box,
+        // so any invalid deserializations may be found by comparing
+        // source buffer with serialized box
+        if (mp4lib.debug) {
+            box.__sourceBuffer = data.subarray(pos - box.size, pos);
+        }
+
+        //if boxtype is unknown, don't add it to the list box
+        if (box.boxtype) {
+            this.boxes.push(box);
+        }
+
+        if (box.size <= 0 || box.size === null) {
+            throw new mp4lib.ParseException('Problem on size of box ' + box.boxtype +
+                ', parsing stopped to avoid infinite loop');
+        }
+    }
+};
+
+/**
+find child position
+*/
+mp4lib.boxes.File.prototype.getBoxOffsetByType = function(boxType) {
+    var offset = 0,
+        i = 0;
+
+    for (i = 0; i < this.boxes.length; i++) {
+        if (this.boxes[i].boxtype === boxType) {
+            return offset;
+        }
+        offset += this.boxes[i].size;
+    }
+    return -1;
+};
+
+mp4lib.boxes.File.prototype.getBoxIndexByType = function(boxType) {
+    var index = 0,
+        i = 0;
+
+    for (i = 0; i < this.boxes.length; i++) {
+        if (this.boxes[i].boxtype === boxType) {
+            return index;
+        }
+        index++;
+    }
+    return -1;
+};
+
+
+// ---------- Generic Box -------------------------------
+mp4lib.boxes.Box = function(boxType, size, uuid, largesize) {
+    this.size = size || null;
+    this.boxtype = boxType;
+    //large size management to do...
+    if (this.size === 1 && largesize) {
+        this.largesize = largesize;
+    }
+
+    if (uuid) {
+        this.extended_type = uuid;
+    }
+
+    this.localPos = 0;
+    this.localEnd = 0;
+};
+
+mp4lib.boxes.Box.prototype.write = function(data, pos) {
+    this.localPos = pos;
+    var i = 0;
+
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.size);
+    //if extended_type is not defined, boxtype must have this.boxtype value
+    if (!this.extended_type) {
+        this._writeData(data, mp4lib.fields.FIELD_ID, this.boxtype);
+    } else { //if extended_type is defined, boxtype must have 'uuid' value
+        this._writeData(data, mp4lib.fields.FIELD_ID, 'uuid');
+    }
+
+    if (this.size === 1) {
+        this._writeData(data, mp4lib.fields.FIELD_INT64, this.largesize);
+    }
+
+    if (this.extended_type) {
+        for (i = 0; i < 16; i++) {
+            this._writeData(data, mp4lib.fields.FIELD_INT8, this.extended_type[i]);
+        }
+    }
+};
+
+mp4lib.boxes.Box.prototype.getBoxByType = function(boxType) {
+    var i = 0;
+    if (this.hasOwnProperty('boxes')) {
+        for (i = 0; i < this.boxes.length; i++) {
+            if (this.boxes[i].boxtype === boxType) {
+                return this.boxes[i];
+            }
+        }
+    }
+    return null;
+};
+
+
+mp4lib.boxes.Box.prototype.getBoxesByType = function(boxType) {
+    var resu = [],
+        i = 0;
+    if (this.hasOwnProperty('boxes')) {
+        for (i = 0; i < this.boxes.length; i++) {
+            if (this.boxes[i].boxtype === boxType) {
+                resu.push(this.boxes[i]);
+            }
+        }
+    }
+    return resu;
+};
+
+/**
+remove child from a box
+*/
+mp4lib.boxes.Box.prototype.removeBoxByType = function(boxType) {
+    var i = 0;
+
+    if (this.hasOwnProperty('boxes')) {
+        for (i = 0; i < this.boxes.length; i++) {
+            if (this.boxes[i].boxtype === boxType) {
+                this.boxes.splice(i, 1);
+            }
+        }
+    } else {
+        mp4lib.warningHandler('' + this.boxtype + 'does not have ' + boxType + ' box, impossible to remove it');
+    }
+};
+
+/**
+find child position
+*/
+mp4lib.boxes.Box.prototype.getBoxOffsetByType = function(boxType) {
+    var offset = 8,
+        i = 0;
+
+    if (this.hasOwnProperty('boxes')) {
+        for (i = 0; i < this.boxes.length; i++) {
+            if (this.boxes[i].boxtype === boxType) {
+                return offset;
+            }
+            offset += this.boxes[i].size;
+        }
+    }
+    return null;
+};
+
+mp4lib.boxes.Box.prototype.getBoxIndexByType = function(boxType) {
+    var index = 0,
+        i = 0;
+
+    if (this.hasOwnProperty('boxes')) {
+        for (i = 0; i < this.boxes.length; i++) {
+            if (this.boxes[i].boxtype === boxType) {
+                return index;
+            }
+            index++;
+        }
+    }
+    return null;
+};
+
+mp4lib.boxes.Box.prototype.computeLength = function() {
+    this.size = mp4lib.fields.FIELD_UINT32.getLength() + mp4lib.fields.FIELD_ID.getLength(); //size and boxtype length
+
+    /*if (this.size === 1) {
+        this.size += mp4lib.fields.FIELD_INT64.getLength(); //add large_size length
+    }*/
+    if (this.extended_type) {
+        this.size += mp4lib.fields.FIELD_INT8.getLength() * 16; //add extended_type length.
+    }
+};
+
+mp4lib.boxes.Box.prototype._readData = function(data, dataType) {
+    var resu = dataType.read(data, this.localPos, this.localEnd);
+    this.localPos += dataType.getLength(resu);
+    return resu;
+};
+
+mp4lib.boxes.Box.prototype._writeData = function(data, dataType, dataField) {
+    if (dataField === undefined || dataField === null) {
+        throw new mp4lib.ParseException('a field to write is null or undefined for box : ' + this.boxtype);
+    } else {
+        dataType.write(data, this.localPos, dataField);
+        this.localPos += dataType.getLength(dataField);
+    }
+};
+
+mp4lib.boxes.Box.prototype._writeBuffer = function(data, dataField, size) {
+    data.set(dataField, this.localPos);
+    this.localPos += size;
+};
+
+mp4lib.boxes.Box.prototype._writeArrayData = function(data, dataArrayType, array) {
+    var i = 0;
+
+    if (array === undefined || array === null || array.length === 0) {
+        throw new mp4lib.ParseException('an array to write is null, undefined or length = 0 for box : ' + this.boxtype);
+    }
+
+    for (i = 0; i < array.length; i++) {
+        this._writeData(data, dataArrayType, array[i]);
+    }
+};
+
+mp4lib.boxes.Box.prototype._readArrayData = function(data, dataArrayType) {
+    var array = [],
+        dataArrayTypeLength = dataArrayType.getLength(),
+        size = (this.localEnd - this.localPos) / dataArrayTypeLength,
+        i = 0;
+
+    for (i = 0; i < size; i++) {
+        array.push(dataArrayType.read(data, this.localPos));
+        this.localPos += dataArrayTypeLength;
+    }
+    return array;
+};
+
+mp4lib.boxes.Box.prototype._readArrayFieldData = function(data, dataArrayType, arraySize) {
+    var innerFieldLength = -1,
+        array = [],
+        i = 0;
+
+    for (i = 0; i < arraySize; i++) {
+
+        array.push(dataArrayType.read(data, this.localPos));
+
+        if (innerFieldLength === -1) {
+            innerFieldLength = dataArrayType.getLength(array[i]);
+        }
+        // it may happen that the size of field depends on the box flags,
+        // we need to count is having box and first structure constructed
+
+        this.localPos += innerFieldLength;
+    }
+    return array;
+};
+
+// ---------- Abstract Container Box -------------------------------
+mp4lib.boxes.ContainerBox = function(boxType, size) {
+    mp4lib.boxes.Box.call(this, boxType, size);
+    this.boxes = [];
+};
+
+mp4lib.boxes.ContainerBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
+mp4lib.boxes.ContainerBox.prototype.constructor = mp4lib.boxes.ContainerBox;
+
+mp4lib.boxes.ContainerBox.prototype.computeLength = function() {
+    mp4lib.boxes.Box.prototype.computeLength.call(this);
+    var i = 0;
+    for (i = 0; i < this.boxes.length; i++) {
+        this.boxes[i].computeLength();
+        this.size += this.boxes[i].size;
+    }
+};
+
+mp4lib.boxes.ContainerBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
+    var i = 0;
+
+    for (i = 0; i < this.boxes.length; i++) {
+        this.localPos = this.boxes[i].write(data, this.localPos);
+    }
+
+    return this.localPos;
+};
+
+mp4lib.boxes.ContainerBox.prototype.read = function(data, pos, end) {
+    var size = 0,
+        uuidFieldPos = 0,
+        uuid = null,
+        boxtype,
+        box;
+
+    while (pos < end) {
+        // Read box size
+        size = mp4lib.fields.FIELD_UINT32.read(data, pos);
+
+        // Read boxtype
+        boxtype = mp4lib.fields.readString(data, pos + 4, 4);
+
+        // Extented type?
+        if (boxtype === "uuid") {
+            uuidFieldPos = (size == 1) ? 16 : 8;
+            uuid = new mp4lib.fields.ArrayField(mp4lib.fields.FIELD_INT8, 16).read(data, pos + uuidFieldPos, pos + uuidFieldPos + 16);
+            uuid = JSON.stringify(uuid);
+        }
+
+        box = mp4lib.createBox(boxtype, size, uuid);
+        if (boxtype === "uuid") {
+            pos = box.read(data, pos + mp4lib.fields.FIELD_INT8.getLength() * 16 + 8, pos + size);
+            uuid = null;
+        } else {
+            pos = box.read(data, pos + 8, pos + size);
+        }
+
+        // in debug mode, sourcebuffer is copied to each box,
+        // so any invalid deserializations may be found by comparing
+        // source buffer with serialized box
+        if (mp4lib.debug) {
+            box.__sourceBuffer = data.subarray(pos - box.size, pos);
+        }
+        
+        //if boxtype is unknown, don't add it to the list box
+        if (box.boxtype) {
+            this.boxes.push(box);
+        }
+
+        if (box.size <= 0 || box.size === null) {
+            throw new mp4lib.ParseException('Problem on size of box ' + box.boxtype +
+                ', parsing stopped to avoid infinite loop');
+        }
+    }
+
+    return pos;
+};
+
+// ---------- Full Box -------------------------------
+mp4lib.boxes.FullBox = function(boxType, size, uuid) {
+    mp4lib.boxes.Box.call(this, boxType, size, uuid);
+    this.version = null;
+    this.flags = null;
+};
+
+mp4lib.boxes.FullBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
+mp4lib.boxes.FullBox.prototype.constructor = mp4lib.boxes.FullBox;
+
+mp4lib.boxes.FullBox.prototype.read = function(data, pos, end) {
+    this.localPos = pos;
+    this.localEnd = end;
+    this.version = this._readData(data, mp4lib.fields.FIELD_INT8);
+    this.flags = this._readData(data, mp4lib.fields.FIELD_BIT24);
+};
+
+mp4lib.boxes.FullBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
+
+    this._writeData(data, mp4lib.fields.FIELD_INT8, this.version);
+    this._writeData(data, mp4lib.fields.FIELD_BIT24, this.flags);
+};
+
+mp4lib.boxes.FullBox.prototype.getFullBoxAttributesLength = function() {
+    this.size += mp4lib.fields.FIELD_INT8.getLength() + mp4lib.fields.FIELD_BIT24.getLength(); //version and flags size
+};
+
+mp4lib.boxes.FullBox.prototype.computeLength = function() {
+    mp4lib.boxes.Box.prototype.computeLength.call(this);
+    mp4lib.boxes.FullBox.prototype.getFullBoxAttributesLength.call(this);
+};
+
+// ---------- Abstract Container FullBox -------------------------------
+mp4lib.boxes.ContainerFullBox = function(boxType, size) {
+    mp4lib.boxes.FullBox.call(this, boxType, size);
+    this.boxes = [];
+};
+
+mp4lib.boxes.ContainerFullBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.ContainerFullBox.prototype.constructor = mp4lib.boxes.ContainerFullBox;
+
+mp4lib.boxes.ContainerFullBox.prototype.computeLength = function(isEntryCount) {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    var i = 0;
+
+    if (isEntryCount) {
+        this.size += mp4lib.fields.FIELD_UINT32.getLength();
+    }
+
+    for (i = 0; i < this.boxes.length; i++) {
+        this.boxes[i].computeLength();
+        this.size += this.boxes[i].size;
+    }
+};
+
+mp4lib.boxes.ContainerFullBox.prototype.read = function(data, pos, end, isEntryCount) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+    var size = 0,
+        uuidFieldPos = 0,
+        uuid = null,
+        boxtype, box;
+
+    if (isEntryCount) {
+        this.entry_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    }
+
+    while (this.localPos < this.localEnd) {
+        // Read box size
+        size = mp4lib.fields.FIELD_UINT32.read(data, this.localPos);
+
+        // Read boxtype
+        boxtype = mp4lib.fields.readString(data, this.localPos + 4, 4);
+
+        // Extented type?
+        if (boxtype == "uuid") {
+            uuidFieldPos = (size == 1) ? 16 : 8;
+            uuid = new mp4lib.fields.ArrayField(mp4lib.fields.FIELD_INT8, 16).read(data, this.localPos + uuidFieldPos, this.localPos + uuidFieldPos + 16);
+            uuid = JSON.stringify(uuid);
+        }
+
+        box = mp4lib.createBox(boxtype, size, uuid);
+        if (boxtype === "uuid") {
+            this.localPos = box.read(data, this.localPos + mp4lib.fields.FIELD_INT8.getLength() * 16 + 8, this.localPos + size);
+            uuid = null;
+        } else {
+            this.localPos = box.read(data, this.localPos + 8, this.localPos + size);
+        }
+
+        // in debug mode, sourcebuffer is copied to each box,
+        // so any invalid deserializations may be found by comparing
+        // source buffer with serialized box
+        if (mp4lib.debug) {
+            box.__sourceBuffer = data.subarray(this.localPos - box.size, this.localPos);
+        }
+
+        if (box.boxtype) {
+            this.boxes.push(box);
+        }
+
+        if (box.size <= 0 || box.size === null) {
+            throw new mp4lib.ParseException('Problem on size of box ' + box.boxtype +
+                ', parsing stopped to avoid infinite loop');
+        }
+    }
+
+    return this.localPos;
+};
+
+mp4lib.boxes.ContainerFullBox.prototype.write = function(data, pos, isEntryCount) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    var i = 0;
+
+    if (isEntryCount === true) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
+    }
+
+    for (i = 0; i < this.boxes.length; i++) {
+        this.localPos = this.boxes[i].write(data, this.localPos);
+    }
+
+    return this.localPos;
+};
+
+// ----------- Unknown Box -----------------------------
+
+mp4lib.boxes.UnknownBox = function(size) {
+    mp4lib.boxes.Box.call(this, null, size);
+};
+
+mp4lib.boxes.UnknownBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
+mp4lib.boxes.UnknownBox.prototype.constructor = mp4lib.boxes.UnknownBox;
+
+mp4lib.boxes.UnknownBox.prototype.read = function(data, pos, end) {
+    this.localPos = pos;
+    this.localEnd = end;
+
+    this.unrecognized_data = data.subarray(this.localPos, this.localEnd);
+
+    return this.localEnd;
+};
+
+mp4lib.boxes.UnknownBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
+
+    this._writeBuffer(data, this.unrecognized_data, this.unrecognized_data.length);
+
+    return this.localPos;
+};
+
+mp4lib.boxes.UnknownBox.prototype.computeLength = function() {
+    mp4lib.boxes.Box.prototype.computeLength.call(this);
+    this.size += this.unrecognized_data.length;
+};
+
+// --------------------------- ftyp ----------------------------------
+
+mp4lib.boxes.FileTypeBox = function(size) {
+    mp4lib.boxes.Box.call(this, 'ftyp', size);
+};
+
+mp4lib.boxes.FileTypeBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
+mp4lib.boxes.FileTypeBox.prototype.constructor = mp4lib.boxes.FileTypeBox;
+
+mp4lib.boxes.FileTypeBox.prototype.computeLength = function() {
+    mp4lib.boxes.Box.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_INT32.getLength() * 2 + mp4lib.fields.FIELD_INT32.getLength() * this.compatible_brands.length;
+};
+
+mp4lib.boxes.FileTypeBox.prototype.read = function(data, pos, end) {
+    this.localPos = pos;
+    this.localEnd = end;
+
+    this.major_brand = this._readData(data, mp4lib.fields.FIELD_INT32);
+    this.minor_brand = this._readData(data, mp4lib.fields.FIELD_INT32);
+    this.compatible_brands = this._readArrayData(data, mp4lib.fields.FIELD_INT32);
+
+    return this.localPos;
+};
+
+mp4lib.boxes.FileTypeBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
+
+    this._writeData(data, mp4lib.fields.FIELD_INT32, this.major_brand);
+    this._writeData(data, mp4lib.fields.FIELD_INT32, this.minor_brand);
+    this._writeArrayData(data, mp4lib.fields.FIELD_INT32, this.compatible_brands);
+
+    return this.localPos;
+};
+// --------------------------- moov ----------------------------------
+
+mp4lib.boxes.MovieBox = function(size) {
+    mp4lib.boxes.ContainerBox.call(this, 'moov', size);
+};
+
+mp4lib.boxes.MovieBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
+mp4lib.boxes.MovieBox.prototype.constructor = mp4lib.boxes.MovieBox;
+
+// --------------------------- moof ----------------------------------
+mp4lib.boxes.MovieFragmentBox = function(size) {
+    mp4lib.boxes.ContainerBox.call(this, 'moof', size);
+};
+
+mp4lib.boxes.MovieFragmentBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
+mp4lib.boxes.MovieFragmentBox.prototype.constructor = mp4lib.boxes.MovieFragmentBox;
+
+// --------------------------- mfra ----------------------------------
+mp4lib.boxes.MovieFragmentRandomAccessBox = function(size) {
+    mp4lib.boxes.ContainerBox.call(this, 'mfra', size);
+};
+
+mp4lib.boxes.MovieFragmentRandomAccessBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
+mp4lib.boxes.MovieFragmentRandomAccessBox.prototype.constructor = mp4lib.boxes.MovieFragmentRandomAccessBox;
+
+// --------------------------- udta ----------------------------------
+mp4lib.boxes.UserDataBox = function(size) {
+    mp4lib.boxes.ContainerBox.call(this, 'udta', size);
+};
+
+mp4lib.boxes.UserDataBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
+mp4lib.boxes.UserDataBox.prototype.constructor = mp4lib.boxes.UserDataBox;
+
+// --------------------------- trak ----------------------------------
+mp4lib.boxes.TrackBox = function(size) {
+    mp4lib.boxes.ContainerBox.call(this, 'trak', size);
+};
+
+mp4lib.boxes.TrackBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
+mp4lib.boxes.TrackBox.prototype.constructor = mp4lib.boxes.TrackBox;
+
+// --------------------------- edts ----------------------------------
+mp4lib.boxes.EditBox = function(size) {
+    mp4lib.boxes.ContainerBox.call(this, 'edts', size);
+};
+
+mp4lib.boxes.EditBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
+mp4lib.boxes.EditBox.prototype.constructor = mp4lib.boxes.EditBox;
+
+// --------------------------- mdia ----------------------------------
+mp4lib.boxes.MediaBox = function(size) {
+    mp4lib.boxes.ContainerBox.call(this, 'mdia', size);
+};
+
+mp4lib.boxes.MediaBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
+mp4lib.boxes.MediaBox.prototype.constructor = mp4lib.boxes.MediaBox;
+
+// --------------------------- minf ----------------------------------
+mp4lib.boxes.MediaInformationBox = function(size) {
+    mp4lib.boxes.ContainerBox.call(this, 'minf', size);
+};
+
+mp4lib.boxes.MediaInformationBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
+mp4lib.boxes.MediaInformationBox.prototype.constructor = mp4lib.boxes.MediaInformationBox;
+
+// --------------------------- dinf ----------------------------------
+mp4lib.boxes.DataInformationBox = function(size) {
+    mp4lib.boxes.ContainerBox.call(this, 'dinf', size);
+};
+
+mp4lib.boxes.DataInformationBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
+mp4lib.boxes.DataInformationBox.prototype.constructor = mp4lib.boxes.DataInformationBox;
+
+// --------------------------- stbl ----------------------------------
+mp4lib.boxes.SampleTableBox = function(size) {
+    mp4lib.boxes.ContainerBox.call(this, 'stbl', size);
+};
+
+mp4lib.boxes.SampleTableBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
+mp4lib.boxes.SampleTableBox.prototype.constructor = mp4lib.boxes.SampleTableBox;
+
+// --------------------------- mvex ----------------------------------
+mp4lib.boxes.MovieExtendsBox = function(size) {
+    mp4lib.boxes.ContainerBox.call(this, 'mvex', size);
+};
+
+mp4lib.boxes.MovieExtendsBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
+mp4lib.boxes.MovieExtendsBox.prototype.constructor = mp4lib.boxes.MovieExtendsBox;
+
+// --------------------------- traf ----------------------------------
+mp4lib.boxes.TrackFragmentBox = function(size) {
+    mp4lib.boxes.ContainerBox.call(this, 'traf', size);
+};
+
+mp4lib.boxes.TrackFragmentBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
+mp4lib.boxes.TrackFragmentBox.prototype.constructor = mp4lib.boxes.TrackFragmentBox;
+
+// --------------------------- meta -----------------------------
+mp4lib.boxes.MetaBox = function(size) {
+    mp4lib.boxes.ContainerFullBox.call(this, 'meta', size);
+};
+
+mp4lib.boxes.MetaBox.prototype = Object.create(mp4lib.boxes.ContainerFullBox.prototype);
+mp4lib.boxes.MetaBox.prototype.constructor = mp4lib.boxes.MetaBox;
+
+mp4lib.boxes.MetaBox.prototype.computeLength = function() {
+    mp4lib.boxes.ContainerFullBox.prototype.computeLength.call(this, false);
+};
+
+mp4lib.boxes.MetaBox.prototype.read = function(data, pos, end) {
+    return mp4lib.boxes.ContainerFullBox.prototype.read.call(this, data, pos, end, false);
+};
+
+mp4lib.boxes.MetaBox.prototype.write = function(data, pos) {
+    return mp4lib.boxes.ContainerFullBox.prototype.write.call(this, data, pos, false);
+};
+
+// --------------------------- mvhd ----------------------------------
+mp4lib.boxes.MovieHeaderBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'mvhd', size);
+};
+
+mp4lib.boxes.MovieHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.MovieHeaderBox.prototype.constructor = mp4lib.boxes.MovieHeaderBox;
+
+mp4lib.boxes.MovieHeaderBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+
+    this.size += mp4lib.fields.FIELD_INT32.getLength() /*rate size*/ + mp4lib.fields.FIELD_INT16.getLength() * 2 /*volume size and reserved size*/ ;
+    this.size += mp4lib.fields.FIELD_INT32.getLength() * 2 /*reserved_2 size*/ + mp4lib.fields.FIELD_INT32.getLength() * 9 /*matrix size*/ ;
+    this.size += mp4lib.fields.FIELD_BIT32.getLength() * 6 /*pre_defined size*/ + mp4lib.fields.FIELD_UINT32.getLength() /*next_track_ID size*/ ;
+    if (this.version === 1) {
+        this.size += mp4lib.fields.FIELD_UINT64.getLength() * 3 + mp4lib.fields.FIELD_UINT32.getLength();
+    } else {
+        this.size += mp4lib.fields.FIELD_UINT32.getLength() * 4;
+    }
+};
+
+mp4lib.boxes.MovieHeaderBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    if (this.version === 1) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.creation_time);
+        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.modification_time);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.timescale);
+        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.duration);
+    } else {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.creation_time);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.modification_time);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.timescale);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.duration);
+    }
+
+    this._writeData(data, mp4lib.fields.FIELD_INT32, this.rate);
+    this._writeData(data, mp4lib.fields.FIELD_INT16, this.volume);
+    this._writeData(data, mp4lib.fields.FIELD_INT16, this.reserved);
+    this._writeArrayData(data, mp4lib.fields.FIELD_INT32, this.reserved_2);
+    this._writeArrayData(data, mp4lib.fields.FIELD_INT32, this.matrix);
+    this._writeArrayData(data, mp4lib.fields.FIELD_BIT32, this.pre_defined);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.next_track_ID);
+
+    return this.localPos;
+};
+
+mp4lib.boxes.MovieHeaderBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    if (this.version == 1) {
+        this.creation_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
+        this.modification_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
+        this.timescale = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.duration = this._readData(data, mp4lib.fields.FIELD_UINT64);
+    } else {
+        this.creation_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.modification_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.timescale = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    }
+
+    this.rate = this._readData(data, mp4lib.fields.FIELD_INT32);
+    this.volume = this._readData(data, mp4lib.fields.FIELD_INT16);
+    this.reserved = this._readData(data, mp4lib.fields.FIELD_INT16);
+    this.reserved_2 = this._readArrayFieldData(data, mp4lib.fields.FIELD_INT32, 2);
+    this.matrix = this._readArrayFieldData(data, mp4lib.fields.FIELD_INT32, 9);
+    this.pre_defined = this._readArrayFieldData(data, mp4lib.fields.FIELD_BIT32, 6);
+    this.next_track_ID = this._readData(data, mp4lib.fields.FIELD_UINT32);
+
+    return this.localPos;
+};
+
+// --------------------------- mdat ----------------------------------
+mp4lib.boxes.MediaDataBox = function(size) {
+    mp4lib.boxes.Box.call(this, 'mdat', size);
+};
+
+mp4lib.boxes.MediaDataBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
+mp4lib.boxes.MediaDataBox.prototype.constructor = mp4lib.boxes.MediaDataBox;
+
+mp4lib.boxes.MediaDataBox.prototype.computeLength = function() {
+    mp4lib.boxes.Box.prototype.computeLength.call(this);
+    this.size += this.data.length;
+};
+
+mp4lib.boxes.MediaDataBox.prototype.read = function(data, pos, end) {
+    this.data = data.subarray(pos, end);
+
+    return end;
+};
+
+mp4lib.boxes.MediaDataBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
+
+    this._writeBuffer(data, this.data, this.data.length);
+
+    return this.localPos;
+};
+
+// --------------------------- free ----------------------------------
+mp4lib.boxes.FreeSpaceBox = function(size) {
+    mp4lib.boxes.Box.call(this, 'free', size);
+};
+
+mp4lib.boxes.FreeSpaceBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
+mp4lib.boxes.FreeSpaceBox.prototype.constructor = mp4lib.boxes.FreeSpaceBox;
+
+mp4lib.boxes.FreeSpaceBox.prototype.computeLength = function() {
+    mp4lib.boxes.Box.prototype.computeLength.call(this);
+    this.size += this.data.length;
+};
+
+mp4lib.boxes.FreeSpaceBox.prototype.read = function(data, pos, end) {
+    this.localPos = pos;
+    this.localEnd = end;
+    this.data = data.subarray(this.localPos, this.localEnd);
+    return this.localEnd;
+};
+
+mp4lib.boxes.FreeSpaceBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
+
+    this._writeBuffer(data, this.data, this.data.length);
+
+    return this.localPos;
+};
+
+// --------------------------- sidx ----------------------------------
+mp4lib.boxes.SegmentIndexBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'sidx', size);
+};
+
+mp4lib.boxes.SegmentIndexBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.SegmentIndexBox.prototype.constructor = mp4lib.boxes.SegmentIndexBox;
+
+mp4lib.boxes.SegmentIndexBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+
+    this.size += mp4lib.fields.FIELD_UINT32.getLength() * 2; /* reference_ID and timescale size*/
+    if (this.version === 1) {
+        this.size += mp4lib.fields.FIELD_UINT64.getLength() * 2; /* earliest_presentation_time and first_offset size*/
+    } else {
+        this.size += mp4lib.fields.FIELD_UINT32.getLength() * 2; /* earliest_presentation_time and first_offset size*/
+    }
+    this.size += mp4lib.fields.FIELD_UINT16.getLength(); /* reserved size*/
+    this.size += mp4lib.fields.FIELD_UINT16.getLength(); /* reference_count size*/
+    this.size += (mp4lib.fields.FIELD_UINT64.getLength() /* reference_info size*/ + mp4lib.fields.FIELD_UINT32.getLength() /* SAP size*/ ) * this.reference_count;
+};
+
+
+mp4lib.boxes.SegmentIndexBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    var i = 0,
+        struct = {};
+
+    this.reference_ID = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.timescale = this._readData(data, mp4lib.fields.FIELD_UINT32);
+
+    if (this.version === 1) {
+        this.earliest_presentation_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
+        this.first_offset = this._readData(data, mp4lib.fields.FIELD_UINT64);
+    } else {
+        this.earliest_presentation_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.first_offset = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    }
+    this.reserved = this._readData(data, mp4lib.fields.FIELD_UINT16);
+    this.reference_count = this._readData(data, mp4lib.fields.FIELD_UINT16);
+
+    this.references = [];
+
+    for (i = 0; i < this.reference_count; i++) {
+        struct = {};
+
+        struct.reference_info = this._readData(data, mp4lib.fields.FIELD_UINT64);
+        struct.SAP = this._readData(data, mp4lib.fields.FIELD_UINT32);
+
+        this.references.push(struct);
+    }
+
+    return this.localPos;
+};
+
+mp4lib.boxes.SegmentIndexBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    var i = 0;
+
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.reference_ID);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.timescale);
+
+    if (this.version === 1) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.earliest_presentation_time);
+        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.first_offset);
+    } else {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.earliest_presentation_time);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.first_offset);
+    }
+
+    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.reserved);
+    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.reference_count);
+
+    for (i = 0; i < this.reference_count; i++) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.references[i].reference_info);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.references[i].SAP);
+    }
+    return this.localPos;
+};
+
+// --------------------------- tkhd ----------------------------------
+mp4lib.boxes.TrackHeaderBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'tkhd', size);
+};
+
+mp4lib.boxes.TrackHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.TrackHeaderBox.prototype.constructor = mp4lib.boxes.TrackHeaderBox;
+
+mp4lib.boxes.TrackHeaderBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_INT16.getLength() * 4 + mp4lib.fields.FIELD_INT32.getLength() * 2 + mp4lib.fields.FIELD_UINT32.getLength() * 2 + mp4lib.fields.FIELD_INT32.getLength() * 9;
+    if (this.version == 1) {
+        this.size += mp4lib.fields.FIELD_UINT64.getLength() * 3 + mp4lib.fields.FIELD_UINT32.getLength() * 2;
+    } else {
+        this.size += mp4lib.fields.FIELD_UINT32.getLength() * 5;
+    }
+};
+
+mp4lib.boxes.TrackHeaderBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    if (this.version === 1) {
+        this.creation_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
+        this.modification_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
+        this.track_id = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.reserved = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.duration = this._readData(data, mp4lib.fields.FIELD_UINT64);
+    } else {
+        this.creation_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.modification_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.track_id = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.reserved = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    }
+
+    this.reserved_2 = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT32, 2);
+    this.layer = this._readData(data, mp4lib.fields.FIELD_INT16);
+    this.alternate_group = this._readData(data, mp4lib.fields.FIELD_INT16);
+    this.volume = this._readData(data, mp4lib.fields.FIELD_INT16);
+    this.reserved_3 = this._readData(data, mp4lib.fields.FIELD_INT16);
+    this.matrix = this._readArrayFieldData(data, mp4lib.fields.FIELD_INT32, 9);
+    this.width = this._readData(data, mp4lib.fields.FIELD_INT32);
+    this.height = this._readData(data, mp4lib.fields.FIELD_INT32);
+    return this.localPos;
+};
+
+mp4lib.boxes.TrackHeaderBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    if (this.version === 1) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.creation_time);
+        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.modification_time);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.track_id);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.reserved);
+        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.duration);
+    } else {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.creation_time);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.modification_time);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.track_id);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.reserved);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.duration);
+    }
+
+    this._writeArrayData(data, mp4lib.fields.FIELD_UINT32, this.reserved_2);
+    this._writeData(data, mp4lib.fields.FIELD_INT16, this.layer);
+    this._writeData(data, mp4lib.fields.FIELD_INT16, this.alternate_group);
+    this._writeData(data, mp4lib.fields.FIELD_INT16, this.volume);
+    this._writeData(data, mp4lib.fields.FIELD_INT16, this.reserved_3);
+    this._writeArrayData(data, mp4lib.fields.FIELD_INT32, this.matrix);
+    this._writeData(data, mp4lib.fields.FIELD_INT32, this.width);
+    this._writeData(data, mp4lib.fields.FIELD_INT32, this.height);
+    return this.localPos;
+};
+
+// --------------------------- mdhd ----------------------------------
+mp4lib.boxes.MediaHeaderBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'mdhd', size);
+};
+
+mp4lib.boxes.MediaHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.MediaHeaderBox.prototype.constructor = mp4lib.boxes.MediaHeaderBox;
+
+mp4lib.boxes.MediaHeaderBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_UINT16.getLength() * 2;
+    if (this.version == 1) {
+        this.size += mp4lib.fields.FIELD_UINT64.getLength() * 3 + mp4lib.fields.FIELD_UINT32.getLength();
+    } else {
+        this.size += mp4lib.fields.FIELD_UINT32.getLength() * 4;
+    }
+};
+
+mp4lib.boxes.MediaHeaderBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    if (this.version === 1) {
+        this.creation_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
+        this.modification_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
+        this.timescale = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.duration = this._readData(data, mp4lib.fields.FIELD_UINT64);
+    } else {
+        this.creation_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.modification_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.timescale = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    }
+
+    this.language = this._readData(data, mp4lib.fields.FIELD_UINT16);
+    this.pre_defined = this._readData(data, mp4lib.fields.FIELD_UINT16);
+    return this.localPos;
+};
+
+mp4lib.boxes.MediaHeaderBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    if (this.version === 1) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.creation_time);
+        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.modification_time);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.timescale);
+        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.duration);
+    } else {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.creation_time);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.modification_time);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.timescale);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.duration);
+    }
+
+    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.language);
+    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.pre_defined);
+    return this.localPos;
+};
+
+// --------------------------- mehd ----------------------------------
+mp4lib.boxes.MovieExtendsHeaderBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'mehd', size);
+};
+
+mp4lib.boxes.MovieExtendsHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.MovieExtendsHeaderBox.prototype.constructor = mp4lib.boxes.MovieExtendsHeaderBox;
+
+mp4lib.boxes.MovieExtendsHeaderBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    if (this.version == 1) {
+        this.size += mp4lib.fields.FIELD_UINT64.getLength();
+    } else {
+        this.size += mp4lib.fields.FIELD_UINT32.getLength();
+    }
+};
+
+mp4lib.boxes.MovieExtendsHeaderBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    if (this.version === 1) {
+        this.fragment_duration = this._readData(data, mp4lib.fields.FIELD_UINT64);
+    } else {
+        this.fragment_duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.MovieExtendsHeaderBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    if (this.version === 1) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.fragment_duration);
+    } else {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.fragment_duration);
+    }
+    return this.localPos;
+};
+
+// --------------------------- hdlr --------------------------------
+mp4lib.boxes.HandlerBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'hdlr', size);
+};
+
+mp4lib.boxes.HandlerBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.HandlerBox.prototype.constructor = mp4lib.boxes.HandlerBox;
+
+//add NAN
+mp4lib.boxes.HandlerBox.prototype.HANDLERTYPEVIDEO = "vide";
+mp4lib.boxes.HandlerBox.prototype.HANDLERTYPEAUDIO = "soun";
+mp4lib.boxes.HandlerBox.prototype.HANDLERTYPETEXT = "meta";
+mp4lib.boxes.HandlerBox.prototype.HANDLERVIDEONAME = "Video Track";
+mp4lib.boxes.HandlerBox.prototype.HANDLERAUDIONAME = "Audio Track";
+mp4lib.boxes.HandlerBox.prototype.HANDLERTEXTNAME = "Text Track";
+
+mp4lib.boxes.HandlerBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_UINT32.getLength() * 2 + mp4lib.fields.FIELD_UINT32.getLength() * 3 +
+        mp4lib.fields.FIELD_STRING.getLength(this.name);
+};
+
+mp4lib.boxes.HandlerBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    this.pre_defined = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.handler_type = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.reserved = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT32, 3);
+    this.name = this._readData(data, mp4lib.fields.FIELD_STRING);
+    return this.localPos;
+};
+
+mp4lib.boxes.HandlerBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.pre_defined);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.handler_type);
+    this._writeArrayData(data, mp4lib.fields.FIELD_UINT32, this.reserved);
+    this._writeData(data, mp4lib.fields.FIELD_STRING, this.name);
+    return this.localPos;
+};
+
+// --------------------------- stts ----------------------------------
+mp4lib.boxes.TimeToSampleBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'stts', size);
+};
+
+mp4lib.boxes.TimeToSampleBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.TimeToSampleBox.prototype.constructor = mp4lib.boxes.TimeToSampleBox;
+
+mp4lib.boxes.TimeToSampleBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_UINT32.getLength();
+    this.size += this.entry_count * (mp4lib.fields.FIELD_UINT32.getLength() * 2);
+};
+
+mp4lib.boxes.TimeToSampleBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+    var i = 0,
+        struct = {};
+
+    this.entry_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
+
+    this.entry = [];
+
+    for (i = 0; i < this.entry_count; i++) {
+        struct = {};
+
+        struct.sample_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        struct.sample_delta = this._readData(data, mp4lib.fields.FIELD_UINT32);
+
+        this.entry.push(struct);
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.TimeToSampleBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    var i = 0;
+
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
+
+    for (i = 0; i < this.entry_count; i++) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].sample_count);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].sample_delta);
+    }
+    return this.localPos;
+};
+
+// --------------------------- stsc ----------------------------------
+mp4lib.boxes.SampleToChunkBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'stsc', size);
+};
+
+mp4lib.boxes.SampleToChunkBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.SampleToChunkBox.prototype.constructor = mp4lib.boxes.SampleToChunkBox;
+
+mp4lib.boxes.SampleToChunkBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_UINT32.getLength();
+    this.size += this.entry_count * (mp4lib.fields.FIELD_UINT32.getLength() * 3);
+};
+
+mp4lib.boxes.SampleToChunkBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+    var i = 0,
+        struct = {};
+
+    this.entry_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
+
+    this.entry = [];
+
+    for (i = 0; i < this.entry_count; i++) {
+        struct = {};
+
+        struct.first_chunk = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        struct.samples_per_chunk = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        struct.samples_description_index = this._readData(data, mp4lib.fields.FIELD_UINT32);
+
+        this.entry.push(struct);
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.SampleToChunkBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    var i = 0;
+
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
+    for (i = 0; i < this.entry_count; i++) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].first_chunk);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].samples_per_chunk);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].samples_description_index);
+    }
+    return this.localPos;
+};
+
+// --------------------------- stco ----------------------------------
+mp4lib.boxes.ChunkOffsetBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'stco', size);
+};
+
+mp4lib.boxes.ChunkOffsetBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.ChunkOffsetBox.prototype.constructor = mp4lib.boxes.ChunkOffsetBox;
+
+mp4lib.boxes.ChunkOffsetBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_UINT32.getLength() + this.entry_count * mp4lib.fields.FIELD_UINT32.getLength();
+};
+
+mp4lib.boxes.ChunkOffsetBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    this.entry_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.chunk_offset = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
+    return this.localPos;
+};
+
+mp4lib.boxes.ChunkOffsetBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    var i = 0;
+
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
+
+    for (i = 0; i < this.entry_count; i++) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.chunk_offset[i]);
+    }
+    return this.localPos;
+};
+
+// --------------------------- trex ----------------------------------
+mp4lib.boxes.TrackExtendsBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'trex', size);
+};
+
+mp4lib.boxes.TrackExtendsBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.TrackExtendsBox.prototype.constructor = mp4lib.boxes.TrackExtendsBox;
+
+mp4lib.boxes.TrackExtendsBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_UINT32.getLength() * 5;
+};
+
+mp4lib.boxes.TrackExtendsBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    this.track_ID = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.default_sample_description_index = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.default_sample_duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.default_sample_size = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.default_sample_flags = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    return this.localPos;
+};
+
+mp4lib.boxes.TrackExtendsBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.track_ID);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.default_sample_description_index);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.default_sample_duration);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.default_sample_size);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.default_sample_flags);
+    return this.localPos;
+};
+
+// --------------------------- vmhd ----------------------------------
+mp4lib.boxes.VideoMediaHeaderBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'vmhd', size);
+};
+
+mp4lib.boxes.VideoMediaHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.VideoMediaHeaderBox.prototype.constructor = mp4lib.boxes.VideoMediaHeaderBox;
+
+mp4lib.boxes.VideoMediaHeaderBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_INT16.getLength() + mp4lib.fields.FIELD_UINT16.getLength() * 3;
+};
+
+mp4lib.boxes.VideoMediaHeaderBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    this.graphicsmode = this._readData(data, mp4lib.fields.FIELD_INT16);
+    this.opcolor = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT16, 3);
+    return this.localPos;
+};
+
+mp4lib.boxes.VideoMediaHeaderBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    this._writeData(data, mp4lib.fields.FIELD_INT16, this.graphicsmode);
+    this._writeArrayData(data, mp4lib.fields.FIELD_UINT16, this.opcolor);
+    return this.localPos;
+};
+
+// --------------------------- smhd ----------------------------------
+mp4lib.boxes.SoundMediaHeaderBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'smhd', size);
+};
+
+mp4lib.boxes.SoundMediaHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.SoundMediaHeaderBox.prototype.constructor = mp4lib.boxes.SoundMediaHeaderBox;
+
+mp4lib.boxes.SoundMediaHeaderBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_INT16.getLength() + mp4lib.fields.FIELD_UINT16.getLength();
+};
+
+mp4lib.boxes.SoundMediaHeaderBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    this.balance = this._readData(data, mp4lib.fields.FIELD_INT16);
+    this.reserved = this._readData(data, mp4lib.fields.FIELD_UINT16);
+    return this.localPos;
+};
+
+mp4lib.boxes.SoundMediaHeaderBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    this._writeData(data, mp4lib.fields.FIELD_INT16, this.balance);
+    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.reserved);
+    return this.localPos;
+};
+
+// --------------------------- dref ----------------------------------
+mp4lib.boxes.DataReferenceBox = function(size) {
+    mp4lib.boxes.ContainerFullBox.call(this, 'dref', size);
+};
+
+mp4lib.boxes.DataReferenceBox.prototype = Object.create(mp4lib.boxes.ContainerFullBox.prototype);
+mp4lib.boxes.DataReferenceBox.prototype.constructor = mp4lib.boxes.DataReferenceBox;
+
+mp4lib.boxes.DataReferenceBox.prototype.computeLength = function() {
+    mp4lib.boxes.ContainerFullBox.prototype.computeLength.call(this, true);
+};
+
+mp4lib.boxes.DataReferenceBox.prototype.read = function(data, pos, end) {
+    return mp4lib.boxes.ContainerFullBox.prototype.read.call(this, data, pos, end, true);
+};
+
+mp4lib.boxes.DataReferenceBox.prototype.write = function(data, pos) {
+    if (!this.entry_count) {
+        //if entry_count has not been set, set it to boxes array length
+        this.entry_count = this.boxes.length;
+    }
+    return mp4lib.boxes.ContainerFullBox.prototype.write.call(this, data, pos, true);
+};
+
+// --------------------------- url  ----------------------------------
+mp4lib.boxes.DataEntryUrlBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'url ', size);
+};
+
+mp4lib.boxes.DataEntryUrlBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.DataEntryUrlBox.prototype.constructor = mp4lib.boxes.DataEntryUrlBox;
+
+mp4lib.boxes.DataEntryUrlBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    //NAN : test on location value, not definition, probleme in IE
+    if (this.location !== undefined /*&& this.location !==""*/ ) {
+        //this.flags = this.flags | 1;
+        this.size += mp4lib.fields.FIELD_STRING.getLength(this.location);
+    }
+};
+
+mp4lib.boxes.DataEntryUrlBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    if (this.flags & '0x000001' === 0) {
+        this.location = this._readData(data, mp4lib.fields.FIELD_STRING);
+    }
+
+    return this.localPos;
+};
+
+mp4lib.boxes.DataEntryUrlBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    if (this.location !== undefined /* && this.location !== ""*/ ) {
+        this._writeData(data, mp4lib.fields.FIELD_STRING, this.location);
+    }
+    return this.localPos;
+};
+
+// --------------------------- urn  ----------------------------------
+mp4lib.boxes.DataEntryUrnBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'urn ', size);
+};
+
+mp4lib.boxes.DataEntryUrnBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.DataEntryUrnBox.prototype.constructor = mp4lib.boxes.DataEntryUrnBox;
+
+mp4lib.boxes.DataEntryUrnBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    if (this.flags & '0x000001' === 0) {
+        this.size += mp4lib.fields.FIELD_STRING.getLength(this.name) + mp4lib.fields.FIELD_STRING.getLength(this.location);
+    }
+};
+
+mp4lib.boxes.DataEntryUrnBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    if (this.flags & '0x000001' === 0) {
+        this.name = this._readData(data, mp4lib.fields.FIELD_STRING);
+        this.location = this._readData(data, mp4lib.fields.FIELD_STRING);
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.DataEntryUrnBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    if (this.flags & '0x000001' === 0) {
+        this._writeData(data, mp4lib.fields.FIELD_STRING, this.name);
+        this._writeData(data, mp4lib.fields.FIELD_STRING, this.location);
+    }
+    return this.localPos;
+};
+
+// --------------------------- mfhd ----------------------------------
+mp4lib.boxes.MovieFragmentHeaderBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'mfhd', size);
+};
+
+mp4lib.boxes.MovieFragmentHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.MovieFragmentHeaderBox.prototype.constructor = mp4lib.boxes.MovieFragmentHeaderBox;
+
+mp4lib.boxes.MovieFragmentHeaderBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_UINT32.getLength();
+};
+
+mp4lib.boxes.MovieFragmentHeaderBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+    this.sequence_number = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    return this.localPos;
+};
+
+mp4lib.boxes.MovieFragmentHeaderBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.sequence_number);
+    return this.localPos;
+};
+
+// --------------------------- tfhd ----------------------------------
+mp4lib.boxes.TrackFragmentHeaderBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'tfhd', size);
+};
+
+mp4lib.boxes.TrackFragmentHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.TrackFragmentHeaderBox.prototype.constructor = mp4lib.boxes.TrackFragmentHeaderBox;
+
+mp4lib.boxes.TrackFragmentHeaderBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_UINT32.getLength();
+    //even if, for example base_data_offset is defined, test the flags value
+    //to know if base_data_offset size should be added to global size.
+    if ((this.flags & 0x000001) !== 0 && this.base_data_offset !== undefined) {
+        this.size += mp4lib.fields.FIELD_UINT64.getLength();
+    }
+    if ((this.flags & 0x000002) !== 0 && this.sample_description_index !== undefined) {
+        this.size += mp4lib.fields.FIELD_UINT32.getLength();
+    }
+    if ((this.flags & 0x000008) !== 0 && this.default_sample_duration !== undefined) {
+        this.size += mp4lib.fields.FIELD_UINT32.getLength();
+    }
+    if ((this.flags & 0x000010) !== 0 && this.default_sample_size !== undefined) {
+        this.size += mp4lib.fields.FIELD_UINT32.getLength();
+    }
+    if ((this.flags & 0x000020) !== 0 && this.default_sample_flags !== undefined) {
+        this.size += mp4lib.fields.FIELD_UINT32.getLength();
+    }
+};
+
+mp4lib.boxes.TrackFragmentHeaderBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    this.track_ID = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    if ((this.flags & 0x000001) !== 0) {
+        this.base_data_offset = this._readData(data, mp4lib.fields.FIELD_UINT64);
+    }
+    if ((this.flags & 0x000002) !== 0) {
+        this.sample_description_index = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    }
+    if ((this.flags & 0x000008) !== 0) {
+        this.default_sample_duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    }
+    if ((this.flags & 0x000010) !== 0) {
+        this.default_sample_size = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    }
+    if ((this.flags & 0x000020) !== 0) {
+        this.default_sample_flags = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.TrackFragmentHeaderBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.track_ID);
+
+    if ((this.flags & 0x000001) !== 0) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.base_data_offset);
+    }
+    if ((this.flags & 0x000002) !== 0) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.sample_description_index);
+    }
+    if ((this.flags & 0x000008) !== 0) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.default_sample_duration);
+    }
+    if ((this.flags & 0x000010) !== 0) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.default_sample_size);
+    }
+    if ((this.flags & 0x000020) !== 0) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.default_sample_flags);
+    }
+    return this.localPos;
+};
+
+// --------------------------- tfdt ----------------------------------
+mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'tfdt', size);
+};
+
+mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox.prototype.constructor = mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox;
+
+mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    if (this.version === 1) {
+        this.size += mp4lib.fields.FIELD_UINT64.getLength();
+    } else {
+        this.size += mp4lib.fields.FIELD_UINT32.getLength();
+    }
+};
+
+mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    if (this.version === 1) {
+        this.baseMediaDecodeTime = this._readData(data, mp4lib.fields.FIELD_UINT64);
+    } else {
+        this.baseMediaDecodeTime = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.TrackFragmentBaseMediaDecodeTimeBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    if (this.version === 1) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.baseMediaDecodeTime);
+    } else {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.baseMediaDecodeTime);
+    }
+    return this.localPos;
+};
+
+// --------------------------- trun ----------------------------------
+mp4lib.boxes.TrackFragmentRunBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'trun', size);
+};
+
+mp4lib.boxes.TrackFragmentRunBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.TrackFragmentRunBox.prototype.constructor = mp4lib.boxes.TrackFragmentRunBox;
+
+mp4lib.boxes.TrackFragmentRunBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    var i = 0;
+    this.size += mp4lib.fields.FIELD_UINT32.getLength(); //sample_count size
+    if ((this.flags & 0x000001) !== 0 && this.data_offset !== undefined) {
+        this.size += mp4lib.fields.FIELD_INT32.getLength();
+    }
+    if ((this.flags & 0x000004) !== 0 && this.first_sample_flags !== undefined) {
+        this.size += mp4lib.fields.FIELD_UINT32.getLength();
+    }
+
+    for (i = 0; i < this.sample_count; i++) {
+        if ((this.flags & 0x000100) !== 0 && this.samples_table[i].sample_duration !== undefined) {
+            this.size += mp4lib.fields.FIELD_UINT32.getLength();
+        }
+        if ((this.flags & 0x000200) !== 0 && this.samples_table[i].sample_size !== undefined) {
+            this.size += mp4lib.fields.FIELD_UINT32.getLength();
+        }
+        if ((this.flags & 0x000400) !== 0 && this.samples_table[i].sample_flags !== undefined) {
+            this.size += mp4lib.fields.FIELD_UINT32.getLength();
+        }
+
+        if (this.version === 1) {
+            if ((this.flags & 0x000800) !== 0 && this.samples_table[i].sample_composition_time_offset !== undefined) {
+                this.size += mp4lib.fields.FIELD_INT32.getLength();
+            }
+        } else {
+            if ((this.flags & 0x000800) !== 0 && this.samples_table[i].sample_composition_time_offset !== undefined) {
+                this.size += mp4lib.fields.FIELD_UINT32.getLength();
+            }
+        }
+    }
+};
+
+mp4lib.boxes.TrackFragmentRunBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+    var i = 0,
+        struct = {};
+
+    this.sample_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
+
+    if ((this.flags & 0x000001) !== 0) {
+        this.data_offset = this._readData(data, mp4lib.fields.FIELD_INT32);
+    }
+    if ((this.flags & 0x000004) !== 0) {
+        this.first_sample_flags = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    }
+
+    this.samples_table = [];
+
+    for (i = 0; i < this.sample_count; i++) {
+        struct = {};
+        if ((this.flags & 0x000100) !== 0) {
+            struct.sample_duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        }
+        if ((this.flags & 0x000200) !== 0) {
+            struct.sample_size = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        }
+        if ((this.flags & 0x000400) !== 0) {
+            struct.sample_flags = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        }
+
+        if (this.version === 1) {
+            if ((this.flags & 0x000800) !== 0) {
+                struct.sample_composition_time_offset = this._readData(data, mp4lib.fields.FIELD_INT32);
+            }
+        } else {
+            if ((this.flags & 0x000800) !== 0) {
+                struct.sample_composition_time_offset = this._readData(data, mp4lib.fields.FIELD_UINT32);
+            }
+        }
+        this.samples_table.push(struct);
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.TrackFragmentRunBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    var i = 0;
+
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.sample_count);
+
+    if ((this.flags & 0x000001) !== 0) {
+        this._writeData(data, mp4lib.fields.FIELD_INT32, this.data_offset);
+    }
+    if ((this.flags & 0x000004) !== 0) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.first_sample_flags);
+    }
+
+    for (i = 0; i < this.sample_count; i++) {
+
+        if ((this.flags & 0x000100) !== 0) {
+            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.samples_table[i].sample_duration);
+        }
+        if ((this.flags & 0x000200) !== 0) {
+            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.samples_table[i].sample_size);
+        }
+        if ((this.flags & 0x000400) !== 0) {
+            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.samples_table[i].sample_flags);
+        }
+
+        if (this.version === 1) {
+            if ((this.flags & 0x000800) !== 0) {
+                this._writeData(data, mp4lib.fields.FIELD_INT32, this.samples_table[i].sample_composition_time_offset);
+            }
+        } else {
+            if ((this.flags & 0x000800) !== 0) {
+                this._writeData(data, mp4lib.fields.FIELD_UINT32, this.samples_table[i].sample_composition_time_offset);
+            }
+        }
+    }
+    return this.localPos;
+};
+
+// --------------------------- stsd ----------------------------------
+mp4lib.boxes.SampleDescriptionBox = function(size) {
+    mp4lib.boxes.ContainerFullBox.call(this, 'stsd', size);
+};
+
+mp4lib.boxes.SampleDescriptionBox.prototype = Object.create(mp4lib.boxes.ContainerFullBox.prototype);
+mp4lib.boxes.SampleDescriptionBox.prototype.constructor = mp4lib.boxes.SampleDescriptionBox;
+
+mp4lib.boxes.SampleDescriptionBox.prototype.computeLength = function() {
+    mp4lib.boxes.ContainerFullBox.prototype.computeLength.call(this, true);
+};
+
+mp4lib.boxes.SampleDescriptionBox.prototype.read = function(data, pos, end) {
+    return mp4lib.boxes.ContainerFullBox.prototype.read.call(this, data, pos, end, true);
+};
+
+mp4lib.boxes.SampleDescriptionBox.prototype.write = function(data, pos) {
+    this.entry_count = this.boxes.length;
+    return mp4lib.boxes.ContainerFullBox.prototype.write.call(this, data, pos, true);
+};
+
+// --------------------------- sdtp ----------------------------------
+mp4lib.boxes.SampleDependencyTableBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'sdtp', size);
+};
+
+mp4lib.boxes.SampleDependencyTableBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.SampleDependencyTableBox.prototype.constructor = mp4lib.boxes.SampleDependencyTableBox;
+
+mp4lib.boxes.SampleDependencyTableBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_UINT8.getLength() * this.sample_dependency_table.length;
+};
+
+mp4lib.boxes.SampleDependencyTableBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+    this.sample_dependency_table = this._readArrayData(data, mp4lib.fields.FIELD_UINT8);
+    return this.localPos;
+};
+
+mp4lib.boxes.SampleDependencyTableBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    this._writeArrayData(data, mp4lib.fields.FIELD_UINT8, this.sample_dependency_table);
+    return this.localPos;
+};
+
+// --------------------------- abstract SampleEntry ----------------------------------
+mp4lib.boxes.SampleEntryBox = function(boxType, size) {
+    mp4lib.boxes.Box.call(this, boxType, size);
+};
+
+mp4lib.boxes.SampleEntryBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
+mp4lib.boxes.SampleEntryBox.prototype.constructor = mp4lib.boxes.SampleEntryBox;
+
+mp4lib.boxes.SampleEntryBox.prototype.computeLength = function() {
+    mp4lib.boxes.Box.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_UINT16.getLength() + mp4lib.fields.FIELD_UINT8.getLength() * 6;
+};
+
+mp4lib.boxes.SampleEntryBox.prototype.read = function(data, pos, end) {
+    this.localPos = pos;
+    this.localEnd = end;
+
+    this.reserved = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT8, 6);
+    this.data_reference_index = this._readData(data, mp4lib.fields.FIELD_UINT16);
+    return this.localPos;
+};
+
+mp4lib.boxes.SampleEntryBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
+
+    this._writeArrayData(data, mp4lib.fields.FIELD_UINT8, this.reserved);
+    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.data_reference_index);
+    return this.localPos;
+};
+
+// --------------------------- abstract VisualSampleEntry ----------------------------------
+mp4lib.boxes.VisualSampleEntryBox = function(boxType, size) {
+    mp4lib.boxes.SampleEntryBox.call(this, boxType, size);
+};
+
+mp4lib.boxes.VisualSampleEntryBox.prototype = Object.create(mp4lib.boxes.SampleEntryBox.prototype);
+mp4lib.boxes.VisualSampleEntryBox.prototype.constructor = mp4lib.boxes.VisualSampleEntryBox;
+
+mp4lib.boxes.VisualSampleEntryBox.prototype.computeLength = function() {
+    mp4lib.boxes.SampleEntryBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_UINT16.getLength() * 7 + mp4lib.fields.FIELD_UINT32.getLength() * 3;
+    this.size += mp4lib.fields.FIELD_UINT32.getLength() * 3;
+    this.size += 32; //compressorname size
+};
+
+mp4lib.boxes.VisualSampleEntryBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.SampleEntryBox.prototype.read.call(this, data, pos, end);
+    this.pre_defined = this._readData(data, mp4lib.fields.FIELD_UINT16);
+    this.reserved_2 = this._readData(data, mp4lib.fields.FIELD_UINT16);
+    // there is already field called reserved from SampleEntry, so we need to call it reserved_2
+    this.pre_defined_2 = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT32, 3);
+    this.width = this._readData(data, mp4lib.fields.FIELD_UINT16);
+    this.height = this._readData(data, mp4lib.fields.FIELD_UINT16);
+    this.horizresolution = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.vertresolution = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.reserved_3 = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.frame_count = this._readData(data, mp4lib.fields.FIELD_UINT16);
+    this.compressorname = new mp4lib.fields.FixedLenStringField(32);
+    this.compressorname = this.compressorname.read(data, this.localPos);
+    this.localPos += 32;
+    this.depth = this._readData(data, mp4lib.fields.FIELD_UINT16);
+    this.pre_defined_3 = this._readData(data, mp4lib.fields.FIELD_INT16);
+    return this.localPos;
+};
+
+mp4lib.boxes.VisualSampleEntryBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.SampleEntryBox.prototype.write.call(this, data, pos);
+    var i = 0;
+
+    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.pre_defined);
+    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.reserved_2);
+    // there is already field called reserved from SampleEntry, so we need to call it reserved_2
+    this._writeArrayData(data, mp4lib.fields.FIELD_UINT32, this.pre_defined_2);
+    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.width);
+    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.height);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.horizresolution);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.vertresolution);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.reserved_3);
+    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.frame_count);
+    for (i = 0; i < 32; i++) {
+        data[this.localPos + i] = this.compressorname.charCodeAt(i);
+    }
+    this.localPos += 32;
+    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.depth);
+    this._writeData(data, mp4lib.fields.FIELD_INT16, this.pre_defined_3);
+    return this.localPos;
+};
+
+// --------------------------- abstract VisualSampleEntryContainer ----------------------------------
+mp4lib.boxes.VisualSampleEntryContainerBox = function(boxType, size) {
+    mp4lib.boxes.VisualSampleEntryBox.call(this, boxType, size);
+    this.boxes = [];
+};
+
+mp4lib.boxes.VisualSampleEntryContainerBox.prototype = Object.create(mp4lib.boxes.VisualSampleEntryBox.prototype);
+mp4lib.boxes.VisualSampleEntryContainerBox.prototype.constructor = mp4lib.boxes.VisualSampleEntryContainerBox;
+
+mp4lib.boxes.VisualSampleEntryContainerBox.prototype.computeLength = function() {
+    mp4lib.boxes.VisualSampleEntryBox.prototype.computeLength.call(this);
+    var i = 0;
+    for (i = 0; i < this.boxes.length; i++) {
+        this.boxes[i].computeLength();
+        this.size += this.boxes[i].size;
+    }
+};
+
+mp4lib.boxes.VisualSampleEntryContainerBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.VisualSampleEntryBox.prototype.read.call(this, data, pos, end);
+
+    var size = 0,
+        uuidFieldPos = 0,
+        uuid = null,
+        boxtype,
+        box;
+
+    while (this.localPos < this.localEnd) {
+        // Read box size
+        size = mp4lib.fields.FIELD_UINT32.read(data, this.localPos);
+
+        // Read boxtype
+        boxtype = mp4lib.fields.readString(data, this.localPos + 4, 4);
+
+        // Extented type?
+        if (boxtype == "uuid") {
+            uuidFieldPos = (size == 1) ? 16 : 8;
+            uuid = new mp4lib.fields.ArrayField(mp4lib.fields.FIELD_INT8, 16).read(data, this.localPos + uuidFieldPos, this.localPos + uuidFieldPos + 16);
+            uuid = JSON.stringify(uuid);
+        }
+
+        box = mp4lib.createBox(boxtype, size, uuid);
+        if (boxtype === "uuid") {
+            this.localPos = box.read(data, this.localPos + mp4lib.fields.FIELD_INT8.getLength() * 16 + 8, this.localPos + size);
+        } else {
+            this.localPos = box.read(data, this.localPos + 8, this.localPos + size);
+        }
+
+        // in debug mode, sourcebuffer is copied to each box,
+        // so any invalid deserializations may be found by comparing
+        // source buffer with serialized box
+        if (mp4lib.debug) {
+            box.__sourceBuffer = data.subarray(this.localPos - box.size, this.localPos);
+        }
+
+        this.boxes.push(box);
+
+        if (box.size <= 0 || box.size === null) {
+            throw new mp4lib.ParseException('Problem on size of box ' + box.boxtype +
+                ', parsing stopped to avoid infinite loop');
+        }
+
+        if (!box.boxtype) {
+            throw new mp4lib.ParseException('Problem on unknown box, parsing stopped to avoid infinite loop');
+        }
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.VisualSampleEntryContainerBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.VisualSampleEntryBox.prototype.write.call(this, data, pos);
+    var i = 0;
+
+    for (i = 0; i < this.boxes.length; i++) {
+        this.localPos = this.boxes[i].write(data, this.localPos);
+    }
+    return this.localPos;
+};
+
+// --------------------------- avc1 ----------------------------------
+mp4lib.boxes.AVC1VisualSampleEntryBox = function(size) {
+    mp4lib.boxes.VisualSampleEntryContainerBox.call(this, 'avc1', size);
+};
+
+mp4lib.boxes.AVC1VisualSampleEntryBox.prototype = Object.create(mp4lib.boxes.VisualSampleEntryContainerBox.prototype);
+mp4lib.boxes.AVC1VisualSampleEntryBox.prototype.constructor = mp4lib.boxes.AVC1VisualSampleEntryBox;
+
+//-------------------------- encv ------------------------------------
+mp4lib.boxes.EncryptedVideoBox = function(size) {
+    mp4lib.boxes.VisualSampleEntryContainerBox.call(this, 'encv', size);
+};
+
+mp4lib.boxes.EncryptedVideoBox.prototype = Object.create(mp4lib.boxes.VisualSampleEntryContainerBox.prototype);
+mp4lib.boxes.EncryptedVideoBox.prototype.constructor = mp4lib.boxes.EncryptedVideoBox;
+
+// --------------------------- avcc ----------------------------------
+mp4lib.boxes.AVCConfigurationBox = function(size) {
+    mp4lib.boxes.Box.call(this, 'avcC', size);
+};
+
+mp4lib.boxes.AVCConfigurationBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
+mp4lib.boxes.AVCConfigurationBox.prototype.constructor = mp4lib.boxes.AVCConfigurationBox;
+
+mp4lib.boxes.AVCConfigurationBox.prototype.computeLength = function() {
+    mp4lib.boxes.Box.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_UINT8.getLength() * 4 + mp4lib.fields.FIELD_UINT8.getLength() * 3;
+    this.size += this._getNALLength(this.numOfSequenceParameterSets, this.SPS_NAL);
+    this.size += this._getNALLength(this.numOfPictureParameterSets, this.PPS_NAL);
+};
+
+mp4lib.boxes.AVCConfigurationBox.prototype._getNALLength = function(nbElements, nalArray) {
+    var size_NAL = 0,
+        i = 0;
+
+    for (i = 0; i < nbElements; i++) {
+        size_NAL += mp4lib.fields.FIELD_UINT16.getLength() + nalArray[i].NAL_length;
+    }
+
+    return size_NAL;
+};
+
+mp4lib.boxes.AVCConfigurationBox.prototype.read = function(data, pos, end) {
+    this.localPos = pos;
+    this.localEnd = end;
+    this.configurationVersion = this._readData(data, mp4lib.fields.FIELD_UINT8);
+    this.AVCProfileIndication = this._readData(data, mp4lib.fields.FIELD_UINT8);
+    this.profile_compatibility = this._readData(data, mp4lib.fields.FIELD_UINT8);
+    this.AVCLevelIndication = this._readData(data, mp4lib.fields.FIELD_UINT8);
+
+    this.temp = this._readData(data, mp4lib.fields.FIELD_UINT8);
+    // 6 bits for reserved =63 and two bits for NAL length = 2-bit length byte size type
+    this.lengthSizeMinusOne = this.temp & 3;
+    this.numOfSequenceParameterSets_tmp = this._readData(data, mp4lib.fields.FIELD_UINT8);
+    this.numOfSequenceParameterSets = this.numOfSequenceParameterSets_tmp & 31;
+
+    this.SPS_NAL = this._readNAL(data, this.numOfSequenceParameterSets);
+
+    this.numOfPictureParameterSets = this._readData(data, mp4lib.fields.FIELD_UINT8);
+
+    this.PPS_NAL = this._readNAL(data, this.numOfPictureParameterSets);
+    return this.localPos;
+};
+
+mp4lib.boxes.AVCConfigurationBox.prototype._readNAL = function(data, nbElements) {
+    var nalArray = [],
+        i = 0,
+        struct = {};
+
+    for (i = 0; i < nbElements; i++) {
+        struct = {};
+
+        struct.NAL_length = this._readData(data, mp4lib.fields.FIELD_UINT16);
+        struct.NAL = data.subarray(this.localPos, this.localPos + struct.NAL_length);
+        this.localPos += struct.NAL_length;
+        nalArray.push(struct);
+    }
+    return nalArray;
+};
+
+mp4lib.boxes.AVCConfigurationBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
+
+    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.configurationVersion);
+    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.AVCProfileIndication);
+    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.profile_compatibility);
+    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.AVCLevelIndication);
+
+    this.temp = this.lengthSizeMinusOne | 252;
+    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.temp);
+    this.numOfSequenceParameterSets = this.SPS_NAL.length;
+    this.numOfSequenceParameterSets_tmp = this.numOfSequenceParameterSets | 224;
+    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.numOfSequenceParameterSets_tmp);
+    this._writeNAL(data, this.numOfSequenceParameterSets, this.SPS_NAL);
+    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.numOfPictureParameterSets);
+    this._writeNAL(data, this.numOfPictureParameterSets, this.PPS_NAL);
+    return this.localPos;
+};
+
+mp4lib.boxes.AVCConfigurationBox.prototype._writeNAL = function(data, nbElements, nalArray) {
+    var i = 0;
+
+    for (i = 0; i < nbElements; i++) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT16, nalArray[i].NAL_length);
+        this._writeBuffer(data, nalArray[i].NAL, nalArray[i].NAL_length);
+    }
+};
+
+// --------------------------- pasp ----------------------------------
+mp4lib.boxes.PixelAspectRatioBox = function(size) {
+    mp4lib.boxes.Box.call(this, 'pasp', size);
+};
+
+mp4lib.boxes.PixelAspectRatioBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
+mp4lib.boxes.PixelAspectRatioBox.prototype.constructor = mp4lib.boxes.PixelAspectRatioBox;
+
+mp4lib.boxes.PixelAspectRatioBox.prototype.computeLength = function() {
+    mp4lib.boxes.Box.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_INT32.getLength() * 2;
+};
+
+mp4lib.boxes.PixelAspectRatioBox.prototype.read = function(data, pos, end) {
+    this.localPos = pos;
+    this.localEnd = end;
+
+    this.hSpacing = this._readData(data, mp4lib.fields.FIELD_INT32);
+    this.vSpacing = this._readData(data, mp4lib.fields.FIELD_INT32);
+    return this.localPos;
+};
+
+mp4lib.boxes.PixelAspectRatioBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
+
+    this._writeData(data, mp4lib.fields.FIELD_INT32, this.hSpacing);
+    this._writeData(data, mp4lib.fields.FIELD_INT32, this.vSpacing);
+    return this.localPos;
+};
+
+// --------------------------- abstract VisualSampleEntry ----------------------------------
+mp4lib.boxes.AudioSampleEntryBox = function(boxType, size) {
+    mp4lib.boxes.SampleEntryBox.call(this, boxType, size);
+};
+
+mp4lib.boxes.AudioSampleEntryBox.prototype = Object.create(mp4lib.boxes.SampleEntryBox.prototype);
+mp4lib.boxes.AudioSampleEntryBox.prototype.constructor = mp4lib.boxes.AudioSampleEntryBox;
+
+mp4lib.boxes.AudioSampleEntryBox.prototype.computeLength = function() {
+    mp4lib.boxes.SampleEntryBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_UINT16.getLength() * 4 + mp4lib.fields.FIELD_UINT32.getLength() * 3;
+};
+
+mp4lib.boxes.AudioSampleEntryBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.SampleEntryBox.prototype.read.call(this, data, pos, end);
+
+    this.reserved_2 = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT32, 2);
+    this.channelcount = this._readData(data, mp4lib.fields.FIELD_UINT16);
+    this.samplesize = this._readData(data, mp4lib.fields.FIELD_UINT16);
+    this.pre_defined = this._readData(data, mp4lib.fields.FIELD_UINT16);
+    this.reserved_3 = this._readData(data, mp4lib.fields.FIELD_UINT16);
+    this.samplerate = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    return this.localPos;
+};
+
+mp4lib.boxes.AudioSampleEntryBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.SampleEntryBox.prototype.write.call(this, data, pos);
+
+    this._writeArrayData(data, mp4lib.fields.FIELD_UINT32, this.reserved_2);
+    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.channelcount);
+    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.samplesize);
+    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.pre_defined);
+    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.reserved_3);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.samplerate);
+    return this.localPos;
+};
+
+// --------------------------- abstract AudioSampleEntryContainer ----------------------------------
+mp4lib.boxes.AudioSampleEntryContainerBox = function(boxType, size) {
+    mp4lib.boxes.AudioSampleEntryBox.call(this, boxType, size);
+    this.boxes = [];
+};
+
+mp4lib.boxes.AudioSampleEntryContainerBox.prototype = Object.create(mp4lib.boxes.AudioSampleEntryBox.prototype);
+mp4lib.boxes.AudioSampleEntryContainerBox.prototype.constructor = mp4lib.boxes.AudioSampleEntryContainerBox;
+
+mp4lib.boxes.AudioSampleEntryContainerBox.prototype.computeLength = function() {
+    mp4lib.boxes.AudioSampleEntryBox.prototype.computeLength.call(this);
+    var i = 0;
+    for (i = 0; i < this.boxes.length; i++) {
+        this.boxes[i].computeLength();
+        this.size += this.boxes[i].size;
+    }
+};
+
+mp4lib.boxes.AudioSampleEntryContainerBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.AudioSampleEntryBox.prototype.read.call(this, data, pos, end);
+
+    var size = 0,
+        uuidFieldPos = 0,
+        uuid = null,
+        boxtype,
+        box;
+
+    while (this.localPos < this.localEnd) {
+        // Read box size
+        size = mp4lib.fields.FIELD_UINT32.read(data, this.localPos);
+
+        // Read boxtype
+        boxtype = mp4lib.fields.readString(data, this.localPos + 4, 4);
+
+        // Extented type?
+        if (boxtype == "uuid") {
+            uuidFieldPos = (size == 1) ? 16 : 8;
+            uuid = new mp4lib.fields.ArrayField(mp4lib.fields.FIELD_INT8, 16).read(data, this.localPos + uuidFieldPos, this.localPos + uuidFieldPos + 16);
+            uuid = JSON.stringify(uuid);
+        }
+
+        box = mp4lib.createBox(boxtype, size, uuid);
+        if (boxtype === "uuid") {
+            this.localPos = box.read(data, this.localPos + mp4lib.fields.FIELD_INT8.getLength() * 16 + 8, this.localPos + size);
+        } else {
+            this.localPos = box.read(data, this.localPos + 8, this.localPos + size);
+        }
+
+        // in debug mode, sourcebuffer is copied to each box,
+        // so any invalid deserializations may be found by comparing
+        // source buffer with serialized box
+        if (mp4lib.debug) {
+            box.__sourceBuffer = data.subarray(this.localPos - box.size, this.localPos);
+        }
+
+        this.boxes.push(box);
+
+        if (box.size <= 0 || box.size === null) {
+            throw new mp4lib.ParseException('Problem on size of box ' + box.boxtype +
+                ', parsing stopped to avoid infinite loop');
+        }
+
+        if (!box.boxtype) {
+            throw new mp4lib.ParseException('Problem on unknown box, parsing stopped to avoid infinite loop');
+        }
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.AudioSampleEntryContainerBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.AudioSampleEntryBox.prototype.write.call(this, data, pos);
+    var i = 0;
+
+    for (i = 0; i < this.boxes.length; i++) {
+        this.localPos = this.boxes[i].write(data, this.localPos);
+    }
+    return this.localPos;
+};
+
+// --------------------------- mp4a ----------------------------------
+mp4lib.boxes.MP4AudioSampleEntryBox = function(size) {
+    mp4lib.boxes.AudioSampleEntryContainerBox.call(this, 'mp4a', size);
+};
+
+mp4lib.boxes.MP4AudioSampleEntryBox.prototype = Object.create(mp4lib.boxes.AudioSampleEntryContainerBox.prototype);
+mp4lib.boxes.MP4AudioSampleEntryBox.prototype.constructor = mp4lib.boxes.MP4AudioSampleEntryBox;
+
+//-------------------------- enca ------------------------------------
+mp4lib.boxes.EncryptedAudioBox = function(size) {
+    mp4lib.boxes.AudioSampleEntryContainerBox.call(this, 'enca', size);
+};
+
+mp4lib.boxes.EncryptedAudioBox.prototype = Object.create(mp4lib.boxes.AudioSampleEntryContainerBox.prototype);
+mp4lib.boxes.EncryptedAudioBox.prototype.constructor = mp4lib.boxes.EncryptedAudioBox;
+
+// --------------------------- esds ----------------------------
+mp4lib.boxes.ESDBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'esds', size);
+};
+
+mp4lib.boxes.ESDBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.ESDBox.prototype.constructor = mp4lib.boxes.ESDBox;
+
+mp4lib.boxes.ESDBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_UINT8.getLength() * 2 + this.ES_length;
+};
+
+mp4lib.boxes.ESDBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    this.ES_tag = this._readData(data, mp4lib.fields.FIELD_UINT8);
+    this.ES_length = this._readData(data, mp4lib.fields.FIELD_UINT8);
+    this.ES_data = data.subarray(this.localPos, this.localPos + this.ES_length);
+    this.localPos += this.ES_length;
+    return this.localPos;
+};
+
+mp4lib.boxes.ESDBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.ES_tag);
+    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.ES_length);
+    this._writeBuffer(data, this.ES_data, this.ES_length);
+    return this.localPos;
+};
+
+// --------------------------- stsz ----------------------------------
+mp4lib.boxes.SampleSizeBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'stsz', size);
+};
+
+mp4lib.boxes.SampleSizeBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.SampleSizeBox.prototype.constructor = mp4lib.boxes.SampleSizeBox;
+
+mp4lib.boxes.SampleSizeBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_UINT32.getLength() * 2 + mp4lib.fields.FIELD_UINT32.getLength() * this.sample_count;
+};
+
+mp4lib.boxes.SampleSizeBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    this.sample_size = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.sample_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.entries = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT32, this.sample_count);
+    return this.localPos;
+};
+
+mp4lib.boxes.SampleSizeBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    var i = 0;
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.sample_size);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.sample_count);
+    for (i = 0; i < this.sample_count; i++) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entries[i]);
+    }
+    return this.localPos;
+};
+
+// ------------------------- pssh ------------------------------------
+mp4lib.boxes.ProtectionSystemSpecificHeaderBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'pssh', size);
+};
+
+mp4lib.boxes.ProtectionSystemSpecificHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.ProtectionSystemSpecificHeaderBox.prototype.constructor = mp4lib.boxes.ProtectionSystemSpecificHeaderBox;
+
+mp4lib.boxes.ProtectionSystemSpecificHeaderBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+
+    this.size += mp4lib.fields.FIELD_UINT8.getLength() * 16;
+    this.size += mp4lib.fields.FIELD_UINT32.getLength();
+    this.size += mp4lib.fields.FIELD_UINT8.getLength() * this.DataSize;
+};
+
+mp4lib.boxes.ProtectionSystemSpecificHeaderBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    this.SystemID = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT8, 16);
+    this.DataSize = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.Data = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT8, this.DataSize);
+    return this.localPos;
+};
+
+mp4lib.boxes.ProtectionSystemSpecificHeaderBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    var i = 0;
+
+    for (i = 0; i < 16; i++) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT8, this.SystemID[i]);
+    }
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.DataSize);
+    for (i = 0; i < this.DataSize; i++) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT8, this.Data[i]);
+    }
+    return this.localPos;
+};
+
+// ------------------------- saiz ------------------------------------
+mp4lib.boxes.SampleAuxiliaryInformationSizesBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'saiz', size);
+};
+
+mp4lib.boxes.SampleAuxiliaryInformationSizesBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.SampleAuxiliaryInformationSizesBox.prototype.constructor = mp4lib.boxes.SampleAuxiliaryInformationSizesBox;
+
+mp4lib.boxes.SampleAuxiliaryInformationSizesBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+
+    if (this.flags & 1) {
+        this.size += mp4lib.fields.FIELD_UINT32.getLength() * 2;
+    }
+
+    this.size += mp4lib.fields.FIELD_UINT8.getLength() + mp4lib.fields.FIELD_UINT32.getLength();
+
+    if (this.default_sample_info_size === 0) {
+        this.size += mp4lib.fields.FIELD_UINT8.getLength() * this.sample_count;
+    }
+};
+
+mp4lib.boxes.SampleAuxiliaryInformationSizesBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    if (this.flags & 1) {
+        this.aux_info_type = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.aux_info_type_parameter = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    }
+    this.default_sample_info_size = this._readData(data, mp4lib.fields.FIELD_UINT8);
+    this.sample_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
+
+    if (this.default_sample_info_size === 0) {
+        this.sample_info_size = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT8, this.sample_count);
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.SampleAuxiliaryInformationSizesBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    var i = 0;
+    if (this.flags & 1) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.aux_info_type);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.aux_info_type_parameter);
+    }
+    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.default_sample_info_size);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.sample_count);
+    if (this.default_sample_info_size === 0) {
+        for (i = 0; i < this.sample_count; i++) {
+            this._writeData(data, mp4lib.fields.FIELD_UINT8, this.sample_info_size[i]);
+        }
+    }
+    return this.localPos;
+};
+
+//------------------------- saio ------------------------------------
+mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'saio', size);
+};
+
+mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox.prototype.constructor = mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox;
+
+mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    if (this.flags & 1) {
+        this.size += mp4lib.fields.FIELD_UINT32.getLength() * 2;
+    }
+    this.size += mp4lib.fields.FIELD_UINT32.getLength(); /*entry_count size */
+    if (this.version === 0) {
+        this.size += mp4lib.fields.FIELD_UINT32.getLength() * this.entry_count;
+    } else {
+        this.size += mp4lib.fields.FIELD_UINT64.getLength() * this.entry_count;
+    }
+};
+
+mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    if (this.flags & 1) {
+        this.aux_info_type = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.aux_info_type_parameter = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    }
+
+    this.entry_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
+
+    if (this.version === 0) {
+        this.offset = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
+    } else {
+        this.offset = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT64, this.entry_count);
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.SampleAuxiliaryInformationOffsetsBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    var i = 0;
+    if (this.flags & 1) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.aux_info_type);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.aux_info_type_parameter);
+    }
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
+    if (this.version === 0) {
+        for (i = 0; i < this.entry_count; i++) {
+            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.offset[i]);
+        }
+    } else {
+        for (i = 0; i < this.entry_count; i++) {
+            this._writeData(data, mp4lib.fields.FIELD_UINT64, this.offset[i]);
+        }
+    }
+    return this.localPos;
+};
+
+//------------------------- sinf ------------------------------------
+mp4lib.boxes.ProtectionSchemeInformationBox = function(size) {
+    mp4lib.boxes.ContainerBox.call(this, 'sinf', size);
+};
+
+mp4lib.boxes.ProtectionSchemeInformationBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
+mp4lib.boxes.ProtectionSchemeInformationBox.prototype.constructor = mp4lib.boxes.ProtectionSchemeInformationBox;
+
+//------------------------ schi --------------------------------------
+mp4lib.boxes.SchemeInformationBox = function(size) {
+    mp4lib.boxes.ContainerBox.call(this, 'schi', size);
+};
+
+mp4lib.boxes.SchemeInformationBox.prototype = Object.create(mp4lib.boxes.ContainerBox.prototype);
+mp4lib.boxes.SchemeInformationBox.prototype.constructor = mp4lib.boxes.SchemeInformationBox;
+
+//------------------------ tenc --------------------------------------
+mp4lib.boxes.TrackEncryptionBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'tenc', size);
+};
+
+mp4lib.boxes.TrackEncryptionBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.TrackEncryptionBox.prototype.constructor = mp4lib.boxes.TrackEncryptionBox;
+
+mp4lib.boxes.TrackEncryptionBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+
+    this.size += mp4lib.fields.FIELD_BIT24.getLength();
+    this.size += mp4lib.fields.FIELD_UINT8.getLength();
+    this.size += mp4lib.fields.FIELD_UINT8.getLength() * 16;
+};
+
+mp4lib.boxes.TrackEncryptionBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    this.default_IsEncrypted = this._readData(data, mp4lib.fields.FIELD_BIT24);
+    this.default_IV_size = this._readData(data, mp4lib.fields.FIELD_UINT8);
+    this.default_KID = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT8, 16);
+    return this.localPos;
+};
+
+mp4lib.boxes.TrackEncryptionBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    this._writeData(data, mp4lib.fields.FIELD_BIT24, this.default_IsEncrypted);
+    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.default_IV_size);
+    this._writeArrayData(data, mp4lib.fields.FIELD_UINT8, this.default_KID);
+    return this.localPos;
+};
+
+//------------------------- schm -------------------------------------
+mp4lib.boxes.SchemeTypeBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'schm', size);
+};
+
+mp4lib.boxes.SchemeTypeBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.SchemeTypeBox.prototype.constructor = mp4lib.boxes.SchemeTypeBox;
+
+mp4lib.boxes.SchemeTypeBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+
+    this.size += mp4lib.fields.FIELD_UINT32.getLength() * 2;
+    if (this.flags & 0x000001) {
+        this.size += mp4lib.fields.FIELD_STRING.getLength(this.scheme_uri);
+    }
+};
+
+mp4lib.boxes.SchemeTypeBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    this.scheme_type = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.scheme_version = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    if (this.flags & 0x000001) {
+        this.scheme_uri = this._readData(data, mp4lib.fields.FIELD_STRING);
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.SchemeTypeBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.scheme_type);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.scheme_version);
+    if (this.flags & 0x000001) {
+        this._writeData(data, mp4lib.fields.FIELD_STRING, this.scheme_uri);
+    }
+    return this.localPos;
+};
+
+// --------------------------- elst ----------------------------------
+mp4lib.boxes.EditListBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'elst', size);
+    this.entries = [];
+};
+
+mp4lib.boxes.EditListBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.EditListBox.prototype.constructor = mp4lib.boxes.EditListBox;
+
+mp4lib.boxes.EditListBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+
+    this.size += mp4lib.fields.FIELD_UINT32.getLength(); //entry_count size
+
+    if (this.version === 1) {
+        this.size += (mp4lib.fields.FIELD_UINT64.getLength() * 2 /*segment_duration and media_time size*/ +
+            mp4lib.fields.FIELD_UINT16.getLength() * 2 /*media_rate_integer and media_rate_fraction size)*/ ) * this.entry_count;
+    } else { // version==0
+        this.size += (mp4lib.fields.FIELD_UINT32.getLength() * 2 /*segment_duration and media_time size*/ +
+            mp4lib.fields.FIELD_UINT16.getLength() * 2 /*media_rate_integer and media_rate_fraction size)*/ ) * this.entry_count;
+    }
+};
+
+mp4lib.boxes.EditListBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+    var i = 0,
+        struct = {};
+    this.entry_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
+
+    for (i = 0; i < this.entry_count; i++) {
+        struct = {};
+        if (this.version === 1) {
+            struct.segment_duration = this._readData(data, mp4lib.fields.FIELD_UINT64);
+            struct.media_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
+        } else { // version==0
+            struct.segment_duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
+            struct.media_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        }
+        struct.media_rate_integer = this._readData(data, mp4lib.fields.FIELD_UINT16);
+        struct.media_rate_fraction = this._readData(data, mp4lib.fields.FIELD_UINT16);
+        this.entries.push(struct);
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.EditListBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    var i = 0;
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
+    for (i = 0; i < this.entry_count; i++) {
+
+        if (this.version === 1) {
+            this._writeData(data, mp4lib.fields.FIELD_UINT64, this.entries[i].segment_duration);
+            this._writeData(data, mp4lib.fields.FIELD_UINT64, this.entries[i].media_time);
+        } else { // version==0
+            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entries[i].segment_duration);
+            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entries[i].media_time);
+        }
+        this._writeData(data, mp4lib.fields.FIELD_UINT16, this.entries[i].media_rate_integer);
+        this._writeData(data, mp4lib.fields.FIELD_UINT16, this.entries[i].media_rate_fraction);
+    }
+    return this.localPos;
+};
+
+// --------------------------- hmhd ----------------------------------
+mp4lib.boxes.HintMediaHeaderBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'hmhd', size);
+};
+
+mp4lib.boxes.HintMediaHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.HintMediaHeaderBox.prototype.constructor = mp4lib.boxes.HintMediaHeaderBox;
+
+mp4lib.boxes.HintMediaHeaderBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+
+    this.size += mp4lib.fields.FIELD_UINT16.getLength() * 2; //maxPDUsize and avgPDUsize size
+    this.size += mp4lib.fields.FIELD_UINT32.getLength() * 3; //maxbitrate, avgbitrate and reserved size
+};
+
+mp4lib.boxes.HintMediaHeaderBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    this.maxPDUsize = this._readData(data, mp4lib.fields.FIELD_UINT16);
+    this.avgPDUsize = this._readData(data, mp4lib.fields.FIELD_UINT16);
+    this.maxbitrate = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.avgbitrate = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.reserved = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    return this.localPos;
+};
+
+mp4lib.boxes.HintMediaHeaderBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.maxPDUsize);
+    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.avgPDUsize);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.maxbitrate);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.avgbitrate);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.reserved);
+    return this.localPos;
+};
+
+// --------------------------- nmhd ----------------------------------
+mp4lib.boxes.NullMediaHeaderBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'nmhd', size);
+};
+
+mp4lib.boxes.NullMediaHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.NullMediaHeaderBox.prototype.constructor = mp4lib.boxes.NullMediaHeaderBox;
+
+// --------------------------- ctts ----------------------------------
+mp4lib.boxes.CompositionOffsetBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'ctts', size);
+    this.entries = [];
+};
+
+mp4lib.boxes.CompositionOffsetBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.CompositionOffsetBox.prototype.constructor = mp4lib.boxes.CompositionOffsetBox;
+
+mp4lib.boxes.CompositionOffsetBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+
+    this.size += mp4lib.fields.FIELD_UINT32.getLength(); //entry_count size
+
+    if (this.version === 0) {
+        this.size += (mp4lib.fields.FIELD_UINT32.getLength() * 2 /*sample_count and sample_offset size*/ ) * this.entry_count;
+    } else { // version===1
+        this.size += (mp4lib.fields.FIELD_UINT32.getLength() /*sample_count size*/ + mp4lib.fields.FIELD_INT32.getLength()
+            /*sample_offset size*/
+        ) * this.entry_count;
+    }
+};
+
+mp4lib.boxes.CompositionOffsetBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+    var i = 0,
+        struct = {};
+    this.entry_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    for (i = 0; i < this.entry_count; i++) {
+        struct = {};
+
+        if (this.version === 0) {
+            struct.sample_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
+            struct.sample_offset = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        } else { // version==1
+            struct.sample_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
+            struct.sample_offset = this._readData(data, mp4lib.fields.FIELD_INT32);
+        }
+        this.entries.push(struct);
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.CompositionOffsetBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    var i = 0;
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
+    for (i = 0; i < this.entry_count; i++) {
+        if (this.version === 0) {
+            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entries[i].sample_count);
+            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entries[i].sample_offset);
+        } else { // version==1
+            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entries[i].sample_count);
+            this._writeData(data, mp4lib.fields.FIELD_INT32, this.entries[i].sample_offset);
+        }
+    }
+    return this.localPos;
+};
+
+// --------------------------- cslg ----------------------------------
+mp4lib.boxes.CompositionToDecodeBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'cslg', size);
+};
+
+mp4lib.boxes.CompositionToDecodeBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.CompositionToDecodeBox.prototype.constructor = mp4lib.boxes.CompositionToDecodeBox;
+
+mp4lib.boxes.CompositionToDecodeBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_INT32.getLength() * 5;
+};
+
+mp4lib.boxes.CompositionToDecodeBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    this.compositionToDTSShift = this._readData(data, mp4lib.fields.FIELD_INT32);
+    this.leastDecodeToDisplayDelta = this._readData(data, mp4lib.fields.FIELD_INT32);
+    this.greatestDecodeToDisplayDelta = this._readData(data, mp4lib.fields.FIELD_INT32);
+    this.compositionStartTime = this._readData(data, mp4lib.fields.FIELD_INT32);
+    this.compositionEndTime = this._readData(data, mp4lib.fields.FIELD_INT32);
+    return this.localPos;
+};
+
+mp4lib.boxes.CompositionToDecodeBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    this._writeData(data, mp4lib.fields.FIELD_INT32, this.compositionToDTSShift);
+    this._writeData(data, mp4lib.fields.FIELD_INT32, this.leastDecodeToDisplayDelta);
+    this._writeData(data, mp4lib.fields.FIELD_INT32, this.greatestDecodeToDisplayDelta);
+    this._writeData(data, mp4lib.fields.FIELD_INT32, this.compositionStartTime);
+    this._writeData(data, mp4lib.fields.FIELD_INT32, this.compositionEndTime);
+    return this.localPos;
+};
+
+// --------------------------- stss ----------------------------------
+mp4lib.boxes.SyncSampleBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'stss', size);
+    this.entries = [];
+};
+
+mp4lib.boxes.SyncSampleBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.SyncSampleBox.prototype.constructor = mp4lib.boxes.SyncSampleBox;
+
+mp4lib.boxes.SyncSampleBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_UINT32.getLength(); //entry_count size
+    this.size += mp4lib.fields.FIELD_UINT32.getLength() * this.entry_count; //entries size
+};
+
+mp4lib.boxes.SyncSampleBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+    var i = 0,
+        struct = {};
+
+    this.entry_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    for (i = 0; i < this.entry_count; i++) {
+        struct = {};
+        struct.sample_number = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.entries.push(struct);
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.SyncSampleBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    var i = 0;
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
+    for (i = 0; i < this.entry_count; i++) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entries[i].sample_number);
+    }
+    return this.localPos;
+};
+
+// --------------------------- tref ----------------------------------
+mp4lib.boxes.TrackReferenceBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'tref', size);
+};
+
+mp4lib.boxes.TrackReferenceBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.TrackReferenceBox.prototype.constructor = mp4lib.boxes.TrackReferenceBox;
+
+mp4lib.boxes.TrackReferenceBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_UINT32.getLength() * this.track_IDs.length;
+};
+
+mp4lib.boxes.TrackReferenceBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+    this.track_IDs = this._readArrayData(data, mp4lib.fields.FIELD_UINT32);
+    return this.localPos;
+};
+
+mp4lib.boxes.TrackReferenceBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    this._writeArrayData(data, mp4lib.fields.FIELD_UINT32, this.track_IDs);
+    return this.localPos;
+};
+
+//---------------------------- frma ----------------------------------
+mp4lib.boxes.OriginalFormatBox = function(size) {
+    mp4lib.boxes.Box.call(this, 'frma', size);
+};
+
+mp4lib.boxes.OriginalFormatBox.prototype = Object.create(mp4lib.boxes.Box.prototype);
+mp4lib.boxes.OriginalFormatBox.prototype.constructor = mp4lib.boxes.OriginalFormatBox;
+
+mp4lib.boxes.OriginalFormatBox.prototype.computeLength = function() {
+    mp4lib.boxes.Box.prototype.computeLength.call(this);
+    this.size += mp4lib.fields.FIELD_UINT32.getLength();
+};
+
+mp4lib.boxes.OriginalFormatBox.prototype.read = function(data, pos, end) {
+    this.localPos = pos;
+    this.localEnd = end;
+    this.data_format = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    return this.localPos;
+};
+
+mp4lib.boxes.OriginalFormatBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.Box.prototype.write.call(this, data, pos);
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.data_format);
+    return this.localPos;
+};
+
+// -------------------------------------------------------------------
+// Microsoft Smooth Streaming specific boxes
+// -------------------------------------------------------------------
+
+// --------------------------- piff ----------------------------------
+//PIFF Sample Encryption box
+mp4lib.boxes.PiffSampleEncryptionBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'sepiff', size, [0xA2, 0x39, 0x4F, 0x52, 0x5A, 0x9B, 0x4F, 0x14, 0xA2, 0x44, 0x6C, 0x42, 0x7C, 0x64, 0x8D, 0xF4]);
+};
+
+mp4lib.boxes.PiffSampleEncryptionBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.PiffSampleEncryptionBox.prototype.constructor = mp4lib.boxes.PiffSampleEncryptionBox;
+
+mp4lib.boxes.PiffSampleEncryptionBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    var i = 0,
+        j = 0;
+
+    this.size += mp4lib.fields.FIELD_UINT32.getLength(); //sample_count size
+    if (this.flags & 1) {
+        this.size += mp4lib.fields.FIELD_UINT8.getLength(); //IV_size size
+    }
+    for (i = 0; i < this.sample_count; i++) {
+        this.size += 8; // InitializationVector size
+        if (this.flags & 2) {
+            this.size += mp4lib.fields.FIELD_UINT16.getLength(); // NumberOfEntries size
+            for (j = 0; j < this.entry[i].NumberOfEntries; j++) {
+                this.size += mp4lib.fields.FIELD_UINT16.getLength(); //BytesOfClearData size
+                this.size += mp4lib.fields.FIELD_UINT32.getLength(); //BytesOfEncryptedData size
+            }
+        }
+    }
+};
+
+mp4lib.boxes.PiffSampleEncryptionBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    var i = 0,
+        j = 0;
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.sample_count);
+    if (this.flags & 1) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT8, this.IV_size);
+    }
+    for (i = 0; i < this.sample_count; i++) {
+        this._writeBuffer(data, this.entry[i].InitializationVector, 8);
+
+        if (this.flags & 2) {
+            this._writeData(data, mp4lib.fields.FIELD_UINT16, this.entry[i].NumberOfEntries); // NumberOfEntries
+
+            for (j = 0; j < this.entry[i].NumberOfEntries; j++) {
+                this._writeData(data, mp4lib.fields.FIELD_UINT16, this.entry[i].clearAndCryptedData[j].BytesOfClearData); //BytesOfClearData
+                this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].clearAndCryptedData[j].BytesOfEncryptedData); //BytesOfEncryptedData size
+            }
+        }
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.PiffSampleEncryptionBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+    var i = 0,
+        j = 0,
+        clearAndCryptedStruct = {},
+        struct = {};
+    this.sample_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    if (this.flags & 1) {
+        this.IV_size = this._readData(data, mp4lib.fields.FIELD_UINT8);
+    }
+    this.entry = [];
+    for (i = 0; i < this.sample_count; i++) {
+        struct = {};
+        struct.InitializationVector = data.subarray(this.localPos, this.localPos + 8);
+        this.localPos += 8; //InitializationVector size
+
+        if (this.flags & 2) {
+            struct.NumberOfEntries = this._readData(data, mp4lib.fields.FIELD_UINT16); // NumberOfEntries
+            struct.clearAndCryptedData = [];
+            for (j = 0; j < struct.NumberOfEntries; j++) {
+                clearAndCryptedStruct = {};
+                clearAndCryptedStruct.BytesOfClearData = this._readData(data, mp4lib.fields.FIELD_UINT16); //BytesOfClearData
+                clearAndCryptedStruct.BytesOfEncryptedData = this._readData(data, mp4lib.fields.FIELD_UINT32); //BytesOfEncryptedData size
+                struct.clearAndCryptedData.push(clearAndCryptedStruct);
+            }
+        }
+        this.entry.push(struct);
+    }
+    return this.localPos;
+};
+
+//PIFF Track Encryption Box
+mp4lib.boxes.PiffTrackEncryptionBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'tepiff', size, [0x89, 0x74, 0xDB, 0xCE, 0x7B, 0xE7, 0x4C, 0x51, 0x84, 0xF9, 0x71, 0x48, 0xF9, 0x88, 0x25, 0x54]);
+};
+
+mp4lib.boxes.PiffTrackEncryptionBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.PiffTrackEncryptionBox.prototype.constructor = mp4lib.boxes.PiffTrackEncryptionBox;
+
+//PIFF Protection System Specific Header Box
+mp4lib.boxes.PiffProtectionSystemSpecificHeaderBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'psshpiff', size, [0xD0, 0x8A, 0x4F, 0x18, 0x10, 0xF3, 0x4A, 0x82, 0xB6, 0xC8, 0x32, 0xD8, 0xAB, 0xA1, 0x83, 0xD3]);
+};
+
+mp4lib.boxes.PiffProtectionSystemSpecificHeaderBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.PiffProtectionSystemSpecificHeaderBox.prototype.constructor = mp4lib.boxes.PiffProtectionSystemSpecificHeaderBox;
+
+// --------------------------- tfdx -----------------------------
+mp4lib.boxes.TfxdBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'tfxd', size, [0x6D, 0x1D, 0x9B, 0x05, 0x42, 0xD5, 0x44, 0xE6, 0x80, 0xE2, 0x14, 0x1D, 0xAF, 0xF7, 0x57, 0xB2]);
+};
+
+mp4lib.boxes.TfxdBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.TfxdBox.prototype.constructor = mp4lib.boxes.TfxdBox;
+
+mp4lib.boxes.TfxdBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    if (this.version === 1) {
+        this.size += mp4lib.fields.FIELD_UINT64.getLength() * 2;
+    } else {
+        this.size += mp4lib.fields.FIELD_UINT32.getLength() * 2;
+    }
+};
+
+mp4lib.boxes.TfxdBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+
+    if (this.version === 1) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.fragment_absolute_time);
+        this._writeData(data, mp4lib.fields.FIELD_UINT64, this.fragment_duration);
+    } else {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.fragment_absolute_time);
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.fragment_duration);
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.TfxdBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+
+    if (this.version === 1) {
+        this.fragment_absolute_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
+        this.fragment_duration = this._readData(data, mp4lib.fields.FIELD_UINT64);
+    } else {
+        this.fragment_absolute_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        this.fragment_duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    }
+    return this.localPos;
+};
+
+// --------------------------- tfrf -----------------------------
+mp4lib.boxes.TfrfBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'tfrf', size, [0xD4, 0x80, 0x7E, 0xF2, 0xCA, 0x39, 0x46, 0x95, 0x8E, 0x54, 0x26, 0xCB, 0x9E, 0x46, 0xA7, 0x9F]);
+};
+
+mp4lib.boxes.TfrfBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.TfrfBox.prototype.constructor = mp4lib.boxes.TfrfBox;
+
+mp4lib.boxes.TfrfBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+
+    this.size += mp4lib.fields.FIELD_UINT8.getLength(); //fragment_count size
+    if (this.version === 1) {
+        this.size += (mp4lib.fields.FIELD_UINT64.getLength() * 2 /*fragment_absolute_time and fragment_duration size*/ ) * this.fragment_count;
+    } else {
+        this.size += (mp4lib.fields.FIELD_UINT32.getLength() * 2 /*fragment_absolute_time and fragment_duration size*/ ) * this.fragment_count;
+    }
+};
+
+mp4lib.boxes.TfrfBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    var i = 0;
+    this._writeData(data, mp4lib.fields.FIELD_UINT8, this.fragment_count);
+    for (i = 0; i < this.fragment_count; i++) {
+        if (this.version === 1) {
+            this._writeData(data, mp4lib.fields.FIELD_UINT64, this.entry[i].fragment_absolute_time);
+            this._writeData(data, mp4lib.fields.FIELD_UINT64, this.entry[i].fragment_duration);
+        } else {
+            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].fragment_absolute_time);
+            this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].fragment_duration);
+        }
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.TfrfBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+    var i = 0,
+        struct = {};
+    this.fragment_count = this._readData(data, mp4lib.fields.FIELD_UINT8);
+    this.entry = [];
+    for (i = 0; i < this.fragment_count; i++) {
+        struct = {};
+        if (this.version === 1) {
+            struct.fragment_absolute_time = this._readData(data, mp4lib.fields.FIELD_UINT64);
+            struct.fragment_duration = this._readData(data, mp4lib.fields.FIELD_UINT64);
+        } else {
+            struct.fragment_absolute_time = this._readData(data, mp4lib.fields.FIELD_UINT32);
+            struct.fragment_duration = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        }
+        this.entry.push(struct);
+    }
+    return this.localPos;
+};
+
+mp4lib.registerTypeBoxes();
+/*
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+ *
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+var mpegts = (function() {
+    return {
+        pes: {},
+        si: {},
+        binary: {},
+        ts: {},
+        Pts: {},
+        aac: {},
+        h264: {}
+    };
+}());
+
+// This module is intended to work both on node.js and inside browser.
+// Since these environments differ in a way modules are stored/accessed,
+// we need to export the module in the environment-dependant way
+
+if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
+    module.exports = mpegts; // node.js
+else
+    window.mpegts = mpegts; // browser
+/*
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+ *
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+mpegts.si.PSISection = function(table_id) {
+    this.m_table_id = table_id;
+    this.m_section_syntax_indicator = 1;
+    this.m_section_length = mpegts.si.PSISection.prototype.SECTION_LENGTH;
+    this.m_transport_stream_id = 0;
+    this.m_version_number = 0;
+    this.m_current_next_indicator = true;
+    this.m_section_number = 0;
+    this.m_last_section_number = 0;
+    this.m_bValid = null;
+};
+
+mpegts.si.PSISection.prototype.parse = function(data) {
+    this.m_bValid = false;
+
+    var id = 0;
+
+    var pointerField = data[id];
+
+    //if pointerField = 0 payload data start immediately otherwise, shift pointerField value
+    id = pointerField === 0 ? id + 1 : id + pointerField;
+
+    this.m_table_id = data[id];
+    id++;
+    this.m_section_syntax_indicator = mpegts.binary.getBitFromByte(data[id], 0);
+    this.m_section_length = mpegts.binary.getValueFrom2Bytes(data.subarray(id, id + 2), 4);
+    id += 2;
+    this.m_transport_stream_id = mpegts.binary.getValueFrom2Bytes(data.subarray(id, id + 2));
+    id += 2;
+    this.m_version_number = mpegts.binary.getValueFromByte(data[id], 2, 5);
+    this.m_current_next_indicator = mpegts.binary.getBitFromByte(data[id], 7);
+    id++;
+    this.m_section_number = data[id];
+    id++;
+    this.m_last_section_number = data[id];
+
+    /*if (nLength < (m_section_length + 3))
+	{
+		m_bComplete = false;
+		SAFE_DELETE(m_pBytestream);
+		m_pBytestream = new unsigned char[m_section_length + 3];
+		memcpy(m_pBytestream, pBytestream, nLength);
+		m_nSectionIndex = nLength;
+		return;
+	}
+
+	m_nSectionIndex = 0;
+	m_bComplete = true;*/
+    this.m_bValid = true;
+
+    return id;
+};
+
+mpegts.si.PSISection.prototype.getSectionLength = function() {
+    return this.m_section_length;
+};
+
+mpegts.si.PSISection.prototype.SECTION_LENGTH = 9;
+mpegts.si.PSISection.prototype.HEADER_LENGTH = 8;
+/*
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+ *
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+// Sampling frequency dependent on sampling_frequency_index
+mpegts.aac.SAMPLING_FREQUENCY = [96000, 88200, 64000, 48000, 44100, 32000, 24000, 22050, 16000, 12000, 11025, 8000, 7350];
+
+mpegts.aac.getAudioSpecificConfig = function(data) { // data as Uint8Array
+
+    // We need to parse the beginning of the adts_frame in order to get
+    // object type, sampling frequency and channel configuration
+    var profile = mpegts.binary.getValueFromByte(data[2], 0, 2);
+    var sampling_frequency_index = mpegts.binary.getValueFromByte(data[2], 2, 4);
+    var channel_configuration = mpegts.binary.getValueFrom2Bytes(data.subarray(2, 5), 7, 3);
+
+    var audioSpecificConfig = new Uint8Array(2);
+
+    // audioObjectType = profile = MPEG-4 Audio Object Type minus 1
+    audioSpecificConfig[0] = (profile + 1) << 3;
+
+    // samplingFrequencyIndex
+    audioSpecificConfig[0] |= (sampling_frequency_index & 0x0E) >> 1;
+    audioSpecificConfig[1] |= (sampling_frequency_index & 0x01) << 7;
+
+    // channelConfiguration
+    audioSpecificConfig[1] |= channel_configuration << 3;
+
+    /*  code for HE AAC v2 to be tested
+
+    var audioSpecificConfig = new Uint8Array(4);
+
+    // audioObjectType = profile => profile, the MPEG-4 Audio Object Type minus 1
+    audioSpecificConfig[0] = 29 << 3;
+
+    // samplingFrequencyIndex
+    audioSpecificConfig[0] |= (sampling_frequency_index & 0x0E) >> 1;
+    audioSpecificConfig[1] |= (sampling_frequency_index & 0x01) << 7;
+
+    // channelConfiguration
+    audioSpecificConfig[1] |= channel_configuration << 3;
+    
+    var extensionSamplingFrequencyIndex = 5;// in HE AAC Extension Sampling frequence
+
+    audioSpecificConfig[1] |= extensionSamplingFrequencyIndex >> 1;
+       
+    audioSpecificConfig[2] = (extensionSamplingFrequencyIndex << 7) | ((profile+1) << 2);// origin object type equals to 2 => AAC Main Low Complexity
+    audioSpecificConfig[3] = 0x0; //alignment bits
+
+   */
+
+    return audioSpecificConfig;
+};
+
+mpegts.aac.parseADTS = function(data, cts) { // data as Uint8Array, cts as an array of cts for each frame index
+
+    var aacFrames = [],
+        adtsHeader = {},
+        aacFrame,
+        adtsFrameIndex,
+        i = 0;
+
+    while (i < data.length) {
+        // = adts_frame
+        adtsFrameIndex = i;
+
+        // == adts_fixed_header
+        adtsHeader.syncword = (data[i] << 4) + ((data[i + 1] & 0xF0) >> 4);
+        // adtsHeader.ID
+        // adtsHeader.layer
+        adtsHeader.protection_absent = data[i + 1] & 0x01;
+        // adtsHeader.profile
+        adtsHeader.sampling_frequency_index = (data[i + 2] & 0x3C) >> 2;
+        // adtsHeader.private_bit
+        adtsHeader.channel_configuration = ((data[i + 2] & 0x01) << 1) + ((data[i + 3] & 0xC0) >> 6);
+        // adtsHeader.original_copy
+        // adtsHeader.home
+
+        // == adts_variable_header
+        // adtsHeader.copyright_identification_bit
+        // adtsHeader.copyright_identification_start
+        adtsHeader.aac_frame_length = ((data[i + 3] & 0x03) << 11) + (data[i + 4] << 3) + ((data[i + 5] & 0xE0) >> 5);
+        // adtsHeader.adts_buffer_fullness
+        adtsHeader.number_of_raw_data_blocks_in_frame = (data[i + 6] & 0x03) >> 2;
+
+        i += 7;
+
+        if (adtsHeader.number_of_raw_data_blocks_in_frame === 0) {
+            // == adts_error_check()
+            if (adtsHeader.protection_absent === 0) {
+                i += 2;
+            }
+
+            // == raw_data_block() => create AAC frame
+            aacFrame = {};
+            aacFrame.offset = i;
+            aacFrame.length = adtsHeader.aac_frame_length - (i - adtsFrameIndex);
+
+            if (cts && cts[adtsFrameIndex]) {
+                aacFrame.cts = cts[adtsFrameIndex];
+            }
+
+            aacFrames.push(aacFrame);
+
+            i += aacFrame.length;
+        } else {
+            // == adts_header_error_check
+        }
+    }
+
+    return aacFrames;
+};
+/*
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+ *
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+mpegts.ts.AdaptationField = function() {
+    /** adaptation field fields */
+    this.m_cAFLength = null;
+    this.m_bDiscontinuityInd = null;
+    this.m_bRAI = null;
+    this.m_bESPriority = null;
+
+    /** Optional fields flags */
+    this.m_bPCRFlag = null;
+    this.m_bOPCRFlag = null;
+    this.m_bSplicingPointFlag = null;
+    this.m_bPrivateDataFlag = null;
+    this.m_bAdaptationFieldExtFlag = null;
+};
+
+mpegts.ts.AdaptationField.prototype.getLength = function() {
+    return (this.m_cAFLength + 1);
+};
+
+mpegts.ts.AdaptationField.prototype.parse = function(data) {
+    this.m_cAFLength = data[0];
+
+    if (this.m_cAFLength === 0) {
+        // = exactly 1 stuffing byte
+        return;
+    }
+
+    var index = 1;
+
+    this.m_bDiscontinuityInd = mpegts.binary.getBitFromByte(data[index], 0);
+    this.m_bRAI = mpegts.binary.getBitFromByte(data[index], 1);
+    this.m_bESPriority = mpegts.binary.getBitFromByte(data[index], 2);
+    this.m_bPCRFlag = mpegts.binary.getBitFromByte(data[index], 3);
+    this.m_bOPCRFlag = mpegts.binary.getBitFromByte(data[index], 4);
+    this.m_bSplicingPointFlag = mpegts.binary.getBitFromByte(data[index], 5);
+    this.m_bPrivateDataFlag = mpegts.binary.getBitFromByte(data[index], 6);
+    this.m_bAdaptationFieldExtFlag = mpegts.binary.getBitFromByte(data[index], 7);
+
+    //other flags are not useful for the conversion HLS => MP4
+};
+/*
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+ *
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+mpegts.binary.readBytes = function(buf, pos, nbBytes) {
+    var value = 0;
+    for (var i = 0; i < nbBytes; i++) {
+        value = value << 8;
+        value = value + buf[pos];
+        pos++;
+    }
+    return value;
+};
+
+/**
+ * Returns a bit value from the given byte
+ * @param data the input byte
+ * @param bitIndex the bit index inside the byte (0=msb to 7=lsb)
+ * @return the bit value as a boolean (0 => false, 1 => true)
+ */
+mpegts.binary.getBitFromByte = function(data, bitIndex) {
+    var cMask = 0x00;
+    cMask += (1 << (7 - bitIndex));
+
+    return ((data & cMask) !== 0);
+};
+
+/**
+ * Returns the value extracted from three consecutive bytes
+ * @param pBytes the input bytes
+ * @param msbIndex the index of the first bit to extract ( 0=msb to 15=lsb )
+ * @param nbBits the number of bits to extract (if '-1' then extract up to the last bit)
+ * @return the value of the extracted bits as an unsigned short, or 0xFFFFFFFF if a problem has occured
+ */
+mpegts.binary.getValueFrom3Bytes = function(pBytes, msbIndex /* = 0*/ , nbBits /* = -1*/ ) {
+    if (typeof nbBits === "undefined") {
+        nbBits = -1;
+    }
+    if (typeof msbIndex === "undefined") {
+        msbIndex = 0;
+    }
+    var nbBits2 = nbBits == -1 ? -1 : (nbBits - (16 - msbIndex));
+    var nbLsbShift = nbBits == -1 ? 0 : (8 - nbBits2);
+    var cValue0 = mpegts.binary.getValueFromByte(pBytes[0], msbIndex);
+    var cValue1 = mpegts.binary.getValueFromByte(pBytes[1]);
+    var cValue2 = mpegts.binary.getValueFromByte(pBytes[2], 0, nbBits2, false);
+
+    return ((((cValue0 << 16) & 0x00FF0000) | ((cValue1 << 8) & 0x0000FF00) | (cValue2 & 0x000000FF)) >> nbLsbShift);
+};
+
+/**
+ * Returns the value extracted from two consecutive bytes
+ * @param data the input bytes
+ * @param msbIndex the index of the first bit to extract ( 0=msb to 15=lsb )
+ * @param nbBits the number of bits to extract (if '-1' then extract up to the last bit)
+ * @return the value of the extracted bits as an unsigned short, or 0xFFFF if a problem has occured
+ */
+mpegts.binary.getValueFrom2Bytes = function(data, msbIndex /* = 0*/ , nbBits /* = -1*/ ) {
+    if (typeof nbBits === "undefined") {
+        nbBits = -1;
+    }
+    if (typeof msbIndex === "undefined") {
+        msbIndex = 0;
+    }
+
+    var nbBits1 = nbBits == -1 ? -1 : (nbBits - (8 - msbIndex));
+    var nbLsbShift = nbBits == -1 ? 0 : (8 - nbBits1);
+    var cValue0 = mpegts.binary.getValueFromByte(data[0], msbIndex);
+    var cValue1 = mpegts.binary.getValueFromByte(data[1], 0, nbBits1, false);
+
+    return ((((cValue0 << 8) & 0xFF00) | (cValue1 & 0x00FF)) >> nbLsbShift);
+};
+
+/**
+ * Returns the value extracted from the given byte
+ * @param data the input byte
+ * @param msbIndex the index of the first bit to extract ( 0=msb to 7=lsb )
+ * @param nbBits the number of bits to extract (if '-1' then extract up to the last bit)
+ * @param bShift true if the bits have to be shifted to the right
+ * @return the value of the extracted bits as an unsigned char, or 0xFF if a problem has occurred
+ */
+mpegts.binary.getValueFromByte = function(data, msbIndex /* = 0*/ , nbBits /* = -1*/ , bShift /* = true*/ ) {
+    var cMask = 0x00;
+    var i = 0;
+
+    if (typeof nbBits === "undefined") {
+        nbBits = -1;
+    }
+    if (typeof msbIndex === "undefined") {
+        msbIndex = 0;
+    }
+
+    var lsbIndex = (nbBits == -1) ? 7 : (msbIndex + nbBits - 1);
+    for (i = msbIndex; i <= lsbIndex; i++) {
+        cMask += (1 << (7 - i));
+    }
+
+    var cValue = data & cMask;
+    if (bShift || typeof bShift === "undefined") {
+        cValue >>= (7 - lsbIndex);
+    }
+    return cValue;
+};
+/*
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+ *
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+mpegts.h264.getSequenceHeader = function(data) { // data as Uint8Array
+
+    var pos = -1,
+        length = -1,
+        i = 0,
+        naluType,
+        sequenceHeader = null,
+        width = 0,
+        height = 0;
+
+    while (i < data.length) {
+        if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x00) && (data[i + 3] === 0x01)) {
+
+            naluType = data[i + 4] & 0x1F;
+
+            // Start of SPS or PPS
+            if ((naluType >= mpegts.h264.NALUTYPE_SPS) && (naluType <= mpegts.h264.NALUTYPE_PPS)) {
+                // First NALU of this type => we start storing the sequence header
+                if (pos === -1) {
+                    pos = i;
+                }
+
+                // SPS => parse to get width and height
+                if (naluType === mpegts.h264.NALUTYPE_SPS) {
+                    var sps = mpegts.h264.parseSPS(data.subarray(i + 5)); // +5 => after nal_unit_type byte
+                    width = (sps.pic_width_in_mbs_minus1 + 1) << 4;
+                    height = (sps.pic_height_in_map_units_minus1 + 1) << 4;
+                }
+            } else if (pos > 0) {
+                length = i - pos;
+            }
+
+            // Start of coded picture NALU
+            if ((naluType === mpegts.h264.NALUTYPE_IDR) || (naluType === mpegts.h264.NALUTYPE_NONIDR)) {
+                break;
+            }
+
+            i += 4;
+        } else if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x01)) {
+            if (pos > 0) {
+                length = i - pos;
+            }
+            break;
+        } else {
+            i++;
+        }
+    }
+
+    if ((pos === -1) || (length === -1)) {
+        return null;
+    }
+
+    sequenceHeader = new Uint8Array(length);
+    sequenceHeader.set(data.subarray(pos, pos + length));
+
+    return {
+        bytes: sequenceHeader,
+        width: width,
+        height: height
+    };
+};
+
+mpegts.h264.read_ue = function(data, ctx) {
+
+    var value = 1,
+        temp = 0,
+        numZeros = 0;
+
+    ctx._bit = (ctx._byte >> ctx._bitPos) & 0x01;
+    ctx._bitPos--;
+    if (ctx._bitPos < 0) {
+        ctx._byte = data[ctx._bytePos];
+        ctx._bytePos++;
+        ctx._bitPos = 7;
+    }
+
+    while (ctx._bit === 0) {
+        numZeros++;
+        value = value << 1;
+        ctx._bit = (ctx._byte >> ctx._bitPos) & 0x01;
+        ctx._bitPos--;
+        if (ctx._bitPos < 0) {
+            ctx._byte = data[ctx._bytePos];
+            ctx._bytePos++;
+            ctx._bitPos = 7;
+        }
+    }
+
+
+    value -= 1;
+    temp = 0;
+    if (numZeros) {
+        while (numZeros > 0) {
+            ctx._bit = (ctx._byte >> ctx._bitPos) & 0x01;
+            ctx._bitPos--;
+            temp = (temp << 1) + ctx._bit;
+            numZeros--;
+            if (ctx._bitPos < 0) {
+                ctx._byte = data[ctx._bytePos];
+                ctx._bytePos++;
+                ctx._bitPos = 7;
+            }
+        }
+    }
+    value = value + temp;
+
+    return value;
+};
+
+mpegts.h264.read_flag = function(data, ctx) {
+
+    var value = 0;
+
+    ctx._bit = (ctx._byte >> ctx._bitPos) & 0x01;
+    ctx._bitPos--;
+    if (ctx._bitPos < 0) {
+        ctx._byte = data[ctx._bytePos];
+        ctx._bytePos++;
+        ctx._bitPos = 7;
+    }
+    value = ctx._bit;
+
+    return value;
+};
+
+
+mpegts.h264.parseSPS = function(data) {
+
+    var sps = {
+            profile_idc: 0,
+            constraint_set0_flag: 0,
+            constraint_set1_flag: 0,
+            constraint_set2_flag: 0,
+            constraint_set3_flag: 0,
+            level_idc: 0,
+            seq_parameter_set_id: 0,
+            chroma_format_idc: 0,
+            separate_colour_plane_flag: 0,
+            bit_depth_luma_minus8: 0,
+            bit_depth_chroma_minus8: 0,
+            qpprime_y_zero_transform_bypass_flag: 0,
+            seq_scaling_matrix_present_flag: 0,
+            log2_max_frame_num_minus4: 0,
+            pic_order_cnt_type: 0,
+            log2_max_pic_order_cnt_lsb_minus4: 0,
+            num_ref_frames: 0,
+            gaps_in_frame_num_value_allowed_flag: 0,
+            pic_width_in_mbs_minus1: 0,
+            pic_height_in_map_units_minus1: 0
+        },
+
+        ctx = {
+            _byte: 0,
+            _bit: 0,
+            _bytePos: 0,
+            _bitPos: 0
+        };
+
+
+    ctx._bytePos = ctx._bitPos = 0;
+
+    // profile_idc - u(8)
+    ctx._byte = data[ctx._bytePos];
+    ctx._bytePos++;
+    sps.profile_idc = ctx._byte;
+
+    // constraint_set_flag (0/1/2/3 + reserved bits) - u(8)
+    ctx._byte = data[ctx._bytePos];
+    ctx._bytePos++;
+    sps.constraint_set0_flag = (ctx._byte & 0x80) >> 7;
+    sps.constraint_set1_flag = (ctx._byte & 0x40) >> 6;
+    sps.constraint_set2_flag = (ctx._byte & 0x20) >> 5;
+    sps.constraint_set3_flag = (ctx._byte & 0x10) >> 4;
+
+    // level_idc - u(8)
+    ctx._byte = data[ctx._bytePos];
+    ctx._bytePos++;
+    sps.level_idc = ctx._byte;
+
+    // sps_id - ue(v)
+    ctx._bitPos = 7;
+    sps.seq_parameter_set_id = mpegts.h264.read_ue(data, ctx);
+
+    if ((sps.profileIdc == 100) ||
+        (sps.profileIdc == 110) ||
+        (sps.profileIdc == 122) ||
+        (sps.profileIdc == 244) ||
+        (sps.profileIdc == 44) ||
+        (sps.profileIdc == 83) ||
+        (sps.profileIdc == 86)) {
+
+        // chroma_format_idc - ue(v) 
+        sps.chroma_format_idc = mpegts.h264.read_ue(data, ctx);
+
+        if (sps.chroma_format_idc === 3) {
+            // separate_colour_plane_flag - u(1)
+            sps.separate_colour_plane_flag = mpegts.h264.read_flag(data, ctx);
+        }
+
+        // bit_depth_luma_minus8 - ue(v)
+        sps.bit_depth_luma_minus8 = mpegts.h264.read_ue(data, ctx);
+
+        // bit_depth_chroma_minus8 - ue(v)
+        sps.bit_depth_chroma_minus8 = mpegts.h264.read_ue(data, ctx);
+
+        // qpprime_y_zero_transform_bypass_flag - u(1)
+        sps.qpprime_y_zero_transform_bypass_flag = mpegts.h264.read_flag(data, ctx);
+
+        // seq_scaling_matrix - u(1)
+        sps.seq_scaling_matrix_present_flag = mpegts.h264.read_flag(data, ctx);
+
+        if (sps.seq_scaling_matrix_present_flag === 1) {
+            // NOT IMPLEMENTED
+            //console.log("H.264 SPS parsing: (seq_scaling_matrix_present_flag = 1) not implemented");
+        }
+    }
+
+    // log2_max_frame_num_minus4 - ue(v)
+    sps.log2_max_frame_num_minus4 = mpegts.h264.read_ue(data, ctx);
+
+    // pic_order_cnt_type - ue(v)
+    sps.pic_order_cnt_type = mpegts.h264.read_ue(data, ctx);
+
+    if (sps.pic_order_cnt_type === 0) {
+        // log2_max_pic_order_cnt_lsb_minus4 - ue(v)
+        sps.log2_max_pic_order_cnt_lsb_minus4 = mpegts.h264.read_ue(data, ctx);
+    } else if (sps.pic_order_cnt_type === 1) {
+        // NOT IMPLEMENTED
+        //console.log("H.264 SPS parsing: (log2_max_pic_order_cnt_lsb_minus4 = 1) not implemented");
+    }
+
+    // num_ref_frames - ue(v)
+    sps.num_ref_frames = mpegts.h264.read_ue(data, ctx);
+
+    // gaps_in_frame_num_value_allowed_flag - u(1)
+    sps.gaps_in_frame_num_value_allowed_flag = mpegts.h264.read_flag(data, ctx);
+
+    // pic_width_in_mbs_minus1 - ue(v)
+    sps.pic_width_in_mbs_minus1 = mpegts.h264.read_ue(data, ctx);
+
+    // pic_height_in_map_units_minus1 - ue(v)
+    sps.pic_height_in_map_units_minus1 = mpegts.h264.read_ue(data, ctx);
+
+    return sps;
+};
+
+mpegts.h264.bytestreamToMp4 = function(data) { // data as Uint8Array
+
+    var i = 0,
+        length = data.length,
+        startCodeIndex = -1,
+        naluSize = 0;
+
+    while (i < length) {
+        if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x00) && (data[i + 3] === 0x01)) {
+
+            if (startCodeIndex >= 0) {
+                naluSize = (i - startCodeIndex - 4); // 4 = start code length or NALU-size field length
+                data[startCodeIndex] = (naluSize & 0xFF000000) >> 24;
+                data[startCodeIndex + 1] = (naluSize & 0x00FF0000) >> 16;
+                data[startCodeIndex + 2] = (naluSize & 0x0000FF00) >> 8;
+                data[startCodeIndex + 3] = (naluSize & 0x000000FF);
+            }
+
+            startCodeIndex = i;
+            i += 4;
+        } else {
+            i++;
+        }
+    }
+
+    // Last NAL unit
+    naluSize = (i - startCodeIndex - 4); // 4 = start code length or NALU-size field length
+    data[startCodeIndex] = (naluSize & 0xFF000000) >> 24;
+    data[startCodeIndex + 1] = (naluSize & 0x00FF0000) >> 16;
+    data[startCodeIndex + 2] = (naluSize & 0x0000FF00) >> 8;
+    data[startCodeIndex + 3] = (naluSize & 0x000000FF);
+
+};
+
+mpegts.h264.isIDR = function(data) { // data as Uint8Array
+    var i = 0,
+        naluType;
+
+    while (i < data.length) {
+        if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x00) && (data[i + 3] === 0x01)) {
+            naluType = data[i + 4] & 0x1F;
+            if (naluType === mpegts.h264.NALUTYPE_IDR) {
+                return true;
+            }
+            i += 4;
+        } else {
+            i++;
+        }
+    }
+    return false;
+};
+
+mpegts.h264.NALUTYPE_NONIDR = 1;
+mpegts.h264.NALUTYPE_IDR = 5;
+mpegts.h264.NALUTYPE_SEI = 6;
+mpegts.h264.NALUTYPE_SPS = 7;
+mpegts.h264.NALUTYPE_PPS = 8;
+mpegts.h264.NALUTYPE_AU_DELIMITER = 9;
+/*
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+ *
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+mpegts.si.PAT = function() {
+    mpegts.si.PSISection.call(this, mpegts.si.PAT.prototype.TABLE_ID);
+    this.m_listOfProgramAssociation = [];
+    this.m_network_pid = null;
+};
+
+mpegts.si.PAT.prototype = Object.create(mpegts.si.PSISection.prototype);
+mpegts.si.PAT.prototype.constructor = mpegts.si.PAT;
+
+mpegts.si.PAT.prototype.parse = function(data) {
+    var id = mpegts.si.PSISection.prototype.parse.call(this, data);
+    id++;
+
+    if (!this.m_bValid) {
+        //console.log("PSI Parsing Problem during PAT parsing!");
+        return;
+    }
+    this.m_bValid = false;
+
+    if (this.m_table_id !== this.TABLE_ID) {
+        return;
+    }
+
+    var remainingBytes = this.getSectionLength() - this.SECTION_LENGTH;
+
+    while (remainingBytes >= 4) {
+        var prog = new mpegts.si.ProgramAssociation(data.subarray(id, id + 4));
+
+        if (prog.getProgramNumber() === 0) {
+            // Network PID
+            this.m_network_pid = prog.getProgramMapPid();
+        } else {
+            this.m_listOfProgramAssociation.push(prog);
+        }
+        remainingBytes -= 4;
+        id += 4;
+    }
+
+    this.m_bValid = true;
+};
+
+/**
+ * returns the PID of the PMT associated to the first program
+ *
+ * @return the PID of the PMT associated to the first program
+ */
+mpegts.si.PAT.prototype.getPmtPid = function() {
+    var pid = mpegts.ts.TsPacket.prototype.UNDEFINED_PID;
+
+    if (this.m_listOfProgramAssociation.length >= 1) {
+        var prog = this.m_listOfProgramAssociation[0];
+        pid = prog.getProgramMapPid();
+    }
+
+    return pid;
+};
+
+mpegts.si.PAT.prototype.TABLE_ID = 0x00;
+mpegts.si.PAT.prototype.PID = 0x00;
+
+
+mpegts.si.ProgramAssociation = function(data) {
+    this.m_program_number = 0;
+    this.m_program_map_pid = 0;
+    this.parse(data);
+};
+
+mpegts.si.ProgramAssociation.prototype.getProgramNumber = function() {
+    return this.m_program_number;
+};
+
+mpegts.si.ProgramAssociation.prototype.getProgramMapPid = function() {
+    return this.m_program_map_pid;
+};
+
+mpegts.si.ProgramAssociation.prototype.getLength = function() {
+    return 4;
+};
+
+/**
+ * Parse the ProgramAssociation from given stream
+ */
+mpegts.si.ProgramAssociation.prototype.parse = function(data) {
+    this.m_program_number = mpegts.binary.getValueFrom2Bytes(data.subarray(0, 2));
+    this.m_program_map_pid = mpegts.binary.getValueFrom2Bytes(data.subarray(2, 4), 3, 13);
+};
+/*
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+ *
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+mpegts.pes.PesPacket = function() {
+    this.m_cStreamID = null;
+    this.m_nPESPacketLength = null;
+    this.m_cPESScramblingCtrl = null;
+    this.m_bPESpriority = null;
+    this.m_bDataAlignement = null;
+    this.m_bCopyright = null;
+    this.m_bOriginalOrCopy = null;
+    this.m_cPES_header_data_length = null;
+    this.m_cPTS_DTS_flags = null;
+    this.m_bESCR_flag = null;
+    this.m_bES_rate_flag = null;
+    this.m_bDSM_trick_mode_flag = null;
+    this.m_bAdditional_copy_info_flag = null;
+    this.m_bPES_CRC_flag = null;
+    this.m_bPES_extension_flag = null;
+    this.m_pPTS = null;
+    this.m_pDTS = null;
+    this.m_pESCR = null;
+    this.m_ES_rate = null;
+    this.m_DSM_trick_mode = null;
+    this.m_Additional_copy_info = null;
+    this.m_PES_CRC = null;
+    this.m_cNbStuffingBytes = null;
+    this.m_pPESExtension = null;
+    this.m_pPrivateData = null;
+    this.m_payloadArray = null;
+    this.m_nPayloadLength = null;
+    this.m_bDirty = null;
+    this.m_bValid = false;
+};
+
+mpegts.pes.PesPacket.prototype.parse = function(data) {
+    var index = 0;
+    this.m_nLength = data.length;
+    // packet_start_code_prefix
+    var nStartCode = mpegts.binary.getValueFrom3Bytes(data.subarray(index, index + 3));
+    if (nStartCode !== this.START_CODE_PREFIX) {
+        //console.log("PES Packet start code not define!");
+        return;
+    }
+
+    index = 3; // 3 = packet_start_code_prefix length
+
+    // stream_id
+    this.m_cStreamID = data[index];
+    index++;
+
+    // PES_packet_length
+    this.m_nPESPacketLength = mpegts.binary.getValueFrom2Bytes(data.subarray(index, index + 2));
+    index += 2;
+
+    // Padding bytes
+    if (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PADDING_STREAM) {
+        // Padding bytes => no more field, no payload
+        this.m_bValid = true;
+        return;
+    }
+
+    // PES_packet_data_byte (no optional header)
+    if (!this.hasOptionalPESHeader()) {
+        //NAN => to Validate!!!!
+        // no more header field, only payload
+        this.m_payloadArray = data.subarray(index + mpegts.pes.PesPacket.prototype.FIXED_HEADER_LENGTH);
+        this.m_nPayloadLength = this.m_nLength - mpegts.pes.PesPacket.prototype.FIXED_HEADER_LENGTH;
+        this.m_bValid = true;
+        return;
+    }
+
+    // Optional PES header
+    var reserved = mpegts.binary.getValueFromByte(data[index], 0, 2);
+    if (reserved !== 0x02) {
+        return;
+    }
+    this.m_cPESScramblingCtrl = mpegts.binary.getValueFromByte(data[index], 2, 2);
+    this.m_bPESpriority = mpegts.binary.getBitFromByte(data[index], 4);
+    this.m_bDataAlignement = mpegts.binary.getBitFromByte(data[index], 5);
+    this.m_bCopyright = mpegts.binary.getBitFromByte(data[index], 6);
+    this.m_bOriginalOrCopy = mpegts.binary.getBitFromByte(data[index], 7);
+    index++;
+
+    // 7 flags
+    this.m_cPTS_DTS_flags = mpegts.binary.getValueFromByte(data[index], 0, 2);
+    this.m_bESCR_flag = mpegts.binary.getBitFromByte(data[index], 2);
+    this.m_bES_rate_flag = mpegts.binary.getBitFromByte(data[index], 3);
+    this.m_bDSM_trick_mode_flag = mpegts.binary.getBitFromByte(data[index], 4);
+    this.m_bAdditional_copy_info_flag = mpegts.binary.getBitFromByte(data[index], 5);
+    this.m_bPES_CRC_flag = mpegts.binary.getBitFromByte(data[index], 6);
+    this.m_bPES_extension_flag = mpegts.binary.getBitFromByte(data[index], 7);
+    index++;
+
+    // PES_header_data_length
+    this.m_cPES_header_data_length = (data[index] & 0xFF);
+    index++;
+
+    // PTS
+    if ((this.m_cPTS_DTS_flags & mpegts.pes.PesPacket.prototype.FLAG_PTS) == mpegts.pes.PesPacket.prototype.FLAG_PTS) {
+        this.m_pPTS = new mpegts.Pts(data.subarray(index, index + 5));
+        index += 5;
+    }
+
+    // DTS
+    if ((this.m_cPTS_DTS_flags & mpegts.pes.PesPacket.prototype.FLAG_DTS) == mpegts.pes.PesPacket.prototype.FLAG_DTS) {
+        this.m_pDTS = new mpegts.Pts(data.subarray(index, index + 5));
+        index += 5;
+    }
+
+    // ESCR
+    if (this.m_bESCR_flag) {
+        //NAN => to Complete
+        //this.m_pESCR = new PCR(m_pBytestream + index);
+        index += 6;
+    }
+
+    // ES_rate	
+    if (this.m_bES_rate_flag) {
+        this.m_ES_rate = mpegts.binary.getValueFrom3Bytes(data.subarray(index, index + 3), 1, 22);
+        index += 3;
+    }
+
+    // DSM_trick_mode
+    if (this.m_bDSM_trick_mode_flag) {
+        this.m_DSM_trick_mode = data[index];
+        index++;
+    }
+
+    // Additional_copy_info
+    if (this.m_bAdditional_copy_info_flag) {
+        this.m_Additional_copy_info = data[index];
+        index++;
+    }
+
+    // PES_CRC
+    if (this.m_bPES_CRC_flag) {
+        this.m_PES_CRC = mpegts.binary.getValueFrom2Bytes(data.subarray(index, index + 2));
+        index += 2;
+    }
+
+    // PES_extension
+    if (this.m_bPES_extension_flag) {
+        //NAN => to Complete
+        //this.m_pPESExtension = new PESExtension(m_pBytestream + index, m_cPES_header_data_length);
+        //index += m_pPESExtension->getLength();
+    }
+
+    // Stuffing bytes
+    var uiHeaderLength = mpegts.pes.PesPacket.prototype.FIXED_HEADER_LENGTH + mpegts.pes.PesPacket.prototype.FIXED_OPTIONAL_HEADER_LENGTH + this.m_cPES_header_data_length;
+    this.m_cNbStuffingBytes = uiHeaderLength - index;
+    index += this.m_cNbStuffingBytes;
+
+    // Payload
+    this.m_nPayloadLength = this.m_nLength - uiHeaderLength;
+    this.m_payloadArray = data.subarray(uiHeaderLength, uiHeaderLength + this.m_nPayloadLength);
+
+    this.m_bValid = true;
+};
+
+
+/**
+ * Returns true if header contains optional PES header.
+ * @return true if header contains optional PES header
+ */
+mpegts.pes.PesPacket.prototype.hasOptionalPESHeader = function() {
+
+    if ((this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_MAP) ||
+        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PADDING_STREAM) ||
+        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PRIVATE_STREAM_2) ||
+        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_ECM_STREAM) ||
+        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_EMM_STREAM) ||
+        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY) ||
+        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_DSMCC_STREAM) ||
+        (this.m_cStreamID === mpegts.ts.TsPacket.prototype.STREAM_ID_H2221_TYPE_E_STREAM)) {
+        return false;
+    }
+
+    return true;
+};
+
+mpegts.pes.PesPacket.prototype.getHeaderLength = function() {
+    return mpegts.pes.PesPacket.prototype.FIXED_HEADER_LENGTH +
+        mpegts.pes.PesPacket.prototype.FIXED_OPTIONAL_HEADER_LENGTH +
+        this.m_cPES_header_data_length;
+};
+
+mpegts.pes.PesPacket.prototype.getPayload = function() {
+    return this.m_payloadArray;
+};
+
+mpegts.pes.PesPacket.prototype.getPts = function() {
+    return this.m_pPTS;
+};
+
+mpegts.pes.PesPacket.prototype.getDts = function() {
+    return this.m_pDTS;
+};
+
+/** The start code prefix */
+mpegts.pes.PesPacket.prototype.START_CODE_PREFIX = 0x000001;
+/** The first fixed header fields length (start_code + stream_id + PES_packet_length fields) **/
+mpegts.pes.PesPacket.prototype.FIXED_HEADER_LENGTH = 6;
+/** The first optional fixed header fields length **/
+mpegts.pes.PesPacket.prototype.FIXED_OPTIONAL_HEADER_LENGTH = 3;
+/** PTS_DTS_flags possible values */
+mpegts.pes.PesPacket.prototype.FLAG_DTS = 0x01;
+mpegts.pes.PesPacket.prototype.FLAG_PTS = 0x02;
+/*
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+ *
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+mpegts.si.PMT = function() {
+    mpegts.si.PSISection.call(this, mpegts.si.PMT.prototype.TABLE_ID);
+    this.m_listOfComponents = [];
+    this.m_PCR_PID = null;
+    this.m_program_info_length = null;
+};
+
+mpegts.si.PMT.prototype = Object.create(mpegts.si.PSISection.prototype);
+mpegts.si.PMT.prototype.constructor = mpegts.si.PMT;
+
+mpegts.si.PMT.prototype.parse = function(data) {
+    var id = mpegts.si.PSISection.prototype.parse.call(this, data);
+    id++;
+
+    if (!this.m_bValid) {
+        //console.log("PSI Parsing Problem during PMT parsing!");
+        return;
+    }
+    this.m_bValid = false;
+
+    // Check table_id field value
+    if (this.m_table_id !== this.TABLE_ID) {
+        return;
+    }
+
+    var remainingBytes = this.getSectionLength() - this.SECTION_LENGTH;
+
+    // check if we have almost PCR_PID and program_info_length fields
+    if (remainingBytes < 4) {
+        return;
+    }
+
+    this.m_PCR_PID = mpegts.binary.getValueFrom2Bytes(data.subarray(id, id + 2), 3);
+    id += 2;
+    this.m_program_info_length = mpegts.binary.getValueFrom2Bytes(data.subarray(id, id + 2), 4);
+    id += 2;
+
+    // Parse program descriptors
+    id += this.m_program_info_length;
+
+    // Parse ES descriptions
+    remainingBytes = (this.m_section_length - this.SECTION_LENGTH - 4 - this.m_program_info_length);
+    var pESDescription = null;
+    while (remainingBytes > 0) {
+        pESDescription = new mpegts.si.ESDescription(data.subarray(id, id + remainingBytes));
+        this.m_listOfComponents.push(pESDescription);
+        remainingBytes -= pESDescription.getLength();
+        id += pESDescription.getLength();
+    }
+
+    this.m_bValid = true;
+};
+
+mpegts.si.PMT.prototype.TABLE_ID = 0x02;
+
+mpegts.si.PMT.prototype.gStreamTypes = [
+    /*  0 - 0x00 */
+    {
+        name: "Reserved",
+        value: 0x00,
+        desc: "ITU-T | ISO/IEC Reserved"
+    },
+    /*  1 - 0x01 */
+    {
+        name: "MPEG1-Video",
+        value: 0xE0,
+        desc: "ISO/IEC 11172-2 Video"
+    },
+    /*  2 - 0x02 */
+    {
+        name: "MPEG2-Video",
+        value: 0xE0,
+        desc: "ITU-T Rec. H.262 | ISO/IEC 13818-2 Video or ISO/IEC 11172-2 constrained parameter video stream"
+    },
+    /*  3 - 0x03 */
+    {
+        name: "MPEG1-Audio",
+        value: 0xC0,
+        desc: "ISO/IEC 11172-3 Audio"
+    },
+    /*  4 - 0x04 */
+    {
+        name: "MPEG2-Audio",
+        value: 0xC0,
+        desc: "ISO/IEC 13818-3 Audio"
+    },
+    /*  5 - 0x05 */
+    {
+        name: "PRIVATE_SECTIONS",
+        value: 0xBD,
+        desc: "ITU-T Rec. H.222.0 | ISO/IEC 13818-1 private_sections"
+    },
+    /*  6 - 0x06 */
+    {
+        name: "PRIVATE",
+        value: 0xBD,
+        desc: "ITU-T Rec. H.222.0 | ISO/IEC 13818-1 PES packets containing private data"
+    },
+    /*  7 - 0x07 */
+    {
+        name: "MHEG",
+        value: 0xF3,
+        desc: "ISO/IEC 13522 MHEG"
+    },
+    /*  8 - 0x08 */
+    {
+        name: "MPEG1-DSM-CC",
+        value: 0xF2,
+        desc: "ITU-T Rec. H.222.0 | ISO/IEC 13818-1 Annex A DSM-CC"
+    },
+    /*  9 - 0x09 */
+    {
+        name: "H.222.1",
+        value: 0xF4,
+        desc: "ITU-T Rec. H.222.1"
+    },
+    /* 10 - 0x0A */
+    {
+        name: "DSM-CC_A",
+        value: 0xF4,
+        desc: "ISO/IEC 13818-6 type A"
+    },
+    /* 11 - 0x0B */
+    {
+        name: "DSM-CC_B",
+        value: 0xF5,
+        desc: "ISO/IEC 13818-6 type B"
+    },
+    /* 12 - 0x0C */
+    {
+        name: "DSM-CC_C",
+        value: 0xF6,
+        desc: "ISO/IEC 13818-6 type C"
+    },
+    /* 13 - 0x0D */
+    {
+        name: "DSM-CC_D",
+        value: 0xF7,
+        desc: "ISO/IEC 13818-6 type D"
+    },
+    /* 14 - 0x0E */
+    {
+        name: "Auxiliary",
+        value: 0x00,
+        desc: "ITU-T Rec. H.222.0 | ISO/IEC 13818-1 auxiliary"
+    },
+    /* 15 - 0x0F */
+    {
+        name: "MPEG2-AAC-ADTS",
+        value: 0xC0,
+        desc: "ISO/IEC 13818-7 Audio with ADTS transport syntax"
+    },
+    /* 16 - 0x10 */
+    {
+        name: "MPEG4-Video",
+        value: 0xE0,
+        desc: "ISO/IEC 14496-2 Visual"
+    },
+    /* 17 - 0x11 */
+    {
+        name: "MPEG4-AAC-LATM",
+        value: 0xC0,
+        desc: "ISO/IEC 14496-3 Audio with the LATM transport syntax as defined in ISO/IEC 14496-3/AMD-1"
+    },
+    /* 18 - 0x12 */
+    {
+        name: "MPEG4-SL",
+        value: 0xFA,
+        desc: "ISO/IEC 14496-1 SL-packetized stream or FlexMux stream carried in PES packets"
+    },
+    /* 19 - 0x13 */
+    {
+        name: "MPEG4-SL",
+        value: 0xFA,
+        desc: "ISO/IEC 14496-1 SL-packetized stream or FlexMux stream carried in ISO/IEC14496_sections"
+    },
+    /* 20 - 0x14 */
+    {
+        name: "DSM-CC_SDP",
+        value: 0x00,
+        desc: "ISO/IEC 13818-6 Synchronized Download Protocol"
+    },
+    /* 21 - 0x15 */
+    {
+        name: "META_PES",
+        value: 0xFC,
+        desc: "Metadata carried in PES packets"
+    },
+    /* 22 - 0x16 */
+    {
+        name: "META_SECTIONS",
+        value: 0xFC,
+        desc: "Metadata carried in metadata_sections"
+    },
+    /* 23 - 0x17 */
+    {
+        name: "META_DSM-CC",
+        value: 0xFC,
+        desc: "Metadata carried in ISO/IEC 13818-6 Data Carousel"
+    },
+    /* 24 - 0x18 */
+    {
+        name: "META_DSM-CC",
+        value: 0xFC,
+        desc: "Metadata carried in ISO/IEC 13818-6 Object Carousel"
+    },
+    /* 25 - 0x19 */
+    {
+        name: "META_DSM-CC",
+        value: 0xFC,
+        desc: "Metadata carried in ISO/IEC 13818-6 Synchronized Download Protocol"
+    },
+    /* 26 - 0x1A */
+    {
+        name: "MPEG2-IPMP",
+        value: 0x00,
+        desc: "IPMP stream (defined in ISO/IEC 13818-11, MPEG-2 IPMP)"
+    },
+    /* 27 - 0x1B */
+    {
+        name: "H.264",
+        value: 0xE0,
+        desc: "AVC video stream as defined in ITU-T Rec. H.264 | ISO/IEC 14496-10 Video"
+    },
+    /* 28 - 0x1C */
+    {
+        name: "MPEG4AAC",
+        value: 0xC0,
+        desc: "ISO/IEC 14496-3 Audio, without using any additional transport syntax, such as DST, ALS and SLS"
+    },
+    /* 29 - 0x1D */
+    {
+        name: "MPEG4Text",
+        value: 0x00,
+        desc: "ISO/IEC 14496-17 Text"
+    },
+    /* 30 - 0x1E */
+    {
+        name: "Aux. Video (23002-3)",
+        value: 0x1E,
+        desc: "Auxiliary video stream as defined in ISO/IEC 23002-3"
+    },
+    /* 31 - 0x1F */
+    {
+        name: "H.264-SVC",
+        value: 0xE0,
+        desc: "SVC video sub-bitstream of a video stream as defined in the Annex G of ITU-T Rec. H.264 | ISO/IEC 14496-10 Video"
+    },
+    /* 32 - 0x20 */
+    {
+        name: "H.264-MVC",
+        value: 0xE0,
+        desc: "MVC video sub-bitstream of a video stream as defined in the Annex H of ITU-T Rec. H.264 | ISO/IEC 14496-10 Video"
+    },
+    /* 33 - 0x21 */
+    {
+        name: "Reserved1",
+        value: 0x00,
+        desc: "TBC Reserved"
+    },
+    /* 34 - 0x22 */
+    {
+        name: "Reserved2",
+        value: 0x00,
+        desc: "TBC Reserved"
+    },
+    /* 35 - 0x23 */
+    {
+        name: "Reserved3",
+        value: 0x00,
+        desc: "TBC Reserved"
+    },
+    /* 36 - 0x24 */
+    {
+        name: "HEVC",
+        value: 0xE0,
+        desc: "ITU.-T Rec H.26x | ISO/IEC 23008-2 video stream"
+    }
+];
+
+mpegts.si.PMT.prototype.MPEG2_VIDEO_STREAM_TYPE = 0x02;
+mpegts.si.PMT.prototype.AVC_VIDEO_STREAM_TYPE = 0x1B;
+mpegts.si.PMT.prototype.MPEG1_AUDIO_STREAM_TYPE = 0x03;
+mpegts.si.PMT.prototype.MPEG2_AUDIO_STREAM_TYPE = 0x04;
+mpegts.si.PMT.prototype.AAC_AUDIO_STREAM_TYPE = 0x11;
+mpegts.si.PMT.prototype.AC3_AUDIO_STREAM_TYPE = 0x06;
+mpegts.si.PMT.prototype.SUB_STREAM_TYPE = 0x06;
+
+mpegts.si.PMT.prototype.STREAM_TYPE_MP1V = 0x01;
+mpegts.si.PMT.prototype.STREAM_TYPE_MP2V = 0x02;
+mpegts.si.PMT.prototype.STREAM_TYPE_MP1A = 0x03;
+mpegts.si.PMT.prototype.STREAM_TYPE_MP2A = 0x04;
+mpegts.si.PMT.prototype.STREAM_TYPE_PRIVATE = 0x06;
+mpegts.si.PMT.prototype.STREAM_TYPE_TELETEXT = 0x06;
+mpegts.si.PMT.prototype.STREAM_TYPE_DVBSUBTITLE = 0x06;
+mpegts.si.PMT.prototype.STREAM_TYPE_AC3 = 0x06;
+mpegts.si.PMT.prototype.STREAM_TYPE_MP2AAC_ADTS = 0x0F;
+mpegts.si.PMT.prototype.STREAM_TYPE_MP4AAC_LATM = 0x11;
+mpegts.si.PMT.prototype.STREAM_TYPE_H264 = 0x1B;
+mpegts.si.PMT.prototype.STREAM_TYPE_MP4AAC = 0x1C;
+mpegts.si.PMT.prototype.STREAM_TYPE_AUX_23002_3 = 0x1E;
+mpegts.si.PMT.prototype.STREAM_TYPE_SVC = 0x1F;
+mpegts.si.PMT.prototype.STREAM_TYPE_MVC = 0x20;
+mpegts.si.PMT.prototype.STREAM_TYPE_HEVC = 0x24;
+
+
+mpegts.si.ESDescription = function(data) {
+    /** ES description fields */
+    this.m_stream_type = null;
+    this.m_elementary_PID = null;
+    this.m_ES_info_length = null;
+    this.parse(data);
+};
+
+/**
+ * Gets the stream type associated to this ES
+ * @return the stream type associated to this ES
+ */
+mpegts.si.ESDescription.prototype.getStreamType = function() {
+    return this.m_stream_type;
+};
+
+/**
+ * Gets the pid on which this ES may be found
+ * @return the pid on which this ES may be found
+ */
+mpegts.si.ESDescription.prototype.getPID = function() {
+    return this.m_elementary_PID;
+};
+
+/**
+ * Returns the elementary stream description length
+ * @return the elementary stream description length
+ */
+mpegts.si.ESDescription.prototype.getLength = function() {
+    return 5 + this.m_ES_info_length;
+};
+
+/**
+ * Parse the ESDescription from given bytestream
+ * @param the bytestream to parse
+ * @return the bytestream length
+ */
+mpegts.si.ESDescription.prototype.parse = function(data) {
+    this.m_stream_type = data[0];
+    this.m_elementary_PID = mpegts.binary.getValueFrom2Bytes(data.subarray(1, 3), 3);
+    this.m_ES_info_length = mpegts.binary.getValueFrom2Bytes(data.subarray(3, 5), 4);
+};
+/*
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+ *
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+mpegts.Pts = function(data) {
+
+    var low,
+        high;
+
+    //initialize an unsigned 64 bits long number
+    //this.m_lPTS = goog.math.Long.fromNumber(0);
+
+    //=> PTS is defined on 33 bits
+    //=> In the first byte, bit number 2 to 4 is useful
+    var bits3230 = data[0] >> 1 & 0x7;
+
+    //thirty-third bit in the high member
+    high = bits3230 >> 2;
+    //32 and 31 bits in th low member, shift by 30 bits
+    low = ((bits3230 & 0x3) << 30) >>> 0; //=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
+
+    //=> In the second byte, all the bits are useful
+    var bits2922 = data[1];
+    low = (low | (bits2922 << 22)) >>> 0; //=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
+
+    //=> In the third byte, bit number 2 to 8 is useful
+    var bits2115 = data[2] >> 1;
+    low = (low | (bits2115 << 15)) >>> 0; //=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
+
+    //=> In the fourth byte, all the bits are useful
+    var bits1407 = data[3];
+    low = (low | (bits1407 << 7)) >>> 0; //=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
+
+    //=> In the fifth byte, bit number 2 to 8 is useful
+    var bits0701 = data[4] >> 1;
+    low = (low | bits0701) >>> 0; //=> http://www.codeonastick.com/2013/06/javascript-convert-signed-integer-to.html unsigned int!!!!!!
+
+    this.m_lPTS = goog.math.Long.fromBits(low, high).toNumber();
+    this.m_fPTS = this.m_lPTS / mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY;
+};
+
+/**
+ * Returns the PTS value in units of system clock frequency.
+ * @return the PTS value in units of system clock frequency
+ */
+mpegts.Pts.prototype.getValue = function() {
+    return this.m_lPTS;
+};
+
+/**
+ * Returns the PTS value in seconds.
+ * @return the PTS value in seconds
+ */
+mpegts.Pts.prototype.getValueInSeconds = function() {
+    return this.m_fPTS;
+};
+
+mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY = 90000;
+/*
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+ *
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+mpegts.ts.TsPacket = function() {
+    this.m_cSync = null;
+    this.m_bTransportError = null;
+    this.m_bPUSI = null;
+    this.m_bTransportPriority = null;
+    this.m_nPID = null;
+    this.m_cTransportScramblingCtrl = null;
+    this.m_cAdaptationFieldCtrl = null;
+    this.m_cContinuityCounter = null;
+    this.m_pAdaptationField = null;
+    this.m_payloadArray = null;
+    this.m_cPayloadLength = null;
+    this.m_bDirty = null;
+    this.m_time = null;
+    this.m_arrivalTime = null;
+    this.m_bIgnored = null;
+};
+
+mpegts.ts.TsPacket.prototype.parse = function(data) {
+    var byteId = 0;
+    this.m_cSync = data[byteId];
+    if (this.m_cSync !== this.SYNC_WORD) {
+        //console.log("TS Packet Malformed!");
+        return;
+    }
+
+    byteId++;
+
+    this.m_bTransportError = mpegts.binary.getBitFromByte(data[byteId], 0);
+    this.m_bPUSI = mpegts.binary.getBitFromByte(data[byteId], 1);
+    this.m_bTransportPriority = mpegts.binary.getBitFromByte(data[byteId], 2);
+    this.m_nPID = mpegts.binary.getValueFrom2Bytes(data.subarray(byteId, byteId + 2), 3, 13);
+
+    byteId += 2;
+
+    this.m_cTransportScramblingCtrl = mpegts.binary.getValueFromByte(data[byteId], 0, 2);
+    this.m_cAdaptationFieldCtrl = mpegts.binary.getValueFromByte(data[byteId], 2, 2);
+    this.m_cContinuityCounter = mpegts.binary.getValueFromByte(data[byteId], 4, 4);
+
+    byteId++;
+
+    // Adaptation field
+    // NAN => to Validate
+    if (this.m_cAdaptationFieldCtrl & 0x02) {
+        // Check adaptation field length before parsing
+        var cAFLength = data[byteId];
+        if ((cAFLength + byteId) >= this.TS_PACKET_SIZE) {
+            //console.log("TS Packet Size Problem!");
+            return;
+        }
+        this.m_pAdaptationField = new mpegts.ts.AdaptationField();
+        this.m_pAdaptationField.parse(data.subarray(byteId));
+        byteId += this.m_pAdaptationField.getLength();
+    }
+
+    // Check packet validity
+    if (this.m_cAdaptationFieldCtrl === 0x00) {
+        //console.log("TS Packet is invalid!");
+        return;
+    }
+
+    // Payload
+    if (this.m_cAdaptationFieldCtrl & 0x01) {
+        this.m_cPayloadLength = this.TS_PACKET_SIZE - byteId;
+        this.m_payloadArray = data.subarray(byteId, byteId + this.m_cPayloadLength);
+    }
+};
+
+mpegts.ts.TsPacket.prototype.getPid = function() {
+    return this.m_nPID;
+};
+
+mpegts.ts.TsPacket.prototype.getPayload = function() {
+    return this.m_payloadArray;
+};
+
+mpegts.ts.TsPacket.prototype.getPayloadLength = function() {
+    return this.m_cPayloadLength;
+};
+
+mpegts.ts.TsPacket.prototype.getPusi = function() {
+    return this.m_bPUSI;
+};
+
+mpegts.ts.TsPacket.prototype.hasAdaptationFieldOnly = function() {
+    return (this.m_cAdaptationFieldCtrl === 0x02);
+};
+
+mpegts.ts.TsPacket.prototype.SYNC_WORD = 0x47;
+mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE = 188;
+mpegts.ts.TsPacket.prototype.UNDEFINED_PID = 0xFFFF;
+mpegts.ts.TsPacket.prototype.PAT_PID = 0;
+mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_MAP = 0xBC;
+mpegts.ts.TsPacket.prototype.STREAM_ID_PADDING_STREAM = 0xBE;
+mpegts.ts.TsPacket.prototype.STREAM_ID_PADDING_STREAM = 0xBE;
+mpegts.ts.TsPacket.prototype.STREAM_ID_PRIVATE_STREAM_2 = 0xBF;
+mpegts.ts.TsPacket.prototype.STREAM_ID_ECM_STREAM = 0xF0;
+mpegts.ts.TsPacket.prototype.STREAM_ID_EMM_STREAM = 0xF1;
+mpegts.ts.TsPacket.prototype.STREAM_ID_DSMCC_STREAM = 0xF2;
+mpegts.ts.TsPacket.prototype.STREAM_ID_H2221_TYPE_E_STREAM = 0xF8;
+mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 0xFF;
+/*   Copyright (C) 2011,2012,2013,2014 John Kula */
+
+/*
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+    All trademarks and service marks contained within this document are
+    property of their respective owners.
+
+    Version 2014.07.23
+
+    Updates may be found at: http:\\www.darkwavetech.com
+
+*/
+
+/*jslint browser:true */
+
+/* This function returns the browser and version number by using the navigator.useragent object */
+
+function fingerprint_browser() {
+    "use strict";
+    var userAgent,
+        name,
+        version;
+
+    try {
+
+        userAgent = navigator.userAgent.toLowerCase();
+
+        if (/msie (\d+\.\d+);/.test(userAgent)) { //test for MSIE x.x;
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            if (userAgent.indexOf("trident/6") > -1) {
+                version = 10;
+            }
+            if (userAgent.indexOf("trident/5") > -1) {
+                version = 9;
+            }
+            if (userAgent.indexOf("trident/4") > -1) {
+                version = 8;
+            }
+            name = "Internet Explorer";
+        } else if (userAgent.indexOf("trident/7") > -1) { //IE 11+ gets rid of the legacy 'MSIE' in the user-agent string;
+            version = 11;
+            name = "Internet Explorer";
+        }  else if (/edge[\/\s](\d+\.\d+)/.test(userAgent)) { //test for Firefox/x.x or Firefox x.x (ignoring remaining digits);
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Edge";
+        }  else if (/firefox[\/\s](\d+\.\d+)/.test(userAgent)) { //test for Firefox/x.x or Firefox x.x (ignoring remaining digits);
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Firefox";
+        } else if (/opera[\/\s](\d+\.\d+)/.test(userAgent)) { //test for Opera/x.x or Opera x.x (ignoring remaining decimal places);
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Opera";
+        } else if (/chrome[\/\s](\d+\.\d+)/.test(userAgent)) { //test for Chrome/x.x or Chrome x.x (ignoring remaining digits);
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Chrome";
+        } else if (/version[\/\s](\d+\.\d+)/.test(userAgent)) { //test for Version/x.x or Version x.x (ignoring remaining digits);
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Safari";
+        } else if (/rv[\/\s](\d+\.\d+)/.test(userAgent)) { //test for rv/x.x or rv x.x (ignoring remaining digits);
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Mozilla";
+        } else if (/mozilla[\/\s](\d+\.\d+)/.test(userAgent)) { //test for Mozilla/x.x or Mozilla x.x (ignoring remaining digits);
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Mozilla";
+        } else if (/binget[\/\s](\d+\.\d+)/.test(userAgent)) { //test for BinGet/x.x or BinGet x.x (ignoring remaining digits);
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Library (BinGet)";
+        } else if (/curl[\/\s](\d+\.\d+)/.test(userAgent)) { //test for Curl/x.x or Curl x.x (ignoring remaining digits);
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Library (cURL)";
+        } else if (/java[\/\s](\d+\.\d+)/.test(userAgent)) { //test for Java/x.x or Java x.x (ignoring remaining digits);
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Library (Java)";
+        } else if (/libwww-perl[\/\s](\d+\.\d+)/.test(userAgent)) { //test for libwww-perl/x.x or libwww-perl x.x (ignoring remaining digits);
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Library (libwww-perl)";
+        } else if (/microsoft url control -[\s](\d+\.\d+)/.test(userAgent)) { //test for Microsoft URL Control - x.x (ignoring remaining digits);
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Library (Microsoft URL Control)";
+        } else if (/peach[\/\s](\d+\.\d+)/.test(userAgent)) { //test for Peach/x.x or Peach x.x (ignoring remaining digits);
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Library (Peach)";
+        } else if (/php[\/\s](\d+\.\d+)/.test(userAgent)) { //test for PHP/x.x or PHP x.x (ignoring remaining digits);
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Library (PHP)";
+        } else if (/pxyscand[\/\s](\d+\.\d+)/.test(userAgent)) { //test for pxyscand/x.x or pxyscand x.x (ignoring remaining digits);
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Library (pxyscand)";
+        } else if (/pycurl[\/\s](\d+\.\d+)/.test(userAgent)) { //test for pycurl/x.x or pycurl x.x (ignoring remaining digits);
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Library (PycURL)";
+        } else if (/python-urllib[\/\s](\d+\.\d+)/.test(userAgent)) { //test for python-urllib/x.x or python-urllib x.x (ignoring remaining digits);
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Library (Python URLlib)";
+        } else if (/appengine-google/.test(userAgent)) { //test for AppEngine-Google;
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Cloud (Google AppEngine)";
+        } else if (/trident/.test(userAgent)) { //test for Trident;
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Trident";
+        } else if (/adventurer/.test(userAgent)) { //test for Orange Adventurer;
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "Adventurer";
+        } else {
+            version = "unknown";
+            name = "unknown";
+        }
+    } catch (err) {
+        name = "error";
+        version = "error";
+    }
+
+    return {
+        name: name.replace(/\s+/g, ''),
+        version: version
+    };
+}
+/*   Copyright (C) 2011,2012,2013,2014 John Kula */
+
+/*
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+    All trademarks and service marks contained within this document are
+    property of their respective owners.
+
+    Version 2014.07.23
+
+    Updates may be found at: http:\\www.darkwavetech.com
+
+*/
+
+/*jslint browser:true */
+
+/* This function returns the operating system and number of bits by looking at the navigator.useragent and navigator.platform objects */
+
+function fingerprint_os() {
+    "use strict";
+
+    var userAgent,
+        platform,
+        name,
+        bits,
+        os = {
+            name: "",
+            bits: ""
+        };
+
+    try {
+        /* navigator.userAgent is supported by all major browsers */
+        userAgent = navigator.userAgent.toLowerCase();
+
+        if (userAgent.indexOf("windows nt 10.0") !== -1) {
+            name = "Windows 10";
+        } else if (userAgent.indexOf("windows nt 6.3") !== -1) {
+            name = "Windows 8.1";
+        } else if (userAgent.indexOf("windows nt 6.2") !== -1) {
+            name = "Windows 8";
+        } else if (userAgent.indexOf("windows nt 6.1") !== -1) {
+            name = "Windows 7";
+        } else if (userAgent.indexOf("windows nt 6.0") !== -1) {
+            name = "Windows Vista/Windows Server 2008";
+        } else if (userAgent.indexOf("windows nt 5.2") !== -1) {
+            name = "Windows XP x64/Windows Server 2003";
+        } else if (userAgent.indexOf("windows nt 5.1") !== -1) {
+            name = "Windows XP";
+        } else if (userAgent.indexOf("windows nt 5.01") !== -1) {
+            name = "Windows 2000, Service Pack 1 (SP1)";
+        } else if (userAgent.indexOf("windows xp") !== -1) {
+            name = "Windows XP";
+        } else if (userAgent.indexOf("windows 2000") !== -1) {
+            name = "Windows 2000";
+        } else if (userAgent.indexOf("windows nt 5.0") !== -1) {
+            name = "Windows 2000";
+        } else if (userAgent.indexOf("windows nt 4.0") !== -1) {
+            name = "Windows NT 4.0";
+        } else if (userAgent.indexOf("windows nt") !== -1) {
+            name = "Windows NT 4.0";
+        } else if (userAgent.indexOf("winnt4.0") !== -1) {
+            name = "Windows NT 4.0";
+        } else if (userAgent.indexOf("winnt") !== -1) {
+            name = "Windows NT 4.0";
+        } else if (userAgent.indexOf("windows me") !== -1) {
+            name = "Windows ME";
+        } else if (userAgent.indexOf("win 9x 4.90") !== -1) {
+            name = "Windows ME";
+        } else if (userAgent.indexOf("windows 98") !== -1) {
+            name = "Windows 98";
+        } else if (userAgent.indexOf("win98") !== -1) {
+            name = "Windows 98";
+        } else if (userAgent.indexOf("windows 95") !== -1) {
+            name = "Windows 95";
+        } else if (userAgent.indexOf("windows_95") !== -1) {
+            name = "Windows 95";
+        } else if (userAgent.indexOf("win95") !== -1) {
+            name = "Windows 95";
+        } else if (userAgent.indexOf("ce") !== -1) {
+            name = "Windows CE";
+        } else if (userAgent.indexOf("win16") !== -1) {
+            name = "Windows 3.11";
+        } else if (userAgent.indexOf("iemobile") !== -1) {
+            name = "Windows Mobile";
+        } else if (userAgent.indexOf("wm5 pie") !== -1) {
+            name = "Windows Mobile";
+        } else if (userAgent.indexOf("windows phone 10.0") !== -1) {
+            name = "Windows Phone 10";
+        } else if (userAgent.indexOf("windows") !== -1) {
+            name = "Windows (Unknown Version)";
+        } else if (userAgent.indexOf("openbsd") !== -1) {
+            name = "Open BSD";
+        } else if (userAgent.indexOf("sunos") !== -1) {
+            name = "Sun OS";
+        } else if (userAgent.indexOf("ubuntu") !== -1) {
+            name = "Ubuntu";
+        } else if (userAgent.indexOf("ipad") !== -1) {
+            name = "iOS (iPad)";
+        } else if (userAgent.indexOf("ipod") !== -1) {
+            name = "iOS (iTouch)";
+        } else if (userAgent.indexOf("iphone") !== -1) {
+            name = "iOS (iPhone)";
+        } else if (userAgent.indexOf("mac os x beta") !== -1) {
+            name = "Mac O SX Beta";
+        } else if (userAgent.indexOf("mac os x 10") !== -1) {
+            if (/mac os x 10_(\d+)\_(\d+)/.test(userAgent)) {
+                name = "Mac OS X 10." + RegExp.$1;
+            } else {
+                name = "Mac OS X 10";
+            }
+        } else if (userAgent.indexOf("mac os x") !== -1) {
+            name = "Mac OS X";
+        } else if (userAgent.indexOf("mac_68000") !== -1) {
+            name = "Mac OS Classic (68000)";
+        } else if (userAgent.indexOf("68K") !== -1) {
+            name = "Mac OS Classic (68000)";
+        } else if (userAgent.indexOf("mac_powerpc") !== -1) {
+            name = "Mac OS Classic (PowerPC)";
+        } else if (userAgent.indexOf("ppc mac") !== -1) {
+            name = "Mac OS Classic (PowerPC)";
+        } else if (userAgent.indexOf("macintosh") !== -1) {
+            name = "Mac OS Classic";
+        } else if (userAgent.indexOf("googletv") !== -1) {
+            name = "Android (GoogleTV)";
+        } else if (userAgent.indexOf("xoom") !== -1) {
+            name = "Android (Xoom)";
+        } else if (userAgent.indexOf("htc_flyer") !== -1) {
+            name = "Android (HTC Flyer)";
+        } else if (userAgent.indexOf("android") !== -1) {
+            name = "Android";
+        } else if (userAgent.indexOf("symbian") !== -1) {
+            name = "Symbian";
+        } else if (userAgent.indexOf("series60") !== -1) {
+            name = "Symbian (Series 60)";
+        } else if (userAgent.indexOf("series70") !== -1) {
+            name = "Symbian (Series 70)";
+        } else if (userAgent.indexOf("series80") !== -1) {
+            name = "Symbian (Series 80)";
+        } else if (userAgent.indexOf("series90") !== -1) {
+            name = "Symbian (Series 90)";
+        } else if (userAgent.indexOf("x11") !== -1) {
+            name = "UNIX";
+        } else if (userAgent.indexOf("nix") !== -1) {
+            name = "UNIX";
+        } else if (userAgent.indexOf("linux") !== -1) {
+            name = "Linux";
+        } else if (userAgent.indexOf("qnx") !== -1) {
+            name = "QNX";
+        } else if (userAgent.indexOf("os/2") !== -1) {
+            name = "IBM OS/2";
+        } else if (userAgent.indexOf("beos") !== -1) {
+            name = "BeOS";
+        } else if (userAgent.indexOf("blackberry95") !== -1) {
+            name = "Blackberry (Storm 1/2)";
+        } else if (userAgent.indexOf("blackberry97") !== -1) {
+            name = "Blackberry (Bold)";
+        } else if (userAgent.indexOf("blackberry96") !== -1) {
+            name = "Blackberry (Tour)";
+        } else if (userAgent.indexOf("blackberry89") !== -1) {
+            name = "Blackberry (Curve 2)";
+        } else if (userAgent.indexOf("blackberry98") !== -1) {
+            name = "Blackberry (Torch)";
+        } else if (userAgent.indexOf("playbook") !== -1) {
+            name = "Blackberry (Playbook)";
+        } else if (userAgent.indexOf("wnd.rim") !== -1) {
+            name = "Blackberry (IE/FF Emulator)";
+        } else if (userAgent.indexOf("blackberry") !== -1) {
+            name = "Blackberry";
+        } else if (userAgent.indexOf("palm") !== -1) {
+            name = "Palm OS";
+        } else if (userAgent.indexOf("webos") !== -1) {
+            name = "WebOS";
+        } else if (userAgent.indexOf("hpwos") !== -1) {
+            name = "WebOS (HP)";
+        } else if (userAgent.indexOf("blazer") !== -1) {
+            name = "Palm OS (Blazer)";
+        } else if (userAgent.indexOf("xiino") !== -1) {
+            name = "Palm OS (Xiino)";
+        } else if (userAgent.indexOf("kindle") !== -1) {
+            name = "Kindle";
+        } else if (userAgent.indexOf("wii") !== -1) {
+            name = "Nintendo (Wii)";
+        } else if (userAgent.indexOf("nintendo ds") !== -1) {
+            name = "Nintendo (DS)";
+        } else if (userAgent.indexOf("playstation 3") !== -1) {
+            name = "Sony (Playstation Console)";
+        } else if (userAgent.indexOf("playstation portable") !== -1) {
+            name = "Sony (Playstation Portable)";
+        } else if (userAgent.indexOf("webtv") !== -1) {
+            name = "MSN TV (WebTV)";
+        } else if (userAgent.indexOf("inferno") !== -1) {
+            name = "Inferno";
+        } else {
+            name = "Unknown";
+        }
+
+        /* navigator.platform is supported by all major browsers */
+        platform = navigator.platform.toLowerCase();
+
+        if (platform.indexOf("x64") !== -1) {
+            bits = "64";
+        } else if (userAgent.indexOf("x86_64") !== -1) {
+            bits = "64";
+        } else if (userAgent.indexOf("x86-64") !== -1) {
+            bits = "64";
+        } else if (userAgent.indexOf("win64") !== -1) {
+            bits = "64";
+        } else if (userAgent.indexOf("x64;") !== -1) {
+            bits = "64";
+        } else if (userAgent.indexOf("amd64") !== -1) {
+            bits = "64";
+        } else if (userAgent.indexOf("wow64") !== -1) {
+            bits = "64";
+        } else if (userAgent.indexOf("x64_64") !== -1) {
+            bits = "64";
+        } else if (userAgent.indexOf("ia65") !== -1) {
+            bits = "64";
+        } else if (userAgent.indexOf("sparc64") !== -1) {
+            bits = "64";
+        } else if (userAgent.indexOf("ppc64") !== -1) {
+            bits = "64";
+        } else if (userAgent.indexOf("irix64") !== -1) {
+            bits = "64";
+        } else if (userAgent.indexOf("irix64") !== -1) {
+            bits = "64";
+        } else {
+            bits = "32";
+        }
+    } catch (err) {
+        name = "error";
+        bits = "error";
+    }
+
+    return {
+        name: name.replace(/\s+/g, ''),
+        bits: "x" + bits
+    };
+}
+
+dijon = this.dijon;
+return MediaPlayer ;
 
 }));
