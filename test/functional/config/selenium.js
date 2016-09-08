@@ -19,6 +19,8 @@ define({
     remote: {
         tunnel: 'BrowserStackTunnel',
         reporters: [{id: 'JUnit', filename: 'test/functional/test-reports/' + (new Date().getFullYear())+'-'+(new Date().getMonth()+1)+'-'+(new Date().getDate())+'_'+(new Date().getHours())+'-'+(new Date().getMinutes())+'-'+(new Date().getSeconds()) + '_report.xml'}],
-        capabilities: {}
+        capabilities: {
+            'selenium-version': '3.0.0'
+        }
     }
 });
