@@ -1194,9 +1194,12 @@ MediaPlayer.dependencies.BufferController = function() {
                 overrideBuffer = true;
 
                 // For xml subtitles file, reset cues since there is no media segment
-                if (type === 'text' && (data.mimeType === 'application/ttml+xml')) {
+                if (type === 'text') {
+                    buffer.UpdateLang(data.id, data.lang);
+                    if (data.mimeType === 'application/ttml+xml') {
                     removeBuffer.call(this);
                 }
+            }
             }
 
             dataChanged = false;
