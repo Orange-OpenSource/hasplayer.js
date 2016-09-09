@@ -104,6 +104,12 @@ MediaPlayer.utils.TTMLRenderer = function() {
                     //definition is done in pixels.
                     div.style.webkitTextStrokeWidth = cssStyle.textOutline.width;
                 }
+
+                if (cssStyle.showBackground && cssStyle.showBackground === 'whenActive') {
+                    div.style.width = "auto";
+                    div.style.height = "auto";
+                }
+
                 div.style.backgroundColor = cssStyle.backgroundColor;
                 div.style.color = cssStyle.color;
                 div.style.fontSize = fontSize;

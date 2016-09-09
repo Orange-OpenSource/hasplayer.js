@@ -491,6 +491,7 @@ MediaPlayer.utils.TTMLParser = function() {
                     origin: null,
                     extent: null,
                     rootExtent: null
+                    showBackground: null
                 },
                 caption,
                 divBody,
@@ -597,6 +598,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                 origin: null,
                                 extent: null,
                                 rootExtent: rootExtent
+                                showBackground : null
                             };
                             region = regions[i];
 
@@ -641,6 +643,7 @@ MediaPlayer.utils.TTMLParser = function() {
 
                                             cssStyle.textOutline = computeTextOutline(textOutline, cellResolution, cssStyle.color);
                                             cssStyle.fontSize = computeFontSize(cssStyle.fontSize, cellResolution);
+                                            cssStyle.showBackground = findStyleElement.call(this, [textDatas[j], region, divBody], 'showBackground');
                                         }
                                         //try to detect multi lines subtitle
                                         textValue += textDatas[j].textContent + "\n";
@@ -676,6 +679,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                     cssStyle.fontSize = computeFontSize(cssStyle.fontSize, cellResolution);
 
                                     cssStyle.origin = findStyleElement.call(this, [region, divBody], 'origin');
+                                    cssStyle.showBackground = findStyleElement.call(this, [region, divBody], 'showBackground');
 
                                     //line and position element have no effect on IE
                                     //For Chrome line = 80 is a percentage workaround to reorder subtitles
