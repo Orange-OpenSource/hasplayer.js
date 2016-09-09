@@ -570,7 +570,7 @@ MediaPlayer = function () {
          * Sets player configuration parameters.
          * @access public
          * @memberof MediaPlayer#
-         * @param {PlayerParams} params - parameter(s) value(s) to set.
+         * @param {MediaPlayer#PlayerParams} params - parameter(s) value(s) to set.
          */
         setConfig: function (params) {
             if (this.config && params) {
@@ -1672,7 +1672,7 @@ MediaPlayer.TRACKS_TYPE = {
  * Player parameters object.
  * All parameters values are applied for any stream type. Parameters can be overriden specifically for audio and video track by setting
  * parameters values in the params.audio and params.video objects.
- * @typedef PlayerParams
+ * @typedef MediaPlayer#PlayerParams
  * @type Object
  * @property {number}   BufferController.minBufferTimeForPlaying - Minimum buffer level before playing, in seconds (default value = 0)
  * @property {number}   BufferController.minBufferTime - Minimum buffer size, in seconds (default value = 16)
