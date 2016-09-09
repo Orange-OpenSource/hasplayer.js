@@ -882,7 +882,7 @@ MediaPlayer = function () {
          */
         seek: function (time) {
             var range = null,
-                minBufferTime = 0;
+                liveEdge = 0;
 
             _isPlayerInitialized();
 
@@ -898,15 +898,15 @@ MediaPlayer = function () {
                 }
             } else {
                 range = this.getDVRWindowRange();
-                minBufferTime = streamController.getMinBufferTime();
+                liveEdge = streamController.getLiveEdge();
                 if (range === null) {
                     throw new Error('MediaPlayer.seek(): impossible for live stream');
                 } else if (time < range.start || time > range.end) {
                     throw new Error('MediaPlayer.seek(): seek value outside available time range');
                 } else {
                     // Ensure we keep enough buffer
-                    if (time > (range.end - minBufferTime)) {
-                        time = range.end - minBufferTime;
+                    if (time > (range.end - liveEdge)) {
+                        time = range.end - liveEdge;
                     }
                     streamController.seek(time, true);
                 }
