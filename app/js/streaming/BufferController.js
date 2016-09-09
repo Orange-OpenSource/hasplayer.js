@@ -48,6 +48,7 @@ MediaPlayer.dependencies.BufferController = function() {
         buffer = null,
         minBufferTime,
         minBufferTimeAtStartup,
+        liveDelay,
         bufferTimeout,
         bufferStateTimeout,
         trickModeEnabled = false,
@@ -947,7 +948,7 @@ MediaPlayer.dependencies.BufferController = function() {
             self.debug.log("[BufferController][" + type + "] Manifest live edge = " + liveEdgeTime);
 
             // Step back from a found live edge time to be able to buffer some data
-            startTime = Math.max((liveEdgeTime - minBufferTime), _currentRepresentation.segmentAvailabilityRange.start);
+            startTime = Math.max((liveEdgeTime - liveDelay), _currentRepresentation.segmentAvailabilityRange.start);
 
             // Get the request corresponding to the start time
             this.indexHandler.getSegmentRequestForTime(_currentRepresentation, startTime).then(
@@ -1276,6 +1277,7 @@ MediaPlayer.dependencies.BufferController = function() {
             this.setEventController(eventController);
             minBufferTime = this.config.getParamFor(type, "BufferController.minBufferTime", "number", -1);
             minBufferTimeAtStartup = this.config.getParamFor(type, "BufferController.minBufferTimeForPlaying", "number", 0);
+            liveDelay = this.config.getParamFor(type, "BufferController.liveDelay", "number", -1);
 
             this.updateData(newData, newPeriodInfo);
 
@@ -1304,6 +1306,11 @@ MediaPlayer.dependencies.BufferController = function() {
                 if (minBufferTime === -1) {
                     minBufferTime = self.bufferExt.decideBufferLength(manifest.minBufferTime, periodInfo.duration, waitingForBuffer);
                 }
+
+                if (liveDelay === -1 || liveDelay < minBufferTime) {
+                    liveDelay = minBufferTime;
+                }
+
                 // Update manifest's minBufferTime value
                 manifest.minBufferTime = minBufferTime;
                 if (type === "video") {
@@ -1443,6 +1450,10 @@ MediaPlayer.dependencies.BufferController = function() {
 
         setMinBufferTime: function(value) {
             minBufferTime = value;
+        },
+
+        getLiveDelay: function() {
+            return liveDelay;
         },
 
         setMediaSource: function(value) {

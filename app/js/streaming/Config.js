@@ -23,6 +23,7 @@ MediaPlayer.utils.Config = function () {
             // BufferController parameters
             "BufferController.minBufferTimeForPlaying": -1,
             "BufferController.minBufferTime": -1,
+            "BufferController.liveDelay": -1,
             // ABR parameters
             "ABR.minBandwidth": -1,
             "ABR.maxBandwidth": -1,
