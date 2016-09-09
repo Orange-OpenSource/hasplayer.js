@@ -127,7 +127,6 @@ MediaPlayer = function () {
         videoModel.getElement().dispatchEvent(event);
     };
 
-
     var _metricAdded = function (e) {
         var event;
         switch (e.data.metric) {
@@ -246,10 +245,7 @@ MediaPlayer = function () {
         _cleanStreamTab(streamTab, idToRemove);
     };
 
-
-    /**
-     * Usefull to dispatch event of quality changed
-     */
+    // Usefull to dispatch event of quality changed
     var _onTimeupdate = function () {
         // If not in playing state, then do not send 'play_bitrate' events, wait for 'loadeddata' event first
         if (videoModel.getPlaybackRate() === 0) {
@@ -261,9 +257,6 @@ MediaPlayer = function () {
         _detectPlayBitrateChange.call(this, audioQualityChanged);
     };
 
-
-
-
     // event connection
     var _connectEvents = function () {
         this.addEventListener('metricAdded', _metricAdded.bind(this));
@@ -271,8 +264,6 @@ MediaPlayer = function () {
         this.addEventListener('warning', _onWarning.bind(this));
         this.addEventListener('timeupdate', _onTimeupdate.bind(this));
     };
-
-
 
 
     /// Private playback functions ///
@@ -1306,7 +1297,7 @@ MediaPlayer = function () {
         * @method isSubtitlesEnabled
         * @access public
         * @memberof MediaPlayer#
-        * @retrun {boolean} true if subtitles are enabled, false otherwise
+        * @return {boolean} true if subtitles are enabled, false otherwise
        */
         isSubtitlesEnabled: function () {
             _isPlayerInitialized();
