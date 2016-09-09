@@ -894,13 +894,15 @@ Dash.dependencies.DashHandler = function() {
             if (!segments || segments.length === 0) {
                 updateRequired = true;
             } else {
-                lowerIdx = segments[0].availabilityIdx;
-                upperIdx = segments[segments.length - 1].availabilityIdx;
-                // ORANGE: check also regarding requested time (@see getForTime()), required for live use case
-                // to avoid already loaded fragments to be returned
-                upperTime = segments[segments.length - 1].presentationStartTime;
-                lowerTime = segments[0].presentationStartTime;
-                updateRequired = (index < lowerIdx) || (index > upperIdx) || (requestedTime > upperTime) || (requestedTime < lowerTime);
+                if (requestedTime !== null) {
+                    lowerTime = segments[0].presentationStartTime;
+                    upperTime = segments[segments.length - 1].presentationStartTime;
+                    updateRequired = (requestedTime < lowerTime) || (requestedTime > upperTime);
+                } else {
+                    lowerIdx = segments[0].availabilityIdx;
+                    upperIdx = segments[segments.length - 1].availabilityIdx;
+                    updateRequired = (index < lowerIdx) || (index > upperIdx);
+                }
             }
 
             return updateRequired;
