@@ -1543,7 +1543,7 @@ MediaPlayer.dependencies.BufferController = function() {
                     break;
 
                 case PLAYING:
-                    if (!this.getVideoModel().isPaused() &&
+                    if (!this.getVideoModel().isPaused() && !this.getVideoModel().isSeeking() &&
                         ((progress <= 0 && bufferLevel <= 1) || (bufferLevel === 0))) {
                         htmlVideoState = BUFFERING;
                         this.debug.info("[BufferController][" + type + "] BUFFERING - " + currentTime + " - " + bufferLevel);
