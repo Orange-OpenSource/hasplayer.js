@@ -92,14 +92,14 @@ Dash.dependencies.BaseURLExtensions = function () {
                 ref_dur = d.getUint32(pos + 4, false);
                 pos += 12;
                 if (ref_size > 0) {
-                sidx.references.push({
-                    'size': ref_size,
-                    'type': ref_type,
-                    'offset': offset,
-                    'duration': ref_dur,
-                    'time': time,
-                    'timescale': sidx.timescale
-                });
+                    sidx.references.push({
+                        'size': ref_size,
+                        'type': ref_type,
+                        'offset': offset,
+                        'duration': ref_dur,
+                        'time': time,
+                        'timescale': sidx.timescale
+                    });
                 }
                 offset += ref_size;
                 time += ref_dur;
