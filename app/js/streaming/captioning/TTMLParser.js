@@ -516,8 +516,10 @@ MediaPlayer.utils.TTMLParser = function() {
                                     color: null,
                                     with: null
                                 },
+                                textAlign: null,
                                 origin: null,
                                 extent: null,
+                                cellResolution: null,
                                 rootExtent: rootExtent,
                                 showBackground : null
                             };
