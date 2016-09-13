@@ -98,7 +98,6 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
         ttmlParser: undefined,
         debug: undefined,
         manifestModel: undefined,
-        manifestExt: undefined,
 
         initialize: function(type, bufferController, subtitleData) {
             mimeType = type;
@@ -223,11 +222,10 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                     .then(function(result) {
                         self.ttmlParser.parse(result).then(function(cues) {
                             var i,
-                            manifest = self.manifestModel.getValue(),
-                            mpd = self.manifestExt.getMpd(manifest);
+                            manifest = self.manifestModel.getValue();
 
                             if (cues) {
-                                if (mpd.name === 'MSS') {
+                                if (manifest.name === 'MSS') {
                                     for (i = 0; i < cues.length; i += 1) {
                                         cues[i].start = cues[i].start + fragmentStart;
                                         cues[i].end = cues[i].end + fragmentStart;
