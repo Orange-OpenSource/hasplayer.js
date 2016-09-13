@@ -1191,7 +1191,8 @@ MediaPlayer = function () {
             for (var i = 0; i < _tracks.length; i += 1) {
                 tracks.push({
                     id: _tracks[i].id,
-                    lang: _tracks[i].lang
+                    lang: _tracks[i].lang,
+                    subType: _tracks[i].subType
                 });
             }
 

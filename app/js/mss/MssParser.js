@@ -84,6 +84,7 @@ Mss.dependencies.MssParser = function() {
             adaptationSet.lang = this.domParser.getAttributeValue(streamIndex, "Language");
             adaptationSet.contentType = this.domParser.getAttributeValue(streamIndex, "Type");
             adaptationSet.mimeType = mimeTypeMap[adaptationSet.contentType];
+            adaptationSet.subType = this.domParser.getAttributeValue(streamIndex, "Subtype");
             adaptationSet.maxWidth = this.domParser.getAttributeValue(streamIndex, "MaxWidth");
             adaptationSet.maxHeight = this.domParser.getAttributeValue(streamIndex, "MaxHeight");
             adaptationSet.BaseURL = baseURL;
