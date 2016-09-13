@@ -18,7 +18,6 @@ Dash.dependencies.DashHandler = function() {
         requestedTime = null,
         isDynamic,
         type,
-        offset = null,
 
         zeroPadToLength = function(numStr, minStrLength) {
             while (numStr.length < minStrLength) {
@@ -193,11 +192,6 @@ Dash.dependencies.DashHandler = function() {
                 seg,
                 fTime;
 
-            if (representation && representation.segments && representation.segments.length > 0 &&
-                (offset === null || offset > representation.segments[0].availabilityIdx)) {
-                offset = representation.segments[0].availabilityIdx;
-            }
-
             //this.debug.log("Checking for stream end...");
             if (isDynamic) {
                 //this.debug.log("Live never ends! (TODO)");
@@ -206,7 +200,7 @@ Dash.dependencies.DashHandler = function() {
             } else {
                 if (index < 0) {
                     isFinished = false;
-                } else if (index < representation.availableSegmentsNumber + offset) {
+                } else if (index < representation.availableSegmentsNumber + representation.segmentStartIndex) {
                     seg = getSegmentByIndex(index, representation);
 
                     if (seg) {
@@ -275,7 +269,7 @@ Dash.dependencies.DashHandler = function() {
             time = 0,
             availabilityIdx = -1,
             calculatedRange,
-            hasEnoughSegments,
+            hasEnoughSegments = false,
             requiredMediaTime,
             startIdx,
             endIdx,
@@ -376,6 +370,7 @@ Dash.dependencies.DashHandler = function() {
                     end: availabilityEndTime
                 };
                 representation.availableSegmentsNumber = availabilityIdx + 1;
+                representation.segmentStartIndex = 0;
             }
 
             return Q.when(segments);
@@ -425,6 +420,7 @@ Dash.dependencies.DashHandler = function() {
                     }
 
                     representation.availableSegmentsNumber = periodStartIdx + Math.ceil((availabilityWindow.end - availabilityWindow.start) / duration);
+                    representation.segmentStartIndex = startIdx;
 
                     deferred.resolve(segments);
                 }
@@ -655,6 +651,7 @@ Dash.dependencies.DashHandler = function() {
                     }
                     representation.segmentAvailabilityRange = availabilityWindow;
                     representation.availableSegmentsNumber = len;
+                    representation.segmentStartIndex = startIdx;
                     deferred.resolve(segments);
                 });
 
@@ -703,6 +700,7 @@ Dash.dependencies.DashHandler = function() {
                         end: segments[len - 1].presentationStartTime
                     };
                     representation.availableSegmentsNumber = len;
+                    representation.segmentStartIndex = 0;
                     deferred.resolve(segments);
                 }, function(){
                     deferred.reject();
