@@ -518,7 +518,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                 },
                                 origin: null,
                                 extent: null,
-                                rootExtent: rootExtent
+                                rootExtent: rootExtent,
                                 showBackground : null
                             };
                             region = regions[i];
