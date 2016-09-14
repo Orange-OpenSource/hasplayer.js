@@ -810,8 +810,7 @@ Dash.dependencies.DashHandler = function() {
                     self.debug.log("[DashHandler][" + type + "] getIndexForSegments, (segment duration) idx =  ", idx);
                     idx = Math.floor((time - representation.adaptation.period.start) / representation.segmentDuration);
                 } else {
-                    self.debug.log("Couldn't figure out a time!");
-                    self.debug.log("Time: " + time);
+                    self.debug.log("[DashHandler][" + type + "] Couldn't figure out segment for time: " + time);
                 }
             }
 
