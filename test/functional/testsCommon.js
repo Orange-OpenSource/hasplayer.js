@@ -59,8 +59,6 @@ define(function(require) {
     }
 
     conf = Object.assign(conf, seleniumConfig);
-    console.log("Selenium configuration:\n", conf);
-
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Tests configuration parameters
