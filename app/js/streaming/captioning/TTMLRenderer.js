@@ -128,7 +128,6 @@ MediaPlayer.utils.TTMLRenderer = function() {
 
         applySubtitlesCSSStyle = function(div, cssStyle, renderingDiv) {
             var origin,
-                divHeight,
                 extent,
                 textOutline,
                 rootExtent,
@@ -145,24 +144,27 @@ MediaPlayer.utils.TTMLRenderer = function() {
 
                 if (cssStyle.origin && cssStyle.origin[cssStyle.origin.length - 1] === '%') {
                     origin = cssStyle.origin.split('%');
-                    div.style.left = ((parseInt(origin[0], 10) * renderingDiv.clientWidth) / 100) + "px";
-                    div.style.bottom = renderingDiv.clientHeight - ((parseInt(origin[1], 10) * renderingDiv.clientHeight) / 100) + "px";
+                    div.style.left = parseInt(origin[0], 10) + '%';
+                    div.style.top = parseInt(origin[1], 10) + '%';
                     if (cssStyle.extent && cssStyle.extent[cssStyle.extent.length - 1] === '%') {
                         extent = cssStyle.extent.split('%');
-                        div.style.width = ((parseInt(extent[0], 10) * renderingDiv.clientWidth) / 100) + "px";
-                        divHeight = ((parseInt(extent[1], 10) * renderingDiv.clientHeight) / 100);
-                        div.style.height = divHeight + "px";
+                        div.style.width = parseInt(extent[0], 10) + '%';
+                        div.style.height = parseInt(extent[1], 10) + '%';
                     }
                 } else if (cssStyle.origin && cssStyle.origin[cssStyle.origin.length - 1] === 'x') {
                     origin = cssStyle.origin.split('px');
                     if (cssStyle.rootExtent && cssStyle.rootExtent[cssStyle.rootExtent.length - 1] === 'x') {
                         rootExtent = cssStyle.rootExtent.split('px');
-                        div.style.left = ((origin[0] / rootExtent[0]) * renderingDiv.clientWidth) + "px";
-                        div.style.bottom = renderingDiv.clientHeight - ((origin[1] / rootExtent[1]) * renderingDiv.clientHeight) + "px";
+                        var temp = (origin[0] / rootExtent[0]) * renderingDiv.clientWidth;
+                        div.style.left = temp / renderingDiv.clientWidth * 100 + '%';
+                        temp = (origin[1] / rootExtent[1]) * renderingDiv.clientHeight;
+                        div.style.top = temp / renderingDiv.clientHeight * 100 + '%';
                         if (cssStyle.extent && cssStyle.extent[cssStyle.extent.length - 1] === 'x') {
                             extent = cssStyle.extent.split('px');
-                            div.style.width = ((extent[0] / rootExtent[0]) * renderingDiv.clientWidth) + "px";
-                            div.style.height = ((extent[1] / rootExtent[1]) * renderingDiv.clientHeight) + "px";
+                            temp = (extent[0] / rootExtent[0]) * renderingDiv.clientWidth;
+                            div.style.width = temp / renderingDiv.clientWidth * 100 + '%';
+                            temp = (extent[1] / rootExtent[1]) * renderingDiv.clientHeight;
+                            div.style.height = temp / renderingDiv.clientHeight * 100 + '%';
                         }
                     } else {
                         div.style.left = origin[0] + "px";
@@ -217,7 +219,7 @@ MediaPlayer.utils.TTMLRenderer = function() {
 
         onCueEnter: function(e) {
             var newDiv = createSubtitleDiv();
-           
+          
             applySubtitlesCSSStyle(newDiv, e.currentTarget.style, ttmlDiv);
 
             newDiv.ttmlStyle = e.currentTarget.style;
