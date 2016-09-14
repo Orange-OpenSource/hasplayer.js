@@ -1602,6 +1602,12 @@ MediaPlayer.dependencies.BufferController = function() {
                     rejectedBytes = null;
                     appendingRejectedData = false;
 
+                    if (trickModeEnabled) {
+                        // Restore ABR quality and auto switch state
+                        self.abrController.setAutoSwitchFor(type, trickModePreviousAutoSwitch);
+                        self.abrController.setQualityFor(type, trickModePreviousQuality);
+                    }
+
                     if (!errored) {
                         self.sourceBufferExt.removeSourceBuffer(mediaSource, buffer);
                     }
