@@ -905,11 +905,10 @@ MediaPlayer.dependencies.BufferController = function() {
                             }
                         );
                     }
-                }
-                /*else {
+                } else {
                     // For VOD streams, signal end of stream
                     signalStreamComplete.call(self);
-                }*/
+                }
             }
         },
 
@@ -1579,9 +1578,9 @@ MediaPlayer.dependencies.BufferController = function() {
                 },
                 deferred = Q.defer();
 
-            doStop.call(self);
+            doStop.call(this);
             // Wait for current buffering process to be completed before restarting
-            self.sourceBufferExt.abort(mediaSource, buffer);
+            this.sourceBufferExt.abort(mediaSource, buffer);
 
             Q.when(deferredFragmentBuffered ? deferredFragmentBuffered.promise : true).then(
                 function() {
