@@ -504,11 +504,11 @@ MediaPlayer.dependencies.StreamController = function() {
             return activeStream.getMinbufferTime();
         },
 
-        getLivedelay: function() {
+        getLiveDelay: function() {
             if (!activeStream) {
                 return MediaPlayer.dependencies.BufferExtensions.DEFAULT_LIVE_DELAY;
             }
-            return activeStream.getLivedelay();
+            return activeStream.getLiveDelay();
         },
 
         load: function(newSource) {

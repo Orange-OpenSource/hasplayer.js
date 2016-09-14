@@ -1216,11 +1216,11 @@ MediaPlayer.dependencies.Stream = function() {
             return videoController.getMinbufferTime();
         },
 
-        getLivedelay: function() {
+        getLiveDelay: function() {
             if (!videoController) {
                 return MediaPlayer.dependencies.BufferExtensions.DEFAULT_LIVE_DELAY;
             }
-            return videoController.getLivedelay();
+            return videoController.getLiveDelay();
         },
 
         startEventController: function() {
