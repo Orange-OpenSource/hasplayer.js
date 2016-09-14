@@ -70,7 +70,6 @@ MediaPlayer.dependencies.BufferController = function() {
         htmlVideoTime = -1,
 
         deferredFragmentBuffered = null,
-        isFirstMediaSegment = false,
 
         // Async. vs async. MSE's SourceBuffer appending/removing algorithm
         appendSync = false,
@@ -374,16 +373,12 @@ MediaPlayer.dependencies.BufferController = function() {
 
                             appendToBuffer.call(self, data, request.quality, request.index).then(
                                 function() {
-                                    if (isFirstMediaSegment) {
-                                        isFirstMediaSegment = false;
-                                        if (self.fragmentController.hasOwnProperty('getStartTime')) {
-                                            segmentStartTime = self.fragmentController.getStartTime();
-                                        }
-                                        if (segmentStartTime) {
-                                            self.metricsModel.addBufferedSwitch(type, segmentStartTime, _currentRepresentation.id, request.quality);
-                                        } else {
-                                            self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
-                                        }
+                                    // Check if a new quality is being appended,
+                                    // then add a metric to enable MediaPlayer to detect playback quality changes
+                                    if (currentBufferedQuality !== request.quality) {
+                                        self.debug.log("[BufferController][" + type + "] Buffered quality changed: " + request.quality);
+                                        self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
+                                        currentBufferedQuality = request.quality;
                                     }
 
                                     // Signal end of buffering process
@@ -430,18 +425,11 @@ MediaPlayer.dependencies.BufferController = function() {
                     self.sourceBufferExt.append(buffer, data, appendSync).then(
                         function( /*appended*/ ) {
                             self.debug.log("[BufferController][" + type + "] Segment buffered");
-                            //self.debug.log("[BufferController]["+type+"] Data has been appended for quality = "+quality+" index = "+index);
-                            if (currentBufferedQuality !== quality) {
-                                isFirstMediaSegment = true;
-                                self.debug.log("[BufferController][" + type + "] set currentBufferedQuality to " + quality);
-                                currentBufferedQuality = quality;
-                            }
 
                             isQuotaExceeded = false;
 
                             // Patch for Safari: do not remove past buffer in live use case
                             // since it generates MEDIA_ERROR_DECODE while appending new segment
-
                             if (isDynamic && bufferLevel > 1 && !isSafari) {
                                 // In case of live streams, remove outdated buffer parts and requests
                                 // (checking bufferLevel ensure buffer is not empty or back to current time)
