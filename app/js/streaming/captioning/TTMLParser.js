@@ -151,7 +151,7 @@ MediaPlayer.utils.TTMLParser = function() {
             return passed;
         },
 
-        findStyleElement = function(nodeTab, styleElementName) {
+        findStyleElement = function(nodeTab, styleElementName, defaultTTMLValue) {
             var styleName,
                 regionName,
                 resu = null,
@@ -224,7 +224,7 @@ MediaPlayer.utils.TTMLParser = function() {
                 }
             }
 
-            return null;
+            return defaultTTMLValue !== undefined ? defaultTTMLValue : null;
         },
 
         searchInTab = function(tab, elementNameReference, styleElementName) {
@@ -555,27 +555,15 @@ MediaPlayer.utils.TTMLParser = function() {
                                          **************************************************************************************/
                                         //search style informations once. 
                                         if (j === 0) {
-                                            cssStyle.backgroundColor = findStyleElement.call(this, [textDatas[j], region, divBody], 'backgroundColor');
-                                            if (cssStyle.backgroundColor === null) {
-                                                //set default TTML value
-                                                cssStyle.backgroundColor = 'transparent';
-                                            }
+                                            cssStyle.backgroundColor = findStyleElement.call(this, [textDatas[j], region, divBody], 'backgroundColor', 'transparent');
                                             cssStyle.color = findStyleElement.call(this, [textDatas[j], region, divBody], 'color');
                                             cssStyle.fontSize = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontSize');
                                             cssStyle.fontFamily = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontFamily');
-                                            cssStyle.fontStyle = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontStyle');
-                                            if (cssStyle.fontStyle === null) {
-                                                //set default TTML value
-                                                cssStyle.fontStyle = 'normal';
-                                            }
+                                            cssStyle.fontStyle = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontStyle', 'normal');
                                             cssStyle.textOutline = findStyleElement.call(this, [textDatas[j], region, divBody], 'textOutline');
                                             cssStyle.extent = findStyleElement.call(this, [textDatas[j], region, divBody], 'extent');
                                             cssStyle.origin = findStyleElement.call(this, [textDatas[j], region, divBody], 'origin');
-                                            cssStyle.textAlign = findStyleElement.call(this, [textDatas[j], region, divBody], 'textAlign');
-                                            if (cssStyle.textAlign === null) {
-                                                //set default TTML value
-                                                cssStyle.textAlign = 'start';
-                                            }
+                                            cssStyle.textAlign = findStyleElement.call(this, [textDatas[j], region, divBody], 'textAlign', 'start');
                                             cssStyle.showBackground = findStyleElement.call(this, [textDatas[j], region, divBody], 'showBackground');
                                             cssStyle.cellResolution = findParameterElement.call(this, [textDatas[j], region, divBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution');
                                             cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
@@ -595,31 +583,15 @@ MediaPlayer.utils.TTMLParser = function() {
                                     textValue = "";
                                     captionArray.push(caption);
                                 } else {
-                                    cssStyle.backgroundColor = findStyleElement.call(this, [region, divBody], 'backgroundColor');
-                                    if (cssStyle.backgroundColor === null) {
-                                        //set default TTML value
-                                        cssStyle.backgroundColor = 'transparent';
-                                    }
+                                    cssStyle.backgroundColor = findStyleElement.call(this, [region, divBody], 'backgroundColor', 'transparent');
                                     cssStyle.color = findStyleElement.call(this, [region, divBody], 'color');
                                     cssStyle.fontSize = findStyleElement.call(this, [region, divBody], 'fontSize');
                                     cssStyle.fontFamily = findStyleElement.call(this, [region, divBody], 'fontFamily');
-
-                                    cssStyle.fontStyle = findStyleElement.call(this, [region, divBody], 'fontStyle');
-                                    if (cssStyle.fontStyle === null) {
-                                        //set default TTML value
-                                        cssStyle.fontStyle = 'normal';
-                                    }
+                                    cssStyle.fontStyle = findStyleElement.call(this, [region, divBody], 'fontStyle', 'normal');
                                     cssStyle.textOutline = findStyleElement.call(this, [region, divBody], 'textOutline');
-
                                     cssStyle.cellResolution = findParameterElement.call(this, [region, divBody], globalPrefParameterNameSpace, 'cellResolution');
                                     cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
-
-                                    cssStyle.textAlign = findStyleElement.call(this, [region, divBody], 'textAlign');
-                                    if (cssStyle.textAlign === null) {
-                                        //set default TTML value
-                                        cssStyle.textAlign = 'start';
-                                    }
-
+                                    cssStyle.textAlign = findStyleElement.call(this, [region, divBody], 'textAlign', 'start');
                                     cssStyle.origin = findStyleElement.call(this, [region, divBody], 'origin');
                                     cssStyle.extent = findStyleElement.call(this, [region, divBody], 'extent');
 
