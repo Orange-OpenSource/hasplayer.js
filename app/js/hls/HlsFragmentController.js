@@ -31,7 +31,7 @@ Hls.dependencies.HlsFragmentController = function() {
             return rslt.mp4Processor.generateInitSegment(tracks);
         },
 
-        generateMediaSegment = function(data) {
+        generateMediaSegment = function(data, request) {
             // Process the HLS chunk to get media tracks description
             //var tracks = rslt.hlsDemux.getTracks(new Uint8Array(data));
             var i = 0,
@@ -39,7 +39,7 @@ Hls.dependencies.HlsFragmentController = function() {
 
             for (i = 0; i < tracks.length; i += 1) {
                 if (tracks[i].type === "video") {
-                    rslt.startTime = tracks[i].samples[0].cts / tracks[i].timescale;
+                    request.startTime = tracks[i].samples[0].dts / tracks[i].timescale;
                 }
             }
             // Generate media segment (moov)
@@ -77,7 +77,7 @@ Hls.dependencies.HlsFragmentController = function() {
                 }
 
                 // Generate media segment (moof)
-                result = generateMediaSegment(bytes);
+                result = generateMediaSegment(bytes, request);
 
                 // Iinsert initialization if required
                 if (InitSegmentData !== null) {
@@ -95,10 +95,6 @@ Hls.dependencies.HlsFragmentController = function() {
         }
 
         return result;
-    };
-
-    rslt.getStartTime = function() {
-        return rslt.startTime;
     };
 
     return rslt;
