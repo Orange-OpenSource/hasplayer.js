@@ -28,7 +28,8 @@ MediaPlayer.utils.TTMLRenderer = function() {
             var subtitleDiv = document.createElement("div");
 
             subtitleDiv.style.position = 'absolute';
-            subtitleDiv.style.display = 'block';
+            subtitleDiv.style.display = 'flex';
+            subtitleDiv.style.flexDirection = 'row';
             subtitleDiv.style.overflow = 'initial';
             subtitleDiv.style.pointerEvents = 'none';
 
@@ -179,13 +180,38 @@ MediaPlayer.utils.TTMLRenderer = function() {
                     //Values in TTML : left | center | right | start | end
                     //Values in css : left|right|center|justify|initial|inherit
                     case 'start':
-                        div.style.textAlign = 'left';
+                        div.style.justifyContent = 'flex-start';
                         break;
                     case 'end':
-                        div.style.textAlign = 'right';
+                        div.style.justifyContent = 'flex-end';
+                        break;
+                    case 'center':
+                        div.style.justifyContent = 'center';
+                        break;
+                    case 'right':
+                        div.style.justifyContent = 'flex-end';
+                        break; 
+                    case 'left':
+                        div.style.justifyContent = 'flex-start';
+                        break; 
+                    default:
+                        div.style.justifyContent = 'flex-start';
+                }
+
+                switch (cssStyle.displayAlign) {
+                    //Values in TTML : before | center | after
+                    //Values in css : flex-start| center | flex-end
+                    case 'before':
+                        div.style.alignItems = 'flex-start';
+                        break;
+                    case 'center':
+                        div.style.alignItems = cssStyle.displayAlign;
+                        break;
+                    case 'after':
+                        div.style.alignItems = 'flex-end';
                         break;
                     default:
-                        div.style.textAlign = cssStyle.textAlign;
+                        div.style.alignItems = 'flex-start';
                 }
 
                 if (cssStyle.showBackground && cssStyle.showBackground === 'whenActive') {

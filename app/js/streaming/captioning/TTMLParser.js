@@ -409,6 +409,7 @@ MediaPlayer.utils.TTMLParser = function() {
                         with: null
                     },
                     textAlign: null,
+                    displayAlign: null,
                     origin: null,
                     extent: null,
                     cellResolution: null,
@@ -519,6 +520,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                     with: null
                                 },
                                 textAlign: null,
+                                displayAlign: null,
                                 origin: null,
                                 extent: null,
                                 cellResolution: null,
@@ -564,6 +566,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                             cssStyle.extent = findStyleElement.call(this, [textDatas[j], region, divBody], 'extent');
                                             cssStyle.origin = findStyleElement.call(this, [textDatas[j], region, divBody], 'origin');
                                             cssStyle.textAlign = findStyleElement.call(this, [textDatas[j], region, divBody], 'textAlign', 'start');
+                                            cssStyle.displayAlign = findStyleElement.call(this, [textDatas[j], region, divBody], 'displayAlign', 'before');
                                             cssStyle.showBackground = findStyleElement.call(this, [textDatas[j], region, divBody], 'showBackground');
                                             cssStyle.cellResolution = findParameterElement.call(this, [textDatas[j], region, divBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution');
                                             cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
@@ -592,6 +595,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                     cssStyle.cellResolution = findParameterElement.call(this, [region, divBody], globalPrefParameterNameSpace, 'cellResolution');
                                     cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
                                     cssStyle.textAlign = findStyleElement.call(this, [region, divBody], 'textAlign', 'start');
+                                    cssStyle.displayAlign = findStyleElement.call(this, [region, divBody], 'displayAlign', 'before');
                                     cssStyle.origin = findStyleElement.call(this, [region, divBody], 'origin');
                                     cssStyle.extent = findStyleElement.call(this, [region, divBody], 'extent');
 
