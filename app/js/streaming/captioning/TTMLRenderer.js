@@ -127,6 +127,19 @@ MediaPlayer.utils.TTMLRenderer = function() {
             return result;
         },
 
+        rgbaTTMLToCss = function(rgbaTTML) {
+            var rgba,
+                resu = rgbaTTML,
+                alpha;
+
+            rgba = rgbaTTML.replace(/^(rgb|rgba)\(/,'').replace(/\)$/,'').replace(/\s/g,'').split(',');
+            if (rgba[rgba.length - 1] > 1) {
+                alpha = parseInt(rgba[rgba.length - 1], 10) / 255;
+                resu = 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+','+alpha+')';
+            }
+            return resu;
+        },
+
         applySubtitlesCSSStyle = function(div, cssStyle, renderingDiv) {
             var origin,
                 extent,
@@ -137,10 +150,14 @@ MediaPlayer.utils.TTMLRenderer = function() {
             if (div) {
                 if (cssStyle.backgroundColor && cssStyle.backgroundColor[0] === '#') {
                     cssStyle.backgroundColor = hex2rgba_convert(cssStyle.backgroundColor);
+                }else if (cssStyle.backgroundColor && cssStyle.backgroundColor[3] === 'a') {//detect backgroundColor with an alpha
+                    cssStyle.backgroundColor = rgbaTTMLToCss(cssStyle.backgroundColor);
                 }
 
                 if (cssStyle.color && cssStyle.color[0] === '#') {
                     cssStyle.color = hex2rgba_convert(cssStyle.color);
+                }else if (cssStyle.color && cssStyle.color[3] === 'a') {//detect backgroundColor with an alpha
+                    cssStyle.color = rgbaTTMLToCss(cssStyle.color);
                 }
 
                 if (cssStyle.origin && cssStyle.origin[cssStyle.origin.length - 1] === '%') {
@@ -209,7 +226,7 @@ MediaPlayer.utils.TTMLRenderer = function() {
                         break;
                     case 'after':
                         div.style.alignItems = 'flex-end';
-                        break;
+                        break;                        
                     default:
                         div.style.alignItems = 'flex-start';
                 }
