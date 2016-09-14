@@ -190,7 +190,7 @@ MediaPlayer.utils.TTMLRenderer = function() {
                     div.style.width = "auto";
                     div.style.height = "auto";
                 }
-
+                div.style.fontStyle = cssStyle.fontStyle;
                 div.style.backgroundColor = cssStyle.backgroundColor;
                 div.style.color = cssStyle.color;
                 div.style.fontSize = computeFontSize(cssStyle.fontSize, cellUnit);

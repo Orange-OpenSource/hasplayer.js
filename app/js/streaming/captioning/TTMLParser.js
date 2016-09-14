@@ -403,6 +403,7 @@ MediaPlayer.utils.TTMLParser = function() {
                     color: null,
                     fontSize: null,
                     fontFamily: null,
+                    fontStyle: null,
                     textOutline: {
                         color: null,
                         with: null
@@ -512,6 +513,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                 color: null,
                                 fontSize: null,
                                 fontFamily: null,
+                                fontStyle: null,
                                 textOutline: {
                                     color: null,
                                     with: null
@@ -561,6 +563,11 @@ MediaPlayer.utils.TTMLParser = function() {
                                             cssStyle.color = findStyleElement.call(this, [textDatas[j], region, divBody], 'color');
                                             cssStyle.fontSize = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontSize');
                                             cssStyle.fontFamily = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontFamily');
+                                            cssStyle.fontStyle = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontStyle');
+                                            if (cssStyle.fontStyle === null) {
+                                                //set default TTML value
+                                                cssStyle.fontStyle = 'normal';
+                                            }
                                             cssStyle.textOutline = findStyleElement.call(this, [textDatas[j], region, divBody], 'textOutline');
                                             cssStyle.extent = findStyleElement.call(this, [textDatas[j], region, divBody], 'extent');
                                             cssStyle.origin = findStyleElement.call(this, [textDatas[j], region, divBody], 'origin');
@@ -596,6 +603,12 @@ MediaPlayer.utils.TTMLParser = function() {
                                     cssStyle.color = findStyleElement.call(this, [region, divBody], 'color');
                                     cssStyle.fontSize = findStyleElement.call(this, [region, divBody], 'fontSize');
                                     cssStyle.fontFamily = findStyleElement.call(this, [region, divBody], 'fontFamily');
+
+                                    cssStyle.fontStyle = findStyleElement.call(this, [region, divBody], 'fontStyle');
+                                    if (cssStyle.fontStyle === null) {
+                                        //set default TTML value
+                                        cssStyle.fontStyle = 'normal';
+                                    }
                                     cssStyle.textOutline = findStyleElement.call(this, [region, divBody], 'textOutline');
 
                                     cssStyle.cellResolution = findParameterElement.call(this, [region, divBody], globalPrefParameterNameSpace, 'cellResolution');
