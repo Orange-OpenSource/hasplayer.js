@@ -34,7 +34,6 @@ MediaPlayer.utils.DOMParser = function() {
                         if (id) {
                             returnTab[id] = querySelectorResult[i].attributes;
                             if (querySelectorResult[i].childNodes.length > 0 ) {
-                                debugger;
                                 returnTab[id].childNodes = querySelectorResult[i].childNodes;
                             }
                         }
