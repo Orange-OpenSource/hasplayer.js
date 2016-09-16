@@ -32,11 +32,11 @@ Hls.dependencies.HlsFragmentController = function() {
         },
 
         generateMediaSegment = function(data, request) {
-            // Process the HLS chunk to get media tracks description
-            //var tracks = rslt.hlsDemux.getTracks(new Uint8Array(data));
             var i = 0,
+                // Demultiplex HLS chunk to get samples
                 tracks = rslt.hlsDemux.demux(new Uint8Array(data));
 
+            // Update fragment start time (=tfdt)
             for (i = 0; i < tracks.length; i += 1) {
                 if (tracks[i].type === "video") {
                     request.startTime = tracks[i].samples[0].dts / tracks[i].timescale;
