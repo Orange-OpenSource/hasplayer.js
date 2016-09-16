@@ -491,12 +491,11 @@ MediaPlayer.utils.TTMLParser = function() {
                         cssStyle.cellResolution = findParameterElement.call(this, [divBody[k]], 'cellResolution');
                         cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
                         cssStyle.textOutline = findStyleElement.call(this, [divBody[k]], 'textOutline');
-
                         caption = {
                             start: startTime,
                             end: endTime,
                             type: 'image',
-                            data: 'data:image/' + tabImages[imageRef.substring(1)].imagetype.nodeValue + ';base64, ' + tabImages[imageRef.substring(1)].innerHTML,
+                            data: 'data:image/' + tabImages[imageRef.substring(1)].imagetype.nodeValue + ';base64, ' + this.domParser.getChildNode(tabImages[imageRef.substring(1)], '#text').nodeValue,
                             line: 80,
                             style: cssStyle
                         };
