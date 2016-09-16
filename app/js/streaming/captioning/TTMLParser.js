@@ -488,7 +488,7 @@ MediaPlayer.utils.TTMLParser = function() {
 
                         cssStyle.origin = findStyleElement.call(this, [divBody[k]], 'origin');
                         cssStyle.extent = findStyleElement.call(this, [divBody[k]], 'extent');
-                        cssStyle.cellResolution = findParameterElement.call(this, [divBody[k]], 'cellResolution');
+                        cssStyle.cellResolution = findParameterElement.call(this, [divBody[k], nodeTt], 'cellResolution');
                         cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
                         cssStyle.textOutline = findStyleElement.call(this, [divBody[k]], 'textOutline');
                         caption = {
@@ -591,7 +591,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                     cssStyle.fontFamily = findStyleElement.call(this, [region, divBody], 'fontFamily');
                                     cssStyle.fontStyle = findStyleElement.call(this, [region, divBody], 'fontStyle', 'normal');
                                     cssStyle.textOutline = findStyleElement.call(this, [region, divBody], 'textOutline');
-                                    cssStyle.cellResolution = findParameterElement.call(this, [region, divBody], globalPrefParameterNameSpace, 'cellResolution');
+                                    cssStyle.cellResolution = findParameterElement.call(this, [region, divBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution');
                                     cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
                                     cssStyle.textAlign = findStyleElement.call(this, [region, divBody], 'textAlign', 'start');
                                     cssStyle.displayAlign = findStyleElement.call(this, [region, divBody], 'displayAlign', 'before');
