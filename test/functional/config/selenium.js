@@ -17,15 +17,16 @@ define({
     },
 
     remote: {
-        tunnel: 'BrowserStackTunnel',
+        tunnel: 'NullTunnel',
         tunnelOptions: {
-            verbose: true,
+            hostname: "hub-cloud.browserstack.com",
+            protocol: "https",
+            port: 443
+        },
+        capabilities: {
             username: process.env.BROWSERSTACK_USER || 'BROWSERSTACK_USER',
             accessKey: process.env.BROWSERSTACK_ACCESS_KEY || 'BROWSERSTACK_ACCESS_KEY'
         },
-        reporters: [{id: 'JUnit', filename: 'test/functional/test-reports/' + (new Date().getFullYear())+'-'+(new Date().getMonth()+1)+'-'+(new Date().getDate())+'_'+(new Date().getHours())+'-'+(new Date().getMinutes())+'-'+(new Date().getSeconds()) + '_report.xml'}],
-        capabilities: {
-            'selenium-version': '3.0.0'
-        }
+        reporters: [{id: 'JUnit', filename: 'test/functional/test-reports/' + (new Date().getFullYear())+'-'+(new Date().getMonth()+1)+'-'+(new Date().getDate())+'_'+(new Date().getHours())+'-'+(new Date().getMinutes())+'-'+(new Date().getSeconds()) + '_report.xml'}]
     }
 });
