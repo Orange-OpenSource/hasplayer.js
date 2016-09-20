@@ -1288,11 +1288,6 @@ MediaPlayer.dependencies.BufferController = function() {
 
             this.updateData(newData, newPeriodInfo);
 
-            doUpdateData.call(this);
-            // data = newData;
-            // periodInfo = newPeriodInfo;
-            // dataChanged = true;
-
             this.load();
 
             ready = true;
@@ -1301,6 +1296,8 @@ MediaPlayer.dependencies.BufferController = function() {
         load: function() {
             var self = this,
                 manifest = self.manifestModel.getValue();
+
+            doUpdateData.call(this);
 
             // Retrieve the representation of initial quality to enable some parameters initialization
             // (@see getLiveEdgeTime() for example)
