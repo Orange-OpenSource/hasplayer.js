@@ -550,14 +550,14 @@ MediaPlayer.dependencies.StreamController = function() {
             var manifest = this.manifestModel.getValue(),
                 manifestUrl = url ? url : (manifest.hasOwnProperty("Location") ? manifest.Location : manifest.mpdUrl);
 
-            this.debug.log("### Refresh manifest @ " + manifestUrl);
+            this.debug.log("[StreamController] Refresh manifest: " + manifestUrl);
 
             var self = this;
             this.manifestLoader.abort();
             this.manifestLoader.load(manifestUrl, true).then(
                 function(manifestResult) {
                     self.manifestModel.setValue(manifestResult);
-                    self.debug.log("### Manifest has been refreshed.");
+                    self.debug.log("[StreamController] Manifest has been refreshed");
                     reloadStream = false;
                 },
                 function(err) {
