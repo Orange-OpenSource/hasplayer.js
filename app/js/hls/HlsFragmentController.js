@@ -43,7 +43,7 @@ Hls.dependencies.HlsFragmentController = function() {
                 }
             }
             // Generate media segment (moov)
-            return rslt.mp4Processor.generateMediaSegment(tracks, rslt.sequenceNumber);
+            return rslt.mp4Processor.generateMediaSegment(tracks);
         };
 
     var rslt = MediaPlayer.utils.copyMethods(MediaPlayer.dependencies.FragmentController);
@@ -51,10 +51,6 @@ Hls.dependencies.HlsFragmentController = function() {
     rslt.manifestModel = undefined;
     rslt.hlsDemux = undefined;
     rslt.mp4Processor = undefined;
-
-    rslt.sequenceNumber = 1;
-
-    rslt.segmentStartTime = null;
 
     rslt.process = function(bytes, request, representations) {
         var result = null,
