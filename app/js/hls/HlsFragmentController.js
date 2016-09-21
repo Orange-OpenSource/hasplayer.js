@@ -15,7 +15,7 @@
  */
 Hls.dependencies.HlsFragmentController = function() {
     "use strict";
-    var lastRequestQuality = null;
+    var lastRequestQuality = -1;
 
     var generateInitSegment = function(data) {
             var i = 0,
@@ -34,7 +34,7 @@ Hls.dependencies.HlsFragmentController = function() {
         generateMediaSegment = function(data, request) {
             var i = 0,
                 // Demultiplex HLS chunk to get samples
-                tracks = rslt.hlsDemux.demux(new Uint8Array(data));
+                tracks = rslt.hlsDemux.demux(new Uint8Array(data), request);
 
             // Update fragment start time (=tfdt)
             for (i = 0; i < tracks.length; i += 1) {
@@ -64,18 +64,17 @@ Hls.dependencies.HlsFragmentController = function() {
         try {
             // Media segment => generate corresponding moof data segment from demultiplexed MPEG2-TS chunk
             if (request && (request.type === "Media Segment") && representations && (representations.length > 0)) {
-                if (lastRequestQuality === null || lastRequestQuality !== request.quality) {
+                if (lastRequestQuality !== request.quality) {
                     // If quality changed then generate initialization segment
-                    rslt.hlsDemux.reset(request.startTime * 90000);
                     InitSegmentData = generateInitSegment(bytes);
-                    request.index = undefined;
+                    request.index = undefined; // ?
                     lastRequestQuality = request.quality;
                 }
 
                 // Generate media segment (moof)
                 result = generateMediaSegment(bytes, request);
 
-                // Iinsert initialization if required
+                // Insert initialization if required
                 if (InitSegmentData !== null) {
                     catArray = new Uint8Array(InitSegmentData.length + result.length);
                     catArray.set(InitSegmentData, 0);
@@ -91,6 +90,10 @@ Hls.dependencies.HlsFragmentController = function() {
         }
 
         return result;
+    };
+
+    rslt.reset = function() {
+        lastRequestQuality = -1;
     };
 
     return rslt;
