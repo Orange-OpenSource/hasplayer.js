@@ -49,6 +49,7 @@
         "../app/js/streaming/URIQueryAndFragmentModel.js",
         "../app/js/streaming/VideoModel.js",
         "../app/js/streaming/VideoModelExtensions.js",
+        "../app/js/streaming/XHRLoader.js",
         "../app/js/streaming/captioning/*",
         "../app/js/streaming/rules/*",
         "../app/js/streaming/vo/*",
