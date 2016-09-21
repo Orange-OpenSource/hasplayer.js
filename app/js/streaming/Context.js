@@ -118,7 +118,7 @@ MediaPlayer.di.Context = function () {
             // @endif
             // @if HLS=true
             this.system.mapClass('hlsParser', Hls.dependencies.HlsParser);
-            this.system.mapClass('hlsDemux', Hls.dependencies.HlsDemux);
+            this.system.mapSingleton('hlsDemux', Hls.dependencies.HlsDemux);
             // @endif
 
             // Create the context manager to plug some specific parts of the code

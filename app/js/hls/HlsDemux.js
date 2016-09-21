@@ -352,19 +352,16 @@ Hls.dependencies.HlsDemux = function() {
             return str;
         },
 
-        doInit = function(startTime) {
-            //pat = null;
-            //pmt = null;
-
-            // Reset codecs info to force setting new codecs (quality switch)
-            for (var i = 0; i < tracks.length; i++) {
-                tracks[i].codecs = "";
-            }
-
-            if (dtsOffset === -1) {
-                dtsOffset = startTime;
-            }
+        doReset = function() {
+            this.debug.log("[HlsDemux] Reset");
+            pat = null;
+            pmt = null;
+            pidToTrackId = [];
+            tracks = [];
+            baseDts = -1;
+            dtsOffset = -1;
         },
+
 
         getTrackCodecInfo = function(data, track) {
             var tsPacket,
@@ -375,10 +372,6 @@ Hls.dependencies.HlsDemux = function() {
                 codecPrivateData,
                 objectType,
                 samplingFrequencyIndex;
-
-            if (track.codecs !== "") {
-                return track;
-            }
 
             // Get first TS packet containing start of a PES/sample
             tsPacket = getTsPacket.call(this, data, 0, track.pid, true);
@@ -496,17 +489,24 @@ Hls.dependencies.HlsDemux = function() {
             return tracks;
         },
 
-        doDemux = function(data) {
+        doDemux = function(data, request) {
             var nbPackets = data.length / mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE,
                 track,
                 i = 0,
                 firstDts = -1,
                 offset;
 
+            if (dtsOffset === -1) {
+                dtsOffset = request.startTime * 90000;
+                this.debug.log("[HlsDemux] Media start time = " + dtsOffset + " (" + request.startTime + ")");
+            }
+
             this.debug.log("[HlsDemux] Demux chunk, size = " + data.length + ", nb packets = " + nbPackets);
 
             // Get PAT, PMT and tracks information if not yet received
-            doGetTracks.call(this, data);
+            if (pmt === null) {
+                doGetTracks.call(this, data);
+            }
 
             // Clear current tracks' data
             for (i = 0; i < tracks.length; i++) {
@@ -553,7 +553,7 @@ Hls.dependencies.HlsDemux = function() {
 
     return {
         debug: undefined,
-        reset: doInit,
+        reset: doReset,
         getTracks: doGetTracks,
         demux: doDemux
     };
