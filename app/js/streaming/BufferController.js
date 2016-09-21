@@ -1305,41 +1305,51 @@ MediaPlayer.dependencies.BufferController = function() {
 
             currentDownloadQuality = -1;
 
-            if (_currentRepresentation) {
-                self.indexHandler.setIsDynamic(isDynamic);
-                if (minBufferTime === -1) {
-                    minBufferTime = self.bufferExt.decideBufferLength(manifest.minBufferTime, periodInfo.duration, waitingForBuffer);
-                }
+            // For HLS, we need to reset fragmentController in order to force initialization segment
+            // generation for 1st segment
+            if (this.fragmentController.reset) {
+                this.fragmentController.reset();
+            }
 
-                if (liveDelay === -1 || liveDelay < minBufferTime) {
-                    liveDelay = minBufferTime;
-                }
+            // Clear buffer
+            removeBuffer.call(this).then(function () {
+                if (_currentRepresentation) {
+                    self.indexHandler.setIsDynamic(isDynamic);
+                    if (minBufferTime === -1) {
+                        minBufferTime = self.bufferExt.decideBufferLength(manifest.minBufferTime, periodInfo.duration, waitingForBuffer);
+                    }
 
-                // Update manifest's minBufferTime value
-                manifest.minBufferTime = minBufferTime;
-                if (type === "video") {
-                    if (isDynamic) {
-                        self.indexHandler.updateSegmentList(_currentRepresentation).then(
-                            function() {
-                                getLiveEdgeTime.call(self).then(
-                                    function(time) {
-                                        self.system.notify("startTimeFound", time);
-                                    }
-                                );
-                            }
-                        );
-                    } else {
-                        self.indexHandler.getCurrentTime(_currentRepresentation).then(
-                            function(time) {
-                                if (time < _currentRepresentation.segmentAvailabilityRange.start) {
-                                    time = _currentRepresentation.segmentAvailabilityRange.start;
+                    if (liveDelay === -1 || liveDelay < minBufferTime) {
+                        liveDelay = minBufferTime;
+                    }
+
+                    // Update manifest's minBufferTime value
+                    manifest.minBufferTime = minBufferTime;
+                    if (type === "video") {
+                        if (isDynamic) {
+                            self.indexHandler.updateSegmentList(_currentRepresentation).then(
+                                function() {
+                                    getLiveEdgeTime.call(self).then(
+                                        function(time) {
+                                            self.system.notify("startTimeFound", time);
+                                        }
+                                    );
                                 }
-                                self.system.notify("startTimeFound", time);
-                            }
-                        );
+                            );
+                        } else {
+                            self.indexHandler.getCurrentTime(_currentRepresentation).then(
+                                function(time) {
+                                    if (time < _currentRepresentation.segmentAvailabilityRange.start) {
+                                        time = _currentRepresentation.segmentAvailabilityRange.start;
+                                    }
+                                    self.system.notify("startTimeFound", time);
+                                }
+                            );
+                        }
                     }
                 }
-            }
+
+            });
         },
 
         getIndexHandler: function() {
