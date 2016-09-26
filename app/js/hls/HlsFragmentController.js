@@ -64,6 +64,12 @@ Hls.dependencies.HlsFragmentController = function() {
         try {
             // Media segment => generate corresponding moof data segment from demultiplexed MPEG2-TS chunk
             if (request && (request.type === "Media Segment") && representations && (representations.length > 0)) {
+
+                // Decrypt the segment if encrypted
+                if (request.encryptedInfo && request.encryptedInfo.method !== "NONE") {
+                    //bytes = decrypt(bytes, request.encryptedInfo);
+                }
+
                 if (lastRequestQuality !== request.quality) {
                     // If quality changed then generate initialization segment
                     InitSegmentData = generateInitSegment(bytes);
