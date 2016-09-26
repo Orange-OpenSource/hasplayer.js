@@ -278,12 +278,9 @@ MediaPlayer.dependencies.BufferController = function() {
 
             self.debug.log("[BufferController][" + type + "] Initialization loaded ", quality);
 
-            data = self.fragmentController.process(initData);
-            if (data) {
-                if (data.error) {
-                    signalSegmentBuffered.call(self);
-                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", data.message);
-                } else {
+            try {
+                data = self.fragmentController.process(initData);
+                if (data) {
                     // Cache the initialization data to use it next time the quality has changed
                     initializationData[quality] = data;
 
@@ -296,11 +293,17 @@ MediaPlayer.dependencies.BufferController = function() {
                             }
                         }
                     );
+                } else {
+                    // ORANGE : For HLS Stream, init segment are pushed with media (@see HlsFragmentController)
+                    loadNextFragment.call(self);
                 }
-            } else {
-                self.debug.log("No " + type + " bytes to push.");
-                // ORANGE : For HLS Stream, init segment are pushed with media (@see HlsFragmentController)
-                loadNextFragment.call(self);
+            } catch (e) {
+                signalSegmentBuffered.call(self);
+                if (e.name) {
+                    self.errHandler.sendError(e.name, e.message, e.data);
+                } else {
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", e.message);
+                }
             }
         },
 
@@ -331,17 +334,9 @@ MediaPlayer.dependencies.BufferController = function() {
                 self.chunkMissingCount = 0;
             }
 
-            // ORANGE: add request and representations in function parameters, used by MssFragmentController
-            data = self.fragmentController.process(response.data, request, availableRepresentations);
-            if (data) {
-                if (data.error) {
-                    signalSegmentBuffered.call(self);
-                    if (data.name) {
-                        self.errHandler.sendError(data.name, data.message, data.data);
-                    } else {
-                        self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", data.message);
-                    }
-                } else {
+            try {
+                data = self.fragmentController.process(response.data, request, availableRepresentations);
+                if (data) {
                     if (eventStreamAdaption.length > 0 || eventStreamRepresentation.length > 0) {
                         events = handleInbandEvents.call(self, data, request, eventStreamAdaption, eventStreamRepresentation);
                         self.eventController.addInbandEvents(events);
@@ -389,13 +384,20 @@ MediaPlayer.dependencies.BufferController = function() {
                             );
                         }
                     );
+                } else {
+                    self.debug.error("[BufferController][" + type + "] Error with segment data, no bytes to push");
+                    // Signal end of buffering process
+                    signalSegmentBuffered.call(self);
+                    // Check buffer level
+                    checkIfSufficientBuffer.call(self);
                 }
-            } else {
-                self.debug.error("[BufferController][" + type + "] Error with segment data, no bytes to push");
-                // Signal end of buffering process
+            } catch (e) {
                 signalSegmentBuffered.call(self);
-                // Check buffer level
-                checkIfSufficientBuffer.call(self);
+                if (e.name) {
+                    self.errHandler.sendError(e.name, e.message, e.data);
+                } else {
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", e.message);
+                }
             }
         },
 
@@ -864,7 +866,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 if (trickModeEnabled) {
                     request = self.indexHandler.getIFrameRequest(request);
                 }
-                
+
                 // If we have already loaded the given fragment ask for the next one. Otherwise prepare it to get loaded
                 if (self.fragmentController.isFragmentLoadedOrPending(self, request)) {
                     self.debug.log("[BufferController][" + type + "] new fragment request => already loaded or pending " + request.url);
@@ -1111,7 +1113,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 function(err) {
                     signalSegmentBuffered();
                     if (err) {
-                        self.errHandler.sendError(err.name, err.message, err.data);                        
+                        self.errHandler.sendError(err.name, err.message, err.data);
                     }
                 }
             );
@@ -1125,7 +1127,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 representation,
                 idx;
 
-            
+
             // Check if running state
             if (!isRunning.call(self)) {
                 deferred.reject();
