@@ -15,9 +15,9 @@
  */
 Hls.dependencies.HlsParser = function() {
     var TAG_EXTM3U = "#EXTM3U",
-        /*TAG_EXTXMEDIASEQUENCE = "#EXT-X-MEDIA-SEQUENCE",
+        /*TAG_EXTXMEDIASEQUENCE = "#EXT-X-MEDIA-SEQUENCE",*/
         TAG_EXTXKEY = "#EXT-X-KEY",
-        TAG_EXTXPROGRAMDATETIME = "#EXT-X-PROGRAM_DATE_TIME",
+        /*TAG_EXTXPROGRAMDATETIME = "#EXT-X-PROGRAM_DATE_TIME",
         TAG_EXTXDISCONTINUITY = "#EXT-X-DISCONTINUITY",
         TAG_EXTXALLOWCACHE = "#EXT-X-ALLOW-CACHE",*/
         TAG_EXTINF = "#EXTINF",
@@ -171,6 +171,22 @@ Hls.dependencies.HlsParser = function() {
         return media;
     };
 
+    var _parseExtXKey = function(extXKey) {
+        var encryptedInfo = {},
+            encryptParams = _getTagParams(extXKey);
+
+
+        encryptedInfo.method = _getTagValue(encryptParams[0], 'METHOD');
+        if (encryptedInfo.method !== 'NONE') {
+            encryptedInfo.uri = _getTagValue(encryptParams[1], 'URI').replace(/"/g, '');
+            if (encryptParams.length > 2) {
+                encryptedInfo.IV = _getTagValue(encryptParams[2], 'IV');
+            }
+        }
+
+        return encryptedInfo;
+    };
+
     /* > HLS v3
     var _parseMediaInf = function(mediaLine) {
         var mediaObj = {};
@@ -243,7 +259,12 @@ Hls.dependencies.HlsParser = function() {
             startNumber: 0,
             timescale: 1,
             BaseURL: representation.BaseURL,
-            SegmentURL_asArray: []
+            SegmentURL_asArray: [],
+            encryptedInfo: {
+                method: 'NONE',
+                uri: null,
+                IV: null
+            }
         };
         representation[segmentList.name] = segmentList;
 
@@ -271,7 +292,8 @@ Hls.dependencies.HlsParser = function() {
                     media: _isAbsoluteURI(media.uri) ? media.uri : (segmentList.BaseURL + media.uri),
                     sequenceNumber: segmentList.startNumber + index,
                     time: (segments.length === 0) ? 0 : segments[segments.length - 1].time + segments[segments.length - 1].duration,
-                    duration: media.duration
+                    duration: media.duration,
+                    encryptedInfo: segmentList.encryptedInfo
                 };
 
                 segments.push(segment);
@@ -282,6 +304,9 @@ Hls.dependencies.HlsParser = function() {
             } else if (_containsTag(data[i], TAG_EXTXENDLIST)) {
                 // "static" playlist => set representation duration
                 representation.duration = duration;
+            } else if (_containsTag(data[i], TAG_EXTXKEY)) {
+                segmentList.encryptedInfo = _parseExtXKey(data[i]);
+                segmentList.encryptedInfo.uri = _isAbsoluteURI(segmentList.encryptedInfo.uri) ? segmentList.encryptedInfo.uri : (segmentList.BaseURL + segmentList.encryptedInfo.uri);
             }
         }
 
@@ -489,8 +514,23 @@ Hls.dependencies.HlsParser = function() {
         xhrLoader.initialize('text', retryAttempts, retryInterval);
         xhrLoader.load(representation.url).then(
             function (request) {
+                // Parse playlist
                 if (_parsePlaylist.call(self, request.response, representation)) {
-                    deferred.resolve();
+                    // Download encrypted key
+                    if (representation.SegmentList.encryptedInfo && representation.SegmentList.encryptedInfo.method === 'AES-128') {
+                        getEncryptedKey.call(self, representation).then(
+                            function() {
+                                deferred.resolve();
+                            }, function(error) {
+                                if (error) {
+                                    deferred.reject(error);
+                                } else {
+                                    deferred.reject();
+                                }
+                            });
+                    } else {
+                        deferred.resolve();
+                    }
                 } else {
                     deferred.reject({
                         name: MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE,
@@ -519,6 +559,41 @@ Hls.dependencies.HlsParser = function() {
 
         return deferred.promise;
     };
+
+    var getEncryptedKey = function(representation) {
+        var deferred = Q.defer();
+
+        this.debug.log("[HlsParser]", "Load encrypted key: " + representation.SegmentList.encryptedInfo.uri);
+        xhrLoader = new MediaPlayer.dependencies.XHRLoader();
+        // Do not retry for encrypted key, we assume the key file has to be present if playlist if present
+        xhrLoader.initialize('arraybuffer', 0, 0);
+        xhrLoader.load(representation.SegmentList.encryptedInfo.uri).then(
+            function (request) {
+                representation.SegmentList.encryptedInfo.key = new Uint8Array(request.response);
+                for (var i = 0; i < representation.SegmentList.SegmentURL_asArray.length; i++) {
+                    representation.SegmentList.SegmentURL_asArray[i].encryptedInfo = representation.SegmentList.encryptedInfo;
+                }
+                deferred.resolve();
+            },
+            function(request) {
+                if (!request || request.aborted) {
+                    deferred.reject();
+                } else {
+                    deferred.reject({
+                        name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
+                        message: "Failed to download HLS encrypted key",
+                        data: {
+                            url: representation.SegmentList.encryptedInfo.uri,
+                            status: request.status
+                        }
+                    });
+                }
+            }
+        );
+
+        return deferred.promise;
+    };
+
 
     var processManifest = function(data, baseUrl) {
         var deferred = Q.defer(),
