@@ -61,38 +61,33 @@ Hls.dependencies.HlsFragmentController = function() {
             return bytes;
         }
 
-        try {
-            // Media segment => generate corresponding moof data segment from demultiplexed MPEG2-TS chunk
-            if (request && (request.type === "Media Segment") && representations && (representations.length > 0)) {
+        // Media segment => generate corresponding moof data segment from demultiplexed MPEG2-TS chunk
+        if (request && (request.type === "Media Segment") && representations && (representations.length > 0)) {
 
-                // Decrypt the segment if encrypted
-                if (request.encryptedInfo && request.encryptedInfo.method !== "NONE") {
-                    //bytes = decrypt(bytes, request.encryptedInfo);
-                }
-
-                if (lastRequestQuality !== request.quality) {
-                    // If quality changed then generate initialization segment
-                    InitSegmentData = generateInitSegment(bytes);
-                    request.index = undefined; // ?
-                    lastRequestQuality = request.quality;
-                }
-
-                // Generate media segment (moof)
-                result = generateMediaSegment(bytes, request);
-
-                // Insert initialization if required
-                if (InitSegmentData !== null) {
-                    catArray = new Uint8Array(InitSegmentData.length + result.length);
-                    catArray.set(InitSegmentData, 0);
-                    catArray.set(result, InitSegmentData.length);
-                    result = catArray;
-                }
-
-                rslt.sequenceNumber++;
+            // Decrypt the segment if encrypted
+            if (request.encryptedInfo && request.encryptedInfo.method !== "NONE") {
+                //bytes = decrypt(bytes, request.encryptedInfo);
             }
-            return result;
-        } catch (e) {
-            return e;
+
+            if (lastRequestQuality !== request.quality) {
+                // If quality changed then generate initialization segment
+                InitSegmentData = generateInitSegment(bytes);
+                request.index = undefined; // ?
+                lastRequestQuality = request.quality;
+            }
+
+            // Generate media segment (moof)
+            result = generateMediaSegment(bytes, request);
+
+            // Insert initialization if required
+            if (InitSegmentData !== null) {
+                catArray = new Uint8Array(InitSegmentData.length + result.length);
+                catArray.set(InitSegmentData, 0);
+                catArray.set(result, InitSegmentData.length);
+                result = catArray;
+            }
+
+            rslt.sequenceNumber++;
         }
 
         return result;
