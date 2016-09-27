@@ -44,6 +44,39 @@ Hls.dependencies.HlsFragmentController = function() {
             }
             // Generate media segment (moov)
             return rslt.mp4Processor.generateMediaSegment(tracks);
+        },
+
+        createInitializationVector = function(segmentNumber) {
+            var uint8View = new Uint8Array(16),
+                i = 0;
+
+            for (i = 12; i < 16; i++) {
+                uint8View[i] = (segmentNumber >> 8 * (15 - i)) & 0xff;
+            }
+
+            return uint8View;
+        },
+
+        decrypt = function(data, decryptionInfo) {
+
+            var view = new DataView(decryptionInfo.key.buffer);
+            var key = new Uint32Array([
+                view.getUint32(0),
+                view.getUint32(4),
+                view.getUint32(8),
+                view.getUint32(12)
+            ]);
+
+            view = new DataView(createInitializationVector(decryptionInfo.iv).buffer);
+            var iv = new Uint32Array([
+                view.getUint32(0),
+                view.getUint32(4),
+                view.getUint32(8),
+                view.getUint32(12)
+            ]);
+
+            var decrypter = new Hls.dependencies.AES128Decrypter(key, iv);
+            return decrypter.decrypt(data);
         };
 
     var rslt = MediaPlayer.utils.copyMethods(MediaPlayer.dependencies.FragmentController);
@@ -65,8 +98,10 @@ Hls.dependencies.HlsFragmentController = function() {
         if (request && (request.type === "Media Segment") && representations && (representations.length > 0)) {
 
             // Decrypt the segment if encrypted
-            if (request.encryptedInfo && request.encryptedInfo.method !== "NONE") {
-                //bytes = decrypt(bytes, request.encryptedInfo);
+            if (request.decryptionInfo && request.decryptionInfo.method !== "NONE") {
+                var t = new Date();
+                bytes = decrypt(bytes, request.decryptionInfo);
+                rslt.debug.log("[HlsFragmentController] decrypted chunk (" + (((new Date()).getTime() - t.getTime()) / 1000).toFixed(3) + "s.)");
             }
 
             if (lastRequestQuality !== request.quality) {
