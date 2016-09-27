@@ -492,8 +492,7 @@ Hls.dependencies.HlsDemux = function() {
         },
 
         doDemux = function(data, request) {
-            var nbPackets = data.length / mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE,
-                track,
+            var track,
                 i = 0,
                 firstDts = -1,
                 offset;
@@ -503,7 +502,7 @@ Hls.dependencies.HlsDemux = function() {
                 this.debug.log("[HlsDemux] Media start time = " + dtsOffset + " (" + request.startTime + ")");
             }
 
-            this.debug.log("[HlsDemux] Demux chunk, size = " + data.length + ", nb packets = " + nbPackets);
+            this.debug.log("[HlsDemux] Demux chunk, size = " + data.length + ", nb packets = " + Math.round(data.length / mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE));
 
             // Get PAT, PMT and tracks information if not yet received
             if (pmt === null) {
@@ -527,7 +526,11 @@ Hls.dependencies.HlsDemux = function() {
             // Parse and demux TS packets
             i = 0;
             while (i < data.length) {
-                demuxTsPacket.call(this, data.subarray(i, i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE));
+                if ((i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE) < data.length) {
+                    demuxTsPacket.call(this, data.subarray(i, i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE));
+                } else {
+                    this.debug.log("[HlsDemux] Demux chunk, residual bytes = " + (data.length - i));
+                }
                 i += mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE;
             }
 
