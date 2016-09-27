@@ -1258,7 +1258,7 @@ MediaPlayer.dependencies.Stream = function() {
                         }
                         // hide subtitle here
                         if (track) {
-                            track.mode = "hidden";
+                            track.mode = "disabled";
                         }
                         textController.stop();
                     }
