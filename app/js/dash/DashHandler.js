@@ -644,9 +644,9 @@ Dash.dependencies.DashHandler = function() {
                         if (s.sequenceNumber !== undefined) {
                             seg.sequenceNumber = s.sequenceNumber;
                         }
-                        // ORANGE: add encrypted info (HLS use case)
-                        if (s.encryptedInfo !== undefined) {
-                            seg.encryptedInfo = s.encryptedInfo;
+                        // ORANGE: add decryption info (HLS use case)
+                        if (s.decryptionInfo !== undefined) {
+                            seg.decryptionInfo = s.decryptionInfo;
                         }
                         //self.debug.log("[DashHandler]["+type+"] createSegment: time = " + seg.mediaStartTime + ", availabilityIdx = " + seg.availabilityIdx + ", url = " + seg.media);
 
@@ -942,9 +942,9 @@ Dash.dependencies.DashHandler = function() {
             if (segment.sequenceNumber !== undefined) {
                 request.sequenceNumber = segment.sequenceNumber;
             }
-            // ORANGE: add encrypted info (HLS use case)
-            if (segment.encryptedInfo !== undefined) {
-                request.encryptedInfo = segment.encryptedInfo;
+            // ORANGE: add decryption info (HLS use case)
+            if (segment.decryptionInfo !== undefined) {
+                request.decryptionInfo = segment.decryptionInfo;
             }
 
             return request;
