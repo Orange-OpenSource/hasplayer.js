@@ -77,7 +77,7 @@ MediaPlayer.dependencies.ManifestLoader = function() {
                 self = this;
 
             _xhrLoader = new MediaPlayer.dependencies.XHRLoader();
-            _xhrLoader.initialize('text', _retryAttempts, _retryInterval);
+            _xhrLoader.initialize(null, _retryAttempts, _retryInterval);
             _xhrLoader.load(url).then(
                 function (request) {
 
