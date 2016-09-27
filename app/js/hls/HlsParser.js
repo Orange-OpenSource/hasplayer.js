@@ -242,20 +242,29 @@ Hls.dependencies.HlsParser = function() {
     };
 
     var _parsePlaylist = function(data, representation) {
-        var segmentList,
+        var deferred = Q.defer(),
+            segmentList,
             segments,
             segment,
             initialization,
             version,
+            decryptionInfo = null,
+            decryptionKeysDefer = [],
             duration = 0,
-            index = 0,
+            segmentIndex = 0,
             media,
             i,
             self = this;
 
         // Check playlist header
         if (!data || (data && data.length < 0)) {
-            return false;
+            deferred.reject({
+                name: MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE,
+                message: "Failed to parse variant stream playlist",
+                data: {
+                    url: representation.url
+                }
+            });
         }
 
         self.debug.log(data);
@@ -263,7 +272,13 @@ Hls.dependencies.HlsParser = function() {
         data = _splitLines(data);
 
         if (data[0].trim() !== TAG_EXTM3U) {
-            return false;
+            deferred.reject({
+                name: MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE,
+                message: "Failed to parse variant stream playlist",
+                data: {
+                    url: representation.url
+                }
+            });
         }
 
         // Intitilaize SegmentList
@@ -276,12 +291,7 @@ Hls.dependencies.HlsParser = function() {
             startNumber: 0,
             timescale: 1,
             BaseURL: representation.BaseURL,
-            SegmentURL_asArray: [],
-            encryptedInfo: {
-                method: 'NONE',
-                uri: null,
-                IV: null
-            }
+            SegmentURL_asArray: []
         };
         representation[segmentList.name] = segmentList;
 
@@ -298,6 +308,10 @@ Hls.dependencies.HlsParser = function() {
                 segmentList.duration = parseInt(_getTagValue(data[i], TAG_EXTXTARGETDURATION), 10);
             } else if (_containsTag(data[i], TAG_EXTXMEDIASEQUENCE)) {
                 segmentList.startNumber = parseInt(_getTagValue(data[i], TAG_EXTXMEDIASEQUENCE), 10);
+            } else if (_containsTag(data[i], TAG_EXTXKEY)) {
+                decryptionInfo = _parseExtXKey(data[i]);
+                decryptionInfo.uri = _isAbsoluteURI(decryptionInfo.uri) ? decryptionInfo.uri : (segmentList.BaseURL + decryptionInfo.uri);
+                decryptionKeysDefer.push(_loadDecryptionKey.call(this, decryptionInfo));
             } else if (_containsTag(data[i], TAG_EXTINF)) {
                 media = _parseExtInf([data[i], data[i + 1]]);
                 segment = {
@@ -307,23 +321,26 @@ Hls.dependencies.HlsParser = function() {
                     //parent: segmentList,
                     // children: [],
                     media: _isAbsoluteURI(media.uri) ? media.uri : (segmentList.BaseURL + media.uri),
-                    sequenceNumber: segmentList.startNumber + index,
+                    sequenceNumber: segmentList.startNumber + segmentIndex,
                     time: (segments.length === 0) ? 0 : segments[segments.length - 1].time + segments[segments.length - 1].duration,
-                    duration: media.duration,
-                    encryptedInfo: segmentList.encryptedInfo
+                    duration: media.duration
                 };
+
+                if (decryptionInfo !== null) {
+                    segment.decryptionInfo = decryptionInfo;
+                    if (segment.decryptionInfo.iv === undefined) {
+                        segment.decryptionInfo.iv = segment.sequenceNumber;
+                    }
+                }
 
                 segments.push(segment);
                 duration += media.duration;
 
-                index++;
+                segmentIndex++;
 
             } else if (_containsTag(data[i], TAG_EXTXENDLIST)) {
                 // "static" playlist => set representation duration
                 representation.duration = duration;
-            } else if (_containsTag(data[i], TAG_EXTXKEY)) {
-                segmentList.encryptedInfo = _parseExtXKey(data[i]);
-                segmentList.encryptedInfo.uri = _isAbsoluteURI(segmentList.encryptedInfo.uri) ? segmentList.encryptedInfo.uri : (segmentList.BaseURL + segmentList.encryptedInfo.uri);
             }
         }
 
@@ -337,7 +354,48 @@ Hls.dependencies.HlsParser = function() {
         // PATCH Live = VOD
         //representation.duration = duration;
 
-        return true;
+        // Wait for all decryption keys to be downlaoded
+        Q.all(decryptionKeysDefer).then(
+            function () {
+                deferred.resolve();
+            },
+            function (error) {
+                deferred.reject(error);
+            }
+        );
+
+        return deferred.promise;
+    };
+
+    var _loadDecryptionKey = function(decryptionInfo) {
+        var deferred = Q.defer();
+
+        this.debug.log("[HlsParser]", "Load decryption key: " + decryptionInfo.uri);
+        var xhr = new MediaPlayer.dependencies.XHRLoader();
+        // Do not retry for encrypted key, we assume the key file has to be present if playlist if present
+        xhr.initialize('arraybuffer', 0, 0);
+        xhr.load(decryptionInfo.uri).then(
+            function (request) {
+                decryptionInfo.key = new Uint8Array(request.response);
+                deferred.resolve();
+            },
+            function(request) {
+                if (!request || request.aborted) {
+                    deferred.reject();
+                } else {
+                    deferred.reject({
+                        name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
+                        message: "Failed to download HLS decryption key",
+                        data: {
+                            url: decryptionInfo.uri,
+                            status: request.status
+                        }
+                    });
+                }
+            }
+        );
+
+        return deferred.promise;
     };
 
     /*var mergeSegmentLists = function(_representation, representation) {
@@ -531,32 +589,13 @@ Hls.dependencies.HlsParser = function() {
         xhrLoader.initialize('text', retryAttempts, retryInterval);
         xhrLoader.load(representation.url).then(
             function (request) {
-                // Parse playlist
-                if (_parsePlaylist.call(self, request.response, representation)) {
-                    // Download encrypted key
-                    if (representation.SegmentList.encryptedInfo && representation.SegmentList.encryptedInfo.method === 'AES-128') {
-                        getEncryptedKey.call(self, representation).then(
-                            function() {
-                                deferred.resolve();
-                            }, function(error) {
-                                if (error) {
-                                    deferred.reject(error);
-                                } else {
-                                    deferred.reject();
-                                }
-                            });
-                    } else {
+                _parsePlaylist.call(self, request.response, representation).then(
+                    function () {
                         deferred.resolve();
-                    }
-                } else {
-                    deferred.reject({
-                        name: MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE,
-                        message: "Failed to parse variant stream playlist",
-                        data: {
-                            url: representation.url
-                        }
+                    },
+                    function (error) {
+                        deferred.reject(error);
                     });
-                }
             },
             function(request) {
                 if (!request || request.aborted) {
@@ -576,41 +615,6 @@ Hls.dependencies.HlsParser = function() {
 
         return deferred.promise;
     };
-
-    var getEncryptedKey = function(representation) {
-        var deferred = Q.defer();
-
-        this.debug.log("[HlsParser]", "Load encrypted key: " + representation.SegmentList.encryptedInfo.uri);
-        xhrLoader = new MediaPlayer.dependencies.XHRLoader();
-        // Do not retry for encrypted key, we assume the key file has to be present if playlist if present
-        xhrLoader.initialize('arraybuffer', 0, 0);
-        xhrLoader.load(representation.SegmentList.encryptedInfo.uri).then(
-            function (request) {
-                representation.SegmentList.encryptedInfo.key = new Uint8Array(request.response);
-                for (var i = 0; i < representation.SegmentList.SegmentURL_asArray.length; i++) {
-                    representation.SegmentList.SegmentURL_asArray[i].encryptedInfo = representation.SegmentList.encryptedInfo;
-                }
-                deferred.resolve();
-            },
-            function(request) {
-                if (!request || request.aborted) {
-                    deferred.reject();
-                } else {
-                    deferred.reject({
-                        name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
-                        message: "Failed to download HLS encrypted key",
-                        data: {
-                            url: representation.SegmentList.encryptedInfo.uri,
-                            status: request.status
-                        }
-                    });
-                }
-            }
-        );
-
-        return deferred.promise;
-    };
-
 
     var processManifest = function(data, baseUrl) {
         var deferred = Q.defer(),
