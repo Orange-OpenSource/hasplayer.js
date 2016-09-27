@@ -33,10 +33,10 @@ Hls.dependencies.HlsParser = function() {
         ATTR_SUBTITLES = "SUBTITLES",
         ATTR_RESOLUTION = "RESOLUTION",
         ATTR_CODECS = "CODECS",
-        /*ATTR_METHOD = "METHOD",
+        ATTR_METHOD = "METHOD",
         ATTR_IV = "IV",
         ATTR_URI = "URI",
-        ATTR_TYPE = "TYPE",
+        /*ATTR_TYPE = "TYPE",
         ATTR_GROUPID = "GROUP-ID",
         ATTR_NAME = "NAME",
         ATTR_DEFAULT = "DEFAULT",
@@ -171,20 +171,37 @@ Hls.dependencies.HlsParser = function() {
         return media;
     };
 
+    // Parse #EXT-X-KEY tag
+    //  #EXT-X-KEY:<method>,<uri>[,<iv>]
+    //  <url>
     var _parseExtXKey = function(extXKey) {
-        var encryptedInfo = {},
-            encryptParams = _getTagParams(extXKey);
+        var decryptionInfo = {},
+            params = _getTagParams(extXKey),
+            i,
+            name,
+            value;
 
+        for (i = 0; i < params.length; i++) {
+            name = params[i].trim().split('=')[0];
+            value = params[i].trim().split('=')[1];
 
-        encryptedInfo.method = _getTagValue(encryptParams[0], 'METHOD');
-        if (encryptedInfo.method !== 'NONE') {
-            encryptedInfo.uri = _getTagValue(encryptParams[1], 'URI').replace(/"/g, '');
-            if (encryptParams.length > 2) {
-                encryptedInfo.IV = _getTagValue(encryptParams[2], 'IV');
+            switch (name) {
+                case ATTR_METHOD:
+                    decryptionInfo.method = value;
+                    break;
+                case ATTR_URI:
+                    decryptionInfo.uri = value.replace(/"/g, '');
+                    break;
+                case ATTR_IV:
+                    decryptionInfo.iv = parseInt(value, 16);
+                    break;
+                default:
+                    break;
+
             }
         }
 
-        return encryptedInfo;
+        return decryptionInfo;
     };
 
     /* > HLS v3
