@@ -1549,20 +1549,22 @@ MediaPlayer.dependencies.BufferController = function() {
                         this.debug.info("[BufferController][" + type + "] BUFFERING - " + currentTime + " - " + bufferLevel);
                         this.metricsModel.addState(type, "buffering", currentTime);
 
-                        // Check if there is a hole in the buffer (segment download failed or input stream discontinuity), then skip it
-                        ranges = this.sourceBufferExt.getAllRanges(buffer);
-                        var i;
-                        for (i = 0; i < ranges.length; i++) {
-                            if (currentTime < ranges.start(i)) {
-                                break;
-                            }
-                        }
-                        if (i < ranges.length) {
-                            // Seek to next available range
-                            this.videoModel.setCurrentTime(ranges.start(i));
-                        } else {
-                            // Else buffering may be due to segment download failure (see onBytesError()), then signal it to Stream (see Stream.onBufferFailed())
+                        if (segmentRequestOnError) {
+                            // If buffering is due to segment download failure (see onBytesError()), then signal it to Stream (see Stream.onBufferFailed())
                             signalSegmentLoadingFailed.call(this);
+                        } else {
+                            // Check if there is a hole in the buffer (segment download failed or input stream discontinuity), then skip it
+                            ranges = this.sourceBufferExt.getAllRanges(buffer);
+                            var i;
+                            for (i = 0; i < ranges.length; i++) {
+                                if (currentTime < ranges.start(i)) {
+                                    break;
+                                }
+                            }
+                            if (i < ranges.length) {
+                                // Seek to next available range
+                                this.videoModel.setCurrentTime(ranges.start(i));
+                            }
                         }
                     }
 
