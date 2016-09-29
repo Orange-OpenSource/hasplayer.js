@@ -128,6 +128,7 @@ MediaPlayer.dependencies.XHRLoader = function() {
 
         load: function(url, range) {
             _url = url;
+            _range = range;
             _retryCount = 0;
             _deferred = Q.defer();
             _load();
