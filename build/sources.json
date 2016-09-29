@@ -73,7 +73,12 @@
         "../app/js/streaming/protection/vo/*"
     ],
     "hls": [
-        "../app/js/hls/*"
+        "../app/js/hls/Hls.js",
+        "../app/js/hls/AES128Decrypter.js",
+        "../app/js/hls/HlsDemux.js",
+        "../app/js/hls/HlsFragmentController.js",
+        "../app/js/hls/HlsHandler.js",
+        "../app/js/hls/HlsParser.js"
     ],
     "mss": [
         "../app/js/mss/Mss.js",
