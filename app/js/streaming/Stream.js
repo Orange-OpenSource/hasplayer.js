@@ -946,7 +946,7 @@ MediaPlayer.dependencies.Stream = function() {
 
             this.debug.log("[Stream] Segment loading failed: start time = " + segmentRequest.startTime + ", duration = " + segmentRequest.duration);
 
-            if (this.manifestExt.getIsDynamic(manifest) && !isReloading) {
+            if (this.manifestExt.getIsDynamic(manifest) && reloadTimeout === null) {
                 // For Live streams, then we try to reload the session
                 isReloading = true;
                 var delay = segmentRequest.duration;
