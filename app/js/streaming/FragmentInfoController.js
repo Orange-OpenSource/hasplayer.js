@@ -116,16 +116,15 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
 
             this.debug.log("[FragmentInfoController][" + type + "] Media loaded ", request.url);
 
-            // ORANGE: add request and representations in function parameters, used by MssFragmentController
-            data = this.fragmentController.process(response.data, request, _bufferController.getAvailableRepresentations());
-            if (data && data.error) {
-                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing fragment info segment", data.message);
-            } else {
+            try {
+                data = this.fragmentController.process(response.data, request, _bufferController.getAvailableRepresentations());
                 this.debug.info("[FragmentInfoController][" + type + "] Buffer segment from url ", request.url);
 
                 deltaTime = new Date().getTime() - startLoadingDate;
 
                 delayLoadNextFragmentInfo.call(this, (segmentDuration - (deltaTime / 1000)));
+            } catch (e) {
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing fragment info segment", e.message);
             }
         },
 

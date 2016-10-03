@@ -15,7 +15,7 @@
  */
 Hls.dependencies.HlsFragmentController = function() {
     "use strict";
-    var lastRequestQuality = null;
+    var lastRequestQuality = -1;
 
     var generateInitSegment = function(data) {
             var i = 0,
@@ -31,19 +31,52 @@ Hls.dependencies.HlsFragmentController = function() {
             return rslt.mp4Processor.generateInitSegment(tracks);
         },
 
-        generateMediaSegment = function(data) {
-            // Process the HLS chunk to get media tracks description
-            //var tracks = rslt.hlsDemux.getTracks(new Uint8Array(data));
+        generateMediaSegment = function(data, request) {
             var i = 0,
-                tracks = rslt.hlsDemux.demux(new Uint8Array(data));
+                // Demultiplex HLS chunk to get samples
+                tracks = rslt.hlsDemux.demux(new Uint8Array(data), request);
 
+            // Update fragment start time (=tfdt)
             for (i = 0; i < tracks.length; i += 1) {
                 if (tracks[i].type === "video") {
-                    rslt.startTime = tracks[i].samples[0].cts / tracks[i].timescale;
+                    request.startTime = tracks[i].samples[0].dts / tracks[i].timescale;
                 }
             }
             // Generate media segment (moov)
-            return rslt.mp4Processor.generateMediaSegment(tracks, rslt.sequenceNumber);
+            return rslt.mp4Processor.generateMediaSegment(tracks);
+        },
+
+        createInitializationVector = function(segmentNumber) {
+            var uint8View = new Uint8Array(16),
+                i = 0;
+
+            for (i = 12; i < 16; i++) {
+                uint8View[i] = (segmentNumber >> 8 * (15 - i)) & 0xff;
+            }
+
+            return uint8View;
+        },
+
+        decrypt = function(data, decryptionInfo) {
+
+            var view = new DataView(decryptionInfo.key.buffer);
+            var key = new Uint32Array([
+                view.getUint32(0),
+                view.getUint32(4),
+                view.getUint32(8),
+                view.getUint32(12)
+            ]);
+
+            view = new DataView(createInitializationVector(decryptionInfo.iv).buffer);
+            var iv = new Uint32Array([
+                view.getUint32(0),
+                view.getUint32(4),
+                view.getUint32(8),
+                view.getUint32(12)
+            ]);
+
+            var decrypter = new Hls.dependencies.AES128Decrypter(key, iv);
+            return decrypter.decrypt(data);
         };
 
     var rslt = MediaPlayer.utils.copyMethods(MediaPlayer.dependencies.FragmentController);
@@ -51,10 +84,6 @@ Hls.dependencies.HlsFragmentController = function() {
     rslt.manifestModel = undefined;
     rslt.hlsDemux = undefined;
     rslt.mp4Processor = undefined;
-
-    rslt.sequenceNumber = 1;
-
-    rslt.segmentStartTime = null;
 
     rslt.process = function(bytes, request, representations) {
         var result = null,
@@ -65,40 +94,42 @@ Hls.dependencies.HlsFragmentController = function() {
             return bytes;
         }
 
-        try {
-            // Media segment => generate corresponding moof data segment from demultiplexed MPEG2-TS chunk
-            if (request && (request.type === "Media Segment") && representations && (representations.length > 0)) {
-                if (lastRequestQuality === null || lastRequestQuality !== request.quality) {
-                    // If quality changed then generate initialization segment
-                    rslt.hlsDemux.reset(request.startTime * 90000);
-                    InitSegmentData = generateInitSegment(bytes);
-                    request.index = undefined;
-                    lastRequestQuality = request.quality;
-                }
+        // Media segment => generate corresponding moof data segment from demultiplexed MPEG2-TS chunk
+        if (request && (request.type === "Media Segment") && representations && (representations.length > 0)) {
 
-                // Generate media segment (moof)
-                result = generateMediaSegment(bytes);
-
-                // Iinsert initialization if required
-                if (InitSegmentData !== null) {
-                    catArray = new Uint8Array(InitSegmentData.length + result.length);
-                    catArray.set(InitSegmentData, 0);
-                    catArray.set(result, InitSegmentData.length);
-                    result = catArray;
-                }
-
-                rslt.sequenceNumber++;
+            // Decrypt the segment if encrypted
+            if (request.decryptionInfo && request.decryptionInfo.method !== "NONE") {
+                var t = new Date();
+                bytes = decrypt(bytes, request.decryptionInfo);
+                rslt.debug.log("[HlsFragmentController] decrypted chunk (" + (((new Date()).getTime() - t.getTime()) / 1000).toFixed(3) + "s.)");
             }
-            return result;
-        } catch (e) {
-            return e;
+
+            if (lastRequestQuality !== request.quality) {
+                // If quality changed then generate initialization segment
+                InitSegmentData = generateInitSegment(bytes);
+                request.index = undefined; // ?
+                lastRequestQuality = request.quality;
+            }
+
+            // Generate media segment (moof)
+            result = generateMediaSegment(bytes, request);
+
+            // Insert initialization if required
+            if (InitSegmentData !== null) {
+                catArray = new Uint8Array(InitSegmentData.length + result.length);
+                catArray.set(InitSegmentData, 0);
+                catArray.set(result, InitSegmentData.length);
+                result = catArray;
+            }
+
+            rslt.sequenceNumber++;
         }
 
         return result;
     };
 
-    rslt.getStartTime = function() {
-        return rslt.startTime;
+    rslt.reset = function() {
+        lastRequestQuality = -1;
     };
 
     return rslt;
