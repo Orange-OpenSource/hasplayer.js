@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2016-10-3_15:54:24 / git revision : e7c2a4f */
+/* Last build : 2016-10-3_15:57:56 / git revision : c2b9689 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.6.0-dev',
-        GIT_TAG = 'e7c2a4f',
-        BUILD_DATE = '2016-10-3_15:54:24',
+        GIT_TAG = 'c2b9689',
+        BUILD_DATE = '2016-10-3_15:57:56',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -3377,11 +3377,6 @@ MediaPlayer.dependencies.BufferController = function() {
 
             this.updateData(newData, newPeriodInfo);
 
-            doUpdateData.call(this);
-            // data = newData;
-            // periodInfo = newPeriodInfo;
-            // dataChanged = true;
-
             this.load();
 
             ready = true;
@@ -3391,47 +3386,59 @@ MediaPlayer.dependencies.BufferController = function() {
             var self = this,
                 manifest = self.manifestModel.getValue();
 
+            doUpdateData.call(this);
+
             // Retrieve the representation of initial quality to enable some parameters initialization
             // (@see getLiveEdgeTime() for example)
             _currentRepresentation = getRepresentationForQuality.call(self, self.abrController.getPlaybackQuality(type, data).quality);
 
             currentDownloadQuality = -1;
 
-            if (_currentRepresentation) {
-                self.indexHandler.setIsDynamic(isDynamic);
-                if (minBufferTime === -1) {
-                    minBufferTime = self.bufferExt.decideBufferLength(manifest.minBufferTime, periodInfo.duration, waitingForBuffer);
-                }
+            // For HLS, we need to reset fragmentController in order to force initialization segment
+            // generation for 1st segment
+            if (this.fragmentController.reset) {
+                this.fragmentController.reset();
+            }
 
-                if (liveDelay === -1 || liveDelay < minBufferTime) {
-                    liveDelay = minBufferTime;
-                }
+            // Clear buffer
+            removeBuffer.call(this).then(function () {
+                if (_currentRepresentation) {
+                    self.indexHandler.setIsDynamic(isDynamic);
+                    if (minBufferTime === -1) {
+                        minBufferTime = self.bufferExt.decideBufferLength(manifest.minBufferTime, periodInfo.duration, waitingForBuffer);
+                    }
 
-                // Update manifest's minBufferTime value
-                manifest.minBufferTime = minBufferTime;
-                if (type === "video") {
-                    if (isDynamic) {
-                        self.indexHandler.updateSegmentList(_currentRepresentation).then(
-                            function() {
-                                getLiveEdgeTime.call(self).then(
-                                    function(time) {
-                                        self.system.notify("startTimeFound", time);
-                                    }
-                                );
-                            }
-                        );
-                    } else {
-                        self.indexHandler.getCurrentTime(_currentRepresentation).then(
-                            function(time) {
-                                if (time < _currentRepresentation.segmentAvailabilityRange.start) {
-                                    time = _currentRepresentation.segmentAvailabilityRange.start;
+                    if (liveDelay === -1 || liveDelay < minBufferTime) {
+                        liveDelay = minBufferTime;
+                    }
+
+                    // Update manifest's minBufferTime value
+                    manifest.minBufferTime = minBufferTime;
+                    if (type === "video") {
+                        if (isDynamic) {
+                            self.indexHandler.updateSegmentList(_currentRepresentation).then(
+                                function() {
+                                    getLiveEdgeTime.call(self).then(
+                                        function(time) {
+                                            self.system.notify("startTimeFound", time);
+                                        }
+                                    );
                                 }
-                                self.system.notify("startTimeFound", time);
-                            }
-                        );
+                            );
+                        } else {
+                            self.indexHandler.getCurrentTime(_currentRepresentation).then(
+                                function(time) {
+                                    if (time < _currentRepresentation.segmentAvailabilityRange.start) {
+                                        time = _currentRepresentation.segmentAvailabilityRange.start;
+                                    }
+                                    self.system.notify("startTimeFound", time);
+                                }
+                            );
+                        }
                     }
                 }
-            }
+
+            });
         },
 
         getIndexHandler: function() {
@@ -3631,20 +3638,22 @@ MediaPlayer.dependencies.BufferController = function() {
                         this.debug.info("[BufferController][" + type + "] BUFFERING - " + currentTime + " - " + bufferLevel);
                         this.metricsModel.addState(type, "buffering", currentTime);
 
-                        // Check if there is a hole in the buffer (segment download failed or input stream discontinuity), then skip it
-                        ranges = this.sourceBufferExt.getAllRanges(buffer);
-                        var i;
-                        for (i = 0; i < ranges.length; i++) {
-                            if (currentTime < ranges.start(i)) {
-                                break;
-                            }
-                        }
-                        if (i < ranges.length) {
-                            // Seek to next available range
-                            this.videoModel.setCurrentTime(ranges.start(i));
-                        } else {
-                            // Else buffering may be due to segment download failure (see onBytesError()), then signal it to Stream (see Stream.onBufferFailed())
+                        if (segmentRequestOnError) {
+                            // If buffering is due to segment download failure (see onBytesError()), then signal it to Stream (see Stream.onBufferFailed())
                             signalSegmentLoadingFailed.call(this);
+                        } else {
+                            // Check if there is a hole in the buffer (segment download failed or input stream discontinuity), then skip it
+                            ranges = this.sourceBufferExt.getAllRanges(buffer);
+                            var i;
+                            for (i = 0; i < ranges.length; i++) {
+                                if (currentTime < ranges.start(i)) {
+                                    break;
+                                }
+                            }
+                            if (i < ranges.length) {
+                                // Seek to next available range
+                                this.videoModel.setCurrentTime(ranges.start(i));
+                            }
                         }
                     }
 
@@ -8584,7 +8593,7 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
             firstStart = null,
             lastEnd = null,
             gap = 0,
-            toler = (tolerance || 0.01),
+            toler = (tolerance || 0.03),
             len,
             i;
 
@@ -9720,7 +9729,7 @@ MediaPlayer.dependencies.Stream = function() {
 
             this.debug.log("[Stream] Segment loading failed: start time = " + segmentRequest.startTime + ", duration = " + segmentRequest.duration);
 
-            if (this.manifestExt.getIsDynamic(manifest) && !isReloading) {
+            if (this.manifestExt.getIsDynamic(manifest) && reloadTimeout === null) {
                 // For Live streams, then we try to reload the session
                 isReloading = true;
                 var delay = segmentRequest.duration;
@@ -11328,6 +11337,7 @@ MediaPlayer.dependencies.XHRLoader = function() {
 
         load: function(url, range) {
             _url = url;
+            _range = range;
             _retryCount = 0;
             _deferred = Q.defer();
             _load();
@@ -21706,38 +21716,49 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
         // MediaKeySession and session-specific event handler
         createSessionToken = function(session, initData, sessionType) {
 
-            var self = this;
+            var self = this,
+                setSessionUsable = function (session, usable) {
+                    for (var i = 0; i < sessions.length; i++) {
+                        if (sessions[i].session === session) {
+                            sessions[i].usable = usable;
+                            break;
+                        }
+                    }
+                };
+
+
             var token = { // Implements MediaPlayer.vo.protection.SessionToken
                 session: session,
                 initData: initData,
                 licenseStored: false,
+                usable: false,
 
                 // This is our main event handler for all desired MediaKeySession events
                 // These events are translated into our API-independent versions of the
                 // same events
                 handleEvent: function(event) {
+
                     switch (event.type) {
 
                         case "keystatuseschange":
-                            self.debug.log("[DRM][PM_21Jan2015] 'keystatuseschange' event: ", event);
                             self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, this);
 
-                             event.target.keyStatuses.forEach(function() {
+                            event.target.keyStatuses.forEach(function() {
                                 // has Edge and Chrome implement different version of keystatues, param are not on same order
                                 var status, keyId;
-                                if(arguments && arguments.length > 0){
-                                    if(arguments[0]){
-                                        if(typeof arguments[0] === 'string'){
+                                if (arguments && arguments.length > 0) {
+                                    if (arguments[0]) {
+                                        if (typeof arguments[0] === 'string') {
                                             status = arguments[0];
-                                        }else{
+                                        } else {
                                             keyId = arguments[0];
                                         }
                                     }
 
-                                    if(arguments[1]){
-                                        if(typeof arguments[1] === 'string'){
+                                    if (arguments[1]) {
+                                        if (typeof arguments[1] === 'string') {
                                             status = arguments[1];
-                                        }else{
+                                        } else {
                                             keyId = arguments[1];
                                         }
                                     }
@@ -21745,23 +21766,27 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                                 self.debug.log("[DRM][PM_21Jan2015] status = " + status + " for KID " + arrayToHexString(new Uint8Array(keyId)));
                                 switch (status) {
                                     case "expired":
-                                      // Report an expired key.
-                                      self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, null,
-                                            new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED, "License has expired!!!", null));
-                                      break;
+                                        setSessionUsable(event.target, false);
+                                        self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, null,
+                                            new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED, "License has expired", null));
+                                        break;
                                     case "output-restricted":
-                                      self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, null,
+                                        setSessionUsable(event.target, false);
+                                        self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, null,
                                             new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT,
-                                                                     "There is no available output device with the required characteristics for the content protection system.",
+                                                                     "There is no available output device with the required characteristics for the content protection system",
                                                                      null));
-                                      break;
-                                    //case "usable":
+                                        break;
+                                    case "usable":
+                                        setSessionUsable(event.target, true);
+                                        break;
+
                                     //case "status-pending":
                                     default:
                                         self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED,
                                             {status:status, keyId: keyId});
-                                    }
-                                  });
+                                }
+                            });
 
                             break;
 
@@ -21886,7 +21911,12 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
         getAllInitData: function() {
             var retVal = [];
             for (var i = 0; i < sessions.length; i++) {
-                retVal.push(sessions[i].initData);
+                if (sessions[i].usable) {
+                    retVal.push(sessions[i].initData);
+                } else {
+                    sessions.splice(i, 1);
+                    i--;
+                }
             }
             return retVal;
         },
@@ -23925,6 +23955,29 @@ MediaPlayer.models.SessionToken.prototype = {
 
 
 
+/*
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+ * 
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+ * 
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+/*jshint -W020 */
+Hls = (function () {
+    "use strict";
+
+    return {
+        dependencies: {}
+    };
+}());
 /**
  * This file contains an adaptation of the AES decryption algorithm
  * from the Standford Javascript Cryptography Library. That work is
@@ -24262,29 +24315,6 @@ Hls.dependencies.AES128Decrypter = function(key, iv) {
 Hls.dependencies.AES128Decrypter.prototype = {
     constructor: Hls.dependencies.AES128Decrypter
 };
-/*
- * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
- * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
- * 
- * Copyright (c) 2014, Orange
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
- * 
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-/*jshint -W020 */
-Hls = (function () {
-    "use strict";
-
-    return {
-        dependencies: {}
-    };
-}());
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
@@ -26072,7 +26102,9 @@ Mss.dependencies.MssParser = function() {
 
             // Check if codec is supported
             if (SUPPORTED_CODECS.indexOf(fourCCValue.toUpperCase()) === -1) {
-                this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Codec not supported", {codec: fourCCValue});
+                // Do not send warning
+                //this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Codec not supported", {codec: fourCCValue});
+                this.debug.warn("[MssParser] Codec not supported: " + fourCCValue);
                 return null;
             }
 
