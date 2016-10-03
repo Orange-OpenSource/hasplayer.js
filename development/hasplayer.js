@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2016-10-3_15:37:16 / git revision : fa4759b */
+/* Last build : 2016-10-3_15:51:6 / git revision : 435fc03 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.6.0-dev',
-        GIT_TAG = 'fa4759b',
-        BUILD_DATE = '2016-10-3_15:37:16',
+        GIT_TAG = '435fc03',
+        BUILD_DATE = '2016-10-3_15:51:6',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -2367,12 +2367,9 @@ MediaPlayer.dependencies.BufferController = function() {
 
             self.debug.log("[BufferController][" + type + "] Initialization loaded ", quality);
 
-            data = self.fragmentController.process(initData);
-            if (data) {
-                if (data.error) {
-                    signalSegmentBuffered.call(self);
-                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", data.message);
-                } else {
+            try {
+                data = self.fragmentController.process(initData);
+                if (data) {
                     // Cache the initialization data to use it next time the quality has changed
                     initializationData[quality] = data;
 
@@ -2385,11 +2382,17 @@ MediaPlayer.dependencies.BufferController = function() {
                             }
                         }
                     );
+                } else {
+                    // ORANGE : For HLS Stream, init segment are pushed with media (@see HlsFragmentController)
+                    loadNextFragment.call(self);
                 }
-            } else {
-                self.debug.log("No " + type + " bytes to push.");
-                // ORANGE : For HLS Stream, init segment are pushed with media (@see HlsFragmentController)
-                loadNextFragment.call(self);
+            } catch (e) {
+                signalSegmentBuffered.call(self);
+                if (e.name) {
+                    self.errHandler.sendError(e.name, e.message, e.data);
+                } else {
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", e.message);
+                }
             }
         },
 
@@ -2420,17 +2423,9 @@ MediaPlayer.dependencies.BufferController = function() {
                 self.chunkMissingCount = 0;
             }
 
-            // ORANGE: add request and representations in function parameters, used by MssFragmentController
-            data = self.fragmentController.process(response.data, request, availableRepresentations);
-            if (data) {
-                if (data.error) {
-                    signalSegmentBuffered.call(self);
-                    if (data.name) {
-                        self.errHandler.sendError(data.name, data.message, data.data);
-                    } else {
-                        self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", data.message);
-                    }
-                } else {
+            try {
+                data = self.fragmentController.process(response.data, request, availableRepresentations);
+                if (data) {
                     if (eventStreamAdaption.length > 0 || eventStreamRepresentation.length > 0) {
                         events = handleInbandEvents.call(self, data, request, eventStreamAdaption, eventStreamRepresentation);
                         self.eventController.addInbandEvents(events);
@@ -2478,13 +2473,20 @@ MediaPlayer.dependencies.BufferController = function() {
                             );
                         }
                     );
+                } else {
+                    self.debug.error("[BufferController][" + type + "] Error with segment data, no bytes to push");
+                    // Signal end of buffering process
+                    signalSegmentBuffered.call(self);
+                    // Check buffer level
+                    checkIfSufficientBuffer.call(self);
                 }
-            } else {
-                self.debug.error("[BufferController][" + type + "] Error with segment data, no bytes to push");
-                // Signal end of buffering process
+            } catch (e) {
                 signalSegmentBuffered.call(self);
-                // Check buffer level
-                checkIfSufficientBuffer.call(self);
+                if (e.name) {
+                    self.errHandler.sendError(e.name, e.message, e.data);
+                } else {
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", e.message);
+                }
             }
         },
 
@@ -2953,7 +2955,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 if (trickModeEnabled) {
                     request = self.indexHandler.getIFrameRequest(request);
                 }
-                
+
                 // If we have already loaded the given fragment ask for the next one. Otherwise prepare it to get loaded
                 if (self.fragmentController.isFragmentLoadedOrPending(self, request)) {
                     self.debug.log("[BufferController][" + type + "] new fragment request => already loaded or pending " + request.url);
@@ -3200,7 +3202,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 function(err) {
                     signalSegmentBuffered();
                     if (err) {
-                        self.errHandler.sendError(err.name, err.message, err.data);                        
+                        self.errHandler.sendError(err.name, err.message, err.data);
                     }
                 }
             );
@@ -3214,7 +3216,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 representation,
                 idx;
 
-            
+
             // Check if running state
             if (!isRunning.call(self)) {
                 deferred.reject();
@@ -4240,7 +4242,7 @@ MediaPlayer.di.Context = function () {
             this.system.mapClass('dashParser', Dash.dependencies.DashParser);
             this.system.mapClass('mssParser', Mss.dependencies.MssParser);
             this.system.mapClass('hlsParser', Hls.dependencies.HlsParser);
-            this.system.mapClass('hlsDemux', Hls.dependencies.HlsDemux);
+            this.system.mapSingleton('hlsDemux', Hls.dependencies.HlsDemux);
 
             // Create the context manager to plug some specific parts of the code
             this.system.mapSingleton('contextManager', MediaPlayer.modules.ContextManager);
@@ -5879,16 +5881,15 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
 
             this.debug.log("[FragmentInfoController][" + type + "] Media loaded ", request.url);
 
-            // ORANGE: add request and representations in function parameters, used by MssFragmentController
-            data = this.fragmentController.process(response.data, request, _bufferController.getAvailableRepresentations());
-            if (data && data.error) {
-                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing fragment info segment", data.message);
-            } else {
+            try {
+                data = this.fragmentController.process(response.data, request, _bufferController.getAvailableRepresentations());
                 this.debug.info("[FragmentInfoController][" + type + "] Buffer segment from url ", request.url);
 
                 deltaTime = new Date().getTime() - startLoadingDate;
 
                 delayLoadNextFragmentInfo.call(this, (segmentDuration - (deltaTime / 1000)));
+            } catch (e) {
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing fragment info segment", e.message);
             }
         },
 
@@ -6073,12 +6074,9 @@ MediaPlayer.dependencies.ManifestLoader = function() {
 
     var DEFAULT_RETRY_ATTEMPTS = 2,
         DEFAULT_RETRY_INTERVAL = 500,
-        retryAttempts = DEFAULT_RETRY_ATTEMPTS,
-        retryInterval = DEFAULT_RETRY_INTERVAL,
-        retryCount = 0,
-        retryTimeout = null,
-        deferred = null,
-        request = null,
+        _retryAttempts = DEFAULT_RETRY_ATTEMPTS,
+        _retryInterval = DEFAULT_RETRY_INTERVAL,
+        _xhrLoader = null,
 
         _getDecodedResponseText = function(text) {
             var fixedCharCodes = '',
@@ -6124,13 +6122,8 @@ MediaPlayer.dependencies.ManifestLoader = function() {
 
         _abort = function() {
 
-            if (request !== null && request.readyState > 0 && request.readyState < 4) {
-                this.debug.log("[ManifestLoader] Manifest download abort.");
-                request.abort();
-            } else if (retryTimeout) {
-                clearTimeout(retryTimeout);
-                retryTimeout = null;
-                deferred.reject();
+            if (_xhrLoader !== null) {
+                _xhrLoader.abort();
             }
 
             this.parser.abort();
@@ -6138,34 +6131,19 @@ MediaPlayer.dependencies.ManifestLoader = function() {
 
         _load = function(url) {
             var baseUrl = _parseBaseUrl(url),
-                requestTime = new Date(),
-                mpdLoadedTime = null,
-                needFailureReport = true,
-                onload = null,
-                report = null,
-                onabort = null,
+                deferred = Q.defer(),
                 self = this;
 
-            onabort = function() {
-                request.aborted = true;
-            };
+            _xhrLoader = new MediaPlayer.dependencies.XHRLoader();
+            _xhrLoader.initialize(null, _retryAttempts, _retryInterval);
+            _xhrLoader.load(url).then(
+                function (request) {
 
-            onload = function() {
-                if (request.status < 200 || request.status > 299) {
-                    return;
-                }
-
-                if (request.status === 200 && request.readyState === 4) {
-                    self.debug.log("[ManifestLoader] Manifest downloaded");
-
-                    // Get the redirection URL and use it as base URL
+                    // Get the redirection URL and use it as base URL for subsequent requests
                     if (request.responseURL) {
                         self.debug.log("[ManifestLoader] Redirect URL: " + request.responseURL);
                         baseUrl = _parseBaseUrl(request.responseURL);
                     }
-
-                    needFailureReport = false;
-                    mpdLoadedTime = new Date();
 
                     self.tokenAuthentication.checkRequestHeaderForToken(request);
                     self.metricsModel.addHttpRequest("stream",
@@ -6174,8 +6152,8 @@ MediaPlayer.dependencies.ManifestLoader = function() {
                         url,
                         null,
                         null,
-                        requestTime,
-                        mpdLoadedTime,
+                        request.startDate,
+                        request.endDate,
                         request.status,
                         null,
                         null);
@@ -6184,8 +6162,8 @@ MediaPlayer.dependencies.ManifestLoader = function() {
                         function(manifest) {
                             if (manifest) {
                                 manifest.mpdUrl = url;
-                                manifest.mpdLoadedTime = mpdLoadedTime;
-                                self.metricsModel.addManifestUpdate("stream", manifest.type, requestTime, mpdLoadedTime, manifest.availabilityStartTime);
+                                manifest.mpdLoadedTime = request.endDate;
+                                self.metricsModel.addManifestUpdate("stream", manifest.type, request.startDate, request.endDate, manifest.availabilityStartTime);
                                 deferred.resolve(manifest);
                             } else {
                                 deferred.reject();
@@ -6208,36 +6186,25 @@ MediaPlayer.dependencies.ManifestLoader = function() {
                             }
                         }
                     );
-                }
-            };
+                },
+                function(request) {
 
-            report = function() {
-                if (!needFailureReport) {
-                    return;
-                }
-                needFailureReport = false;
-
-                self.metricsModel.addHttpRequest("stream",
-                    null,
-                    "MPD",
-                    url,
-                    null,
-                    null,
-                    requestTime,
-                    new Date(),
-                    request.status,
-                    null,
-                    null);
-
-                if (request.aborted) {
-                    deferred.reject();
-                } else {
-                    retryCount++;
-                    if (retryAttempts > 0 && retryCount <= retryAttempts) {
-                        retryTimeout = setTimeout(function() {
-                            _load.call(self, url);
-                        }, retryInterval);
+                    if (!request || request.aborted) {
+                        deferred.reject();
                     } else {
+
+                        self.metricsModel.addHttpRequest("stream",
+                            null,
+                            "MPD",
+                            url,
+                            null,
+                            null,
+                            request.startDate,
+                            request.endDate,
+                            request.status,
+                            null,
+                            null);
+
                         deferred.reject({
                             name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
                             message: "Failed to download manifest",
@@ -6248,19 +6215,9 @@ MediaPlayer.dependencies.ManifestLoader = function() {
                         });
                     }
                 }
-            };
+            );
 
-            try {
-                request = new XMLHttpRequest();
-                request.onload = onload;
-                request.onloadend = report;
-                request.onerror = report;
-                request.onabort = onabort;
-                request.open("GET", url, true);
-                request.send();
-            } catch (e) {
-                request.onerror();
-            }
+            return deferred.promise;
         };
 
     return {
@@ -6271,17 +6228,11 @@ MediaPlayer.dependencies.ManifestLoader = function() {
         tokenAuthentication: undefined,
 
         setup: function() {
-            retryAttempts = this.config.getParam("ManifestLoader.RetryAttempts", "number", DEFAULT_RETRY_ATTEMPTS);
-            retryInterval = this.config.getParam("ManifestLoader.RetryInterval", "number", DEFAULT_RETRY_INTERVAL);
+            _retryAttempts = this.config.getParam("ManifestLoader.RetryAttempts", "number", DEFAULT_RETRY_ATTEMPTS);
+            _retryInterval = this.config.getParam("ManifestLoader.RetryInterval", "number", DEFAULT_RETRY_INTERVAL);
         },
 
-        load: function(url) {
-            deferred = Q.defer();
-            request = new XMLHttpRequest();
-            retryCount = 0;
-            _load.call(this, url);
-            return deferred.promise;
-        },
+        load: _load,
 
         abort: _abort
     };
@@ -7469,10 +7420,10 @@ MediaPlayer.dependencies.Mp4Processor = function() {
         createHandlerReferenceBox = function(track) {
 
             // This box within a Media Box declares the process by which the media-data in the track is presented, and thus,
-            // the nature of the media in a track. For example, a video track would be handled by a video handler. 
+            // the nature of the media in a track. For example, a video track would be handled by a video handler.
             var hdlr = new mp4lib.boxes.HandlerBox();
 
-            hdlr.version = 0; // default value version = 0 
+            hdlr.version = 0; // default value version = 0
             hdlr.pre_defined = 0; //default value.
             switch (track.type) {
                 case 'video':
@@ -7537,7 +7488,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             dref.entry_count = 1; // is an integer that counts the actual entries
             dref.flags = 0; // default value
 
-            // The DataEntryBox within the DataReferenceBox shall be either a DataEntryUrnBox or a DataEntryUrlBox.           
+            // The DataEntryBox within the DataReferenceBox shall be either a DataEntryUrnBox or a DataEntryUrlBox.
             // (not used, but mandatory)
             url = new mp4lib.boxes.DataEntryUrlBox();
             url.location = "";
@@ -7605,7 +7556,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             stsz.version = 0; // default value = 0
             stsz.flags = 0; //default value = 0
             stsz.sample_count = 0; //is an integer that gives the number of samples in the track; if sample-size is 0, then it is
-            //also the number of entries in the following table         
+            //also the number of entries in the following table
             stsz.sample_size = 0; //is integer specifying the default sample size.
 
             return stsz;
@@ -7780,10 +7731,10 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             //create Protection Scheme Info Box
             var sinf = new mp4lib.boxes.ProtectionSchemeInformationBox();
 
-            //create and add Original Format Box => indicate codec type of the encrypted content         
+            //create and add Original Format Box => indicate codec type of the encrypted content
             sinf.boxes.push(createOriginalFormatBox(track));
 
-            //create and add Scheme Type box            
+            //create and add Scheme Type box
             sinf.boxes.push(createSchemeTypeBox());
 
             //create and add Scheme Information Box
@@ -7859,7 +7810,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             decoderConfigDescriptor[9] = (track.bandwidth & 0x0000FF00) >> 8; // ''
             decoderConfigDescriptor[10] = (track.bandwidth & 0x000000FF); // ''
             decoderConfigDescriptor[11] = (track.bandwidth & 0xFF000000) >> 24; // bit(32), avgbitrate
-            decoderConfigDescriptor[12] |= (track.bandwidth & 0x00FF0000) >> 16; // '' 
+            decoderConfigDescriptor[12] |= (track.bandwidth & 0x00FF0000) >> 16; // ''
             decoderConfigDescriptor[13] |= (track.bandwidth & 0x0000FF00) >> 8; // ''
             decoderConfigDescriptor[14] |= (track.bandwidth & 0x000000FF); // ''
             decoderConfigDescriptor.set(decoderSpecificInfo, 15); // DecoderSpecificInfo bytes
@@ -8045,7 +7996,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
                 track = tracks[tracks.length - 1],
                 i;
 
-            // Create Movie Extends Box (mvex) 
+            // Create Movie Extends Box (mvex)
             // This box warns readers that there might be Movie Fragment Boxes in this file
             mvex = new mp4lib.boxes.MovieExtendsBox();
 
@@ -8058,7 +8009,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
                 mehd.version = 1;
                 mehd.flags = 0;
                 mehd.fragment_duration = Math.round(track.duration * track.timescale); // declares length of the presentation of the whole movie including fragments
-                
+
                 //add mehd box in mvex box
                 mvex.boxes.push(mehd);
             }*/
@@ -8072,7 +8023,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
                 trex.version = 0;
                 trex.flags = 0;
                 trex.track_ID = track.trackId; // identifies the track; this shall be the track ID of a track in the Movie Box
-                trex.default_sample_description_index = 1; // Set default value 
+                trex.default_sample_description_index = 1; // Set default value
                 trex.default_sample_duration = 0; // ''
                 trex.default_sample_flags = 0; // ''
                 trex.default_sample_size = 0; // ''
@@ -8109,7 +8060,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             // Create file
             moov_file = new mp4lib.boxes.File();
 
-            // Create Movie box (moov) 
+            // Create Movie box (moov)
             moov = new mp4lib.boxes.MovieBox();
 
             // Create and add MovieHeader box (mvhd)
@@ -8142,7 +8093,9 @@ MediaPlayer.dependencies.Mp4Processor = function() {
         // MOOF
         ///////////////////////////////////////////////////////////////////////////////////////////
 
-        createMovieFragmentHeaderBox = function(sequenceNumber) {
+        sequenceNumber = 1,
+
+        createMovieFragmentHeaderBox = function() {
 
             // Movie Fragment Header Box
             // The movie fragment header contains a sequence number, as a safety check. The sequence number usually
@@ -8153,7 +8106,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
 
             mfhd.version = 0;
             mfhd.flags = 0;
-            mfhd.sequence_number = sequenceNumber;
+            mfhd.sequence_number = sequenceNumber++;
 
             return mfhd;
         },
@@ -8298,7 +8251,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             return mdat;
         },
 
-        doGenerateMediaSegment = function(tracks, sequenceNumber) {
+        doGenerateMediaSegment = function(tracks) {
 
             var moof_file,
                 moof,
@@ -8314,12 +8267,12 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             // Create file
             moof_file = new mp4lib.boxes.File();
 
-            // Create Movie Fragment box (moof) 
+            // Create Movie Fragment box (moof)
             moof = new mp4lib.boxes.MovieFragmentBox();
 
-            // Create Movie Fragment Header box (moof) 
-            moof.boxes.push(createMovieFragmentHeaderBox(sequenceNumber));
-            
+            // Create Movie Fragment Header box (moof)
+            moof.boxes.push(createMovieFragmentHeaderBox());
+
             if (tracks) {
                 for (i = 0; i < tracks.length; i += 1) {
                     // Create Track Fragment box (traf)
@@ -11226,6 +11179,149 @@ MediaPlayer.dependencies.VideoModelExtensions = function () {
 
 MediaPlayer.dependencies.VideoModelExtensions.prototype = {
     constructor: MediaPlayer.dependencies.VideoModelExtensions
+};
+/*
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+ *
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+MediaPlayer.dependencies.XHRLoader = function() {
+    "use strict";
+
+    var _xhr = null,
+        _url = null,
+        _responseType = null,
+        _range = null,
+        _onprogress = null,
+        _retryAttempts = 0,
+        _retryInterval = 0,
+        _retryCount = 0,
+        _retryTimeout = null,
+        _deferred = null,
+
+        _abort = function() {
+
+            if (_xhr !== null && _xhr.readyState > 0 && _xhr.readyState < 4) {
+                _xhr.abort();
+            } else if (_retryTimeout) {
+                clearTimeout(_retryTimeout);
+                _retryTimeout = null;
+                _deferred.reject();
+            }
+        },
+
+        _load = function() {
+            var needFailureReport = true,
+
+                onprogress = function(event) {
+                    if (_onprogress) {
+                        _onprogress(_xhr, event);
+                    }
+                },
+
+                onabort = function() {
+                    _xhr.aborted = true;
+                },
+
+                onload = function() {
+                    if (_xhr.status < 200 || _xhr.status > 299) {
+                        return;
+                    }
+
+                    if (_xhr.status === 200 && _xhr.readyState === 4) {
+                        // The request succeeded
+                        // => return the response the responseURL in case of URL redirection
+                        needFailureReport = false;
+
+                        // Add endDate attribute to store request end time
+                        _xhr.endDate = new Date();
+
+                        _deferred.resolve(_xhr);
+                    }
+                },
+
+                onloadend = function() {
+
+                    if (!needFailureReport) {
+                        return;
+                    }
+                    needFailureReport = false;
+
+                    // Add endDate attribute to store request end time
+                    _xhr.endDate = new Date();
+
+                    // The request failed
+                    _retryCount++;
+                    if (!_xhr.aborted && _retryAttempts > 0 && _retryCount <= _retryAttempts) {
+                        // Retry the request
+                        _retryTimeout = setTimeout(function() {
+                            _load();
+                        }, _retryInterval);
+                    } else {
+                        _deferred.reject(_xhr);
+                    }
+                };
+
+            try {
+                _xhr = new XMLHttpRequest();
+
+                if (_responseType) {
+                    _xhr.responseType = _responseType;
+                }
+
+                if (_range) {
+                    _xhr.setRequestHeader('Range', 'bytes=' + _range);
+                }
+
+                _xhr.onprogress = onprogress;
+                _xhr.onabort = onabort;
+                _xhr.onload = onload;
+                _xhr.onloadend = onloadend;
+                _xhr.onerror = onloadend;
+
+                // Add startDate attribute to store request start time
+                _xhr.startDate = new Date();
+
+                _xhr.open("GET", _url, true);
+                _xhr.send();
+            } catch (e) {
+                _xhr.onerror();
+            }
+        };
+
+    return {
+
+        initialize: function(responseType, retryAttempts, retryInterval, onprogress) {
+            _responseType = responseType;
+            _retryAttempts = retryAttempts;
+            _retryInterval = retryInterval;
+            _onprogress = onprogress;
+        },
+
+        load: function(url, range) {
+            _url = url;
+            _retryCount = 0;
+            _deferred = Q.defer();
+            _load();
+            return _deferred.promise;
+        },
+
+        abort: _abort
+    };
+};
+
+MediaPlayer.dependencies.XHRLoader.prototype = {
+    constructor: MediaPlayer.dependencies.XHRLoader
 };
 /*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
@@ -15587,7 +15683,10 @@ Dash.dependencies.DashHandler = function() {
                         if (s.sequenceNumber !== undefined) {
                             seg.sequenceNumber = s.sequenceNumber;
                         }
-
+                        // ORANGE: add decryption info (HLS use case)
+                        if (s.decryptionInfo !== undefined) {
+                            seg.decryptionInfo = s.decryptionInfo;
+                        }
                         //self.debug.log("[DashHandler]["+type+"] createSegment: time = " + seg.mediaStartTime + ", availabilityIdx = " + seg.availabilityIdx + ", url = " + seg.media);
 
                         segments.push(seg);
@@ -15881,6 +15980,10 @@ Dash.dependencies.DashHandler = function() {
             // ORANGE: add sequence number (HLS use case)
             if (segment.sequenceNumber !== undefined) {
                 request.sequenceNumber = segment.sequenceNumber;
+            }
+            // ORANGE: add decryption info (HLS use case)
+            if (segment.decryptionInfo !== undefined) {
+                request.decryptionInfo = segment.decryptionInfo;
             }
 
             return request;
@@ -23804,6 +23907,343 @@ MediaPlayer.models.SessionToken.prototype = {
 
 
 
+/**
+ * This file contains an adaptation of the AES decryption algorithm
+ * from the Standford Javascript Cryptography Library. That work is
+ * covered by the following copyright and permissions notice:
+ *
+ * Copyright 2009-2010 Emily Stark, Mike Hamburg, Dan Boneh.
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above
+ *    copyright notice, this list of conditions and the following
+ *    disclaimer in the documentation and/or other materials provided
+ *    with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHORS ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL <COPYRIGHT HOLDER> OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *
+ * The views and conclusions contained in the software and documentation
+ * are those of the authors and should not be interpreted as representing
+ * official policies, either expressed or implied, of the authors.
+ */
+
+Hls.dependencies.AES = function() {
+
+    /**
+    * Schedule out an AES key for both encryption and decryption. This
+    * is a low-level class. Use a cipher mode to do bulk encryption.
+    *
+    * @constructor
+    * @param key {Array} The key as an array of 4, 6 or 8 words.
+    */
+    this.init = function (key) {
+
+        /**
+         * The expanded S-box and inverse S-box tables. These will be computed
+         * on the client so that we don't have to send them down the wire.
+         *
+         * There are two tables, _tables[0] is for encryption and
+         * _tables[1] is for decryption.
+         *
+         * The first 4 sub-tables are the expanded S-box with MixColumns. The
+         * last (_tables[01][4]) is the S-box itself.
+         *
+         * @private
+         */
+        this._tables = [[[],[],[],[],[]],[[],[],[],[],[]]];
+
+        this._precompute.call(this);
+
+        var i, j, tmp,
+        encKey, decKey,
+        sbox = this._tables[0][4], decTable = this._tables[1],
+        keyLen = key.length, rcon = 1;
+
+        if (keyLen !== 4 && keyLen !== 6 && keyLen !== 8) {
+            throw new Error('Invalid aes key size=' + keyLen);
+        }
+
+        encKey = key.slice(0);
+        decKey = [];
+        this._key = [encKey, decKey];
+
+        // schedule encryption keys
+        for (i = keyLen; i < 4 * keyLen + 28; i++) {
+            tmp = encKey[i-1];
+
+            // apply sbox
+            if (i%keyLen === 0 || (keyLen === 8 && i%keyLen === 4)) {
+                tmp = sbox[tmp>>>24]<<24 ^ sbox[tmp>>16&255]<<16 ^ sbox[tmp>>8&255]<<8 ^ sbox[tmp&255];
+
+                // shift rows and add rcon
+                if (i%keyLen === 0) {
+                    tmp = tmp<<8 ^ tmp>>>24 ^ rcon<<24;
+                    rcon = rcon<<1 ^ (rcon>>7)*283;
+                }
+            }
+
+            encKey[i] = encKey[i-keyLen] ^ tmp;
+        }
+
+        // schedule decryption keys
+        for (j = 0; i; j++, i--) {
+            tmp = encKey[j&3 ? i : i - 4];
+            if (i<=4 || j<4) {
+                decKey[j] = tmp;
+            } else {
+                decKey[j] = decTable[0][sbox[tmp>>>24]] ^
+                decTable[1][sbox[tmp>>16  & 255]] ^
+                decTable[2][sbox[tmp>>8   & 255]] ^
+                decTable[3][sbox[tmp      & 255]];
+            }
+        }
+    };
+
+    /**
+    * Expand the S-box tables.
+    *
+    * @private
+    */
+    this._precompute = function () {
+        var encTable = this._tables[0], decTable = this._tables[1],
+            sbox = encTable[4], sboxInv = decTable[4],
+            i, x, xInv, d=[], th=[], x2, x4, x8, s, tEnc, tDec;
+
+        // Compute double and third tables
+        for (i = 0; i < 256; i++) {
+            th[( d[i] = i<<1 ^ (i>>7)*283 )^i]=i;
+        }
+
+        for (x = xInv = 0; !sbox[x]; x ^= x2 || 1, xInv = th[xInv] || 1) {
+            // Compute sbox
+            s = xInv ^ xInv<<1 ^ xInv<<2 ^ xInv<<3 ^ xInv<<4;
+            s = s>>8 ^ s&255 ^ 99;
+            sbox[x] = s;
+            sboxInv[s] = x;
+
+            // Compute MixColumns
+            x8 = d[x4 = d[x2 = d[x]]];
+            tDec = x8*0x1010101 ^ x4*0x10001 ^ x2*0x101 ^ x*0x1010100;
+            tEnc = d[s]*0x101 ^ s*0x1010100;
+
+            for (i = 0; i < 4; i++) {
+                encTable[i][x] = tEnc = tEnc<<24 ^ tEnc>>>8;
+                decTable[i][s] = tDec = tDec<<24 ^ tDec>>>8;
+            }
+        }
+
+        // Compactify. Considerable speedup on Firefox.
+        for (i = 0; i < 5; i++) {
+            encTable[i] = encTable[i].slice(0);
+            decTable[i] = decTable[i].slice(0);
+        }
+    };
+
+    /**
+    * Decrypt 16 bytes, specified as four 32-bit words.
+    * @param encrypted0 {number} the first word to decrypt
+    * @param encrypted1 {number} the second word to decrypt
+    * @param encrypted2 {number} the third word to decrypt
+    * @param encrypted3 {number} the fourth word to decrypt
+    * @param out {Int32Array} the array to write the decrypted words
+    * into
+    * @param offset {number} the offset into the output array to start
+    * writing results
+    * @return {Array} The plaintext.
+    */
+    this.decrypt = function (encrypted0, encrypted1, encrypted2, encrypted3, out, offset) {
+        var key = this._key[1],
+            // state variables a,b,c,d are loaded with pre-whitened data
+            a = encrypted0 ^ key[0],
+            b = encrypted3 ^ key[1],
+            c = encrypted2 ^ key[2],
+            d = encrypted1 ^ key[3],
+            a2, b2, c2,
+
+            nInnerRounds = key.length / 4 - 2, // key.length === 2 ?
+            i,
+            kIndex = 4,
+            table = this._tables[1],
+
+            // load up the tables
+            table0    = table[0],
+            table1    = table[1],
+            table2    = table[2],
+            table3    = table[3],
+            sbox  = table[4];
+
+        // Inner rounds. Cribbed from OpenSSL.
+        for (i = 0; i < nInnerRounds; i++) {
+            a2 = table0[a>>>24] ^ table1[b>>16 & 255] ^ table2[c>>8 & 255] ^ table3[d & 255] ^ key[kIndex];
+            b2 = table0[b>>>24] ^ table1[c>>16 & 255] ^ table2[d>>8 & 255] ^ table3[a & 255] ^ key[kIndex + 1];
+            c2 = table0[c>>>24] ^ table1[d>>16 & 255] ^ table2[a>>8 & 255] ^ table3[b & 255] ^ key[kIndex + 2];
+            d  = table0[d>>>24] ^ table1[a>>16 & 255] ^ table2[b>>8 & 255] ^ table3[c & 255] ^ key[kIndex + 3];
+            kIndex += 4;
+            a=a2; b=b2; c=c2;
+        }
+
+        // Last round.
+        for (i = 0; i < 4; i++) {
+            out[(3 & -i) + offset] =
+            sbox[a>>>24      ]<<24 ^
+            sbox[b>>16  & 255]<<16 ^
+            sbox[c>>8   & 255]<<8  ^
+            sbox[d      & 255]     ^
+            key[kIndex++];
+            a2=a; a=b; b=c; c=d; d=a2;
+        }
+    };
+};
+
+Hls.dependencies.AES.prototype = {
+    constructor: Hls.dependencies.AES
+};
+
+Hls.dependencies.AES128Decrypter = function(key, iv) {
+    "use strict";
+
+    this.key = key;
+    this.iv = iv;
+
+    /**
+    * Convert network-order (big-endian) bytes into their little-endian
+    * representation.
+    */
+    this.ntoh = function(word) {
+        return (word << 24) |
+               ((word & 0xff00) << 8) |
+               ((word & 0xff0000) >> 8) |
+               (word >>> 24);
+    };
+
+    /**
+    * Decrypt bytes using AES-128 with CBC and PKCS#7 padding.
+    * @param encrypted {Uint8Array} the encrypted bytes
+    * @param key {Uint32Array} the bytes of the decryption key
+    * @param initVector {Uint32Array} the initialization vector (IV) to
+    * use for the first round of CBC.
+    * @return {Uint8Array} the decrypted bytes
+    *
+    * @see http://en.wikipedia.org/wiki/Advanced_Encryption_Standard
+    * @see http://en.wikipedia.org/wiki/Block_cipher_mode_of_operation#Cipher_Block_Chaining_.28CBC.29
+    * @see https://tools.ietf.org/html/rfc2315
+    */
+    this.doDecrypt = function(encrypted, key, initVector) {
+        var
+            // word-level access to the encrypted bytes
+            encrypted32 = new Int32Array(encrypted.buffer, encrypted.byteOffset, encrypted.byteLength >> 2),
+
+            decipher = new Hls.dependencies.AES(),
+
+            // byte and word-level access for the decrypted output
+            decrypted = new Uint8Array(encrypted.byteLength),
+            decrypted32 = new Int32Array(decrypted.buffer),
+
+            // temporary variables for working with the IV, encrypted, and
+            // decrypted data
+            init0, init1, init2, init3,
+            encrypted0, encrypted1, encrypted2, encrypted3,
+
+            // iteration variable
+            wordIx;
+
+        decipher.init(Array.prototype.slice.call(key));
+
+        // pull out the words of the IV to ensure we don't modify the
+        // passed-in reference and easier access
+        init0 = ~~initVector[0];
+        init1 = ~~initVector[1];
+        init2 = ~~initVector[2];
+        init3 = ~~initVector[3];
+
+        // decrypt four word sequences, applying cipher-block chaining (CBC)
+        // to each decrypted block
+        for (wordIx = 0; wordIx < encrypted32.length; wordIx += 4) {
+            // convert big-endian (network order) words into little-endian
+            // (javascript order)
+            encrypted0 = ~~this.ntoh(encrypted32[wordIx]);
+            encrypted1 = ~~this.ntoh(encrypted32[wordIx + 1]);
+            encrypted2 = ~~this.ntoh(encrypted32[wordIx + 2]);
+            encrypted3 = ~~this.ntoh(encrypted32[wordIx + 3]);
+
+            // decrypt the block
+            decipher.decrypt(encrypted0,
+                encrypted1,
+                encrypted2,
+                encrypted3,
+                decrypted32,
+                wordIx);
+
+            // XOR with the IV, and restore network byte-order to obtain the
+            // plaintext
+            decrypted32[wordIx]     = this.ntoh(decrypted32[wordIx] ^ init0);
+            decrypted32[wordIx + 1] = this.ntoh(decrypted32[wordIx + 1] ^ init1);
+            decrypted32[wordIx + 2] = this.ntoh(decrypted32[wordIx + 2] ^ init2);
+            decrypted32[wordIx + 3] = this.ntoh(decrypted32[wordIx + 3] ^ init3);
+
+            // setup the IV for the next round
+            init0 = encrypted0;
+            init1 = encrypted1;
+            init2 = encrypted2;
+            init3 = encrypted3;
+        }
+
+        return decrypted;
+    };
+
+    this.localDecrypt = function(encrypted, key, initVector, decrypted) {
+        var bytes = this.doDecrypt(encrypted,
+            key,
+            initVector);
+            decrypted.set(bytes, encrypted.byteOffset);
+    };
+
+    this.decrypt = function(encrypted) {
+        var step = 4 * 8000,
+            //encrypted32 = new Int32Array(encrypted.buffer),
+            encrypted32 = new Int32Array(encrypted),
+            decrypted = new Uint8Array(encrypted.byteLength),
+            i = 0;
+
+        // split up the encryption job and do the individual chunks asynchronously
+        var key = this.key;
+        var initVector = this.iv;
+        this.localDecrypt(encrypted32.subarray(i, i + step), key, initVector, decrypted);
+
+        for (i = step; i < encrypted32.length; i += step) {
+            initVector = new Uint32Array([
+                this.ntoh(encrypted32[i - 4]),
+                this.ntoh(encrypted32[i - 3]),
+                this.ntoh(encrypted32[i - 2]),
+                this.ntoh(encrypted32[i - 1])
+            ]);
+            this.localDecrypt(encrypted32.subarray(i, i + step), key, initVector, decrypted);
+        }
+
+        return decrypted;
+    };
+};
+
+Hls.dependencies.AES128Decrypter.prototype = {
+    constructor: Hls.dependencies.AES128Decrypter
+};
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
@@ -24181,19 +24621,16 @@ Hls.dependencies.HlsDemux = function() {
             return str;
         },
 
-        doInit = function(startTime) {
-            //pat = null;
-            //pmt = null;
-
-            // Reset codecs info to force setting new codecs (quality switch)
-            for (var i = 0; i < tracks.length; i++) {
-                tracks[i].codecs = "";
-            }
-
-            if (dtsOffset === -1) {
-                dtsOffset = startTime;
-            }
+        doReset = function() {
+            this.debug.log("[HlsDemux] Reset");
+            pat = null;
+            pmt = null;
+            pidToTrackId = [];
+            tracks = [];
+            baseDts = -1;
+            dtsOffset = -1;
         },
+
 
         getTrackCodecInfo = function(data, track) {
             var tsPacket,
@@ -24204,10 +24641,6 @@ Hls.dependencies.HlsDemux = function() {
                 codecPrivateData,
                 objectType,
                 samplingFrequencyIndex;
-
-            if (track.codecs !== "") {
-                return track;
-            }
 
             // Get first TS packet containing start of a PES/sample
             tsPacket = getTsPacket.call(this, data, 0, track.pid, true);
@@ -24280,7 +24713,8 @@ Hls.dependencies.HlsDemux = function() {
 
         doGetTracks = function(data) {
             var i = 0,
-                trackIdCounter = 1; // start at 1;
+                trackIdCounter = 1, // start at 1;
+                trackType;
 
             // Parse PSI (PAT, PMT) if not yet received
             if (pat === null) {
@@ -24307,10 +24741,11 @@ Hls.dependencies.HlsDemux = function() {
             for (i = tracks.length - 1; i >= 0; i--) {
                 getTrackCodecInfo.call(this, data, tracks[i]);
                 if (tracks[i].codecs === "") {
+                    trackType = tracks[i].type;
                     tracks.splice(i, 1);
                     throw {
                         name: MediaPlayer.dependencies.ErrorHandler.prototype.HLS_DEMUX_ERROR,
-                        message: "Failed to get codec information for track " + tracks[i].type
+                        message: "Failed to get codec information for track " + trackType
                     };
                 }
             }
@@ -24325,17 +24760,23 @@ Hls.dependencies.HlsDemux = function() {
             return tracks;
         },
 
-        doDemux = function(data) {
-            var nbPackets = data.length / mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE,
-                track,
+        doDemux = function(data, request) {
+            var track,
                 i = 0,
                 firstDts = -1,
                 offset;
 
-            this.debug.log("[HlsDemux] Demux chunk, size = " + data.length + ", nb packets = " + nbPackets);
+            if (dtsOffset === -1) {
+                dtsOffset = request.startTime * 90000;
+                this.debug.log("[HlsDemux] Media start time = " + dtsOffset + " (" + request.startTime + ")");
+            }
+
+            this.debug.log("[HlsDemux] Demux chunk, size = " + data.length + ", nb packets = " + Math.round(data.length / mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE));
 
             // Get PAT, PMT and tracks information if not yet received
-            doGetTracks.call(this, data);
+            if (pmt === null) {
+                doGetTracks.call(this, data);
+            }
 
             // Clear current tracks' data
             for (i = 0; i < tracks.length; i++) {
@@ -24354,7 +24795,11 @@ Hls.dependencies.HlsDemux = function() {
             // Parse and demux TS packets
             i = 0;
             while (i < data.length) {
-                demuxTsPacket.call(this, data.subarray(i, i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE));
+                if ((i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE) < data.length) {
+                    demuxTsPacket.call(this, data.subarray(i, i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE));
+                } else {
+                    this.debug.log("[HlsDemux] Demux chunk, residual bytes = " + (data.length - i));
+                }
                 i += mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE;
             }
 
@@ -24382,7 +24827,7 @@ Hls.dependencies.HlsDemux = function() {
 
     return {
         debug: undefined,
-        reset: doInit,
+        reset: doReset,
         getTracks: doGetTracks,
         demux: doDemux
     };
@@ -24408,7 +24853,7 @@ Hls.dependencies.HlsDemux.prototype = {
  */
 Hls.dependencies.HlsFragmentController = function() {
     "use strict";
-    var lastRequestQuality = null;
+    var lastRequestQuality = -1;
 
     var generateInitSegment = function(data) {
             var i = 0,
@@ -24424,19 +24869,52 @@ Hls.dependencies.HlsFragmentController = function() {
             return rslt.mp4Processor.generateInitSegment(tracks);
         },
 
-        generateMediaSegment = function(data) {
-            // Process the HLS chunk to get media tracks description
-            //var tracks = rslt.hlsDemux.getTracks(new Uint8Array(data));
+        generateMediaSegment = function(data, request) {
             var i = 0,
-                tracks = rslt.hlsDemux.demux(new Uint8Array(data));
+                // Demultiplex HLS chunk to get samples
+                tracks = rslt.hlsDemux.demux(new Uint8Array(data), request);
 
+            // Update fragment start time (=tfdt)
             for (i = 0; i < tracks.length; i += 1) {
                 if (tracks[i].type === "video") {
-                    rslt.startTime = tracks[i].samples[0].cts / tracks[i].timescale;
+                    request.startTime = tracks[i].samples[0].dts / tracks[i].timescale;
                 }
             }
             // Generate media segment (moov)
-            return rslt.mp4Processor.generateMediaSegment(tracks, rslt.sequenceNumber);
+            return rslt.mp4Processor.generateMediaSegment(tracks);
+        },
+
+        createInitializationVector = function(segmentNumber) {
+            var uint8View = new Uint8Array(16),
+                i = 0;
+
+            for (i = 12; i < 16; i++) {
+                uint8View[i] = (segmentNumber >> 8 * (15 - i)) & 0xff;
+            }
+
+            return uint8View;
+        },
+
+        decrypt = function(data, decryptionInfo) {
+
+            var view = new DataView(decryptionInfo.key.buffer);
+            var key = new Uint32Array([
+                view.getUint32(0),
+                view.getUint32(4),
+                view.getUint32(8),
+                view.getUint32(12)
+            ]);
+
+            view = new DataView(createInitializationVector(decryptionInfo.iv).buffer);
+            var iv = new Uint32Array([
+                view.getUint32(0),
+                view.getUint32(4),
+                view.getUint32(8),
+                view.getUint32(12)
+            ]);
+
+            var decrypter = new Hls.dependencies.AES128Decrypter(key, iv);
+            return decrypter.decrypt(data);
         };
 
     var rslt = MediaPlayer.utils.copyMethods(MediaPlayer.dependencies.FragmentController);
@@ -24444,10 +24922,6 @@ Hls.dependencies.HlsFragmentController = function() {
     rslt.manifestModel = undefined;
     rslt.hlsDemux = undefined;
     rslt.mp4Processor = undefined;
-
-    rslt.sequenceNumber = 1;
-
-    rslt.segmentStartTime = null;
 
     rslt.process = function(bytes, request, representations) {
         var result = null,
@@ -24458,40 +24932,42 @@ Hls.dependencies.HlsFragmentController = function() {
             return bytes;
         }
 
-        try {
-            // Media segment => generate corresponding moof data segment from demultiplexed MPEG2-TS chunk
-            if (request && (request.type === "Media Segment") && representations && (representations.length > 0)) {
-                if (lastRequestQuality === null || lastRequestQuality !== request.quality) {
-                    // If quality changed then generate initialization segment
-                    rslt.hlsDemux.reset(request.startTime * 90000);
-                    InitSegmentData = generateInitSegment(bytes);
-                    request.index = undefined;
-                    lastRequestQuality = request.quality;
-                }
+        // Media segment => generate corresponding moof data segment from demultiplexed MPEG2-TS chunk
+        if (request && (request.type === "Media Segment") && representations && (representations.length > 0)) {
 
-                // Generate media segment (moof)
-                result = generateMediaSegment(bytes);
-
-                // Iinsert initialization if required
-                if (InitSegmentData !== null) {
-                    catArray = new Uint8Array(InitSegmentData.length + result.length);
-                    catArray.set(InitSegmentData, 0);
-                    catArray.set(result, InitSegmentData.length);
-                    result = catArray;
-                }
-
-                rslt.sequenceNumber++;
+            // Decrypt the segment if encrypted
+            if (request.decryptionInfo && request.decryptionInfo.method !== "NONE") {
+                var t = new Date();
+                bytes = decrypt(bytes, request.decryptionInfo);
+                rslt.debug.log("[HlsFragmentController] decrypted chunk (" + (((new Date()).getTime() - t.getTime()) / 1000).toFixed(3) + "s.)");
             }
-            return result;
-        } catch (e) {
-            return e;
+
+            if (lastRequestQuality !== request.quality) {
+                // If quality changed then generate initialization segment
+                InitSegmentData = generateInitSegment(bytes);
+                request.index = undefined; // ?
+                lastRequestQuality = request.quality;
+            }
+
+            // Generate media segment (moof)
+            result = generateMediaSegment(bytes, request);
+
+            // Insert initialization if required
+            if (InitSegmentData !== null) {
+                catArray = new Uint8Array(InitSegmentData.length + result.length);
+                catArray.set(InitSegmentData, 0);
+                catArray.set(result, InitSegmentData.length);
+                result = catArray;
+            }
+
+            rslt.sequenceNumber++;
         }
 
         return result;
     };
 
-    rslt.getStartTime = function() {
-        return rslt.startTime;
+    rslt.reset = function() {
+        lastRequestQuality = -1;
     };
 
     return rslt;
@@ -24576,9 +25052,9 @@ Hls.dependencies.HlsHandler.prototype = {
  */
 Hls.dependencies.HlsParser = function() {
     var TAG_EXTM3U = "#EXTM3U",
-        /*TAG_EXTXMEDIASEQUENCE = "#EXT-X-MEDIA-SEQUENCE",
+        /*TAG_EXTXMEDIASEQUENCE = "#EXT-X-MEDIA-SEQUENCE",*/
         TAG_EXTXKEY = "#EXT-X-KEY",
-        TAG_EXTXPROGRAMDATETIME = "#EXT-X-PROGRAM_DATE_TIME",
+        /*TAG_EXTXPROGRAMDATETIME = "#EXT-X-PROGRAM_DATE_TIME",
         TAG_EXTXDISCONTINUITY = "#EXT-X-DISCONTINUITY",
         TAG_EXTXALLOWCACHE = "#EXT-X-ALLOW-CACHE",*/
         TAG_EXTINF = "#EXTINF",
@@ -24594,10 +25070,10 @@ Hls.dependencies.HlsParser = function() {
         ATTR_SUBTITLES = "SUBTITLES",
         ATTR_RESOLUTION = "RESOLUTION",
         ATTR_CODECS = "CODECS",
-        /*ATTR_METHOD = "METHOD",
+        ATTR_METHOD = "METHOD",
         ATTR_IV = "IV",
         ATTR_URI = "URI",
-        ATTR_TYPE = "TYPE",
+        /*ATTR_TYPE = "TYPE",
         ATTR_GROUPID = "GROUP-ID",
         ATTR_NAME = "NAME",
         ATTR_DEFAULT = "DEFAULT",
@@ -24608,12 +25084,7 @@ Hls.dependencies.HlsParser = function() {
         DEFAULT_RETRY_INTERVAL = 500,
         retryAttempts = DEFAULT_RETRY_ATTEMPTS,
         retryInterval = DEFAULT_RETRY_INTERVAL,
-        retryCount = 0,
-        retryTimeout = null,
-        deferredPlaylist = null;
-
-
-    var playlistRequest = new XMLHttpRequest();
+        xhrLoader;
 
     var _splitLines = function(oData) {
         var i = 0;
@@ -24737,6 +25208,39 @@ Hls.dependencies.HlsParser = function() {
         return media;
     };
 
+    // Parse #EXT-X-KEY tag
+    //  #EXT-X-KEY:<method>,<uri>[,<iv>]
+    //  <url>
+    var _parseExtXKey = function(extXKey) {
+        var decryptionInfo = {},
+            params = _getTagParams(extXKey),
+            i,
+            name,
+            value;
+
+        for (i = 0; i < params.length; i++) {
+            name = params[i].trim().split('=')[0];
+            value = params[i].trim().split('=')[1];
+
+            switch (name) {
+                case ATTR_METHOD:
+                    decryptionInfo.method = value;
+                    break;
+                case ATTR_URI:
+                    decryptionInfo.uri = value.replace(/"/g, '');
+                    break;
+                case ATTR_IV:
+                    decryptionInfo.iv = parseInt(value, 16);
+                    break;
+                default:
+                    break;
+
+            }
+        }
+
+        return decryptionInfo;
+    };
+
     /* > HLS v3
     var _parseMediaInf = function(mediaLine) {
         var mediaObj = {};
@@ -24775,20 +25279,29 @@ Hls.dependencies.HlsParser = function() {
     };
 
     var _parsePlaylist = function(data, representation) {
-        var segmentList,
+        var deferred = Q.defer(),
+            segmentList,
             segments,
             segment,
             initialization,
             version,
+            decryptionInfo = null,
+            decryptionKeysDefer = [],
             duration = 0,
-            index = 0,
+            segmentIndex = 0,
             media,
             i,
             self = this;
 
         // Check playlist header
         if (!data || (data && data.length < 0)) {
-            return false;
+            deferred.reject({
+                name: MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE,
+                message: "Failed to parse variant stream playlist",
+                data: {
+                    url: representation.url
+                }
+            });
         }
 
         self.debug.log(data);
@@ -24796,7 +25309,13 @@ Hls.dependencies.HlsParser = function() {
         data = _splitLines(data);
 
         if (data[0].trim() !== TAG_EXTM3U) {
-            return false;
+            deferred.reject({
+                name: MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE,
+                message: "Failed to parse variant stream playlist",
+                data: {
+                    url: representation.url
+                }
+            });
         }
 
         // Intitilaize SegmentList
@@ -24826,6 +25345,10 @@ Hls.dependencies.HlsParser = function() {
                 segmentList.duration = parseInt(_getTagValue(data[i], TAG_EXTXTARGETDURATION), 10);
             } else if (_containsTag(data[i], TAG_EXTXMEDIASEQUENCE)) {
                 segmentList.startNumber = parseInt(_getTagValue(data[i], TAG_EXTXMEDIASEQUENCE), 10);
+            } else if (_containsTag(data[i], TAG_EXTXKEY)) {
+                decryptionInfo = _parseExtXKey(data[i]);
+                decryptionInfo.uri = _isAbsoluteURI(decryptionInfo.uri) ? decryptionInfo.uri : (segmentList.BaseURL + decryptionInfo.uri);
+                decryptionKeysDefer.push(_loadDecryptionKey.call(this, decryptionInfo));
             } else if (_containsTag(data[i], TAG_EXTINF)) {
                 media = _parseExtInf([data[i], data[i + 1]]);
                 segment = {
@@ -24835,15 +25358,22 @@ Hls.dependencies.HlsParser = function() {
                     //parent: segmentList,
                     // children: [],
                     media: _isAbsoluteURI(media.uri) ? media.uri : (segmentList.BaseURL + media.uri),
-                    sequenceNumber: segmentList.startNumber + index,
+                    sequenceNumber: segmentList.startNumber + segmentIndex,
                     time: (segments.length === 0) ? 0 : segments[segments.length - 1].time + segments[segments.length - 1].duration,
                     duration: media.duration
                 };
 
+                if (decryptionInfo !== null) {
+                    segment.decryptionInfo = decryptionInfo;
+                    if (segment.decryptionInfo.iv === undefined) {
+                        segment.decryptionInfo.iv = segment.sequenceNumber;
+                    }
+                }
+
                 segments.push(segment);
                 duration += media.duration;
 
-                index++;
+                segmentIndex++;
 
             } else if (_containsTag(data[i], TAG_EXTXENDLIST)) {
                 // "static" playlist => set representation duration
@@ -24861,7 +25391,48 @@ Hls.dependencies.HlsParser = function() {
         // PATCH Live = VOD
         //representation.duration = duration;
 
-        return true;
+        // Wait for all decryption keys to be downlaoded
+        Q.all(decryptionKeysDefer).then(
+            function () {
+                deferred.resolve();
+            },
+            function (error) {
+                deferred.reject(error);
+            }
+        );
+
+        return deferred.promise;
+    };
+
+    var _loadDecryptionKey = function(decryptionInfo) {
+        var deferred = Q.defer();
+
+        this.debug.log("[HlsParser]", "Load decryption key: " + decryptionInfo.uri);
+        var xhr = new MediaPlayer.dependencies.XHRLoader();
+        // Do not retry for encrypted key, we assume the key file has to be present if playlist if present
+        xhr.initialize('arraybuffer', 0, 0);
+        xhr.load(decryptionInfo.uri).then(
+            function (request) {
+                decryptionInfo.key = new Uint8Array(request.response);
+                deferred.resolve();
+            },
+            function(request) {
+                if (!request || request.aborted) {
+                    deferred.reject();
+                } else {
+                    deferred.reject({
+                        name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
+                        message: "Failed to download HLS decryption key",
+                        data: {
+                            url: decryptionInfo.uri,
+                            status: request.status
+                        }
+                    });
+                }
+            }
+        );
+
+        return deferred.promise;
     };
 
     /*var mergeSegmentLists = function(_representation, representation) {
@@ -25046,79 +25617,40 @@ Hls.dependencies.HlsParser = function() {
         return base;
     };
 
-
-    var doUpdatePlaylist = function(representation) {
-        var error = true,
+    var updatePlaylist = function(representation) {
+        var deferred = Q.defer(),
             self = this;
 
-        retryTimeout = null;
-
-        var onabort = function() {
-            playlistRequest.aborted = true;
-        };
-
-        var onload = function() {
-            if (playlistRequest.status < 200 || playlistRequest.status > 299) {
-                return;
-            }
-
-            if (playlistRequest.status === 200 && playlistRequest.readyState === 4) {
-                error = false;
-                if (_parsePlaylist.call(self, playlistRequest.response, representation)) {
-                    deferredPlaylist.resolve();
+        this.debug.log("[HlsParser]", "Load playlist manifest: " + representation.url);
+        xhrLoader = new MediaPlayer.dependencies.XHRLoader();
+        xhrLoader.initialize('text', retryAttempts, retryInterval);
+        xhrLoader.load(representation.url).then(
+            function (request) {
+                _parsePlaylist.call(self, request.response, representation).then(
+                    function () {
+                        deferred.resolve();
+                    },
+                    function (error) {
+                        deferred.reject(error);
+                    });
+            },
+            function(request) {
+                if (!request || request.aborted) {
+                    deferred.reject();
                 } else {
-                    deferredPlaylist.reject({
-                        name: MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE,
-                        message: "Failed to parse variant stream playlist",
+                    deferred.reject({
+                        name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
+                        message: "Failed to download variant stream playlist",
                         data: {
-                            url: representation.url
+                            url: representation.url,
+                            status: request.status
                         }
                     });
                 }
             }
-        };
+        );
 
-        var onreport = function() {
-
-            if (playlistRequest.aborted) {
-                deferredPlaylist.reject();
-                return;
-            }
-
-            if (!error) {
-                deferredPlaylist.resolve();
-                return;
-            }
-
-            retryCount++;
-            if (retryAttempts > 0 && retryCount <= retryAttempts) {
-                retryTimeout = setTimeout(function() {
-                    doUpdatePlaylist.call(self, representation);
-                }, retryInterval);
-            } else {
-                deferredPlaylist.reject({
-                    name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
-                    message: "Failed to download variant stream playlist",
-                    data: {
-                        url: representation.url,
-                        status: playlistRequest.status
-                    }
-                });
-            }
-        };
-
-        try {
-            self.debug.log("[HlsParser]", "Load playlist manifest: " + representation.url);
-            playlistRequest = new XMLHttpRequest();
-            playlistRequest.onload = onload;
-            playlistRequest.onloadend = onreport;
-            playlistRequest.onerror = onreport;
-            playlistRequest.onabort = onabort;
-            playlistRequest.open("GET", representation.url, true);
-            playlistRequest.send();
-        } catch (e) {
-            playlistRequest.onerror();
-        }
+        return deferred.promise;
     };
 
     var processManifest = function(data, baseUrl) {
@@ -25279,7 +25811,7 @@ Hls.dependencies.HlsParser = function() {
         // Get representation (variant stream) playlist
         result = this.abrController.getPlaybackQuality("video", adaptationSet);
         representation = adaptationSet.Representation_asArray[result.quality];
-        self.updatePlaylist(representation).then(
+        updatePlaylist.call(this, representation).then(
             function() {
                 postProcess.call(self, mpd, result.quality).then(function() {
                     deferred.resolve(mpd);
@@ -25301,19 +25833,15 @@ Hls.dependencies.HlsParser = function() {
     };
 
     var internalParse = function(data, baseUrl) {
+        this.hlsDemux.reset();
         this.debug.log("[HlsParser]", "Doing parse.");
         this.debug.log("[HlsParser]", data);
         return processManifest.call(this, _splitLines(data), baseUrl);
     };
 
     var abort = function() {
-        if (playlistRequest !== null && playlistRequest.readyState > 0 && playlistRequest.readyState < 4) {
-            this.debug.log("[HlsParser] Playlist manifest download abort.");
-            playlistRequest.abort();
-        } else if (retryTimeout) {
-            clearTimeout(retryTimeout);
-            retryTimeout = null;
-            deferredPlaylist.reject();
+        if (xhrLoader !== null) {
+            xhrLoader.abort();
         }
     };
 
@@ -25325,16 +25853,14 @@ Hls.dependencies.HlsParser = function() {
         abrController: undefined,
         hlsDemux: undefined,
 
-        parse: internalParse,
-
-        updatePlaylist: function(representation) {
+        setup: function() {
             retryAttempts = this.config.getParam("ManifestLoader.RetryAttempts", "number", DEFAULT_RETRY_ATTEMPTS);
             retryInterval = this.config.getParam("ManifestLoader.RetryInterval", "number", DEFAULT_RETRY_INTERVAL);
-            retryCount = 0;
-            deferredPlaylist = Q.defer();
-            doUpdatePlaylist.call(this, representation);
-            return deferredPlaylist.promise;
         },
+
+        parse: internalParse,
+
+        updatePlaylist: updatePlaylist,
 
         abort: abort
     };
@@ -26498,21 +27024,12 @@ Mss.dependencies.MssFragmentController = function() {
             adaptation = manifest.Period_asArray[representations[0].adaptation.period.index].AdaptationSet_asArray[representations[0].adaptation.index];
             if (request) {
                 if (request.type === "Media Segment") {
-                    try {
-                        result = convertFragment.call(this, result, request, adaptation);
-                    } catch (e) {
-                        return e;
-                    }
-
+                    result = convertFragment.call(this, result, request, adaptation);
                     if (!result) {
                         return null;
                     }
                 } else if (request.type === "FragmentInfo Segment") {
-                    try {
-                        updateSegmentsList.call(this, result, request, adaptation);
-                    } catch (e) {
-                        return e;
-                    }
+                    updateSegmentsList.call(this, result, request, adaptation);
                 }
             }
         }
