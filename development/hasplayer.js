@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2016-9-19_9:19:15 / git revision : 15e8d30 */
+/* Last build : 2016-10-3_15:34:33 / git revision : 13ed74b */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.6.0-dev',
-        GIT_TAG = '15e8d30',
-        BUILD_DATE = '2016-9-19_9:19:15',
+        GIT_TAG = '13ed74b',
+        BUILD_DATE = '2016-10-3_15:34:33',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -169,7 +169,6 @@ MediaPlayer = function () {
         });
         videoModel.getElement().dispatchEvent(event);
     };
-
 
     var _metricAdded = function (e) {
         var event;
@@ -289,10 +288,7 @@ MediaPlayer = function () {
         _cleanStreamTab(streamTab, idToRemove);
     };
 
-
-    /**
-     * Usefull to dispatch event of quality changed
-     */
+    // Usefull to dispatch event of quality changed
     var _onTimeupdate = function () {
         // If not in playing state, then do not send 'play_bitrate' events, wait for 'loadeddata' event first
         if (videoModel.getPlaybackRate() === 0) {
@@ -304,9 +300,6 @@ MediaPlayer = function () {
         _detectPlayBitrateChange.call(this, audioQualityChanged);
     };
 
-
-
-
     // event connection
     var _connectEvents = function () {
         this.addEventListener('metricAdded', _metricAdded.bind(this));
@@ -314,8 +307,6 @@ MediaPlayer = function () {
         this.addEventListener('warning', _onWarning.bind(this));
         this.addEventListener('timeupdate', _onTimeupdate.bind(this));
     };
-
-
 
 
     /// Private playback functions ///
@@ -613,7 +604,7 @@ MediaPlayer = function () {
          * Sets player configuration parameters.
          * @access public
          * @memberof MediaPlayer#
-         * @param {PlayerParams} params - parameter(s) value(s) to set.
+         * @param {MediaPlayer#PlayerParams} params - parameter(s) value(s) to set.
          */
         setConfig: function (params) {
             if (this.config && params) {
@@ -925,7 +916,7 @@ MediaPlayer = function () {
          */
         seek: function (time) {
             var range = null,
-                minBufferTime = 0;
+                liveEdge = 0;
 
             _isPlayerInitialized();
 
@@ -941,15 +932,15 @@ MediaPlayer = function () {
                 }
             } else {
                 range = this.getDVRWindowRange();
-                minBufferTime = streamController.getMinBufferTime();
+                liveEdge = streamController.getLiveEdge();
                 if (range === null) {
                     throw new Error('MediaPlayer.seek(): impossible for live stream');
                 } else if (time < range.start || time > range.end) {
                     throw new Error('MediaPlayer.seek(): seek value outside available time range');
                 } else {
                     // Ensure we keep enough buffer
-                    if (time > (range.end - minBufferTime)) {
-                        time = range.end - minBufferTime;
+                    if (time > (range.end - liveEdge)) {
+                        time = range.end - liveEdge;
                     }
                     streamController.seek(time, true);
                 }
@@ -1349,7 +1340,7 @@ MediaPlayer = function () {
         * @method isSubtitlesEnabled
         * @access public
         * @memberof MediaPlayer#
-        * @retrun {boolean} true if subtitles are enabled, false otherwise
+        * @return {boolean} true if subtitles are enabled, false otherwise
        */
         isSubtitlesEnabled: function () {
             _isPlayerInitialized();
@@ -1715,10 +1706,11 @@ MediaPlayer.TRACKS_TYPE = {
  * Player parameters object.
  * All parameters values are applied for any stream type. Parameters can be overriden specifically for audio and video track by setting
  * parameters values in the params.audio and params.video objects.
- * @typedef PlayerParams
+ * @typedef MediaPlayer#PlayerParams
  * @type Object
  * @property {number}   BufferController.minBufferTimeForPlaying - Minimum buffer level before playing, in seconds (default value = 0)
  * @property {number}   BufferController.minBufferTime - Minimum buffer size, in seconds (default value = 16)
+ * @property {number}   BufferController.liveDelay - The delay between the live edge and playing time, in seconds (default value = minBufferTime)
  * @property {number}   ABR.minBandwidth - Minimum bandwidth to be playbacked (default value = -1)
  * @property {number}   ABR.maxBandwidth - Maximum bandwidth to be playbacked (default value = -1)
  * @property {number}   ABR.minQuality - Minimum quality index (start from 0) to be playbacked (default value = -1)
@@ -2145,6 +2137,7 @@ MediaPlayer.dependencies.BufferController = function() {
         buffer = null,
         minBufferTime,
         minBufferTimeAtStartup,
+        liveDelay,
         bufferTimeout,
         bufferStateTimeout,
         trickModeEnabled = false,
@@ -3044,7 +3037,7 @@ MediaPlayer.dependencies.BufferController = function() {
             self.debug.log("[BufferController][" + type + "] Manifest live edge = " + liveEdgeTime);
 
             // Step back from a found live edge time to be able to buffer some data
-            startTime = Math.max((liveEdgeTime - minBufferTime), _currentRepresentation.segmentAvailabilityRange.start);
+            startTime = Math.max((liveEdgeTime - liveDelay), _currentRepresentation.segmentAvailabilityRange.start);
 
             // Get the request corresponding to the start time
             this.indexHandler.getSegmentRequestForTime(_currentRepresentation, startTime).then(
@@ -3373,6 +3366,7 @@ MediaPlayer.dependencies.BufferController = function() {
             this.setEventController(eventController);
             minBufferTime = this.config.getParamFor(type, "BufferController.minBufferTime", "number", -1);
             minBufferTimeAtStartup = this.config.getParamFor(type, "BufferController.minBufferTimeForPlaying", "number", 0);
+            liveDelay = this.config.getParamFor(type, "BufferController.liveDelay", "number", -1);
 
             this.updateData(newData, newPeriodInfo);
 
@@ -3401,6 +3395,11 @@ MediaPlayer.dependencies.BufferController = function() {
                 if (minBufferTime === -1) {
                     minBufferTime = self.bufferExt.decideBufferLength(manifest.minBufferTime, periodInfo.duration, waitingForBuffer);
                 }
+
+                if (liveDelay === -1 || liveDelay < minBufferTime) {
+                    liveDelay = minBufferTime;
+                }
+
                 // Update manifest's minBufferTime value
                 manifest.minBufferTime = minBufferTime;
                 if (type === "video") {
@@ -3540,6 +3539,10 @@ MediaPlayer.dependencies.BufferController = function() {
 
         setMinBufferTime: function(value) {
             minBufferTime = value;
+        },
+
+        getLiveDelay: function() {
+            return liveDelay;
         },
 
         setMediaSource: function(value) {
@@ -3754,15 +3757,15 @@ MediaPlayer.dependencies.BufferController.prototype = {
 };
 /*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
- * 
+ *
  * Copyright (c) 2013, Digital Primates
  * All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 MediaPlayer.dependencies.BufferExtensions = function () {
@@ -3913,6 +3916,7 @@ MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_MIN = "min";
 MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_INFINITY = "infinity";
 MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_STARTUP = 1;
 MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME = 16;
+MediaPlayer.dependencies.BufferExtensions.DEFAULT_LIVE_DELAY = 16;
 MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_TOP_QUALITY = 30;
 MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_TOP_QUALITY_LONG_FORM = 300;
 MediaPlayer.dependencies.BufferExtensions.LONG_FORM_CONTENT_DURATION_THRESHOLD = 600;
@@ -4004,6 +4008,7 @@ MediaPlayer.utils.Config = function () {
             // BufferController parameters
             "BufferController.minBufferTimeForPlaying": -1,
             "BufferController.minBufferTime": -1,
+            "BufferController.liveDelay": -1,
             // ABR parameters
             "ABR.minBandwidth": -1,
             "ABR.maxBandwidth": -1,
@@ -10012,6 +10017,20 @@ MediaPlayer.dependencies.Stream = function() {
             return periodInfo;
         },
 
+        getMinbufferTime: function() {
+            if (!videoController) {
+                return MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
+            }
+            return videoController.getMinbufferTime();
+        },
+
+        getLivedelay: function() {
+            if (!videoController) {
+                return MediaPlayer.dependencies.BufferExtensions.DEFAULT_LIVE_DELAY;
+            }
+            return videoController.getLivedelay();
+        },
+
         startEventController: function() {
             eventController.start();
         },
@@ -10417,7 +10436,7 @@ MediaPlayer.dependencies.StreamController = function() {
             }
 
             this.debug.info("[StreamController] composeStreams");
-            
+
             if (self.capabilities.supportsEncryptedMedia()) {
                 if (!protectionController) {
                     protectionController = self.system.getObject("protectionController");
@@ -10551,7 +10570,7 @@ MediaPlayer.dependencies.StreamController = function() {
             if (deferredLoading) {
                 deferredLoading.resolve();
                 deferredLoading = null;
-            }            
+            }
         };
 
     return {
@@ -10642,11 +10661,18 @@ MediaPlayer.dependencies.StreamController = function() {
             return undefined;
         },
 
-        getMinBufferTime: function () {
-            if (!this.manifestModel || !this.manifestModel.getValue()) {
-                return -1;
+        getMinbufferTime: function() {
+            if (!activeStream) {
+                return MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
             }
-            return this.manifestModel.getValue().minBufferTime;
+            return activeStream.getMinbufferTime();
+        },
+
+        getLivedelay: function() {
+            if (!activeStream) {
+                return MediaPlayer.dependencies.BufferExtensions.DEFAULT_LIVE_DELAY;
+            }
+            return activeStream.getLivedelay();
         },
 
         load: function(newSource) {
