@@ -1209,6 +1209,20 @@ MediaPlayer.dependencies.Stream = function() {
             return periodInfo;
         },
 
+        getMinbufferTime: function() {
+            if (!videoController) {
+                return MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
+            }
+            return videoController.getMinbufferTime();
+        },
+
+        getLivedelay: function() {
+            if (!videoController) {
+                return MediaPlayer.dependencies.BufferExtensions.DEFAULT_LIVE_DELAY;
+            }
+            return videoController.getLivedelay();
+        },
+
         startEventController: function() {
             eventController.start();
         },

@@ -127,7 +127,6 @@ MediaPlayer = function () {
         videoModel.getElement().dispatchEvent(event);
     };
 
-
     var _metricAdded = function (e) {
         var event;
         switch (e.data.metric) {
@@ -246,10 +245,7 @@ MediaPlayer = function () {
         _cleanStreamTab(streamTab, idToRemove);
     };
 
-
-    /**
-     * Usefull to dispatch event of quality changed
-     */
+    // Usefull to dispatch event of quality changed
     var _onTimeupdate = function () {
         // If not in playing state, then do not send 'play_bitrate' events, wait for 'loadeddata' event first
         if (videoModel.getPlaybackRate() === 0) {
@@ -261,9 +257,6 @@ MediaPlayer = function () {
         _detectPlayBitrateChange.call(this, audioQualityChanged);
     };
 
-
-
-
     // event connection
     var _connectEvents = function () {
         this.addEventListener('metricAdded', _metricAdded.bind(this));
@@ -271,8 +264,6 @@ MediaPlayer = function () {
         this.addEventListener('warning', _onWarning.bind(this));
         this.addEventListener('timeupdate', _onTimeupdate.bind(this));
     };
-
-
 
 
     /// Private playback functions ///
@@ -570,7 +561,7 @@ MediaPlayer = function () {
          * Sets player configuration parameters.
          * @access public
          * @memberof MediaPlayer#
-         * @param {PlayerParams} params - parameter(s) value(s) to set.
+         * @param {MediaPlayer#PlayerParams} params - parameter(s) value(s) to set.
          */
         setConfig: function (params) {
             if (this.config && params) {
@@ -882,7 +873,7 @@ MediaPlayer = function () {
          */
         seek: function (time) {
             var range = null,
-                minBufferTime = 0;
+                liveEdge = 0;
 
             _isPlayerInitialized();
 
@@ -898,15 +889,15 @@ MediaPlayer = function () {
                 }
             } else {
                 range = this.getDVRWindowRange();
-                minBufferTime = streamController.getMinBufferTime();
+                liveEdge = streamController.getLiveEdge();
                 if (range === null) {
                     throw new Error('MediaPlayer.seek(): impossible for live stream');
                 } else if (time < range.start || time > range.end) {
                     throw new Error('MediaPlayer.seek(): seek value outside available time range');
                 } else {
                     // Ensure we keep enough buffer
-                    if (time > (range.end - minBufferTime)) {
-                        time = range.end - minBufferTime;
+                    if (time > (range.end - liveEdge)) {
+                        time = range.end - liveEdge;
                     }
                     streamController.seek(time, true);
                 }
@@ -1306,7 +1297,7 @@ MediaPlayer = function () {
         * @method isSubtitlesEnabled
         * @access public
         * @memberof MediaPlayer#
-        * @retrun {boolean} true if subtitles are enabled, false otherwise
+        * @return {boolean} true if subtitles are enabled, false otherwise
        */
         isSubtitlesEnabled: function () {
             _isPlayerInitialized();
@@ -1672,10 +1663,11 @@ MediaPlayer.TRACKS_TYPE = {
  * Player parameters object.
  * All parameters values are applied for any stream type. Parameters can be overriden specifically for audio and video track by setting
  * parameters values in the params.audio and params.video objects.
- * @typedef PlayerParams
+ * @typedef MediaPlayer#PlayerParams
  * @type Object
  * @property {number}   BufferController.minBufferTimeForPlaying - Minimum buffer level before playing, in seconds (default value = 0)
  * @property {number}   BufferController.minBufferTime - Minimum buffer size, in seconds (default value = 16)
+ * @property {number}   BufferController.liveDelay - The delay between the live edge and playing time, in seconds (default value = minBufferTime)
  * @property {number}   ABR.minBandwidth - Minimum bandwidth to be playbacked (default value = -1)
  * @property {number}   ABR.maxBandwidth - Maximum bandwidth to be playbacked (default value = -1)
  * @property {number}   ABR.minQuality - Minimum quality index (start from 0) to be playbacked (default value = -1)

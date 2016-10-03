@@ -272,7 +272,7 @@ MediaPlayer.dependencies.StreamController = function() {
             }
 
             this.debug.info("[StreamController] composeStreams");
-            
+
             if (self.capabilities.supportsEncryptedMedia()) {
                 if (!protectionController) {
                     protectionController = self.system.getObject("protectionController");
@@ -406,7 +406,7 @@ MediaPlayer.dependencies.StreamController = function() {
             if (deferredLoading) {
                 deferredLoading.resolve();
                 deferredLoading = null;
-            }            
+            }
         };
 
     return {
@@ -497,11 +497,18 @@ MediaPlayer.dependencies.StreamController = function() {
             return undefined;
         },
 
-        getMinBufferTime: function () {
-            if (!this.manifestModel || !this.manifestModel.getValue()) {
-                return -1;
+        getMinbufferTime: function() {
+            if (!activeStream) {
+                return MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
             }
-            return this.manifestModel.getValue().minBufferTime;
+            return activeStream.getMinbufferTime();
+        },
+
+        getLivedelay: function() {
+            if (!activeStream) {
+                return MediaPlayer.dependencies.BufferExtensions.DEFAULT_LIVE_DELAY;
+            }
+            return activeStream.getLivedelay();
         },
 
         load: function(newSource) {

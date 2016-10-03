@@ -11,6 +11,9 @@
     "// BufferController.minBufferTime": "The minimum media buffer size (in seconds) to fill when playing",
     "BufferController.minBufferTime": -1,
 
+    "// BufferController.liveDelay": "The delay between the live edge and playing time",
+    "BufferController.liveDelay": -1,
+
     "// ABR.minBandwidth" : "The minimum quality bandwidth to be used by ABR controller",
     "ABR.minBandwidth": -1,
 
