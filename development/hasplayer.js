@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2016-10-3_15:34:33 / git revision : 13ed74b */
+/* Last build : 2016-10-3_15:37:16 / git revision : fa4759b */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.6.0-dev',
-        GIT_TAG = '13ed74b',
-        BUILD_DATE = '2016-10-3_15:34:33',
+        GIT_TAG = 'fa4759b',
+        BUILD_DATE = '2016-10-3_15:37:16',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -916,7 +916,7 @@ MediaPlayer = function () {
          */
         seek: function (time) {
             var range = null,
-                liveEdge = 0;
+                liveDelay = 0;
 
             _isPlayerInitialized();
 
@@ -932,15 +932,15 @@ MediaPlayer = function () {
                 }
             } else {
                 range = this.getDVRWindowRange();
-                liveEdge = streamController.getLiveEdge();
+                liveDelay = streamController.getLiveDelay();
                 if (range === null) {
                     throw new Error('MediaPlayer.seek(): impossible for live stream');
                 } else if (time < range.start || time > range.end) {
                     throw new Error('MediaPlayer.seek(): seek value outside available time range');
                 } else {
                     // Ensure we keep enough buffer
-                    if (time > (range.end - liveEdge)) {
-                        time = range.end - liveEdge;
+                    if (time > (range.end - liveDelay)) {
+                        time = range.end - liveDelay;
                     }
                     streamController.seek(time, true);
                 }
@@ -2159,7 +2159,6 @@ MediaPlayer.dependencies.BufferController = function() {
         htmlVideoTime = -1,
 
         deferredFragmentBuffered = null,
-        isFirstMediaSegment = false,
 
         // Async. vs async. MSE's SourceBuffer appending/removing algorithm
         appendSync = false,
@@ -2463,16 +2462,12 @@ MediaPlayer.dependencies.BufferController = function() {
 
                             appendToBuffer.call(self, data, request.quality, request.index).then(
                                 function() {
-                                    if (isFirstMediaSegment) {
-                                        isFirstMediaSegment = false;
-                                        if (self.fragmentController.hasOwnProperty('getStartTime')) {
-                                            segmentStartTime = self.fragmentController.getStartTime();
-                                        }
-                                        if (segmentStartTime) {
-                                            self.metricsModel.addBufferedSwitch(type, segmentStartTime, _currentRepresentation.id, request.quality);
-                                        } else {
-                                            self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
-                                        }
+                                    // Check if a new quality is being appended,
+                                    // then add a metric to enable MediaPlayer to detect playback quality changes
+                                    if (currentBufferedQuality !== request.quality) {
+                                        self.debug.log("[BufferController][" + type + "] Buffered quality changed: " + request.quality);
+                                        self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
+                                        currentBufferedQuality = request.quality;
                                     }
 
                                     // Signal end of buffering process
@@ -2519,18 +2514,11 @@ MediaPlayer.dependencies.BufferController = function() {
                     self.sourceBufferExt.append(buffer, data, appendSync).then(
                         function( /*appended*/ ) {
                             self.debug.log("[BufferController][" + type + "] Segment buffered");
-                            //self.debug.log("[BufferController]["+type+"] Data has been appended for quality = "+quality+" index = "+index);
-                            if (currentBufferedQuality !== quality) {
-                                isFirstMediaSegment = true;
-                                self.debug.log("[BufferController][" + type + "] set currentBufferedQuality to " + quality);
-                                currentBufferedQuality = quality;
-                            }
 
                             isQuotaExceeded = false;
 
                             // Patch for Safari: do not remove past buffer in live use case
                             // since it generates MEDIA_ERROR_DECODE while appending new segment
-
                             if (isDynamic && bufferLevel > 1 && !isSafari) {
                                 // In case of live streams, remove outdated buffer parts and requests
                                 // (checking bufferLevel ensure buffer is not empty or back to current time)
@@ -2994,11 +2982,10 @@ MediaPlayer.dependencies.BufferController = function() {
                             }
                         );
                     }
-                }
-                /*else {
+                } else {
                     // For VOD streams, signal end of stream
                     signalStreamComplete.call(self);
-                }*/
+                }
             }
         },
 
@@ -3668,9 +3655,9 @@ MediaPlayer.dependencies.BufferController = function() {
                 },
                 deferred = Q.defer();
 
-            doStop.call(self);
+            doStop.call(this);
             // Wait for current buffering process to be completed before restarting
-            self.sourceBufferExt.abort(mediaSource, buffer);
+            this.sourceBufferExt.abort(mediaSource, buffer);
 
             Q.when(deferredFragmentBuffered ? deferredFragmentBuffered.promise : true).then(
                 function() {
@@ -3690,6 +3677,12 @@ MediaPlayer.dependencies.BufferController = function() {
                     isQuotaExceeded = false;
                     rejectedBytes = null;
                     appendingRejectedData = false;
+
+                    if (trickModeEnabled) {
+                        // Restore ABR quality and auto switch state
+                        self.abrController.setAutoSwitchFor(type, trickModePreviousAutoSwitch);
+                        self.abrController.setQualityFor(type, trickModePreviousQuality);
+                    }
 
                     if (!errored) {
                         self.sourceBufferExt.removeSourceBuffer(mediaSource, buffer);
@@ -10024,11 +10017,11 @@ MediaPlayer.dependencies.Stream = function() {
             return videoController.getMinbufferTime();
         },
 
-        getLivedelay: function() {
+        getLiveDelay: function() {
             if (!videoController) {
                 return MediaPlayer.dependencies.BufferExtensions.DEFAULT_LIVE_DELAY;
             }
-            return videoController.getLivedelay();
+            return videoController.getLiveDelay();
         },
 
         startEventController: function() {
@@ -10668,11 +10661,11 @@ MediaPlayer.dependencies.StreamController = function() {
             return activeStream.getMinbufferTime();
         },
 
-        getLivedelay: function() {
+        getLiveDelay: function() {
             if (!activeStream) {
                 return MediaPlayer.dependencies.BufferExtensions.DEFAULT_LIVE_DELAY;
             }
-            return activeStream.getLivedelay();
+            return activeStream.getLiveDelay();
         },
 
         load: function(newSource) {
@@ -15760,8 +15753,7 @@ Dash.dependencies.DashHandler = function() {
                     self.debug.log("[DashHandler][" + type + "] getIndexForSegments, (segment duration) idx =  ", idx);
                     idx = Math.floor((time - representation.adaptation.period.start) / representation.segmentDuration);
                 } else {
-                    self.debug.log("Couldn't figure out a time!");
-                    self.debug.log("Time: " + time);
+                    self.debug.log("[DashHandler][" + type + "] Couldn't figure out segment for time: " + time);
                 }
             }
 
