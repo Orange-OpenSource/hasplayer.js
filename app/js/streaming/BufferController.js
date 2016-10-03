@@ -85,10 +85,11 @@ MediaPlayer.dependencies.BufferController = function() {
 
         segmentDuration = NaN,
 
-        // Patch for Safari: do not remove past buffer in live use case
-        // since it generates MEDIA_ERROR_DECODE while appending new segment
+        // Patch for Safari: do not remove past buffer in live use case since it generates MEDIA_ERROR_DECODE while appending new segment (see hasEnoughSpaceToAppend())
         isSafari = (fingerprint_browser().name === "Safari"),
 
+        // Patch for Firefox: set buffer timestampOffset since on Firefox timestamping is based on CTS (see OnMediaLoaded())
+        isFirefox = (fingerprint_browser().name === "Firefox"),
 
         sendRequest = function() {
 
@@ -311,7 +312,6 @@ MediaPlayer.dependencies.BufferController = function() {
             var self = this,
                 eventStreamAdaption = this.manifestExt.getEventStreamForAdaptationSet(self.getData()),
                 eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(self.getData(), _currentRepresentation),
-                segmentStartTime = null,
                 events,
                 data;
 
@@ -365,6 +365,11 @@ MediaPlayer.dependencies.BufferController = function() {
                                 debugBufferRange.call(self);
                             }*/
                             overrideBuffer = false;
+
+                            // If firefox, set buffer timestampOffset since timestamping (MSE buffer range and <video> currentTime) is based on CTS (and not DTS like in other browsers)
+                            if (isFirefox) {
+                                buffer.timestampOffset = -(getSegmentTimestampOffset(data) / request.timescale);
+                            }
 
                             appendToBuffer.call(self, data, request.quality, request.index).then(
                                 function() {
@@ -501,6 +506,19 @@ MediaPlayer.dependencies.BufferController = function() {
                     }
                 }
             }
+        },
+
+        getSegmentTimestampOffset = function (data) {
+            var fragment = mp4lib.deserialize(data),
+                moof = fragment.getBoxByType("moof"),
+                traf = moof === null ? null : moof.getBoxByType("traf"),
+                trun = traf === null ? null : traf.getBoxByType("trun");
+
+            if (trun === null || trun.samples_table.length === 0) {
+                return 0;
+            }
+
+            return trun.samples_table[0].sample_composition_time_offset === undefined ? 0 : trun.samples_table[0].sample_composition_time_offset;
         },
 
         handleInbandEvents = function(data, request, adaptionSetInbandEvents, representationInbandEvents) {
