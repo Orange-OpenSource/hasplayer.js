@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2016-10-3_15:51:6 / git revision : 435fc03 */
+/* Last build : 2016-10-3_15:54:24 / git revision : e7c2a4f */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.6.0-dev',
-        GIT_TAG = '435fc03',
-        BUILD_DATE = '2016-10-3_15:51:6',
+        GIT_TAG = 'e7c2a4f',
+        BUILD_DATE = '2016-10-3_15:54:24',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -2174,10 +2174,11 @@ MediaPlayer.dependencies.BufferController = function() {
 
         segmentDuration = NaN,
 
-        // Patch for Safari: do not remove past buffer in live use case
-        // since it generates MEDIA_ERROR_DECODE while appending new segment
+        // Patch for Safari: do not remove past buffer in live use case since it generates MEDIA_ERROR_DECODE while appending new segment (see hasEnoughSpaceToAppend())
         isSafari = (fingerprint_browser().name === "Safari"),
 
+        // Patch for Firefox: set buffer timestampOffset since on Firefox timestamping is based on CTS (see OnMediaLoaded())
+        isFirefox = (fingerprint_browser().name === "Firefox"),
 
         sendRequest = function() {
 
@@ -2400,7 +2401,6 @@ MediaPlayer.dependencies.BufferController = function() {
             var self = this,
                 eventStreamAdaption = this.manifestExt.getEventStreamForAdaptationSet(self.getData()),
                 eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(self.getData(), _currentRepresentation),
-                segmentStartTime = null,
                 events,
                 data;
 
@@ -2454,6 +2454,11 @@ MediaPlayer.dependencies.BufferController = function() {
                                 debugBufferRange.call(self);
                             }*/
                             overrideBuffer = false;
+
+                            // If firefox, set buffer timestampOffset since timestamping (MSE buffer range and <video> currentTime) is based on CTS (and not DTS like in other browsers)
+                            if (isFirefox) {
+                                buffer.timestampOffset = -(getSegmentTimestampOffset(data) / request.timescale);
+                            }
 
                             appendToBuffer.call(self, data, request.quality, request.index).then(
                                 function() {
@@ -2590,6 +2595,19 @@ MediaPlayer.dependencies.BufferController = function() {
                     }
                 }
             }
+        },
+
+        getSegmentTimestampOffset = function (data) {
+            var fragment = mp4lib.deserialize(data),
+                moof = fragment.getBoxByType("moof"),
+                traf = moof === null ? null : moof.getBoxByType("traf"),
+                trun = traf === null ? null : traf.getBoxByType("trun");
+
+            if (trun === null || trun.samples_table.length === 0) {
+                return 0;
+            }
+
+            return trun.samples_table[0].sample_composition_time_offset === undefined ? 0 : trun.samples_table[0].sample_composition_time_offset;
         },
 
         handleInbandEvents = function(data, request, adaptionSetInbandEvents, representationInbandEvents) {
