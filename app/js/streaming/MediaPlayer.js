@@ -1331,11 +1331,11 @@ MediaPlayer = function () {
         },
 
         /**
-         * Use this method to attach an HTML5 div for hasplayer.js to render rich TTML subtitles.
-         *
-         * @param {HTMLDivElement} div - An unstyled div placed after the video element. It will be styled to match the video size and overlay z-order.
-         * @memberof module:MediaPlayer
-         * @instance
+         * Attaches an HTML div element to be used to render rich TTML subtitles.
+         * @method attachTTMLRenderingDiv
+         * @access public
+         * @memberof MediaPlayer#
+         * @param {HTMLDivElement} div - An unstyled div element placed after the video element. It will be styled to match the video size and overlay z-order
          */
         attachTTMLRenderingDiv: function(div) {
             _isPlayerInitialized();
