@@ -972,6 +972,10 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         } catch (e) {}
     }
 
+    if (vars && vars.hasOwnProperty("startTime") && $scope.selectedItem) {
+        $scope.selectedItem.startTime = vars.startTime;
+    }
+
     if (vars && vars.hasOwnProperty("autoplay") && vars.autoplay === 'true' && $scope.selectedItem.url) {
         $scope.doLoad();
     }

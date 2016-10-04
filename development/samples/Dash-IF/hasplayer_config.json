@@ -27,31 +27,37 @@
     "ABR.maxQuality": -1,
 
     "// ABR.switchUpIncrementally" : "If true, then ABR controller switches up quality incrementally",
-    "ABR.switchUpIncrementally": false,
+    "ABR.switchUpIncrementally": -1,
 
     "// ABR.switchUpRatioSafetyFactor" : "The bandwidth ratio factor to overpass before switching up quality",
-    "ABR.switchUpRatioSafetyFactor": 1.5,
+    "ABR.switchUpRatioSafetyFactor": -1,
 
     "// ABR.latencyInBandwidth" : "If true, latency is counted when determining downloading bitrate",
-    "ABR.latencyInBandwidth": true,
+    "ABR.latencyInBandwidth": -1,
 
     "// ABR.switchLowerBufferRatio" : "The buffer size (ratio of BufferController.minBufferTime) lower limit before switching to lower quality",
-    "ABR.switchLowerBufferRatio": 0.25,
+    "ABR.switchLowerBufferRatio": -1,
 
     "// ABR.switchLowerBufferTime" : "The buffer size (in seconds) lower limit before switching to lower quality, if defined it overrides ABR.switchLowerBufferRatio",
     "ABR.switchLowerBufferTime": -1,
 
     "// ABR.switchDownBufferRatio" : "The buffer size (ratio of BufferController.minBufferTime) lower limit before switching down",
-    "ABR.switchDownBufferRatio": 0.5,
+    "ABR.switchDownBufferRatio": -1,
 
     "// ABR.switchDownBufferTime" : "The buffer size (in seconds) lower limit before switching down, if defined it overrides ABR.switchDownBufferRatio",
     "ABR.switchDownBufferTime": -1,
 
     "// ABR.switchUpBufferRatio" : "The buffer size (ratio of BufferController.minBufferTime) lower limit before switching up",
-    "ABR.switchUpBufferRatio": 0.75,
+    "ABR.switchUpBufferRatio": -1,
 
     "// ABR.switchUpBufferTime" : "The buffer size (in seconds) lower limit before switching up, if defined it overrides ABR.switchUpBufferRatio",
     "ABR.switchUpBufferTime": -1,
+
+    "// ABR.droppedFramesMinRatio" : "The number of dropped frames (as a ratio to total video frames) from which switching up quality is disabled",
+    "ABR.switchUpBufferRatio": -1,
+
+    "// ABR.droppedFramesMaxRatio" : "The number of dropped frames (as a ratio to total video frames) from which quality is switched down",
+    "ABR.switchUpBufferRatio": -1,
 
     "// video" : "Video media parameters that override general parameters",
     "video": {

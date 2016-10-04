@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2016-10-3_15:57:56 / git revision : c2b9689 */
+/* Last build : 2016-10-4_7:22:33 / git revision : 3513930 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.6.0-dev',
-        GIT_TAG = 'c2b9689',
-        BUILD_DATE = '2016-10-3_15:57:56',
+        GIT_TAG = '3513930',
+        BUILD_DATE = '2016-10-4_7:22:33',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -1234,7 +1234,8 @@ MediaPlayer = function () {
             for (var i = 0; i < _tracks.length; i += 1) {
                 tracks.push({
                     id: _tracks[i].id,
-                    lang: _tracks[i].lang
+                    lang: _tracks[i].lang,
+                    subType: _tracks[i].subType
                 });
             }
 
@@ -3632,7 +3633,7 @@ MediaPlayer.dependencies.BufferController = function() {
                     break;
 
                 case PLAYING:
-                    if (!this.getVideoModel().isPaused() &&
+                    if (!this.getVideoModel().isPaused() && !this.getVideoModel().isSeeking() &&
                         ((progress <= 0 && bufferLevel <= 1) || (bufferLevel === 0))) {
                         htmlVideoState = BUFFERING;
                         this.debug.info("[BufferController][" + type + "] BUFFERING - " + currentTime + " - " + bufferLevel);
@@ -15085,7 +15086,6 @@ Dash.dependencies.DashHandler = function() {
         requestedTime = null,
         isDynamic,
         type,
-        offset = null,
 
         zeroPadToLength = function(numStr, minStrLength) {
             while (numStr.length < minStrLength) {
@@ -15260,11 +15260,6 @@ Dash.dependencies.DashHandler = function() {
                 seg,
                 fTime;
 
-            if (representation && representation.segments && representation.segments.length > 0 &&
-                (offset === null || offset > representation.segments[0].availabilityIdx)) {
-                offset = representation.segments[0].availabilityIdx;
-            }
-
             //this.debug.log("Checking for stream end...");
             if (isDynamic) {
                 //this.debug.log("Live never ends! (TODO)");
@@ -15273,7 +15268,7 @@ Dash.dependencies.DashHandler = function() {
             } else {
                 if (index < 0) {
                     isFinished = false;
-                } else if (index < representation.availableSegmentsNumber + offset) {
+                } else if (index < representation.availableSegmentsNumber + representation.segmentStartIndex) {
                     seg = getSegmentByIndex(index, representation);
 
                     if (seg) {
@@ -15342,7 +15337,7 @@ Dash.dependencies.DashHandler = function() {
             time = 0,
             availabilityIdx = -1,
             calculatedRange,
-            hasEnoughSegments,
+            hasEnoughSegments = false,
             requiredMediaTime,
             startIdx,
             endIdx,
@@ -15443,6 +15438,7 @@ Dash.dependencies.DashHandler = function() {
                     end: availabilityEndTime
                 };
                 representation.availableSegmentsNumber = availabilityIdx + 1;
+                representation.segmentStartIndex = 0;
             }
 
             return Q.when(segments);
@@ -15492,6 +15488,7 @@ Dash.dependencies.DashHandler = function() {
                     }
 
                     representation.availableSegmentsNumber = periodStartIdx + Math.ceil((availabilityWindow.end - availabilityWindow.start) / duration);
+                    representation.segmentStartIndex = startIdx;
 
                     deferred.resolve(segments);
                 }
@@ -15722,6 +15719,7 @@ Dash.dependencies.DashHandler = function() {
                     }
                     representation.segmentAvailabilityRange = availabilityWindow;
                     representation.availableSegmentsNumber = len;
+                    representation.segmentStartIndex = startIdx;
                     deferred.resolve(segments);
                 });
 
@@ -15770,6 +15768,7 @@ Dash.dependencies.DashHandler = function() {
                         end: segments[len - 1].presentationStartTime
                     };
                     representation.availableSegmentsNumber = len;
+                    representation.segmentStartIndex = 0;
                     deferred.resolve(segments);
                 }, function(){
                     deferred.reject();
@@ -15963,13 +15962,15 @@ Dash.dependencies.DashHandler = function() {
             if (!segments || segments.length === 0) {
                 updateRequired = true;
             } else {
-                lowerIdx = segments[0].availabilityIdx;
-                upperIdx = segments[segments.length - 1].availabilityIdx;
-                // ORANGE: check also regarding requested time (@see getForTime()), required for live use case
-                // to avoid already loaded fragments to be returned
-                upperTime = segments[segments.length - 1].presentationStartTime;
-                lowerTime = segments[0].presentationStartTime;
-                updateRequired = (index < lowerIdx) || (index > upperIdx) || (requestedTime > upperTime) || (requestedTime < lowerTime);
+                if (requestedTime !== null) {
+                    lowerTime = segments[0].presentationStartTime;
+                    upperTime = segments[segments.length - 1].presentationStartTime;
+                    updateRequired = (requestedTime < lowerTime) || (requestedTime > upperTime);
+                } else {
+                    lowerIdx = segments[0].availabilityIdx;
+                    upperIdx = segments[segments.length - 1].availabilityIdx;
+                    updateRequired = (index < lowerIdx) || (index > upperIdx);
+                }
             }
 
             return updateRequired;
@@ -26026,6 +26027,7 @@ Mss.dependencies.MssParser = function() {
             adaptationSet.lang = this.domParser.getAttributeValue(streamIndex, "Language");
             adaptationSet.contentType = this.domParser.getAttributeValue(streamIndex, "Type");
             adaptationSet.mimeType = mimeTypeMap[adaptationSet.contentType];
+            adaptationSet.subType = this.domParser.getAttributeValue(streamIndex, "Subtype");
             adaptationSet.maxWidth = this.domParser.getAttributeValue(streamIndex, "MaxWidth");
             adaptationSet.maxHeight = this.domParser.getAttributeValue(streamIndex, "MaxHeight");
             adaptationSet.BaseURL = baseURL;
