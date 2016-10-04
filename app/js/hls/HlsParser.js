@@ -15,9 +15,9 @@
  */
 Hls.dependencies.HlsParser = function() {
     var TAG_EXTM3U = "#EXTM3U",
-        /*TAG_EXTXMEDIASEQUENCE = "#EXT-X-MEDIA-SEQUENCE",
+        /*TAG_EXTXMEDIASEQUENCE = "#EXT-X-MEDIA-SEQUENCE",*/
         TAG_EXTXKEY = "#EXT-X-KEY",
-        TAG_EXTXPROGRAMDATETIME = "#EXT-X-PROGRAM_DATE_TIME",
+        /*TAG_EXTXPROGRAMDATETIME = "#EXT-X-PROGRAM_DATE_TIME",
         TAG_EXTXDISCONTINUITY = "#EXT-X-DISCONTINUITY",
         TAG_EXTXALLOWCACHE = "#EXT-X-ALLOW-CACHE",*/
         TAG_EXTINF = "#EXTINF",
@@ -33,10 +33,10 @@ Hls.dependencies.HlsParser = function() {
         ATTR_SUBTITLES = "SUBTITLES",
         ATTR_RESOLUTION = "RESOLUTION",
         ATTR_CODECS = "CODECS",
-        /*ATTR_METHOD = "METHOD",
+        ATTR_METHOD = "METHOD",
         ATTR_IV = "IV",
         ATTR_URI = "URI",
-        ATTR_TYPE = "TYPE",
+        /*ATTR_TYPE = "TYPE",
         ATTR_GROUPID = "GROUP-ID",
         ATTR_NAME = "NAME",
         ATTR_DEFAULT = "DEFAULT",
@@ -47,12 +47,7 @@ Hls.dependencies.HlsParser = function() {
         DEFAULT_RETRY_INTERVAL = 500,
         retryAttempts = DEFAULT_RETRY_ATTEMPTS,
         retryInterval = DEFAULT_RETRY_INTERVAL,
-        retryCount = 0,
-        retryTimeout = null,
-        deferredPlaylist = null;
-
-
-    var playlistRequest = new XMLHttpRequest();
+        xhrLoader;
 
     var _splitLines = function(oData) {
         var i = 0;
@@ -176,6 +171,39 @@ Hls.dependencies.HlsParser = function() {
         return media;
     };
 
+    // Parse #EXT-X-KEY tag
+    //  #EXT-X-KEY:<method>,<uri>[,<iv>]
+    //  <url>
+    var _parseExtXKey = function(extXKey) {
+        var decryptionInfo = {},
+            params = _getTagParams(extXKey),
+            i,
+            name,
+            value;
+
+        for (i = 0; i < params.length; i++) {
+            name = params[i].trim().split('=')[0];
+            value = params[i].trim().split('=')[1];
+
+            switch (name) {
+                case ATTR_METHOD:
+                    decryptionInfo.method = value;
+                    break;
+                case ATTR_URI:
+                    decryptionInfo.uri = value.replace(/"/g, '');
+                    break;
+                case ATTR_IV:
+                    decryptionInfo.iv = parseInt(value, 16);
+                    break;
+                default:
+                    break;
+
+            }
+        }
+
+        return decryptionInfo;
+    };
+
     /* > HLS v3
     var _parseMediaInf = function(mediaLine) {
         var mediaObj = {};
@@ -214,20 +242,29 @@ Hls.dependencies.HlsParser = function() {
     };
 
     var _parsePlaylist = function(data, representation) {
-        var segmentList,
+        var deferred = Q.defer(),
+            segmentList,
             segments,
             segment,
             initialization,
             version,
+            decryptionInfo = null,
+            decryptionKeysDefer = [],
             duration = 0,
-            index = 0,
+            segmentIndex = 0,
             media,
             i,
             self = this;
 
         // Check playlist header
         if (!data || (data && data.length < 0)) {
-            return false;
+            deferred.reject({
+                name: MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE,
+                message: "Failed to parse variant stream playlist",
+                data: {
+                    url: representation.url
+                }
+            });
         }
 
         self.debug.log(data);
@@ -235,7 +272,13 @@ Hls.dependencies.HlsParser = function() {
         data = _splitLines(data);
 
         if (data[0].trim() !== TAG_EXTM3U) {
-            return false;
+            deferred.reject({
+                name: MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE,
+                message: "Failed to parse variant stream playlist",
+                data: {
+                    url: representation.url
+                }
+            });
         }
 
         // Intitilaize SegmentList
@@ -265,6 +308,10 @@ Hls.dependencies.HlsParser = function() {
                 segmentList.duration = parseInt(_getTagValue(data[i], TAG_EXTXTARGETDURATION), 10);
             } else if (_containsTag(data[i], TAG_EXTXMEDIASEQUENCE)) {
                 segmentList.startNumber = parseInt(_getTagValue(data[i], TAG_EXTXMEDIASEQUENCE), 10);
+            } else if (_containsTag(data[i], TAG_EXTXKEY)) {
+                decryptionInfo = _parseExtXKey(data[i]);
+                decryptionInfo.uri = _isAbsoluteURI(decryptionInfo.uri) ? decryptionInfo.uri : (segmentList.BaseURL + decryptionInfo.uri);
+                decryptionKeysDefer.push(_loadDecryptionKey.call(this, decryptionInfo));
             } else if (_containsTag(data[i], TAG_EXTINF)) {
                 media = _parseExtInf([data[i], data[i + 1]]);
                 segment = {
@@ -274,15 +321,22 @@ Hls.dependencies.HlsParser = function() {
                     //parent: segmentList,
                     // children: [],
                     media: _isAbsoluteURI(media.uri) ? media.uri : (segmentList.BaseURL + media.uri),
-                    sequenceNumber: segmentList.startNumber + index,
+                    sequenceNumber: segmentList.startNumber + segmentIndex,
                     time: (segments.length === 0) ? 0 : segments[segments.length - 1].time + segments[segments.length - 1].duration,
                     duration: media.duration
                 };
 
+                if (decryptionInfo !== null) {
+                    segment.decryptionInfo = decryptionInfo;
+                    if (segment.decryptionInfo.iv === undefined) {
+                        segment.decryptionInfo.iv = segment.sequenceNumber;
+                    }
+                }
+
                 segments.push(segment);
                 duration += media.duration;
 
-                index++;
+                segmentIndex++;
 
             } else if (_containsTag(data[i], TAG_EXTXENDLIST)) {
                 // "static" playlist => set representation duration
@@ -300,7 +354,48 @@ Hls.dependencies.HlsParser = function() {
         // PATCH Live = VOD
         //representation.duration = duration;
 
-        return true;
+        // Wait for all decryption keys to be downlaoded
+        Q.all(decryptionKeysDefer).then(
+            function () {
+                deferred.resolve();
+            },
+            function (error) {
+                deferred.reject(error);
+            }
+        );
+
+        return deferred.promise;
+    };
+
+    var _loadDecryptionKey = function(decryptionInfo) {
+        var deferred = Q.defer();
+
+        this.debug.log("[HlsParser]", "Load decryption key: " + decryptionInfo.uri);
+        var xhr = new MediaPlayer.dependencies.XHRLoader();
+        // Do not retry for encrypted key, we assume the key file has to be present if playlist if present
+        xhr.initialize('arraybuffer', 0, 0);
+        xhr.load(decryptionInfo.uri).then(
+            function (request) {
+                decryptionInfo.key = new Uint8Array(request.response);
+                deferred.resolve();
+            },
+            function(request) {
+                if (!request || request.aborted) {
+                    deferred.reject();
+                } else {
+                    deferred.reject({
+                        name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
+                        message: "Failed to download HLS decryption key",
+                        data: {
+                            url: decryptionInfo.uri,
+                            status: request.status
+                        }
+                    });
+                }
+            }
+        );
+
+        return deferred.promise;
     };
 
     /*var mergeSegmentLists = function(_representation, representation) {
@@ -485,79 +580,40 @@ Hls.dependencies.HlsParser = function() {
         return base;
     };
 
-
-    var doUpdatePlaylist = function(representation) {
-        var error = true,
+    var updatePlaylist = function(representation) {
+        var deferred = Q.defer(),
             self = this;
 
-        retryTimeout = null;
-
-        var onabort = function() {
-            playlistRequest.aborted = true;
-        };
-
-        var onload = function() {
-            if (playlistRequest.status < 200 || playlistRequest.status > 299) {
-                return;
-            }
-
-            if (playlistRequest.status === 200 && playlistRequest.readyState === 4) {
-                error = false;
-                if (_parsePlaylist.call(self, playlistRequest.response, representation)) {
-                    deferredPlaylist.resolve();
+        this.debug.log("[HlsParser]", "Load playlist manifest: " + representation.url);
+        xhrLoader = new MediaPlayer.dependencies.XHRLoader();
+        xhrLoader.initialize('text', retryAttempts, retryInterval);
+        xhrLoader.load(representation.url).then(
+            function (request) {
+                _parsePlaylist.call(self, request.response, representation).then(
+                    function () {
+                        deferred.resolve();
+                    },
+                    function (error) {
+                        deferred.reject(error);
+                    });
+            },
+            function(request) {
+                if (!request || request.aborted) {
+                    deferred.reject();
                 } else {
-                    deferredPlaylist.reject({
-                        name: MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE,
-                        message: "Failed to parse variant stream playlist",
+                    deferred.reject({
+                        name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
+                        message: "Failed to download variant stream playlist",
                         data: {
-                            url: representation.url
+                            url: representation.url,
+                            status: request.status
                         }
                     });
                 }
             }
-        };
+        );
 
-        var onreport = function() {
-
-            if (playlistRequest.aborted) {
-                deferredPlaylist.reject();
-                return;
-            }
-
-            if (!error) {
-                deferredPlaylist.resolve();
-                return;
-            }
-
-            retryCount++;
-            if (retryAttempts > 0 && retryCount <= retryAttempts) {
-                retryTimeout = setTimeout(function() {
-                    doUpdatePlaylist.call(self, representation);
-                }, retryInterval);
-            } else {
-                deferredPlaylist.reject({
-                    name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
-                    message: "Failed to download variant stream playlist",
-                    data: {
-                        url: representation.url,
-                        status: playlistRequest.status
-                    }
-                });
-            }
-        };
-
-        try {
-            self.debug.log("[HlsParser]", "Load playlist manifest: " + representation.url);
-            playlistRequest = new XMLHttpRequest();
-            playlistRequest.onload = onload;
-            playlistRequest.onloadend = onreport;
-            playlistRequest.onerror = onreport;
-            playlistRequest.onabort = onabort;
-            playlistRequest.open("GET", representation.url, true);
-            playlistRequest.send();
-        } catch (e) {
-            playlistRequest.onerror();
-        }
+        return deferred.promise;
     };
 
     var processManifest = function(data, baseUrl) {
@@ -718,7 +774,7 @@ Hls.dependencies.HlsParser = function() {
         // Get representation (variant stream) playlist
         result = this.abrController.getPlaybackQuality("video", adaptationSet);
         representation = adaptationSet.Representation_asArray[result.quality];
-        self.updatePlaylist(representation).then(
+        updatePlaylist.call(this, representation).then(
             function() {
                 postProcess.call(self, mpd, result.quality).then(function() {
                     deferred.resolve(mpd);
@@ -740,19 +796,15 @@ Hls.dependencies.HlsParser = function() {
     };
 
     var internalParse = function(data, baseUrl) {
+        this.hlsDemux.reset();
         this.debug.log("[HlsParser]", "Doing parse.");
         this.debug.log("[HlsParser]", data);
         return processManifest.call(this, _splitLines(data), baseUrl);
     };
 
     var abort = function() {
-        if (playlistRequest !== null && playlistRequest.readyState > 0 && playlistRequest.readyState < 4) {
-            this.debug.log("[HlsParser] Playlist manifest download abort.");
-            playlistRequest.abort();
-        } else if (retryTimeout) {
-            clearTimeout(retryTimeout);
-            retryTimeout = null;
-            deferredPlaylist.reject();
+        if (xhrLoader !== null) {
+            xhrLoader.abort();
         }
     };
 
@@ -764,16 +816,14 @@ Hls.dependencies.HlsParser = function() {
         abrController: undefined,
         hlsDemux: undefined,
 
-        parse: internalParse,
-
-        updatePlaylist: function(representation) {
+        setup: function() {
             retryAttempts = this.config.getParam("ManifestLoader.RetryAttempts", "number", DEFAULT_RETRY_ATTEMPTS);
             retryInterval = this.config.getParam("ManifestLoader.RetryInterval", "number", DEFAULT_RETRY_INTERVAL);
-            retryCount = 0;
-            deferredPlaylist = Q.defer();
-            doUpdatePlaylist.call(this, representation);
-            return deferredPlaylist.promise;
         },
+
+        parse: internalParse,
+
+        updatePlaylist: updatePlaylist,
 
         abort: abort
     };

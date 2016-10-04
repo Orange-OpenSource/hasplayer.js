@@ -18,7 +18,6 @@ Dash.dependencies.DashHandler = function() {
         requestedTime = null,
         isDynamic,
         type,
-        offset = null,
 
         zeroPadToLength = function(numStr, minStrLength) {
             while (numStr.length < minStrLength) {
@@ -193,11 +192,6 @@ Dash.dependencies.DashHandler = function() {
                 seg,
                 fTime;
 
-            if (representation && representation.segments && representation.segments.length > 0 &&
-                (offset === null || offset > representation.segments[0].availabilityIdx)) {
-                offset = representation.segments[0].availabilityIdx;
-            }
-
             //this.debug.log("Checking for stream end...");
             if (isDynamic) {
                 //this.debug.log("Live never ends! (TODO)");
@@ -206,7 +200,7 @@ Dash.dependencies.DashHandler = function() {
             } else {
                 if (index < 0) {
                     isFinished = false;
-                } else if (index < representation.availableSegmentsNumber + offset) {
+                } else if (index < representation.availableSegmentsNumber + representation.segmentStartIndex) {
                     seg = getSegmentByIndex(index, representation);
 
                     if (seg) {
@@ -275,7 +269,7 @@ Dash.dependencies.DashHandler = function() {
             time = 0,
             availabilityIdx = -1,
             calculatedRange,
-            hasEnoughSegments,
+            hasEnoughSegments = false,
             requiredMediaTime,
             startIdx,
             endIdx,
@@ -376,6 +370,7 @@ Dash.dependencies.DashHandler = function() {
                     end: availabilityEndTime
                 };
                 representation.availableSegmentsNumber = availabilityIdx + 1;
+                representation.segmentStartIndex = 0;
             }
 
             return Q.when(segments);
@@ -425,6 +420,7 @@ Dash.dependencies.DashHandler = function() {
                     }
 
                     representation.availableSegmentsNumber = periodStartIdx + Math.ceil((availabilityWindow.end - availabilityWindow.start) / duration);
+                    representation.segmentStartIndex = startIdx;
 
                     deferred.resolve(segments);
                 }
@@ -644,7 +640,10 @@ Dash.dependencies.DashHandler = function() {
                         if (s.sequenceNumber !== undefined) {
                             seg.sequenceNumber = s.sequenceNumber;
                         }
-
+                        // ORANGE: add decryption info (HLS use case)
+                        if (s.decryptionInfo !== undefined) {
+                            seg.decryptionInfo = s.decryptionInfo;
+                        }
                         //self.debug.log("[DashHandler]["+type+"] createSegment: time = " + seg.mediaStartTime + ", availabilityIdx = " + seg.availabilityIdx + ", url = " + seg.media);
 
                         segments.push(seg);
@@ -652,6 +651,7 @@ Dash.dependencies.DashHandler = function() {
                     }
                     representation.segmentAvailabilityRange = availabilityWindow;
                     representation.availableSegmentsNumber = len;
+                    representation.segmentStartIndex = startIdx;
                     deferred.resolve(segments);
                 });
 
@@ -700,6 +700,7 @@ Dash.dependencies.DashHandler = function() {
                         end: segments[len - 1].presentationStartTime
                     };
                     representation.availableSegmentsNumber = len;
+                    representation.segmentStartIndex = 0;
                     deferred.resolve(segments);
                 }, function(){
                     deferred.reject();
@@ -810,8 +811,7 @@ Dash.dependencies.DashHandler = function() {
                     self.debug.log("[DashHandler][" + type + "] getIndexForSegments, (segment duration) idx =  ", idx);
                     idx = Math.floor((time - representation.adaptation.period.start) / representation.segmentDuration);
                 } else {
-                    self.debug.log("Couldn't figure out a time!");
-                    self.debug.log("Time: " + time);
+                    self.debug.log("[DashHandler][" + type + "] Couldn't figure out segment for time: " + time);
                 }
             }
 
@@ -894,13 +894,15 @@ Dash.dependencies.DashHandler = function() {
             if (!segments || segments.length === 0) {
                 updateRequired = true;
             } else {
-                lowerIdx = segments[0].availabilityIdx;
-                upperIdx = segments[segments.length - 1].availabilityIdx;
-                // ORANGE: check also regarding requested time (@see getForTime()), required for live use case
-                // to avoid already loaded fragments to be returned
-                upperTime = segments[segments.length - 1].presentationStartTime;
-                lowerTime = segments[0].presentationStartTime;
-                updateRequired = (index < lowerIdx) || (index > upperIdx) || (requestedTime > upperTime) || (requestedTime < lowerTime);
+                if (requestedTime !== null) {
+                    lowerTime = segments[0].presentationStartTime;
+                    upperTime = segments[segments.length - 1].presentationStartTime;
+                    updateRequired = (requestedTime < lowerTime) || (requestedTime > upperTime);
+                } else {
+                    lowerIdx = segments[0].availabilityIdx;
+                    upperIdx = segments[segments.length - 1].availabilityIdx;
+                    updateRequired = (index < lowerIdx) || (index > upperIdx);
+                }
             }
 
             return updateRequired;
@@ -939,6 +941,10 @@ Dash.dependencies.DashHandler = function() {
             // ORANGE: add sequence number (HLS use case)
             if (segment.sequenceNumber !== undefined) {
                 request.sequenceNumber = segment.sequenceNumber;
+            }
+            // ORANGE: add decryption info (HLS use case)
+            if (segment.decryptionInfo !== undefined) {
+                request.decryptionInfo = segment.decryptionInfo;
             }
 
             return request;

@@ -151,38 +151,49 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
         // MediaKeySession and session-specific event handler
         createSessionToken = function(session, initData, sessionType) {
 
-            var self = this;
+            var self = this,
+                setSessionUsable = function (session, usable) {
+                    for (var i = 0; i < sessions.length; i++) {
+                        if (sessions[i].session === session) {
+                            sessions[i].usable = usable;
+                            break;
+                        }
+                    }
+                };
+
+
             var token = { // Implements MediaPlayer.vo.protection.SessionToken
                 session: session,
                 initData: initData,
                 licenseStored: false,
+                usable: false,
 
                 // This is our main event handler for all desired MediaKeySession events
                 // These events are translated into our API-independent versions of the
                 // same events
                 handleEvent: function(event) {
+
                     switch (event.type) {
 
                         case "keystatuseschange":
-                            self.debug.log("[DRM][PM_21Jan2015] 'keystatuseschange' event: ", event);
                             self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, this);
 
-                             event.target.keyStatuses.forEach(function() {
+                            event.target.keyStatuses.forEach(function() {
                                 // has Edge and Chrome implement different version of keystatues, param are not on same order
                                 var status, keyId;
-                                if(arguments && arguments.length > 0){
-                                    if(arguments[0]){
-                                        if(typeof arguments[0] === 'string'){
+                                if (arguments && arguments.length > 0) {
+                                    if (arguments[0]) {
+                                        if (typeof arguments[0] === 'string') {
                                             status = arguments[0];
-                                        }else{
+                                        } else {
                                             keyId = arguments[0];
                                         }
                                     }
 
-                                    if(arguments[1]){
-                                        if(typeof arguments[1] === 'string'){
+                                    if (arguments[1]) {
+                                        if (typeof arguments[1] === 'string') {
                                             status = arguments[1];
-                                        }else{
+                                        } else {
                                             keyId = arguments[1];
                                         }
                                     }
@@ -190,23 +201,27 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                                 self.debug.log("[DRM][PM_21Jan2015] status = " + status + " for KID " + arrayToHexString(new Uint8Array(keyId)));
                                 switch (status) {
                                     case "expired":
-                                      // Report an expired key.
-                                      self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, null,
-                                            new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED, "License has expired!!!", null));
-                                      break;
+                                        setSessionUsable(event.target, false);
+                                        self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, null,
+                                            new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED, "License has expired", null));
+                                        break;
                                     case "output-restricted":
-                                      self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, null,
+                                        setSessionUsable(event.target, false);
+                                        self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, null,
                                             new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT,
-                                                                     "There is no available output device with the required characteristics for the content protection system.",
+                                                                     "There is no available output device with the required characteristics for the content protection system",
                                                                      null));
-                                      break;
-                                    //case "usable":
+                                        break;
+                                    case "usable":
+                                        setSessionUsable(event.target, true);
+                                        break;
+
                                     //case "status-pending":
                                     default:
                                         self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED,
                                             {status:status, keyId: keyId});
-                                    }
-                                  });
+                                }
+                            });
 
                             break;
 
@@ -331,7 +346,12 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
         getAllInitData: function() {
             var retVal = [];
             for (var i = 0; i < sessions.length; i++) {
-                retVal.push(sessions[i].initData);
+                if (sessions[i].usable) {
+                    retVal.push(sessions[i].initData);
+                } else {
+                    sessions.splice(i, 1);
+                    i--;
+                }
             }
             return retVal;
         },

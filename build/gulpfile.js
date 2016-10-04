@@ -20,8 +20,14 @@ var gulp = require('gulp'),
     zip = require('gulp-zip'),
     // custom import
     pkg = require('../package.json'),
-    option = require('./gulp/option'),
-    sources = require('./gulp/sources.json');
+    sources = require('./sources.json'),
+    // command line options
+    argv = require('yargs')
+        .default('protection', true)
+        .default('analytics', false)
+        .default('mss', true)
+        .default('hls', true)
+        .argv;
 
 
 var comment = '<%= pkg.copyright %>\n\n/* Last build : <%= pkg.gitDate %>_<%= pkg.gitTime %> / git revision : <%= pkg.gitRevision %> */\n\n';
@@ -40,28 +46,23 @@ var config = {
     }
 };
 
-var options = {
-    protection: true,
-    analytics: false,
-    hls: true,
-    mss: true
-};
-
-//initialize option with arguments given in params and default params;
-option.init(process.argv, options);
-
-// create the final globs for sources according to options
+// Create the final globs for sources according to command line options
 var sourcesGlob = sources.default;
-if (gulp.option('protection', true)) {
+
+if (argv.protection) {
     sourcesGlob = sourcesGlob.concat(sources.protection);
 }
 
-if (gulp.option('hls', true)) {
+if (argv.hls) {
     sourcesGlob = sourcesGlob.concat(sources.hls);
 }
 
-if (gulp.option('mss', true)) {
+if (argv.mss) {
     sourcesGlob = sourcesGlob.concat(sources.mss);
+}
+
+if (argv.analytics) {
+    sourcesGlob = sourcesGlob.concat(sources.analytics);
 }
 
 gulp.task("default", function(cb) {
@@ -131,18 +132,28 @@ gulp.task('version', function() {
 });
 
 gulp.task('build', ['clean', 'package-info', 'lint'], function() {
-    // integrate libs after doing lint
-    sourcesGlob = sources.libs.concat(sourcesGlob);
+
+    // Integrate libs after doing lint
+    sourcesGlob = sourcesGlob.concat(sources.libs);
+
+    // Initialize preprocess context
+    var context = {};
+    for (var option in  argv) {
+        if (typeof argv[option] === 'boolean') {
+            context[option.toUpperCase()] = argv[option];
+        }
+    }
+
     return gulp.src(sourcesGlob)
         .pipe(concat(pkg.name))
         .pipe(preprocess({
-            context: gulp.option.all()
+            context: context
         }))
         .pipe(umd({
             namespace: function() {
                 return 'MediaPlayer';
             },
-            template: path.join(__dirname, 'gulp/umd.js')
+            template: path.join(__dirname, 'umd.js')
         }))
         .pipe(replace(/VERSION[\s*]=[\s*]['\\](.*)['\\]/g, 'VERSION = \'' + pkg.version + '\''))
         .pipe(replace(/@@TIMESTAMP/, pkg.gitDate + '_' + pkg.gitTime))

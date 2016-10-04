@@ -946,7 +946,7 @@ MediaPlayer.dependencies.Stream = function() {
 
             this.debug.log("[Stream] Segment loading failed: start time = " + segmentRequest.startTime + ", duration = " + segmentRequest.duration);
 
-            if (this.manifestExt.getIsDynamic(manifest) && !isReloading) {
+            if (this.manifestExt.getIsDynamic(manifest) && reloadTimeout === null) {
                 // For Live streams, then we try to reload the session
                 isReloading = true;
                 var delay = segmentRequest.duration;
@@ -1209,6 +1209,20 @@ MediaPlayer.dependencies.Stream = function() {
             return periodInfo;
         },
 
+        getMinbufferTime: function() {
+            if (!videoController) {
+                return MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
+            }
+            return videoController.getMinbufferTime();
+        },
+
+        getLiveDelay: function() {
+            if (!videoController) {
+                return MediaPlayer.dependencies.BufferExtensions.DEFAULT_LIVE_DELAY;
+            }
+            return videoController.getLiveDelay();
+        },
+
         startEventController: function() {
             eventController.start();
         },
@@ -1223,6 +1237,7 @@ MediaPlayer.dependencies.Stream = function() {
             if (enabled !== subtitlesEnabled) {
                 subtitlesEnabled = enabled;
                 track = this.textTrackExtensions.getCurrentTextTrack(this.videoModel.getElement());
+                this.textTrackExtensions.cleanSubtitles();
 
                 if (textController) {
                     if (enabled) {
@@ -1243,7 +1258,7 @@ MediaPlayer.dependencies.Stream = function() {
                         }
                         // hide subtitle here
                         if (track) {
-                            track.mode = "hidden";
+                            track.mode = "disabled";
                         }
                         textController.stop();
                     }

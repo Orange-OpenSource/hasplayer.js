@@ -8,6 +8,13 @@
             "browsers":"cdsbi"
         },
         {
+            "type": "Live",
+            "protocol": "HLS",
+            "name": "Big Buck Bunny (AES128)",
+            "url": "http://apache1.rd.francetelecom.com/BBB/index.m3u8",
+            "browsers": "cdsbi"
+        },
+        {
             "type": "VOD",
             "protocol": "MSS",
             "name": "VOD - SuperSpeedway",

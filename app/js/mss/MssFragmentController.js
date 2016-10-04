@@ -389,21 +389,12 @@ Mss.dependencies.MssFragmentController = function() {
             adaptation = manifest.Period_asArray[representations[0].adaptation.period.index].AdaptationSet_asArray[representations[0].adaptation.index];
             if (request) {
                 if (request.type === "Media Segment") {
-                    try {
-                        result = convertFragment.call(this, result, request, adaptation);
-                    } catch (e) {
-                        return e;
-                    }
-
+                    result = convertFragment.call(this, result, request, adaptation);
                     if (!result) {
                         return null;
                     }
                 } else if (request.type === "FragmentInfo Segment") {
-                    try {
-                        updateSegmentsList.call(this, result, request, adaptation);
-                    } catch (e) {
-                        return e;
-                    }
+                    updateSegmentsList.call(this, result, request, adaptation);
                 }
             }
         }

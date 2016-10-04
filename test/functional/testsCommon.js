@@ -59,8 +59,6 @@ define(function(require) {
     }
 
     conf = Object.assign(conf, seleniumConfig);
-    console.log("Selenium configuration:\n", conf);
-
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
     // Tests configuration parameters
@@ -70,11 +68,8 @@ define(function(require) {
     // application=<development|master>
     testsConfig.testPage = intern.args.application ? [applications.DashIF[intern.args.application]] : [applications.DashIF.development];
 
-
     // drm=<true|false>
     testsConfig.drm = intern.args.drm ? (intern.args.drm !== 'false') : true;
-
-    console.log("Intern:\n", testsConfig);
 
     return conf;
 });

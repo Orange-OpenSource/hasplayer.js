@@ -352,19 +352,16 @@ Hls.dependencies.HlsDemux = function() {
             return str;
         },
 
-        doInit = function(startTime) {
-            //pat = null;
-            //pmt = null;
-
-            // Reset codecs info to force setting new codecs (quality switch)
-            for (var i = 0; i < tracks.length; i++) {
-                tracks[i].codecs = "";
-            }
-
-            if (dtsOffset === -1) {
-                dtsOffset = startTime;
-            }
+        doReset = function() {
+            this.debug.log("[HlsDemux] Reset");
+            pat = null;
+            pmt = null;
+            pidToTrackId = [];
+            tracks = [];
+            baseDts = -1;
+            dtsOffset = -1;
         },
+
 
         getTrackCodecInfo = function(data, track) {
             var tsPacket,
@@ -375,10 +372,6 @@ Hls.dependencies.HlsDemux = function() {
                 codecPrivateData,
                 objectType,
                 samplingFrequencyIndex;
-
-            if (track.codecs !== "") {
-                return track;
-            }
 
             // Get first TS packet containing start of a PES/sample
             tsPacket = getTsPacket.call(this, data, 0, track.pid, true);
@@ -451,7 +444,8 @@ Hls.dependencies.HlsDemux = function() {
 
         doGetTracks = function(data) {
             var i = 0,
-                trackIdCounter = 1; // start at 1;
+                trackIdCounter = 1, // start at 1;
+                trackType;
 
             // Parse PSI (PAT, PMT) if not yet received
             if (pat === null) {
@@ -478,10 +472,11 @@ Hls.dependencies.HlsDemux = function() {
             for (i = tracks.length - 1; i >= 0; i--) {
                 getTrackCodecInfo.call(this, data, tracks[i]);
                 if (tracks[i].codecs === "") {
+                    trackType = tracks[i].type;
                     tracks.splice(i, 1);
                     throw {
                         name: MediaPlayer.dependencies.ErrorHandler.prototype.HLS_DEMUX_ERROR,
-                        message: "Failed to get codec information for track " + tracks[i].type
+                        message: "Failed to get codec information for track " + trackType
                     };
                 }
             }
@@ -496,17 +491,23 @@ Hls.dependencies.HlsDemux = function() {
             return tracks;
         },
 
-        doDemux = function(data) {
-            var nbPackets = data.length / mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE,
-                track,
+        doDemux = function(data, request) {
+            var track,
                 i = 0,
                 firstDts = -1,
                 offset;
 
-            this.debug.log("[HlsDemux] Demux chunk, size = " + data.length + ", nb packets = " + nbPackets);
+            if (dtsOffset === -1) {
+                dtsOffset = request.startTime * 90000;
+                this.debug.log("[HlsDemux] Media start time = " + dtsOffset + " (" + request.startTime + ")");
+            }
+
+            this.debug.log("[HlsDemux] Demux chunk, size = " + data.length + ", nb packets = " + Math.round(data.length / mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE));
 
             // Get PAT, PMT and tracks information if not yet received
-            doGetTracks.call(this, data);
+            if (pmt === null) {
+                doGetTracks.call(this, data);
+            }
 
             // Clear current tracks' data
             for (i = 0; i < tracks.length; i++) {
@@ -525,7 +526,11 @@ Hls.dependencies.HlsDemux = function() {
             // Parse and demux TS packets
             i = 0;
             while (i < data.length) {
-                demuxTsPacket.call(this, data.subarray(i, i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE));
+                if ((i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE) < data.length) {
+                    demuxTsPacket.call(this, data.subarray(i, i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE));
+                } else {
+                    this.debug.log("[HlsDemux] Demux chunk, residual bytes = " + (data.length - i));
+                }
                 i += mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE;
             }
 
@@ -553,7 +558,7 @@ Hls.dependencies.HlsDemux = function() {
 
     return {
         debug: undefined,
-        reset: doInit,
+        reset: doReset,
         getTracks: doGetTracks,
         demux: doDemux
     };

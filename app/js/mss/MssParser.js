@@ -84,6 +84,7 @@ Mss.dependencies.MssParser = function() {
             adaptationSet.lang = this.domParser.getAttributeValue(streamIndex, "Language");
             adaptationSet.contentType = this.domParser.getAttributeValue(streamIndex, "Type");
             adaptationSet.mimeType = mimeTypeMap[adaptationSet.contentType];
+            adaptationSet.subType = this.domParser.getAttributeValue(streamIndex, "Subtype");
             adaptationSet.maxWidth = this.domParser.getAttributeValue(streamIndex, "MaxWidth");
             adaptationSet.maxHeight = this.domParser.getAttributeValue(streamIndex, "MaxHeight");
             adaptationSet.BaseURL = baseURL;
@@ -160,7 +161,9 @@ Mss.dependencies.MssParser = function() {
 
             // Check if codec is supported
             if (SUPPORTED_CODECS.indexOf(fourCCValue.toUpperCase()) === -1) {
-                this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Codec not supported", {codec: fourCCValue});
+                // Do not send warning
+                //this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Codec not supported", {codec: fourCCValue});
+                this.debug.warn("[MssParser] Codec not supported: " + fourCCValue);
                 return null;
             }
 

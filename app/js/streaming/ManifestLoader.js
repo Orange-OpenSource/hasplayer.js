@@ -16,12 +16,9 @@ MediaPlayer.dependencies.ManifestLoader = function() {
 
     var DEFAULT_RETRY_ATTEMPTS = 2,
         DEFAULT_RETRY_INTERVAL = 500,
-        retryAttempts = DEFAULT_RETRY_ATTEMPTS,
-        retryInterval = DEFAULT_RETRY_INTERVAL,
-        retryCount = 0,
-        retryTimeout = null,
-        deferred = null,
-        request = null,
+        _retryAttempts = DEFAULT_RETRY_ATTEMPTS,
+        _retryInterval = DEFAULT_RETRY_INTERVAL,
+        _xhrLoader = null,
 
         _getDecodedResponseText = function(text) {
             var fixedCharCodes = '',
@@ -67,13 +64,8 @@ MediaPlayer.dependencies.ManifestLoader = function() {
 
         _abort = function() {
 
-            if (request !== null && request.readyState > 0 && request.readyState < 4) {
-                this.debug.log("[ManifestLoader] Manifest download abort.");
-                request.abort();
-            } else if (retryTimeout) {
-                clearTimeout(retryTimeout);
-                retryTimeout = null;
-                deferred.reject();
+            if (_xhrLoader !== null) {
+                _xhrLoader.abort();
             }
 
             this.parser.abort();
@@ -81,34 +73,19 @@ MediaPlayer.dependencies.ManifestLoader = function() {
 
         _load = function(url) {
             var baseUrl = _parseBaseUrl(url),
-                requestTime = new Date(),
-                mpdLoadedTime = null,
-                needFailureReport = true,
-                onload = null,
-                report = null,
-                onabort = null,
+                deferred = Q.defer(),
                 self = this;
 
-            onabort = function() {
-                request.aborted = true;
-            };
+            _xhrLoader = new MediaPlayer.dependencies.XHRLoader();
+            _xhrLoader.initialize(null, _retryAttempts, _retryInterval);
+            _xhrLoader.load(url).then(
+                function (request) {
 
-            onload = function() {
-                if (request.status < 200 || request.status > 299) {
-                    return;
-                }
-
-                if (request.status === 200 && request.readyState === 4) {
-                    self.debug.log("[ManifestLoader] Manifest downloaded");
-
-                    // Get the redirection URL and use it as base URL
+                    // Get the redirection URL and use it as base URL for subsequent requests
                     if (request.responseURL) {
                         self.debug.log("[ManifestLoader] Redirect URL: " + request.responseURL);
                         baseUrl = _parseBaseUrl(request.responseURL);
                     }
-
-                    needFailureReport = false;
-                    mpdLoadedTime = new Date();
 
                     self.tokenAuthentication.checkRequestHeaderForToken(request);
                     self.metricsModel.addHttpRequest("stream",
@@ -117,8 +94,8 @@ MediaPlayer.dependencies.ManifestLoader = function() {
                         url,
                         null,
                         null,
-                        requestTime,
-                        mpdLoadedTime,
+                        request.startDate,
+                        request.endDate,
                         request.status,
                         null,
                         null);
@@ -127,8 +104,8 @@ MediaPlayer.dependencies.ManifestLoader = function() {
                         function(manifest) {
                             if (manifest) {
                                 manifest.mpdUrl = url;
-                                manifest.mpdLoadedTime = mpdLoadedTime;
-                                self.metricsModel.addManifestUpdate("stream", manifest.type, requestTime, mpdLoadedTime, manifest.availabilityStartTime);
+                                manifest.mpdLoadedTime = request.endDate;
+                                self.metricsModel.addManifestUpdate("stream", manifest.type, request.startDate, request.endDate, manifest.availabilityStartTime);
                                 deferred.resolve(manifest);
                             } else {
                                 deferred.reject();
@@ -151,36 +128,25 @@ MediaPlayer.dependencies.ManifestLoader = function() {
                             }
                         }
                     );
-                }
-            };
+                },
+                function(request) {
 
-            report = function() {
-                if (!needFailureReport) {
-                    return;
-                }
-                needFailureReport = false;
-
-                self.metricsModel.addHttpRequest("stream",
-                    null,
-                    "MPD",
-                    url,
-                    null,
-                    null,
-                    requestTime,
-                    new Date(),
-                    request.status,
-                    null,
-                    null);
-
-                if (request.aborted) {
-                    deferred.reject();
-                } else {
-                    retryCount++;
-                    if (retryAttempts > 0 && retryCount <= retryAttempts) {
-                        retryTimeout = setTimeout(function() {
-                            _load.call(self, url);
-                        }, retryInterval);
+                    if (!request || request.aborted) {
+                        deferred.reject();
                     } else {
+
+                        self.metricsModel.addHttpRequest("stream",
+                            null,
+                            "MPD",
+                            url,
+                            null,
+                            null,
+                            request.startDate,
+                            request.endDate,
+                            request.status,
+                            null,
+                            null);
+
                         deferred.reject({
                             name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
                             message: "Failed to download manifest",
@@ -191,19 +157,9 @@ MediaPlayer.dependencies.ManifestLoader = function() {
                         });
                     }
                 }
-            };
+            );
 
-            try {
-                request = new XMLHttpRequest();
-                request.onload = onload;
-                request.onloadend = report;
-                request.onerror = report;
-                request.onabort = onabort;
-                request.open("GET", url, true);
-                request.send();
-            } catch (e) {
-                request.onerror();
-            }
+            return deferred.promise;
         };
 
     return {
@@ -214,17 +170,11 @@ MediaPlayer.dependencies.ManifestLoader = function() {
         tokenAuthentication: undefined,
 
         setup: function() {
-            retryAttempts = this.config.getParam("ManifestLoader.RetryAttempts", "number", DEFAULT_RETRY_ATTEMPTS);
-            retryInterval = this.config.getParam("ManifestLoader.RetryInterval", "number", DEFAULT_RETRY_INTERVAL);
+            _retryAttempts = this.config.getParam("ManifestLoader.RetryAttempts", "number", DEFAULT_RETRY_ATTEMPTS);
+            _retryInterval = this.config.getParam("ManifestLoader.RetryInterval", "number", DEFAULT_RETRY_INTERVAL);
         },
 
-        load: function(url) {
-            deferred = Q.defer();
-            request = new XMLHttpRequest();
-            retryCount = 0;
-            _load.call(this, url);
-            return deferred.promise;
-        },
+        load: _load,
 
         abort: _abort
     };

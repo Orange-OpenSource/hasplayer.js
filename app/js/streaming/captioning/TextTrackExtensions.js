@@ -13,10 +13,15 @@
  */
 MediaPlayer.utils.TextTrackExtensions = function() {
     "use strict";
-    var Cue;
+    var Cue,
+        currentLanguage = "",
+        ttmlRenderer = null;
 
     return {
+        system: undefined,
         eventBus: undefined,
+        videoModel: undefined,
+        debug: undefined,
         config: undefined,
 
         setup: function() {
@@ -28,7 +33,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                 type: "cueEnter",
                 data: {
                     text: subtitle_text,
-                    style: subtitle_style,
+                    style: subtitle_style
                 }
             });
         },
@@ -38,7 +43,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                 type: "cueExit",
                 data: {
                     text: subtitle_text,
-                    style: subtitle_style,
+                    style: subtitle_style
                 }
             });
         },
@@ -56,6 +61,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
             var track = null,
                 currentItem = null,
                 subtitleDisplayMode = 'subtitles',
+                renderingDiv = this.videoModel.getTTMLRenderingDiv(),
                 i;
 
             //no function removeTextTrack is defined
@@ -63,19 +69,29 @@ MediaPlayer.utils.TextTrackExtensions = function() {
             //deleteCues will be very efficient in this case
             track = this.getCurrentTextTrack(video);
             if (!track) {
-                subtitleDisplayMode = this.config.getParam("TextTrackExtensions.displayModeExtern", "boolean") === true ? 'metadata' : 'subtitles';
+                if (renderingDiv) {
+                    ttmlRenderer = this.system.getObject("ttmlRenderer");
+                    ttmlRenderer.initialize(renderingDiv);
+                }
+                subtitleDisplayMode = renderingDiv !== null ? 'metadata' : 'subtitles';
+                if (subtitleDisplayMode === 'subtitles') {
+                    subtitleDisplayMode = this.config.getParam("TextTrackExtensions.displayModeExtern", "boolean") === true ? 'metadata' : 'subtitles';
+                }
                 //TODO: Ability to define the KIND in the MPD - ie subtitle vs caption....
                 track = video.addTextTrack(subtitleDisplayMode, 'hascaption', scrlang);
+                currentLanguage = scrlang;
                 // track.default is an object property identifier that is a reserved word
                 // The following jshint directive is used to suppressed the warning "Expected an identifier and instead saw 'default' (a reserved word)"
                 /*jshint -W024 */
                 track.default = isDefaultTrack;
                 track.mode = "showing";
-            }else{
+            } else {
+                this.cleanSubtitles();
                 track.default = isDefaultTrack;
                 if (track.mode !== 'showing') {
                     track.mode = "showing";
                 }
+                currentLanguage = scrlang;
             }
 
             for (i = 0; i < captionData.length; i += 1) {
@@ -84,13 +100,27 @@ MediaPlayer.utils.TextTrackExtensions = function() {
             }
 
             return track;
-        },
+        },        
 
         onCueEnter: function(e) {
+            var renderingDiv = this.videoModel.getTTMLRenderingDiv();
+
+            if (e.currentTarget.type === 'image' && renderingDiv === null) {
+                this.debug.warn("[TextTrackExtensions] Rendering image subtitles without div is impossible");
+            }
+
+            if (renderingDiv) {
+                ttmlRenderer.onCueEnter(e);
+            }
             this.cueEnter(e.currentTarget.style, e.currentTarget.text);
         },
 
         onCueExit: function(e) {
+            var renderingDiv = this.videoModel.getTTMLRenderingDiv();
+
+            if (renderingDiv) {
+                ttmlRenderer.onCueExit(e);
+            }
             this.cueExit(e.currentTarget.style, e.currentTarget.text);
         },
 
@@ -107,9 +137,10 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                 if (currentItem.start < currentItem.end) {
                     newCue = new Cue(currentItem.start, currentItem.end, currentItem.data);
 
+                    newCue.id = currentLanguage;
                     newCue.onenter = this.onCueEnter.bind(this);
                     newCue.onexit = this.onCueExit.bind(this);
-
+                    newCue.type = currentItem.type;
                     newCue.snapToLines = false;
 
                     newCue.line = currentItem.line;
@@ -151,6 +182,13 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                     }
                 }
             }
-        }
+        },
+
+        cleanSubtitles: function() {
+            var renderingDiv = this.videoModel.getTTMLRenderingDiv();
+            if (renderingDiv && ttmlRenderer) {
+                ttmlRenderer.cleanSubtitles();
+            }
+        },
     };
 };

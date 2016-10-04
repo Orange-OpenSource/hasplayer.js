@@ -159,10 +159,10 @@ MediaPlayer.dependencies.Mp4Processor = function() {
         createHandlerReferenceBox = function(track) {
 
             // This box within a Media Box declares the process by which the media-data in the track is presented, and thus,
-            // the nature of the media in a track. For example, a video track would be handled by a video handler. 
+            // the nature of the media in a track. For example, a video track would be handled by a video handler.
             var hdlr = new mp4lib.boxes.HandlerBox();
 
-            hdlr.version = 0; // default value version = 0 
+            hdlr.version = 0; // default value version = 0
             hdlr.pre_defined = 0; //default value.
             switch (track.type) {
                 case 'video':
@@ -227,7 +227,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             dref.entry_count = 1; // is an integer that counts the actual entries
             dref.flags = 0; // default value
 
-            // The DataEntryBox within the DataReferenceBox shall be either a DataEntryUrnBox or a DataEntryUrlBox.           
+            // The DataEntryBox within the DataReferenceBox shall be either a DataEntryUrnBox or a DataEntryUrlBox.
             // (not used, but mandatory)
             url = new mp4lib.boxes.DataEntryUrlBox();
             url.location = "";
@@ -295,7 +295,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             stsz.version = 0; // default value = 0
             stsz.flags = 0; //default value = 0
             stsz.sample_count = 0; //is an integer that gives the number of samples in the track; if sample-size is 0, then it is
-            //also the number of entries in the following table         
+            //also the number of entries in the following table
             stsz.sample_size = 0; //is integer specifying the default sample size.
 
             return stsz;
@@ -470,10 +470,10 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             //create Protection Scheme Info Box
             var sinf = new mp4lib.boxes.ProtectionSchemeInformationBox();
 
-            //create and add Original Format Box => indicate codec type of the encrypted content         
+            //create and add Original Format Box => indicate codec type of the encrypted content
             sinf.boxes.push(createOriginalFormatBox(track));
 
-            //create and add Scheme Type box            
+            //create and add Scheme Type box
             sinf.boxes.push(createSchemeTypeBox());
 
             //create and add Scheme Information Box
@@ -549,7 +549,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             decoderConfigDescriptor[9] = (track.bandwidth & 0x0000FF00) >> 8; // ''
             decoderConfigDescriptor[10] = (track.bandwidth & 0x000000FF); // ''
             decoderConfigDescriptor[11] = (track.bandwidth & 0xFF000000) >> 24; // bit(32), avgbitrate
-            decoderConfigDescriptor[12] |= (track.bandwidth & 0x00FF0000) >> 16; // '' 
+            decoderConfigDescriptor[12] |= (track.bandwidth & 0x00FF0000) >> 16; // ''
             decoderConfigDescriptor[13] |= (track.bandwidth & 0x0000FF00) >> 8; // ''
             decoderConfigDescriptor[14] |= (track.bandwidth & 0x000000FF); // ''
             decoderConfigDescriptor.set(decoderSpecificInfo, 15); // DecoderSpecificInfo bytes
@@ -735,7 +735,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
                 track = tracks[tracks.length - 1],
                 i;
 
-            // Create Movie Extends Box (mvex) 
+            // Create Movie Extends Box (mvex)
             // This box warns readers that there might be Movie Fragment Boxes in this file
             mvex = new mp4lib.boxes.MovieExtendsBox();
 
@@ -748,7 +748,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
                 mehd.version = 1;
                 mehd.flags = 0;
                 mehd.fragment_duration = Math.round(track.duration * track.timescale); // declares length of the presentation of the whole movie including fragments
-                
+
                 //add mehd box in mvex box
                 mvex.boxes.push(mehd);
             }*/
@@ -762,7 +762,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
                 trex.version = 0;
                 trex.flags = 0;
                 trex.track_ID = track.trackId; // identifies the track; this shall be the track ID of a track in the Movie Box
-                trex.default_sample_description_index = 1; // Set default value 
+                trex.default_sample_description_index = 1; // Set default value
                 trex.default_sample_duration = 0; // ''
                 trex.default_sample_flags = 0; // ''
                 trex.default_sample_size = 0; // ''
@@ -799,7 +799,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             // Create file
             moov_file = new mp4lib.boxes.File();
 
-            // Create Movie box (moov) 
+            // Create Movie box (moov)
             moov = new mp4lib.boxes.MovieBox();
 
             // Create and add MovieHeader box (mvhd)
@@ -832,7 +832,9 @@ MediaPlayer.dependencies.Mp4Processor = function() {
         // MOOF
         ///////////////////////////////////////////////////////////////////////////////////////////
 
-        createMovieFragmentHeaderBox = function(sequenceNumber) {
+        sequenceNumber = 1,
+
+        createMovieFragmentHeaderBox = function() {
 
             // Movie Fragment Header Box
             // The movie fragment header contains a sequence number, as a safety check. The sequence number usually
@@ -843,7 +845,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
 
             mfhd.version = 0;
             mfhd.flags = 0;
-            mfhd.sequence_number = sequenceNumber;
+            mfhd.sequence_number = sequenceNumber++;
 
             return mfhd;
         },
@@ -988,7 +990,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             return mdat;
         },
 
-        doGenerateMediaSegment = function(tracks, sequenceNumber) {
+        doGenerateMediaSegment = function(tracks) {
 
             var moof_file,
                 moof,
@@ -1004,12 +1006,12 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             // Create file
             moof_file = new mp4lib.boxes.File();
 
-            // Create Movie Fragment box (moof) 
+            // Create Movie Fragment box (moof)
             moof = new mp4lib.boxes.MovieFragmentBox();
 
-            // Create Movie Fragment Header box (moof) 
-            moof.boxes.push(createMovieFragmentHeaderBox(sequenceNumber));
-            
+            // Create Movie Fragment Header box (moof)
+            moof.boxes.push(createMovieFragmentHeaderBox());
+
             if (tracks) {
                 for (i = 0; i < tracks.length; i += 1) {
                     // Create Track Fragment box (traf)

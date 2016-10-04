@@ -30,9 +30,12 @@ MediaPlayer.utils.TTMLParser = function() {
         TTML_URI = "http://www.w3.org/ns/ttml",
         TTML_PARAMETER_URI = "http://www.w3.org/ns/ttml#parameter",
         TTML_STYLE_URI = "http://www.w3.org/ns/ttml#styling",
+        SMPTE_TT_URI = "http://www.smpte-ra.org/schemas/2052-1/2010/smpte-tt",
         globalPrefTTNameSpace = "",
         globalPrefStyleNameSpace = "",
         globalPrefParameterNameSpace = "",
+        globalPrefSMPTENameSpace = "",
+
         //regionPrefTTNameSpace = "",
         //regionPrefStyleNameSpace = "",
         // R0028 - A document must not contain a <timeExpression> value that does not conform to the subset of clock-time that
@@ -59,6 +62,7 @@ MediaPlayer.utils.TTMLParser = function() {
         frameRate = null,
         tabStyles = [],
         tabRegions = [],
+        tabImages = [],
 
         parseTimings = function(timingStr) {
 
@@ -147,7 +151,7 @@ MediaPlayer.utils.TTMLParser = function() {
             return passed;
         },
 
-        findStyleElement = function(nodeTab, styleElementName) {
+        findStyleElement = function(nodeTab, styleElementName, defaultTTMLValue) {
             var styleName,
                 regionName,
                 resu = null,
@@ -169,6 +173,18 @@ MediaPlayer.utils.TTMLParser = function() {
                     resu = searchInTab(tabStyles, styleName, styleElementName);
                     if (resu) {
                         return resu;
+                    }
+
+                    //search if others styles are referenced in the selected one
+                    styleName = searchInTab(tabStyles, styleName, 'style');
+
+                    while (styleName) {
+                        //search in this other style
+                        resu = searchInTab(tabStyles, styleName, styleElementName);
+                        if (resu) {
+                            return resu;
+                        }
+                        styleName = searchInTab(tabStyles, styleName, 'style');
                     }
                 }
 
@@ -208,7 +224,7 @@ MediaPlayer.utils.TTMLParser = function() {
                 }
             }
 
-            return null;
+            return defaultTTMLValue !== undefined ? defaultTTMLValue : null;
         },
 
         searchInTab = function(tab, elementNameReference, styleElementName) {
@@ -269,6 +285,7 @@ MediaPlayer.utils.TTMLParser = function() {
             var nameSpace = null,
                 TTAFUrl = null,
                 TTMLUrl = null,
+                SMPTETTUrl = null,
                 i = 0,
                 tabReturn = [],
                 valTab;
@@ -285,6 +302,9 @@ MediaPlayer.utils.TTMLParser = function() {
                 case "main":
                     TTAFUrl = TTAF_URI;
                     TTMLUrl = TTML_URI;
+                    break;
+                case "smpte":
+                    SMPTETTUrl = SMPTE_TT_URI;
                     break;
             }
 
@@ -324,6 +344,16 @@ MediaPlayer.utils.TTMLParser = function() {
                         }
                     }
                 }
+            } else if (SMPTETTUrl) {
+                nameSpace = this.domParser.getAttributeName(node, SMPTETTUrl);
+                if (nameSpace.length > 0) {
+                    for (i = 0; i < nameSpace.length; i += 1) {
+                        valTab = nameSpace[i].split(':').length > 1 ? nameSpace[i].split(':')[1] + ':' : "";
+                        if (tabReturn.indexOf(valTab) < 0) {
+                            tabReturn.push(valTab);
+                        }
+                    }
+                }
             }
 
             return tabReturn;
@@ -359,87 +389,6 @@ MediaPlayer.utils.TTMLParser = function() {
             return computedCellResolution;
         },
 
-        computeTextOutline = function(textOutline, cellResolution, defaultColor) {
-            var computedTextOutline = {
-                    color: null,
-                    width: null
-                },
-                formatTextOutlineWidth,
-                textOutlineWidthIndex = 0;
-
-            if (textOutline) {
-                textOutline = textOutline.split(' ');
-                //detect if outline color has been defined, if not outline color should be set to color value
-                if (textOutline[0] && isNaN(textOutline[0][0])) {
-                    computedTextOutline.color = textOutline[0];
-                    textOutlineWidthIndex = 1;
-                } else {
-                    computedTextOutline.color = defaultColor;
-                }
-
-                //detect text outline width, the first length value
-                if (textOutline[textOutlineWidthIndex]) {
-                    //get the last character for text Outline width definition
-                    formatTextOutlineWidth = textOutline[textOutlineWidthIndex][textOutline[textOutlineWidthIndex].length - 1];
-                    switch (formatTextOutlineWidth) {
-                        //definition in cell.
-                        case 'c':
-                            textOutline[textOutlineWidthIndex] = textOutline[textOutlineWidthIndex].split('c');
-                            if (textOutline[textOutlineWidthIndex][0]) {
-                                computedTextOutline.width = (parseFloat(textOutline[textOutlineWidthIndex][0] / cellResolution[1], 10) * 100).toFixed(1) + '%';
-                            }
-                            break;
-                        case 'x':
-                            //definition in pixel
-                            computedTextOutline.width = textOutline[textOutlineWidthIndex];
-                            break;
-                    }
-                }
-            }
-            return computedTextOutline;
-        },
-
-        computeFontSize = function(fontSize, cellResolution) {
-            var formatFontSize,
-                cellsSize,
-                i,
-                computedFontSize = fontSize;
-
-            if (fontSize) {
-                //get the last character for font size definition
-                formatFontSize = fontSize[fontSize.length - 1];
-            }
-
-            switch (formatFontSize) {
-                case '%':
-                    computedFontSize = (parseFloat(1 / cellResolution[1], 10) * 100);
-                    computedFontSize = ((parseInt(fontSize.substr(0, fontSize.length - 1), 10) * computedFontSize) / 100).toFixed(1) + "%";
-                    break;
-                case 'c':
-                    //define fontSize in %
-                    cellsSize = fontSize.replace(/\s/g, '').split('c');
-
-                    for (i = 0; i < cellsSize.length; i += 1) {
-                        cellsSize[i] = parseFloat(cellsSize[i]);
-                    }
-
-                    if (isNaN(cellsSize[1])) {
-                        computedFontSize = (cellsSize[0] / cellResolution[1] * 100).toFixed(1) + '%';
-                    } else {
-                        computedFontSize = (cellsSize[1] / cellResolution[1] * 100).toFixed(1) + '%';
-                    }
-                    break;
-                case 'x':
-                    //nothing to do, fontSize has been set with an absolute value.
-                    break;
-                default:
-                    //no fontSize has been defined => '1 c'
-                    computedFontSize = (parseFloat(1 / cellResolution[1], 10) * 100).toFixed(1) + '%';
-            }
-
-            return computedFontSize;
-        },
-
         internalParse = function(data) {
             var captionArray = [],
                 errorMsg,
@@ -454,10 +403,18 @@ MediaPlayer.utils.TTMLParser = function() {
                     color: null,
                     fontSize: null,
                     fontFamily: null,
+                    fontStyle: null,
                     textOutline: {
                         color: null,
                         with: null
-                    }
+                    },
+                    textAlign: null,
+                    displayAlign: null,
+                    origin: null,
+                    extent: null,
+                    cellResolution: null,
+                    rootExtent: null,
+                    showBackground: null
                 },
                 caption,
                 divBody,
@@ -465,14 +422,18 @@ MediaPlayer.utils.TTMLParser = function() {
                 textDatas,
                 j,
                 k,
-                cellResolution,
-                extent,
+                rootExtent,
                 textNodes,
-                textOutline,
                 textValue = "",
+                imageRef,
+                ttmlRenderingType = "",
                 lastCaption;
 
             try {
+
+                if (this.videoModel.getTTMLRenderingDiv() !== null) {
+                    ttmlRenderingType = 'html';
+                }
 
                 xmlDoc = this.domParser.createXmlTree(data);
 
@@ -481,6 +442,7 @@ MediaPlayer.utils.TTMLParser = function() {
                     return Q.reject(errorMsg);
                 }
 
+                globalPrefSMPTENameSpace = getNameSpace.call(this, nodeTt, 'smpte');
                 //define global namespace prefix for TTML
                 globalPrefTTNameSpace = getNameSpace.call(this, nodeTt, 'main');
                 //define global namespace prefix for parameter
@@ -510,8 +472,35 @@ MediaPlayer.utils.TTMLParser = function() {
                 globalPrefTTNameSpace = arrayUnique(globalPrefTTNameSpace.concat(getNameSpace.call(this, tabRegions, 'main')));
                 //search prefStyle nameSpace in tabRegions
                 globalPrefStyleNameSpace = arrayUnique(globalPrefStyleNameSpace.concat(getNameSpace.call(this, tabRegions, 'style')));
+                //get all images url
+                tabImages = this.domParser.getAllSpecificNodes(nodeTt, 'image');
+                //search if there is a root container size
+                rootExtent = findStyleElement.call(this, [nodeTt], 'extent');
+
+                cssStyle.rootExtent = rootExtent;
 
                 for (k = 0; k < divBody.length; k += 1) {
+                    //is it images subtitles?
+                    imageRef = findParameterElement.call(this, [divBody[k]], globalPrefSMPTENameSpace, 'backgroundImage');
+                    if (imageRef && tabImages[imageRef.substring(1)] !== undefined) {
+                        startTime = getTimeValue.call(this, divBody[k], 'begin');
+                        endTime = getTimeValue.call(this, divBody[k], 'end');
+
+                        cssStyle.origin = findStyleElement.call(this, [divBody[k]], 'origin');
+                        cssStyle.extent = findStyleElement.call(this, [divBody[k]], 'extent');
+                        cssStyle.cellResolution = findParameterElement.call(this, [divBody[k], nodeTt], 'cellResolution');
+                        cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
+                        cssStyle.textOutline = findStyleElement.call(this, [divBody[k]], 'textOutline');
+                        caption = {
+                            start: startTime,
+                            end: endTime,
+                            type: 'image',
+                            data: 'data:image/' + tabImages[imageRef.substring(1)].imagetype.nodeValue + ';base64, ' + this.domParser.getChildNode(tabImages[imageRef.substring(1)], '#text').nodeValue,
+                            line: 80,
+                            style: cssStyle
+                        };
+                        captionArray.push(caption);
+                    }
                     regions = this.domParser.getChildNodes(divBody[k], 'p');
 
                     if (!regions || regions.length === 0) {
@@ -524,11 +513,18 @@ MediaPlayer.utils.TTMLParser = function() {
                                 color: null,
                                 fontSize: null,
                                 fontFamily: null,
+                                fontStyle: null,
                                 textOutline: {
                                     color: null,
                                     with: null
                                 },
-                                origin: null
+                                textAlign: null,
+                                displayAlign: null,
+                                origin: null,
+                                extent: null,
+                                cellResolution: null,
+                                rootExtent: rootExtent,
+                                showBackground : null
                             };
                             region = regions[i];
 
@@ -540,13 +536,16 @@ MediaPlayer.utils.TTMLParser = function() {
 
                             endTime = getTimeValue.call(this, region, 'end');
 
-                            if (isNaN(startTime) || isNaN(endTime) || (endTime<startTime)) {
+                            if (isNaN(startTime) || isNaN(endTime) || (endTime < startTime)) {
                                 errorMsg = "TTML document has incorrect timing value";
                             } else {
                                 textDatas = this.domParser.getChildNodes(region, 'span');
                                 //subtitles are set in span
                                 if (textDatas.length > 0) {
                                     for (j = 0; j < textDatas.length; j++) {
+                                        if (j > 0) {
+                                            textValue += '\n';
+                                        }
                                         /******************** Find style informations ***************************************
                                          *   1- in subtitle paragraph ToDo
                                          *   2- in style element referenced in the subtitle paragraph
@@ -557,25 +556,22 @@ MediaPlayer.utils.TTMLParser = function() {
                                          **************************************************************************************/
                                         //search style informations once. 
                                         if (j === 0) {
-                                            cssStyle.backgroundColor = findStyleElement.call(this, [textDatas[j], region, divBody], 'backgroundColor');
-                                            if (cssStyle.backgroundColor === null) {
-                                                //set default TTML value
-                                                cssStyle.backgroundColor = 'transparent';
-                                            }
+                                            cssStyle.backgroundColor = findStyleElement.call(this, [textDatas[j], region, divBody], 'backgroundColor', 'transparent');
                                             cssStyle.color = findStyleElement.call(this, [textDatas[j], region, divBody], 'color');
                                             cssStyle.fontSize = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontSize');
                                             cssStyle.fontFamily = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontFamily');
-                                            textOutline = findStyleElement.call(this, [textDatas[j], region, divBody], 'textOutline');
-                                            extent = findStyleElement.call(this, [textDatas[j], region, divBody], 'extent');
-
-                                            cellResolution = findParameterElement.call(this, [textDatas[j], region, divBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution');
-                                            cellResolution = computeCellResolution(cellResolution);
-
-                                            cssStyle.textOutline = computeTextOutline(textOutline, cellResolution, cssStyle.color);
-                                            cssStyle.fontSize = computeFontSize(cssStyle.fontSize, cellResolution);
+                                            cssStyle.fontStyle = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontStyle', 'normal');
+                                            cssStyle.textOutline = findStyleElement.call(this, [textDatas[j], region, divBody], 'textOutline');
+                                            cssStyle.extent = findStyleElement.call(this, [textDatas[j], region, divBody], 'extent');
+                                            cssStyle.origin = findStyleElement.call(this, [textDatas[j], region, divBody], 'origin');
+                                            cssStyle.textAlign = findStyleElement.call(this, [textDatas[j], region, divBody], 'textAlign', 'start');
+                                            cssStyle.displayAlign = findStyleElement.call(this, [textDatas[j], region, divBody], 'displayAlign', 'before');
+                                            cssStyle.showBackground = findStyleElement.call(this, [textDatas[j], region, divBody], 'showBackground');
+                                            cssStyle.cellResolution = findParameterElement.call(this, [textDatas[j], region, divBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution');
+                                            cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
                                         }
                                         //try to detect multi lines subtitle
-                                        textValue += textDatas[j].textContent + "\n";
+                                        textValue += textDatas[j].textContent;
                                     }
                                     //line and position element have no effect on IE
                                     //For Chrome line = 80 is a percentage workaround to reorder subtitles
@@ -589,25 +585,20 @@ MediaPlayer.utils.TTMLParser = function() {
                                     textValue = "";
                                     captionArray.push(caption);
                                 } else {
-                                    cssStyle.backgroundColor = findStyleElement.call(this, [region, divBody], 'backgroundColor');
-                                    if (cssStyle.backgroundColor === null) {
-                                        //set default TTML value
-                                        cssStyle.backgroundColor = 'transparent';
-                                    }
+                                    cssStyle.backgroundColor = findStyleElement.call(this, [region, divBody], 'backgroundColor', 'transparent');
                                     cssStyle.color = findStyleElement.call(this, [region, divBody], 'color');
                                     cssStyle.fontSize = findStyleElement.call(this, [region, divBody], 'fontSize');
                                     cssStyle.fontFamily = findStyleElement.call(this, [region, divBody], 'fontFamily');
-                                    textOutline = findStyleElement.call(this, [region, divBody], 'textOutline');
-
-                                    extent = findStyleElement.call(this, [region, divBody], 'extent');
-
-                                    cellResolution = findParameterElement.call(this, [region, divBody], globalPrefParameterNameSpace, 'cellResolution');
-                                    cellResolution = computeCellResolution(cellResolution);
-
-                                    cssStyle.textOutline = computeTextOutline(textOutline, cellResolution, cssStyle.color);
-                                    cssStyle.fontSize = computeFontSize(cssStyle.fontSize, cellResolution);
-
+                                    cssStyle.fontStyle = findStyleElement.call(this, [region, divBody], 'fontStyle', 'normal');
+                                    cssStyle.textOutline = findStyleElement.call(this, [region, divBody], 'textOutline');
+                                    cssStyle.cellResolution = findParameterElement.call(this, [region, divBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution');
+                                    cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
+                                    cssStyle.textAlign = findStyleElement.call(this, [region, divBody], 'textAlign', 'start');
+                                    cssStyle.displayAlign = findStyleElement.call(this, [region, divBody], 'displayAlign', 'before');
                                     cssStyle.origin = findStyleElement.call(this, [region, divBody], 'origin');
+                                    cssStyle.extent = findStyleElement.call(this, [region, divBody], 'extent');
+
+                                    cssStyle.showBackground = findStyleElement.call(this, [region, divBody], 'showBackground');
 
                                     //line and position element have no effect on IE
                                     //For Chrome line = 80 is a percentage workaround to reorder subtitles
@@ -616,36 +607,39 @@ MediaPlayer.utils.TTMLParser = function() {
                                         previousStartTime = getTimeValue.call(this, regions[i - 1], 'begin');
                                         previousEndTime = getTimeValue.call(this, regions[i - 1], 'end');
                                     }
-
-                                    if (startTime === previousStartTime && endTime === previousEndTime) {
+                                    //workaround to be able to show subtitles on two lines even if startTime and endTime are not equals to the previous values.
+                                    if ((startTime === previousStartTime && endTime === previousEndTime) || (startTime >= previousStartTime && endTime <= previousEndTime)) {
                                         if (region.textContent !== "") {
-                                            lastCaption = captionArray.pop();
-                                            caption = {
-                                                start: startTime,
-                                                end: endTime,
-                                                data: lastCaption.data + '\n' + region.textContent,
-                                                line: 80,
-                                                style: cssStyle
-                                            };
-                                        }
-                                    } //workaround to be able to show subtitles on two lines even if startTime and endTime are not equals to the previous values.
-                                    else if (startTime >= previousStartTime && endTime <= previousEndTime){
-                                        if (region.textContent !== "") {
-                                            lastCaption = captionArray[captionArray.length-1];
-                                            lastCaption.end = startTime;
-                                            caption = {
-                                                start: startTime,
-                                                end: endTime,
-                                                data: lastCaption.data + '\n' + region.textContent,
-                                                line: 80,
-                                                style: cssStyle
-                                            };
+                                            //if rendering is done in an external div, do not add subtitle text with the same time.
+                                            if (ttmlRenderingType === 'html') {
+                                                caption = {
+                                                    start: startTime,
+                                                    end: endTime,
+                                                    data: region.textContent,
+                                                    line: 80,
+                                                    style: cssStyle
+                                                };
+                                            } else {
+                                                if (startTime >= previousStartTime && endTime <= previousEndTime) {
+                                                    lastCaption = captionArray[captionArray.length - 1];
+                                                    lastCaption.end = startTime;
+                                                } else {
+                                                    lastCaption = captionArray.pop();
+                                                }
+                                                caption = {
+                                                    start: startTime,
+                                                    end: endTime,
+                                                    data: lastCaption.data + '\n' + region.textContent,
+                                                    line: 80,
+                                                    style: cssStyle
+                                                };
+                                            }
                                         }
                                     } else {
                                         textNodes = this.domParser.getChildNodes(region, '#text');
 
                                         for (j = 0; j < textNodes.length; j += 1) {
-                                            if ( j > 0) {
+                                            if (j > 0) {
                                                 textValue += '\n';
                                             }
                                             textValue += textNodes[j].textContent;
@@ -683,6 +677,7 @@ MediaPlayer.utils.TTMLParser = function() {
 
     return {
         domParser: undefined,
+        videoModel: undefined,
         parse: internalParse
 
     };

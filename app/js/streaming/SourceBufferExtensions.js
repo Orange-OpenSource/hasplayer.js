@@ -65,7 +65,7 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
             firstStart = null,
             lastEnd = null,
             gap = 0,
-            toler = (tolerance || 0.01),
+            toler = (tolerance || 0.03),
             len,
             i;
 

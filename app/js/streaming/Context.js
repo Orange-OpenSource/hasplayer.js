@@ -49,6 +49,7 @@ MediaPlayer.di.Context = function () {
             this.system.mapSingleton('tokenAuthentication', MediaPlayer.utils.TokenAuthentication);
             this.system.mapSingleton('vttParser', MediaPlayer.utils.VTTParser);
             this.system.mapSingleton('ttmlParser', MediaPlayer.utils.TTMLParser);
+            this.system.mapSingleton('ttmlRenderer', MediaPlayer.utils.TTMLRenderer);
 
             // MediaPlayer.models.*
             this.system.mapSingleton('manifestModel', MediaPlayer.models.ManifestModel);
@@ -117,7 +118,7 @@ MediaPlayer.di.Context = function () {
             // @endif
             // @if HLS=true
             this.system.mapClass('hlsParser', Hls.dependencies.HlsParser);
-            this.system.mapClass('hlsDemux', Hls.dependencies.HlsDemux);
+            this.system.mapSingleton('hlsDemux', Hls.dependencies.HlsDemux);
             // @endif
 
             // Create the context manager to plug some specific parts of the code
