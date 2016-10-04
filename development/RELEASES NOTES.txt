@@ -1,3 +1,8 @@
+### Release Notes v1.5.0 (2016/09/07)
+* Raise "MEDIA_KEYERR_OUTPUT" error when output display is restricted by a Widevine license
+* Enhance TTML to WebVTT transcoding for subtitles on multiple lines and empty subtitles
+* Optimized track switching mechanism to avoid playback error on Firefox
+
 ### Release Notes v1.4.0 (2016/08/18)
 * DVR: disable seeking within buffering window before live edge
 * Add 'startTime' parameter in input stream to enable playback start at given time
