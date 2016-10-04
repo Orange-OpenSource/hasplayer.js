@@ -28,22 +28,24 @@ MediaPlayer.utils.TextTrackExtensions = function() {
             Cue = window.VTTCue || window.TextTrackCue;
         },
 
-        cueEnter: function(subtitle_style, subtitle_text) {
+        cueEnter: function(subtitle_style, subtitle_text, subtitle_type) {
             this.eventBus.dispatchEvent({
                 type: "cueEnter",
                 data: {
                     text: subtitle_text,
-                    style: subtitle_style
+                    style: subtitle_style,
+                    type: subtitle_type
                 }
             });
         },
 
-        cueExit: function(subtitle_style, subtitle_text) {
+        cueExit: function(subtitle_style, subtitle_text, subtitle_type) {
             this.eventBus.dispatchEvent({
                 type: "cueExit",
                 data: {
                     text: subtitle_text,
-                    style: subtitle_style
+                    style: subtitle_style,
+                    type: subtitle_type
                 }
             });
         },
@@ -112,7 +114,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
             if (renderingDiv) {
                 ttmlRenderer.onCueEnter(e);
             }
-            this.cueEnter(e.currentTarget.style, e.currentTarget.text);
+            this.cueEnter(e.currentTarget.style, e.currentTarget.text, e.currentTarget.type);
         },
 
         onCueExit: function(e) {
