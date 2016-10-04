@@ -610,7 +610,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                     //workaround to be able to show subtitles on two lines even if startTime and endTime are not equals to the previous values.
                                     if ((startTime === previousStartTime && endTime === previousEndTime) || (startTime >= previousStartTime && endTime <= previousEndTime)) {
                                         if (region.textContent !== "") {
-                                            //if rendering is done in an external div, do not add subtitle text with the same time.
+                                            //if rendering is done in an internal div, do not add subtitle text with the same time.
                                             if (ttmlRenderingType === 'html') {
                                                 caption = {
                                                     start: startTime,
