@@ -16,7 +16,7 @@ MediaPlayer.utils.TTMLRenderer = function() {
     var ttmlDiv,
         subtitleDivTab = [],
 
-    onFullScreenChange = function() {
+        onFullScreenChange = function() {
             var i = 0;
 
             for (i = 0; i < subtitleDivTab.length; i++) {
@@ -24,12 +24,13 @@ MediaPlayer.utils.TTMLRenderer = function() {
             }
         },
 
-        createSubtitleDiv= function() {
+        createSubtitleDiv = function() {
             var subtitleDiv = document.createElement("div");
 
             subtitleDiv.style.position = 'absolute';
             subtitleDiv.style.display = 'flex';
-            subtitleDiv.style.overflow = 'hidden';
+            subtitleDiv.style.flexDirection = 'row';
+            subtitleDiv.style.overflow = 'initial';
             subtitleDiv.style.pointerEvents = 'none';
 
             ttmlDiv.appendChild(subtitleDiv);
@@ -37,82 +38,213 @@ MediaPlayer.utils.TTMLRenderer = function() {
             return subtitleDiv;
         },
 
-        removeSubtitleDiv= function(div) {
-            ttmlDiv.removeChild(div);
+        removeSubtitleDiv = function(div) {
+            if (ttmlDiv.hasChildNodes()) {
+                ttmlDiv.removeChild(div);
+            }
         },
 
-        applySubtitlesCSSStyle= function(div, cssStyle, renderingDiv) {
-            function hex2rgba_convert(hex) {
-                hex = hex.replace('#', '');
-                var r = parseInt(hex.substring(0, 2), 16),
-                    g = parseInt(hex.substring(2, 4), 16),
-                    b = parseInt(hex.substring(4, 6), 16),
-                    a = hex.length > 6 ? parseInt(hex.substring(6, 8), 16) : 255,
-                    result = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+        computeFontSize = function(fontSize, cellUnit) {
+            var computedFontSize,
+                i;
+            if (fontSize && fontSize[fontSize.length - 1] === '%') {
+                computedFontSize = parseFloat(fontSize.substr(0, fontSize.length - 1)) / 100 * cellUnit[1] + 'px';
+            } else if (fontSize && fontSize[fontSize.length - 1] === 'x') {
+                //case in pixels
+                computedFontSize = fontSize;
+            } else if (fontSize && fontSize[fontSize.length - 1] === 'c') {
+                var cellsSize = fontSize.replace(/\s/g, '').split('c');
 
-                return result;
-            }
-
-            var fontSize,
-                origin,
-                extent,
-                rootExtent;
-
-            if (div) {
-                if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === '%') {
-                    fontSize = (renderingDiv.clientHeight * parseFloat(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1))) / 100 + 'px';
+                for (i = 0; i < cellsSize.length; i += 1) {
+                    cellsSize[i] = parseFloat(cellsSize[i]);
                 }
 
+                if (isNaN(cellsSize[1])) {
+                    computedFontSize = cellsSize[0] * cellUnit[1] + 'px';
+                } else {
+                    computedFontSize = cellsSize[1] * cellUnit[1] + 'px';
+                }
+            } else { //default value defined in TTML
+                computedFontSize = cellUnit[1] + 'px';
+            }
+
+            return computedFontSize;
+        },
+
+        computeTextOutline = function(textOutline, cellUnit, defaultColor) {
+            var computedTextOutline = {
+                    color: defaultColor,
+                    width: null
+                },
+                formatTextOutlineWidth,
+                textOutlineWidthIndex = 0;
+
+            if (textOutline) {
+                textOutline = textOutline.split(' ');
+
+                //detect if outline color has been defined, if not, outline color should be set to color value
+                if (textOutline[0] && isNaN(textOutline[0][0])) {
+                    computedTextOutline.color = textOutline[0];
+                    textOutlineWidthIndex = 1;
+                } else {
+                    computedTextOutline.color = defaultColor;
+                }
+
+                if (computedTextOutline.color && computedTextOutline.color[0] === '#') {
+                    computedTextOutline.color = hex2rgba_convert(computedTextOutline.color);
+                }
+
+                //detect text outline width, the first length value
+                if (textOutline[textOutlineWidthIndex]) {
+                    //get the last character for text Outline width definition
+                    formatTextOutlineWidth = textOutline[textOutlineWidthIndex][textOutline[textOutlineWidthIndex].length - 1];
+                    switch (formatTextOutlineWidth) {
+                        //definition in cell.
+                        case 'c':
+                            textOutline[textOutlineWidthIndex] = textOutline[textOutlineWidthIndex].split('c');
+                            if (textOutline[textOutlineWidthIndex][0]) {
+                                computedTextOutline.width = textOutline[textOutlineWidthIndex][0] * cellUnit[1] + 'px';
+                            }
+                            break;
+                        case 'x':
+                            //definition in pixel
+                            computedTextOutline.width = textOutline[textOutlineWidthIndex];
+                            break;
+                    }
+                }
+            }
+            return computedTextOutline;
+        },
+
+        hex2rgba_convert = function(hex) {
+            hex = hex.replace('#', '');
+            var r = parseInt(hex.substring(0, 2), 16),
+                g = parseInt(hex.substring(2, 4), 16),
+                b = parseInt(hex.substring(4, 6), 16),
+                a = hex.length > 6 ? parseInt(hex.substring(6, 8), 16) : 255,
+                result = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+
+            return result;
+        },
+
+        rgbaTTMLToCss = function(rgbaTTML) {
+            var rgba,
+                resu = rgbaTTML,
+                alpha;
+
+            rgba = rgbaTTML.replace(/^(rgb|rgba)\(/,'').replace(/\)$/,'').replace(/\s/g,'').split(',');
+            if (rgba[rgba.length - 1] > 1) {
+                alpha = parseInt(rgba[rgba.length - 1], 10) / 255;
+                resu = 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+','+alpha+')';
+            }
+            return resu;
+        },
+
+        applySubtitlesCSSStyle = function(div, cssStyle, renderingDiv) {
+            var origin,
+                extent,
+                textOutline,
+                rootExtent,
+                cellUnit = [renderingDiv.clientWidth / cssStyle.cellResolution[0], renderingDiv.clientHeight / cssStyle.cellResolution[1]];
+
+            if (div) {
                 if (cssStyle.backgroundColor && cssStyle.backgroundColor[0] === '#') {
                     cssStyle.backgroundColor = hex2rgba_convert(cssStyle.backgroundColor);
+                }else if (cssStyle.backgroundColor && cssStyle.backgroundColor[3] === 'a') {//detect backgroundColor with an alpha
+                    cssStyle.backgroundColor = rgbaTTMLToCss(cssStyle.backgroundColor);
                 }
 
                 if (cssStyle.color && cssStyle.color[0] === '#') {
                     cssStyle.color = hex2rgba_convert(cssStyle.color);
-                }
-
-                if (cssStyle.textOutline.color && cssStyle.textOutline.color[0] === '#') {
-                    div.style.webkitTextStroke = hex2rgba_convert(cssStyle.textOutline.color);
-                } else if (cssStyle.textOutline.color) {
-                    div.style.webkitTextStroke = cssStyle.textOutline.color;
+                }else if (cssStyle.color && cssStyle.color[3] === 'a') {//detect backgroundColor with an alpha
+                    cssStyle.color = rgbaTTMLToCss(cssStyle.color);
                 }
 
                 if (cssStyle.origin && cssStyle.origin[cssStyle.origin.length - 1] === '%') {
                     origin = cssStyle.origin.split('%');
-                    div.style.left = ((parseInt(origin[0], 10) * renderingDiv.clientWidth) / 100) + "px";
-                    div.style.bottom = renderingDiv.clientHeight - ((parseInt(origin[1], 10) * renderingDiv.clientHeight) / 100) + "px";
-                }else if (cssStyle.origin && cssStyle.origin[cssStyle.origin.length - 1] === 'x') {
+                    div.style.left = parseInt(origin[0], 10) + '%';
+                    div.style.top = parseInt(origin[1], 10) + '%';
+                    if (cssStyle.extent && cssStyle.extent[cssStyle.extent.length - 1] === '%') {
+                        extent = cssStyle.extent.split('%');
+                        div.style.width = parseInt(extent[0], 10) + '%';
+                        div.style.height = parseInt(extent[1], 10) + '%';
+                    }
+                } else if (cssStyle.origin && cssStyle.origin[cssStyle.origin.length - 1] === 'x') {
                     origin = cssStyle.origin.split('px');
                     if (cssStyle.rootExtent && cssStyle.rootExtent[cssStyle.rootExtent.length - 1] === 'x') {
                         rootExtent = cssStyle.rootExtent.split('px');
-                        div.style.left = ((origin[0] / rootExtent[0]) * renderingDiv.clientWidth)+ "px";
-                        div.style.bottom = renderingDiv.clientHeight - ((origin[1] / rootExtent[1]) * renderingDiv.clientHeight)+ "px";
+                        var temp = (origin[0] / rootExtent[0]) * renderingDiv.clientWidth;
+                        div.style.left = temp / renderingDiv.clientWidth * 100 + '%';
+                        temp = (origin[1] / rootExtent[1]) * renderingDiv.clientHeight;
+                        div.style.top = temp / renderingDiv.clientHeight * 100 + '%';
                         if (cssStyle.extent && cssStyle.extent[cssStyle.extent.length - 1] === 'x') {
                             extent = cssStyle.extent.split('px');
-                            div.style.width = ((extent[0] / rootExtent[0]) * renderingDiv.clientWidth)+ "px";
-                            div.style.height = ((extent[1] / rootExtent[1]) * renderingDiv.clientHeight)+ "px";
+                            temp = (extent[0] / rootExtent[0]) * renderingDiv.clientWidth;
+                            div.style.width = temp / renderingDiv.clientWidth * 100 + '%';
+                            temp = (extent[1] / rootExtent[1]) * renderingDiv.clientHeight;
+                            div.style.height = temp / renderingDiv.clientHeight * 100 + '%';
                         }
-                    }else{
-                        div.style.left = origin[0]+ "px";
+                    } else {
+                        div.style.left = origin[0] + "px";
                         div.style.top = origin[1] + "px";
                     }
                 }
 
-                if (cssStyle.textOutline.width &&cssStyle.textOutline.width[cssStyle.textOutline.width.length - 1] === '%') {
-                    div.style.webkitTextStrokeWidth = parseInt((renderingDiv.clientWidth * parseFloat(cssStyle.textOutline.width.substr(0, cssStyle.textOutline.width.length - 1))) / 100, 10) + 'px';
-                } else if (cssStyle.textOutline.width) {
-                    //definition is done in pixels.
-                    div.style.webkitTextStrokeWidth = cssStyle.textOutline.width;
+                textOutline = computeTextOutline(cssStyle.textOutline, cellUnit, cssStyle.color);
+                div.style.webkitTextStrokeWidth = textOutline.width;
+                div.style.webkitTextStroke = textOutline.color;
+                switch (cssStyle.textAlign) {
+                    //Values in TTML : left | center | right | start | end
+                    //Values in css : left|right|center|justify|initial|inherit
+                    case 'start':
+                        div.style.justifyContent = 'flex-start';
+                        break;
+                    case 'end':
+                        div.style.justifyContent = 'flex-end';
+                        break;
+                    case 'center':
+                        div.style.justifyContent = 'center';
+                        break;
+                    case 'right':
+                        div.style.justifyContent = 'flex-end';
+                        break; 
+                    case 'left':
+                        div.style.justifyContent = 'flex-start';
+                        break; 
+                    default:
+                        div.style.justifyContent = 'flex-start';
                 }
+
+                switch (cssStyle.displayAlign) {
+                    //Values in TTML : before | center | after
+                    //Values in css : flex-start| center | flex-end
+                    case 'before':
+                        div.style.alignItems = 'flex-start';
+                        break;
+                    case 'center':
+                        div.style.alignItems = cssStyle.displayAlign;
+                        break;
+                    case 'after':
+                        div.style.alignItems = 'flex-end';
+                        break;                        
+                    default:
+                        div.style.alignItems = 'flex-start';
+                }
+
+                if (cssStyle.showBackground && cssStyle.showBackground === 'whenActive') {
+                    div.style.width = "auto";
+                    div.style.height = "auto";
+                }
+                div.style.fontStyle = cssStyle.fontStyle;
                 div.style.backgroundColor = cssStyle.backgroundColor;
                 div.style.color = cssStyle.color;
-                div.style.fontSize = fontSize;
+                div.style.fontSize = computeFontSize(cssStyle.fontSize, cellUnit);
                 div.style.fontFamily = cssStyle.fontFamily;
             }
         };
 
     return {
-        initialize: function(renderingDiv){
+        initialize: function(renderingDiv) {
             ttmlDiv = renderingDiv;
             document.addEventListener('webkitfullscreenchange', onFullScreenChange.bind(this));
             document.addEventListener('mozfullscreenchange', onFullScreenChange.bind(this));
@@ -123,26 +255,28 @@ MediaPlayer.utils.TTMLRenderer = function() {
             var i = 0;
 
             for (i = 0; i < subtitleDivTab.length; i++) {
-                removeSubtitleDiv(subtitleDivTab[i]); 
+                removeSubtitleDiv(subtitleDivTab[i]);
             }
             subtitleDivTab = [];
         },
 
         onCueEnter: function(e) {
             var newDiv = createSubtitleDiv();
-            
+          
             applySubtitlesCSSStyle(newDiv, e.currentTarget.style, ttmlDiv);
 
             newDiv.ttmlStyle = e.currentTarget.style;
-            
-            if(e.currentTarget.type !== 'image'){
+
+            if (e.currentTarget.type !== 'image') {
                 newDiv.innerText = e.currentTarget.text;
-            }else {
+            } else {
                 var img = new Image();
+                img.style.height = 'auto';
+                img.style.width = 'auto';
                 img.src = e.currentTarget.text;
                 newDiv.appendChild(img);
             }
-            
+
             subtitleDivTab.push(newDiv);
         },
 

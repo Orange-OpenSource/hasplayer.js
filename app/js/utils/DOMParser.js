@@ -33,8 +33,8 @@ MediaPlayer.utils.DOMParser = function() {
                         id = this.getAttributeValue(querySelectorResult[i], 'xml:id');
                         if (id) {
                             returnTab[id] = querySelectorResult[i].attributes;
-                            if (querySelectorResult[i].innerHTML !== "" ) {
-                                returnTab[id].innerHTML = querySelectorResult[i].innerHTML;
+                            if (querySelectorResult[i].childNodes.length > 0 ) {
+                                returnTab[id].childNodes = querySelectorResult[i].childNodes;
                             }
                         }
                     }

@@ -151,7 +151,7 @@ MediaPlayer.utils.TTMLParser = function() {
             return passed;
         },
 
-        findStyleElement = function(nodeTab, styleElementName) {
+        findStyleElement = function(nodeTab, styleElementName, defaultTTMLValue) {
             var styleName,
                 regionName,
                 resu = null,
@@ -224,7 +224,7 @@ MediaPlayer.utils.TTMLParser = function() {
                 }
             }
 
-            return null;
+            return defaultTTMLValue !== undefined ? defaultTTMLValue : null;
         },
 
         searchInTab = function(tab, elementNameReference, styleElementName) {
@@ -389,87 +389,6 @@ MediaPlayer.utils.TTMLParser = function() {
             return computedCellResolution;
         },
 
-        computeTextOutline = function(textOutline, cellResolution, defaultColor) {
-            var computedTextOutline = {
-                    color: null,
-                    width: null
-                },
-                formatTextOutlineWidth,
-                textOutlineWidthIndex = 0;
-
-            if (textOutline) {
-                textOutline = textOutline.split(' ');
-                //detect if outline color has been defined, if not outline color should be set to color value
-                if (textOutline[0] && isNaN(textOutline[0][0])) {
-                    computedTextOutline.color = textOutline[0];
-                    textOutlineWidthIndex = 1;
-                } else {
-                    computedTextOutline.color = defaultColor;
-                }
-
-                //detect text outline width, the first length value
-                if (textOutline[textOutlineWidthIndex]) {
-                    //get the last character for text Outline width definition
-                    formatTextOutlineWidth = textOutline[textOutlineWidthIndex][textOutline[textOutlineWidthIndex].length - 1];
-                    switch (formatTextOutlineWidth) {
-                        //definition in cell.
-                        case 'c':
-                            textOutline[textOutlineWidthIndex] = textOutline[textOutlineWidthIndex].split('c');
-                            if (textOutline[textOutlineWidthIndex][0]) {
-                                computedTextOutline.width = (parseFloat(textOutline[textOutlineWidthIndex][0] / cellResolution[1], 10) * 100).toFixed(1) + '%';
-                            }
-                            break;
-                        case 'x':
-                            //definition in pixel
-                            computedTextOutline.width = textOutline[textOutlineWidthIndex];
-                            break;
-                    }
-                }
-            }
-            return computedTextOutline;
-        },
-
-        computeFontSize = function(fontSize, cellResolution) {
-            var formatFontSize,
-                cellsSize,
-                i,
-                computedFontSize = fontSize;
-
-            if (fontSize) {
-                //get the last character for font size definition
-                formatFontSize = fontSize[fontSize.length - 1];
-            }
-
-            switch (formatFontSize) {
-                case '%':
-                    computedFontSize = (parseFloat(1 / cellResolution[1], 10) * 100);
-                    computedFontSize = ((parseInt(fontSize.substr(0, fontSize.length - 1), 10) * computedFontSize) / 100).toFixed(1) + "%";
-                    break;
-                case 'c':
-                    //define fontSize in %
-                    cellsSize = fontSize.replace(/\s/g, '').split('c');
-
-                    for (i = 0; i < cellsSize.length; i += 1) {
-                        cellsSize[i] = parseFloat(cellsSize[i]);
-                    }
-
-                    if (isNaN(cellsSize[1])) {
-                        computedFontSize = (cellsSize[0] / cellResolution[1] * 100).toFixed(1) + '%';
-                    } else {
-                        computedFontSize = (cellsSize[1] / cellResolution[1] * 100).toFixed(1) + '%';
-                    }
-                    break;
-                case 'x':
-                    //nothing to do, fontSize has been set with an absolute value.
-                    break;
-                default:
-                    //no fontSize has been defined => '1 c'
-                    computedFontSize = (parseFloat(1 / cellResolution[1], 10) * 100).toFixed(1) + '%';
-            }
-
-            return computedFontSize;
-        },
-
         internalParse = function(data) {
             var captionArray = [],
                 errorMsg,
@@ -484,13 +403,18 @@ MediaPlayer.utils.TTMLParser = function() {
                     color: null,
                     fontSize: null,
                     fontFamily: null,
+                    fontStyle: null,
                     textOutline: {
                         color: null,
                         with: null
                     },
+                    textAlign: null,
+                    displayAlign: null,
                     origin: null,
                     extent: null,
-                    rootExtent: null
+                    cellResolution: null,
+                    rootExtent: null,
+                    showBackground: null
                 },
                 caption,
                 divBody,
@@ -498,11 +422,8 @@ MediaPlayer.utils.TTMLParser = function() {
                 textDatas,
                 j,
                 k,
-                cellResolution,
-                extent,
                 rootExtent,
                 textNodes,
-                textOutline,
                 textValue = "",
                 imageRef,
                 ttmlRenderingType = "",
@@ -567,12 +488,14 @@ MediaPlayer.utils.TTMLParser = function() {
 
                         cssStyle.origin = findStyleElement.call(this, [divBody[k]], 'origin');
                         cssStyle.extent = findStyleElement.call(this, [divBody[k]], 'extent');
-
+                        cssStyle.cellResolution = findParameterElement.call(this, [divBody[k], nodeTt], 'cellResolution');
+                        cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
+                        cssStyle.textOutline = findStyleElement.call(this, [divBody[k]], 'textOutline');
                         caption = {
                             start: startTime,
                             end: endTime,
                             type: 'image',
-                            data: 'data:image/' + tabImages[imageRef.substring(1)].imagetype.nodeValue + ';base64, ' + tabImages[imageRef.substring(1)].innerHTML,
+                            data: 'data:image/' + tabImages[imageRef.substring(1)].imagetype.nodeValue + ';base64, ' + this.domParser.getChildNode(tabImages[imageRef.substring(1)], '#text').nodeValue,
                             line: 80,
                             style: cssStyle
                         };
@@ -590,13 +513,18 @@ MediaPlayer.utils.TTMLParser = function() {
                                 color: null,
                                 fontSize: null,
                                 fontFamily: null,
+                                fontStyle: null,
                                 textOutline: {
                                     color: null,
                                     with: null
                                 },
+                                textAlign: null,
+                                displayAlign: null,
                                 origin: null,
                                 extent: null,
-                                rootExtent: rootExtent
+                                cellResolution: null,
+                                rootExtent: rootExtent,
+                                showBackground : null
                             };
                             region = regions[i];
 
@@ -615,6 +543,9 @@ MediaPlayer.utils.TTMLParser = function() {
                                 //subtitles are set in span
                                 if (textDatas.length > 0) {
                                     for (j = 0; j < textDatas.length; j++) {
+                                        if (j > 0) {
+                                            textValue += '\n';
+                                        }
                                         /******************** Find style informations ***************************************
                                          *   1- in subtitle paragraph ToDo
                                          *   2- in style element referenced in the subtitle paragraph
@@ -625,25 +556,22 @@ MediaPlayer.utils.TTMLParser = function() {
                                          **************************************************************************************/
                                         //search style informations once. 
                                         if (j === 0) {
-                                            cssStyle.backgroundColor = findStyleElement.call(this, [textDatas[j], region, divBody], 'backgroundColor');
-                                            if (cssStyle.backgroundColor === null) {
-                                                //set default TTML value
-                                                cssStyle.backgroundColor = 'transparent';
-                                            }
+                                            cssStyle.backgroundColor = findStyleElement.call(this, [textDatas[j], region, divBody], 'backgroundColor', 'transparent');
                                             cssStyle.color = findStyleElement.call(this, [textDatas[j], region, divBody], 'color');
                                             cssStyle.fontSize = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontSize');
                                             cssStyle.fontFamily = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontFamily');
-                                            textOutline = findStyleElement.call(this, [textDatas[j], region, divBody], 'textOutline');
-                                            extent = findStyleElement.call(this, [textDatas[j], region, divBody], 'extent');
-
-                                            cellResolution = findParameterElement.call(this, [textDatas[j], region, divBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution');
-                                            cellResolution = computeCellResolution(cellResolution);
-
-                                            cssStyle.textOutline = computeTextOutline(textOutline, cellResolution, cssStyle.color);
-                                            cssStyle.fontSize = computeFontSize(cssStyle.fontSize, cellResolution);
+                                            cssStyle.fontStyle = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontStyle', 'normal');
+                                            cssStyle.textOutline = findStyleElement.call(this, [textDatas[j], region, divBody], 'textOutline');
+                                            cssStyle.extent = findStyleElement.call(this, [textDatas[j], region, divBody], 'extent');
+                                            cssStyle.origin = findStyleElement.call(this, [textDatas[j], region, divBody], 'origin');
+                                            cssStyle.textAlign = findStyleElement.call(this, [textDatas[j], region, divBody], 'textAlign', 'start');
+                                            cssStyle.displayAlign = findStyleElement.call(this, [textDatas[j], region, divBody], 'displayAlign', 'before');
+                                            cssStyle.showBackground = findStyleElement.call(this, [textDatas[j], region, divBody], 'showBackground');
+                                            cssStyle.cellResolution = findParameterElement.call(this, [textDatas[j], region, divBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution');
+                                            cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
                                         }
                                         //try to detect multi lines subtitle
-                                        textValue += textDatas[j].textContent + "\n";
+                                        textValue += textDatas[j].textContent;
                                     }
                                     //line and position element have no effect on IE
                                     //For Chrome line = 80 is a percentage workaround to reorder subtitles
@@ -657,25 +585,20 @@ MediaPlayer.utils.TTMLParser = function() {
                                     textValue = "";
                                     captionArray.push(caption);
                                 } else {
-                                    cssStyle.backgroundColor = findStyleElement.call(this, [region, divBody], 'backgroundColor');
-                                    if (cssStyle.backgroundColor === null) {
-                                        //set default TTML value
-                                        cssStyle.backgroundColor = 'transparent';
-                                    }
+                                    cssStyle.backgroundColor = findStyleElement.call(this, [region, divBody], 'backgroundColor', 'transparent');
                                     cssStyle.color = findStyleElement.call(this, [region, divBody], 'color');
                                     cssStyle.fontSize = findStyleElement.call(this, [region, divBody], 'fontSize');
                                     cssStyle.fontFamily = findStyleElement.call(this, [region, divBody], 'fontFamily');
-                                    textOutline = findStyleElement.call(this, [region, divBody], 'textOutline');
-
-                                    extent = findStyleElement.call(this, [region, divBody], 'extent');
-
-                                    cellResolution = findParameterElement.call(this, [region, divBody], globalPrefParameterNameSpace, 'cellResolution');
-                                    cellResolution = computeCellResolution(cellResolution);
-
-                                    cssStyle.textOutline = computeTextOutline(textOutline, cellResolution, cssStyle.color);
-                                    cssStyle.fontSize = computeFontSize(cssStyle.fontSize, cellResolution);
-
+                                    cssStyle.fontStyle = findStyleElement.call(this, [region, divBody], 'fontStyle', 'normal');
+                                    cssStyle.textOutline = findStyleElement.call(this, [region, divBody], 'textOutline');
+                                    cssStyle.cellResolution = findParameterElement.call(this, [region, divBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution');
+                                    cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
+                                    cssStyle.textAlign = findStyleElement.call(this, [region, divBody], 'textAlign', 'start');
+                                    cssStyle.displayAlign = findStyleElement.call(this, [region, divBody], 'displayAlign', 'before');
                                     cssStyle.origin = findStyleElement.call(this, [region, divBody], 'origin');
+                                    cssStyle.extent = findStyleElement.call(this, [region, divBody], 'extent');
+
+                                    cssStyle.showBackground = findStyleElement.call(this, [region, divBody], 'showBackground');
 
                                     //line and position element have no effect on IE
                                     //For Chrome line = 80 is a percentage workaround to reorder subtitles

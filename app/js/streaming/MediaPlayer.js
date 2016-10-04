@@ -1299,17 +1299,32 @@ MediaPlayer = function () {
         * @access public
         * @memberof MediaPlayer#
         * @return {boolean} true if subtitles are enabled, false otherwise
-       */
+        */
         isSubtitlesEnabled: function () {
             _isPlayerInitialized();
             return subtitlesEnabled;
         },
 
         /**
-         * Returns instance of Div that was attached by calling attachTTMLRenderingDiv()
-         * @returns {Object}
-         * @memberof module:MediaPlayer
-         * @instance
+         * Enables or disables subtitles display in a div outside video player.
+         * @method enableSubtitleExternDisplay
+         * @access public
+         * @memberof MediaPlayer#
+         * @param {boolean} mode - true if subtitles are displayed in a div outside video player
+         */
+        enableSubtitleExternDisplay: function (value) {
+            if (typeof value !== 'boolean') {
+                throw new Error('MediaPlayer.enableSubtitleExternDisplay(): Invalid Arguments');
+            }
+            this.config.setParams({'TextTrackExtensions.displayModeExtern': value});
+        },
+
+        /**
+         * Returns the HTML div element previously attached (@see [attachTTMLRenderingDiv]{@link MediaPlayer#attachTTMLRenderingDiv})
+         * @method getTTMLRenderingDiv
+         * @access public
+         * @memberof MediaPlayer#
+         * @returns {HTMLDivElement} the HTML div object previously attached
          */
         getTTMLRenderingDiv: function() {
             return videoModel ? videoModel.getTTMLRenderingDiv() : null;

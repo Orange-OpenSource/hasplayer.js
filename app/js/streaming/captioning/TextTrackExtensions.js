@@ -22,6 +22,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
         eventBus: undefined,
         videoModel: undefined,
         debug: undefined,
+        config: undefined,
 
         setup: function() {
             Cue = window.VTTCue || window.TextTrackCue;
@@ -73,6 +74,9 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                     ttmlRenderer.initialize(renderingDiv);
                 }
                 subtitleDisplayMode = renderingDiv !== null ? 'metadata' : 'subtitles';
+                if (subtitleDisplayMode === 'subtitles') {
+                    subtitleDisplayMode = this.config.getParam("TextTrackExtensions.displayModeExtern", "boolean") === true ? 'metadata' : 'subtitles';
+                }
                 //TODO: Ability to define the KIND in the MPD - ie subtitle vs caption....
                 track = video.addTextTrack(subtitleDisplayMode, 'hascaption', scrlang);
                 currentLanguage = scrlang;
