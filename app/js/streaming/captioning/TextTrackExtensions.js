@@ -86,11 +86,16 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                 // The following jshint directive is used to suppressed the warning "Expected an identifier and instead saw 'default' (a reserved word)"
                 /*jshint -W024 */
                 track.default = isDefaultTrack;
-                track.mode = "showing";
+                if (subtitleDisplayMode !== 'metadata') {
+                    track.mode = "showing";
+                }else{
+                    track.mode = "hidden";
+                }
+
             } else {
                 this.cleanSubtitles();
                 track.default = isDefaultTrack;
-                if (track.mode !== 'showing') {
+                if (track.mode !== 'showing' && track.kind !== 'metadata') {
                     track.mode = "showing";
                 }
                 currentLanguage = scrlang;
@@ -180,7 +185,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                     //noway to delete track, just disable it
                     //useful when player switchs between a stream with subtitles and an other one without.
                     if (disabled) {
-                        track.mode = "disabled";
+                        track.mode = "hidden";
                     }
                 }
             }

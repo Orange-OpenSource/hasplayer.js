@@ -1249,8 +1249,10 @@ MediaPlayer.dependencies.Stream = function() {
                             streamsComposed.call(this);
                         }
                         // show subtitle here => useful for full TTML file
-                        if (track && track.mode !== 'showing') {
+                        if (track && track.kind !== 'metadata' && track.mode !== 'showing') {
                             track.mode = "showing";
+                        }else if (track) {
+                            track.mode = "hidden";
                         }
                     } else {
                         if (fragmentInfoTextController) {
