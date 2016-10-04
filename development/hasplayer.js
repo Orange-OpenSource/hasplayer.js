@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2016-10-4_9:40:31 / git revision : 951854e */
+/* Last build : 2016-10-4_9:45:56 / git revision : 35bdbd8 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.6.0-dev',
-        GIT_TAG = '951854e',
-        BUILD_DATE = '2016-10-4_9:40:31',
+        GIT_TAG = '35bdbd8',
+        BUILD_DATE = '2016-10-4_9:45:56',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -1374,11 +1374,11 @@ MediaPlayer = function () {
         },
 
         /**
-         * Use this method to attach an HTML5 div for hasplayer.js to render rich TTML subtitles.
-         *
-         * @param {HTMLDivElement} div - An unstyled div placed after the video element. It will be styled to match the video size and overlay z-order.
-         * @memberof module:MediaPlayer
-         * @instance
+         * Attaches an HTML div element to be used to render rich TTML subtitles.
+         * @method attachTTMLRenderingDiv
+         * @access public
+         * @memberof MediaPlayer#
+         * @param {HTMLDivElement} div - An unstyled div element placed after the video element. It will be styled to match the video size and overlay z-order
          */
         attachTTMLRenderingDiv: function(div) {
             _isPlayerInitialized();
@@ -10055,7 +10055,7 @@ MediaPlayer.dependencies.Stream = function() {
                         }
                         // hide subtitle here
                         if (track) {
-                            track.mode = "hidden";
+                            track.mode = "disabled";
                         }
                         textController.stop();
                     }
@@ -10703,14 +10703,14 @@ MediaPlayer.dependencies.StreamController = function() {
             var manifest = this.manifestModel.getValue(),
                 manifestUrl = url ? url : (manifest.hasOwnProperty("Location") ? manifest.Location : manifest.mpdUrl);
 
-            this.debug.log("### Refresh manifest @ " + manifestUrl);
+            this.debug.log("[StreamController] Refresh manifest: " + manifestUrl);
 
             var self = this;
             this.manifestLoader.abort();
             this.manifestLoader.load(manifestUrl, true).then(
                 function(manifestResult) {
                     self.manifestModel.setValue(manifestResult);
-                    self.debug.log("### Manifest has been refreshed.");
+                    self.debug.log("[StreamController] Manifest has been refreshed");
                     reloadStream = false;
                 },
                 function(err) {
@@ -14661,14 +14661,16 @@ Dash.dependencies.BaseURLExtensions = function () {
                 ref_size = ref_size & 0x7fffffff;
                 ref_dur = d.getUint32(pos + 4, false);
                 pos += 12;
-                sidx.references.push({
-                    'size': ref_size,
-                    'type': ref_type,
-                    'offset': offset,
-                    'duration': ref_dur,
-                    'time': time,
-                    'timescale': sidx.timescale
-                });
+                if (ref_size > 0) {
+                    sidx.references.push({
+                        'size': ref_size,
+                        'type': ref_type,
+                        'offset': offset,
+                        'duration': ref_dur,
+                        'time': time,
+                        'timescale': sidx.timescale
+                    });
+                }
                 offset += ref_size;
                 time += ref_dur;
             }
