@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2016-10-4_7:22:33 / git revision : 3513930 */
+/* Last build : 2016-10-4_9:40:31 / git revision : 951854e */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.6.0-dev',
-        GIT_TAG = '3513930',
-        BUILD_DATE = '2016-10-4_7:22:33',
+        GIT_TAG = '951854e',
+        BUILD_DATE = '2016-10-4_9:40:31',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -1342,17 +1342,32 @@ MediaPlayer = function () {
         * @access public
         * @memberof MediaPlayer#
         * @return {boolean} true if subtitles are enabled, false otherwise
-       */
+        */
         isSubtitlesEnabled: function () {
             _isPlayerInitialized();
             return subtitlesEnabled;
         },
 
         /**
-         * Returns instance of Div that was attached by calling attachTTMLRenderingDiv()
-         * @returns {Object}
-         * @memberof module:MediaPlayer
-         * @instance
+         * Enables or disables subtitles display in a div outside video player.
+         * @method enableSubtitleExternDisplay
+         * @access public
+         * @memberof MediaPlayer#
+         * @param {boolean} mode - true if subtitles are displayed in a div outside video player
+         */
+        enableSubtitleExternDisplay: function (value) {
+            if (typeof value !== 'boolean') {
+                throw new Error('MediaPlayer.enableSubtitleExternDisplay(): Invalid Arguments');
+            }
+            this.config.setParams({'TextTrackExtensions.displayModeExtern': value});
+        },
+
+        /**
+         * Returns the HTML div element previously attached (@see [attachTTMLRenderingDiv]{@link MediaPlayer#attachTTMLRenderingDiv})
+         * @method getTTMLRenderingDiv
+         * @access public
+         * @memberof MediaPlayer#
+         * @returns {HTMLDivElement} the HTML div object previously attached
          */
         getTTMLRenderingDiv: function() {
             return videoModel ? videoModel.getTTMLRenderingDiv() : null;
@@ -11505,7 +11520,7 @@ MediaPlayer.utils.TTMLParser = function() {
             return passed;
         },
 
-        findStyleElement = function(nodeTab, styleElementName) {
+        findStyleElement = function(nodeTab, styleElementName, defaultTTMLValue) {
             var styleName,
                 regionName,
                 resu = null,
@@ -11578,7 +11593,7 @@ MediaPlayer.utils.TTMLParser = function() {
                 }
             }
 
-            return null;
+            return defaultTTMLValue !== undefined ? defaultTTMLValue : null;
         },
 
         searchInTab = function(tab, elementNameReference, styleElementName) {
@@ -11743,87 +11758,6 @@ MediaPlayer.utils.TTMLParser = function() {
             return computedCellResolution;
         },
 
-        computeTextOutline = function(textOutline, cellResolution, defaultColor) {
-            var computedTextOutline = {
-                    color: null,
-                    width: null
-                },
-                formatTextOutlineWidth,
-                textOutlineWidthIndex = 0;
-
-            if (textOutline) {
-                textOutline = textOutline.split(' ');
-                //detect if outline color has been defined, if not outline color should be set to color value
-                if (textOutline[0] && isNaN(textOutline[0][0])) {
-                    computedTextOutline.color = textOutline[0];
-                    textOutlineWidthIndex = 1;
-                } else {
-                    computedTextOutline.color = defaultColor;
-                }
-
-                //detect text outline width, the first length value
-                if (textOutline[textOutlineWidthIndex]) {
-                    //get the last character for text Outline width definition
-                    formatTextOutlineWidth = textOutline[textOutlineWidthIndex][textOutline[textOutlineWidthIndex].length - 1];
-                    switch (formatTextOutlineWidth) {
-                        //definition in cell.
-                        case 'c':
-                            textOutline[textOutlineWidthIndex] = textOutline[textOutlineWidthIndex].split('c');
-                            if (textOutline[textOutlineWidthIndex][0]) {
-                                computedTextOutline.width = (parseFloat(textOutline[textOutlineWidthIndex][0] / cellResolution[1], 10) * 100).toFixed(1) + '%';
-                            }
-                            break;
-                        case 'x':
-                            //definition in pixel
-                            computedTextOutline.width = textOutline[textOutlineWidthIndex];
-                            break;
-                    }
-                }
-            }
-            return computedTextOutline;
-        },
-
-        computeFontSize = function(fontSize, cellResolution) {
-            var formatFontSize,
-                cellsSize,
-                i,
-                computedFontSize = fontSize;
-
-            if (fontSize) {
-                //get the last character for font size definition
-                formatFontSize = fontSize[fontSize.length - 1];
-            }
-
-            switch (formatFontSize) {
-                case '%':
-                    computedFontSize = (parseFloat(1 / cellResolution[1], 10) * 100);
-                    computedFontSize = ((parseInt(fontSize.substr(0, fontSize.length - 1), 10) * computedFontSize) / 100).toFixed(1) + "%";
-                    break;
-                case 'c':
-                    //define fontSize in %
-                    cellsSize = fontSize.replace(/\s/g, '').split('c');
-
-                    for (i = 0; i < cellsSize.length; i += 1) {
-                        cellsSize[i] = parseFloat(cellsSize[i]);
-                    }
-
-                    if (isNaN(cellsSize[1])) {
-                        computedFontSize = (cellsSize[0] / cellResolution[1] * 100).toFixed(1) + '%';
-                    } else {
-                        computedFontSize = (cellsSize[1] / cellResolution[1] * 100).toFixed(1) + '%';
-                    }
-                    break;
-                case 'x':
-                    //nothing to do, fontSize has been set with an absolute value.
-                    break;
-                default:
-                    //no fontSize has been defined => '1 c'
-                    computedFontSize = (parseFloat(1 / cellResolution[1], 10) * 100).toFixed(1) + '%';
-            }
-
-            return computedFontSize;
-        },
-
         internalParse = function(data) {
             var captionArray = [],
                 errorMsg,
@@ -11838,13 +11772,18 @@ MediaPlayer.utils.TTMLParser = function() {
                     color: null,
                     fontSize: null,
                     fontFamily: null,
+                    fontStyle: null,
                     textOutline: {
                         color: null,
                         with: null
                     },
+                    textAlign: null,
+                    displayAlign: null,
                     origin: null,
                     extent: null,
-                    rootExtent: null
+                    cellResolution: null,
+                    rootExtent: null,
+                    showBackground: null
                 },
                 caption,
                 divBody,
@@ -11852,11 +11791,8 @@ MediaPlayer.utils.TTMLParser = function() {
                 textDatas,
                 j,
                 k,
-                cellResolution,
-                extent,
                 rootExtent,
                 textNodes,
-                textOutline,
                 textValue = "",
                 imageRef,
                 ttmlRenderingType = "",
@@ -11921,12 +11857,14 @@ MediaPlayer.utils.TTMLParser = function() {
 
                         cssStyle.origin = findStyleElement.call(this, [divBody[k]], 'origin');
                         cssStyle.extent = findStyleElement.call(this, [divBody[k]], 'extent');
-
+                        cssStyle.cellResolution = findParameterElement.call(this, [divBody[k], nodeTt], 'cellResolution');
+                        cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
+                        cssStyle.textOutline = findStyleElement.call(this, [divBody[k]], 'textOutline');
                         caption = {
                             start: startTime,
                             end: endTime,
                             type: 'image',
-                            data: 'data:image/' + tabImages[imageRef.substring(1)].imagetype.nodeValue + ';base64, ' + tabImages[imageRef.substring(1)].innerHTML,
+                            data: 'data:image/' + tabImages[imageRef.substring(1)].imagetype.nodeValue + ';base64, ' + this.domParser.getChildNode(tabImages[imageRef.substring(1)], '#text').nodeValue,
                             line: 80,
                             style: cssStyle
                         };
@@ -11944,13 +11882,18 @@ MediaPlayer.utils.TTMLParser = function() {
                                 color: null,
                                 fontSize: null,
                                 fontFamily: null,
+                                fontStyle: null,
                                 textOutline: {
                                     color: null,
                                     with: null
                                 },
+                                textAlign: null,
+                                displayAlign: null,
                                 origin: null,
                                 extent: null,
-                                rootExtent: rootExtent
+                                cellResolution: null,
+                                rootExtent: rootExtent,
+                                showBackground : null
                             };
                             region = regions[i];
 
@@ -11969,6 +11912,9 @@ MediaPlayer.utils.TTMLParser = function() {
                                 //subtitles are set in span
                                 if (textDatas.length > 0) {
                                     for (j = 0; j < textDatas.length; j++) {
+                                        if (j > 0) {
+                                            textValue += '\n';
+                                        }
                                         /******************** Find style informations ***************************************
                                          *   1- in subtitle paragraph ToDo
                                          *   2- in style element referenced in the subtitle paragraph
@@ -11979,25 +11925,22 @@ MediaPlayer.utils.TTMLParser = function() {
                                          **************************************************************************************/
                                         //search style informations once. 
                                         if (j === 0) {
-                                            cssStyle.backgroundColor = findStyleElement.call(this, [textDatas[j], region, divBody], 'backgroundColor');
-                                            if (cssStyle.backgroundColor === null) {
-                                                //set default TTML value
-                                                cssStyle.backgroundColor = 'transparent';
-                                            }
+                                            cssStyle.backgroundColor = findStyleElement.call(this, [textDatas[j], region, divBody], 'backgroundColor', 'transparent');
                                             cssStyle.color = findStyleElement.call(this, [textDatas[j], region, divBody], 'color');
                                             cssStyle.fontSize = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontSize');
                                             cssStyle.fontFamily = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontFamily');
-                                            textOutline = findStyleElement.call(this, [textDatas[j], region, divBody], 'textOutline');
-                                            extent = findStyleElement.call(this, [textDatas[j], region, divBody], 'extent');
-
-                                            cellResolution = findParameterElement.call(this, [textDatas[j], region, divBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution');
-                                            cellResolution = computeCellResolution(cellResolution);
-
-                                            cssStyle.textOutline = computeTextOutline(textOutline, cellResolution, cssStyle.color);
-                                            cssStyle.fontSize = computeFontSize(cssStyle.fontSize, cellResolution);
+                                            cssStyle.fontStyle = findStyleElement.call(this, [textDatas[j], region, divBody], 'fontStyle', 'normal');
+                                            cssStyle.textOutline = findStyleElement.call(this, [textDatas[j], region, divBody], 'textOutline');
+                                            cssStyle.extent = findStyleElement.call(this, [textDatas[j], region, divBody], 'extent');
+                                            cssStyle.origin = findStyleElement.call(this, [textDatas[j], region, divBody], 'origin');
+                                            cssStyle.textAlign = findStyleElement.call(this, [textDatas[j], region, divBody], 'textAlign', 'start');
+                                            cssStyle.displayAlign = findStyleElement.call(this, [textDatas[j], region, divBody], 'displayAlign', 'before');
+                                            cssStyle.showBackground = findStyleElement.call(this, [textDatas[j], region, divBody], 'showBackground');
+                                            cssStyle.cellResolution = findParameterElement.call(this, [textDatas[j], region, divBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution');
+                                            cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
                                         }
                                         //try to detect multi lines subtitle
-                                        textValue += textDatas[j].textContent + "\n";
+                                        textValue += textDatas[j].textContent;
                                     }
                                     //line and position element have no effect on IE
                                     //For Chrome line = 80 is a percentage workaround to reorder subtitles
@@ -12011,25 +11954,20 @@ MediaPlayer.utils.TTMLParser = function() {
                                     textValue = "";
                                     captionArray.push(caption);
                                 } else {
-                                    cssStyle.backgroundColor = findStyleElement.call(this, [region, divBody], 'backgroundColor');
-                                    if (cssStyle.backgroundColor === null) {
-                                        //set default TTML value
-                                        cssStyle.backgroundColor = 'transparent';
-                                    }
+                                    cssStyle.backgroundColor = findStyleElement.call(this, [region, divBody], 'backgroundColor', 'transparent');
                                     cssStyle.color = findStyleElement.call(this, [region, divBody], 'color');
                                     cssStyle.fontSize = findStyleElement.call(this, [region, divBody], 'fontSize');
                                     cssStyle.fontFamily = findStyleElement.call(this, [region, divBody], 'fontFamily');
-                                    textOutline = findStyleElement.call(this, [region, divBody], 'textOutline');
-
-                                    extent = findStyleElement.call(this, [region, divBody], 'extent');
-
-                                    cellResolution = findParameterElement.call(this, [region, divBody], globalPrefParameterNameSpace, 'cellResolution');
-                                    cellResolution = computeCellResolution(cellResolution);
-
-                                    cssStyle.textOutline = computeTextOutline(textOutline, cellResolution, cssStyle.color);
-                                    cssStyle.fontSize = computeFontSize(cssStyle.fontSize, cellResolution);
-
+                                    cssStyle.fontStyle = findStyleElement.call(this, [region, divBody], 'fontStyle', 'normal');
+                                    cssStyle.textOutline = findStyleElement.call(this, [region, divBody], 'textOutline');
+                                    cssStyle.cellResolution = findParameterElement.call(this, [region, divBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution');
+                                    cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
+                                    cssStyle.textAlign = findStyleElement.call(this, [region, divBody], 'textAlign', 'start');
+                                    cssStyle.displayAlign = findStyleElement.call(this, [region, divBody], 'displayAlign', 'before');
                                     cssStyle.origin = findStyleElement.call(this, [region, divBody], 'origin');
+                                    cssStyle.extent = findStyleElement.call(this, [region, divBody], 'extent');
+
+                                    cssStyle.showBackground = findStyleElement.call(this, [region, divBody], 'showBackground');
 
                                     //line and position element have no effect on IE
                                     //For Chrome line = 80 is a percentage workaround to reorder subtitles
@@ -12131,7 +12069,7 @@ MediaPlayer.utils.TTMLRenderer = function() {
     var ttmlDiv,
         subtitleDivTab = [],
 
-    onFullScreenChange = function() {
+        onFullScreenChange = function() {
             var i = 0;
 
             for (i = 0; i < subtitleDivTab.length; i++) {
@@ -12139,12 +12077,13 @@ MediaPlayer.utils.TTMLRenderer = function() {
             }
         },
 
-        createSubtitleDiv= function() {
+        createSubtitleDiv = function() {
             var subtitleDiv = document.createElement("div");
 
             subtitleDiv.style.position = 'absolute';
             subtitleDiv.style.display = 'flex';
-            subtitleDiv.style.overflow = 'hidden';
+            subtitleDiv.style.flexDirection = 'row';
+            subtitleDiv.style.overflow = 'initial';
             subtitleDiv.style.pointerEvents = 'none';
 
             ttmlDiv.appendChild(subtitleDiv);
@@ -12152,82 +12091,213 @@ MediaPlayer.utils.TTMLRenderer = function() {
             return subtitleDiv;
         },
 
-        removeSubtitleDiv= function(div) {
-            ttmlDiv.removeChild(div);
+        removeSubtitleDiv = function(div) {
+            if (ttmlDiv.hasChildNodes()) {
+                ttmlDiv.removeChild(div);
+            }
         },
 
-        applySubtitlesCSSStyle= function(div, cssStyle, renderingDiv) {
-            function hex2rgba_convert(hex) {
-                hex = hex.replace('#', '');
-                var r = parseInt(hex.substring(0, 2), 16),
-                    g = parseInt(hex.substring(2, 4), 16),
-                    b = parseInt(hex.substring(4, 6), 16),
-                    a = hex.length > 6 ? parseInt(hex.substring(6, 8), 16) : 255,
-                    result = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+        computeFontSize = function(fontSize, cellUnit) {
+            var computedFontSize,
+                i;
+            if (fontSize && fontSize[fontSize.length - 1] === '%') {
+                computedFontSize = parseFloat(fontSize.substr(0, fontSize.length - 1)) / 100 * cellUnit[1] + 'px';
+            } else if (fontSize && fontSize[fontSize.length - 1] === 'x') {
+                //case in pixels
+                computedFontSize = fontSize;
+            } else if (fontSize && fontSize[fontSize.length - 1] === 'c') {
+                var cellsSize = fontSize.replace(/\s/g, '').split('c');
 
-                return result;
-            }
-
-            var fontSize,
-                origin,
-                extent,
-                rootExtent;
-
-            if (div) {
-                if (cssStyle.fontSize && cssStyle.fontSize[cssStyle.fontSize.length - 1] === '%') {
-                    fontSize = (renderingDiv.clientHeight * parseFloat(cssStyle.fontSize.substr(0, cssStyle.fontSize.length - 1))) / 100 + 'px';
+                for (i = 0; i < cellsSize.length; i += 1) {
+                    cellsSize[i] = parseFloat(cellsSize[i]);
                 }
 
+                if (isNaN(cellsSize[1])) {
+                    computedFontSize = cellsSize[0] * cellUnit[1] + 'px';
+                } else {
+                    computedFontSize = cellsSize[1] * cellUnit[1] + 'px';
+                }
+            } else { //default value defined in TTML
+                computedFontSize = cellUnit[1] + 'px';
+            }
+
+            return computedFontSize;
+        },
+
+        computeTextOutline = function(textOutline, cellUnit, defaultColor) {
+            var computedTextOutline = {
+                    color: defaultColor,
+                    width: null
+                },
+                formatTextOutlineWidth,
+                textOutlineWidthIndex = 0;
+
+            if (textOutline) {
+                textOutline = textOutline.split(' ');
+
+                //detect if outline color has been defined, if not, outline color should be set to color value
+                if (textOutline[0] && isNaN(textOutline[0][0])) {
+                    computedTextOutline.color = textOutline[0];
+                    textOutlineWidthIndex = 1;
+                } else {
+                    computedTextOutline.color = defaultColor;
+                }
+
+                if (computedTextOutline.color && computedTextOutline.color[0] === '#') {
+                    computedTextOutline.color = hex2rgba_convert(computedTextOutline.color);
+                }
+
+                //detect text outline width, the first length value
+                if (textOutline[textOutlineWidthIndex]) {
+                    //get the last character for text Outline width definition
+                    formatTextOutlineWidth = textOutline[textOutlineWidthIndex][textOutline[textOutlineWidthIndex].length - 1];
+                    switch (formatTextOutlineWidth) {
+                        //definition in cell.
+                        case 'c':
+                            textOutline[textOutlineWidthIndex] = textOutline[textOutlineWidthIndex].split('c');
+                            if (textOutline[textOutlineWidthIndex][0]) {
+                                computedTextOutline.width = textOutline[textOutlineWidthIndex][0] * cellUnit[1] + 'px';
+                            }
+                            break;
+                        case 'x':
+                            //definition in pixel
+                            computedTextOutline.width = textOutline[textOutlineWidthIndex];
+                            break;
+                    }
+                }
+            }
+            return computedTextOutline;
+        },
+
+        hex2rgba_convert = function(hex) {
+            hex = hex.replace('#', '');
+            var r = parseInt(hex.substring(0, 2), 16),
+                g = parseInt(hex.substring(2, 4), 16),
+                b = parseInt(hex.substring(4, 6), 16),
+                a = hex.length > 6 ? parseInt(hex.substring(6, 8), 16) : 255,
+                result = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+
+            return result;
+        },
+
+        rgbaTTMLToCss = function(rgbaTTML) {
+            var rgba,
+                resu = rgbaTTML,
+                alpha;
+
+            rgba = rgbaTTML.replace(/^(rgb|rgba)\(/,'').replace(/\)$/,'').replace(/\s/g,'').split(',');
+            if (rgba[rgba.length - 1] > 1) {
+                alpha = parseInt(rgba[rgba.length - 1], 10) / 255;
+                resu = 'rgba('+rgba[0]+','+rgba[1]+','+rgba[2]+','+alpha+')';
+            }
+            return resu;
+        },
+
+        applySubtitlesCSSStyle = function(div, cssStyle, renderingDiv) {
+            var origin,
+                extent,
+                textOutline,
+                rootExtent,
+                cellUnit = [renderingDiv.clientWidth / cssStyle.cellResolution[0], renderingDiv.clientHeight / cssStyle.cellResolution[1]];
+
+            if (div) {
                 if (cssStyle.backgroundColor && cssStyle.backgroundColor[0] === '#') {
                     cssStyle.backgroundColor = hex2rgba_convert(cssStyle.backgroundColor);
+                }else if (cssStyle.backgroundColor && cssStyle.backgroundColor[3] === 'a') {//detect backgroundColor with an alpha
+                    cssStyle.backgroundColor = rgbaTTMLToCss(cssStyle.backgroundColor);
                 }
 
                 if (cssStyle.color && cssStyle.color[0] === '#') {
                     cssStyle.color = hex2rgba_convert(cssStyle.color);
-                }
-
-                if (cssStyle.textOutline.color && cssStyle.textOutline.color[0] === '#') {
-                    div.style.webkitTextStroke = hex2rgba_convert(cssStyle.textOutline.color);
-                } else if (cssStyle.textOutline.color) {
-                    div.style.webkitTextStroke = cssStyle.textOutline.color;
+                }else if (cssStyle.color && cssStyle.color[3] === 'a') {//detect backgroundColor with an alpha
+                    cssStyle.color = rgbaTTMLToCss(cssStyle.color);
                 }
 
                 if (cssStyle.origin && cssStyle.origin[cssStyle.origin.length - 1] === '%') {
                     origin = cssStyle.origin.split('%');
-                    div.style.left = ((parseInt(origin[0], 10) * renderingDiv.clientWidth) / 100) + "px";
-                    div.style.bottom = renderingDiv.clientHeight - ((parseInt(origin[1], 10) * renderingDiv.clientHeight) / 100) + "px";
-                }else if (cssStyle.origin && cssStyle.origin[cssStyle.origin.length - 1] === 'x') {
+                    div.style.left = parseInt(origin[0], 10) + '%';
+                    div.style.top = parseInt(origin[1], 10) + '%';
+                    if (cssStyle.extent && cssStyle.extent[cssStyle.extent.length - 1] === '%') {
+                        extent = cssStyle.extent.split('%');
+                        div.style.width = parseInt(extent[0], 10) + '%';
+                        div.style.height = parseInt(extent[1], 10) + '%';
+                    }
+                } else if (cssStyle.origin && cssStyle.origin[cssStyle.origin.length - 1] === 'x') {
                     origin = cssStyle.origin.split('px');
                     if (cssStyle.rootExtent && cssStyle.rootExtent[cssStyle.rootExtent.length - 1] === 'x') {
                         rootExtent = cssStyle.rootExtent.split('px');
-                        div.style.left = ((origin[0] / rootExtent[0]) * renderingDiv.clientWidth)+ "px";
-                        div.style.bottom = renderingDiv.clientHeight - ((origin[1] / rootExtent[1]) * renderingDiv.clientHeight)+ "px";
+                        var temp = (origin[0] / rootExtent[0]) * renderingDiv.clientWidth;
+                        div.style.left = temp / renderingDiv.clientWidth * 100 + '%';
+                        temp = (origin[1] / rootExtent[1]) * renderingDiv.clientHeight;
+                        div.style.top = temp / renderingDiv.clientHeight * 100 + '%';
                         if (cssStyle.extent && cssStyle.extent[cssStyle.extent.length - 1] === 'x') {
                             extent = cssStyle.extent.split('px');
-                            div.style.width = ((extent[0] / rootExtent[0]) * renderingDiv.clientWidth)+ "px";
-                            div.style.height = ((extent[1] / rootExtent[1]) * renderingDiv.clientHeight)+ "px";
+                            temp = (extent[0] / rootExtent[0]) * renderingDiv.clientWidth;
+                            div.style.width = temp / renderingDiv.clientWidth * 100 + '%';
+                            temp = (extent[1] / rootExtent[1]) * renderingDiv.clientHeight;
+                            div.style.height = temp / renderingDiv.clientHeight * 100 + '%';
                         }
-                    }else{
-                        div.style.left = origin[0]+ "px";
+                    } else {
+                        div.style.left = origin[0] + "px";
                         div.style.top = origin[1] + "px";
                     }
                 }
 
-                if (cssStyle.textOutline.width &&cssStyle.textOutline.width[cssStyle.textOutline.width.length - 1] === '%') {
-                    div.style.webkitTextStrokeWidth = parseInt((renderingDiv.clientWidth * parseFloat(cssStyle.textOutline.width.substr(0, cssStyle.textOutline.width.length - 1))) / 100, 10) + 'px';
-                } else if (cssStyle.textOutline.width) {
-                    //definition is done in pixels.
-                    div.style.webkitTextStrokeWidth = cssStyle.textOutline.width;
+                textOutline = computeTextOutline(cssStyle.textOutline, cellUnit, cssStyle.color);
+                div.style.webkitTextStrokeWidth = textOutline.width;
+                div.style.webkitTextStroke = textOutline.color;
+                switch (cssStyle.textAlign) {
+                    //Values in TTML : left | center | right | start | end
+                    //Values in css : left|right|center|justify|initial|inherit
+                    case 'start':
+                        div.style.justifyContent = 'flex-start';
+                        break;
+                    case 'end':
+                        div.style.justifyContent = 'flex-end';
+                        break;
+                    case 'center':
+                        div.style.justifyContent = 'center';
+                        break;
+                    case 'right':
+                        div.style.justifyContent = 'flex-end';
+                        break; 
+                    case 'left':
+                        div.style.justifyContent = 'flex-start';
+                        break; 
+                    default:
+                        div.style.justifyContent = 'flex-start';
                 }
+
+                switch (cssStyle.displayAlign) {
+                    //Values in TTML : before | center | after
+                    //Values in css : flex-start| center | flex-end
+                    case 'before':
+                        div.style.alignItems = 'flex-start';
+                        break;
+                    case 'center':
+                        div.style.alignItems = cssStyle.displayAlign;
+                        break;
+                    case 'after':
+                        div.style.alignItems = 'flex-end';
+                        break;                        
+                    default:
+                        div.style.alignItems = 'flex-start';
+                }
+
+                if (cssStyle.showBackground && cssStyle.showBackground === 'whenActive') {
+                    div.style.width = "auto";
+                    div.style.height = "auto";
+                }
+                div.style.fontStyle = cssStyle.fontStyle;
                 div.style.backgroundColor = cssStyle.backgroundColor;
                 div.style.color = cssStyle.color;
-                div.style.fontSize = fontSize;
+                div.style.fontSize = computeFontSize(cssStyle.fontSize, cellUnit);
                 div.style.fontFamily = cssStyle.fontFamily;
             }
         };
 
     return {
-        initialize: function(renderingDiv){
+        initialize: function(renderingDiv) {
             ttmlDiv = renderingDiv;
             document.addEventListener('webkitfullscreenchange', onFullScreenChange.bind(this));
             document.addEventListener('mozfullscreenchange', onFullScreenChange.bind(this));
@@ -12238,26 +12308,28 @@ MediaPlayer.utils.TTMLRenderer = function() {
             var i = 0;
 
             for (i = 0; i < subtitleDivTab.length; i++) {
-                removeSubtitleDiv(subtitleDivTab[i]); 
+                removeSubtitleDiv(subtitleDivTab[i]);
             }
             subtitleDivTab = [];
         },
 
         onCueEnter: function(e) {
             var newDiv = createSubtitleDiv();
-            
+          
             applySubtitlesCSSStyle(newDiv, e.currentTarget.style, ttmlDiv);
 
             newDiv.ttmlStyle = e.currentTarget.style;
-            
-            if(e.currentTarget.type !== 'image'){
+
+            if (e.currentTarget.type !== 'image') {
                 newDiv.innerText = e.currentTarget.text;
-            }else {
+            } else {
                 var img = new Image();
+                img.style.height = 'auto';
+                img.style.width = 'auto';
                 img.src = e.currentTarget.text;
                 newDiv.appendChild(img);
             }
-            
+
             subtitleDivTab.push(newDiv);
         },
 
@@ -12620,6 +12692,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
         textTrackExtensions: undefined,
         ttmlParser: undefined,
         debug: undefined,
+        manifestModel: undefined,
 
         initialize: function(type, bufferController, subtitleData) {
             mimeType = type;
@@ -12743,11 +12816,15 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                 self.convertUTFToString(mdat.data, encoding)
                     .then(function(result) {
                         self.ttmlParser.parse(result).then(function(cues) {
-                            var i;
+                            var i,
+                            manifest = self.manifestModel.getValue();
+
                             if (cues) {
-                                for (i = 0; i < cues.length; i += 1) {
-                                    cues[i].start = cues[i].start + fragmentStart;
-                                    cues[i].end = cues[i].end + fragmentStart;
+                                if (manifest.name === 'MSS') {
+                                    for (i = 0; i < cues.length; i += 1) {
+                                        cues[i].start = cues[i].start + fragmentStart;
+                                        cues[i].end = cues[i].end + fragmentStart;
+                                    }
                                 }
 
                                 self.textTrackExtensions.addCues(self.track, cues);
@@ -12891,6 +12968,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
         eventBus: undefined,
         videoModel: undefined,
         debug: undefined,
+        config: undefined,
 
         setup: function() {
             Cue = window.VTTCue || window.TextTrackCue;
@@ -12942,6 +13020,9 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                     ttmlRenderer.initialize(renderingDiv);
                 }
                 subtitleDisplayMode = renderingDiv !== null ? 'metadata' : 'subtitles';
+                if (subtitleDisplayMode === 'subtitles') {
+                    subtitleDisplayMode = this.config.getParam("TextTrackExtensions.displayModeExtern", "boolean") === true ? 'metadata' : 'subtitles';
+                }
                 //TODO: Ability to define the KIND in the MPD - ie subtitle vs caption....
                 track = video.addTextTrack(subtitleDisplayMode, 'hascaption', scrlang);
                 currentLanguage = scrlang;
@@ -18752,8 +18833,8 @@ MediaPlayer.utils.DOMParser = function() {
                         id = this.getAttributeValue(querySelectorResult[i], 'xml:id');
                         if (id) {
                             returnTab[id] = querySelectorResult[i].attributes;
-                            if (querySelectorResult[i].innerHTML !== "" ) {
-                                returnTab[id].innerHTML = querySelectorResult[i].innerHTML;
+                            if (querySelectorResult[i].childNodes.length > 0 ) {
+                                returnTab[id].childNodes = querySelectorResult[i].childNodes;
                             }
                         }
                     }
