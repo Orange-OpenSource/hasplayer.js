@@ -65,19 +65,13 @@ MediaPlayer.utils.DOMParser = function() {
             return returnValue;
         },
 
-        getAttributeValue: function(node, attrName) {
-            var returnValue = null,
-                domElem = null,
-                attribList = null;
-
-            if (node && node.attributes) {
-                attribList = node.attributes;
-                if (attribList) {
-                    domElem = attribList.getNamedItem(attrName);
-                    if (domElem) {
-                        returnValue = domElem.value;
-                        return returnValue;
-                    }
+        getAttributeValue: function(node, attrName, namespace) {
+            var returnValue = null;
+            
+            if (node) {
+                returnValue = node.getAttribute(attrName);
+                if (returnValue === null) {
+                    returnValue = node.getAttributeNS(namespace, attrName);
                 }
             }
 
