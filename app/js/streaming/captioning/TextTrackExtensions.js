@@ -145,11 +145,10 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                     newCue = new Cue(currentItem.start, currentItem.end, currentItem.data);
 
                     newCue.id = currentLanguage;
+                    newCue.type = currentItem.type;
                     newCue.onenter = this.onCueEnter.bind(this);
                     newCue.onexit = this.onCueExit.bind(this);
-                    newCue.type = currentItem.type;
                     newCue.snapToLines = false;
-
                     newCue.line = currentItem.line;
 
                     if (currentItem.style) {
@@ -165,12 +164,19 @@ MediaPlayer.utils.TextTrackExtensions = function() {
             var track = null,
                 cues = null,
                 lastIdx = null,
+                currentTrackMode,
                 i = 0;
 
             //when multiple tracks are supported - iterate through and delete all cues from all tracks.
             if (video) {
                 track = video.textTracks[0];
                 if (track) {
+                    currentTrackMode = track.mode;
+                    //if track mode is disabled, the cues are not accessible
+                    //we have to change the mode value to be sure the delete process is correctly executed.
+                    if (currentTrackMode === 'disabled') {
+                        track.mode = 'hidden';
+                    }
                     cues = track.cues;
                     if (cues) {
                         lastIdx = cues.length - 1;
@@ -182,11 +188,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                             }
                         }
                     }
-                    //noway to delete track, just disable it
-                    //useful when player switchs between a stream with subtitles and an other one without.
-                    if (disabled) {
-                        track.mode = "hidden";
-                    }
+                    track.mode = currentTrackMode;
                 }
             }
         },
