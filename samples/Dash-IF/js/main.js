@@ -131,6 +131,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
     var player,
         video,
+        subtitlesDiv,
         context,
         config = null,
         videoSeries = [],
@@ -364,6 +365,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         if ($scope.audioTracks !== null) {
         $scope.audioData = $scope.audioTracks[0];
         }
+
         //init subtitles tracks
         player.enableSubtitles(true);
         $scope.textTracks = player.getTracks(MediaPlayer.TRACKS_TYPE.TEXT);
@@ -378,26 +380,6 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
     //if video size change, player has to update subtitles size
     function onFullScreenChange(){
-        setSubtitlesCSSStyle(subtitlesCSSStyle);
-    }
-
-
-    function setSubtitlesCSSStyle(style){
-        if(style){
-            var fontSize = style.data.fontSize;
-
-            if (style.data.fontSize[style.data.fontSize.length-1] ==='%') {
-                fontSize  = (video.clientHeight * style.data.fontSize.substr(0, style.data.fontSize.length-1))/100;
-            }
-
-            document.getElementById("cueStyle").innerHTML = '::cue{ background-color:'+style.data.backgroundColor+';color:'+style.data.color+';font-size: '+fontSize+'px;font-family: '+style.data.fontFamily+'}';
-        }
-    }
-
-
-    function onSubtitlesStyleChanged(style) {
-        subtitlesCSSStyle = style;
-        setSubtitlesCSSStyle(subtitlesCSSStyle);
     }
 
     function onManifestUrlUpdate(){
@@ -636,8 +618,8 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     // Player Setup
     //
     ////////////////////////////////////////
-
     video = document.querySelector(".dash-video-player video");
+    subtitlesDiv = document.querySelector(".subtitlesDiv");
     player = new MediaPlayer();
 
     // link reference between mediaPlayer and player object
@@ -651,7 +633,6 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     player.init(video);
     player.addEventListener("error", onError.bind(this));
     player.addEventListener("metricChanged", metricChanged.bind(this));
-    player.addEventListener("subtitlesStyleChanged",onSubtitlesStyleChanged.bind(this));
     player.addEventListener("manifestUrlUpdate", onManifestUrlUpdate.bind(this));
     video.addEventListener("loadeddata", onload.bind(this));
     video.addEventListener("play", onplay.bind(this));
@@ -925,6 +906,8 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         // ORANGE: reset ABR controller
         player.setInitialQualityFor("video", 0);
         player.setInitialQualityFor("audio", 0);
+
+        player.attachTTMLRenderingDiv(subtitlesDiv);
 
         $scope.playbackRate = "x1";
         player.load($scope.selectedItem);
