@@ -364,7 +364,7 @@ MediaPlayer.utils.TTMLParser = function() {
                 rootExtent = findStyleElement.call(this, [nodeTt], 'extent');
 
                 cssStyle.rootExtent = rootExtent;
-
+                //browse all the different div elements
                 for (k = 0; k < divBody.length; k += 1) {
                     //is it images subtitles?
                     imageRef = findParameterElement.call(this, [divBody[k]], globalPrefSMPTENameSpace, 'backgroundImage');
@@ -421,7 +421,6 @@ MediaPlayer.utils.TTMLParser = function() {
                             if (isNaN(startTime) || isNaN(endTime) || (endTime < startTime)) {
                                 errorMsg = "TTML document has incorrect timing value";
                             } else {
-
                                  //is it images subtitles?
                                 imageRef = findParameterElement.call(this, [region], globalPrefSMPTENameSpace, 'backgroundImage');
                                 if (imageRef && tabImages[imageRef.substring(1)] !== undefined) {
@@ -541,7 +540,8 @@ MediaPlayer.utils.TTMLParser = function() {
                                             }
                                         }
                                     } else {
-                                        textNodes = this.domParser.getChildNodes(region, '#text');
+
+                                        textNodes = this.domParser.getTextNodesIn(region);
 
                                         for (j = 0; j < textNodes.length; j += 1) {
                                             if (j > 0) {

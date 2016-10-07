@@ -65,12 +65,45 @@ MediaPlayer.utils.DOMParser = function() {
             return returnValue;
         },
 
+        getTextNodesIn: function(nodeParent) {
+          var textNodes = [],
+              i = 0,
+              nodes = null,
+              node = null,
+              nodeType = null;
+
+          if (nodeParent) {
+            for (nodes = nodeParent.childNodes, i = nodes.length; i--;) {
+              node = nodes[i], nodeType = node.nodeType;
+                /*ELEMENT_NODE == 1 ( element node )
+                ATTRIBUTE_NODE == 2 ( node attribute )
+                TEXT_NODE == 3 ( text node )
+                CDATA_SECTION_NODE == 4 ( CDATA section node )
+                ENTITY_REFERENCE_NODE == 5 ( node reference to an entity )
+                ENTITY_NODE == 6 ( Feature node )
+                PROCESSING_INSTRUCTION_NODE == 7 ( processing instruction node )
+                COMMENT_NODE == 8 ( comment node )
+                DOCUMENT_NODE == 9 ( document node )
+                DOCUMENT_TYPE_NODE == 10 ( Document Type node )
+                DOCUMENT_FRAGMENT_NODE == 11 ( node document fragment )
+                NOTATION_NODE == 12 ( node notation )*/
+              if (nodeType == 3) {
+                  textNodes.push(node);
+              }
+              else if (nodeType == 1 || nodeType == 9 || nodeType == 11) {
+                textNodes = textNodes.concat(this.getTextNodesIn(node));
+              }
+            }
+          }
+          return textNodes;
+        },
+
         getAttributeValue: function(node, attrName, namespace) {
             var returnValue = null;
-            
-            if (node) {
+
+            if (node && typeof node.getAttribute == 'function') {
                 returnValue = node.getAttribute(attrName);
-                if (returnValue === null) {
+                if (returnValue === null && namespace) {
                     returnValue = node.getAttributeNS(namespace, attrName);
                 }
             }
