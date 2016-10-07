@@ -73,8 +73,10 @@ MediaPlayer.utils.DOMParser = function() {
               nodeType = null;
 
           if (nodeParent) {
-            for (nodes = nodeParent.childNodes, i = nodes.length; i--;) {
-              node = nodes[i], nodeType = node.nodeType;
+            nodes = nodeParent.childNodes;
+            for (i = 0; i < nodes.length; i++) {
+                node = nodes[i];
+                nodeType = node.nodeType;
                 /*ELEMENT_NODE == 1 ( element node )
                 ATTRIBUTE_NODE == 2 ( node attribute )
                 TEXT_NODE == 3 ( text node )
