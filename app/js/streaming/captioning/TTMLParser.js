@@ -290,16 +290,8 @@ MediaPlayer.utils.TTMLParser = function() {
             return computedCellResolution;
         },
 
-        internalParse = function(data) {
-            var captionArray = [],
-                errorMsg,
-                regions,
-                region,
-                previousStartTime = null,
-                previousEndTime = null,
-                startTime,
-                endTime,
-                cssStyle = {
+        getStyle = function(nodeElementsTab, rootExtent){
+            var cssStyle = {
                     backgroundColor: null,
                     color: null,
                     fontSize: null,
@@ -314,9 +306,37 @@ MediaPlayer.utils.TTMLParser = function() {
                     origin: null,
                     extent: null,
                     cellResolution: null,
-                    rootExtent: null,
+                    rootExtent: rootExtent,
                     showBackground: null
-                },
+                };
+
+            cssStyle.backgroundColor = findStyleElement.call(this, nodeElementsTab, 'backgroundColor', 'transparent');
+            cssStyle.color = findStyleElement.call(this, nodeElementsTab, 'color');
+            cssStyle.fontSize = findStyleElement.call(this, nodeElementsTab, 'fontSize');
+            cssStyle.fontFamily = findStyleElement.call(this, nodeElementsTab, 'fontFamily');
+            cssStyle.fontStyle = findStyleElement.call(this, nodeElementsTab, 'fontStyle', 'normal');
+            cssStyle.textOutline = findStyleElement.call(this, nodeElementsTab, 'textOutline');
+            cssStyle.extent = findStyleElement.call(this, nodeElementsTab, 'extent');
+            cssStyle.origin = findStyleElement.call(this, nodeElementsTab, 'origin');
+            cssStyle.textAlign = findStyleElement.call(this, nodeElementsTab, 'textAlign', 'start');
+            cssStyle.displayAlign = findStyleElement.call(this, nodeElementsTab, 'displayAlign', 'before');
+            cssStyle.showBackground = findStyleElement.call(this, nodeElementsTab, 'showBackground');
+            cssStyle.cellResolution = findParameterElement.call(this, nodeElementsTab, globalPrefParameterNameSpace, 'cellResolution');
+            cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
+
+            return cssStyle;
+        },
+
+        internalParse = function(data) {
+            var captionArray = [],
+                errorMsg,
+                regions,
+                region,
+                previousStartTime = null,
+                previousEndTime = null,
+                startTime,
+                endTime,
+                cssStyle = null,
                 caption,
                 divBody,
                 i,
@@ -363,7 +383,6 @@ MediaPlayer.utils.TTMLParser = function() {
                 //search if there is a root container size
                 rootExtent = findStyleElement.call(this, [nodeTt], 'extent');
 
-                cssStyle.rootExtent = rootExtent;
                 //browse all the different div elements
                 for (k = 0; k < divBody.length; k += 1) {
                     //is it images subtitles?
@@ -372,12 +391,9 @@ MediaPlayer.utils.TTMLParser = function() {
 
                         startTime = parseTimings(findParameterElement.call(this, [divBody[k]], globalPrefTTNameSpace, 'begin'));
                         endTime = parseTimings(findParameterElement.call(this, [divBody[k]], globalPrefTTNameSpace, 'end'));
-
-                        cssStyle.origin = findStyleElement.call(this, [divBody[k]], 'origin');
-                        cssStyle.extent = findStyleElement.call(this, [divBody[k]], 'extent');
-                        cssStyle.cellResolution = findParameterElement.call(this, [divBody[k], nodeTt], 'cellResolution');
-                        cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
-                        cssStyle.textOutline = findStyleElement.call(this, [divBody[k]], 'textOutline');
+                        
+                        cssStyle = getStyle.call(this, [divBody[k], nodeTt], rootExtent);
+                       
                         caption = {
                             start: startTime,
                             end: endTime,
@@ -395,24 +411,7 @@ MediaPlayer.utils.TTMLParser = function() {
                     } else {
                         for (i = 0; i < regions.length; i += 1) {
                             caption = null;
-                            cssStyle = {
-                                backgroundColor: null,
-                                color: null,
-                                fontSize: null,
-                                fontFamily: null,
-                                fontStyle: null,
-                                textOutline: {
-                                    color: null,
-                                    with: null
-                                },
-                                textAlign: null,
-                                displayAlign: null,
-                                origin: null,
-                                extent: null,
-                                cellResolution: null,
-                                rootExtent: rootExtent,
-                                showBackground : null
-                            };
+                            cssStyle = null;
                             region = regions[i];
 
                             startTime = parseTimings(findParameterElement.call(this, [region], globalPrefTTNameSpace, 'begin'));
@@ -424,11 +423,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                  //is it images subtitles?
                                 imageRef = findParameterElement.call(this, [region], globalPrefSMPTENameSpace, 'backgroundImage');
                                 if (imageRef && tabImages[imageRef.substring(1)] !== undefined) {
-                                    cssStyle.origin = findStyleElement.call(this, [region, divBody], 'origin');
-                                    cssStyle.extent = findStyleElement.call(this, [region], 'extent');
-                                    cssStyle.cellResolution = findParameterElement.call(this, [region, nodeTt], 'cellResolution');
-                                    cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
-                                    cssStyle.textOutline = findStyleElement.call(this, [region], 'textOutline');
+                                    cssStyle = getStyle.call(this, [region, divBody], rootExtent);
                                     caption = {
                                         start: startTime,
                                         end: endTime,
@@ -457,19 +452,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                          **************************************************************************************/
                                         //search style informations once. 
                                         if (j === 0) {
-                                            cssStyle.backgroundColor = findStyleElement.call(this, [textDatas[j], region, nodeBody], 'backgroundColor', 'transparent');
-                                            cssStyle.color = findStyleElement.call(this, [textDatas[j], region, nodeBody], 'color');
-                                            cssStyle.fontSize = findStyleElement.call(this, [textDatas[j], region, nodeBody], 'fontSize');
-                                            cssStyle.fontFamily = findStyleElement.call(this, [textDatas[j], region, nodeBody], 'fontFamily');
-                                            cssStyle.fontStyle = findStyleElement.call(this, [textDatas[j], region, nodeBody], 'fontStyle', 'normal');
-                                            cssStyle.textOutline = findStyleElement.call(this, [textDatas[j], region, nodeBody], 'textOutline');
-                                            cssStyle.extent = findStyleElement.call(this, [textDatas[j], region, nodeBody], 'extent');
-                                            cssStyle.origin = findStyleElement.call(this, [textDatas[j], region, nodeBody], 'origin');
-                                            cssStyle.textAlign = findStyleElement.call(this, [textDatas[j], region, nodeBody], 'textAlign', 'start');
-                                            cssStyle.displayAlign = findStyleElement.call(this, [textDatas[j], region, nodeBody], 'displayAlign', 'before');
-                                            cssStyle.showBackground = findStyleElement.call(this, [textDatas[j], region, nodeBody], 'showBackground');
-                                            cssStyle.cellResolution = findParameterElement.call(this, [textDatas[j], region, nodeBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution');
-                                            cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
+                                            cssStyle = getStyle.call(this, [textDatas[j], region, nodeBody], rootExtent);
                                         }
                                         //try to detect multi lines subtitle
                                         textValue += textDatas[j].textContent;
@@ -487,20 +470,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                     textValue = "";
                                     captionArray.push(caption);
                                 } else {
-                                    cssStyle.backgroundColor = findStyleElement.call(this, [region, nodeBody], 'backgroundColor', 'transparent');
-                                    cssStyle.color = findStyleElement.call(this, [region, nodeBody], 'color');
-                                    cssStyle.fontSize = findStyleElement.call(this, [region, nodeBody], 'fontSize');
-                                    cssStyle.fontFamily = findStyleElement.call(this, [region, nodeBody], 'fontFamily');
-                                    cssStyle.fontStyle = findStyleElement.call(this, [region, nodeBody], 'fontStyle', 'normal');
-                                    cssStyle.textOutline = findStyleElement.call(this, [region, nodeBody], 'textOutline');
-                                    cssStyle.cellResolution = findParameterElement.call(this, [region, nodeBody, nodeTt], globalPrefParameterNameSpace, 'cellResolution');
-                                    cssStyle.cellResolution = computeCellResolution(cssStyle.cellResolution);
-                                    cssStyle.textAlign = findStyleElement.call(this, [region, nodeBody], 'textAlign', 'start');
-                                    cssStyle.displayAlign = findStyleElement.call(this, [region, nodeBody], 'displayAlign', 'before');
-                                    cssStyle.origin = findStyleElement.call(this, [region, nodeBody], 'origin');
-                                    cssStyle.extent = findStyleElement.call(this, [region, nodeBody], 'extent');
-
-                                    cssStyle.showBackground = findStyleElement.call(this, [region, nodeBody], 'showBackground');
+                                    cssStyle = getStyle.call(this, [region, nodeBody], rootExtent);
 
                                     //line and position element have no effect on IE
                                     //For Chrome line = 80 is a percentage workaround to reorder subtitles
