@@ -432,7 +432,6 @@ MediaPlayer.utils.TTMLParser = function() {
                                         line: 80,
                                         style: cssStyle
                                     };
-                                    captionArray.push(caption);
                                 }
 
                                 textDatas = this.domParser.getChildNodes(region, 'span');
