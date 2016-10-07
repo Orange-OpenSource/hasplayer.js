@@ -423,7 +423,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                  //is it images subtitles?
                                 imageRef = findParameterElement.call(this, [region], globalPrefSMPTENameSpace, 'backgroundImage');
                                 if (imageRef && tabImages[imageRef.substring(1)] !== undefined) {
-                                    cssStyle = getStyle.call(this, [region, divBody[k]], rootExtent);
+                                    cssStyle = getStyle.call(this, [region, divBody[k], nodeTt], rootExtent);
                                     caption = {
                                         start: startTime,
                                         end: endTime,
@@ -451,7 +451,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                          **************************************************************************************/
                                         //search style informations once. 
                                         if (j === 0) {
-                                            cssStyle = getStyle.call(this, [textDatas[j], region, nodeBody], rootExtent);
+                                            cssStyle = getStyle.call(this, [textDatas[j], region, nodeBody, nodeTt], rootExtent);
                                         }
                                         //try to detect multi lines subtitle
                                         textValue += textDatas[j].textContent;
@@ -469,7 +469,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                     textValue = "";
                                     captionArray.push(caption);
                                 } else {
-                                    cssStyle = getStyle.call(this, [region, nodeBody], rootExtent);
+                                    cssStyle = getStyle.call(this, [region, nodeBody, nodeTt], rootExtent);
 
                                     //line and position element have no effect on IE
                                     //For Chrome line = 80 is a percentage workaround to reorder subtitles
