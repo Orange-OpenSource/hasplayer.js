@@ -423,7 +423,7 @@ MediaPlayer.utils.TTMLParser = function() {
                                  //is it images subtitles?
                                 imageRef = findParameterElement.call(this, [region], globalPrefSMPTENameSpace, 'backgroundImage');
                                 if (imageRef && tabImages[imageRef.substring(1)] !== undefined) {
-                                    cssStyle = getStyle.call(this, [region, divBody], rootExtent);
+                                    cssStyle = getStyle.call(this, [region, divBody[k]], rootExtent);
                                     caption = {
                                         start: startTime,
                                         end: endTime,
