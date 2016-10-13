@@ -1406,16 +1406,13 @@ MediaPlayer.dependencies.BufferController = function() {
             this.debug.log("[BufferController][" + type + "] Update data");
 
             // Check if track has changed (in case of language switch for example)
-            //trackChanged = data === null ? true : (((data.lang !== null ? data.lang : data.id) !== ((newData.lang !== null ? newData.lang : newData.id))) ? true : false);
-            trackChanged = data === null ? false : (((data.lang !== null ? data.lang : data.id) !== ((newData.lang !== null ? newData.lang : newData.id))) ? true : false);
+            trackChanged = (data.id !==  newData.id) || (data.lang !==  newData.lang) || (data.subType !==  newData.subType) ;
 
             // Set the new data
             data = newData;
             periodInfo = newPeriodInfo;
             dataChanged = true;
 
-            // Check if track has changed (in case of language switch for example)
-            //if (data === null ? true : (((data.lang !== null ? data.lang : data.id) !== ((newData.lang !== null ? newData.lang : newData.id))) ? true : false);
             if (trackChanged) {
                 this.debug.log("[BufferController][" + type + "] Track changed");
 
