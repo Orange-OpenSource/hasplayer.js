@@ -1406,7 +1406,7 @@ MediaPlayer.dependencies.BufferController = function() {
             this.debug.log("[BufferController][" + type + "] Update data");
 
             // Check if track has changed (in case of language switch for example)
-            trackChanged = (data.id !==  newData.id) || (data.lang !==  newData.lang) || (data.subType !==  newData.subType) ;
+            trackChanged = (data === null) ? false : ((data.id !==  newData.id) || (data.lang !==  newData.lang) || (data.subType !==  newData.subType));
 
             // Set the new data
             data = newData;
