@@ -152,8 +152,6 @@ MediaPlayer.models.VideoModel = function () {
             TTMLRenderingDiv.style.pointerEvents = 'none';
             TTMLRenderingDiv.style.top = 0;
             TTMLRenderingDiv.style.left = 0;
-            TTMLRenderingDiv.style.width = '100%';
-            TTMLRenderingDiv.style.height = '100%';
         },
 
         stallStream: stallStream
