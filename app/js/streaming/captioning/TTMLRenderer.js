@@ -24,6 +24,11 @@ MediaPlayer.utils.TTMLRenderer = function() {
             }
         },
 
+        onSeeking = function() {
+            //used for FF, when the user wants to seek, cueExit is not always sent.
+            this.cleanSubtitles();
+        },
+
         createSubtitleDiv = function() {
             var subtitleDiv = document.createElement("div");
 
@@ -244,11 +249,14 @@ MediaPlayer.utils.TTMLRenderer = function() {
         };
 
     return {
+        videoModel: undefined,
+
         initialize: function(renderingDiv) {
             ttmlDiv = renderingDiv;
             document.addEventListener('webkitfullscreenchange', onFullScreenChange.bind(this));
             document.addEventListener('mozfullscreenchange', onFullScreenChange.bind(this));
             document.addEventListener('fullscreenchange', onFullScreenChange.bind(this));
+            this.videoModel.listen("seeking", onSeeking.bind(this));
         },
 
         cleanSubtitles: function() {
@@ -262,7 +270,7 @@ MediaPlayer.utils.TTMLRenderer = function() {
 
         onCueEnter: function(e) {
             var newDiv = createSubtitleDiv();
-          
+
             applySubtitlesCSSStyle(newDiv, e.currentTarget.style, ttmlDiv);
 
             newDiv.ttmlStyle = e.currentTarget.style;
@@ -276,7 +284,7 @@ MediaPlayer.utils.TTMLRenderer = function() {
                 img.src = e.currentTarget.text;
                 newDiv.appendChild(img);
             }
-
+            newDiv.data = e.currentTarget.text;
             subtitleDivTab.push(newDiv);
         },
 
@@ -284,7 +292,7 @@ MediaPlayer.utils.TTMLRenderer = function() {
             var i = 0;
 
             for (i = 0; i < subtitleDivTab.length; i++) {
-                if (subtitleDivTab[i].ttmlStyle === e.currentTarget.style) {
+                if ((e.currentTarget.text === subtitleDivTab[i].data) && (subtitleDivTab[i].ttmlStyle === e.currentTarget.style)) {
                     break;
                 }
             }
