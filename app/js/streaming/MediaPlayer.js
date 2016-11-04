@@ -1268,7 +1268,8 @@ MediaPlayer = function () {
 
             return {
                 id: _track.id,
-                lang: _track.lang
+                lang: _track.lang,
+                subType: _track.subType
             };
         },
 //#endregion
