@@ -193,6 +193,15 @@ MediaPlayer.utils.TTMLRenderer = function() {
                         div.style.left = origin[0] + "px";
                         div.style.top = origin[1] + "px";
                     }
+                }else if (cssStyle.origin && cssStyle.origin[cssStyle.origin.length - 1] === 'c') {
+                    origin = cssStyle.origin.split('c');
+                    div.style.left = (origin[0] * cellUnit[0]) + "px";
+                    div.style.top = (origin[1] * cellUnit[1]) + "px";
+                    if (cssStyle.extent && cssStyle.extent[cssStyle.extent.length - 1] === 'c') {
+                        extent = cssStyle.extent.split('c');
+                        div.style.width = (extent[0] * cellUnit[0]) + "px";
+                        div.style.height = (extent[1] * cellUnit[1]) + "px";
+                    }
                 }
 
                 textOutline = computeTextOutline(cssStyle.textOutline, cellUnit, cssStyle.color);
