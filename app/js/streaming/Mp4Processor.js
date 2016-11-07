@@ -396,7 +396,12 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             }
 
             avc1.data_reference_index = 1; //To DO... ??
-            avc1.compressorname = "AVC Coding"; //is a name, for informative purposes. It is formatted in a fixed 32-byte field, with the first
+            avc1.compressorname = [0x0A, 0x41, 0x56, 0x43, 0x20, 0x43, 0x6F, 0x64,
+                                   0x69, 0x6E, 0x67, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                                   0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+            // = "AVC Coding";
+            //is a name, for informative purposes. It is formatted in a fixed 32-byte field, with the first
             //byte set to the number of bytes to be displayed, followed by that number of bytes of displayable data,
             //and then padding to complete 32 bytes total (including the size byte). The field may be set to 0.
             avc1.depth = 0x0018; //takes one of the following values 0x0018 – images are in colour with no alpha.
