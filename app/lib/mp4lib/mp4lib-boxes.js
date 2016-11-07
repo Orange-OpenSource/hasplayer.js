@@ -2289,6 +2289,90 @@ mp4lib.boxes.ProtectionSystemSpecificHeaderBox.prototype.write = function(data, 
     return this.localPos;
 };
 
+
+// --------------------------- senc ----------------------------------
+mp4lib.boxes.SampleEncryptionBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'senc', size);
+};
+
+mp4lib.boxes.SampleEncryptionBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.SampleEncryptionBox.prototype.constructor = mp4lib.boxes.SampleEncryptionBox;
+
+mp4lib.boxes.SampleEncryptionBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    var i = 0,
+        j = 0;
+
+    this.size += mp4lib.fields.FIELD_UINT32.getLength(); //sample_count size
+    if (this.flags & 1) {
+        this.size += mp4lib.fields.FIELD_UINT8.getLength(); //IV_size size
+    }
+    for (i = 0; i < this.sample_count; i++) {
+        this.size += 8; // InitializationVector size
+        if (this.flags & 2) {
+            this.size += mp4lib.fields.FIELD_UINT16.getLength(); // NumberOfEntries size
+            for (j = 0; j < this.entry[i].NumberOfEntries; j++) {
+                this.size += mp4lib.fields.FIELD_UINT16.getLength(); //BytesOfClearData size
+                this.size += mp4lib.fields.FIELD_UINT32.getLength(); //BytesOfEncryptedData size
+            }
+        }
+    }
+};
+
+mp4lib.boxes.SampleEncryptionBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    var i = 0,
+        j = 0;
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.sample_count);
+    if (this.flags & 1) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT8, this.IV_size);
+    }
+    for (i = 0; i < this.sample_count; i++) {
+        this._writeBuffer(data, this.entry[i].InitializationVector, 8);
+
+        if (this.flags & 2) {
+            this._writeData(data, mp4lib.fields.FIELD_UINT16, this.entry[i].NumberOfEntries); // NumberOfEntries
+
+            for (j = 0; j < this.entry[i].NumberOfEntries; j++) {
+                this._writeData(data, mp4lib.fields.FIELD_UINT16, this.entry[i].clearAndCryptedData[j].BytesOfClearData); //BytesOfClearData
+                this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].clearAndCryptedData[j].BytesOfEncryptedData); //BytesOfEncryptedData size
+            }
+        }
+    }
+    return this.localPos;
+};
+
+mp4lib.boxes.SampleEncryptionBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+    var i = 0,
+        j = 0,
+        clearAndCryptedStruct = {},
+        struct = {};
+    this.sample_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    if (this.flags & 1) {
+        this.IV_size = this._readData(data, mp4lib.fields.FIELD_UINT8);
+    }
+    this.entry = [];
+    for (i = 0; i < this.sample_count; i++) {
+        struct = {};
+        struct.InitializationVector = data.subarray(this.localPos, this.localPos + 8);
+        this.localPos += 8; //InitializationVector size
+
+        if (this.flags & 2) {
+            struct.NumberOfEntries = this._readData(data, mp4lib.fields.FIELD_UINT16); // NumberOfEntries
+            struct.clearAndCryptedData = [];
+            for (j = 0; j < struct.NumberOfEntries; j++) {
+                clearAndCryptedStruct = {};
+                clearAndCryptedStruct.BytesOfClearData = this._readData(data, mp4lib.fields.FIELD_UINT16); //BytesOfClearData
+                clearAndCryptedStruct.BytesOfEncryptedData = this._readData(data, mp4lib.fields.FIELD_UINT32); //BytesOfEncryptedData size
+                struct.clearAndCryptedData.push(clearAndCryptedStruct);
+            }
+        }
+        this.entry.push(struct);
+    }
+    return this.localPos;
+};
+
 // ------------------------- saiz ------------------------------------
 mp4lib.boxes.SampleAuxiliaryInformationSizesBox = function(size) {
     mp4lib.boxes.FullBox.call(this, 'saiz', size);
