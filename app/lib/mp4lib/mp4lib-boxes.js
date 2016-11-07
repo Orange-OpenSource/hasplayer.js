@@ -1811,9 +1811,7 @@ mp4lib.boxes.VisualSampleEntryBox.prototype.read = function(data, pos, end) {
     this.vertresolution = this._readData(data, mp4lib.fields.FIELD_UINT32);
     this.reserved_3 = this._readData(data, mp4lib.fields.FIELD_UINT32);
     this.frame_count = this._readData(data, mp4lib.fields.FIELD_UINT16);
-    this.compressorname = new mp4lib.fields.FixedLenStringField(32);
-    this.compressorname = this.compressorname.read(data, this.localPos);
-    this.localPos += 32;
+    this.compressorname = this._readArrayFieldData(data, mp4lib.fields.FIELD_UINT8, 32);
     this.depth = this._readData(data, mp4lib.fields.FIELD_UINT16);
     this.pre_defined_3 = this._readData(data, mp4lib.fields.FIELD_INT16);
     return this.localPos;
@@ -1821,7 +1819,6 @@ mp4lib.boxes.VisualSampleEntryBox.prototype.read = function(data, pos, end) {
 
 mp4lib.boxes.VisualSampleEntryBox.prototype.write = function(data, pos) {
     mp4lib.boxes.SampleEntryBox.prototype.write.call(this, data, pos);
-    var i = 0;
 
     this._writeData(data, mp4lib.fields.FIELD_UINT16, this.pre_defined);
     this._writeData(data, mp4lib.fields.FIELD_UINT16, this.reserved_2);
@@ -1833,10 +1830,7 @@ mp4lib.boxes.VisualSampleEntryBox.prototype.write = function(data, pos) {
     this._writeData(data, mp4lib.fields.FIELD_UINT32, this.vertresolution);
     this._writeData(data, mp4lib.fields.FIELD_UINT32, this.reserved_3);
     this._writeData(data, mp4lib.fields.FIELD_UINT16, this.frame_count);
-    for (i = 0; i < 32; i++) {
-        data[this.localPos + i] = this.compressorname.charCodeAt(i);
-    }
-    this.localPos += 32;
+    this._writeArrayData(data, mp4lib.fields.FIELD_UINT8, this.compressorname);
     this._writeData(data, mp4lib.fields.FIELD_UINT16, this.depth);
     this._writeData(data, mp4lib.fields.FIELD_INT16, this.pre_defined_3);
     return this.localPos;
