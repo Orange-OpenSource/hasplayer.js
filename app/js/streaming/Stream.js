@@ -955,6 +955,7 @@ MediaPlayer.dependencies.Stream = function() {
                     reloadTimeout = null;
                     //pause.call(self);
                     self.system.notify("manifestUpdate", true);
+                    stopFragmentInfoControllers.call(self);
                 }, delay * 1000);
             } else {
                 // For VOD streams, we seek at recovery time
