@@ -29,7 +29,8 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         segmentDownloadFailed = false,
         segmentDownloadErrorCount = 0,
         reloadTimeout = null,
-        startLoadingDate = null,
+        startFragmentInfoDate = null,
+        startTimeStampValue = null,
         deltaTime = 0,
 
         segmentDuration = NaN,
@@ -50,6 +51,9 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             if (!ready || !started) {
                 return;
             }
+
+            startFragmentInfoDate = new Date().getTime();
+            startTimeStampValue = _fragmentInfoTime;
 
             this.debug.info("[FragmentInfoController][" + type + "] startPlayback");
 
@@ -94,6 +98,9 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             clearTimeout(bufferTimeout);
             started = false;
 
+            startFragmentInfoDate = null;
+            startTimeStampValue = null;
+
             // Stop reload timeout
             clearTimeout(reloadTimeout);
             reloadTimeout = null;
@@ -106,7 +113,9 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         },
 
         onBytesLoaded = function(request, response) {
-            var data;
+            var data,
+                deltaDate,
+                deltaTimeStamp;
 
             segmentDuration = request.duration;
 
@@ -120,9 +129,13 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
                 data = this.fragmentController.process(response.data, request, _bufferController.getAvailableRepresentations());
                 this.debug.info("[FragmentInfoController][" + type + "] Buffer segment from url ", request.url);
 
-                deltaTime = new Date().getTime() - startLoadingDate;
+                deltaDate = (new Date().getTime() - startFragmentInfoDate) / 1000;
 
-                delayLoadNextFragmentInfo.call(this, (segmentDuration - (deltaTime / 1000)));
+                deltaTimeStamp = (_fragmentInfoTime + segmentDuration) - startTimeStampValue;
+
+                deltaTime = (deltaTimeStamp - deltaDate) > 0 ? (deltaTimeStamp - deltaDate) : 0;
+
+                delayLoadNextFragmentInfo.call(this, deltaTime);
             } catch (e) {
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing fragment info segment", e.message);
             }
@@ -215,8 +228,6 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             }
 
             self.debug.log("[FragmentInfoController][" + type + "] Start buffering process...");
-
-            startLoadingDate = new Date().getTime();
 
             // Get next segment time
             segmentTime = _fragmentInfoTime;
