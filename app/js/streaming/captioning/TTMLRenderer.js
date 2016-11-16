@@ -245,12 +245,12 @@ MediaPlayer.utils.TTMLRenderer = function() {
                         div.style.alignItems = 'flex-start';
                 }
 
-                if (cssStyle.showBackground && cssStyle.showBackground === 'whenActive') {
-                    div.style.width = "auto";
-                    div.style.height = "auto";
-                }
                 div.style.fontStyle = cssStyle.fontStyle;
-                div.style.backgroundColor = cssStyle.backgroundColor;
+                if (cssStyle.showBackground && cssStyle.showBackground === 'whenActive') {
+                    div.style.backgroundColor = 'transparent';
+                }else {
+                    div.style.backgroundColor = cssStyle.backgroundColor;
+                }
                 div.style.color = cssStyle.color;
                 div.style.fontSize = computeFontSize(cssStyle.fontSize, cellUnit);
                 div.style.fontFamily = cssStyle.fontFamily;
@@ -285,7 +285,12 @@ MediaPlayer.utils.TTMLRenderer = function() {
             newDiv.ttmlStyle = e.currentTarget.style;
 
             if (e.currentTarget.type !== 'image') {
-                newDiv.innerText = e.currentTarget.text;
+                var p = document.createElement('p');
+                newDiv.appendChild(p);
+                p.innerText = e.currentTarget.text;
+                if (newDiv.ttmlStyle.showBackground && newDiv.ttmlStyle.showBackground === 'whenActive') {
+                    p.style.backgroundColor = e.currentTarget.style.backgroundColor;
+                }
             } else {
                 var img = new Image();
                 img.style.height = 'auto';
