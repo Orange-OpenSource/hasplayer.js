@@ -85,8 +85,12 @@ MediaPlayer.utils.TTMLParser = function() {
                 // ORANGE: removed the restrictions above.
                 //         now if no frameRate is defined in tt, the :ff information is ignored.
 
+                if (!isFinite(frameRate)) {
+                  frameRate = 25; // sensible default. much better than rounding to seconds!
+                }
+
                 if (timeParts[3]) {
-                    if (frameRate && !isNaN(frameRate)) {
+                    if (frameRate && !isFinite(frameRate)) {
                         parsedTime += parseFloat(timeParts[3]) / frameRate;
                     }
                 }
@@ -367,6 +371,11 @@ MediaPlayer.utils.TTMLParser = function() {
                 returnTime = parseTimings(this.domParser.getAttributeValue(node, globalPrefTTNameSpace[i] + parameter));
             }
 
+            // fallback to attribute without namespace
+            if (!isFinite(returnTime)) {
+              returnTime = parseTimings(this.domParser.getAttributeValue(node, parameter));
+            }
+
             return returnTime;
         },
 
@@ -451,6 +460,9 @@ MediaPlayer.utils.TTMLParser = function() {
                 globalPrefStyleNameSpace = getNameSpace.call(this, nodeTt, 'style');
                 for (i = 0; i < globalPrefParameterNameSpace.length; i += 1) {
                     frameRate = this.domParser.getAttributeValue(nodeTt, globalPrefParameterNameSpace[i] + "frameRate") ? parseInt(frameRate, 10) : null;
+                }
+                if (!isFinite(frameRate)) {
+                  frameRate = parseInt(this.domParser.getAttributeValue(nodeTt, "frameRate"), 10);
                 }
 
                 divBody = this.domParser.getChildNodes(nodeBody, 'div');
