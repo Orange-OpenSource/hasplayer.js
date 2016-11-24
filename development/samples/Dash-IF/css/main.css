@@ -61,6 +61,12 @@ a:hover {
     width: 100%;
 }
 
+.videoContainer {
+    width: 848px;
+    height: 420px;
+    position: inherit;
+}
+
 .dropdown-menu {
     max-height: 250px;
     overflow: auto;
