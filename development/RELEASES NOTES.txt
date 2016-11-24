@@ -1,3 +1,20 @@
+### Release Notes v1.6.0 (2016/10/04)
+* Handle Firefox's MSE and <video> timestamping based on CTS/PTS (and not DTS like on other browsers)
+* Add 'subType' information for tracks (MediaPlayer.getTracks()) to differentiate HoH subtitles
+* Add configuration parameter 'liveDelay' (that enables to get around 412 precondition failed errors raised by some MSS streaming servers)
+* Add support for subtitles as images
+* Add possibility to attach an HTML div element to be used to render rich TTML subtitles
+* Enhance TTML subtitles parsing and display (showBackground, opacity, font style, size and resolution, etc)
+* Add AES128 decryption support for HLS streams
+* Bugs fixing:
+* - Fix regression on segments processing errors catching
+* - Fix issue on buffer gaps on Edge in case of discording timestamps between the manifest and the segments
+* - Fix KEY_ERR_OUTPUT ('output-restricted') error not raised when restarting (stop then play) a stream
+* - Fix HLS sessions reloading when some segment download failed
+* - Fix potential incorrect seeking to another previously buffered range
+* - Fix 'ended' event not raised when playing was started at time > 0
+* - Fix ABR resetting when trick mode was previously enabled
+
 ### Release Notes v1.5.0 (2016/09/07)
 * Raise "MEDIA_KEYERR_OUTPUT" error when output display is restricted by a Widevine license
 * Enhance TTML to WebVTT transcoding for subtitles on multiple lines and empty subtitles
