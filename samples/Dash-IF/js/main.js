@@ -179,7 +179,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     $scope.streamType = "MSS";
 
     $scope.protectionTypes = ["PlayReady", "Widevine"];
-    $scope.protectionType = bowser.chrome ? "Widevine" : "PlayReady";
+    $scope.protectionType = (bowser.chrome || bowser.firefox) ? "Widevine" : "PlayReady";
     var protectionSchemes = ["com.microsoft.playready", "com.widevine.alpha"];
     // create blank structure for selectedItem
     $scope.selectedItem = {};
