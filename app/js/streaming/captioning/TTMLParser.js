@@ -451,10 +451,17 @@ MediaPlayer.utils.TTMLParser = function() {
                                          **************************************************************************************/
                                         //search style informations once. 
                                         if (j === 0) {
-                                            cssStyle = getStyle.call(this, [textDatas[j], region, nodeBody, nodeTt], rootExtent);
+                                            cssStyle = getStyle.call(this, [textDatas[j], region, nodeBody, nodeTt, divBody[k]], rootExtent);
                                         }
-                                        //try to detect multi lines subtitle
-                                        textValue += textDatas[j].textContent;
+
+                                        textNodes = this.domParser.getTextNodesIn(textDatas[j]);
+
+                                        for (var r = 0; r < textNodes.length; r += 1) {
+                                            if (r > 0) {
+                                                textValue += '\n';
+                                            }
+                                            textValue += textNodes[r].textContent;
+                                        }
                                     }
                                     //line and position element have no effect on IE
                                     //For Chrome line = 80 is a percentage workaround to reorder subtitles
