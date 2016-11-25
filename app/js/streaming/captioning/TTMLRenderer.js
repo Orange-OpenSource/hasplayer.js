@@ -288,7 +288,7 @@ MediaPlayer.utils.TTMLRenderer = function() {
                 var p = document.createElement('p');
                 newDiv.appendChild(p);
                 p.innerText = e.currentTarget.text;
-                p.style.marginTop = '0px';
+                p.style.marginTop = 'auto';
                 if (newDiv.ttmlStyle.showBackground && newDiv.ttmlStyle.showBackground === 'whenActive') {
                     p.style.backgroundColor = e.currentTarget.style.backgroundColor;
                 }
