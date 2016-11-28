@@ -223,6 +223,15 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
                 if ((start >= 0) && (start < duration) && (end > start) && (mediaSource.readyState !== "ended")) {
                     buffer.remove(start, end);
                 }
+                
+                //workaround in order to remove all the cues in the textTrack from the video element.
+                //end parameter equals the video.duration. The use case of a dash stream with a full TTML subtitles file has an issue because video duration could be NaN. It occurs
+                //after the manifest has been parsed, a call to MediaSource.setDuration is made but after a few ms, a duration change event occurs with a value of NaN. The origin of this issue may be
+                //that no media segments have been pushed.
+                //So, all the buffer is removed. 
+                if (isNaN(end) && (mediaSource.readyState !== "ended")) {
+                    buffer.remove(start);   
+                }
 
                 if (sync) {
                     deferred.resolve();

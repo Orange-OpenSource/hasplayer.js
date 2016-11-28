@@ -107,30 +107,20 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
                 handleEvent: function(event) {
                     switch (event.type) {
-
                         case "encrypted":
                             self.debug.log("[DRM][PM_21Jan2015] 'encrypted' event");
-                            // this code is commented as the license retrieval is done on the key initialisation
-                            // if (event.initData) {
-                            //     var initData = ArrayBuffer.isView(event.initData) ? event.initData.buffer : event.initData;
-                            //     self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY,
-                            //             new MediaPlayer.vo.protection.NeedKey(initData, event.initDataType));
-                            // }
-                        break;
-
+                            break;
                         case "waitingforkey":
-                            // Chrome doesn't raised error if keys don't match
-                            // so the unique wy is to track this event and raise an error
                             self.debug.log("[DRM][PM_21Jan2015] 'waitingforkey' event");
-                            // Set licenseStored to false to remove the session
-                            if (this.session !== null) {
+                            if (this.session !== null && this.session.licenseStored === true) {
+                                // Widevine CDM doesn't raised error if keys don't match
+                                // The unique way to check if the received license is valid is to track this event and raise an error
                                 this.session.licenseStored = false;
                                 this.session = null;
+                                videoElement.removeEventListener("waitingforkey", eventHandler);
+                                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR,
+                                    new MediaPlayer.vo.protection.KeyError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED, "Media is encrypted and no valid key is available"));
                             }
-                            videoElement.removeEventListener("waitingforkey", eventHandler);
-                            self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR,
-                                new MediaPlayer.vo.protection.KeyError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED, "Media is encrypted and no key is available"));
-
                         break;
                     }
                 }
@@ -285,6 +275,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
          * Initialize this protection model
          */
         init: function() {
+            eventHandler.session = null;
         },
 
         teardown: function() {
@@ -460,7 +451,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             // Send our request to the key session
             var self = this;
 
-            self.debug.log("[DRM][PM_21Jan2015] Update key session");
+            self.debug.log("[DRM][PM_21Jan2015] Update key session " + session.sessionId);
 
             if (this.protectionExt.isClearKey(this.keySystem)) {
                 message = message.toJWK();

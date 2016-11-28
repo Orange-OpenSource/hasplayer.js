@@ -286,6 +286,7 @@ MediaPlayer.dependencies.BufferController = function() {
                     initializationData[quality] = data;
 
                     self.debug.info("[BufferController][" + type + "] Buffer initialization segment ", (request.url !== null) ? request.url : request.quality);
+                    //console.saveBinArray(data, type + "_init_" + request.quality + ".mp4");
                     appendToBuffer.call(self, data, request.quality).then(
                         function() {
                             // Load next media segment
@@ -355,7 +356,7 @@ MediaPlayer.dependencies.BufferController = function() {
                             }
                         }*/
 
-                    //console.saveBinArray(data, type + "_" + request.index + "_" + request.quality + ".mp4");
+                    //console.saveBinArray(data, request.url.substring(request.url.lastIndexOf('/') + 1));
                     data = deleteInbandEvents.call(self, data);
 
                     // Check if we need to override the current buffered segments (in case of language switch for example)
@@ -1406,16 +1407,13 @@ MediaPlayer.dependencies.BufferController = function() {
             this.debug.log("[BufferController][" + type + "] Update data");
 
             // Check if track has changed (in case of language switch for example)
-            //trackChanged = data === null ? true : (((data.lang !== null ? data.lang : data.id) !== ((newData.lang !== null ? newData.lang : newData.id))) ? true : false);
-            trackChanged = data === null ? false : (((data.lang !== null ? data.lang : data.id) !== ((newData.lang !== null ? newData.lang : newData.id))) ? true : false);
+            trackChanged = (data === null) ? false : ((data.id !==  newData.id) || (data.lang !==  newData.lang) || (data.subType !==  newData.subType));
 
             // Set the new data
             data = newData;
             periodInfo = newPeriodInfo;
             dataChanged = true;
 
-            // Check if track has changed (in case of language switch for example)
-            //if (data === null ? true : (((data.lang !== null ? data.lang : data.id) !== ((newData.lang !== null ? newData.lang : newData.id))) ? true : false);
             if (trackChanged) {
                 this.debug.log("[BufferController][" + type + "] Track changed");
 

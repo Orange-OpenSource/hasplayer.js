@@ -341,6 +341,9 @@ MediaPlayer = function () {
         return null;
     };
 
+    var _isSameTrack = function (track1, track2) {
+        return (track1.id === track2.id) && (track1.lang === track2.lang) && (track1.subType === track2.subType);
+    };
 
     // parse the arguments of load function to make an object
     var _parseLoadArguments = function () {
@@ -1206,7 +1209,7 @@ MediaPlayer = function () {
          * @memberof MediaPlayer#
          * @see [getTracks]{@link MediaPlayer#getTracks}
          * @param {String} type - the stream type according to MediaPlayer.TRACKS_TYPE (see @link MediaPlayer#TRACKS_TYPE)
-         * @param {Track} track - the track to select
+         * @param {Track} track - the track to select, as returned by the [getTracks]{@link MediaPlayer#getTracks} method
          *
          */
         selectTrack: function (type, track) {
@@ -1217,8 +1220,8 @@ MediaPlayer = function () {
                 throw new Error('MediaPlayer Invalid Argument - "type" should be defined and shoud be kind of MediaPlayer.TRACKS_TYPE');
             }
 
-            if (!track || !(track.id || track.lang)) {
-                throw new Error('MediaPlayer.selectTrack(): track parameter is unknown');
+            if (!track || !(track.id || track.lang || track.subType)) {
+                throw new Error('MediaPlayer.selectTrack(): track parameter is not in valid');
             }
 
             var _tracks = _getTracksFromType(type);
@@ -1227,19 +1230,15 @@ MediaPlayer = function () {
                 this.debug.error("[MediaPlayer] No available track for type " + type);
                 return;
             }
-
             var selectedTrack = _getSelectedTrackFromType(type);
 
-            if (selectedTrack &&
-                ((track.id && track.id === selectedTrack.id) ||
-                 (track.lang && track.lang === selectedTrack.lang))) {
+            if (selectedTrack && _isSameTrack(selectedTrack, track)) {
                 this.debug.log("[MediaPlayer] " + type + " track [" + track.id + " - " + track.lang + "] is already selected");
                 return;
             }
 
             for (var i = 0; i < _tracks.length; i += 1) {
-                if ((track.id && track.id === _tracks[i].id) ||
-                    (track.lang && track.lang === _tracks[i].lang)) {
+                if (_isSameTrack(_tracks[i], track)) {
                     _selectTrackFromType(type, _tracks[i]);
                     return;
                 }
@@ -1269,7 +1268,8 @@ MediaPlayer = function () {
 
             return {
                 id: _track.id,
-                lang: _track.lang
+                lang: _track.lang,
+                subType: _track.subType
             };
         },
 //#endregion

@@ -1,3 +1,18 @@
+### Release Notes v1.7.0 (2016/11/28)
+* Add support for TTML origin defined with field 'c'
+* Bugs fixing:
+* - Fix compatibility issue with Smooth streaming Streams in CENC/PIFF1.3 format
+* - Fix subtitles being displayed by Firefox when using external display mode
+* - Fix issue on image subtitles display
+* - Fix namespace resolution for subtitles XML files
+* - Remove subtitles external <div> size setting (to be set by webapp)
+* - Workaround for missing 'cueExit' event not sent by Firefox when seeking
+* - Fix issue on track selection among tracks with identical language
+* - Correct FragmentInfo requests scheduling in Smooth Streaming DVR mode
+* - Stops Smooth Streaming DVR FragmentInfo requests in case of session reloading
+* - Fix TTML origin management if set on main div
+* - Correct TTML showbackground management to keep text alignment value
+
 ### Release Notes v1.6.0 (2016/10/04)
 * Handle Firefox's MSE and <video> timestamping based on CTS/PTS (and not DTS like on other browsers)
 * Add 'subType' information for tracks (MediaPlayer.getTracks()) to differentiate HoH subtitles

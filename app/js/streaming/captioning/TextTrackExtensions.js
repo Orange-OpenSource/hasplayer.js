@@ -28,22 +28,24 @@ MediaPlayer.utils.TextTrackExtensions = function() {
             Cue = window.VTTCue || window.TextTrackCue;
         },
 
-        cueEnter: function(subtitle_style, subtitle_text) {
+        cueEnter: function(subtitle_style, subtitle_text, subtitle_type) {
             this.eventBus.dispatchEvent({
                 type: "cueEnter",
                 data: {
                     text: subtitle_text,
-                    style: subtitle_style
+                    style: subtitle_style,
+                    type: subtitle_type
                 }
             });
         },
 
-        cueExit: function(subtitle_style, subtitle_text) {
+        cueExit: function(subtitle_style, subtitle_text, subtitle_type) {
             this.eventBus.dispatchEvent({
                 type: "cueExit",
                 data: {
                     text: subtitle_text,
-                    style: subtitle_style
+                    style: subtitle_style,
+                    type: subtitle_type
                 }
             });
         },
@@ -84,11 +86,16 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                 // The following jshint directive is used to suppressed the warning "Expected an identifier and instead saw 'default' (a reserved word)"
                 /*jshint -W024 */
                 track.default = isDefaultTrack;
-                track.mode = "showing";
+                if (subtitleDisplayMode !== 'metadata') {
+                    track.mode = "showing";
+                }else{
+                    track.mode = "hidden";
+                }
+
             } else {
                 this.cleanSubtitles();
                 track.default = isDefaultTrack;
-                if (track.mode !== 'showing') {
+                if (track.mode !== 'showing' && track.kind !== 'metadata') {
                     track.mode = "showing";
                 }
                 currentLanguage = scrlang;
@@ -112,7 +119,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
             if (renderingDiv) {
                 ttmlRenderer.onCueEnter(e);
             }
-            this.cueEnter(e.currentTarget.style, e.currentTarget.text);
+            this.cueEnter(e.currentTarget.style, e.currentTarget.text, e.currentTarget.type);
         },
 
         onCueExit: function(e) {
@@ -138,11 +145,10 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                     newCue = new Cue(currentItem.start, currentItem.end, currentItem.data);
 
                     newCue.id = currentLanguage;
+                    newCue.type = currentItem.type;
                     newCue.onenter = this.onCueEnter.bind(this);
                     newCue.onexit = this.onCueExit.bind(this);
-                    newCue.type = currentItem.type;
                     newCue.snapToLines = false;
-
                     newCue.line = currentItem.line;
 
                     if (currentItem.style) {
@@ -158,12 +164,19 @@ MediaPlayer.utils.TextTrackExtensions = function() {
             var track = null,
                 cues = null,
                 lastIdx = null,
+                currentTrackMode,
                 i = 0;
 
             //when multiple tracks are supported - iterate through and delete all cues from all tracks.
             if (video) {
                 track = video.textTracks[0];
                 if (track) {
+                    currentTrackMode = track.mode;
+                    //if track mode is disabled, the cues are not accessible
+                    //we have to change the mode value to be sure the delete process is correctly executed.
+                    if (currentTrackMode === 'disabled') {
+                        track.mode = 'hidden';
+                    }
                     cues = track.cues;
                     if (cues) {
                         lastIdx = cues.length - 1;
@@ -175,11 +188,7 @@ MediaPlayer.utils.TextTrackExtensions = function() {
                             }
                         }
                     }
-                    //noway to delete track, just disable it
-                    //useful when player switchs between a stream with subtitles and an other one without.
-                    if (disabled) {
-                        track.mode = "disabled";
-                    }
+                    track.mode = currentTrackMode;
                 }
             }
         },

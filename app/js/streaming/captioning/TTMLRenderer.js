@@ -24,6 +24,11 @@ MediaPlayer.utils.TTMLRenderer = function() {
             }
         },
 
+        onSeeking = function() {
+            //used for FF, when the user wants to seek, cueExit is not always sent.
+            this.cleanSubtitles();
+        },
+
         createSubtitleDiv = function() {
             var subtitleDiv = document.createElement("div");
 
@@ -188,6 +193,15 @@ MediaPlayer.utils.TTMLRenderer = function() {
                         div.style.left = origin[0] + "px";
                         div.style.top = origin[1] + "px";
                     }
+                }else if (cssStyle.origin && cssStyle.origin[cssStyle.origin.length - 1] === 'c') {
+                    origin = cssStyle.origin.split('c');
+                    div.style.left = (origin[0] * cellUnit[0]) + "px";
+                    div.style.top = (origin[1] * cellUnit[1]) + "px";
+                    if (cssStyle.extent && cssStyle.extent[cssStyle.extent.length - 1] === 'c') {
+                        extent = cssStyle.extent.split('c');
+                        div.style.width = (extent[0] * cellUnit[0]) + "px";
+                        div.style.height = (extent[1] * cellUnit[1]) + "px";
+                    }
                 }
 
                 textOutline = computeTextOutline(cssStyle.textOutline, cellUnit, cssStyle.color);
@@ -231,12 +245,12 @@ MediaPlayer.utils.TTMLRenderer = function() {
                         div.style.alignItems = 'flex-start';
                 }
 
-                if (cssStyle.showBackground && cssStyle.showBackground === 'whenActive') {
-                    div.style.width = "auto";
-                    div.style.height = "auto";
-                }
                 div.style.fontStyle = cssStyle.fontStyle;
-                div.style.backgroundColor = cssStyle.backgroundColor;
+                if (cssStyle.showBackground && cssStyle.showBackground === 'whenActive') {
+                    div.style.backgroundColor = 'transparent';
+                }else {
+                    div.style.backgroundColor = cssStyle.backgroundColor;
+                }
                 div.style.color = cssStyle.color;
                 div.style.fontSize = computeFontSize(cssStyle.fontSize, cellUnit);
                 div.style.fontFamily = cssStyle.fontFamily;
@@ -244,11 +258,14 @@ MediaPlayer.utils.TTMLRenderer = function() {
         };
 
     return {
+        videoModel: undefined,
+
         initialize: function(renderingDiv) {
             ttmlDiv = renderingDiv;
             document.addEventListener('webkitfullscreenchange', onFullScreenChange.bind(this));
             document.addEventListener('mozfullscreenchange', onFullScreenChange.bind(this));
             document.addEventListener('fullscreenchange', onFullScreenChange.bind(this));
+            this.videoModel.listen("seeking", onSeeking.bind(this));
         },
 
         cleanSubtitles: function() {
@@ -262,13 +279,19 @@ MediaPlayer.utils.TTMLRenderer = function() {
 
         onCueEnter: function(e) {
             var newDiv = createSubtitleDiv();
-          
+
             applySubtitlesCSSStyle(newDiv, e.currentTarget.style, ttmlDiv);
 
             newDiv.ttmlStyle = e.currentTarget.style;
 
             if (e.currentTarget.type !== 'image') {
-                newDiv.innerText = e.currentTarget.text;
+                var p = document.createElement('p');
+                newDiv.appendChild(p);
+                p.innerText = e.currentTarget.text;
+                p.style.marginTop = 'auto';
+                if (newDiv.ttmlStyle.showBackground && newDiv.ttmlStyle.showBackground === 'whenActive') {
+                    p.style.backgroundColor = e.currentTarget.style.backgroundColor;
+                }
             } else {
                 var img = new Image();
                 img.style.height = 'auto';
@@ -276,7 +299,7 @@ MediaPlayer.utils.TTMLRenderer = function() {
                 img.src = e.currentTarget.text;
                 newDiv.appendChild(img);
             }
-
+            newDiv.data = e.currentTarget.text;
             subtitleDivTab.push(newDiv);
         },
 
@@ -284,7 +307,7 @@ MediaPlayer.utils.TTMLRenderer = function() {
             var i = 0;
 
             for (i = 0; i < subtitleDivTab.length; i++) {
-                if (subtitleDivTab[i].ttmlStyle === e.currentTarget.style) {
+                if ((e.currentTarget.text === subtitleDivTab[i].data) && (subtitleDivTab[i].ttmlStyle === e.currentTarget.style)) {
                     break;
                 }
             }

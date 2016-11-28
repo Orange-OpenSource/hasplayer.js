@@ -297,8 +297,8 @@ Mss.dependencies.MssFragmentController = function() {
                 }
             }
 
-            // If protected content (sepiff box = Sample Encryption PIFF)
-            // => convert it into a senc box
+            // If protected content in PIFF1.1 format (sepiff box = Sample Encryption PIFF)
+            // => convert sepiff box it into a senc box
             // => create saio and saiz boxes (if not already present)
             sepiff = traf.getBoxByType("sepiff");
             if (sepiff !== null) {
@@ -353,7 +353,8 @@ Mss.dependencies.MssFragmentController = function() {
             trun.data_offset = fragment_size - mdat.size + 8; // 8 = 'size' + 'type' mdat fields length
 
             // Update saio box offset field according to new senc box offset
-            if (sepiff !== null) {
+            saio = traf.getBoxByType("saio");
+            if (saio !== null) {
                 moofPosInFragment = fragment.getBoxOffsetByType("moof");
                 trafPosInMoof = moof.getBoxOffsetByType("traf");
                 sencPosInTraf = traf.getBoxOffsetByType("senc");
