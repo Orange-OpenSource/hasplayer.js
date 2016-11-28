@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2016-11-24_10:22:12 / git revision : 1e1c3b5 */
+/* Last build : 2016-11-28_8:37:8 / git revision : 004dde0 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.7.0-dev',
-        GIT_TAG = '1e1c3b5',
-        BUILD_DATE = '2016-11-24_10:22:12',
+        GIT_TAG = '004dde0',
+        BUILD_DATE = '2016-11-28_8:37:8',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -8781,6 +8781,15 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
                 if ((start >= 0) && (start < duration) && (end > start) && (mediaSource.readyState !== "ended")) {
                     buffer.remove(start, end);
                 }
+                
+                //workaround in order to remove all the cues in the textTrack from the video element.
+                //end parameter equals the video.duration. The use case of a dash stream with a full TTML subtitles file has an issue because video duration could be NaN. It occurs
+                //after the manifest has been parsed, a call to MediaSource.setDuration is made but after a few ms, a duration change event occurs with a value of NaN. The origin of this issue may be
+                //that no media segments have been pushed.
+                //So, all the buffer is removed. 
+                if (isNaN(end) && (mediaSource.readyState !== "ended")) {
+                    buffer.remove(start);   
+                }
 
                 if (sync) {
                     deferred.resolve();
@@ -12238,7 +12247,7 @@ MediaPlayer.utils.TTMLRenderer = function() {
                 var p = document.createElement('p');
                 newDiv.appendChild(p);
                 p.innerText = e.currentTarget.text;
-                p.style.marginTop = '0px';
+                p.style.marginTop = 'auto';
                 if (newDiv.ttmlStyle.showBackground && newDiv.ttmlStyle.showBackground === 'whenActive') {
                     p.style.backgroundColor = e.currentTarget.style.backgroundColor;
                 }
