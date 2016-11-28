@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<VAST version="2.0">
+	<Ad id="BC0_Position1">
+		<InLine>
+			<AdSystem>OAS</AdSystem>
+			<AdTitle>BC0</AdTitle>
+			<Description>ad Description</Description>
+			<Impression>http://orange-opensource.github.io/hasplayer.js/adserver/tracking/impression</Impression>
+			<Creatives>
+				<Creative id="Image">
+					<Linear>
+						<Duration>00:00:05</Duration>
+						<VideoClicks>
+							<ClickThrough>
+								<![CDATA[https://github.com/Orange-OpenSource/hasplayer.js]]>
+							</ClickThrough> 
+						</VideoClicks>
+						<MediaFiles>
+							<MediaFile type="image/jpeg" delivery="progressive">
+								<![CDATA[../media/pub.jpg]]>
+							</MediaFile>
+						</MediaFiles>
+					</Linear>
+			</Creative>
+			</Creatives>
+		</InLine>
+	</Ad>
+</VAST>

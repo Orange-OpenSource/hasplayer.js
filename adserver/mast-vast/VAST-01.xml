@@ -1,0 +1,44 @@
+<VAST version="2.0">
+<Ad id="tf1pub_100">
+        <InLine>
+          <AdSystem>TF1 Pub VAST 2.0</AdSystem>
+          <AdTitle/>
+          <Description/>
+          <Error/>
+		<Impression>http://orange-opensource.github.io/hasplayer.js/adserver/tracking/impression</Impression>       
+          <Creatives>
+            <Creative id="Video">
+              <Linear>
+                <Duration>00:00:20</Duration>
+				<TrackingEvents>
+					<Tracking event="complete">http://orange-opensource.github.io/hasplayer.js/adserver/tracking/complete</Tracking>
+					<Tracking event="creativeView">http://orange-opensource.github.io/hasplayer.js/adserver/tracking/creativeView</Tracking>
+					<Tracking event="start">http://orange-opensource.github.io/hasplayer.js/adserver/tracking/start</Tracking>
+					<Tracking event="midpoint">http://orange-opensource.github.io/hasplayer.js/adserver/tracking/midpoint</Tracking>
+					<Tracking event="firstQuartile">http://orange-opensource.github.io/hasplayer.js/adserver/tracking/firstQuartile</Tracking>
+					<Tracking event="thirdQuartile">http://orange-opensource.github.io/hasplayer.js/adserver/tracking/thirdQuartile</Tracking>
+					<Tracking event="rewind">http://orange-opensource.github.io/hasplayer.js/adserver/tracking/rewind</Tracking>
+					<Tracking event="mute">http://orange-opensource.github.io/hasplayer.js/adserver/tracking/mute</Tracking>
+					<Tracking event="unmute">http://orange-opensource.github.io/hasplayer.js/adserver/tracking/unmute</Tracking>
+					<Tracking event="pause">http://orange-opensource.github.io/hasplayer.js/adserver/tracking/pause</Tracking>
+					<Tracking event="resume">http://orange-opensource.github.io/hasplayer.js/adserver/tracking/resume</Tracking>
+					<Tracking event="fullscreen">http://orange-opensource.github.io/hasplayer.js/adserver/tracking/fullscreen</Tracking>
+				</TrackingEvents>
+                <VideoClicks>
+                  <ClickThrough>
+                    <![CDATA[https://github.com/Orange-OpenSource/hasplayer.js]]>
+                  </ClickThrough>
+				  	<ClickTracking>http://orange-opensource.github.io/hasplayer.js/adserver/tracking/clickTracking0</ClickTracking>
+					<ClickTracking>http://orange-opensource.github.io/hasplayer.js/adserver/tracking/clickTracking1</ClickTracking>
+					<ClickTracking>http://orange-opensource.github.io/hasplayer.js/adserver/tracking/clickTracking2</ClickTracking>
+                </VideoClicks>
+                  <MediaFiles>
+					<MediaFile delivery="progressive" bitrate="150" width="50" height="25" type="video/mp4">
+						<![CDATA[../media/small.mp4]]>
+					</MediaFile>
+                  </MediaFiles>
+              </Linear>
+            </Creative>
+          </Creatives>
+     </InLine>
+</Ad></VAST>

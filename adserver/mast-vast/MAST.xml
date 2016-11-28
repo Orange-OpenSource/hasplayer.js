@@ -1,0 +1,37 @@
+<MAST xsi:schemaLocation="http://openvideoplayer.sf.net/mast http://openvideoplayer.sf.net/mast/mast.xsd" xmlns="http://openvideoplayer.sf.net/mast" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<triggers>
+		<trigger id="preroll" description="preroll.">
+			<startConditions>
+				<condition type="event" name="OnItemStart"/>
+			</startConditions>
+			<endConditions>
+				<condition type="event" name="OnItemEnd"/>
+			</endConditions>
+			<sources>
+				<source uri="./VAST-01.xml" format="vast"/>
+			</sources>
+		</trigger>
+
+		<trigger id="midroll" description="midroll at 20sec.">
+			<startConditions>
+				<condition type="property" name="Position" operator="GEQ" value="00:00:20" />
+			</startConditions>
+			<endConditions>
+				<condition type="event" name="OnItemEnd"/>
+			</endConditions>
+			<sources>
+				<source uri="VAST-02.xml" format="vast"/>
+			</sources>
+		</trigger>
+
+		<trigger id="endroll" description="endroll">
+			<startConditions>
+				<condition type="event" name="OnItemEnd"/>
+			</startConditions>
+			<sources>
+				<source uri="./VAST-01.xml" format="vast"/>
+			</sources>
+		</trigger>		
+
+		</triggers>
+</MAST>
