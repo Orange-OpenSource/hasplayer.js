@@ -455,7 +455,8 @@ Mss.dependencies.MssParser = function() {
             // Set mpd node properties
             mpd.name = 'MSS';
             mpd.profiles = "urn:mpeg:dash:profile:isoff-live:2011";
-            mpd.type = Boolean(this.domParser.getAttributeValue(smoothNode, 'IsLive')) ? "dynamic" : "static";
+            var isLive = this.domParser.getAttributeValue(smoothNode, 'IsLive');
+            mpd.type = (isLive !== null && isLive.toLowerCase() === 'true') ? "dynamic" : "static";
             mpd.timeShiftBufferDepth = parseFloat(this.domParser.getAttributeValue(smoothNode, 'DVRWindowLength')) / TIME_SCALE_100_NANOSECOND_UNIT;
             mpd.mediaPresentationDuration = (parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration')) === 0) ? Infinity : parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration')) / TIME_SCALE_100_NANOSECOND_UNIT;
             mpd.BaseURL = baseURL;
