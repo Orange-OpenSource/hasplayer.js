@@ -55,18 +55,15 @@ MediaPlayer.rules.AbandonRequestsRule = function() {
                 }
 
                 elapsedTime = (now - request.firstByteDate.getTime()) / 1000;
-                //this.debug.log("[AbandonRequestsRule][" + type + "] elapsedTime = " + elapsedTime + " s (" + request.bytesLoaded + "/" + request.bytesTotal + ")");
 
                 if (request.bytesLoaded < request.bytesTotal && elapsedTime >= (request.duration * GRACE_TIME_THRESHOLD)) {
 
                     measuredBandwidth = request.bytesLoaded / elapsedTime;
                     estimatedTimeOfDownload = request.bytesTotal / measuredBandwidth;
 
-                    //this.debug.log("[AbandonRequestsRule][" + type + "] bw = " + measuredBandwidth + " kb/s (" + estimatedTimeOfDownload + " s)");
-
                     if ((estimatedTimeOfDownload) > (request.duration * ABANDON_MULTIPLIER)) {
                         switchRequest = new MediaPlayer.rules.SwitchRequest(0, MediaPlayer.rules.SwitchRequest.prototype.STRONG);
-                        this.debug.info("[AbandonRequestsRule][" + type + "] BW = " + measuredBandwidth.toFixed(3) + " kb/s => switch to lowest quality");
+                        this.debug.info("[AbandonRequestsRule][" + type + "] BW = " + (measuredBandwidth * 8 / 1000).toFixed(3) + " kb/s => switch to lowest quality");
                     }
                 }
 
