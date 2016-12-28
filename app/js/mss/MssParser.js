@@ -48,7 +48,6 @@ Mss.dependencies.MssParser = function() {
                 smoothNode = this.domParser.getChildNode(xmlDoc, "SmoothStreamingMedia"),
                 i;
 
-            period.duration = (parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration')) === 0) ? Infinity : parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration')) / TIME_SCALE_100_NANOSECOND_UNIT;
             period.BaseURL = baseURL;
 
             // For each StreamIndex node, create an AdaptationSet element
@@ -455,9 +454,10 @@ Mss.dependencies.MssParser = function() {
             mpd.name = 'MSS';
             mpd.profiles = "urn:mpeg:dash:profile:isoff-live:2011";
             var isLive = this.domParser.getAttributeValue(smoothNode, 'IsLive');
-            mpd.type = (isLive !== null && isLive.toLowerCase() === 'true') ? "dynamic" : "static";
+            mpd.type = (isLive !== null && isLive.toLowerCase() === 'true') ? 'dynamic' : 'static';
             mpd.timeShiftBufferDepth = parseFloat(this.domParser.getAttributeValue(smoothNode, 'DVRWindowLength')) / TIME_SCALE_100_NANOSECOND_UNIT;
-            mpd.mediaPresentationDuration = (parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration')) === 0) ? Infinity : parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration')) / TIME_SCALE_100_NANOSECOND_UNIT;
+            var duration = parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration'));
+            mpd.mediaPresentationDuration = (duration === 0) ? Infinity : (duration / TIME_SCALE_100_NANOSECOND_UNIT);
             mpd.BaseURL = baseURL;
             mpd.minBufferTime = MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
 
@@ -470,8 +470,10 @@ Mss.dependencies.MssParser = function() {
             mpd.Period = mapPeriod.call(this);
             mpd.Period_asArray = [mpd.Period];
 
-            // Initialize period start time
             period = mpd.Period;
+
+            // Complete period initialization
+            period.duration = mpd.mediaPresentationDuration;
             period.start = 0;
 
             // ContentProtection node
