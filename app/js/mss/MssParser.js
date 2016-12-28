@@ -446,11 +446,10 @@ Mss.dependencies.MssParser = function() {
                 protection = this.domParser.getChildNode(smoothNode, 'Protection'),
                 protectionHeader = null,
                 KID,
-                realDuration,
-                firstSegment,
-                lastSegment,
-                adaptationTimeOffset,
-                i;
+                timestampOffset,
+                startTime,
+                segments,
+                i, j;
 
             // Set mpd node properties
             mpd.name = 'MSS';
@@ -508,25 +507,9 @@ Mss.dependencies.MssParser = function() {
             }
 
             adaptations = period.AdaptationSet_asArray;
-            for (i = 0; i < adaptations.length; i += 1) {
-                // In case of VOD streams, check if start time is greater than 0.
-                // Therefore, set period start time to the higher adaptation start time
-                if (mpd.type === "static" && adaptations[i].contentType !== 'text') {
-                    firstSegment = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray[0];
-                    lastSegment = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray[adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray.length-1];
-                    adaptationTimeOffset = parseFloat(firstSegment.t) / TIME_SCALE_100_NANOSECOND_UNIT;
-                    period.start = (period.start === 0) ? adaptationTimeOffset : Math.max(period.start, adaptationTimeOffset);
-                    //get last segment start time, add the duration of this last segment
-                    realDuration = parseFloat(((lastSegment.t + lastSegment.d) / TIME_SCALE_100_NANOSECOND_UNIT).toFixed(3));
-                    //detect difference between announced duration (in MSS manifest) and real duration => in any case, we want that the video element sends the ended event.
-                    //set the smallest value between all the adaptations
-                    if (!isNaN(realDuration) && realDuration < mpd.mediaPresentationDuration) {
-                        mpd.mediaPresentationDuration = realDuration;
-                        period.duration = realDuration;
-                    }
-                }
 
-                // Propagate content protection information into each adaptation
+            // Propagate content protection information into each adaptation
+            for (i = 0; i < adaptations.length; i += 1) {
                 if (mpd.ContentProtection !== undefined) {
                     adaptations[i].ContentProtection = mpd.ContentProtection;
                     adaptations[i].ContentProtection_asArray = mpd.ContentProtection_asArray;
@@ -537,6 +520,34 @@ Mss.dependencies.MssParser = function() {
             delete mpd.ContentProtection;
             delete mpd.ContentProtection_asArray;
 
+
+            // In case of VOD streams, check if start time is greater than 0
+            // Then determine timestamp offset according to higher audio/video start time
+            if (mpd.type === "static") {
+                for (i = 0; i < adaptations.length; i++) {
+                    if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
+                        startTime = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray[0].t;
+                        if (startTime > 0) {
+                            timestampOffset = timestampOffset ? Math.min(timestampOffset, startTime) : startTime;
+                        }
+                    }
+                }
+
+                // Patch segment templates timestamps and determine period start time (since audio/video should not be aligned to 0)
+                if (timestampOffset > 0) {
+                    for (i = 0; i < adaptations.length; i++) {
+                        segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
+                        for (j = 0; j < segments.length; j++) {
+                            segments[j].tManifest = segments[j].t;
+                            segments[j].t -= timestampOffset;
+                        }
+                        if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
+                            period.start = Math.max(segments[0].t, period.start);
+                        }
+                    }
+                    period.start = parseFloat(period.start) / TIME_SCALE_100_NANOSECOND_UNIT;
+                }
+            }
 
             return mpd;
         },
