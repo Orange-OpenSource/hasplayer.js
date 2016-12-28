@@ -283,7 +283,8 @@ Dash.dependencies.DashHandler = function() {
                     fTimescale,
                     template.media,
                     s.mediaRange,
-                    availabilityIdx);
+                    availabilityIdx,
+                    s.tManifest);
             };
 
             fTimescale = representation.timescale;
@@ -313,7 +314,7 @@ Dash.dependencies.DashHandler = function() {
                     time = frag.t;
                 }
 
-                //This is a special case: "A negative value of the @r attribute of the S element indicates that the duration indicated in @d attribute repeats until the start of the next S element, the end of the Period or until the 
+                //This is a special case: "A negative value of the @r attribute of the S element indicates that the duration indicated in @d attribute repeats until the start of the next S element, the end of the Period or until the
                 // next MPD update."
                 if (repeat < 0) {
                     nextFrag = fragments[i + 1];
@@ -554,7 +555,7 @@ Dash.dependencies.DashHandler = function() {
             return deferred.promise;
         },
 
-        getTimeBasedSegment = function(representation, time, duration, fTimescale, url, range, index) {
+        getTimeBasedSegment = function(representation, time, duration, fTimescale, url, range, index, tManifest) {
             var self = this,
                 scaledTime = time / fTimescale,
                 scaledDuration = Math.min(duration / fTimescale, representation.adaptation.period.mpd.maxSegmentDuration),
@@ -582,7 +583,7 @@ Dash.dependencies.DashHandler = function() {
             // at this wall clock time, the video element currentTime should be seg.presentationStartTime
             seg.wallStartTime = self.timelineConverter.calcWallTimeForSegment(seg, isDynamic);
 
-            seg.replacementTime = time;
+            seg.replacementTime = tManifest ? tManifest : time;
 
             seg.replacementNumber = getNumberForSegment(seg, index);
 
