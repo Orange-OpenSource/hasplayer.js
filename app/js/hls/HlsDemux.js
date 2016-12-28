@@ -526,11 +526,11 @@ Hls.dependencies.HlsDemux = function() {
             // Parse and demux TS packets
             i = 0;
             while (i < data.length) {
-                if ((i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE) < data.length) {
-                    demuxTsPacket.call(this, data.subarray(i, i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE));
-                } else {
+                if ((i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE) > data.length) {
                     this.debug.log("[HlsDemux] Demux chunk, residual bytes = " + (data.length - i));
+                    break;
                 }
+                demuxTsPacket.call(this, data.subarray(i, i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE));
                 i += mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE;
             }
 
