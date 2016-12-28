@@ -476,6 +476,10 @@ Mss.dependencies.MssParser = function() {
             period.duration = mpd.mediaPresentationDuration;
             period.start = 0;
 
+            // Test live to static
+            // mpd.type = 'static';
+            // period.duration = mpd.timeShiftBufferDepth;
+
             // ContentProtection node
             if (protection !== undefined) {
                 /* @if PROTECTION=true */
