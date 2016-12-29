@@ -1063,20 +1063,20 @@ MediaPlayer.dependencies.Mp4Processor = function() {
 
         generateInitSegment: function (tracks) {
             var file = new mp4lib.boxes.File();
-            file.boxes = generateMoov(tracks);
+            file.boxes = generateMoov.call(this, tracks);
             return mp4lib.serialize(file);
         },
 
         generateMediaSegment: function (tracks) {
             var file = new mp4lib.boxes.File();
-            file.boxes = generateMoof(tracks);
+            file.boxes = generateMoof.call(this, tracks);
             return mp4lib.serialize(file);
         },
 
         generateInitMediaSegment: function (tracks) {
             var file = new mp4lib.boxes.File();
-            file.boxes = generateMoov(tracks);
-            file.boxes = file.boxes.concat(generateMoof(tracks));
+            file.boxes = generateMoov.call(this, tracks);
+            file.boxes = file.boxes.concat(generateMoof.call(this, tracks));
             return mp4lib.serialize(file);
         },
     };
