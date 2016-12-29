@@ -274,31 +274,39 @@ MediaPlayer.dependencies.BufferController = function() {
         onInitializationLoaded = function(request, response) {
             var self = this,
                 initData = response.data,
-                quality = request.quality,
-                data;
+                quality = request.quality;
 
             self.debug.log("[BufferController][" + type + "] Initialization loaded ", quality);
 
             try {
-                data = self.fragmentController.process(initData);
-                if (data) {
-                    // Cache the initialization data to use it next time the quality has changed
-                    initializationData[quality] = data;
+                self.fragmentController.process(initData).then(function(data) {
+                    if (data) {
+                        // Cache the initialization data to use it next time the quality has changed
+                        initializationData[quality] = data;
 
-                    self.debug.info("[BufferController][" + type + "] Buffer initialization segment ", (request.url !== null) ? request.url : request.quality);
-                    //console.saveBinArray(data, type + "_init_" + request.quality + ".mp4");
-                    appendToBuffer.call(self, data, request.quality).then(
-                        function() {
-                            // Load next media segment
-                            if (isRunning()) {
-                                loadNextFragment.call(self);
+                        self.debug.info("[BufferController][" + type + "] Buffer initialization segment ", (request.url !== null) ? request.url : request.quality);
+                        //console.saveBinArray(data, type + "_init_" + request.quality + ".mp4");
+                        appendToBuffer.call(self, data, request.quality).then(
+                            function() {
+                                // Load next media segment
+                                if (isRunning()) {
+                                    loadNextFragment.call(self);
+                                }
                             }
-                        }
-                    );
-                } else {
-                    // ORANGE : For HLS Stream, init segment are pushed with media (@see HlsFragmentController)
-                    loadNextFragment.call(self);
-                }
+                        );
+                    } else {
+                        // ORANGE : For HLS Stream, init segment are pushed with media (@see HlsFragmentController)
+                        loadNextFragment.call(self);
+                    }
+                },
+                function (e) {
+                    signalSegmentBuffered.call(self);
+                    if (e.name) {
+                        self.errHandler.sendError(e.name, e.message, e.data);
+                    } else {
+                        self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", e.message);
+                    }
+                });
             } catch (e) {
                 signalSegmentBuffered.call(self);
                 if (e.name) {
@@ -313,8 +321,7 @@ MediaPlayer.dependencies.BufferController = function() {
             var self = this,
                 eventStreamAdaption = this.manifestExt.getEventStreamForAdaptationSet(self.getData()),
                 eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(self.getData(), _currentRepresentation),
-                events,
-                data;
+                events;
 
             segmentDuration = request.duration;
 
@@ -336,67 +343,76 @@ MediaPlayer.dependencies.BufferController = function() {
             }
 
             try {
-                data = self.fragmentController.process(response.data, request, availableRepresentations);
-                if (data) {
-                    if (eventStreamAdaption.length > 0 || eventStreamRepresentation.length > 0) {
-                        events = handleInbandEvents.call(self, data, request, eventStreamAdaption, eventStreamRepresentation);
-                        self.eventController.addInbandEvents(events);
-                    }
-
-                    self.debug.info("[BufferController][" + type + "] Buffer segment from url ", request.url);
-
-                    /*if (trickModeEnabled) {
-                            var filename = type + "_" + request.index + "_" + request.quality + ".mp4",
-                                blob = new Blob([data], {
-                                    type: 'data/mp4'
-                                });
-
-                            if (navigator.msSaveBlob) { // For IE10+ and edge
-                                navigator.msSaveBlob(blob, filename);
-                            }
-                        }*/
-
-                    //console.saveBinArray(data, request.url.substring(request.url.lastIndexOf('/') + 1));
-                    data = deleteInbandEvents.call(self, data);
-
-                    // Check if we need to override the current buffered segments (in case of language switch for example)
-                    Q.when(overrideBuffer ? removeBuffer.call(self) : true).then(
-                        function() {
-                            /*if (overrideBuffer) {
-                                debugBufferRange.call(self);
-                            }*/
-                            overrideBuffer = false;
-
-                            // If firefox, set buffer timestampOffset since timestamping (MSE buffer range and <video> currentTime) is based on CTS (and not DTS like in other browsers)
-                            if (isFirefox) {
-                                buffer.timestampOffset = -(getSegmentTimestampOffset(data) / request.timescale);
-                            }
-
-                            appendToBuffer.call(self, data, request.quality, request.index).then(
-                                function() {
-                                    // Check if a new quality is being appended,
-                                    // then add a metric to enable MediaPlayer to detect playback quality changes
-                                    if (currentBufferedQuality !== request.quality) {
-                                        self.debug.log("[BufferController][" + type + "] Buffered quality changed: " + request.quality);
-                                        self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
-                                        currentBufferedQuality = request.quality;
-                                    }
-
-                                    // Signal end of buffering process
-                                    signalSegmentBuffered.call(self);
-                                    // Check buffer level
-                                    checkIfSufficientBuffer.call(self);
-                                }
-                            );
+                self.fragmentController.process(response.data, request, _currentRepresentation).then(function(data) {
+                    if (data) {
+                        if (eventStreamAdaption.length > 0 || eventStreamRepresentation.length > 0) {
+                            events = handleInbandEvents.call(self, data, request, eventStreamAdaption, eventStreamRepresentation);
+                            self.eventController.addInbandEvents(events);
                         }
-                    );
-                } else {
-                    self.debug.error("[BufferController][" + type + "] Error with segment data, no bytes to push");
-                    // Signal end of buffering process
+
+                        self.debug.info("[BufferController][" + type + "] Buffer segment from url ", request.url);
+
+                        /*if (trickModeEnabled) {
+                                var filename = type + "_" + request.index + "_" + request.quality + ".mp4",
+                                    blob = new Blob([data], {
+                                        type: 'data/mp4'
+                                    });
+
+                                if (navigator.msSaveBlob) { // For IE10+ and edge
+                                    navigator.msSaveBlob(blob, filename);
+                                }
+                            }*/
+
+                        //console.saveBinArray(data, request.url.substring(request.url.lastIndexOf('/') + 1));
+                        data = deleteInbandEvents.call(self, data);
+
+                        // Check if we need to override the current buffered segments (in case of language switch for example)
+                        Q.when(overrideBuffer ? removeBuffer.call(self) : true).then(
+                            function() {
+                                /*if (overrideBuffer) {
+                                    debugBufferRange.call(self);
+                                }*/
+                                overrideBuffer = false;
+
+                                // If firefox, set buffer timestampOffset since timestamping (MSE buffer range and <video> currentTime) is based on CTS (and not DTS like in other browsers)
+                                if (isFirefox) {
+                                    buffer.timestampOffset = -(getSegmentTimestampOffset(data) / request.timescale);
+                                }
+
+                                appendToBuffer.call(self, data, request.quality, request.index).then(
+                                    function() {
+                                        // Check if a new quality is being appended,
+                                        // then add a metric to enable MediaPlayer to detect playback quality changes
+                                        if (currentBufferedQuality !== request.quality) {
+                                            self.debug.log("[BufferController][" + type + "] Buffered quality changed: " + request.quality);
+                                            self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
+                                            currentBufferedQuality = request.quality;
+                                        }
+
+                                        // Signal end of buffering process
+                                        signalSegmentBuffered.call(self);
+                                        // Check buffer level
+                                        checkIfSufficientBuffer.call(self);
+                                    }
+                                );
+                            }
+                        );
+                    } else {
+                        self.debug.error("[BufferController][" + type + "] Error with segment data, no bytes to push");
+                        // Signal end of buffering process
+                        signalSegmentBuffered.call(self);
+                        // Check buffer level
+                        checkIfSufficientBuffer.call(self);
+                    }
+                },
+                function (e) {
                     signalSegmentBuffered.call(self);
-                    // Check buffer level
-                    checkIfSufficientBuffer.call(self);
-                }
+                    if (e.name) {
+                        self.errHandler.sendError(e.name, e.message, e.data);
+                    } else {
+                        self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", e.message);
+                    }
+                });
             } catch (e) {
                 signalSegmentBuffered.call(self);
                 if (e.name) {

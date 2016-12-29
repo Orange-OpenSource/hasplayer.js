@@ -378,34 +378,43 @@ Mss.dependencies.MssFragmentController = function() {
     rslt.manifestExt = undefined;
     rslt.metricsModel = undefined;
 
-    rslt.process = function(bytes, request, representations) {
-        var result = null,
+    rslt.process = function(bytes, request, representation) {
+        var deferred = Q.defer(),
+            result = null,
             manifest = this.manifestModel.getValue(),
             adaptation = null;
 
         if (bytes !== null && bytes !== undefined && bytes.byteLength > 0) {
             result = new Uint8Array(bytes);
         } else {
-            return null;
+            deferred.resolve(null);
+            return deferred.promise;
         }
 
-        if (manifest && representations && (representations.length > 0)) {
-            // Get adaptation containing provided representations
-            // (Note: here representations is of type Dash.vo.Representation)
-            adaptation = manifest.Period_asArray[representations[0].adaptation.period.index].AdaptationSet_asArray[representations[0].adaptation.index];
-            if (request) {
-                if (request.type === "Media Segment") {
-                    result = convertFragment.call(this, result, request, adaptation);
-                    if (!result) {
-                        return null;
+        if (manifest && representation) {
+            try {
+                // Get adaptation containing provided representations
+                // (Note: here representations is of type Dash.vo.Representation)
+                adaptation = manifest.Period_asArray[representation.adaptation.period.index].AdaptationSet_asArray[representation.adaptation.index];
+                if (request) {
+                    if (request.type === "Media Segment") {
+                        result = convertFragment.call(this, result, request, adaptation);
+                        deferred.resolve(!result ? null : result);
+                    } else if (request.type === "FragmentInfo Segment") {
+                        updateSegmentsList.call(this, result, request, adaptation);
+                        deferred.resolve(result);
+                    } else {
+                        deferred.resolve(result);
                     }
-                } else if (request.type === "FragmentInfo Segment") {
-                    updateSegmentsList.call(this, result, request, adaptation);
                 }
+            } catch (e) {
+                deferred.reject(e);
             }
+        } else {
+            deferred.resolve(result);
         }
 
-        return result;
+        return deferred.promise;
     };
 
     return rslt;
