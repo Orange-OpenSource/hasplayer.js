@@ -1306,12 +1306,6 @@ MediaPlayer.dependencies.BufferController = function() {
 
             currentDownloadQuality = -1;
 
-            // For HLS, we need to reset fragmentController in order to force initialization segment
-            // generation for 1st segment
-            if (this.fragmentController.reset) {
-                this.fragmentController.reset();
-            }
-
             // Clear buffer
             removeBuffer.call(this).then(function () {
                 if (_currentRepresentation) {
