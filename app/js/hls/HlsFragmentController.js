@@ -16,7 +16,9 @@
 Hls.dependencies.HlsFragmentController = function() {
     "use strict";
 
-    var generateMediaSegment = function(data, request) {
+    var decryptionInfos = {},
+
+        generateMediaSegment = function(data, request) {
             var i = 0,
                 // Demultiplex HLS chunk to get samples
                 tracks = rslt.hlsDemux.demux(new Uint8Array(data), request);
@@ -45,6 +47,8 @@ Hls.dependencies.HlsFragmentController = function() {
 
         decrypt = function(data, decryptionInfo) {
 
+            var t = new Date();
+
             var view = new DataView(decryptionInfo.key.buffer);
             var key = new Uint32Array([
                 view.getUint32(0),
@@ -62,7 +66,73 @@ Hls.dependencies.HlsFragmentController = function() {
             ]);
 
             var decrypter = new Hls.dependencies.AES128Decrypter(key, iv);
+            rslt.debug.log("[HlsFragmentController] decrypted chunk (" + (((new Date()).getTime() - t.getTime()) / 1000).toFixed(3) + "s.)");
+
             return decrypter.decrypt(data);
+        },
+
+        loadDecryptionKey = function(decryptionInfo) {
+            var deferred = Q.defer();
+
+            this.debug.log("[HlsFragmentController]", "Load decryption key: " + decryptionInfo.uri);
+            var xhr = new MediaPlayer.dependencies.XHRLoader();
+            // Do not retry for encrypted key, we assume the key file has to be present if playlist if present
+            xhr.initialize('arraybuffer', 0, 0);
+            xhr.load(decryptionInfo.uri).then(
+                function (request) {
+                    decryptionInfo.key = new Uint8Array(request.response);
+                    deferred.resolve();
+                },
+                function(request) {
+                    if (!request || request.aborted) {
+                        deferred.reject();
+                    } else {
+                        deferred.reject({
+                            name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
+                            message: "Failed to download HLS decryption key",
+                            data: {
+                                url: decryptionInfo.uri,
+                                status: request.status
+                            }
+                        });
+                    }
+                }
+            );
+
+            return deferred.promise;
+        },
+
+        decryptSegment = function(bytes, request) {
+            var deferred = Q.defer(),
+                decryptionInfo,
+                self = this;
+
+            if (!request.decryptionInfo || request.decryptionInfo.method === "NONE") {
+                deferred.resolve(bytes);
+                return deferred.promise;
+            }
+
+            // check if decryption key has not been already downloaded
+            // if (!manifest.decryptionInfos) {
+            //     manifest.decryptionInfos = {};
+            // }
+            decryptionInfo = decryptionInfos[request.decryptionInfo.uri];
+            if (decryptionInfo) {
+                deferred.resolve(decrypt.call(this, bytes, decryptionInfo));
+            } else {
+                decryptionInfo = request.decryptionInfo;
+                loadDecryptionKey.call(this, decryptionInfo).then(
+                    function() {
+                        decryptionInfos[decryptionInfo.uri] = decryptionInfo;
+                        deferred.resolve(decrypt.call(self, bytes, decryptionInfo));
+                    },
+                    function (e) {
+                        deferred.reject(e);
+                    }
+                );
+            }
+
+            return deferred.promise;
         };
 
     var rslt = MediaPlayer.utils.copyMethods(MediaPlayer.dependencies.FragmentController);
@@ -71,31 +141,37 @@ Hls.dependencies.HlsFragmentController = function() {
     rslt.hlsDemux = undefined;
     rslt.mp4Processor = undefined;
 
-    rslt.process = function(bytes, request, representations) {
-        var result = null;
+    rslt.process = function(bytes, request/*, representation*/) {
+        var deferred = Q.defer(),
+            result = null;
 
         if ((bytes === null) || (bytes === undefined) || (bytes.byteLength === 0)) {
             return bytes;
         }
 
         // Media segment => generate corresponding moof data segment from demultiplexed MPEG2-TS chunk
-        if (request && (request.type === "Media Segment") && representations && (representations.length > 0)) {
+        if (request && (request.type === "Media Segment")) {
+                // Decrypt the segment if encrypted
+                decryptSegment.call(rslt, bytes, request).then(function(data) {
+                    //console.saveBinArray(data, request.url.substring(request.url.lastIndexOf('/') + 1));
+                    try {
+                        // Generate media segment (moof)
+                        result = generateMediaSegment(data, request);
+                        rslt.sequenceNumber++;
+                        deferred.resolve(result);
+                    } catch (e) {
+                        deferred.reject(e);
+                    }
+                }, function (e) {
+                    deferred.reject(e);
+                });
 
-            // Decrypt the segment if encrypted
-            if (request.decryptionInfo && request.decryptionInfo.method !== "NONE") {
-                var t = new Date();
-                bytes = decrypt(bytes, request.decryptionInfo);
-                rslt.debug.log("[HlsFragmentController] decrypted chunk (" + (((new Date()).getTime() - t.getTime()) / 1000).toFixed(3) + "s.)");
-                //console.saveBinArray(bytes, request.url.substring(request.url.lastIndexOf('/') + 1));
-            }
-
-            // Generate media segment (moof)
-            result = generateMediaSegment(bytes, request);
-
-            rslt.sequenceNumber++;
+        } else {
+            deferred.resolve(result);
         }
 
-        return result;
+        //return result;
+        return deferred.promise;
     };
 
     return rslt;
