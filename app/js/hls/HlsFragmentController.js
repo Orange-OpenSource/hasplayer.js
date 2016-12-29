@@ -15,23 +15,8 @@
  */
 Hls.dependencies.HlsFragmentController = function() {
     "use strict";
-    var lastRequestQuality = -1;
 
-    var generateInitSegment = function(data) {
-            var i = 0,
-                manifest = rslt.manifestModel.getValue(),
-                // Process the HLS chunk to get media tracks description
-                tracks = rslt.hlsDemux.getTracks(new Uint8Array(data));
-
-            // Add track duration
-            for (i = 0; i < tracks.length; i += 1) {
-                tracks[i].duration = manifest.mediaPresentationDuration;
-            }
-            // Generate init segment (moov)
-            return rslt.mp4Processor.generateInitSegment(tracks);
-        },
-
-        generateMediaSegment = function(data, request) {
+    var generateMediaSegment = function(data, request) {
             var i = 0,
                 // Demultiplex HLS chunk to get samples
                 tracks = rslt.hlsDemux.demux(new Uint8Array(data), request);
@@ -42,8 +27,9 @@ Hls.dependencies.HlsFragmentController = function() {
                     request.startTime = tracks[i].samples[0].dts / tracks[i].timescale;
                 }
             }
-            // Generate media segment (moov)
-            return rslt.mp4Processor.generateMediaSegment(tracks);
+
+            // Generate init (moov) and media segment (moof)
+            return rslt.mp4Processor.generateInitMediaSegment(tracks);
         },
 
         createInitializationVector = function(segmentNumber) {
@@ -86,9 +72,7 @@ Hls.dependencies.HlsFragmentController = function() {
     rslt.mp4Processor = undefined;
 
     rslt.process = function(bytes, request, representations) {
-        var result = null,
-            InitSegmentData = null,
-            catArray = null;
+        var result = null;
 
         if ((bytes === null) || (bytes === undefined) || (bytes.byteLength === 0)) {
             return bytes;
@@ -102,34 +86,16 @@ Hls.dependencies.HlsFragmentController = function() {
                 var t = new Date();
                 bytes = decrypt(bytes, request.decryptionInfo);
                 rslt.debug.log("[HlsFragmentController] decrypted chunk (" + (((new Date()).getTime() - t.getTime()) / 1000).toFixed(3) + "s.)");
-            }
-
-            if (lastRequestQuality !== request.quality) {
-                // If quality changed then generate initialization segment
-                InitSegmentData = generateInitSegment(bytes);
-                request.index = undefined; // ?
-                lastRequestQuality = request.quality;
+                //console.saveBinArray(bytes, request.url.substring(request.url.lastIndexOf('/') + 1));
             }
 
             // Generate media segment (moof)
             result = generateMediaSegment(bytes, request);
 
-            // Insert initialization if required
-            if (InitSegmentData !== null) {
-                catArray = new Uint8Array(InitSegmentData.length + result.length);
-                catArray.set(InitSegmentData, 0);
-                catArray.set(result, InitSegmentData.length);
-                result = catArray;
-            }
-
             rslt.sequenceNumber++;
         }
 
         return result;
-    };
-
-    rslt.reset = function() {
-        lastRequestQuality = -1;
     };
 
     return rslt;
