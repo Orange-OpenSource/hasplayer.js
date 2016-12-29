@@ -858,7 +858,7 @@ MediaPlayer.dependencies.BufferController = function() {
             }
 
             // currentSequenceNumber used in HLS
-            if ((currentSequenceNumber !== -1) && !seeking) {
+            if ((currentSequenceNumber !== -1) && !seeking && !overrideBuffer) {
                 self.debug.log("[BufferController][" + type + "] loadNextFragment for sequence number: " + currentSequenceNumber);
                 self.indexHandler.getNextSegmentRequestFromSN(_currentRepresentation, currentSequenceNumber).then(onFragmentRequest.bind(self));
             } else {
@@ -1146,7 +1146,6 @@ MediaPlayer.dependencies.BufferController = function() {
                 representation,
                 idx;
 
-
             // Check if running state
             if (!isRunning.call(self)) {
                 deferred.reject();
@@ -1155,6 +1154,8 @@ MediaPlayer.dependencies.BufferController = function() {
 
             idx = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
             representation = manifest.Period_asArray[periodInfo.index].AdaptationSet_asArray[idx].Representation_asArray[repIndex];
+
+            this.debug.log("[BufferController][" + type + "] Update playlist for representation " + representation.id);
             self.parser.hlsParser.updatePlaylist(representation).then(
                 function() {
                     availableRepresentations = updateRepresentations.call(self, data, periodInfo);
