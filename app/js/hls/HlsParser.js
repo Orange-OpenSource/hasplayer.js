@@ -127,38 +127,24 @@ Hls.dependencies.HlsParser = function() {
         },
 
         parsePlaylist = function(manifest, representation) {
-            var deferred = Q.defer(),
-                segmentList,
+            var segmentList,
                 segments,
                 segment,
                 initialization,
                 decryptionInfo = null,
-                decryptionKeysDefer = [],
                 duration = 0,
                 sequenceNumber = 0,
                 self = this;
 
             // Check playlist header
             if (!manifest || (manifest && manifest.length < 0)) {
-                deferred.reject({
-                    name: MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE,
-                    message: "Failed to parse variant stream playlist",
-                    data: {
-                        url: representation.url
-                    }
-                });
+                return false;
             }
 
             self.debug.log(manifest);
 
             if (manifest.indexOf('#EXTM3U') !== 0) {
-                deferred.reject({
-                    name: MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE,
-                    message: "Failed to parse variant stream playlist",
-                    data: {
-                        url: representation.url
-                    }
-                });
+                return false;
             }
 
             // Intitilaize SegmentList
@@ -201,7 +187,6 @@ Hls.dependencies.HlsParser = function() {
                             uri: getAbsoluteURI(attrs['URI'], segmentList.BaseURL),
                             iv: attrs['IV']
                         };
-                        decryptionKeysDefer.push(loadDecryptionKey.call(this, decryptionInfo));
                         break;
                     case 'EXTINF':
                         segment = {
@@ -241,48 +226,7 @@ Hls.dependencies.HlsParser = function() {
             // PATCH Live = VOD
             //representation.duration = duration;
 
-            // Wait for all decryption keys to be downlaoded
-            Q.all(decryptionKeysDefer).then(
-                function () {
-                    deferred.resolve();
-                },
-                function (error) {
-                    deferred.reject(error);
-                }
-            );
-
-            return deferred.promise;
-        },
-
-        loadDecryptionKey = function(decryptionInfo) {
-            var deferred = Q.defer();
-
-            this.debug.log("[HlsParser]", "Load decryption key: " + decryptionInfo.uri);
-            var xhr = new MediaPlayer.dependencies.XHRLoader();
-            // Do not retry for encrypted key, we assume the key file has to be present if playlist if present
-            xhr.initialize('arraybuffer', 0, 0);
-            xhr.load(decryptionInfo.uri).then(
-                function (request) {
-                    decryptionInfo.key = new Uint8Array(request.response);
-                    deferred.resolve();
-                },
-                function(request) {
-                    if (!request || request.aborted) {
-                        deferred.reject();
-                    } else {
-                        deferred.reject({
-                            name: MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST,
-                            message: "Failed to download HLS decryption key",
-                            data: {
-                                url: decryptionInfo.uri,
-                                status: request.status
-                            }
-                        });
-                    }
-                }
-            );
-
-            return deferred.promise;
+            return true;
         },
 
         postProcess = function(manifest, quality) {
@@ -386,13 +330,17 @@ Hls.dependencies.HlsParser = function() {
             xhrLoader.initialize('text', retryAttempts, retryInterval);
             xhrLoader.load(representation.url).then(
                 function (request) {
-                    parsePlaylist.call(self, request.response, representation).then(
-                        function () {
-                            deferred.resolve();
-                        },
-                        function (error) {
-                            deferred.reject(error);
+                    if (parsePlaylist.call(self, request.response, representation)) {
+                        deferred.resolve();
+                    } else {
+                        deferred.reject({
+                            name: MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE,
+                            message: "Failed to parse variant stream playlist",
+                            data: {
+                                url: representation.url
+                            }
                         });
+                    }
                 },
                 function(request) {
                     if (!request || request.aborted) {
