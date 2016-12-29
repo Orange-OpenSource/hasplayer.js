@@ -795,14 +795,11 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             return psshs;
         },
 
-        doGenerateInitSegment = function(tracks) {
-            var moov_file,
+        generateMoov = function (tracks) {
+            var boxes = [],
                 moov,
                 supportedKS,
                 i;
-
-            // Create file
-            moov_file = new mp4lib.boxes.File();
 
             // Create Movie box (moov)
             moov = new mp4lib.boxes.MovieBox();
@@ -826,11 +823,11 @@ MediaPlayer.dependencies.Mp4Processor = function() {
                 }
             }
 
-            moov_file.boxes.push(createFileTypeBox());
+            boxes.push(createFileTypeBox());
 
-            moov_file.boxes.push(moov);
+            boxes.push(moov);
 
-            return mp4lib.serialize(moov_file);
+            return boxes;
         },
 
         ///////////////////////////////////////////////////////////////////////////////////////////
@@ -983,7 +980,6 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             return sdtp;
         },
 
-
         createMediaDataBox = function(track) {
 
             // Media Data Box
@@ -995,21 +991,17 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             return mdat;
         },
 
-        doGenerateMediaSegment = function(tracks) {
+        generateMoof = function (tracks) {
 
-            var moof_file,
+            var boxes = [],
                 moof,
                 i,
                 length,
-                data,
                 trafs,
                 mdatLength = 0,
                 trackglobal = {},
                 mdatTracksTab = [],
                 offset = 0;
-
-            // Create file
-            moof_file = new mp4lib.boxes.File();
 
             // Create Movie Fragment box (moof)
             moof = new mp4lib.boxes.MovieFragmentBox();
@@ -1024,10 +1016,10 @@ MediaPlayer.dependencies.Mp4Processor = function() {
                 }
             }
 
-            moof_file.boxes.push(moof);
+            boxes.push(moof);
 
-            // Determine total length of output fragment file
-            length = moof_file.getLength();
+            moof.computeLength();
+            length = moof.size;
 
             // Add tracks data
             trafs = moof.getBoxesByType("traf");
@@ -1061,18 +1053,32 @@ MediaPlayer.dependencies.Mp4Processor = function() {
             }
 
             // Create mdat
-            moof_file.boxes.push(createMediaDataBox(trackglobal));
+            boxes.push(createMediaDataBox(trackglobal));
 
-            data = mp4lib.serialize(moof_file);
-
-            return data;
+            return boxes;
         };
 
     return {
         protectionExt: undefined,
 
-        generateInitSegment: doGenerateInitSegment,
-        generateMediaSegment: doGenerateMediaSegment
+        generateInitSegment: function (tracks) {
+            var file = new mp4lib.boxes.File();
+            file.boxes = generateMoov(tracks);
+            return mp4lib.serialize(file);
+        },
+
+        generateMediaSegment: function (tracks) {
+            var file = new mp4lib.boxes.File();
+            file.boxes = generateMoof(tracks);
+            return mp4lib.serialize(file);
+        },
+
+        generateInitMediaSegment: function (tracks) {
+            var file = new mp4lib.boxes.File();
+            file.boxes = generateMoov(tracks);
+            file.boxes = file.boxes.concat(generateMoof(tracks));
+            return mp4lib.serialize(file);
+        },
     };
 };
 
