@@ -1077,9 +1077,7 @@ MediaPlayer.dependencies.BufferController = function() {
             loadInit = (initializationData.length === 0) && (manifest.name !== "M3U");
 
             // Get current quality
-            abrResult = self.abrController.getPlaybackQuality(type, data);
-
-            quality = abrResult.quality;
+            quality = self.abrController.getPlaybackQuality(type, data).quality;
 
             // Get corresponding representation
             _currentRepresentation = getRepresentationForQuality.call(self, quality);
