@@ -383,6 +383,10 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         startFragmentInfoControllers = function() {
+            if (manifest.name !== 'MSS' || !this.manifestExt.getIsDynamic(manifest)) {
+                return;
+            }
+
             if (fragmentInfoVideoController && dvrStarted === false) {
                 dvrStarted = true;
                 fragmentInfoVideoController.start();
