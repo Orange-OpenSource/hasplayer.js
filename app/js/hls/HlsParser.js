@@ -126,7 +126,18 @@ Hls.dependencies.HlsParser = function() {
             return medias;
         },
 
-        parsePlaylist = function(manifest, representation) {
+        removeSegments = function(segments, sequenceNumber) {
+            for (var i = 0; i < segments.length; i++) {
+                if (segments[i].sequenceNumber < sequenceNumber) {
+                    segments.shift();
+                    i--;
+                } else {
+                    break;
+                }
+            }
+        },
+
+        parsePlaylist = function(manifest, representation, adaptation) {
             var segmentList,
                 segments,
                 segment,
@@ -229,11 +240,11 @@ Hls.dependencies.HlsParser = function() {
             return true;
         },
 
-        postProcess = function(manifest, quality) {
+        postProcess = function(manifest) {
             var deferred = Q.defer(),
                 period = manifest.Period_asArray[0],
                 adaptationSet = period.AdaptationSet_asArray[0],
-                representation = adaptationSet.Representation_asArray[quality],
+                representation = adaptationSet.Representation_asArray[0],
                 request = new MediaPlayer.vo.SegmentRequest(),
                 self = this,
                 manifestDuration,
@@ -272,7 +283,7 @@ Hls.dependencies.HlsParser = function() {
             manifest.minBufferTime = representation.SegmentList.duration * 3; //MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME
 
             // Download initialization data (PSI, IDR...) of 1st representation to obtain codec information
-            representation = adaptationSet.Representation_asArray[quality];
+            representation = adaptationSet.Representation_asArray[0];
             request.type = "Initialization Segment";
             request.url = representation.SegmentList.Initialization.sourceURL;
 
@@ -321,7 +332,7 @@ Hls.dependencies.HlsParser = function() {
             return base;
         },
 
-        updatePlaylist = function(representation) {
+        updatePlaylist = function(representation, adaptation) {
             var deferred = Q.defer(),
                 self = this;
 
@@ -330,7 +341,7 @@ Hls.dependencies.HlsParser = function() {
             xhrLoader.initialize('text', retryAttempts, retryInterval);
             xhrLoader.load(representation.url).then(
                 function (request) {
-                    if (parsePlaylist.call(self, request.response, representation)) {
+                    if (parsePlaylist.call(self, request.response, representation, adaptation)) {
                         deferred.resolve();
                     } else {
                         deferred.reject({
@@ -467,14 +478,18 @@ Hls.dependencies.HlsParser = function() {
                 representationId++;
             }
 
+            // Sort representation in bandwidth ascending order
+            representations.sort(function(a, b) {
+                return a.bandwidth - b.bandwidth;
+            });
+
             adaptationSet.Representation = (representations.length > 1) ? representations : representations[0];
             adaptationSet.Representation_asArray = representations;
             adaptationsSets.push(adaptationSet);
 
             // Download and process representation (variant stream) playlist
-            result = this.abrController.getPlaybackQuality("video", adaptationsSets[0]);
-            representation = adaptationsSets[0].Representation_asArray[result.quality];
-            playlistDefers.push(updatePlaylist.call(this, representation));
+            representation = adaptationsSets[0].Representation_asArray[0];
+            playlistDefers.push(updatePlaylist.call(this, representation, adaptationSet));
 
             // alternative renditions of the same content (alternative audio tracks or subtitles) #EXT-X-MEDIA
             medias = getMedias(manifest);
@@ -511,17 +526,14 @@ Hls.dependencies.HlsParser = function() {
                 adaptationSet.Representation_asArray = [representation];
                 if (media.type === 'audio') {
                     adaptationsSets.push(adaptationSet);
-                    playlistDefers.push(updatePlaylist.call(this, representation));
+                    playlistDefers.push(updatePlaylist.call(this, representation, adaptationSet));
                 }
             }
 
             // Get representation (variant stream) playlist
-            // result = this.abrController.getPlaybackQuality("video", adaptationsSets[0]);
-            // representation = adaptationsSets[0].Representation_asArray[result.quality];
-            // updatePlaylist.call(this, representation).then(
             Q.all(playlistDefers).then(
                 function() {
-                    postProcess.call(self, mpd, result.quality).then(function() {
+                    postProcess.call(self, mpd).then(function() {
                         deferred.resolve(mpd);
                     });
                 },
@@ -558,7 +570,6 @@ Hls.dependencies.HlsParser = function() {
         config: undefined,
         manifestModel: undefined,
         fragmentLoader: undefined,
-        abrController: undefined,
         hlsDemux: undefined,
 
         setup: function() {
