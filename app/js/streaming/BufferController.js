@@ -82,6 +82,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
         // HLS chunk sequence number
         currentSequenceNumber = -1,
+        playlistRefreshTimeout = null,
 
         segmentDuration = NaN,
 
@@ -916,19 +917,10 @@ MediaPlayer.dependencies.BufferController = function() {
                 self.debug.log("[BufferController][" + type + "] loadNextFragment failed");
                 signalSegmentBuffered.call(self);
 
-                // If live HLS, then try to refresh playlist
                 if (isDynamic) {
+                    // If live HLS, then check buffer since playlist should be updated
                     if (manifest.name === "M3U") {
-                        updatePlayListForRepresentation.call(self, currentDownloadQuality).then(
-                            function() {
-                                _currentRepresentation = getRepresentationForQuality.call(self, currentDownloadQuality);
-                                updateCheckBufferTimeout.call(self, 0);
-                            }, function(err) {
-                                if (err) {
-                                    self.errHandler.sendError(err.name, err.message, err.data);
-                                }
-                            }
-                        );
+                        updateCheckBufferTimeout.call(self);
                     }
                 } else {
                     // For VOD streams, signal end of stream
@@ -1050,7 +1042,7 @@ MediaPlayer.dependencies.BufferController = function() {
         updateCheckBufferTimeout = function(delay) {
             var self = this;
 
-            delay = Math.max(delay, (segmentDuration / 2));
+            delay = delay ? delay : 1;
 
             this.debug.log("[BufferController][" + type + "] Check buffer in = " + delay.toFixed(3) + " ms (bufferLevel = " + bufferLevel + ")");
 
@@ -1068,8 +1060,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 manifest = self.manifestModel.getValue(),
                 loadInit = false,
                 quality,
-                playlistUpdated = null,
-                abrResult;
+                playlistUpdated = null;
 
             if (deferredFragmentBuffered !== null) {
                 self.debug.error("[BufferController][" + type + "] deferredFragmentBuffered has not been resolved, create a new one is not correct.");
@@ -1105,21 +1096,10 @@ MediaPlayer.dependencies.BufferController = function() {
                 self.metricsModel.addRepresentationSwitch(type, now, currentVideoTime, _currentRepresentation.id, quality);
 
                 // HLS use case => download playlist for new representation
-                if ((manifest.name === "M3U") && (isDynamic || availableRepresentations[quality].initialization === null)) {
-                    playlistUpdated = Q.defer();
-                    updatePlayListForRepresentation.call(self, quality).then(
-                        function() {
-                            _currentRepresentation = getRepresentationForQuality.call(self, quality);
-                            playlistUpdated.resolve();
-                        },
-                        function(err) {
-                            playlistUpdated.reject(err);
-                        }
-                    );
-                }
+                playlistUpdated = updatePlayListForRepresentation.call(self);
             }
 
-            Q.when(playlistUpdated ? playlistUpdated.promise : true).then(
+            Q.when(playlistUpdated ? playlistUpdated : true).then(
                 function() {
                     if (loadInit === true) {
                         // Load initialization segment request
@@ -1155,29 +1135,48 @@ MediaPlayer.dependencies.BufferController = function() {
 
         },
 
-        updatePlayListForRepresentation = function(repIndex) {
-            var self = this,
-                deferred = Q.defer(),
-                manifest = self.manifestModel.getValue(),
+        updatePlayListForRepresentation = function() {
+            var manifest = this.manifestModel.getValue(),
+                deferred,
                 representation,
-                idx;
+                idx,
+                self = this;
 
-            // Check if running state
-            if (!isRunning.call(self)) {
-                deferred.reject();
-                return deferred.promise;
+            if (manifest.name !== "M3U" || !isDynamic) {
+                return Q.when(true);
             }
 
+            if (playlistRefreshTimeout) {
+                clearTimeout(playlistRefreshTimeout);
+                playlistRefreshTimeout = null;
+            }
+
+            deferred = Q.defer();
+
             idx = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
-            representation = manifest.Period_asArray[periodInfo.index].AdaptationSet_asArray[idx].Representation_asArray[repIndex];
+            representation = manifest.Period_asArray[periodInfo.index].AdaptationSet_asArray[idx].Representation_asArray[currentDownloadQuality];
 
             this.debug.log("[BufferController][" + type + "] Update playlist for representation " + representation.id);
-            self.parser.hlsParser.updatePlaylist(representation).then(
+
+            self.parser.hlsParser.updatePlaylist(representation, data).then(
                 function() {
                     availableRepresentations = updateRepresentations.call(self, data, periodInfo);
+                    _currentRepresentation = getRepresentationForQuality.call(self, currentDownloadQuality);
+                    representation = manifest.Period_asArray[periodInfo.index].AdaptationSet_asArray[idx].Representation_asArray[currentDownloadQuality];
+
+                    // Refresh playlist according to last segment duration
+                    var segments = representation.SegmentList.SegmentURL_asArray;
+                    var segment = segments[segments.length-1];
+                    playlistRefreshTimeout = setTimeout(function() {
+                        updatePlayListForRepresentation.call(self);
+                    }, ((segment.duration - 1) * 1000));
+
                     deferred.resolve();
                 },
                 function(err) {
+                    if (err) {
+                        self.errHandler.sendWarning(err.name, err.message, err.data);
+                    }
                     deferred.reject(err);
                 }
             );
@@ -1561,7 +1560,7 @@ MediaPlayer.dependencies.BufferController = function() {
                         if (segmentRequestOnError) {
                             // If buffering is due to segment download failure (see onBytesError()), then signal it to Stream (see Stream.onBufferFailed())
                             signalSegmentLoadingFailed.call(this);
-                        } else {
+                        } else if (!isDynamic) {
                             // Check if there is a hole in the buffer (segment download failed or input stream discontinuity), then skip it
                             ranges = this.sourceBufferExt.getAllRanges(buffer);
                             var i;
@@ -1607,6 +1606,11 @@ MediaPlayer.dependencies.BufferController = function() {
             doStop.call(this);
             // Wait for current buffering process to be completed before restarting
             this.sourceBufferExt.abort(mediaSource, buffer);
+
+            if (playlistRefreshTimeout) {
+                clearTimeout(playlistRefreshTimeout);
+                playlistRefreshTimeout = null;
+            }
 
             Q.when(deferredFragmentBuffered ? deferredFragmentBuffered.promise : true).then(
                 function() {
