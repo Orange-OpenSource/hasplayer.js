@@ -145,6 +145,7 @@ Hls.dependencies.HlsParser = function() {
                 decryptionInfo = null,
                 duration = 0,
                 sequenceNumber = 0,
+                i,
                 self = this;
 
             // Check playlist header
@@ -158,19 +159,22 @@ Hls.dependencies.HlsParser = function() {
                 return false;
             }
 
-            // Intitilaize SegmentList
-            segmentList = {
-                name: "SegmentList",
-                isRoot: false,
-                isArray: false,
-                // children: [],
-                duration: 0,
-                startNumber: 0,
-                timescale: 1,
-                BaseURL: representation.BaseURL,
-                SegmentURL_asArray: []
-            };
-            representation[segmentList.name] = segmentList;
+            segmentList = representation['SegmentList'];
+            if (!segmentList) {
+                // Initialize SegmentList
+                segmentList = {
+                    name: 'SegmentList',
+                    isRoot: false,
+                    isArray: false,
+                    // children: [],
+                    duration: 0,
+                    startNumber: 0,
+                    timescale: 1,
+                    BaseURL: representation.BaseURL,
+                    SegmentURL_asArray: []
+                };
+                representation['SegmentList'] = segmentList;
+            }
 
             segments = segmentList.SegmentURL_asArray;
 
@@ -215,7 +219,9 @@ Hls.dependencies.HlsParser = function() {
                             segment.decryptionInfo.iv = segment.sequenceNumber;
                         }
 
-                        segments.push(segment);
+                        if (segments.length === 0 || segment.sequenceNumber > segments[segments.length-1].sequenceNumber) {
+                            segments.push(segment);
+                        }
                         sequenceNumber++;
                         duration += segment.duration;
                         break;
@@ -226,6 +232,29 @@ Hls.dependencies.HlsParser = function() {
                         break;
                 }
             }
+
+            // Remove segments from previous playlist
+            removeSegments(segments, segmentList.startNumber);
+
+            // Correct segments timeline according to previous segment list (in case of variant stream switching)
+            if (adaptation.segments) {
+                // Align segment list according to sequence number
+                removeSegments(segments, adaptation.segments[0].sequenceNumber);
+                removeSegments(adaptation.segments, segments[0].sequenceNumber);
+                if (segments[0].time !== adaptation.segments[0].time) {
+                    segments[0].time = adaptation.segments[0].time;
+                    for (i = 1; i < segments.length; i++) {
+                        segments[i].time = segments[i - 1].time + segments[i - 1].duration;
+                    }
+                }
+            }
+
+            adaptation.segments = segments;
+
+            var range = {
+                start: segments[0].time / segmentList.timescale,
+                end: (segments[segments.length - 1].time + segments[segments.length - 1].duration)  / segmentList.timescale
+            };
 
             // Set initialization segment info
             initialization = {
