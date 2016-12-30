@@ -1074,7 +1074,7 @@ MediaPlayer.dependencies.BufferController = function() {
             doUpdateData.call(self);
 
             // If initialization data has been changed (track changed), then load initialization segment
-            loadInit = initializationData.length === 0;
+            loadInit = (initializationData.length === 0) && (manifest.name !== "M3U");
 
             // Get current quality
             abrResult = self.abrController.getPlaybackQuality(type, data);
