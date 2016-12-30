@@ -256,6 +256,8 @@ Hls.dependencies.HlsParser = function() {
                 end: (segments[segments.length - 1].time + segments[segments.length - 1].duration)  / segmentList.timescale
             };
 
+            this.metricsModel.addDVRInfo('video', new Date(), range);
+
             // Set initialization segment info
             initialization = {
                 name: "Initialization",
@@ -600,6 +602,7 @@ Hls.dependencies.HlsParser = function() {
         manifestModel: undefined,
         fragmentLoader: undefined,
         hlsDemux: undefined,
+        metricsModel: undefined,
 
         setup: function() {
             retryAttempts = this.config.getParam("ManifestLoader.RetryAttempts", "number", DEFAULT_RETRY_ATTEMPTS);
