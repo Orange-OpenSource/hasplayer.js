@@ -229,12 +229,11 @@ Hls.dependencies.HlsDemux = function() {
                 demuxADTS.call(this, track);
             }
 
-            // Patch first frame timestamp and duration in case of missing frames at the end
-            // of the previous segment
+            // Patch first frame timestamp and duration in case of missing frames at the end of the previous segment
             if (track.previousCts && track.previousDuration) {
                 sample = track.samples[0];
                 var gap = sample.cts - (track.previousCts + track.previousDuration);
-                if (gap > 0) {
+                if (gap > 0 && gap < track.timescale) {
                     sample.cts -= gap;
                     sample.dts -= gap;
                     sample.duration += gap;
