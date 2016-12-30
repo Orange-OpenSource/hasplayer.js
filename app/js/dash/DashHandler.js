@@ -637,6 +637,12 @@ Dash.dependencies.DashHandler = function() {
                         seg.index = s.index;
                         seg.indexRange = s.indexRange;
 
+                        // ORANGE: overwrite duration if set at segment level (HLS use case)
+                        if (s.duration) {
+                            seg.duration = s.duration;
+                            seg.presentationStartTime = seg.mediaStartTime = s.time;
+                        }
+
                         // ORANGE: add sequence number (HLS use case)
                         if (s.sequenceNumber !== undefined) {
                             seg.sequenceNumber = s.sequenceNumber;
