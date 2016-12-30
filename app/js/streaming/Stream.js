@@ -823,7 +823,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.debug.info("[Stream] Check start time");
 
             // Check if video buffer is not empty
-            videoRange = this.sourceBufferExt.getBufferRange(videoController.getBuffer(), seekTime, 2);
+            videoRange = this.sourceBufferExt.getBufferRange(videoController.getBuffer(), seekTime, videoController.getSegmentDuration());
             if (videoRange === null) {
                 return;
             }
@@ -832,7 +832,7 @@ MediaPlayer.dependencies.Stream = function() {
 
             if (audioController) {
                 // Check if audio buffer is not empty
-                audioRange = this.sourceBufferExt.getBufferRange(audioController.getBuffer(), seekTime, 2);
+                audioRange = this.sourceBufferExt.getBufferRange(audioController.getBuffer(), seekTime, audioController.getSegmentDuration());
                 if (audioRange === null) {
                     return;
                 }
