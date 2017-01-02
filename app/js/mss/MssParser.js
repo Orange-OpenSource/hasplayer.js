@@ -555,7 +555,7 @@ Mss.dependencies.MssParser = function() {
                             period.start = Math.max(segments[0].t, period.start);
                         }
                     }
-                    period.start = parseFloat(period.start) / TIME_SCALE_100_NANOSECOND_UNIT;
+                    period.start /= TIME_SCALE_100_NANOSECOND_UNIT;
                 }
             }
 
