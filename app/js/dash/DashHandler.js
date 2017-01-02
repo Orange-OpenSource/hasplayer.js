@@ -968,6 +968,7 @@ Dash.dependencies.DashHandler = function() {
             }
 
             requestedTime = time;
+            index = -1;
 
             self.debug.log("[DashHandler][" + type + "] Getting the request for time: " + time);
 
