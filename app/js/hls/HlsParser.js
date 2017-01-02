@@ -72,6 +72,7 @@ Hls.dependencies.HlsParser = function() {
                 }
 
                 codecs = codecs.split(',');
+                audioCodec = videoCodec = '';
                 for (i = 0; i < codecs.length; i++) {
                     if (codecs[i].indexOf('avc1') !== -1) {
                         videoCodec = codecs[i];
@@ -498,7 +499,7 @@ Hls.dependencies.HlsParser = function() {
                     id: representationId.toString(),
                     mimeType: "video/mp4",
                     // Consider audio codec only if no alternate track for audio
-                    codecs: stream.audioId.length > 0 ? stream.videoCodec : (stream.videoCodec + ',' + stream.audioCodec),
+                    codecs: (stream.videoCodec.length > 0) ? (stream.audioId.length > 0 ? stream.videoCodec : (stream.videoCodec + ',' + stream.audioCodec)) : "",
                     bandwidth: stream.bandwidth,
                     width: stream.width,
                     height: stream.height,
