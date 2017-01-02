@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2016-12-12_13:39:18 / git revision : 56120f6 */
+/* Last build : 2017-1-2_14:12:42 / git revision : 809c44b */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.8.0-dev',
-        GIT_TAG = '56120f6',
-        BUILD_DATE = '2016-12-12_13:39:18',
+        GIT_TAG = '809c44b',
+        BUILD_DATE = '2017-1-2_14:12:42',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -15372,7 +15372,8 @@ Dash.dependencies.DashHandler = function() {
                     fTimescale,
                     template.media,
                     s.mediaRange,
-                    availabilityIdx);
+                    availabilityIdx,
+                    s.tManifest);
             };
 
             fTimescale = representation.timescale;
@@ -15402,7 +15403,7 @@ Dash.dependencies.DashHandler = function() {
                     time = frag.t;
                 }
 
-                //This is a special case: "A negative value of the @r attribute of the S element indicates that the duration indicated in @d attribute repeats until the start of the next S element, the end of the Period or until the 
+                //This is a special case: "A negative value of the @r attribute of the S element indicates that the duration indicated in @d attribute repeats until the start of the next S element, the end of the Period or until the
                 // next MPD update."
                 if (repeat < 0) {
                     nextFrag = fragments[i + 1];
@@ -15643,7 +15644,7 @@ Dash.dependencies.DashHandler = function() {
             return deferred.promise;
         },
 
-        getTimeBasedSegment = function(representation, time, duration, fTimescale, url, range, index) {
+        getTimeBasedSegment = function(representation, time, duration, fTimescale, url, range, index, tManifest) {
             var self = this,
                 scaledTime = time / fTimescale,
                 scaledDuration = Math.min(duration / fTimescale, representation.adaptation.period.mpd.maxSegmentDuration),
@@ -15671,7 +15672,7 @@ Dash.dependencies.DashHandler = function() {
             // at this wall clock time, the video element currentTime should be seg.presentationStartTime
             seg.wallStartTime = self.timelineConverter.calcWallTimeForSegment(seg, isDynamic);
 
-            seg.replacementTime = time;
+            seg.replacementTime = tManifest ? tManifest : time;
 
             seg.replacementNumber = getNumberForSegment(seg, index);
 
@@ -26031,7 +26032,6 @@ Mss.dependencies.MssParser = function() {
                 smoothNode = this.domParser.getChildNode(xmlDoc, "SmoothStreamingMedia"),
                 i;
 
-            period.duration = (parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration')) === 0) ? Infinity : parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration')) / TIME_SCALE_100_NANOSECOND_UNIT;
             period.BaseURL = baseURL;
 
             // For each StreamIndex node, create an AdaptationSet element
@@ -26427,19 +26427,19 @@ Mss.dependencies.MssParser = function() {
                 protection = this.domParser.getChildNode(smoothNode, 'Protection'),
                 protectionHeader = null,
                 KID,
-                realDuration,
-                firstSegment,
-                lastSegment,
-                adaptationTimeOffset,
-                i;
+                timestampOffset,
+                startTime,
+                segments,
+                i, j;
 
             // Set mpd node properties
             mpd.name = 'MSS';
             mpd.profiles = "urn:mpeg:dash:profile:isoff-live:2011";
             var isLive = this.domParser.getAttributeValue(smoothNode, 'IsLive');
-            mpd.type = (isLive !== null && isLive.toLowerCase() === 'true') ? "dynamic" : "static";
+            mpd.type = (isLive !== null && isLive.toLowerCase() === 'true') ? 'dynamic' : 'static';
             mpd.timeShiftBufferDepth = parseFloat(this.domParser.getAttributeValue(smoothNode, 'DVRWindowLength')) / TIME_SCALE_100_NANOSECOND_UNIT;
-            mpd.mediaPresentationDuration = (parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration')) === 0) ? Infinity : parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration')) / TIME_SCALE_100_NANOSECOND_UNIT;
+            var duration = parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration'));
+            mpd.mediaPresentationDuration = (duration === 0) ? Infinity : (duration / TIME_SCALE_100_NANOSECOND_UNIT);
             mpd.BaseURL = baseURL;
             mpd.minBufferTime = MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
 
@@ -26452,9 +26452,16 @@ Mss.dependencies.MssParser = function() {
             mpd.Period = mapPeriod.call(this);
             mpd.Period_asArray = [mpd.Period];
 
-            // Initialize period start time
             period = mpd.Period;
+
+            // Complete period initialization
             period.start = 0;
+
+            // Test live to static
+            // if (mpd.type !== 'static') {
+            //     mpd.type = 'static';
+            //     mpd.mediaPresentationDuration = mpd.timeShiftBufferDepth;
+            // }
 
             // ContentProtection node
             if (protection !== undefined) {
@@ -26483,25 +26490,9 @@ Mss.dependencies.MssParser = function() {
             }
 
             adaptations = period.AdaptationSet_asArray;
-            for (i = 0; i < adaptations.length; i += 1) {
-                // In case of VOD streams, check if start time is greater than 0.
-                // Therefore, set period start time to the higher adaptation start time
-                if (mpd.type === "static" && adaptations[i].contentType !== 'text') {
-                    firstSegment = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray[0];
-                    lastSegment = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray[adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray.length-1];
-                    adaptationTimeOffset = parseFloat(firstSegment.t) / TIME_SCALE_100_NANOSECOND_UNIT;
-                    period.start = (period.start === 0) ? adaptationTimeOffset : Math.max(period.start, adaptationTimeOffset);
-                    //get last segment start time, add the duration of this last segment
-                    realDuration = parseFloat(((lastSegment.t + lastSegment.d) / TIME_SCALE_100_NANOSECOND_UNIT).toFixed(3));
-                    //detect difference between announced duration (in MSS manifest) and real duration => in any case, we want that the video element sends the ended event.
-                    //set the smallest value between all the adaptations
-                    if (!isNaN(realDuration) && realDuration < mpd.mediaPresentationDuration) {
-                        mpd.mediaPresentationDuration = realDuration;
-                        period.duration = realDuration;
-                    }
-                }
 
-                // Propagate content protection information into each adaptation
+            // Propagate content protection information into each adaptation
+            for (i = 0; i < adaptations.length; i += 1) {
                 if (mpd.ContentProtection !== undefined) {
                     adaptations[i].ContentProtection = mpd.ContentProtection;
                     adaptations[i].ContentProtection_asArray = mpd.ContentProtection_asArray;
@@ -26512,6 +26503,39 @@ Mss.dependencies.MssParser = function() {
             delete mpd.ContentProtection;
             delete mpd.ContentProtection_asArray;
 
+            // In case of VOD streams, check if start time is greater than 0
+            // Then determine timestamp offset according to higher audio/video start time
+            if (mpd.type === "static") {
+                for (i = 0; i < adaptations.length; i++) {
+                    if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
+                        segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
+                        startTime = segments[0].t;
+                        if (startTime > 0) {
+                            timestampOffset = timestampOffset ? Math.min(timestampOffset, startTime) : startTime;
+                        }
+                        // Correct content duration according to minimum adaptation's segments duration
+                        // in order to force <video> element sending 'ended' event
+                        mpd.mediaPresentationDuration = Math.min(mpd.mediaPresentationDuration, ((segments[segments.length-1].t + segments[segments.length-1].d) / TIME_SCALE_100_NANOSECOND_UNIT).toFixed(3));
+                    }
+                }
+
+                // Patch segment templates timestamps and determine period start time (since audio/video should not be aligned to 0)
+                if (timestampOffset > 0) {
+                    for (i = 0; i < adaptations.length; i++) {
+                        segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
+                        for (j = 0; j < segments.length; j++) {
+                            segments[j].tManifest = segments[j].t;
+                            segments[j].t -= timestampOffset;
+                        }
+                        if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
+                            period.start = Math.max(segments[0].t, period.start);
+                        }
+                    }
+                    period.start /= TIME_SCALE_100_NANOSECOND_UNIT;
+                }
+            }
+
+            period.duration = mpd.mediaPresentationDuration;
 
             return mpd;
         },
@@ -26759,6 +26783,11 @@ Mss.dependencies.MssFragmentController = function() {
                 segmentId = -1,
                 availabilityStartTime = null,
                 range;
+
+            // Process tfrf only for live streams
+            if (manifest.type !== 'dynamic') {
+                return;
+            }
 
             // Go through tfrf entries
             while (i < entries.length) {
