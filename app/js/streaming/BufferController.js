@@ -1140,8 +1140,15 @@ MediaPlayer.dependencies.BufferController = function() {
                 idx,
                 self = this;
 
-            if (manifest.name !== "M3U" || !isDynamic) {
+            if (manifest.name !== "M3U") {
                 return Q.when(true);
+            }
+
+            // In static use case, do not update playlist if already downloaded
+            if (!isDynamic) {
+                if (_currentRepresentation.segmentInfoType === "SegmentList") {
+                    return Q.when(true);
+                }
             }
 
             if (playlistRefreshTimeout) {
