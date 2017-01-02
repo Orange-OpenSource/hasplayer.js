@@ -476,8 +476,10 @@ Mss.dependencies.MssParser = function() {
             period.start = 0;
 
             // Test live to static
-            // mpd.type = 'static';
-            // period.duration = mpd.timeShiftBufferDepth;
+            // if (mpd.type !== 'static') {
+            //     mpd.type = 'static';
+            //     mpd.mediaPresentationDuration = mpd.timeShiftBufferDepth;
+            // }
 
             // ContentProtection node
             if (protection !== undefined) {
@@ -524,7 +526,6 @@ Mss.dependencies.MssParser = function() {
             // Delete Content Protection under root mpd node
             delete mpd.ContentProtection;
             delete mpd.ContentProtection_asArray;
-
 
             // In case of VOD streams, check if start time is greater than 0
             // Then determine timestamp offset according to higher audio/video start time
