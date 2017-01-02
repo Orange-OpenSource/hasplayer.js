@@ -32,6 +32,11 @@ Mss.dependencies.MssFragmentController = function() {
                 availabilityStartTime = null,
                 range;
 
+            // Process tfrf only for live streams
+            if (manifest.type !== 'dynamic') {
+                return;
+            }
+
             // Go through tfrf entries
             while (i < entries.length) {
                 fragment_absolute_time = entries[i].fragment_absolute_time;
