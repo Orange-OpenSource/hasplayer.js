@@ -880,8 +880,8 @@ MediaPlayer.dependencies.Stream = function() {
 
             // Check if different track selected
             if (index !== currentIndex) {
-                if (this.manifestExt.getIsDynamic(manifest)) {
-                    // If live, refresh the manifest to get new selected track segments info
+                if (manifest.name === 'MSS' || !this.manifestExt.getIsDynamic(manifest)) {
+                    // If live MSS, refresh the manifest to get new selected track segments info
                     this.system.notify("manifestUpdate");
                 } else {
                     // Else update controller data directly
