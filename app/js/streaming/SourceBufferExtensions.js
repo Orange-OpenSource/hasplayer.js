@@ -183,20 +183,20 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
         return defer.promise;
     },
 
-    append: function (buffer, bytes) {
+    append: function (buffer, bytes, request) {
         var deferred = Q.defer(),
             self = this;
 
         self.waitForUpdateEnd(buffer).then(function() {
             try {
                 if ("append" in buffer) {
-                    buffer.append(bytes);
+                    buffer.append(bytes, request);
                 } else if ("appendBuffer" in buffer) {
                     buffer.appendBuffer(bytes);
                 }
 
                 // updating is in progress, we should wait for it to complete before signaling that this operation is done
-                self.waitForUpdateEnd(buffer).then(
+                self.waitForUpdateEnd(buffer, request).then(
                     function() {
                         deferred.resolve();
                     }
@@ -219,14 +219,14 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
                 if ((start >= 0) && (start < duration) && (end > start) && (mediaSource.readyState !== "ended")) {
                     buffer.remove(start, end);
                 }
-                
+
                 //workaround in order to remove all the cues in the textTrack from the video element.
                 //end parameter equals the video.duration. The use case of a dash stream with a full TTML subtitles file has an issue because video duration could be NaN. It occurs
                 //after the manifest has been parsed, a call to MediaSource.setDuration is made but after a few ms, a duration change event occurs with a value of NaN. The origin of this issue may be
                 //that no media segments have been pushed.
-                //So, all the buffer is removed. 
+                //So, all the buffer is removed.
                 if (isNaN(end) && (mediaSource.readyState !== "ended")) {
-                    buffer.remove(start);   
+                    buffer.remove(start);
                 }
 
                 // updating is in progress, we should wait for it to complete before signaling that this operation is done

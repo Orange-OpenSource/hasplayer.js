@@ -377,7 +377,7 @@ MediaPlayer.dependencies.BufferController = function() {
                                     buffer.timestampOffset = -(getSegmentTimestampOffset(data) / request.timescale);
                                 }
 
-                                appendToBuffer.call(self, data, request.quality, request.index).then(
+                                appendToBuffer.call(self, data, request.quality, request).then(
                                     function() {
                                         // Check if a new quality is being appended,
                                         // then add a metric to enable MediaPlayer to detect playback quality changes
@@ -421,7 +421,7 @@ MediaPlayer.dependencies.BufferController = function() {
             }
         },
 
-        appendToBuffer = function(data, quality, index) {
+        appendToBuffer = function(data, quality, request) {
             var self = this,
                 deferred = Q.defer(),
                 currentVideoTime = self.videoModel.getCurrentTime(),
@@ -444,7 +444,7 @@ MediaPlayer.dependencies.BufferController = function() {
                         return;
                     }
                     self.debug.log("[BufferController][" + type + "] Buffering segment");
-                    self.sourceBufferExt.append(buffer, data).then(
+                    self.sourceBufferExt.append(buffer, data, request).then(
                         function( /*appended*/ ) {
                             self.debug.log("[BufferController][" + type + "] Segment buffered");
 
@@ -488,8 +488,8 @@ MediaPlayer.dependencies.BufferController = function() {
                             if (result.err.code === MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_QUOTA_EXCEEDED) {
                                 rejectedBytes = {
                                     data: data,
-                                    quality: quality,
-                                    index: index
+                                    quality: quality/*,
+                                    index: index*/
                                 };
                                 deferredRejectedDataAppend = deferred;
                                 isQuotaExceeded = true;
