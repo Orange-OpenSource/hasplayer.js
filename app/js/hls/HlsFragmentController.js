@@ -150,26 +150,31 @@ Hls.dependencies.HlsFragmentController = function() {
             return deferred.promise;
         }
 
-        // Media segment => generate corresponding moof data segment from demultiplexed MPEG2-TS chunk
-        if (request && (request.type === "Media Segment")) {
-                // Decrypt the segment if encrypted
-                decryptSegment.call(rslt, bytes, request).then(function(data) {
-                    //console.saveBinArray(data, request.url.substring(request.url.lastIndexOf('/') + 1));
-                    try {
-                        // Generate media segment (moof)
-                        result = generateMediaSegment(data, request);
-                        rslt.sequenceNumber++;
-                        deferred.resolve(result);
-                    } catch (e) {
-                        deferred.reject(e);
-                    }
-                }, function (e) {
-                    deferred.reject(e);
-                });
-
-        } else {
-            deferred.resolve(result);
+        if (!request || (request.type !== "Media Segment")) {
+            deferred.resolve(null);
+            return deferred.promise;
         }
+
+        // If text track (WebVTT), then do not process segment
+        if (request.streamType === 'text') {
+            deferred.resolve(bytes);
+            return deferred.promise;
+        }
+
+        // Decrypt the segment if encrypted
+        decryptSegment.call(rslt, bytes, request).then(function(data) {
+            //console.saveBinArray(data, request.url.substring(request.url.lastIndexOf('/') + 1));
+            try {
+                // Generate media segment (moof) from demultiplexed MPEG2-TS chunk
+                result = generateMediaSegment(data, request);
+                rslt.sequenceNumber++;
+                deferred.resolve(result);
+            } catch (e) {
+                deferred.reject(e);
+            }
+        }, function (e) {
+            deferred.reject(e);
+        });
 
         //return result;
         return deferred.promise;
