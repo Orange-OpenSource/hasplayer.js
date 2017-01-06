@@ -18,6 +18,7 @@ Hls.dependencies.HlsParser = function() {
         REGEXP_EXTXMEDIA = /#EXT-X-MEDIA:(.*)/g,
         REGEXP_EXTXMEDIASEQUENCE = '(?:#(EXT-X-MEDIA-SEQUENCE):*(\\d+))',
         REGEXP_EXTXTARGETDURATION = '(?:#(EXT-X-TARGETDURATION):*(\\d+))',
+        REGEXP_EXTXPROGRAMDATETIME = '(?:#(EXT-X-PROGRAM-DATE-TIME):*(.+))',
         REGEXP_EXTXKEY = '(?:#(EXT-X-KEY):(.+))',
         REGEXP_EXTXINF = '(?:#(EXTINF):*(\\d+(?:\\.\\d+)?)(?:,(.*))?[\r\n]*(.*))',
         REGEXP_EXTXENDLIST = '(?:#(EXT-X-ENDLIST))',
@@ -25,6 +26,7 @@ Hls.dependencies.HlsParser = function() {
         REGEXP_PLAYLIST = new RegExp('(?:' +
                                      REGEXP_EXTXMEDIASEQUENCE + '|' +
                                      REGEXP_EXTXTARGETDURATION + '|' +
+                                     REGEXP_EXTXPROGRAMDATETIME + '|' +
                                      REGEXP_EXTXKEY + '|' +
                                      REGEXP_EXTXINF + '|' +
                                      REGEXP_EXTXENDLIST +
@@ -146,6 +148,7 @@ Hls.dependencies.HlsParser = function() {
                 decryptionInfo = null,
                 duration = 0,
                 sequenceNumber = 0,
+                programDateTime = null,
                 i;
 
             // Check playlist header
@@ -224,9 +227,18 @@ Hls.dependencies.HlsParser = function() {
                         }
                         sequenceNumber++;
                         duration += segment.duration;
+
+                        if (programDateTime) {
+                            segment.programDateTime = programDateTime;
+                            programDateTime += segment.duration;
+                        }
+
                         break;
                     case 'EXT-X-ENDLIST':
                         representation.duration = duration;
+                        break;
+                    case 'EXT-X-PROGRAM-DATE-TIME':
+                        programDateTime = Date.parse(match[2]) / 1000.0;
                         break;
                     default:
                         break;
@@ -252,11 +264,18 @@ Hls.dependencies.HlsParser = function() {
             adaptation.segments = segments;
 
             var range = {
-                start: segments[0].time / segmentList.timescale,
-                end: (segments[segments.length - 1].time + segments[segments.length - 1].duration)  / segmentList.timescale
+                start: segments[0].time,
+                end: segments[segments.length - 1].time + segments[segments.length - 1].duration
             };
 
-            this.metricsModel.addDVRInfo('video', new Date(), range);
+            if (programDateTime) {
+                range.programStart = segments[0].programDateTime;
+                range.programEnd = segments[segments.length - 1].programDateTime + segments[segments.length - 1].duration;
+            }
+
+            if (adaptation.contentType === 'video') {
+                this.metricsModel.addDVRInfo('video', new Date(), range);
+            }
 
             // Set initialization segment info
             initialization = {
