@@ -286,6 +286,12 @@ Hls.dependencies.HlsDemux = function() {
                 sample.size = aacFrames[i].length;
                 sample.duration = duration;
                 sample.flags = 0x01000000; // sample_depends_on = 1, other flags = 0
+
+                // Store original MPEG2TS timestamp to help determining offset between absolute samples timestamps and MPEG2TS timestamps (see WebVTT parser)
+                if (aacSamples.length === 0) {
+                    sample.mpegTimestamp = track.samples[0].mpegTimestamp;
+                }
+
                 aacSamples.push(sample);
 
                 // Update cts for next frame
