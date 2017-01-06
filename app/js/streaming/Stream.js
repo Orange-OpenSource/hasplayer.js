@@ -880,7 +880,7 @@ MediaPlayer.dependencies.Stream = function() {
 
             // Check if different track selected
             if (index !== currentIndex) {
-                if (manifest.name === 'MSS' || !this.manifestExt.getIsDynamic(manifest)) {
+                if (manifest.name === 'MSS' && this.manifestExt.getIsDynamic(manifest)) {
                     // If live MSS, refresh the manifest to get new selected track segments info
                     this.system.notify("manifestUpdate");
                 } else {
@@ -1246,8 +1246,8 @@ MediaPlayer.dependencies.Stream = function() {
 
                 if (textController) {
                     if (enabled) {
-                        if (this.manifestExt.getIsDynamic(manifest)) {
-                            // In case of live streams, refresh manifest before activating subtitles
+                        if (manifest.name === 'MSS' && this.manifestExt.getIsDynamic(manifest)) {
+                            // In case of MSS live streams, refresh manifest before activating subtitles
                             this.system.mapHandler("streamsComposed", undefined, streamsComposed.bind(this), true);
                             this.system.notify("manifestUpdate");
                         } else {
