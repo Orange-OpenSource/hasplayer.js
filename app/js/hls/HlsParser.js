@@ -116,7 +116,7 @@ Hls.dependencies.HlsParser = function() {
                 media = {
                     type: type,
                     groupId: attrs['GROUP-ID'] || '',
-                    name: attrs['NAME'] || '',
+                    name: type + (attrs['NAME'] ? ('_' + attrs['NAME']) : ''),
                     language: attrs['LANGUAGE'] || '',
                     autoSelect: attrs['AUTO-SELECT'] === 'YES' ? true : false,
                     default: attrs['SUTITLES'] === 'YES' ? true : false,
