@@ -146,7 +146,8 @@ Hls.dependencies.HlsFragmentController = function() {
             result = null;
 
         if ((bytes === null) || (bytes === undefined) || (bytes.byteLength === 0)) {
-            return bytes;
+            deferred.resolve(null);
+            return deferred.promise;
         }
 
         // Media segment => generate corresponding moof data segment from demultiplexed MPEG2-TS chunk
