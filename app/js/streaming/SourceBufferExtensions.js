@@ -183,7 +183,7 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
         return defer.promise;
     },
 
-    append: function (buffer, bytes, sync) {
+    append: function (buffer, bytes) {
         var deferred = Q.defer(),
             self = this;
 
@@ -195,16 +195,12 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
                     buffer.appendBuffer(bytes);
                 }
 
-                if (sync) {
-                    deferred.resolve();
-                } else {
-                    // updating is in progress, we should wait for it to complete before signaling that this operation is done
-                    self.waitForUpdateEnd(buffer).then(
-                        function() {
-                            deferred.resolve();
-                        }
-                    );
-                }
+                // updating is in progress, we should wait for it to complete before signaling that this operation is done
+                self.waitForUpdateEnd(buffer).then(
+                    function() {
+                        deferred.resolve();
+                    }
+                );
             } catch (err) {
                 deferred.reject({err: err, data: bytes});
             }
@@ -213,7 +209,7 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
         return deferred.promise;
     },
 
-    remove: function (buffer, start, end, duration, mediaSource, sync) {
+    remove: function (buffer, start, end, duration, mediaSource) {
         var deferred = Q.defer(),
             self = this;
 
@@ -233,16 +229,12 @@ MediaPlayer.dependencies.SourceBufferExtensions.prototype = {
                     buffer.remove(start);   
                 }
 
-                if (sync) {
-                    deferred.resolve();
-                } else {
-                    // updating is in progress, we should wait for it to complete before signaling that this operation is done
-                    self.waitForUpdateEnd(buffer).then(
-                        function() {
-                            deferred.resolve();
-                        }
-                    );
-                }
+                // updating is in progress, we should wait for it to complete before signaling that this operation is done
+                self.waitForUpdateEnd(buffer).then(
+                    function() {
+                        deferred.resolve();
+                    }
+                );
             } catch (err) {
                 deferred.reject(err);
             }

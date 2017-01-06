@@ -71,9 +71,6 @@ MediaPlayer.dependencies.BufferController = function() {
 
         deferredFragmentBuffered = null,
 
-        // Async. vs async. MSE's SourceBuffer appending/removing algorithm
-        appendSync = false,
-
         // Segment download failure recovery
         SEGMENT_DOWNLOAD_ERROR_MAX = 3,
         segmentDownloadErrorCount = 0,
@@ -447,7 +444,7 @@ MediaPlayer.dependencies.BufferController = function() {
                         return;
                     }
                     self.debug.log("[BufferController][" + type + "] Buffering segment");
-                    self.sourceBufferExt.append(buffer, data, appendSync).then(
+                    self.sourceBufferExt.append(buffer, data).then(
                         function( /*appended*/ ) {
                             self.debug.log("[BufferController][" + type + "] Segment buffered");
 
@@ -735,7 +732,7 @@ MediaPlayer.dependencies.BufferController = function() {
             }
 
             // Wait for buffer update completed
-            self.sourceBufferExt.remove(buffer, removeStart, removeEnd, periodInfo.duration, mediaSource, appendSync).then(
+            self.sourceBufferExt.remove(buffer, removeStart, removeEnd, periodInfo.duration, mediaSource).then(
                 function() {
                     // Remove all requests from the list of the executed requests
                     self.fragmentController.removeExecutedRequestsBeforeTime(fragmentModel, removeEnd + 1); // +1 for rounding issues
@@ -1291,11 +1288,6 @@ MediaPlayer.dependencies.BufferController = function() {
 
             this.debug.log("[BufferController][" + type + "] Initialize");
 
-            // PATCH for Espial browser which implements SourceBuffer appending/removing synchronoulsy
-            if (navigator.userAgent.indexOf("Espial") !== -1) {
-                this.debug.log("[BufferController][" + type + "] Espial browser = sync append");
-                appendSync = true;
-            }
             this[MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS] = onFragmentLoadProgress;
 
             isDynamic = this.manifestExt.getIsDynamic(manifest);
