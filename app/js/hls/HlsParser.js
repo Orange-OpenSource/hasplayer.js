@@ -146,15 +146,14 @@ Hls.dependencies.HlsParser = function() {
                 decryptionInfo = null,
                 duration = 0,
                 sequenceNumber = 0,
-                i,
-                self = this;
+                i;
 
             // Check playlist header
             if (!manifest || (manifest && manifest.length < 0)) {
                 return false;
             }
 
-            self.debug.log(manifest);
+            this.debug.log(manifest);
 
             if (manifest.indexOf('#EXTM3U') !== 0) {
                 return false;
