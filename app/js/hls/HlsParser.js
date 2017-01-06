@@ -552,10 +552,8 @@ Hls.dependencies.HlsParser = function() {
 
                 adaptationSet.Representation = representation;
                 adaptationSet.Representation_asArray = [representation];
-                if (media.type === 'audio') {
-                    adaptationsSets.push(adaptationSet);
-                    playlistDefers.push(updatePlaylist.call(this, representation, adaptationSet));
-                }
+                adaptationsSets.push(adaptationSet);
+                playlistDefers.push(updatePlaylist.call(this, representation, adaptationSet));
             }
 
             // Get representation (variant stream) playlist
