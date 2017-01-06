@@ -120,6 +120,9 @@ Hls.dependencies.HlsDemux = function() {
                     baseDts = sample.dts;
                 }
 
+                // Store original MPEG2TS timestamp to help determining offset between absolute samples timestamps and MPEG2TS timestamps (see WebVTT parser)
+                sample.mpegTimestamp = sample.cts;
+
                 sample.dts -= baseDts;
                 sample.cts -= baseDts;
 

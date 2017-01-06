@@ -25,6 +25,14 @@ Hls.dependencies.HlsFragmentController = function() {
 
             // Update fragment start time (=tfdt)
             for (i = 0; i < tracks.length; i += 1) {
+
+                if (!rslt.manifestModel.getValue().timestampMap && tracks[i].samples[0].mpegTimestamp) {
+                    rslt.manifestModel.getValue().timestampMap = {
+                        local: tracks[i].samples[0].cts / 90000.0,
+                        mpegts: tracks[i].samples[0].mpegTimestamp
+                    };
+                }
+
                 if (tracks[i].type === "video") {
                     request.startTime = tracks[i].samples[0].dts / tracks[i].timescale;
                 }
