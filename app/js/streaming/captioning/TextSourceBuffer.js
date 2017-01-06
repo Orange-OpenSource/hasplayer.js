@@ -144,7 +144,7 @@ MediaPlayer.dependencies.TextSourceBuffer = function () {
         append: function (bytes, request) {
             var self = this,
                 ccContent = decodeUtf8(bytes),
-                cues = self.getParser().parse(ccContent);
+                cues = self.getParser().parse(ccContent, request);
 
             if (video.textTracks.length === 0) {
                 // We need to create the TextTrack

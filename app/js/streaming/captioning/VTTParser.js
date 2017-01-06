@@ -59,33 +59,50 @@ MediaPlayer.utils.VTTParser = function () {
             }
 
             if (local === null || mpegts === null) {
-                return 0;
-            }
-
-            var timestampMap = this.manifestModel.getValue().timestampMap;
-            if (!timestampMap) {
                 return -1;
             }
 
-            var time = timestampMap.local + ((mpegts - timestampMap.mpegts) / 90000.0);
+            // var timestampMap = this.manifestModel.getValue().timestampMap;
+            // if (!timestampMap) {
+            //     return -1;
+            // }
+
+            // var time = timestampMap.local + ((mpegts - timestampMap.mpegts) / 90000.0);
 
             return {
                 local: local,
-                time: time
+                mpegts: mpegts
             };
+        },
+
+        getTimestampOffset = function (timestampMap, request) {
+
+            if (timestampMap === -1) {
+                return 0;
+            }
+
+            var streamTimestampMap = this.manifestModel.getValue().timestampMap;
+            if (!streamTimestampMap) {
+                // If MPEGTS timestamp mapping not yet set, then consider segment start time
+                return timestampMap.local - request.startTime;
+            }
+
+            var mpegtsOffset = ((timestampMap.mpegts - streamTimestampMap.mpegts) / 90000.0);
+
+            return (timestampMap.local - streamTimestampMap.local - mpegtsOffset);
         };
 
     return {
         manifestModel: undefined,
 
-        parse: function (data) {
+        parse: function (data, request) {
             var cues = [],
                 cue = null,
                 line,
                 cueInfo,
                 i;
 
-            var timestampMap = parseTimestampMap.call(this, data);
+            var offset = getTimestampOffset.call(this, parseTimestampMap(data), request);
 
             var lines = data.split(REGEXP_LINEBREAK);
 
@@ -103,11 +120,12 @@ MediaPlayer.utils.VTTParser = function () {
                     cue = {
                         type: 'text',
                         line: 80,
-                        start: parseTimestamp(cueInfo[1]) - timestampMap.local + timestampMap.time,
-                        end: parseTimestamp(cueInfo[2]) - timestampMap.local + timestampMap.time,
+                        start: parseTimestamp(cueInfo[1]) - offset,//timestampMap.local + timestampMap.time,
+                        end: parseTimestamp(cueInfo[2]) - offset,//timestampMap.local + timestampMap.time,
                         style: cueInfo[3].trim(),
                         data: ''
                     };
+                    console.log('[text] Buffered range', cue);
                 } else if (cue !== null) {
                     cue.data += ((cue.data.length === 0) ? '' : '\n') + lines[i];
                 }
