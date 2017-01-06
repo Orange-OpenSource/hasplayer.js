@@ -230,7 +230,7 @@ Hls.dependencies.HlsParser = function() {
 
                         if (programDateTime) {
                             segment.programDateTime = programDateTime;
-                            programDateTime += segment.duration;
+                            programDateTime += (segment.duration * 1000);
                         }
 
                         break;
@@ -238,7 +238,7 @@ Hls.dependencies.HlsParser = function() {
                         representation.duration = duration;
                         break;
                     case 'EXT-X-PROGRAM-DATE-TIME':
-                        programDateTime = Date.parse(match[2]) / 1000.0;
+                        programDateTime = Date.parse(match[2]);
                         break;
                     default:
                         break;
