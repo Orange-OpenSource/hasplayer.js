@@ -64,7 +64,7 @@ MediaPlayer.dependencies.FragmentController = function() {
                 result = new Uint8Array(bytes);
             }
 
-            return result;
+            return Q.when(result);
         },
 
         attachBufferController: function(bufferController) {

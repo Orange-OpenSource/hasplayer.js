@@ -14,55 +14,128 @@
 MediaPlayer.utils.VTTParser = function () {
     "use strict";
 
-    var convertCuePointTimes = function(time) {
-        var timeArray = time.split( ":"),
-            len = timeArray.length - 1;
+    var REGEXP_TIMESTAMPMAP = /X-TIMESTAMP-MAP=(.+)/,
+        REGEXP_ATTRIBUTES = /\s*(.+?)\s*:((?:\".*?\")|.*?)(?:,|$)/g,
+        REGEXP_CUE = /(\S*)[\s]*-->[\s]*(\S*)(.*)/g,
+        REGEXP_LINEBREAK = /(?:\r\n|\r|\n)/gm,
 
-        time = parseInt( timeArray[len-1], 10 ) * 60 + parseFloat( timeArray[len], 10 );
+        parseTimestamp = function(stime) {
+            var timeArray = stime.split(":"),
+                len = timeArray.length,
+                time = 0;
 
-        if ( len === 2 ) {
-            time += parseInt( timeArray[0], 10 ) * 3600;
-        }
+            for (var i = 0; i < len; i++) {
+                time += parseFloat(timeArray[i], 10) * Math.pow(60, (len-i-1));
+            }
 
-        return time;
-    };
+            return time;
+        },
 
-    return {
+        parseTimestampMap = function (data) {
+            var match,
+                attrs,
+                name,
+                value,
+                local = null,
+                mpegts = null;
 
-        parse: function (data)
-        {
-            var regExNewLine = /(?:\r\n|\r|\n)/gm,
-                regExToken = /-->/,
-                regExWhiteSpace = /(^[\s]+|[\s]+$)/g,
-                captionArray = [],
-                len;
+            match = REGEXP_TIMESTAMPMAP.exec(data);
 
-            data = data.split( regExNewLine );
-            len = data.length;
+            if (!match) {
+                return;
+            }
+            attrs = match[1];
 
-            for (var i = 0 ; i < len; i++)
-            {
-                var item = data[i];
-
-                if (item.length > 0 && item !== "WEBVTT")
-                {
-                    if (item.match(regExToken))
-                    {
-                        var cuePoints = item.split(regExToken);
-                        //vtt has sublines so more will need to be done here
-                        var sublines = data[i+1];
-
-                        //TODO Make VO external so other parsers can use.
-                        captionArray.push({
-                            start:convertCuePointTimes(cuePoints[0].replace(regExWhiteSpace, '')),
-                            end:convertCuePointTimes(cuePoints[1].replace(regExWhiteSpace, '')),
-                            data:sublines
-                        });
-                    }
+            while ((match = REGEXP_ATTRIBUTES.exec(attrs)) !== null) {
+                name = match[1];
+                value = match[2];
+                switch(name) {
+                    case 'MPEGTS':
+                        mpegts = parseInt(value, 10);
+                        break;
+                    case 'LOCAL':
+                        local = parseTimestamp(value);
                 }
             }
 
-            return Q.when(captionArray);
+            if (local === null || mpegts === null) {
+                return -1;
+            }
+
+            // var timestampMap = this.manifestModel.getValue().timestampMap;
+            // if (!timestampMap) {
+            //     return -1;
+            // }
+
+            // var time = timestampMap.local + ((mpegts - timestampMap.mpegts) / 90000.0);
+
+            return {
+                local: local,
+                mpegts: mpegts
+            };
+        },
+
+        getTimestampOffset = function (timestampMap, request) {
+
+            if (timestampMap === -1) {
+                return 0;
+            }
+
+            var streamTimestampMap = this.manifestModel.getValue().timestampMap;
+            if (!streamTimestampMap) {
+                // If MPEGTS timestamp mapping not yet set, then consider segment start time
+                return timestampMap.local - request.startTime;
+            }
+
+            var mpegtsOffset = ((timestampMap.mpegts - streamTimestampMap.mpegts) / 90000.0);
+
+            return (timestampMap.local - streamTimestampMap.local - mpegtsOffset);
+        };
+
+    return {
+        manifestModel: undefined,
+
+        parse: function (data, request) {
+            var cues = [],
+                cue = null,
+                line,
+                cueInfo,
+                i;
+
+            var offset = getTimestampOffset.call(this, parseTimestampMap(data), request);
+
+            var lines = data.split(REGEXP_LINEBREAK);
+
+            for (i = 0; i < lines.length; i++) {
+                line = lines[i].trim();
+                if (line.length === 0) {
+                    continue;
+                }
+                if (lines[i].match(REGEXP_CUE)) {
+                    if (cue !== null) {
+                        cues.push(cue);
+                    }
+                    // Start of new cue
+                    cueInfo = lines[i].split(REGEXP_CUE);
+                    cue = {
+                        type: 'text',
+                        line: 80,
+                        start: parseTimestamp(cueInfo[1]) - offset,
+                        end: parseTimestamp(cueInfo[2]) - offset,
+                        // Do not set style, would need to be converted from VTT to TTML in case TTML renderer is used
+                        //style: cueInfo[3].trim(),
+                        data: ''
+                    };
+                    console.log('[text] Buffered range', cue);
+                } else if (cue !== null) {
+                    cue.data += ((cue.data.length === 0) ? '' : '\n') + lines[i];
+                }
+            }
+            if (cue !== null) {
+                cues.push(cue);
+            }
+
+            return cues;
         }
     };
 };

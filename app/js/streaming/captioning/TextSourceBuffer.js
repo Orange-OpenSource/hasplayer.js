@@ -15,60 +15,169 @@ MediaPlayer.dependencies.TextSourceBuffer = function () {
 
     var video,
         data,
-        mimeType;
+        mimeType,
+
+        decodeUtf8 = function(arrayBuffer) {
+            var result = "",
+                i = 0,
+                c = 0,
+                c2 = 0,
+                c3 = 0,
+                data = new Uint8Array(arrayBuffer);
+
+            // If we have a BOM skip it
+            if (data.length >= 3 && data[0] === 0xef && data[1] === 0xbb && data[2] === 0xbf) {
+                i = 3;
+            }
+
+            while (i < data.length) {
+                c = data[i];
+
+                if (c < 128) {
+                    result += String.fromCharCode(c);
+                    i++;
+                } else if (c > 191 && c < 224) {
+                    if (i + 1 >= data.length) {
+                        throw "UTF-8 Decode failed. Two byte character was truncated.";
+                    }
+                    c2 = data[i + 1];
+                    result += String.fromCharCode(((c & 31) << 6) | (c2 & 63));
+                    i += 2;
+                } else {
+                    if (i + 2 >= data.length) {
+                        throw "UTF-8 Decode failed. Multi byte character was truncated.";
+                    }
+                    c2 = data[i + 1];
+                    c3 = data[i + 2];
+                    result += String.fromCharCode(((c & 15) << 12) | ((c2 & 63) << 6) | (c3 & 63));
+                    i += 3;
+                }
+            }
+            return result;
+        },
+
+        buffered = {
+            length: 0,
+            ranges: [],
+
+            start: function(index) {
+                return this.ranges[index].start;
+            },
+
+            end: function(index) {
+                return this.ranges[index].end;
+            },
+
+            addRange: function(start, end) {
+                var i = 0,
+                    rangesUpdated = false,
+                    tolerance = 0.01;
+
+                //detect discontinuity in ranges.
+                for (i = 0; i < this.ranges.length; i++) {
+                    if (this.ranges[i].end <= (start + tolerance) && this.ranges[i].end >= (start - tolerance)) {
+                        rangesUpdated = true;
+                        this.ranges[i].end = end;
+                    }
+
+                    if (this.ranges[i].start <= (end + tolerance) && this.ranges[i].start >= (end - tolerance)) {
+                        rangesUpdated = true;
+                        this.ranges[i].start = start;
+                    }
+                }
+
+                if (!rangesUpdated) {
+                    this.ranges.push({
+                        start: start,
+                        end: end
+                    });
+                    this.length = this.length + 1;
+
+                    // TimeRanges must be normalized
+                    this.ranges.sort(function(a, b) {
+                        return a.start - b.start;
+                    });
+                }
+            },
+
+            removeRange: function(start, end) {
+                var i = 0;
+                for (i = this.ranges.length - 1; i >= 0; i -= 1) {
+                    if (((end === undefined || end === -1) || (this.ranges[i].end <= end)) &&
+                        ((start === undefined || start === -1) || (this.ranges[i].start >= start))) {
+                        this.ranges.splice(i, 1);
+                    }
+                }
+
+                this.length = this.ranges.length;
+            },
+
+            reset: function() {
+                this.length = 0;
+                this.ranges = [];
+            }
+        };
 
     return {
         system:undefined,
         eventBus:undefined,
         errHandler: undefined,
+        textTrackExtensions: undefined,
+        buffered: buffered,
 
         initialize: function (type, bufferController) {
             mimeType = type;
             video = bufferController.getVideoModel().getElement();
             data = bufferController.getData();
+            buffered.reset();
         },
 
-        append: function (bytes) {
+        remove: function(start, end) {
+            if (start < 0 || start >= end) {
+                throw "INVALID_ACCESS_ERR";
+            }
+
+            this.textTrackExtensions.deleteCues(video, false, start, end);
+            this.buffered.removeRange(start, end);
+        },
+
+        append: function (bytes, request) {
             var self = this,
-                ccContent = String.fromCharCode.apply(null, new Uint16Array(bytes));
+                ccContent = decodeUtf8(bytes),
+                cues = self.getParser().parse(ccContent, request);
 
-            self.getParser().parse(ccContent).then(
-                function(result)
-                {
-                    var label = data.Representation_asArray[0].id,
-                        lang = data.lang;
+            if (video.textTracks.length === 0) {
+                // We need to create the TextTrack
+                self.textTrackExtensions.addTextTrack(video, [], data.Representation_asArray[0].id, data.lang, true);
+            }
 
-                    self.getTextTrackExtensions().addTextTrack(video, result, label, lang, true).then(
-                        function(/*track*/)
-                        {
-                            self.eventBus.dispatchEvent({type:"updateend"});
-                        }
-                    );
-                },
-                function(errMsg) {
-                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CC_ERR_PARSE, errMsg, ccContent);
-                }
-            );
+            if (video.textTracks.length === 0) {
+                // Failed to create TextTrack, should never happen
+                return;
+            }
+
+            self.textTrackExtensions.addCues(video.textTracks[0], cues);
+
+            if (request) {
+                self.buffered.addRange(request.startTime, request.startTime + request.duration);
+            }
         },
 
-        abort:function() {
-            this.getTextTrackExtensions().deleteCues(video);
+        abort: function() {
+            this.textTrackExtensions.deleteCues(video);
+            this.buffered.reset();
         },
 
-        getParser:function() {
+        getParser: function() {
             var parser;
 
             if (mimeType === "text/vtt") {
                 parser = this.system.getObject("vttParser");
-            } else if (mimeType === "application/ttml+xml") {
+            } /*else if (mimeType === "application/ttml+xml") {
                 parser = this.system.getObject("ttmlParser");
-            }
+            }*/
 
             return parser;
-        },
-
-        getTextTrackExtensions:function() {
-            return this.system.getObject("textTrackExtensions");
         },
 
         addEventListener: function (type, listener, useCapture) {

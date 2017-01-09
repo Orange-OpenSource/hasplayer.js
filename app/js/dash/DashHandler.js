@@ -637,6 +637,12 @@ Dash.dependencies.DashHandler = function() {
                         seg.index = s.index;
                         seg.indexRange = s.indexRange;
 
+                        // ORANGE: overwrite duration if set at segment level (HLS use case)
+                        if (s.duration) {
+                            seg.duration = s.duration;
+                            seg.presentationStartTime = seg.mediaStartTime = s.time;
+                        }
+
                         // ORANGE: add sequence number (HLS use case)
                         if (s.sequenceNumber !== undefined) {
                             seg.sequenceNumber = s.sequenceNumber;
@@ -962,6 +968,7 @@ Dash.dependencies.DashHandler = function() {
             }
 
             requestedTime = time;
+            index = -1;
 
             self.debug.log("[DashHandler][" + type + "] Getting the request for time: " + time);
 
