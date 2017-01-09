@@ -907,7 +907,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         player.setInitialQualityFor("video", 0);
         player.setInitialQualityFor("audio", 0);
 
-        player.attachTTMLRenderingDiv(subtitlesDiv);
+        //player.attachTTMLRenderingDiv(subtitlesDiv);
 
         $scope.playbackRate = "x1";
         player.load($scope.selectedItem);
