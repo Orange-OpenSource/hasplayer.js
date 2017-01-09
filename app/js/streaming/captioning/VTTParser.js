@@ -120,9 +120,10 @@ MediaPlayer.utils.VTTParser = function () {
                     cue = {
                         type: 'text',
                         line: 80,
-                        start: parseTimestamp(cueInfo[1]) - offset,//timestampMap.local + timestampMap.time,
-                        end: parseTimestamp(cueInfo[2]) - offset,//timestampMap.local + timestampMap.time,
-                        style: cueInfo[3].trim(),
+                        start: parseTimestamp(cueInfo[1]) - offset,
+                        end: parseTimestamp(cueInfo[2]) - offset,
+                        // Do not set style, would need to be converted from VTT to TTML in case TTML renderer is used
+                        //style: cueInfo[3].trim(),
                         data: ''
                     };
                     console.log('[text] Buffered range', cue);
