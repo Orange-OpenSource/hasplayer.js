@@ -11,6 +11,7 @@
     "devel" : true,
     "browser": true,
     "loopfunc" : true,
+    "sub" : true,
     "predef" : [
         "dijon",
         "Q",
