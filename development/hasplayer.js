@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-1-10_10:12:33 / git revision : 173f693 */
+/* Last build : 2017-1-10_14:35:48 / git revision : 088820e */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.8.0-dev',
-        GIT_TAG = '173f693',
-        BUILD_DATE = '2017-1-10_10:12:33',
+        GIT_TAG = '088820e',
+        BUILD_DATE = '2017-1-10_14:35:48',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -34916,7 +34916,6 @@ mpegts.h264.read_ue = function(data, ctx) {
         }
     }
 
-
     value -= 1;
     temp = 0;
     if (numZeros) {
@@ -34932,7 +34931,7 @@ mpegts.h264.read_ue = function(data, ctx) {
             }
         }
     }
-    value = value + temp;
+    value += temp;
 
     return value;
 };
@@ -35007,19 +35006,21 @@ mpegts.h264.parseSPS = function(data) {
     ctx._bytePos++;
     sps.level_idc = ctx._byte;
 
-    // sps_id - ue(v)
+    // seq_parameter_set_id - ue(v)
+    ctx._byte = data[ctx._bytePos];
+    ctx._bytePos++;
     ctx._bitPos = 7;
     sps.seq_parameter_set_id = mpegts.h264.read_ue(data, ctx);
 
-    if ((sps.profileIdc == 100) ||
-        (sps.profileIdc == 110) ||
-        (sps.profileIdc == 122) ||
-        (sps.profileIdc == 244) ||
-        (sps.profileIdc == 44) ||
-        (sps.profileIdc == 83) ||
-        (sps.profileIdc == 86)) {
+    if ((sps.profile_idc === 100) ||
+        (sps.profile_idc === 110) ||
+        (sps.profile_idc === 122) ||
+        (sps.profile_idc === 244) ||
+        (sps.profile_idc === 44) ||
+        (sps.profile_idc === 83) ||
+        (sps.profile_idc === 86)) {
 
-        // chroma_format_idc - ue(v) 
+        // chroma_format_idc - ue(v)
         sps.chroma_format_idc = mpegts.h264.read_ue(data, ctx);
 
         if (sps.chroma_format_idc === 3) {
