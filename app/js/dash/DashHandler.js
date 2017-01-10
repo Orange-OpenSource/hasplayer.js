@@ -1040,7 +1040,6 @@ Dash.dependencies.DashHandler = function() {
 
             requestedTime = null;
             index += 1;
-            //self.debug.log("New index: " + index);
 
             deferred = Q.defer();
 
@@ -1095,6 +1094,9 @@ Dash.dependencies.DashHandler = function() {
             if (index === -1) {
                 throw "You must call getSegmentRequestForTime first.";
             }
+
+            requestedTime = null;
+            index += 1;
 
             deferred = Q.defer();
 
