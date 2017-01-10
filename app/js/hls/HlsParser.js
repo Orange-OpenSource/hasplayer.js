@@ -69,9 +69,6 @@ Hls.dependencies.HlsParser = function() {
                 attrs = getTagAttributes(match[1]);
 
                 codecs = attrs['CODECS'] || '';
-                if (codecs.length === 0) {
-                    // Do not support
-                }
 
                 codecs = codecs.split(',');
                 audioCodec = videoCodec = '';
