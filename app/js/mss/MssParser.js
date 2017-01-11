@@ -149,7 +149,7 @@ Mss.dependencies.MssParser = function() {
             fourCCValue = this.domParser.getAttributeValue(qualityLevel, "FourCC");
 
             // If FourCC not defined at QualityLevel level, then get it from StreamIndex level
-            if (fourCCValue === null || fourCCValue == "") {
+            if (fourCCValue === null || fourCCValue === "") {
                 fourCCValue = this.domParser.getAttributeValue(streamIndex, "FourCC");
             }
 
