@@ -155,7 +155,7 @@ Mss.dependencies.MssParser = function() {
 
             // If still not defined (optionnal for audio stream, see https://msdn.microsoft.com/en-us/library/ff728116%28v=vs.95%29.aspx),
             // then we consider the stream is an audio AAC stream
-            if (fourCCValue === null || fourCCValue == "") {
+            if (fourCCValue === null || fourCCValue === "") {
                 fourCCValue = "AAC";
             }
 
