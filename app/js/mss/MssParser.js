@@ -149,13 +149,13 @@ Mss.dependencies.MssParser = function() {
             fourCCValue = this.domParser.getAttributeValue(qualityLevel, "FourCC");
 
             // If FourCC not defined at QualityLevel level, then get it from StreamIndex level
-            if (fourCCValue === null) {
+            if (fourCCValue === null || fourCCValue == "") {
                 fourCCValue = this.domParser.getAttributeValue(streamIndex, "FourCC");
             }
 
             // If still not defined (optionnal for audio stream, see https://msdn.microsoft.com/en-us/library/ff728116%28v=vs.95%29.aspx),
             // then we consider the stream is an audio AAC stream
-            if (fourCCValue === null) {
+            if (fourCCValue === null || fourCCValue == "") {
                 fourCCValue = "AAC";
             }
 
