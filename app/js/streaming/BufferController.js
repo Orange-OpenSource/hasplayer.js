@@ -374,7 +374,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
                                 // If firefox, set buffer timestampOffset since timestamping (MSE buffer range and <video> currentTime) is based on CTS (and not DTS like in other browsers)
                                 if (isFirefox) {
-                                    buffer.timestampOffset = -(getSegmentTimestampOffset(data) / request.timescale);
+                                    buffer.timestampOffset = -getSegmentTimestampOffset(data, request.timescale);
                                 }
 
                                 appendToBuffer.call(self, data, request.quality, request).then(
@@ -523,17 +523,33 @@ MediaPlayer.dependencies.BufferController = function() {
             }
         },
 
-        getSegmentTimestampOffset = function (data) {
+        getSegmentTimestampOffset = function (data, request) {
             var fragment = mp4lib.deserialize(data),
+                moov = fragment.getBoxByType("moov"),
                 moof = fragment.getBoxByType("moof"),
                 traf = moof === null ? null : moof.getBoxByType("traf"),
-                trun = traf === null ? null : traf.getBoxByType("trun");
+                trun = traf === null ? null : traf.getBoxByType("trun"),
+                ctsOffset,
+                timescale;
 
             if (trun === null || trun.samples_table.length === 0) {
                 return 0;
             }
 
-            return trun.samples_table[0].sample_composition_time_offset === undefined ? 0 : trun.samples_table[0].sample_composition_time_offset;
+            ctsOffset = trun.samples_table[0].sample_composition_time_offset;
+            if (ctsOffset ===  undefined) {
+                return 0;
+            }
+
+            // Try to get timescale from moov
+            if (moov) {
+                var mvhd = moov.getBoxByType("mvhd");
+                timescale = mvhd.timescale;
+            } else {
+                timescale = request.timescale;
+            }
+
+            return (ctsOffset / timescale);
         },
 
         handleInbandEvents = function(data, request, adaptionSetInbandEvents, representationInbandEvents) {
