@@ -374,7 +374,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
                                 // If firefox, set buffer timestampOffset since timestamping (MSE buffer range and <video> currentTime) is based on CTS (and not DTS like in other browsers)
                                 if (isFirefox) {
-                                    buffer.timestampOffset = -getSegmentTimestampOffset(data, request.timescale);
+                                    buffer.timestampOffset = -getSegmentTimestampOffset(data, request);
                                 }
 
                                 appendToBuffer.call(self, data, request.quality, request).then(
