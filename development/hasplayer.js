@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-1-11_10:30:42 / git revision : 304f880 */
+/* Last build : 2017-1-11_16:38:22 / git revision : 9c93440 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.8.0-dev',
-        GIT_TAG = '304f880',
-        BUILD_DATE = '2017-1-11_10:30:42',
+        GIT_TAG = '9c93440',
+        BUILD_DATE = '2017-1-11_16:38:22',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -26231,13 +26231,13 @@ Mss.dependencies.MssParser = function() {
             fourCCValue = this.domParser.getAttributeValue(qualityLevel, "FourCC");
 
             // If FourCC not defined at QualityLevel level, then get it from StreamIndex level
-            if (fourCCValue === null) {
+            if (fourCCValue === null || fourCCValue === "") {
                 fourCCValue = this.domParser.getAttributeValue(streamIndex, "FourCC");
             }
 
             // If still not defined (optionnal for audio stream, see https://msdn.microsoft.com/en-us/library/ff728116%28v=vs.95%29.aspx),
             // then we consider the stream is an audio AAC stream
-            if (fourCCValue === null) {
+            if (fourCCValue === null || fourCCValue === "") {
                 fourCCValue = "AAC";
             }
 
@@ -26681,6 +26681,7 @@ Mss.dependencies.MssParser = function() {
 Mss.dependencies.MssParser.prototype = {
     constructor: Mss.dependencies.MssParser
 };
+
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
