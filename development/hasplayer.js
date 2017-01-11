@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-1-10_14:35:48 / git revision : 088820e */
+/* Last build : 2017-1-11_9:34:30 / git revision : 05a5e81 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.8.0-dev',
-        GIT_TAG = '088820e',
-        BUILD_DATE = '2017-1-10_14:35:48',
+        GIT_TAG = '05a5e81',
+        BUILD_DATE = '2017-1-11_9:34:30',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -2479,7 +2479,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
                                 // If firefox, set buffer timestampOffset since timestamping (MSE buffer range and <video> currentTime) is based on CTS (and not DTS like in other browsers)
                                 if (isFirefox) {
-                                    buffer.timestampOffset = -(getSegmentTimestampOffset(data) / request.timescale);
+                                    buffer.timestampOffset = -getSegmentTimestampOffset(data, request.timescale);
                                 }
 
                                 appendToBuffer.call(self, data, request.quality, request).then(
@@ -2628,17 +2628,33 @@ MediaPlayer.dependencies.BufferController = function() {
             }
         },
 
-        getSegmentTimestampOffset = function (data) {
+        getSegmentTimestampOffset = function (data, request) {
             var fragment = mp4lib.deserialize(data),
+                moov = fragment.getBoxByType("moov"),
                 moof = fragment.getBoxByType("moof"),
                 traf = moof === null ? null : moof.getBoxByType("traf"),
-                trun = traf === null ? null : traf.getBoxByType("trun");
+                trun = traf === null ? null : traf.getBoxByType("trun"),
+                ctsOffset,
+                timescale;
 
             if (trun === null || trun.samples_table.length === 0) {
                 return 0;
             }
 
-            return trun.samples_table[0].sample_composition_time_offset === undefined ? 0 : trun.samples_table[0].sample_composition_time_offset;
+            ctsOffset = trun.samples_table[0].sample_composition_time_offset;
+            if (ctsOffset ===  undefined) {
+                return 0;
+            }
+
+            // Try to get timescale from moov
+            if (moov) {
+                var mvhd = moov.getBoxByType("mvhd");
+                timescale = mvhd.timescale;
+            } else {
+                timescale = request.timescale;
+            }
+
+            return (ctsOffset / timescale);
         },
 
         handleInbandEvents = function(data, request, adaptionSetInbandEvents, representationInbandEvents) {
