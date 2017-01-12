@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-1-11_16:38:22 / git revision : 9c93440 */
+/* Last build : 2017-1-12_10:25:52 / git revision : 44d8299 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.8.0-dev',
-        GIT_TAG = '9c93440',
-        BUILD_DATE = '2017-1-11_16:38:22',
+        GIT_TAG = '44d8299',
+        BUILD_DATE = '2017-1-12_10:25:52',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -1725,8 +1725,8 @@ MediaPlayer.TRACKS_TYPE = {
  * @typedef MediaPlayer#PlayerParams
  * @type Object
  * @property {number}   BufferController.minBufferTimeForPlaying - Minimum buffer level before playing, in seconds (default value = 0)
- * @property {number}   BufferController.minBufferTime - Minimum buffer size, in seconds (default value = 16)
- * @property {number}   BufferController.liveDelay - The delay between the live edge and playing time, in seconds (default value = minBufferTime)
+ * @property {number}   BufferController.minBufferTime - Minimum buffer size (in seconds), if set to '-1' the maximum value between the manifest's minBufferTime and 16 sec. is considered (default value = -1)
+ * @property {number}   BufferController.liveDelay - The delay (in seconds) between the live edge and playing time, if set to '-1' the live delay is set according to minBufferTime (default value = -1)
  * @property {number}   ABR.minBandwidth - Minimum bandwidth to be playbacked (default value = -1)
  * @property {number}   ABR.maxBandwidth - Maximum bandwidth to be playbacked (default value = -1)
  * @property {number}   ABR.minQuality - Minimum quality index (start from 0) to be playbacked (default value = -1)
@@ -1744,6 +1744,7 @@ MediaPlayer.TRACKS_TYPE = {
  * @property {number}   ManifestLoader.RetryInterval - Interval (in milliseconds) between each retry attempts for downloading manifest file (default value = 500)
  * @property {number}   FragmentLoader.RetryAttempts - Number of retry attempts for downloading segment files when it fails (default value = 2)
  * @property {number}   FragmentLoader.RetryInterval - Interval (in milliseconds) between each retry attempts for downloading segment files (default value = 500)
+ * @property {boolean}  Protection.licensePersistence - Provides or not license persistence at application level, in case no persistence is provided by the CDM (default value = false)
  * @property {Object}   video - Video parameters (parameters for video track)
  * @property {Object}   audio - audio parameters (parameters for audio track)
  */
@@ -4078,16 +4079,16 @@ MediaPlayer.utils.Config = function () {
             "ABR.maxBandwidth": -1,
             "ABR.minQuality": -1,
             "ABR.maxQuality": -1,
-            "ABR.switchUpIncrementally": false,
+            "ABR.switchUpIncrementally": -1,
             "ABR.switchUpRatioSafetyFactor": -1,
-            "ABR.latencyInBandwidth": true,
+            "ABR.latencyInBandwidth": -1,
             "ABR.switchDownBufferTime": -1,
             "ABR.switchDownBufferRatio": -1,
             "ABR.switchLowerBufferTime": -1,
             "ABR.switchLowerBufferRatio": -1,
             "ABR.switchUpBufferTime": -1,
             "ABR.switchUpBufferRatio": -1,
-            "ABR.keepBandwidthCondition": true,
+            "ABR.keepBandwidthCondition": -1,
             "ABR.droppedFramesMinRatio": -1,
             "ABR.droppedFramesMaxRatio": -1,
             // Manifest loader parameters
@@ -4096,6 +4097,8 @@ MediaPlayer.utils.Config = function () {
             // Fragment loader parameters
             "FragmentLoader.RetryAttempts": -1,
             "FragmentLoader.RetryInterval": -1,
+            // Protection parameters
+            "Protection.licensePersistence": -1,
             // Video parameters
             "video": {
             },
@@ -22095,6 +22098,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
         unsubscribe: undefined,
         protectionExt: undefined,
         keySystem: null,
+        config: null,
         debug: null,
 
         setup: function() {
@@ -22114,13 +22118,18 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
             this.debug.log("[DRM][PM_21Jan2015] Teardown");
 
-            // remove session without license
-            for (i = 0; i < sessions.length; i++) {
-                session = sessions[i];
-                if (!session.licenseStored) {
-                   sessions.splice(i, 1);
-                   i--;
+            if (this.config.getParam("Protection.licensePersistence", "boolean", false)) {
+                // Remove only session without license
+                for (i = 0; i < sessions.length; i++) {
+                    session = sessions[i];
+                    if (!session.licenseStored) {
+                       sessions.splice(i, 1);
+                       i--;
+                    }
                 }
+            } else {
+                // By default remove all licenses
+                sessions = [];
             }
 
             videoElement.removeEventListener("waitingforkey", eventHandler);
