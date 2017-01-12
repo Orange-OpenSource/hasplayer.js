@@ -47,6 +47,8 @@ MediaPlayer.utils.Config = function () {
             // Fragment loader parameters
             "FragmentLoader.RetryAttempts": -1,
             "FragmentLoader.RetryInterval": -1,
+            // Protection parameters
+            "Protection.licensePersistence": -1,
             // Video parameters
             "video": {
             },
