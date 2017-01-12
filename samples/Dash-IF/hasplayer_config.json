@@ -59,6 +59,9 @@
     "// ABR.droppedFramesMaxRatio" : "The number of dropped frames (as a ratio to total video frames) from which quality is switched down",
     "ABR.switchUpBufferRatio": -1,
 
+    "// Protection parameters" : "If true, then protection model (2015) implements license persistence at application level",
+    "Protection.licensePersistence": -1,
+
     "// video" : "Video media parameters that override general parameters",
     "video": {
     },
