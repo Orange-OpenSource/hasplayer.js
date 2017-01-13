@@ -469,7 +469,7 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         onError = function(event) {
-            var error = event.srcElement.error,
+            var error = event.target.error,
                 code,
                 message = "[Stream] <video> error: ";
 
