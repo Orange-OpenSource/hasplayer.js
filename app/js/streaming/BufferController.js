@@ -893,7 +893,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 self.indexHandler.getNextSegmentRequestFromSN(_currentRepresentation, currentSequenceNumber).then(onFragmentRequest.bind(self));
             } else {
                 self.debug.log("[BufferController][" + type + "] loadNextFragment for time: " + segmentTime);
-                self.indexHandler.getSegmentRequestForTime(_currentRepresentation, segmentTime).then(onFragmentRequest.bind(self), function (){
+                self.indexHandler.getSegmentRequestForTime(_currentRepresentation, segmentTime).then(onFragmentRequest.bind(self), function() {
                     currentDownloadQuality = -1;
                     signalStreamComplete.call(self);
                 });
@@ -1041,7 +1041,7 @@ MediaPlayer.dependencies.BufferController = function() {
             } else {
                 if (trackChanged || overrideBuffer ||
                     ((bufferLevel < minBufferTime) &&
-                     ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted)))) {
+                        ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted)))) {
                     // Buffer needs to be filled
                     bufferFragment.call(self);
                 } else {
@@ -1240,9 +1240,9 @@ MediaPlayer.dependencies.BufferController = function() {
                 if (type === 'text') {
                     buffer.UpdateLang(data.id, data.lang);
                     if (data.mimeType === 'application/ttml+xml') {
-                    removeBuffer.call(this);
+                        removeBuffer.call(this);
+                    }
                 }
-            }
             }
 
             dataChanged = false;

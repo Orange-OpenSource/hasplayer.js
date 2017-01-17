@@ -27,7 +27,7 @@ MediaPlayer.models.ManifestModel = function () {
         setValue: function (value) {
             manifest = value;
             if (manifest) {
-            this.system.notify("manifestUpdated");
+                this.system.notify("manifestUpdated");
             }
 
             if (manifest !== null) {

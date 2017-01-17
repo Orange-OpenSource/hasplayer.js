@@ -11,29 +11,29 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-MediaPlayer.dependencies.TextController = function () {
+MediaPlayer.dependencies.TextController = function() {
 
-     var LOADING = "LOADING",
-         //LOADED = "LOADED",
-         READY = "READY",
-         initialized = false,
-         periodInfo = null,
-         mediaSource,
-         data,
-         buffer,
-         availableRepresentations,
-         state = READY,
-         setState = function (value) {
-             this.debug.log("TextController setState to:" + value);
-             state = value;
-         },
-         startPlayback = function () {
+    var LOADING = "LOADING",
+        //LOADED = "LOADED",
+        READY = "READY",
+        initialized = false,
+        periodInfo = null,
+        mediaSource,
+        data,
+        buffer,
+        availableRepresentations,
+        state = READY,
+        setState = function(value) {
+            this.debug.log("TextController setState to:" + value);
+            state = value;
+        },
+        startPlayback = function() {
 
-             if (!initialized || state !== READY) {
-                 return;
-             }
+            if (!initialized || state !== READY) {
+                return;
+            }
 
-             var self = this;
+            var self = this;
             // TODO Multiple tracks can be handled here by passing in quality level.
             self.indexHandler.getInitRequest(availableRepresentations[0]).then(
                 function(request) {
@@ -63,15 +63,15 @@ MediaPlayer.dependencies.TextController = function () {
             var self = this;
             //self.debug.log(" Text track Bytes finished loading: " + request.url);
             // ORANGE: add request parameter to retrieve startTime and timescale in fragmentController
-             self.fragmentController.process(response.data, request).then(
-                 function (data) {
-                     if (data !== null) {
-                         //self.debug.log("Push text track bytes: " + data.byteLength);
-                         self.sourceBufferExt.append(buffer, data, self.videoModel);
-                     }
-                 }
-             );
-         },
+            self.fragmentController.process(response.data, request).then(
+                function(data) {
+                    if (data !== null) {
+                        //self.debug.log("Push text track bytes: " + data.byteLength);
+                        self.sourceBufferExt.append(buffer, data, self.videoModel);
+                    }
+                }
+            );
+        },
 
         onBytesError = function( /*request*/ ) {};
 
@@ -84,7 +84,7 @@ MediaPlayer.dependencies.TextController = function () {
         manifestModel: undefined,
         manifestExt: undefined,
         debug: undefined,
-        initialize: function (periodInfo, data, buffer, videoModel, source) {
+        initialize: function(periodInfo, data, buffer, videoModel, source) {
             var self = this;
 
             self.setVideoModel(videoModel);
@@ -102,31 +102,31 @@ MediaPlayer.dependencies.TextController = function () {
             periodInfo = value;
         },
 
-        getPeriodIndex: function () {
+        getPeriodIndex: function() {
             return periodInfo.index;
         },
 
-        getVideoModel: function () {
+        getVideoModel: function() {
             return this.videoModel;
         },
 
-        setVideoModel: function (value) {
+        setVideoModel: function(value) {
             this.videoModel = value;
         },
 
-        getData: function () {
+        getData: function() {
             return data;
         },
 
-        setData: function (value) {
+        setData: function(value) {
             data = value;
         },
 
-        getBuffer: function () {
+        getBuffer: function() {
             return buffer;
         },
 
-        setBuffer: function (value) {
+        setBuffer: function(value) {
             buffer = value;
         },
 
@@ -143,7 +143,7 @@ MediaPlayer.dependencies.TextController = function () {
             startPlayback.call(this);
         },
 
-        reset: function (errored) {
+        reset: function(errored) {
             if (!errored) {
                 this.sourceBufferExt.abort(mediaSource, buffer);
                 this.sourceBufferExt.removeSourceBuffer(mediaSource, buffer);
