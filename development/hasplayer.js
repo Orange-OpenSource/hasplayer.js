@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-1-13_15:53:15 / git revision : 1664063 */
+/* Last build : 2017-1-17_13:37:13 / git revision : 0680228 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.8.0-dev',
-        GIT_TAG = '1664063',
-        BUILD_DATE = '2017-1-13_15:53:15',
+        GIT_TAG = '0680228',
+        BUILD_DATE = '2017-1-17_13:37:13',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -2999,7 +2999,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 self.indexHandler.getNextSegmentRequestFromSN(_currentRepresentation, currentSequenceNumber).then(onFragmentRequest.bind(self));
             } else {
                 self.debug.log("[BufferController][" + type + "] loadNextFragment for time: " + segmentTime);
-                self.indexHandler.getSegmentRequestForTime(_currentRepresentation, segmentTime).then(onFragmentRequest.bind(self), function (){
+                self.indexHandler.getSegmentRequestForTime(_currentRepresentation, segmentTime).then(onFragmentRequest.bind(self), function() {
                     currentDownloadQuality = -1;
                     signalStreamComplete.call(self);
                 });
@@ -3147,7 +3147,7 @@ MediaPlayer.dependencies.BufferController = function() {
             } else {
                 if (trackChanged || overrideBuffer ||
                     ((bufferLevel < minBufferTime) &&
-                     ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted)))) {
+                        ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted)))) {
                     // Buffer needs to be filled
                     bufferFragment.call(self);
                 } else {
@@ -3346,9 +3346,9 @@ MediaPlayer.dependencies.BufferController = function() {
                 if (type === 'text') {
                     buffer.UpdateLang(data.id, data.lang);
                     if (data.mimeType === 'application/ttml+xml') {
-                    removeBuffer.call(this);
+                        removeBuffer.call(this);
+                    }
                 }
-            }
             }
 
             dataChanged = false;
@@ -6183,7 +6183,7 @@ MediaPlayer.dependencies.ManifestLoader = function() {
             }
 
             return fixedCharCodes;
-    },
+        },
 
         _parseBaseUrl = function(url) {
             var base = null;
@@ -6249,7 +6249,7 @@ MediaPlayer.dependencies.ManifestLoader = function() {
                         },
                         function(error) {
                             // Check if reject is due to other issue than manifest parsing
-                            // (for example HLS variant steam playlist download error) 
+                            // (for example HLS variant steam playlist download error)
                             if (error && error.name && error.message) {
                                 deferred.reject(error);
                             } else {
@@ -6319,7 +6319,6 @@ MediaPlayer.dependencies.ManifestLoader = function() {
 MediaPlayer.dependencies.ManifestLoader.prototype = {
     constructor: MediaPlayer.dependencies.ManifestLoader
 };
-
 /*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
  *
@@ -6470,7 +6469,7 @@ MediaPlayer.models.ManifestModel = function () {
         setValue: function (value) {
             manifest = value;
             if (manifest) {
-            this.system.notify("manifestUpdated");
+                this.system.notify("manifestUpdated");
             }
 
             if (manifest !== null) {
@@ -11095,8 +11094,8 @@ MediaPlayer.models.VideoModel = function () {
         TTMLRenderingDiv = null,
 
         isStalled = function () {
-            for (var type in stalledStreams){
-                if(stalledStreams[type]===true) {
+            for (var type in stalledStreams) {
+                if (stalledStreams[type] === true) {
                     return true;
                 }
             }
@@ -11116,13 +11115,13 @@ MediaPlayer.models.VideoModel = function () {
         };
 
     return {
-        system : undefined,
-        debug : undefined,
+        system: undefined,
+        debug: undefined,
 
-        setup : function () {
+        setup: function () {
         },
 
-        reset : function () {
+        reset: function () {
             stalledStreams = [];
         },
 
@@ -11140,15 +11139,15 @@ MediaPlayer.models.VideoModel = function () {
             return element.paused;
         },
 
-        isSeeking: function() {
+        isSeeking: function () {
             return element.seeking;
         },
 
-        getDuration:  function () {
+        getDuration: function () {
             return element.duration;
         },
 
-        getPlaybackRate:  function () {
+        getPlaybackRate: function () {
             return element.playbackRate;
         },
 
@@ -11157,7 +11156,7 @@ MediaPlayer.models.VideoModel = function () {
             element.playbackRate = value;
         },
 
-        getMute:  function () {
+        getMute: function () {
             return element.muted;
         },
 
@@ -12318,29 +12317,29 @@ MediaPlayer.utils.TTMLRenderer = function() {
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-MediaPlayer.dependencies.TextController = function () {
+MediaPlayer.dependencies.TextController = function() {
 
-     var LOADING = "LOADING",
-         //LOADED = "LOADED",
-         READY = "READY",
-         initialized = false,
-         periodInfo = null,
-         mediaSource,
-         data,
-         buffer,
-         availableRepresentations,
-         state = READY,
-         setState = function (value) {
-             this.debug.log("TextController setState to:" + value);
-             state = value;
-         },
-         startPlayback = function () {
+    var LOADING = "LOADING",
+        //LOADED = "LOADED",
+        READY = "READY",
+        initialized = false,
+        periodInfo = null,
+        mediaSource,
+        data,
+        buffer,
+        availableRepresentations,
+        state = READY,
+        setState = function(value) {
+            this.debug.log("TextController setState to:" + value);
+            state = value;
+        },
+        startPlayback = function() {
 
-             if (!initialized || state !== READY) {
-                 return;
-             }
+            if (!initialized || state !== READY) {
+                return;
+            }
 
-             var self = this;
+            var self = this;
             // TODO Multiple tracks can be handled here by passing in quality level.
             self.indexHandler.getInitRequest(availableRepresentations[0]).then(
                 function(request) {
@@ -12370,15 +12369,15 @@ MediaPlayer.dependencies.TextController = function () {
             var self = this;
             //self.debug.log(" Text track Bytes finished loading: " + request.url);
             // ORANGE: add request parameter to retrieve startTime and timescale in fragmentController
-             self.fragmentController.process(response.data, request).then(
-                 function (data) {
-                     if (data !== null) {
-                         //self.debug.log("Push text track bytes: " + data.byteLength);
-                         self.sourceBufferExt.append(buffer, data, self.videoModel);
-                     }
-                 }
-             );
-         },
+            self.fragmentController.process(response.data, request).then(
+                function(data) {
+                    if (data !== null) {
+                        //self.debug.log("Push text track bytes: " + data.byteLength);
+                        self.sourceBufferExt.append(buffer, data, self.videoModel);
+                    }
+                }
+            );
+        },
 
         onBytesError = function( /*request*/ ) {};
 
@@ -12391,7 +12390,7 @@ MediaPlayer.dependencies.TextController = function () {
         manifestModel: undefined,
         manifestExt: undefined,
         debug: undefined,
-        initialize: function (periodInfo, data, buffer, videoModel, source) {
+        initialize: function(periodInfo, data, buffer, videoModel, source) {
             var self = this;
 
             self.setVideoModel(videoModel);
@@ -12409,31 +12408,31 @@ MediaPlayer.dependencies.TextController = function () {
             periodInfo = value;
         },
 
-        getPeriodIndex: function () {
+        getPeriodIndex: function() {
             return periodInfo.index;
         },
 
-        getVideoModel: function () {
+        getVideoModel: function() {
             return this.videoModel;
         },
 
-        setVideoModel: function (value) {
+        setVideoModel: function(value) {
             this.videoModel = value;
         },
 
-        getData: function () {
+        getData: function() {
             return data;
         },
 
-        setData: function (value) {
+        setData: function(value) {
             data = value;
         },
 
-        getBuffer: function () {
+        getBuffer: function() {
             return buffer;
         },
 
-        setBuffer: function (value) {
+        setBuffer: function(value) {
             buffer = value;
         },
 
@@ -12450,7 +12449,7 @@ MediaPlayer.dependencies.TextController = function () {
             startPlayback.call(this);
         },
 
-        reset: function (errored) {
+        reset: function(errored) {
             if (!errored) {
                 this.sourceBufferExt.abort(mediaSource, buffer);
                 this.sourceBufferExt.removeSourceBuffer(mediaSource, buffer);
@@ -12464,7 +12463,6 @@ MediaPlayer.dependencies.TextController = function () {
 MediaPlayer.dependencies.TextController.prototype = {
     constructor: MediaPlayer.dependencies.TextController
 };
-
 /*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
  *
