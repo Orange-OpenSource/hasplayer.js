@@ -1024,12 +1024,14 @@ MediaPlayer = function () {
 
         /**
          * Return the available DVR window range in case of live streams.
-         * @method isLive
+         * @method getDVRWindowRange
          * @access public
          * @memberOf MediaPlayer#
          * @return {object} range - the DVR window range
          * @return {number} range.start - the DVR window range start time
          * @return {number} range.end - the DVR window range end time
+         * @return {number} range.programStart - the DVR window range absolute program start date/time (if available, may be undefined)
+         * @return {number} range.programEnd - the DVR window range absolute program end date/time (if available, may be undefined)
          */
         getDVRWindowRange: function () {
             _isPlayerInitialized();
