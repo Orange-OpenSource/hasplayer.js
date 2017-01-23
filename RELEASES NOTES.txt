@@ -1,3 +1,16 @@
+### Release Notes v1.8.0 (2017/01/23)
+* Implements license persistence at application layer (protection model 21Jan2015) according to player configuration (by default no license persistence)
+* [MSS] Add support for MSS static streams starting at t > 0 (live delinearization use case)
+* [HLS] Add support for HLSv5 streams (multiple audio/subtitle tracks/streams)
+* [HLS] Add support for VTT subtitles
+* [HLS] Add support for DVR mode
+* - Provide absolute program date/time (if available) for DVR window range (see MediaPlayer.getDVRWindowRange())
+* Bugs fixing:
+* - [MSS] Correct 'IsLive' parameter parsing in case
+* - [MSS] Fix use case where 'FourCC' field is an empty string
+* - [HLS] Fix regression on MPEGTS packets demultiplexing
+* - [HLS] Correct H.264 SPS parsing to retrieve video's width and height values
+
 ### Release Notes v1.7.0 (2016/11/28)
 * Add support for TTML origin defined with field 'c'
 * Bugs fixing:
