@@ -112,7 +112,7 @@ gulp.task('lint', function() {
 });
 
 gulp.task('package-info', function() {
-    // Get last abbreviated commit hash 
+    // Get last abbreviated commit hash
     git.exec({args: 'log -1 --format=%h', quiet: true}, function (err, stdout) {
         pkg.gitRevision = stdout.replace(/(\r\n|\n|\r)/gm,"");
     });
