@@ -280,16 +280,17 @@ MediaPlayer.utils.TTMLRenderer = function() {
         onCueEnter: function(e) {
             var newDiv = createSubtitleDiv();
 
-            applySubtitlesCSSStyle(newDiv, e.currentTarget.style, ttmlDiv);
-
-            newDiv.ttmlStyle = e.currentTarget.style;
+            if (e.currentTarget.style) {
+                applySubtitlesCSSStyle(newDiv, e.currentTarget.style, ttmlDiv);
+                newDiv.ttmlStyle = e.currentTarget.style;
+            }
 
             if (e.currentTarget.type !== 'image') {
                 var p = document.createElement('p');
                 newDiv.appendChild(p);
                 p.innerText = e.currentTarget.text;
                 p.style.marginTop = 'auto';
-                if (newDiv.ttmlStyle.showBackground && newDiv.ttmlStyle.showBackground === 'whenActive') {
+                if (newDiv.ttmlStyle && newDiv.ttmlStyle.showBackground && newDiv.ttmlStyle.showBackground === 'whenActive') {
                     p.style.backgroundColor = e.currentTarget.style.backgroundColor;
                 }
             } else {

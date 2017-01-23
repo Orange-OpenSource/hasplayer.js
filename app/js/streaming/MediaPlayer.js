@@ -1024,12 +1024,14 @@ MediaPlayer = function () {
 
         /**
          * Return the available DVR window range in case of live streams.
-         * @method isLive
+         * @method getDVRWindowRange
          * @access public
          * @memberOf MediaPlayer#
          * @return {object} range - the DVR window range
          * @return {number} range.start - the DVR window range start time
          * @return {number} range.end - the DVR window range end time
+         * @return {number} range.programStart - the DVR window range absolute program start date/time (if available, may be undefined)
+         * @return {number} range.programEnd - the DVR window range absolute program end date/time (if available, may be undefined)
          */
         getDVRWindowRange: function () {
             _isPlayerInitialized();
@@ -1682,8 +1684,8 @@ MediaPlayer.TRACKS_TYPE = {
  * @typedef MediaPlayer#PlayerParams
  * @type Object
  * @property {number}   BufferController.minBufferTimeForPlaying - Minimum buffer level before playing, in seconds (default value = 0)
- * @property {number}   BufferController.minBufferTime - Minimum buffer size, in seconds (default value = 16)
- * @property {number}   BufferController.liveDelay - The delay between the live edge and playing time, in seconds (default value = minBufferTime)
+ * @property {number}   BufferController.minBufferTime - Minimum buffer size (in seconds), if set to '-1' the maximum value between the manifest's minBufferTime and 16 sec. is considered (default value = -1)
+ * @property {number}   BufferController.liveDelay - The delay (in seconds) between the live edge and playing time, if set to '-1' the live delay is set according to minBufferTime (default value = -1)
  * @property {number}   ABR.minBandwidth - Minimum bandwidth to be playbacked (default value = -1)
  * @property {number}   ABR.maxBandwidth - Maximum bandwidth to be playbacked (default value = -1)
  * @property {number}   ABR.minQuality - Minimum quality index (start from 0) to be playbacked (default value = -1)
@@ -1701,6 +1703,7 @@ MediaPlayer.TRACKS_TYPE = {
  * @property {number}   ManifestLoader.RetryInterval - Interval (in milliseconds) between each retry attempts for downloading manifest file (default value = 500)
  * @property {number}   FragmentLoader.RetryAttempts - Number of retry attempts for downloading segment files when it fails (default value = 2)
  * @property {number}   FragmentLoader.RetryInterval - Interval (in milliseconds) between each retry attempts for downloading segment files (default value = 500)
+ * @property {boolean}  Protection.licensePersistence - Provides or not license persistence at application level, in case no persistence is provided by the CDM (default value = false)
  * @property {Object}   video - Video parameters (parameters for video track)
  * @property {Object}   audio - audio parameters (parameters for audio track)
  */

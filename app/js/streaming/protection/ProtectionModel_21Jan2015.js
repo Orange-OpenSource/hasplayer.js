@@ -265,6 +265,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
         unsubscribe: undefined,
         protectionExt: undefined,
         keySystem: null,
+        config: null,
         debug: null,
 
         setup: function() {
@@ -284,13 +285,18 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
             this.debug.log("[DRM][PM_21Jan2015] Teardown");
 
-            // remove session without license
-            for (i = 0; i < sessions.length; i++) {
-                session = sessions[i];
-                if (!session.licenseStored) {
-                   sessions.splice(i, 1);
-                   i--;
+            if (this.config.getParam("Protection.licensePersistence", "boolean", false)) {
+                // Remove only session without license
+                for (i = 0; i < sessions.length; i++) {
+                    session = sessions[i];
+                    if (!session.licenseStored) {
+                       sessions.splice(i, 1);
+                       i--;
+                    }
                 }
+            } else {
+                // By default remove all licenses
+                sessions = [];
             }
 
             videoElement.removeEventListener("waitingforkey", eventHandler);

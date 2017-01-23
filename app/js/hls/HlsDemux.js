@@ -23,9 +23,8 @@ Hls.dependencies.HlsDemux = function() {
         return tmp;
     };
 
-    var pat = null,
-        pmt = null,
-        pidToTrackId = [],
+    var trackIdCounter = 1,
+        pidToTrack = [],
         tracks = [],
         baseDts = -1,
         dtsOffset = -1,
@@ -60,60 +59,21 @@ Hls.dependencies.HlsDemux = function() {
                 return null;
             }
 
-            pat = new mpegts.si.PAT();
+            var pat = new mpegts.si.PAT();
             pat.parse(tsPacket.packet.getPayload());
-
-            //this.debug.log("[HlsDemux] PAT: PMT_PID=" + pat.getPmtPid());
 
             return pat;
         },
 
         getPMT = function(data, pid) {
-            var tsPacket = getTsPacket.call(this, data, 0, pid),
-                i = 0,
-                elementStream,
-                track,
-                streamTypeDesc;
+            var tsPacket = getTsPacket.call(this, data, 0, pid);
 
             if (tsPacket === null) {
                 return null;
             }
 
-            pmt = new mpegts.si.PMT();
+            var pmt = new mpegts.si.PMT();
             pmt.parse(tsPacket.packet.getPayload());
-
-            //this.debug.log("[HlsDemux] PMT");
-
-            for (i = 0; i < pmt.m_listOfComponents.length; i++) {
-                elementStream = pmt.m_listOfComponents[i];
-                track = new MediaPlayer.vo.Mp4Track();
-                streamTypeDesc = pmt.gStreamTypes[elementStream.m_stream_type];
-                if (streamTypeDesc !== null) {
-                    track.streamType = streamTypeDesc.name;
-                    switch (streamTypeDesc.value) {
-                        case 0xE0:
-                            track.type = "video";
-                            break;
-                        case 0xC0:
-                            track.type = "audio";
-                            break;
-                        case 0xFC:
-                            track.type = "data";
-                            break;
-                        default:
-                            track.type = "und";
-                    }
-                } else {
-                    this.debug.log("[HlsDemux] Stream Type " + elementStream.m_stream_type + " unknown!");
-                }
-
-                // PATCH to remove audio track
-                // if (track.type === "video") {
-                track.timescale = mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY;
-                track.pid = elementStream.m_elementary_PID;
-                tracks.push(track);
-                // }
-            }
 
             return pmt;
         },
@@ -121,7 +81,6 @@ Hls.dependencies.HlsDemux = function() {
         demuxTsPacket = function(data) {
             var tsPacket,
                 pid,
-                trackId,
                 track,
                 sample = null,
                 sampleData = null,
@@ -137,13 +96,10 @@ Hls.dependencies.HlsDemux = function() {
 
             // Get PID and corresponding track
             pid = tsPacket.getPid();
-            trackId = pidToTrackId[pid];
-            if (trackId === undefined) {
+            track = pidToTrack[pid];
+            if (!track) {
                 return;
             }
-
-            // Get track from tracks array (trackId start from 1)
-            track = tracks[trackId - 1];
 
             // PUSI => start storing new AU
             if (tsPacket.getPusi()) {
@@ -164,11 +120,16 @@ Hls.dependencies.HlsDemux = function() {
                     baseDts = sample.dts;
                 }
 
+                // Store original MPEG2TS timestamp to help determining offset between absolute samples timestamps and MPEG2TS timestamps (see WebVTT parser)
+                sample.mpegTimestamp = sample.cts;
+
                 sample.dts -= baseDts;
                 sample.cts -= baseDts;
 
                 sample.dts += dtsOffset;
                 sample.cts += dtsOffset;
+
+                //this.debug.log("[HlsDemux][" + track.type + "] dts = " + sample.dts + ", cts = " + sample.cts);
 
                 // Store payload of PES packet as a subsample
                 sampleData = pesPacket.getPayload();
@@ -185,12 +146,22 @@ Hls.dependencies.HlsDemux = function() {
                 }
 
                 sample.subSamples.push(sampleData);
-                track.samples.push(sample);
-            } else {
-                // Get currently buffered access unit
-                if (track.samples.length > 0) {
-                    sample = track.samples[track.samples.length - 1];
+
+                if (sample.dts >= 0) {
+                     track.samples.push(sample);
+                } else {
+                    // Check A/V desynchronisation
+                    var offset = Math.abs(sample.dts) / 90000;
+                    if (offset > 10) {
+                        throw {
+                            name: MediaPlayer.dependencies.ErrorHandler.prototype.HLS_DEMUX_ERROR,
+                            message: "A/V desynchronization (" + Math.round(offset) + " s.)"
+                        };
+                    }
                 }
+            } else if (track.samples.length > 0) {
+                // Get currently buffered access unit
+                sample = track.samples[track.samples.length - 1];
 
                 // Store payload of TS packet as a subsample
                 sample.subSamples.push(tsPacket.getPayload());
@@ -203,6 +174,10 @@ Hls.dependencies.HlsDemux = function() {
                 offset = 0,
                 subSamplesLength,
                 i, s;
+
+            if (track.samples.length === 0) {
+                return;
+            }
 
             // Determine total length of track samples data
             // Set samples duration and size
@@ -257,12 +232,11 @@ Hls.dependencies.HlsDemux = function() {
                 demuxADTS.call(this, track);
             }
 
-            // Patch first frame timestamp and duration in case of missing frames at the end
-            // of the previous segment
+            // Patch first frame timestamp and duration in case of missing frames at the end of the previous segment
             if (track.previousCts && track.previousDuration) {
                 sample = track.samples[0];
                 var gap = sample.cts - (track.previousCts + track.previousDuration);
-                if (gap > 0) {
+                if (gap > 0 && gap < track.timescale) {
                     sample.cts -= gap;
                     sample.dts -= gap;
                     sample.duration += gap;
@@ -312,6 +286,12 @@ Hls.dependencies.HlsDemux = function() {
                 sample.size = aacFrames[i].length;
                 sample.duration = duration;
                 sample.flags = 0x01000000; // sample_depends_on = 1, other flags = 0
+
+                // Store original MPEG2TS timestamp to help determining offset between absolute samples timestamps and MPEG2TS timestamps (see WebVTT parser)
+                if (aacSamples.length === 0) {
+                    sample.mpegTimestamp = track.samples[0].mpegTimestamp;
+                }
+
                 aacSamples.push(sample);
 
                 // Update cts for next frame
@@ -354,9 +334,10 @@ Hls.dependencies.HlsDemux = function() {
 
         doReset = function() {
             this.debug.log("[HlsDemux] Reset");
-            pat = null;
-            pmt = null;
-            pidToTrackId = [];
+            // pat = null;
+            // pmt = null;
+            trackIdCounter = 1;
+            pidToTrack = [];
             tracks = [];
             baseDts = -1;
             dtsOffset = -1;
@@ -416,6 +397,8 @@ Hls.dependencies.HlsDemux = function() {
                 // Extract width and height from SPS
                 track.width = sequenceHeader.width;
                 track.height = sequenceHeader.height;
+                this.debug.log("[HlsDemux] width  = " + track.width);
+                this.debug.log("[HlsDemux] height = " + track.height);
             }
 
             // AAC
@@ -438,54 +421,90 @@ Hls.dependencies.HlsDemux = function() {
                 track.codecPrivateData = codecPrivateDataHex.toUpperCase();*/
             }
 
-            this.debug.log("[HlsDemux][" + track.type + "] track codecPrivateData = " + track.codecPrivateData);
-            this.debug.log("[HlsDemux][" + track.type + "] track codecs = " + track.codecs);
+            this.debug.log("[HlsDemux] codecs = " + track.codecs);
+            this.debug.log("[HlsDemux] codecPrivateData = " + track.codecPrivateData);
         },
 
         doGetTracks = function(data) {
             var i = 0,
-                trackIdCounter = 1, // start at 1;
-                trackType;
+                pat,
+                pmt,
+                es,
+                pid,
+                track,
+                streamTypeDesc;
 
-            // Parse PSI (PAT, PMT) if not yet received
+            // Get PSI (PAT, PMT)
+            pat = getPAT.call(this, data);
             if (pat === null) {
-                pat = getPAT.call(this, data);
-                if (pat === null) {
-                    throw {
-                        name: MediaPlayer.dependencies.ErrorHandler.prototype.HLS_DEMUX_ERROR,
-                        message: "Failed to demux, missing signalization (PAT)"
-                    };
-                }
+                throw {
+                    name: MediaPlayer.dependencies.ErrorHandler.prototype.HLS_DEMUX_ERROR,
+                    message: "Failed to demux, missing signalization (PAT)"
+                };
             }
 
+            pmt = getPMT.call(this, data, pat.getPmtPid());
             if (pmt === null) {
-                pmt = getPMT.call(this, data, pat.getPmtPid());
-                if (pmt === null) {
-                    throw {
-                        name: MediaPlayer.dependencies.ErrorHandler.prototype.HLS_DEMUX_ERROR,
-                        message: "Failed to demux, missing signalization (PMT)"
-                    };
-                }
+                throw {
+                    name: MediaPlayer.dependencies.ErrorHandler.prototype.HLS_DEMUX_ERROR,
+                    message: "Failed to demux, missing signalization (PMT)"
+                };
             }
 
-            // Get track information and remove tracks for which we did not manage to get codec information (no packet ?!)
-            for (i = tracks.length - 1; i >= 0; i--) {
-                getTrackCodecInfo.call(this, data, tracks[i]);
-                if (tracks[i].codecs === "") {
-                    trackType = tracks[i].type;
-                    tracks.splice(i, 1);
+            // Create a track for each elementary stream
+            for (i = 0; i < pmt.m_listOfComponents.length; i++) {
+                es = pmt.m_listOfComponents[i];
+                pid = es.m_elementary_PID;
+
+                track = pidToTrack[pid];
+
+                if (!track) {
+                    // Create new track
+                    track = new MediaPlayer.vo.Mp4Track();
+                    track.timescale = mpegts.Pts.prototype.SYSTEM_CLOCK_FREQUENCY;
+                    track.pid = pid;
+
+                    // Get elemantary stream type
+                    streamTypeDesc = pmt.gStreamTypes[es.m_stream_type];
+                    if (streamTypeDesc === null) {
+                        this.debug.log("[HlsDemux] Stream Type " + es.m_stream_type + " unknown!");
+                        continue;
+                    }
+
+                    // Determine track type
+                    track.streamType = streamTypeDesc.name;
+                    switch (streamTypeDesc.value) {
+                        case 0xE0:
+                            track.type = "video";
+                            break;
+                        case 0xC0:
+                            track.type = "audio";
+                            break;
+                        case 0xFC:
+                            track.type = "data";
+                            break;
+                        default:
+                            track.type = "und";
+                    }
+                }
+
+                // Get/update track codec details
+                getTrackCodecInfo.call(this, data, track);
+                if (track.codecs === "") {
                     throw {
                         name: MediaPlayer.dependencies.ErrorHandler.prototype.HLS_DEMUX_ERROR,
-                        message: "Failed to get codec information for track " + trackType
+                        message: "Failed to get codec information for track " + track.type
                     };
                 }
-            }
 
-            // Set track id and map to to PID
-            for (i = 0; i < tracks.length; i++) {
-                tracks[i].trackId = trackIdCounter;
-                pidToTrackId[tracks[i].pid] = trackIdCounter;
-                trackIdCounter++;
+                if (!pidToTrack[pid]) {
+                    // Set trackId
+                    track.trackId = trackIdCounter;
+                    trackIdCounter++;
+                    this.debug.log("[HlsDemux] Add track: type = " + track.type + ", PID = " + track.pid + ", trackId = " + track.trackId);
+                    tracks.push(track);
+                    pidToTrack[pid] = track;
+                }
             }
 
             return tracks;
@@ -505,9 +524,7 @@ Hls.dependencies.HlsDemux = function() {
             this.debug.log("[HlsDemux] Demux chunk, size = " + data.length + ", nb packets = " + Math.round(data.length / mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE));
 
             // Get PAT, PMT and tracks information if not yet received
-            if (pmt === null) {
-                doGetTracks.call(this, data);
-            }
+            doGetTracks.call(this, data);
 
             // Clear current tracks' data
             for (i = 0; i < tracks.length; i++) {
@@ -526,11 +543,11 @@ Hls.dependencies.HlsDemux = function() {
             // Parse and demux TS packets
             i = 0;
             while (i < data.length) {
-                if ((i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE) < data.length) {
-                    demuxTsPacket.call(this, data.subarray(i, i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE));
-                } else {
+                if ((i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE) > data.length) {
                     this.debug.log("[HlsDemux] Demux chunk, residual bytes = " + (data.length - i));
+                    break;
                 }
+                demuxTsPacket.call(this, data.subarray(i, i + mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE));
                 i += mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE;
             }
 
@@ -538,6 +555,11 @@ Hls.dependencies.HlsDemux = function() {
             //this.debug.log("[HlsDemux] Demux: baseDts = " + baseDts + ", dtsOffset = " + dtsOffset);
             for (i = 0; i < tracks.length; i++) {
                 track = tracks[i];
+
+                if (track.samples.length === 0) {
+                    continue;
+                }
+
                 postProcess.call(this, track);
 
                 this.debug.log("[HlsDemux][" + track.type + "] Demux: 1st PTS = " + track.samples[0].dts + " (" + (track.samples[0].dts / 90000) + ")");
@@ -553,11 +575,19 @@ Hls.dependencies.HlsDemux = function() {
                 }
             }
 
-            return tracks;
+            var _tracks = [];
+            for (i = 0; i < tracks.length; i++) {
+                if (tracks[i].samples.length > 0) {
+                    _tracks.push(tracks[i]);
+                }
+            }
+
+            return _tracks;
         };
 
     return {
         debug: undefined,
+
         reset: doReset,
         getTracks: doGetTracks,
         demux: doDemux

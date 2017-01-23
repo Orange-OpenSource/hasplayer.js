@@ -113,8 +113,7 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         },
 
         onBytesLoaded = function(request, response) {
-            var data,
-                deltaDate,
+            var deltaDate,
                 deltaTimeStamp;
 
             segmentDuration = request.duration;
@@ -123,19 +122,15 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
             segmentDownloadFailed = false;
             segmentDownloadErrorCount = 0;
 
-            this.debug.log("[FragmentInfoController][" + type + "] Media loaded ", request.url);
+            this.debug.log("[FragmentInfoController][" + type + "] FragmentInfo loaded ", request.url);
 
             try {
-                data = this.fragmentController.process(response.data, request, _bufferController.getAvailableRepresentations());
-                this.debug.info("[FragmentInfoController][" + type + "] Buffer segment from url ", request.url);
-
-                deltaDate = (new Date().getTime() - startFragmentInfoDate) / 1000;
-
-                deltaTimeStamp = (_fragmentInfoTime + segmentDuration) - startTimeStampValue;
-
-                deltaTime = (deltaTimeStamp - deltaDate) > 0 ? (deltaTimeStamp - deltaDate) : 0;
-
-                delayLoadNextFragmentInfo.call(this, deltaTime);
+                this.fragmentController.process(response.data, request, _bufferController.getCurrentRepresentation()).then(function(/*data*/) {
+                    deltaDate = (new Date().getTime() - startFragmentInfoDate) / 1000;
+                    deltaTimeStamp = (_fragmentInfoTime + segmentDuration) - startTimeStampValue;
+                    deltaTime = (deltaTimeStamp - deltaDate) > 0 ? (deltaTimeStamp - deltaDate) : 0;
+                    delayLoadNextFragmentInfo.call(this, deltaTime);
+                });
             } catch (e) {
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing fragment info segment", e.message);
             }

@@ -71,9 +71,6 @@ MediaPlayer.dependencies.BufferController = function() {
 
         deferredFragmentBuffered = null,
 
-        // Async. vs async. MSE's SourceBuffer appending/removing algorithm
-        appendSync = false,
-
         // Segment download failure recovery
         SEGMENT_DOWNLOAD_ERROR_MAX = 3,
         segmentDownloadErrorCount = 0,
@@ -82,6 +79,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
         // HLS chunk sequence number
         currentSequenceNumber = -1,
+        playlistRefreshTimeout = null,
 
         segmentDuration = NaN,
 
@@ -274,31 +272,39 @@ MediaPlayer.dependencies.BufferController = function() {
         onInitializationLoaded = function(request, response) {
             var self = this,
                 initData = response.data,
-                quality = request.quality,
-                data;
+                quality = request.quality;
 
             self.debug.log("[BufferController][" + type + "] Initialization loaded ", quality);
 
             try {
-                data = self.fragmentController.process(initData);
-                if (data) {
-                    // Cache the initialization data to use it next time the quality has changed
-                    initializationData[quality] = data;
+                self.fragmentController.process(initData).then(function(data) {
+                    if (data) {
+                        // Cache the initialization data to use it next time the quality has changed
+                        initializationData[quality] = data;
 
-                    self.debug.info("[BufferController][" + type + "] Buffer initialization segment ", (request.url !== null) ? request.url : request.quality);
-                    //console.saveBinArray(data, type + "_init_" + request.quality + ".mp4");
-                    appendToBuffer.call(self, data, request.quality).then(
-                        function() {
-                            // Load next media segment
-                            if (isRunning()) {
-                                loadNextFragment.call(self);
+                        self.debug.info("[BufferController][" + type + "] Buffer initialization segment ", (request.url !== null) ? request.url : request.quality);
+                        //console.saveBinArray(data, type + "_init_" + request.quality + ".mp4");
+                        appendToBuffer.call(self, data, request.quality).then(
+                            function() {
+                                // Load next media segment
+                                if (isRunning()) {
+                                    loadNextFragment.call(self);
+                                }
                             }
-                        }
-                    );
-                } else {
-                    // ORANGE : For HLS Stream, init segment are pushed with media (@see HlsFragmentController)
-                    loadNextFragment.call(self);
-                }
+                        );
+                    } else {
+                        // ORANGE : For HLS Stream, init segment are pushed with media (@see HlsFragmentController)
+                        loadNextFragment.call(self);
+                    }
+                },
+                function (e) {
+                    signalSegmentBuffered.call(self);
+                    if (e.name) {
+                        self.errHandler.sendError(e.name, e.message, e.data);
+                    } else {
+                        self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", e.message);
+                    }
+                });
             } catch (e) {
                 signalSegmentBuffered.call(self);
                 if (e.name) {
@@ -313,8 +319,7 @@ MediaPlayer.dependencies.BufferController = function() {
             var self = this,
                 eventStreamAdaption = this.manifestExt.getEventStreamForAdaptationSet(self.getData()),
                 eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(self.getData(), _currentRepresentation),
-                events,
-                data;
+                events;
 
             segmentDuration = request.duration;
 
@@ -336,67 +341,76 @@ MediaPlayer.dependencies.BufferController = function() {
             }
 
             try {
-                data = self.fragmentController.process(response.data, request, availableRepresentations);
-                if (data) {
-                    if (eventStreamAdaption.length > 0 || eventStreamRepresentation.length > 0) {
-                        events = handleInbandEvents.call(self, data, request, eventStreamAdaption, eventStreamRepresentation);
-                        self.eventController.addInbandEvents(events);
-                    }
-
-                    self.debug.info("[BufferController][" + type + "] Buffer segment from url ", request.url);
-
-                    /*if (trickModeEnabled) {
-                            var filename = type + "_" + request.index + "_" + request.quality + ".mp4",
-                                blob = new Blob([data], {
-                                    type: 'data/mp4'
-                                });
-
-                            if (navigator.msSaveBlob) { // For IE10+ and edge
-                                navigator.msSaveBlob(blob, filename);
-                            }
-                        }*/
-
-                    //console.saveBinArray(data, request.url.substring(request.url.lastIndexOf('/') + 1));
-                    data = deleteInbandEvents.call(self, data);
-
-                    // Check if we need to override the current buffered segments (in case of language switch for example)
-                    Q.when(overrideBuffer ? removeBuffer.call(self) : true).then(
-                        function() {
-                            /*if (overrideBuffer) {
-                                debugBufferRange.call(self);
-                            }*/
-                            overrideBuffer = false;
-
-                            // If firefox, set buffer timestampOffset since timestamping (MSE buffer range and <video> currentTime) is based on CTS (and not DTS like in other browsers)
-                            if (isFirefox) {
-                                buffer.timestampOffset = -(getSegmentTimestampOffset(data) / request.timescale);
-                            }
-
-                            appendToBuffer.call(self, data, request.quality, request.index).then(
-                                function() {
-                                    // Check if a new quality is being appended,
-                                    // then add a metric to enable MediaPlayer to detect playback quality changes
-                                    if (currentBufferedQuality !== request.quality) {
-                                        self.debug.log("[BufferController][" + type + "] Buffered quality changed: " + request.quality);
-                                        self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
-                                        currentBufferedQuality = request.quality;
-                                    }
-
-                                    // Signal end of buffering process
-                                    signalSegmentBuffered.call(self);
-                                    // Check buffer level
-                                    checkIfSufficientBuffer.call(self);
-                                }
-                            );
+                self.fragmentController.process(response.data, request, _currentRepresentation).then(function(data) {
+                    if (data) {
+                        if (eventStreamAdaption.length > 0 || eventStreamRepresentation.length > 0) {
+                            events = handleInbandEvents.call(self, data, request, eventStreamAdaption, eventStreamRepresentation);
+                            self.eventController.addInbandEvents(events);
                         }
-                    );
-                } else {
-                    self.debug.error("[BufferController][" + type + "] Error with segment data, no bytes to push");
-                    // Signal end of buffering process
+
+                        self.debug.info("[BufferController][" + type + "] Buffer segment from url ", request.url);
+
+                        /*if (trickModeEnabled) {
+                                var filename = type + "_" + request.index + "_" + request.quality + ".mp4",
+                                    blob = new Blob([data], {
+                                        type: 'data/mp4'
+                                    });
+
+                                if (navigator.msSaveBlob) { // For IE10+ and edge
+                                    navigator.msSaveBlob(blob, filename);
+                                }
+                            }*/
+
+                        //console.saveBinArray(data, request.url.substring(request.url.lastIndexOf('/') + 1));
+                        data = deleteInbandEvents.call(self, data);
+
+                        // Check if we need to override the current buffered segments (in case of language switch for example)
+                        Q.when(overrideBuffer ? removeBuffer.call(self) : true).then(
+                            function() {
+                                /*if (overrideBuffer) {
+                                    debugBufferRange.call(self);
+                                }*/
+                                overrideBuffer = false;
+
+                                // If firefox, set buffer timestampOffset since timestamping (MSE buffer range and <video> currentTime) is based on CTS (and not DTS like in other browsers)
+                                if (isFirefox) {
+                                    buffer.timestampOffset = -getSegmentTimestampOffset(data, request);
+                                }
+
+                                appendToBuffer.call(self, data, request.quality, request).then(
+                                    function() {
+                                        // Check if a new quality is being appended,
+                                        // then add a metric to enable MediaPlayer to detect playback quality changes
+                                        if (currentBufferedQuality !== request.quality) {
+                                            self.debug.log("[BufferController][" + type + "] Buffered quality changed: " + request.quality);
+                                            self.metricsModel.addBufferedSwitch(type, request.startTime, _currentRepresentation.id, request.quality);
+                                            currentBufferedQuality = request.quality;
+                                        }
+
+                                        // Signal end of buffering process
+                                        signalSegmentBuffered.call(self);
+                                        // Check buffer level
+                                        checkIfSufficientBuffer.call(self);
+                                    }
+                                );
+                            }
+                        );
+                    } else {
+                        self.debug.error("[BufferController][" + type + "] Error with segment data, no bytes to push");
+                        // Signal end of buffering process
+                        signalSegmentBuffered.call(self);
+                        // Check buffer level
+                        checkIfSufficientBuffer.call(self);
+                    }
+                },
+                function (e) {
                     signalSegmentBuffered.call(self);
-                    // Check buffer level
-                    checkIfSufficientBuffer.call(self);
-                }
+                    if (e.name) {
+                        self.errHandler.sendError(e.name, e.message, e.data);
+                    } else {
+                        self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing media segment", e.message);
+                    }
+                });
             } catch (e) {
                 signalSegmentBuffered.call(self);
                 if (e.name) {
@@ -407,7 +421,7 @@ MediaPlayer.dependencies.BufferController = function() {
             }
         },
 
-        appendToBuffer = function(data, quality, index) {
+        appendToBuffer = function(data, quality, request) {
             var self = this,
                 deferred = Q.defer(),
                 currentVideoTime = self.videoModel.getCurrentTime(),
@@ -430,7 +444,7 @@ MediaPlayer.dependencies.BufferController = function() {
                         return;
                     }
                     self.debug.log("[BufferController][" + type + "] Buffering segment");
-                    self.sourceBufferExt.append(buffer, data, appendSync).then(
+                    self.sourceBufferExt.append(buffer, data, request).then(
                         function( /*appended*/ ) {
                             self.debug.log("[BufferController][" + type + "] Segment buffered");
 
@@ -474,8 +488,8 @@ MediaPlayer.dependencies.BufferController = function() {
                             if (result.err.code === MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_QUOTA_EXCEEDED) {
                                 rejectedBytes = {
                                     data: data,
-                                    quality: quality,
-                                    index: index
+                                    quality: quality/*,
+                                    index: index*/
                                 };
                                 deferredRejectedDataAppend = deferred;
                                 isQuotaExceeded = true;
@@ -509,17 +523,33 @@ MediaPlayer.dependencies.BufferController = function() {
             }
         },
 
-        getSegmentTimestampOffset = function (data) {
+        getSegmentTimestampOffset = function (data, request) {
             var fragment = mp4lib.deserialize(data),
+                moov = fragment.getBoxByType("moov"),
                 moof = fragment.getBoxByType("moof"),
                 traf = moof === null ? null : moof.getBoxByType("traf"),
-                trun = traf === null ? null : traf.getBoxByType("trun");
+                trun = traf === null ? null : traf.getBoxByType("trun"),
+                ctsOffset,
+                timescale;
 
             if (trun === null || trun.samples_table.length === 0) {
                 return 0;
             }
 
-            return trun.samples_table[0].sample_composition_time_offset === undefined ? 0 : trun.samples_table[0].sample_composition_time_offset;
+            ctsOffset = trun.samples_table[0].sample_composition_time_offset;
+            if (ctsOffset ===  undefined) {
+                return 0;
+            }
+
+            // Try to get timescale from moov
+            if (moov) {
+                var mvhd = moov.getBoxByType("mvhd");
+                timescale = mvhd.timescale;
+            } else {
+                timescale = request.timescale;
+            }
+
+            return (ctsOffset / timescale);
         },
 
         handleInbandEvents = function(data, request, adaptionSetInbandEvents, representationInbandEvents) {
@@ -718,7 +748,7 @@ MediaPlayer.dependencies.BufferController = function() {
             }
 
             // Wait for buffer update completed
-            self.sourceBufferExt.remove(buffer, removeStart, removeEnd, periodInfo.duration, mediaSource, appendSync).then(
+            self.sourceBufferExt.remove(buffer, removeStart, removeEnd, periodInfo.duration, mediaSource).then(
                 function() {
                     // Remove all requests from the list of the executed requests
                     self.fragmentController.removeExecutedRequestsBeforeTime(fragmentModel, removeEnd + 1); // +1 for rounding issues
@@ -858,12 +888,12 @@ MediaPlayer.dependencies.BufferController = function() {
             }
 
             // currentSequenceNumber used in HLS
-            if ((currentSequenceNumber !== -1) && !seeking) {
+            if ((currentSequenceNumber !== -1) && !seeking && !overrideBuffer) {
                 self.debug.log("[BufferController][" + type + "] loadNextFragment for sequence number: " + currentSequenceNumber);
                 self.indexHandler.getNextSegmentRequestFromSN(_currentRepresentation, currentSequenceNumber).then(onFragmentRequest.bind(self));
             } else {
                 self.debug.log("[BufferController][" + type + "] loadNextFragment for time: " + segmentTime);
-                self.indexHandler.getSegmentRequestForTime(_currentRepresentation, segmentTime).then(onFragmentRequest.bind(self), function (){
+                self.indexHandler.getSegmentRequestForTime(_currentRepresentation, segmentTime).then(onFragmentRequest.bind(self), function() {
                     currentDownloadQuality = -1;
                     signalStreamComplete.call(self);
                 });
@@ -900,19 +930,10 @@ MediaPlayer.dependencies.BufferController = function() {
                 self.debug.log("[BufferController][" + type + "] loadNextFragment failed");
                 signalSegmentBuffered.call(self);
 
-                // If live HLS, then try to refresh playlist
                 if (isDynamic) {
+                    // If live HLS, then check buffer since playlist should be updated
                     if (manifest.name === "M3U") {
-                        updatePlayListForRepresentation.call(self, currentDownloadQuality).then(
-                            function() {
-                                _currentRepresentation = getRepresentationForQuality.call(self, currentDownloadQuality);
-                                updateCheckBufferTimeout.call(self, 0);
-                            }, function(err) {
-                                if (err) {
-                                    self.errHandler.sendError(err.name, err.message, err.data);
-                                }
-                            }
-                        );
+                        updateCheckBufferTimeout.call(self);
                     }
                 } else {
                     // For VOD streams, signal end of stream
@@ -1020,7 +1041,7 @@ MediaPlayer.dependencies.BufferController = function() {
             } else {
                 if (trackChanged || overrideBuffer ||
                     ((bufferLevel < minBufferTime) &&
-                     ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted)))) {
+                        ((minBufferTime < timeToEnd) || (minBufferTime >= timeToEnd && !isBufferingCompleted)))) {
                     // Buffer needs to be filled
                     bufferFragment.call(self);
                 } else {
@@ -1034,7 +1055,7 @@ MediaPlayer.dependencies.BufferController = function() {
         updateCheckBufferTimeout = function(delay) {
             var self = this;
 
-            delay = Math.max(delay, (segmentDuration / 2));
+            delay = delay ? delay : 1;
 
             this.debug.log("[BufferController][" + type + "] Check buffer in = " + delay.toFixed(3) + " ms (bufferLevel = " + bufferLevel + ")");
 
@@ -1052,8 +1073,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 manifest = self.manifestModel.getValue(),
                 loadInit = false,
                 quality,
-                playlistUpdated = null,
-                abrResult;
+                playlistUpdated = null;
 
             if (deferredFragmentBuffered !== null) {
                 self.debug.error("[BufferController][" + type + "] deferredFragmentBuffered has not been resolved, create a new one is not correct.");
@@ -1067,12 +1087,10 @@ MediaPlayer.dependencies.BufferController = function() {
             doUpdateData.call(self);
 
             // If initialization data has been changed (track changed), then load initialization segment
-            loadInit = initializationData.length === 0;
+            loadInit = (initializationData.length === 0) && (manifest.name !== "M3U");
 
             // Get current quality
-            abrResult = self.abrController.getPlaybackQuality(type, data);
-
-            quality = abrResult.quality;
+            quality = self.abrController.getPlaybackQuality(type, data).quality;
 
             // Get corresponding representation
             _currentRepresentation = getRepresentationForQuality.call(self, quality);
@@ -1089,21 +1107,10 @@ MediaPlayer.dependencies.BufferController = function() {
                 self.metricsModel.addRepresentationSwitch(type, now, currentVideoTime, _currentRepresentation.id, quality);
 
                 // HLS use case => download playlist for new representation
-                if ((manifest.name === "M3U") && (isDynamic || availableRepresentations[quality].initialization === null)) {
-                    playlistUpdated = Q.defer();
-                    updatePlayListForRepresentation.call(self, quality).then(
-                        function() {
-                            _currentRepresentation = getRepresentationForQuality.call(self, quality);
-                            playlistUpdated.resolve();
-                        },
-                        function(err) {
-                            playlistUpdated.reject(err);
-                        }
-                    );
-                }
+                playlistUpdated = updatePlayListForRepresentation.call(self);
             }
 
-            Q.when(playlistUpdated ? playlistUpdated.promise : true).then(
+            Q.when(playlistUpdated ? playlistUpdated : true).then(
                 function() {
                     if (loadInit === true) {
                         // Load initialization segment request
@@ -1139,28 +1146,55 @@ MediaPlayer.dependencies.BufferController = function() {
 
         },
 
-        updatePlayListForRepresentation = function(repIndex) {
-            var self = this,
-                deferred = Q.defer(),
-                manifest = self.manifestModel.getValue(),
+        updatePlayListForRepresentation = function() {
+            var manifest = this.manifestModel.getValue(),
+                deferred,
                 representation,
-                idx;
+                idx,
+                self = this;
 
-
-            // Check if running state
-            if (!isRunning.call(self)) {
-                deferred.reject();
-                return deferred.promise;
+            if (manifest.name !== "M3U") {
+                return Q.when(true);
             }
 
+            // In static use case, do not update playlist if already downloaded
+            if (!isDynamic) {
+                if (_currentRepresentation.segmentInfoType === "SegmentList") {
+                    return Q.when(true);
+                }
+            }
+
+            if (playlistRefreshTimeout) {
+                clearTimeout(playlistRefreshTimeout);
+                playlistRefreshTimeout = null;
+            }
+
+            deferred = Q.defer();
+
             idx = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
-            representation = manifest.Period_asArray[periodInfo.index].AdaptationSet_asArray[idx].Representation_asArray[repIndex];
-            self.parser.hlsParser.updatePlaylist(representation).then(
+            representation = manifest.Period_asArray[periodInfo.index].AdaptationSet_asArray[idx].Representation_asArray[currentDownloadQuality];
+
+            this.debug.log("[BufferController][" + type + "] Update playlist for representation " + representation.id);
+
+            self.parser.hlsParser.updatePlaylist(representation, data).then(
                 function() {
                     availableRepresentations = updateRepresentations.call(self, data, periodInfo);
+                    _currentRepresentation = getRepresentationForQuality.call(self, currentDownloadQuality);
+                    representation = manifest.Period_asArray[periodInfo.index].AdaptationSet_asArray[idx].Representation_asArray[currentDownloadQuality];
+
+                    // Refresh playlist according to last segment duration
+                    var segments = representation.SegmentList.SegmentURL_asArray;
+                    var segment = segments[segments.length-1];
+                    playlistRefreshTimeout = setTimeout(function() {
+                        updatePlayListForRepresentation.call(self);
+                    }, ((segment.duration - 1) * 1000));
+
                     deferred.resolve();
                 },
                 function(err) {
+                    if (err) {
+                        self.errHandler.sendWarning(err.name, err.message, err.data);
+                    }
                     deferred.reject(err);
                 }
             );
@@ -1206,9 +1240,9 @@ MediaPlayer.dependencies.BufferController = function() {
                 if (type === 'text') {
                     buffer.UpdateLang(data.id, data.lang);
                     if (data.mimeType === 'application/ttml+xml') {
-                    removeBuffer.call(this);
+                        removeBuffer.call(this);
+                    }
                 }
-            }
             }
 
             dataChanged = false;
@@ -1270,11 +1304,6 @@ MediaPlayer.dependencies.BufferController = function() {
 
             this.debug.log("[BufferController][" + type + "] Initialize");
 
-            // PATCH for Espial browser which implements SourceBuffer appending/removing synchronoulsy
-            if (navigator.userAgent.indexOf("Espial") !== -1) {
-                this.debug.log("[BufferController][" + type + "] Espial browser = sync append");
-                appendSync = true;
-            }
             this[MediaPlayer.dependencies.FragmentLoader.eventList.ENAME_LOADING_PROGRESS] = onFragmentLoadProgress;
 
             isDynamic = this.manifestExt.getIsDynamic(manifest);
@@ -1305,12 +1334,6 @@ MediaPlayer.dependencies.BufferController = function() {
             _currentRepresentation = getRepresentationForQuality.call(self, self.abrController.getPlaybackQuality(type, data).quality);
 
             currentDownloadQuality = -1;
-
-            // For HLS, we need to reset fragmentController in order to force initialization segment
-            // generation for 1st segment
-            if (this.fragmentController.reset) {
-                this.fragmentController.reset();
-            }
 
             // Clear buffer
             removeBuffer.call(this).then(function () {
@@ -1550,7 +1573,7 @@ MediaPlayer.dependencies.BufferController = function() {
                         if (segmentRequestOnError) {
                             // If buffering is due to segment download failure (see onBytesError()), then signal it to Stream (see Stream.onBufferFailed())
                             signalSegmentLoadingFailed.call(this);
-                        } else {
+                        } else if (!isDynamic) {
                             // Check if there is a hole in the buffer (segment download failed or input stream discontinuity), then skip it
                             ranges = this.sourceBufferExt.getAllRanges(buffer);
                             var i;
@@ -1596,6 +1619,11 @@ MediaPlayer.dependencies.BufferController = function() {
             doStop.call(this);
             // Wait for current buffering process to be completed before restarting
             this.sourceBufferExt.abort(mediaSource, buffer);
+
+            if (playlistRefreshTimeout) {
+                clearTimeout(playlistRefreshTimeout);
+                playlistRefreshTimeout = null;
+            }
 
             Q.when(deferredFragmentBuffered ? deferredFragmentBuffered.promise : true).then(
                 function() {

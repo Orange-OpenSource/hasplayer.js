@@ -363,7 +363,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         //init audio tracks
         $scope.audioTracks = player.getTracks(MediaPlayer.TRACKS_TYPE.AUDIO);
         if ($scope.audioTracks !== null) {
-        $scope.audioData = $scope.audioTracks[0];
+            $scope.audioData = $scope.audioTracks[0];
         }
 
         //init subtitles tracks
@@ -907,7 +907,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         player.setInitialQualityFor("video", 0);
         player.setInitialQualityFor("audio", 0);
 
-        player.attachTTMLRenderingDiv(subtitlesDiv);
+        //player.attachTTMLRenderingDiv(subtitlesDiv);
 
         $scope.playbackRate = "x1";
         player.load($scope.selectedItem);
@@ -917,7 +917,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         if ($scope.chromecast.playing){
             $scope.stopInChromecast();
         }
-        
+
         player.reset(0);
 
         initPlayer();
@@ -951,7 +951,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     if (vars && vars.hasOwnProperty("stream")) {
         try {
             $scope.selectedItem = JSON.parse(atob(vars.stream));
-        setProtectionData();
+            setProtectionData();
         } catch (e) {}
     }
 

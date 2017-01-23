@@ -383,6 +383,10 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         startFragmentInfoControllers = function() {
+            if (manifest.name !== 'MSS' || !this.manifestExt.getIsDynamic(manifest)) {
+                return;
+            }
+
             if (fragmentInfoVideoController && dvrStarted === false) {
                 dvrStarted = true;
                 fragmentInfoVideoController.start();
@@ -469,7 +473,7 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         onError = function(event) {
-            var error = event.srcElement.error,
+            var error = event.target.error,
                 code,
                 message = "[Stream] <video> error: ";
 
@@ -823,7 +827,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.debug.info("[Stream] Check start time");
 
             // Check if video buffer is not empty
-            videoRange = this.sourceBufferExt.getBufferRange(videoController.getBuffer(), seekTime, 2);
+            videoRange = this.sourceBufferExt.getBufferRange(videoController.getBuffer(), seekTime, videoController.getSegmentDuration());
             if (videoRange === null) {
                 return;
             }
@@ -832,7 +836,7 @@ MediaPlayer.dependencies.Stream = function() {
 
             if (audioController) {
                 // Check if audio buffer is not empty
-                audioRange = this.sourceBufferExt.getBufferRange(audioController.getBuffer(), seekTime, 2);
+                audioRange = this.sourceBufferExt.getBufferRange(audioController.getBuffer(), seekTime, audioController.getSegmentDuration());
                 if (audioRange === null) {
                     return;
                 }
@@ -876,8 +880,8 @@ MediaPlayer.dependencies.Stream = function() {
 
             // Check if different track selected
             if (index !== currentIndex) {
-                if (this.manifestExt.getIsDynamic(manifest)) {
-                    // If live, refresh the manifest to get new selected track segments info
+                if (manifest.name === 'MSS' && this.manifestExt.getIsDynamic(manifest)) {
+                    // If live MSS, refresh the manifest to get new selected track segments info
                     this.system.notify("manifestUpdate");
                 } else {
                     // Else update controller data directly
@@ -1242,8 +1246,8 @@ MediaPlayer.dependencies.Stream = function() {
 
                 if (textController) {
                     if (enabled) {
-                        if (this.manifestExt.getIsDynamic(manifest)) {
-                            // In case of live streams, refresh manifest before activating subtitles
+                        if (manifest.name === 'MSS' && this.manifestExt.getIsDynamic(manifest)) {
+                            // In case of MSS live streams, refresh manifest before activating subtitles
                             this.system.mapHandler("streamsComposed", undefined, streamsComposed.bind(this), true);
                             this.system.notify("manifestUpdate");
                         } else {

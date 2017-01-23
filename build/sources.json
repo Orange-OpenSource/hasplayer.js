@@ -54,7 +54,7 @@
         "../app/js/streaming/rules/*",
         "../app/js/streaming/vo/*",
         "../app/js/streaming/vo/metrics/*",
-		"../app/js/dash/Dash.js",
+        "../app/js/dash/Dash.js",
         "../app/js/dash/**/*",
         "../app/js/streaming/protection/ProtectionModel.js",
         "../app/js/utils/CopyMethods.js",

@@ -101,7 +101,6 @@ mpegts.h264.read_ue = function(data, ctx) {
         }
     }
 
-
     value -= 1;
     temp = 0;
     if (numZeros) {
@@ -117,7 +116,7 @@ mpegts.h264.read_ue = function(data, ctx) {
             }
         }
     }
-    value = value + temp;
+    value += temp;
 
     return value;
 };
@@ -192,19 +191,21 @@ mpegts.h264.parseSPS = function(data) {
     ctx._bytePos++;
     sps.level_idc = ctx._byte;
 
-    // sps_id - ue(v)
+    // seq_parameter_set_id - ue(v)
+    ctx._byte = data[ctx._bytePos];
+    ctx._bytePos++;
     ctx._bitPos = 7;
     sps.seq_parameter_set_id = mpegts.h264.read_ue(data, ctx);
 
-    if ((sps.profileIdc == 100) ||
-        (sps.profileIdc == 110) ||
-        (sps.profileIdc == 122) ||
-        (sps.profileIdc == 244) ||
-        (sps.profileIdc == 44) ||
-        (sps.profileIdc == 83) ||
-        (sps.profileIdc == 86)) {
+    if ((sps.profile_idc === 100) ||
+        (sps.profile_idc === 110) ||
+        (sps.profile_idc === 122) ||
+        (sps.profile_idc === 244) ||
+        (sps.profile_idc === 44) ||
+        (sps.profile_idc === 83) ||
+        (sps.profile_idc === 86)) {
 
-        // chroma_format_idc - ue(v) 
+        // chroma_format_idc - ue(v)
         sps.chroma_format_idc = mpegts.h264.read_ue(data, ctx);
 
         if (sps.chroma_format_idc === 3) {

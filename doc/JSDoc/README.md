@@ -6,7 +6,7 @@ hasplayer.js is an extension of the [dash.js](https://github.com/Dash-Industry-F
 
 If your intent is to use the player code without contributing back to this project, then use the MASTER branch which holds the approved and stable public releases.
 
-If your goal is to improve or extend the code and contribute back to this project, then you should make your changes in, and submit a pull request against, the DEVELOPMENT branch. 
+If your goal is to improve or extend the code and contribute back to this project, then you should make your changes in, and submit a pull request against, the DEVELOPMENT branch.
 
 ## Getting Started
 
@@ -76,11 +76,11 @@ In the case of protected content, here is an example illustrating setting of the
         <script>
             (function(){
                 var stream = {
-                    url: "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest",
+                    url: "<manifest_url>",
                     protData: {
                         com.microsoft.playready: {
-                            laURL: "http://roap.purplecast.us/test/services/StandardPlayReadyAquireLicenseByContent.cfm?distrib=olps",
-                            customData: "B2C99B73-CA41-4003-84A3AA16CE92B304"
+                            laURL: "<licenser_url>",
+                            cdmData: "<specific_CDM_data>"
                         }
                     }
                 };
@@ -95,7 +95,7 @@ In the case of protected content, here is an example illustrating setting of the
 ## Events
 
 MediaPlayer offers events to be notified of differents events on video streaming. Those events are, for a part, sent by the HTML5 video element, and for an other part, sent by hasPlayer.js.
- 
+
 ```
 function registerMediaPlayerEvents() {
     // MediaPlayer events

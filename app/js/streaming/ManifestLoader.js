@@ -47,7 +47,7 @@ MediaPlayer.dependencies.ManifestLoader = function() {
             }
 
             return fixedCharCodes;
-    },
+        },
 
         _parseBaseUrl = function(url) {
             var base = null;
@@ -113,7 +113,7 @@ MediaPlayer.dependencies.ManifestLoader = function() {
                         },
                         function(error) {
                             // Check if reject is due to other issue than manifest parsing
-                            // (for example HLS variant steam playlist download error) 
+                            // (for example HLS variant steam playlist download error)
                             if (error && error.name && error.message) {
                                 deferred.reject(error);
                             } else {
