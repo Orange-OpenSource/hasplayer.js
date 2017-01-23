@@ -1,0 +1,155 @@
+### Release Notes v1.8.0 (2017/01/23)
+* Implements license persistence at application layer (protection model 21Jan2015) according to player configuration (by default no license persistence)
+* [MSS] Add support for MSS static streams starting at t > 0 (live delinearization use case)
+* [HLS] Add support for HLSv5 streams (multiple audio/subtitle tracks/streams)
+* [HLS] Add support for VTT subtitles
+* [HLS] Add support for DVR mode
+* - Provide absolute program date/time (if available) for DVR window range (see MediaPlayer.getDVRWindowRange())
+* Bugs fixing:
+* - [MSS] Correct 'IsLive' parameter parsing in case
+* - [MSS] Fix use case where 'FourCC' field is an empty string
+* - [HLS] Fix regression on MPEGTS packets demultiplexing
+* - [HLS] Correct H.264 SPS parsing to retrieve video's width and height values
+
+### Release Notes v1.7.0 (2016/11/28)
+* Add support for TTML origin defined with field 'c'
+* Bugs fixing:
+* - Fix compatibility issue with Smooth streaming Streams in CENC/PIFF1.3 format
+* - Fix subtitles being displayed by Firefox when using external display mode
+* - Fix issue on image subtitles display
+* - Fix namespace resolution for subtitles XML files
+* - Remove subtitles external <div> size setting (to be set by webapp)
+* - Workaround for missing 'cueExit' event not sent by Firefox when seeking
+* - Fix issue on track selection among tracks with identical language
+* - Correct FragmentInfo requests scheduling in Smooth Streaming DVR mode
+* - Stops Smooth Streaming DVR FragmentInfo requests in case of session reloading
+* - Fix TTML origin management if set on main div
+* - Correct TTML showbackground management to keep text alignment value
+
+### Release Notes v1.6.0 (2016/10/04)
+* Handle Firefox's MSE and <video> timestamping based on CTS/PTS (and not DTS like on other browsers)
+* Add 'subType' information for tracks (MediaPlayer.getTracks()) to differentiate HoH subtitles
+* Add configuration parameter 'liveDelay' (that enables to get around 412 precondition failed errors raised by some MSS streaming servers)
+* Add support for subtitles as images
+* Add possibility to attach an HTML div element to be used to render rich TTML subtitles
+* Enhance TTML subtitles parsing and display (showBackground, opacity, font style, size and resolution, etc)
+* Add AES128 decryption support for HLS streams
+* Bugs fixing:
+* - Fix regression on segments processing errors catching
+* - Fix issue on buffer gaps on Edge in case of discording timestamps between the manifest and the segments
+* - Fix KEY_ERR_OUTPUT ('output-restricted') error not raised when restarting (stop then play) a stream
+* - Fix HLS sessions reloading when some segment download failed
+* - Fix potential incorrect seeking to another previously buffered range
+* - Fix 'ended' event not raised when playing was started at time > 0
+* - Fix ABR resetting when trick mode was previously enabled
+
+### Release Notes v1.5.0 (2016/09/07)
+* Raise "MEDIA_KEYERR_OUTPUT" error when output display is restricted by a Widevine license
+* Enhance TTML to WebVTT transcoding for subtitles on multiple lines and empty subtitles
+* Optimized track switching mechanism to avoid playback error on Firefox
+
+### Release Notes v1.4.0 (2016/08/18)
+* DVR: disable seeking within buffering window before live edge
+* Add 'startTime' parameter in input stream to enable playback start at given time
+* Bugs fixing:
+* - Fix stop playing when buffer reached on IE11 and Edge
+* - Fix DVR window range update when paused
+* - Fix regression on 'ended' event firing
+* - Fast zapping error (consolidate load and reset process)
+* - Correct ABR rules in case of aborted or abandoned requests
+* - Patch for Safari which faces an issue with MSE buffer removing
+* - Correct display of subtitles on multiple lines
+* - Correct display of subtitles with no layout and style
+* - External TTML subtitles file management
+* - TTML style parsing
+* - Correct regression on abandon request rule
+* - Correct 'ended' event detection when trick mode is enabled
+* - Correct PlayReady CDM data to disable proactive (pre-delivery) license acquisition
+
+### Release Notes v1.3.1 (2016/06/08)
+* Add support for subtitles in external xml file
+* Bugs fixing:
+* - Regression on IE11 (player on failure)
+* - Correct issue for multi-lines subtitles
+* - No error raised when empty challenge received from CDM
+* - MANIFEST_ERR_NO_VIDEO/AUDIO raised even if video/audio track in manifest
+* - Regression on stream reset process that locks the player
+* - Missing HTTP status code when raising DOWNLOAD_ERR_CONTENT
+* - 'ended' event may not be raised on <video> element when reaching end of stream
+* - Byte-range requests for DASH
+
+### Release Notes v1.3.0 (2016/05/25)
+* Refactored and enriched MediaPlayer API
+* Add MediaPlayer plugins framework
+* Add new ABR rule considering dropped frames
+* DVR mode enhancement for MSS with FrgmentInfo requests to keep DVR window up to date
+* Corrected VOD streams management (no manifest refresh while switching tracks, ...)
+* Build: use gulp framework (instead of grunt)
+* Add new errors for HLS demultiplexing errors ('HLS_DEMUX_ERROR')
+* Bugs fixing:
+* - Mute state reset when load a new stream
+* - Crash in HLS demultiplexing when no audio packet in stream
+* - MANIFEST_ERR_PARSE (instead of DOWNLOAD_ERR_MANIFEST) when failed to download HLS variant stream playlist
+* - Byte-range requests for DASH contents
+* - Support for unknown MP4 boxes
+
+### Release Notes v1.2.7 (2016/04/01)
+* Bugs fixing:
+  - HLS support on Firefox
+  - Correct seeking and live start time management (BufferController's working time handling, seek to removed buffer ranges, etc)
+  - TTML parsing and VTT cues buffering management
+  - Correct manifest download error in case of automatic session reloading
+* Add DVR support
+* Add trick mode support (fast forward and rewind)
+* Add retry for HLS variants streams playlists requests
+* Add session type parameter in input protection data
+* Add INTERNAL_ERROR for initialization and media segments processing exceptions
+
+### Release Notes v1.2.6 (2016/01/14)
+* EME support updated from dash.js
+* Add MediaKeySession persistance within MediaPlayer instance (useful for chrome that do not support persistance natively)
+* Enhance playback startup time (zapping time)
+* Robust resetting process
+* Optimize MSS to DASH manifest transcoding
+* Add segment dowloading abandonment functionality in case of drop bandwidth
+* Refactor tracks language switching
+* Refactor error events and add warning events
+* Report HTTP status code when manifest/segment/license downloading fails
+* Report error code contained in licenser server response body
+* Segment download error robustness (automatic session reload when buffer becomes underflow)
+* Switch off/on text track downloading when subtitles are disabled/enabled
+* And many bugs fixing
+
+### Release Notes v1.2.1 (2015/09/14)
+* Enable keeping ABR bandwidth conditions when loading new stream
+* Optimized ABR rules according to buffering state of the video player
+* Add support for default audio/text language to be selected at startup
+* Autoplay management accross all platforms (mainly for Android devices)
+* Bugs fixing (seek, MSS segments processing, Edge support...)
+
+### Release Notes v1.2.0 (2015/07/01)
+* HLS support
+* EME support refactoring with multiple versions support (taken from dash.js project)
+* PlayReady to Widevine content protection conversion (requires coordination between PlayReady and Widevine licensers)
+* Configuration mechanism for streaming and ABR controllers
+* Enhanced errors handling
+* Fallback mechanism for segment download failure
+* Optimized ABR rules
+* Enhanced TTML subtitles support
+* Configurable build process (protocol(s), EME support)
+* And many bug corrections
+
+### Release Notes v1.1.0 (2014/10/31)
+* Based on dash.js v1.2.0 (see dash.js release notes)
+* Simplified BufferController with sequential segments downloading
+* Optimized and simplified live edge searching
+* TTML subtitles support
+* Quality filtering functionnality
+* Sample application (samples/DemoPlayer) with dynamic bandwidth chart
+
+### Release Notes v1.0.0 (2014/04/16)
+* Based on dash.js v1.1.0 (see dash.js release notes)
+* Smooth Streaming support (live and VOD)
+* Automatic protocol detection (DASH vs MSS)
+* PlayReady support with CustomData and licenser back URL
+* Multi-languages audio support
