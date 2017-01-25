@@ -7,6 +7,7 @@ var exec = require('child_process').exec,
 // Shell gitCommands
 var gitCommands = {
     currentBranch:  "git branch | grep \\* | cut -d ' ' -f2",
+    commitDate:     "git log -1 --format=%cD",
     clone:          "git clone -b gh-pages https://github.com/Orange-OpenSource/hasplayer.js.git gh-pages",
     configUser:     "git config user.name \"Travis-CI\"",
     configEmail:    "git config user.email \"bertrand.berthelot@orange.com\"",
@@ -44,20 +45,21 @@ var getBranchName = function() {
     }
 };
 
-
 // Steps for deployment
-// 1 - Get branch name
-// 2 - Clean gh-pages directory
-// 3 - Checkout gh-pages from github
-// 4 - Copy 'dist' directory contents into corresponding subfolder of gh-pages
-// 5 - Upate home file (index.html) in case of a new release
-// 6 - Add, commit and push changes to Github
+// 1 - Get version
+// 2 - Get date
+// 3 - Clean gh-pages directory
+// 4 - Checkout gh-pages from github
+// 5 - Copy 'dist' directory contents into corresponding subfolder of gh-pages
+// 6 - Upate home file (index.html) in case of a new release
+// 7 - Add, commit and push changes to Github
 
-// 1 - Get branch name
+// 1 - Get version
 getBranchName().then(
-    function(branch) {
+    function (branch) {
         branch = branch.replace(/\s/g, '').trim();
         console.info('Branch: ' + branch);
+
         // If 'development' branch set version to 'development'
         if (branch === 'development') {
             pkg.version = 'development';
@@ -66,23 +68,36 @@ getBranchName().then(
             return Promise.reject('Branch not deployed');
         }
         console.info('Version: ' + pkg.version);
+
         return Promise.resolve();
     }
 )
 
-// 2 - Clean gh-pages directory
+// 2 - Get date
+.then(function () {
+    return execCommand(gitCommands.commitDate).then(
+        function (cdate) {
+            var date = new Date(cdate);
+            pkg.date = (date.getFullYear()) + '-' + (date.getMonth() + 1) + '-' + (date.getDate());
+            console.info('Date: ' + pkg.date);
+            return Promise.resolve();
+        }
+    );
+})
+
+// 3 - Clean gh-pages directory
 .then(function () {
     console.info('Clean gh-pages working directory');
     return del('gh-pages/**/*', {force:true, dot:true});
 })
 
-// 3 - Checkout gh-pages from github
+// 4 - Checkout gh-pages from github
 .then(function () {
     console.info('Checkout gh-pages');
     return execCommand(gitCommands.clone);
 })
 
-// 4 - Copy 'dist' directory contents into corresponding subfolder of gh-pages
+// 5 - Copy 'dist' directory contents into corresponding subfolder of gh-pages
 .then(function() {
     var path = 'gh-pages/' + pkg.version;
     if (!fs.existsSync(path)) {
@@ -93,30 +108,28 @@ getBranchName().then(
     return execCommand('cp -r dist/* ' + path);
 })
 
-// 5 - Upate home file (index.html) in case of a new release
+// 6 - Upate home file (index.html) in case of a new release
 .then(function() {
     // Open index.html file
     var path = 'gh-pages/index.html';
     var index = fs.readFileSync(path, 'utf-8');
-    //console.log(index);
 
     // Check if file has to be updated
     if (index.indexOf(pkg.version) === -1) {
-        var pos = index.indexOf('<a href=\"development');
+        var pos = index.indexOf('<p/>');
         if (pos !== -1) {
             // Insert new link (before 'development' version)
             console.info('Update index.html');
             index = index.substring(0, pos - 1) +
-                    '<a href=\"' + pkg.version + '/index.html\">Version ' + pkg.version + '</a><br/>\n' +
+                    '\n<a href=\"' + pkg.version + '/index.html\">Version ' + pkg.version + '</a> - (' + pkg.date + ')<br/>\n' +
                     index.substring(pos, index.length - 1);
-            //console.log(index);
             fs.writeFileSync(path, index);
         }
     }
     return Promise.resolve();
 })
 
-// 6 - Add, commit and push changes to Github
+// 7 - Add, commit and push changes to Github
 .then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.configUser))
 .then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.configEmail))
 .then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.add))
