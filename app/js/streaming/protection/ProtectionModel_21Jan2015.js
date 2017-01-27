@@ -193,7 +193,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                                     case "expired":
                                         setSessionUsable(event.target, false);
                                         self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, null,
-                                            new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED, "License has expired", null));
+                                            new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_EXPIRED, "License has expired", null));
                                         break;
                                     case "output-restricted":
                                         setSessionUsable(event.target, false);
