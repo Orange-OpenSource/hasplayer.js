@@ -112,7 +112,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                             break;
                         case "waitingforkey":
                             self.debug.log("[DRM][PM_21Jan2015] 'waitingforkey' event");
-                            if (this.session !== null && this.session.licenseStored === true) {
+                            if (this.session !== null && this.session.licenseStored && this.session.usable) {
                                 // Widevine CDM doesn't raised error if keys don't match
                                 // The unique way to check if the received license is valid is to track this event and raise an error
                                 this.session.licenseStored = false;
