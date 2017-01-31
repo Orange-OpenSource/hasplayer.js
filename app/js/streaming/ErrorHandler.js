@@ -66,6 +66,7 @@ MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE = "MANIFEST_E
 MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_STREAM = "MANIFEST_ERR_NO_STREAM";
 MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO = "MANIFEST_ERR_NO_VIDEO";
 MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO = "MANIFEST_ERR_NO_AUDIO";
+MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_TEXT = "MANIFEST_ERR_NO_TEXT";
 MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST = "DOWNLOAD_ERR_MANIFEST";
 MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX = "DOWNLOAD_ERR_SIDX";
 MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_INIT = "DOWNLOAD_ERR_INIT";
