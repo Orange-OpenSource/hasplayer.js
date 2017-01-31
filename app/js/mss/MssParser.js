@@ -74,9 +74,7 @@ Mss.dependencies.MssParser = function() {
                 representations = [],
                 representation,
                 segmentTemplate = {},
-                segments,
                 qualityLevels = null,
-                range,
                 i;
 
             adaptationSet.id = this.domParser.getAttributeValue(streamIndex, "Name");
@@ -121,15 +119,6 @@ Mss.dependencies.MssParser = function() {
 
             // Set SegmentTemplate
             adaptationSet.SegmentTemplate = segmentTemplate;
-
-            segments = segmentTemplate.SegmentTimeline.S_asArray;
-
-            range = {
-                start: segments[0].t / segmentTemplate.timescale,
-                end: (segments[segments.length - 1].t + segments[segments.length - 1].d)  / segmentTemplate.timescale
-            };
-
-            this.metricsModel.addDVRInfo(adaptationSet.contentType, new Date(), range);
 
             return adaptationSet;
         },
@@ -435,6 +424,22 @@ Mss.dependencies.MssParser = function() {
         },
         /* @endif */
 
+        addDVRInfo = function(adaptationSet) {
+            var segmentTemplate = adaptationSet.SegmentTemplate,
+                segments = segmentTemplate.SegmentTimeline.S_asArray;
+
+            if (segments.length === 0) {
+                return;
+            }
+
+            var range = {
+                start: segments[0].t / segmentTemplate.timescale,
+                end: (segments[segments.length - 1].t + segments[segments.length - 1].d)  / segmentTemplate.timescale
+            };
+
+            this.metricsModel.addDVRInfo(adaptationSet.contentType, new Date(), range);
+        },
+
         processManifest = function(manifestLoadedTime) {
             var mpd = {},
                 period,
@@ -515,11 +520,16 @@ Mss.dependencies.MssParser = function() {
 
             adaptations = period.AdaptationSet_asArray;
 
-            // Propagate content protection information into each adaptation
             for (i = 0; i < adaptations.length; i += 1) {
+                // Propagate content protection information into each adaptation
                 if (mpd.ContentProtection !== undefined) {
                     adaptations[i].ContentProtection = mpd.ContentProtection;
                     adaptations[i].ContentProtection_asArray = mpd.ContentProtection_asArray;
+                }
+
+                // Add DVRInfo for live streams
+                if (mpd.type === "dynamic") {
+                    addDVRInfo.call(this, adaptations[i]);
                 }
             }
 
