@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-1-25_13:26:53 / git revision : 8d83420 */
+/* Last build : 2017-1-31_13:35:37 / git revision : 9f2f31a */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.9.0-dev',
-        GIT_TAG = '8d83420',
-        BUILD_DATE = '2017-1-25_13:26:53',
+        GIT_TAG = '9f2f31a',
+        BUILD_DATE = '2017-1-31_13:35:37',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -4733,6 +4733,7 @@ MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_PARSE = "MANIFEST_E
 MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_STREAM = "MANIFEST_ERR_NO_STREAM";
 MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO = "MANIFEST_ERR_NO_VIDEO";
 MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO = "MANIFEST_ERR_NO_AUDIO";
+MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_TEXT = "MANIFEST_ERR_NO_TEXT";
 MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST = "DOWNLOAD_ERR_MANIFEST";
 MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX = "DOWNLOAD_ERR_SIDX";
 MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_INIT = "DOWNLOAD_ERR_INIT";
@@ -4750,6 +4751,7 @@ MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_SERVICE = "MEDIA_KE
 MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_OUTPUT = "MEDIA_KEYERR_OUTPUT";
 MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_HARDWARECHANGE = "MEDIA_KEYERR_HARDWARECHANGE";
 MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_DOMAIN = "MEDIA_KEYERR_DOMAIN";
+MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_EXPIRED = "MEDIA_KEYERR_EXPIRED";
 
 // Key system errors
 MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYSYSERR_ACCESS_DENIED = "MEDIA_KEYSYSERR_ACCESS_DENIED";
@@ -5952,7 +5954,8 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         },
 
         onBytesLoaded = function(request, response) {
-            var deltaDate,
+            var self = this,
+                deltaDate,
                 deltaTimeStamp;
 
             segmentDuration = request.duration;
@@ -5968,7 +5971,7 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
                     deltaDate = (new Date().getTime() - startFragmentInfoDate) / 1000;
                     deltaTimeStamp = (_fragmentInfoTime + segmentDuration) - startTimeStampValue;
                     deltaTime = (deltaTimeStamp - deltaDate) > 0 ? (deltaTimeStamp - deltaDate) : 0;
-                    delayLoadNextFragmentInfo.call(this, deltaTime);
+                    delayLoadNextFragmentInfo.call(self, deltaTime);
                 });
             } catch (e) {
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing fragment info segment", e.message);
@@ -21946,7 +21949,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                             break;
                         case "waitingforkey":
                             self.debug.log("[DRM][PM_21Jan2015] 'waitingforkey' event");
-                            if (this.session !== null && this.session.licenseStored === true) {
+                            if (this.session !== null && this.session.licenseStored && this.session.usable) {
                                 // Widevine CDM doesn't raised error if keys don't match
                                 // The unique way to check if the received license is valid is to track this event and raise an error
                                 this.session.licenseStored = false;
@@ -22027,7 +22030,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                                     case "expired":
                                         setSessionUsable(event.target, false);
                                         self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, null,
-                                            new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED, "License has expired", null));
+                                            new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_EXPIRED, "License has expired", null));
                                         break;
                                     case "output-restricted":
                                         setSessionUsable(event.target, false);
@@ -26167,9 +26170,7 @@ Mss.dependencies.MssParser = function() {
                 representations = [],
                 representation,
                 segmentTemplate = {},
-                segments,
                 qualityLevels = null,
-                range,
                 i;
 
             adaptationSet.id = this.domParser.getAttributeValue(streamIndex, "Name");
@@ -26215,15 +26216,6 @@ Mss.dependencies.MssParser = function() {
             // Set SegmentTemplate
             adaptationSet.SegmentTemplate = segmentTemplate;
 
-            segments = segmentTemplate.SegmentTimeline.S_asArray;
-
-            range = {
-                start: segments[0].t / segmentTemplate.timescale,
-                end: (segments[segments.length - 1].t + segments[segments.length - 1].d)  / segmentTemplate.timescale
-            };
-
-            this.metricsModel.addDVRInfo(adaptationSet.contentType, new Date(), range);
-
             return adaptationSet;
         },
 
@@ -26248,7 +26240,12 @@ Mss.dependencies.MssParser = function() {
             // If still not defined (optionnal for audio stream, see https://msdn.microsoft.com/en-us/library/ff728116%28v=vs.95%29.aspx),
             // then we consider the stream is an audio AAC stream
             if (fourCCValue === null || fourCCValue === "") {
-                fourCCValue = "AAC";
+                if (this.domParser.getAttributeValue(streamIndex, "Type") === 'audio') {
+                    fourCCValue = "AAC";
+                } else {
+                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Codec not supported", {codec: ''});
+                    return null;
+                }
             }
 
             // Check if codec is supported
@@ -26526,6 +26523,22 @@ Mss.dependencies.MssParser = function() {
             return contentProtection;
         },
 
+        addDVRInfo = function(adaptationSet) {
+            var segmentTemplate = adaptationSet.SegmentTemplate,
+                segments = segmentTemplate.SegmentTimeline.S_asArray;
+
+            if (segments.length === 0) {
+                return;
+            }
+
+            var range = {
+                start: segments[0].t / segmentTemplate.timescale,
+                end: (segments[segments.length - 1].t + segments[segments.length - 1].d)  / segmentTemplate.timescale
+            };
+
+            this.metricsModel.addDVRInfo(adaptationSet.contentType, new Date(), range);
+        },
+
         processManifest = function(manifestLoadedTime) {
             var mpd = {},
                 period,
@@ -26600,11 +26613,16 @@ Mss.dependencies.MssParser = function() {
 
             adaptations = period.AdaptationSet_asArray;
 
-            // Propagate content protection information into each adaptation
             for (i = 0; i < adaptations.length; i += 1) {
+                // Propagate content protection information into each adaptation
                 if (mpd.ContentProtection !== undefined) {
                     adaptations[i].ContentProtection = mpd.ContentProtection;
                     adaptations[i].ContentProtection_asArray = mpd.ContentProtection_asArray;
+                }
+
+                // Add DVRInfo for live streams
+                if (mpd.type === "dynamic") {
+                    addDVRInfo.call(this, adaptations[i]);
                 }
             }
 
