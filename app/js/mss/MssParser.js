@@ -144,7 +144,12 @@ Mss.dependencies.MssParser = function() {
             // If still not defined (optionnal for audio stream, see https://msdn.microsoft.com/en-us/library/ff728116%28v=vs.95%29.aspx),
             // then we consider the stream is an audio AAC stream
             if (fourCCValue === null || fourCCValue === "") {
-                fourCCValue = "AAC";
+                if (this.domParser.getAttributeValue(streamIndex, "Type") === 'audio') {
+                    fourCCValue = "AAC";
+                } else {
+                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Codec not supported", {codec: ''});
+                    return null;
+                }
             }
 
             // Check if codec is supported
