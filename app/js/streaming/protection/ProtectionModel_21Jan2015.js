@@ -388,9 +388,8 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             if (videoElement === mediaElement)
                 return;
 
-            // Since this model is a singleton for media key sessions persistance,
-            // we ignore reseting video element.
-            if (mediaElement === null) {
+            // If media key sessions persistence is active, then we ignore reseting video element.
+            if (mediaElement === null && this.config.getParam("Protection.licensePersistence", "boolean", false)) {
                 return;
             }
 
@@ -399,6 +398,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 videoElement.removeEventListener("encrypted", eventHandler);
                 videoElement.removeEventListener("waitingforkey", eventHandler);
                 videoElement.setMediaKeys(null);
+                mediaKeys = null;
             }
 
             videoElement = mediaElement;
