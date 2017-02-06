@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-1-31_13:35:37 / git revision : 9f2f31a */
+/* Last build : 2017-2-6_8:25:18 / git revision : b792a02 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.9.0-dev',
-        GIT_TAG = '9f2f31a',
-        BUILD_DATE = '2017-1-31_13:35:37',
+        GIT_TAG = 'b792a02',
+        BUILD_DATE = '2017-2-6_8:25:18',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -22225,9 +22225,8 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             if (videoElement === mediaElement)
                 return;
 
-            // Since this model is a singleton for media key sessions persistance,
-            // we ignore reseting video element.
-            if (mediaElement === null) {
+            // If media key sessions persistence is active, then we ignore reseting video element.
+            if (mediaElement === null && this.config.getParam("Protection.licensePersistence", "boolean", false)) {
                 return;
             }
 
@@ -22236,6 +22235,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 videoElement.removeEventListener("encrypted", eventHandler);
                 videoElement.removeEventListener("waitingforkey", eventHandler);
                 videoElement.setMediaKeys(null);
+                mediaKeys = null;
             }
 
             videoElement = mediaElement;
