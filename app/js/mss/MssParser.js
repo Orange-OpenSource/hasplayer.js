@@ -75,16 +75,21 @@ Mss.dependencies.MssParser = function() {
                 representation,
                 segmentTemplate = {},
                 qualityLevels = null,
+                subType = null,
                 i;
 
             adaptationSet.id = this.domParser.getAttributeValue(streamIndex, "Name");
             adaptationSet.lang = this.domParser.getAttributeValue(streamIndex, "Language");
             adaptationSet.contentType = this.domParser.getAttributeValue(streamIndex, "Type");
             adaptationSet.mimeType = mimeTypeMap[adaptationSet.contentType];
-            adaptationSet.subType = this.domParser.getAttributeValue(streamIndex, "Subtype");
             adaptationSet.maxWidth = this.domParser.getAttributeValue(streamIndex, "MaxWidth");
             adaptationSet.maxHeight = this.domParser.getAttributeValue(streamIndex, "MaxHeight");
             adaptationSet.BaseURL = baseURL;
+
+            subType = this.domParser.getAttributeValue(streamIndex, "Subtype");
+            if (subType) {
+                adaptationSet.subType = subType;
+            }
 
             // Create a SegmentTemplate with a SegmentTimeline
             segmentTemplate = mapSegmentTemplate.call(this, streamIndex);
