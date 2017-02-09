@@ -173,10 +173,15 @@ Hls.dependencies.HlsFragmentController = function() {
         decryptSegment.call(rslt, bytes, request).then(function(data) {
             //console.saveBinArray(data, request.url.substring(request.url.lastIndexOf('/') + 1));
             try {
-                // Generate media segment (moof) from demultiplexed MPEG2-TS chunk
-                result = generateMediaSegment(data, request);
-                rslt.sequenceNumber++;
-                deferred.resolve(result);
+                // First check stream has not been reset while decrypting the chunk
+                if (!rslt.manifestModel.getValue()) {
+                    deferred.resolve(null);
+                } else {
+                    // Generate media segment (moof) from demultiplexed MPEG2-TS chunk
+                    result = generateMediaSegment(data, request);
+                    rslt.sequenceNumber++;
+                    deferred.resolve(result);
+                }
             } catch (e) {
                 deferred.reject(e);
             }
