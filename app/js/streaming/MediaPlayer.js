@@ -492,6 +492,8 @@ MediaPlayer = function () {
          * <li>'download_bitrate' (see [download_bitrate]{@link MediaPlayer#event:download_bitrate} event specification)
          * <li>'bufferLevel_updated' (see [bufferLevel_updated]{@link MediaPlayer#event:bufferLevel_updated} event specification)
          * <li>'state_changed' (see [state_changed]{@link MediaPlayer#event:state_changed} event specification)
+         * <li>'cueEnter' (see [cueEnter]{@link MediaPlayer#event:cueEnter} event specification)
+         * <li>'cueExit' (see [cueExit]{@link MediaPlayer#event:cueExit} event specification)
          * @method addEventListener
          * @access public
          * @memberof MediaPlayer#
@@ -1542,6 +1544,7 @@ MediaPlayer.PUBLIC_EVENTS = {
      * @param {object} event.data.data - error additionnal data
      */
     'error': 'hasplayer',
+
     /**
     * The warning event is fired when a warning occurs.
     *
@@ -1554,6 +1557,32 @@ MediaPlayer.PUBLIC_EVENTS = {
     * @param {object} event.data.data - warning additionnal data
     */
     'warning': 'hasplayer',
+
+    /**
+     * The manifestUrlUpdate event is fired when the URL of the manifest may have to be refreshed,
+     * since the player failed to download the manifest file (URL expiration for example).
+     * The application shall therefore provide an updated manifest URL by using the method [refreshManifest]{@link MediaPlayer#refreshManifest}
+     *
+     * @event MediaPlayer#manifestUrlUpdate
+     * @param {object} event - the event
+     * @param {object} event.type - the event type ('manifestUrlUpdate')
+     * @param {object} event.data - the event data
+     * @param {object} event.data.url - the current manifest url
+     */
+    'manifestUrlUpdate': 'hasplayer',
+
+    /**
+     * The metricAdded event is fired when a new metric has been added,
+     * TBD
+     */
+    'metricAdded' : 'hasplayer',
+
+    /**
+     * The metricChanged event is fired when a metric has been updated,
+     * TBD
+     */
+    'metricChanged' : 'hasplayer',
+
     /**
      * The cueEnter event is fired when a subtitle cue needs to be displayed.
      *
@@ -1585,31 +1614,6 @@ MediaPlayer.PUBLIC_EVENTS = {
     'cueExit': 'hasplayer',
 
     /**
-     * The manifestUrlUpdate event is fired when the URL of the manifest may have to be refreshed,
-     * since the player failed to download the manifest file (URL expiration for example).
-     * The application shall therefore provide an updated manifest URL by using the method [refreshManifest]{@link MediaPlayer#refreshManifest}
-     *
-     * @event MediaPlayer#manifestUrlUpdate
-     * @param {object} event - the event
-     * @param {object} event.type - the event type ('manifestUrlUpdate')
-     * @param {object} event.data - the event data
-     * @param {object} event.data.url - the current manifest url
-     */
-    'manifestUrlUpdate': 'hasplayer',
-
-    /**
-     * The metricAdded event is fired when a new metric has been added,
-     * TBD
-     */
-    'metricAdded' : 'hasplayer',
-
-    /**
-     * The metricChanged event is fired when a metric has been updated,
-     * TBD
-     */
-    'metricChanged' : 'hasplayer',
-
-    /**
      * The 'play_bitrate' event is fired when the current played bitrate has changed.
      *
      * @event MediaPlayer#play_bitrate
@@ -1638,7 +1642,6 @@ MediaPlayer.PUBLIC_EVENTS = {
      * @param {number} event.detail.height - in case of video stream, the video height of the representation
      */
     'download_bitrate': 'video',
-
 
     /**
      * The bufferLevel_updated event is fired when the buffer level changed.
