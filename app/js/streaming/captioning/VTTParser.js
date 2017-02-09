@@ -126,7 +126,6 @@ MediaPlayer.utils.VTTParser = function () {
                         //style: cueInfo[3].trim(),
                         data: ''
                     };
-                    console.log('[text] Buffered range', cue);
                 } else if (cue !== null) {
                     cue.data += ((cue.data.length === 0) ? '' : '\n') + lines[i];
                 }
