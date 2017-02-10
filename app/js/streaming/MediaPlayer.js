@@ -341,8 +341,16 @@ MediaPlayer = function () {
         return null;
     };
 
+    var _isEqual = function (prop1, prop2) {
+        if (!prop1 && !prop2) {
+            // let's consider in this case that null and undefined are equal
+            return true;
+        }
+        return prop1 === prop2;
+    };
+
     var _isSameTrack = function (track1, track2) {
-        return (track1.id === track2.id) && (track1.lang === track2.lang) && (track1.subType === track2.subType);
+        return (_isEqual(track1.id,track2.id) && _isEqual(track1.lang ,track2.lang) && _isEqual(track1.subType, track2.subType));
     };
 
     // parse the arguments of load function to make an object
