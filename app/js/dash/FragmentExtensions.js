@@ -141,8 +141,8 @@ Dash.dependencies.FragmentExtensions = function () {
                 deferred.reject(errorStr);
             };
 
-            request.responseType = "arraybuffer";
             request.open("GET", url);
+            request.responseType = "arraybuffer";
             request.send(null);
 
             return deferred.promise;

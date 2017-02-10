@@ -1,4 +1,4 @@
-﻿/*
+/*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
  *
@@ -92,6 +92,7 @@ MediaPlayer.dependencies.XHRLoader = function() {
 
             try {
                 _xhr = new XMLHttpRequest();
+                _xhr.open("GET", _url, true);
 
                 if (_responseType) {
                     _xhr.responseType = _responseType;
@@ -110,7 +111,6 @@ MediaPlayer.dependencies.XHRLoader = function() {
                 // Add startDate attribute to store request start time
                 _xhr.startDate = new Date();
 
-                _xhr.open("GET", _url, true);
                 _xhr.send();
             } catch (e) {
                 _xhr.onerror();
