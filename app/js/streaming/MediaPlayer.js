@@ -297,9 +297,23 @@ MediaPlayer = function () {
         }
     };
 
+    var _toMediaPlayerTrack = function (track) {
+        if (!track) {
+            return null;
+        }
+        var _track = {};
+        if (track.id) {
+            _track.id = track.id;
+        }
+        if (track.lang) {
+            _track.lang = track.lang;
+        }
+        if (track.subType) {
+            _track.subType = track.subType;
+        }
+        return _track;
+    };
 
-
-    // TODO : remove this when migration of method getTracks will be done on all the process
     var _getTracksFromType = function (_type) {
         if (!streamController) {
             return null;
@@ -350,7 +364,7 @@ MediaPlayer = function () {
     };
 
     var _isSameTrack = function (track1, track2) {
-        return (_isEqual(track1.id,track2.id) && _isEqual(track1.lang ,track2.lang) && _isEqual(track1.subType, track2.subType));
+        return (_isEqual(track1.id, track2.id) && _isEqual(track1.lang, track2.lang) && _isEqual(track1.subType, track2.subType));
     };
 
     // parse the arguments of load function to make an object
@@ -1204,11 +1218,7 @@ MediaPlayer = function () {
 
             var tracks = [];
             for (var i = 0; i < _tracks.length; i += 1) {
-                tracks.push({
-                    id: _tracks[i].id,
-                    lang: _tracks[i].lang,
-                    subType: _tracks[i].subType
-                });
+                tracks.push(_toMediaPlayerTrack(_tracks[i]));
             }
 
             return tracks;
@@ -1272,17 +1282,7 @@ MediaPlayer = function () {
                 throw new Error('MediaPlayer Invalid Argument - "type" should be defined and shoud be kind of MediaPlayer.TRACKS_TYPE');
             }
 
-            var _track = _getSelectedTrackFromType(type);
-
-            if (!_track) {
-                return null;
-            }
-
-            return {
-                id: _track.id,
-                lang: _track.lang,
-                subType: _track.subType
-            };
+            return _toMediaPlayerTrack(_getSelectedTrackFromType(type));
         },
 //#endregion
 
