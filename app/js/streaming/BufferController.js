@@ -1157,11 +1157,6 @@ MediaPlayer.dependencies.BufferController = function() {
                 idx,
                 self = this;
 
-            // Check if running state
-            if (!isRunning.call(self)) {
-                return Q.when(true);
-            }
-
             if (manifest.name !== "M3U") {
                 return Q.when(true);
             }
@@ -1187,22 +1182,18 @@ MediaPlayer.dependencies.BufferController = function() {
 
             self.parser.hlsParser.updatePlaylist(representation, data).then(
                 function() {
-                    if (!isRunning.call(self)) {
-                        deferred.resolve();
-                    } else {
-                        availableRepresentations = updateRepresentations.call(self, data, periodInfo);
-                        _currentRepresentation = getRepresentationForQuality.call(self, currentDownloadQuality);
-                        representation = manifest.Period_asArray[periodInfo.index].AdaptationSet_asArray[idx].Representation_asArray[currentDownloadQuality];
+                    availableRepresentations = updateRepresentations.call(self, data, periodInfo);
+                    _currentRepresentation = getRepresentationForQuality.call(self, currentDownloadQuality);
+                    representation = manifest.Period_asArray[periodInfo.index].AdaptationSet_asArray[idx].Representation_asArray[currentDownloadQuality];
 
-                        // Refresh playlist according to last segment duration
-                        var segments = representation.SegmentList.SegmentURL_asArray;
-                        var segment = segments[segments.length-1];
-                        playlistRefreshTimeout = setTimeout(function() {
-                            updatePlayListForRepresentation.call(self);
-                        }, ((segment.duration - 1) * 1000));
+                    // Refresh playlist according to last segment duration
+                    var segments = representation.SegmentList.SegmentURL_asArray;
+                    var segment = segments[segments.length-1];
+                    playlistRefreshTimeout = setTimeout(function() {
+                        updatePlayListForRepresentation.call(self);
+                    }, ((segment.duration - 1) * 1000));
 
-                        deferred.resolve();
-                    }
+                    deferred.resolve();
                 },
                 function(err) {
                     if (err) {
