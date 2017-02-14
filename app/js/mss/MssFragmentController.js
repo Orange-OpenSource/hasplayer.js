@@ -159,8 +159,7 @@ Mss.dependencies.MssFragmentController = function() {
                 trunDuration,
                 mdatData;
 
-            // This function duplicates the first sample (from KeyFrame request) to generate
-            // a full segment with the segment duration.
+            // This function duplicates the first sample (from KeyFrame request) to generate a full segment that lasts segmentDuration.
 
             // Get references on boxes
             moof = fragment.getBoxByType("moof");
@@ -169,26 +168,32 @@ Mss.dependencies.MssFragmentController = function() {
             trun = traf.getBoxByType("trun");
             tfhd = traf.getBoxByType("tfhd");
 
-            // We will set the sample_duration for each segment, then we do set also for first segment duration if not set
-            if (trun.samples_table[0].sample_duration === undefined) {
+            // Set first sample duration (if not set)
+            // (sample duration has to be set for each sample in case we have to modify last sample duration to complete the segment)
+            if (!trun.samples_table[0].sample_duration) {
                 trun.samples_table[0].sample_duration = tfhd.default_sample_duration;
             }
+
+            // Update trun flags to indicate sample-duration-present flag is set (since we do set sample_duration for each sample)
+            trun.flags |= 0x000100;
+
+            // Update tfhd flags to indicate default-sample-duration-present flag is not set (since we do set sample_duration for each sample)
+            tfhd.flags &= 0xFFFFF7;
 
             // Determine number of samples according to the segment duration
             trunEntries = Math.floor(segmentDuration / trun.samples_table[0].sample_duration);
 
-            // Add samples in trun box to complete fragment ((trunEntries - 1) for not considering already existing first fragment)
+            // Duplicate 1st sample in trun box to complete fragment
             for (i = 0; i < (trunEntries - 1); i++) {
                 trun.samples_table.push(trun.samples_table[0]);
             }
+            trun.sample_count = trun.samples_table.length;
 
             // Patch/lengthen the last sample duration if segment not complete
             trunDuration = trunEntries * trun.samples_table[0].sample_duration;
             if (trunDuration < segmentDuration) {
                 trun.samples_table[trun.samples_table.length - 1].sample_duration += segmentDuration - trunDuration;
             }
-
-            trun.sample_count = trun.samples_table.length;
 
             // Update PIFF Sample Encryption box
             sepiff = traf.getBoxByType("sepiff");
@@ -223,7 +228,7 @@ Mss.dependencies.MssFragmentController = function() {
             // Duplicate mdat data
             mdatData = mdat.data;
             mdat.data = new Uint8Array(mdatData.length * trun.sample_count);
-            for (i = 0; i < trun.sample_count; i += 1) {
+            for (i = 0; i < trun.sample_count; i++) {
                 mdat.data.set(mdatData, mdatData.length * i);
             }
         },
@@ -273,6 +278,14 @@ Mss.dependencies.MssFragmentController = function() {
             if (trun.samples_table.length === 1 && sampleDuration < fragmentDuration) {
                 duplicateSample(fragment, fragmentDuration);
             }
+
+            // if (tfhd.default_sample_duration) {
+            //     for (i = 0; i < trun.samples_table.length; i++) {
+            //         trun.samples_table[i].sample_duration = tfhd.default_sample_duration;
+            //     }
+            //     trun.flags |= 0x000100;
+            //     tfhd.flags &= 0xFFFFF7;
+            // }
 
             // Update tfhd.track_ID field
             tfhd.track_ID = trackId;
@@ -350,11 +363,10 @@ Mss.dependencies.MssFragmentController = function() {
             trun.flags |= 0x000001; // set trun.data-offset-present to true
             trun.data_offset = 0; // Set a default value for trun.data_offset
 
-            // Determine new size of the converted fragment
-            // and allocate new data buffer
+            // Determine new size of the converted fragment and allocate new data buffer
             fragment_size = fragment.getLength();
 
-            // updata trun.data_offset field = offset of first data byte (inside mdat box)
+            // Update trun.data_offset field = offset of first data byte (inside mdat box)
             trun.data_offset = fragment_size - mdat.size + 8; // 8 = 'size' + 'type' mdat fields length
 
             // Update saio box offset field according to new senc box offset
