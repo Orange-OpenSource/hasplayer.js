@@ -153,7 +153,7 @@ Hls.dependencies.HlsParser = function() {
                 return false;
             }
 
-            this.debug.log(manifest);
+            // this.debug.log(manifest);
 
             if (manifest.indexOf('#EXTM3U') !== 0) {
                 return false;
