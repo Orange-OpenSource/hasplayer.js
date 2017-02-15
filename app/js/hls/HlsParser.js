@@ -295,7 +295,6 @@ Hls.dependencies.HlsParser = function() {
                 // Consider representation of current and downloaded quality
                 representation = adaptationSet.Representation_asArray[quality],
                 request = new MediaPlayer.vo.SegmentRequest(),
-                self = this,
                 manifestDuration,
                 mpdLoadedTime,
                 maxSequenceNumber,
@@ -377,8 +376,8 @@ Hls.dependencies.HlsParser = function() {
             };
 
             if (representation.codecs === "") {
-                self.debug.log("[HlsParser]", "Load initialization segment: " + request.url);
-                self.fragmentLoader.load(request).then(onLoaded.bind(self, representation), onError.bind(self));
+                this.debug.log("[HlsParser]", "Load initialization segment: " + request.url);
+                this.fragmentLoader.load(request).then(onLoaded.bind(this, representation), onError.bind(this));
             } else {
                 deferred.resolve();
             }
@@ -400,8 +399,8 @@ Hls.dependencies.HlsParser = function() {
         },
 
         updatePlaylist = function(representation, adaptation) {
-            var deferred = Q.defer(),
-                self = this;
+            var self = this,
+                deferred = Q.defer();
 
             this.debug.log("[HlsParser]", "Load playlist manifest: " + representation.url);
             xhrLoader = new MediaPlayer.dependencies.XHRLoader();
@@ -440,7 +439,8 @@ Hls.dependencies.HlsParser = function() {
         },
 
         processManifest = function(manifest, baseUrl) {
-            var deferred = Q.defer(),
+            var self = this,
+                deferred = Q.defer(),
                 mpd,
                 period,
                 adaptationsSets = [],
@@ -454,7 +454,6 @@ Hls.dependencies.HlsParser = function() {
                 media,
                 quality,
                 playlistDefers = [],
-                self = this,
                 i = 0;
 
             if (manifest.indexOf('#EXTM3U') !== 0) {
