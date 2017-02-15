@@ -290,7 +290,9 @@ Hls.dependencies.HlsParser = function() {
         postProcess = function(manifest, quality) {
             var deferred = Q.defer(),
                 period = manifest.Period_asArray[0],
+                // Consider video AdaptationSet (always the 1st one)
                 adaptationSet = period.AdaptationSet_asArray[0],
+                // Consider representation of current and downloaded quality
                 representation = adaptationSet.Representation_asArray[quality],
                 request = new MediaPlayer.vo.SegmentRequest(),
                 self = this,
@@ -316,14 +318,11 @@ Hls.dependencies.HlsParser = function() {
 
             // Dynamic use case
             if (manifest.type === "dynamic") {
-                // => set manifest refresh period as the duration of 1 fragment/chunk
-                //manifest.minimumUpdatePeriod = representation.SegmentList.duration;
-
-                // => set availabilityStartTime property
+                // Set availabilityStartTime property
                 mpdLoadedTime = new Date();
                 manifest.availabilityStartTime = new Date(mpdLoadedTime.getTime() - (manifestDuration * 1000));
 
-                // => set timeshift buffer depth
+                // Set timeshift buffer depth
                 manifest.timeShiftBufferDepth = manifestDuration;
             }
 
@@ -374,7 +373,6 @@ Hls.dependencies.HlsParser = function() {
             };
 
             var onError = function() {
-                // ERROR
                 deferred.resolve();
             };
 
@@ -556,7 +554,7 @@ Hls.dependencies.HlsParser = function() {
             representation = adaptationsSets[0].Representation_asArray[quality];
             playlistDefers.push(updatePlaylist.call(this, representation, adaptationSet));
 
-            // alternative renditions of the same content (alternative audio tracks or subtitles) #EXT-X-MEDIA
+            // Alternative renditions of the same content (alternative audio tracks or subtitles) #EXT-X-MEDIA
             medias = getMedias(manifest);
             for (i =0; i < medias.length; i++) {
                 media = medias[i];
