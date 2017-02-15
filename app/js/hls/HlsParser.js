@@ -295,8 +295,9 @@ Hls.dependencies.HlsParser = function() {
                 request = new MediaPlayer.vo.SegmentRequest(),
                 self = this,
                 manifestDuration,
-                mpdLoadedTime;
-
+                mpdLoadedTime,
+                maxSequenceNumber,
+                i, j, k;
 
             period.start = 0; //segmentTimes[adaptationSet.Representation_asArray[0].SegmentList.startNumber];
 
@@ -328,6 +329,27 @@ Hls.dependencies.HlsParser = function() {
 
             // Set minBufferTime
             manifest.minBufferTime = representation.SegmentList.duration * 3; //MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME
+
+            // Align segment lists of all adaptations
+            maxSequenceNumber = Math.max.apply(null, period.AdaptationSet_asArray.map(function(adaptation) {
+                var repIndex = quality > adaptation.Representation_asArray.length ? 0 : quality;
+                return adaptation.Representation_asArray[repIndex].SegmentList.startNumber;
+            }));
+            for (i = 0; i < period.AdaptationSet_asArray.length; i++) {
+                var adaptation = period.AdaptationSet_asArray[i];
+                for (j = 0; j < adaptation.Representation_asArray.length; j++) {
+                    if (adaptation.Representation_asArray[j].SegmentList) {
+                        var segments = adaptation.Representation_asArray[j].SegmentList.SegmentURL_asArray;
+                        if (segments[0].sequenceNumber < maxSequenceNumber) {
+                            removeSegments(segments, maxSequenceNumber);
+                            segments[0].time = 0;
+                            for (k = 1; k < segments.length; k++) {
+                                segments[k].time = segments[k - 1].time + segments[k - 1].duration;
+                            }
+                        }
+                    }
+                }
+            }
 
             // Download initialization data (PSI, IDR...) of 1st representation to obtain codec information
             representation = adaptationSet.Representation_asArray[quality];
