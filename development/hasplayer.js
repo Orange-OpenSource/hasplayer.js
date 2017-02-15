@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-2-6_8:25:18 / git revision : b792a02 */
+/* Last build : 2017-2-15_14:15:37 / git revision : 0aa2ae2 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.9.0-dev',
-        GIT_TAG = 'b792a02',
-        BUILD_DATE = '2017-2-6_8:25:18',
+        GIT_TAG = '0aa2ae2',
+        BUILD_DATE = '2017-2-15_14:15:37',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -13262,7 +13262,7 @@ MediaPlayer.utils.VTTParser = function () {
             match = REGEXP_TIMESTAMPMAP.exec(data);
 
             if (!match) {
-                return;
+                return -1;
             }
             attrs = match[1];
 
@@ -13323,8 +13323,8 @@ MediaPlayer.utils.VTTParser = function () {
                 i;
 
             var offset = getTimestampOffset.call(this, parseTimestampMap(data), request);
-
-            var lines = data.split(REGEXP_LINEBREAK);
+            
+            var lines = data.split(REGEXP_LINEBREAK);            
 
             for (i = 0; i < lines.length; i++) {
                 line = lines[i].trim();
