@@ -276,6 +276,7 @@ mpegts.h264.bytestreamToMp4 = function(data) { // data as Uint8Array
                 data[startCodeIndex + 1] = (naluSize & 0x00FF0000) >> 16;
                 data[startCodeIndex + 2] = (naluSize & 0x0000FF00) >> 8;
                 data[startCodeIndex + 3] = (naluSize & 0x000000FF);
+                // console.log("[H264] NALU: type = " + (data[i + 4] & 0x1F) + ", size = " + naluSize);
             }
 
             startCodeIndex = i;
@@ -291,6 +292,7 @@ mpegts.h264.bytestreamToMp4 = function(data) { // data as Uint8Array
     data[startCodeIndex + 1] = (naluSize & 0x00FF0000) >> 16;
     data[startCodeIndex + 2] = (naluSize & 0x0000FF00) >> 8;
     data[startCodeIndex + 3] = (naluSize & 0x000000FF);
+    // console.log("[H264] NALU: type = " + (data[i + 4] & 0x1F) + ", size = " + naluSize);
 
 };
 
