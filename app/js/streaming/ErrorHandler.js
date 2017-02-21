@@ -74,6 +74,7 @@ MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT = "DOWNLOAD
 MediaPlayer.dependencies.ErrorHandler.prototype.CC_ERR_PARSE = "CC_ERR_PARSE";
 
 // HLS errors
+MediaPlayer.dependencies.ErrorHandler.prototype.HLS_INVALID_PACKET_ERROR = "HLS_INVALID_PACKET_ERROR";
 MediaPlayer.dependencies.ErrorHandler.prototype.HLS_DEMUX_ERROR = "HLS_DEMUX_ERROR";
 MediaPlayer.dependencies.ErrorHandler.prototype.HLS_INVALID_KEY_ERROR = "HLS_INVALID_KEY_ERROR";
 

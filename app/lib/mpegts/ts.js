@@ -81,6 +81,13 @@ mpegts.ts.TsPacket.prototype.parse = function(data) {
     }
 };
 
+mpegts.ts.TsPacket.prototype.checkSyncWord = function(data) {
+    var byteId = 0;
+    var sync = data[byteId];
+
+    return (sync === this.SYNC_WORD);
+};
+
 mpegts.ts.TsPacket.prototype.getPid = function() {
     return this.m_nPID;
 };
