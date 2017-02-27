@@ -153,6 +153,12 @@ MediaPlayer.dependencies.BufferController = function() {
                 return;
             }
 
+            // We check also if buffering process is not already started
+            // This may happen if doStart is called by Stream on 'play' event after a seek
+            if (deferredFragmentBuffered !== null) {
+                return;
+            }
+
             if (seeking === false) {
                 currentTime = new Date();
                 clearPlayListTraceMetrics(currentTime, MediaPlayer.vo.metrics.PlayList.Trace.USER_REQUEST_STOP_REASON);
@@ -209,7 +215,7 @@ MediaPlayer.dependencies.BufferController = function() {
             // Wait for current buffering process to be completed before restarting
             Q.when(deferredFragmentBuffered ? deferredFragmentBuffered.promise : true).then(
                 function() {
-                    //self.debug.log("[BufferController]["+type+"] SEEK: deferredFragmentBuffered = "+deferredFragmentBuffered+" Call start!");
+                    // self.debug.log("[BufferController]["+type+"] SEEK: do start");
                     doStart.call(self);
                 }
             );
@@ -274,7 +280,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 initData = response.data,
                 quality = request.quality;
 
-            if (!isRunning()) {
+            if (!isRunning.call(this)) {
                 return;
             }
 
@@ -291,7 +297,7 @@ MediaPlayer.dependencies.BufferController = function() {
                         appendToBuffer.call(self, data, request.quality).then(
                             function() {
                                 // Load next media segment
-                                if (isRunning()) {
+                                if (isRunning.call(self)) {
                                     loadNextFragment.call(self);
                                 }
                             }
@@ -327,7 +333,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
             segmentDuration = request.duration;
 
-            if (!isRunning()) {
+            if (!isRunning.call(this)) {
                 return;
             }
 
@@ -857,7 +863,7 @@ MediaPlayer.dependencies.BufferController = function() {
                     function() {
                         self.debug.log("[BufferController][" + type + "] Initialization segment buffered");
                         // Load next media segment
-                        if (isRunning()) {
+                        if (isRunning.call(self)) {
                             loadNextFragment.call(self);
                         }
                     }
@@ -1141,7 +1147,7 @@ MediaPlayer.dependencies.BufferController = function() {
                     }
                 },
                 function(err) {
-                    signalSegmentBuffered();
+                    signalSegmentBuffered.call(self);
                     if (err) {
                         self.errHandler.sendError(err.name, err.message, err.data);
                     }
