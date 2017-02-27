@@ -20,19 +20,19 @@ MediaPlayer.dependencies.ErrorHandler = function () {
         debug: undefined,
 
         sendWarning: function (code, message, data) {
+            this.debug.warn("[Warn] Code: " + code + ", Message: " + message + ", Data: " + JSON.stringify(data, null, '\t'));
             this.eventBus.dispatchEvent({
                 type: "warning",
                 data: {code : code, message: message, data: data}
             });
-            this.debug.warn("[Warn] Code: " + code + ", Message: " + message + ", Data: " + JSON.stringify(data, null, '\t'));
         },
 
         sendError: function (code, message, data) {
+            this.debug.error("[Error] Code: " + code + ", Message: " + message + ", Data: " + JSON.stringify(data, null, '\t'));
             this.eventBus.dispatchEvent({
                 type: "error",
                 data: {code : code, message: message, data: data}
             });
-            this.debug.error("[Error] Code: " + code + ", Message: " + message + ", Data: " + JSON.stringify(data, null, '\t'));
         }
     };
 };
