@@ -26,8 +26,7 @@ MediaPlayer.rules.DownloadRatioRule = function() {
         name: "DownloadRatioRule",
 
         checkIndex: function(current, metrics, data) {
-            var self = this,
-                requests = self.metricsExt.getHttpRequests(metrics),
+            var requests = this.metricsExt.getHttpRequests(metrics),
                 lastRequest = null,
                 downloadTime,
                 totalTime,
@@ -44,13 +43,13 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                 p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
 
             if (data && data.hasOwnProperty('type')) {
-                latencyInBandwidth = self.config.getParamFor(data.type, "ABR.latencyInBandwidth", "boolean", true);
-                switchUpRatioSafetyFactor = self.config.getParamFor(data.type, "ABR.switchUpRatioSafetyFactor", "number", 1.5);
-                //self.debug.log("Checking download ratio rule...");
-                self.debug.log("[DownloadRatioRule][" + data.type + "] Checking download ratio rule... (current = " + current + ")");
+                latencyInBandwidth = this.config.getParamFor(data.type, "ABR.latencyInBandwidth", "boolean", true);
+                switchUpRatioSafetyFactor = this.config.getParamFor(data.type, "ABR.switchUpRatioSafetyFactor", "number", 1.5);
+                //this.debug.log("Checking download ratio rule...");
+                this.debug.log("[DownloadRatioRule][" + data.type + "] Checking download ratio rule... (current = " + current + ")");
 
                 if (!metrics) {
-                    self.debug.log("[DownloadRatioRule][" + data.type + "] No metrics, bailing.");
+                    this.debug.log("[DownloadRatioRule][" + data.type + "] No metrics, bailing.");
                     return new MediaPlayer.rules.SwitchRequest();
                 }
 
@@ -64,7 +63,7 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                 }
 
                 if (lastRequest === null) {
-                    self.debug.log("[DownloadRatioRule][" + data.type + "] No valid requests made for this stream yet, bailing.");
+                    this.debug.log("[DownloadRatioRule][" + data.type + "] No valid requests made for this stream yet, bailing.");
                     return new MediaPlayer.rules.SwitchRequest();
                 }
 
@@ -72,7 +71,7 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                 downloadTime = (lastRequest.tfinish.getTime() - lastRequest.tresponse.getTime()) / 1000;
 
                 if (totalTime <= 0) {
-                    self.debug.log("[DownloadRatioRule][" + data.type + "] Don't know how long the download of the last fragment took, bailing.");
+                    this.debug.log("[DownloadRatioRule][" + data.type + "] Don't know how long the download of the last fragment took, bailing.");
                     return new MediaPlayer.rules.SwitchRequest();
                 }
 
@@ -80,22 +79,24 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                     lastRequest.mediaduration === undefined ||
                     lastRequest.mediaduration <= 0 ||
                     isNaN(lastRequest.mediaduration)) {
-                    self.debug.log("[DownloadRatioRule][" + data.type + "] Don't know the duration of the last media fragment, bailing.");
+                    this.debug.log("[DownloadRatioRule][" + data.type + "] Don't know the duration of the last media fragment, bailing.");
                     return new MediaPlayer.rules.SwitchRequest();
                 }
 
-                self.debug.log("[DownloadRatioRule][" + data.type + "] DL: " + Number(downloadTime.toFixed(3)) + "s, Total: " + Number(totalTime.toFixed(3)) + "s");
-
                 totalBytesLength = lastRequest.bytesLength;
+
+                this.debug.log("[DownloadRatioRule][" + data.type + "] DL: " + Number(downloadTime.toFixed(3)) + "s, Total: " + Number(totalTime.toFixed(3)) + "s, Length: " + totalBytesLength);
 
                 // Take average bandwidth over 3 requests
                 count = 1;
                 while (i >= 0 && count < 3) {
                     if (requests[i].tfinish && requests[i].trequest && requests[i].tresponse && requests[i].bytesLength > 0) {
-                        self.debug.log("[DownloadRatioRule][" + data.type + "] length: " + requests[i].bytesLength + ", time: " + ((requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1000));
+                        var _totalTime = (requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1000;
+                        var _downloadTime = (requests[i].tfinish.getTime() - requests[i].tresponse.getTime()) / 1000;
+                        this.debug.log("[DownloadRatioRule][" + data.type + "] DL: " + Number(_downloadTime.toFixed(3)) + "s, Total: " + Number(_totalTime.toFixed(3)) + "s, Length: " + requests[i].bytesLength);
+                        totalTime += _totalTime;
+                        downloadTime += _downloadTime;
                         totalBytesLength += requests[i].bytesLength;
-                        totalTime += (requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1000;
-                        downloadTime += (requests[i].tfinish.getTime() - requests[i].tresponse.getTime()) / 1000;
                         count += 1;
                     }
                     i--;
@@ -106,17 +107,17 @@ MediaPlayer.rules.DownloadRatioRule = function() {
 
                 calculatedBandwidth = latencyInBandwidth ? (totalBytesLength / totalTime) : (totalBytesLength / downloadTime);
 
-                self.debug.log("[DownloadRatioRule][" + data.type + "] BW = " + Math.round(calculatedBandwidth / 1000) + " kb/s");
+                this.debug.log("[DownloadRatioRule][" + data.type + "] BW = " + Math.round(calculatedBandwidth / 1000) + " kb/s");
 
                 if (isNaN(calculatedBandwidth)) {
                     return new MediaPlayer.rules.SwitchRequest();
                 }
 
-                count = self.manifestExt.getRepresentationCount(data);
-                currentRepresentation = self.manifestExt.getRepresentationFor(current, data);
-                currentBandwidth = self.manifestExt.getBandwidth(currentRepresentation);
+                count = this.manifestExt.getRepresentationCount(data);
+                currentRepresentation = this.manifestExt.getRepresentationFor(current, data);
+                currentBandwidth = this.manifestExt.getBandwidth(currentRepresentation);
                 for (i = 0; i < count; i += 1) {
-                    bandwidths.push(self.manifestExt.getRepresentationBandwidth(data, i));
+                    bandwidths.push(this.manifestExt.getRepresentationBandwidth(data, i));
                 }
                 if (calculatedBandwidth <= currentBandwidth) {
                     for (i = current - 1; i > 0; i -= 1) {
@@ -127,12 +128,12 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                     q = i;
                     p = MediaPlayer.rules.SwitchRequest.prototype.WEAK;
 
-                    self.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count - 1) + " (" + bandwidths[q] + "), p=" + p);
+                    this.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count - 1) + " (" + bandwidths[q] + "), p=" + p);
                     return new MediaPlayer.rules.SwitchRequest(q, p);
                 } else {
                     for (i = count - 1; i > current; i -= 1) {
                         if (calculatedBandwidth > (bandwidths[i] * switchUpRatioSafetyFactor)) {
-                            //self.debug.log("[DownloadRatioRule][" + data.type + "] bw = " + calculatedBandwidth + " results[i] * switchUpRatioSafetyFactor =" + (bandwidths[i] * switchUpRatioSafetyFactor) + " with i=" + i);
+                            //this.debug.log("[DownloadRatioRule][" + data.type + "] bw = " + calculatedBandwidth + " results[i] * switchUpRatioSafetyFactor =" + (bandwidths[i] * switchUpRatioSafetyFactor) + " with i=" + i);
                             break;
                         }
                     }
@@ -140,7 +141,7 @@ MediaPlayer.rules.DownloadRatioRule = function() {
                     q = i;
                     p = MediaPlayer.rules.SwitchRequest.prototype.STRONG;
 
-                    self.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count - 1) + " (" + bandwidths[q] + "), p=" + p);
+                    this.debug.info("[DownloadRatioRule][" + data.type + "] SwitchRequest: q=" + q + "/" + (count - 1) + " (" + bandwidths[q] + "), p=" + p);
                     return new MediaPlayer.rules.SwitchRequest(q, p);
                 }
             } else {

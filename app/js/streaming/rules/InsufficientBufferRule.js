@@ -27,8 +27,7 @@ MediaPlayer.rules.InsufficientBufferRule = function() {
         name: "InsufficientBufferRule",
 
         checkIndex: function(current, metrics, data, playerState) {
-            var self = this,
-                bufferLevel = self.metricsExt.getCurrentBufferLevel(metrics),
+            var bufferLevel = this.metricsExt.getCurrentBufferLevel(metrics),
                 minBufferTime,
                 switchLowerBufferRatio,
                 switchLowerBufferTime,
@@ -47,36 +46,36 @@ MediaPlayer.rules.InsufficientBufferRule = function() {
 
             // Check if we start buffering the stream. In this case we ignore the rule
             if (playerState === 'buffering') {
-                self.isStartBuffering[data.type] = true;
+                this.isStartBuffering[data.type] = true;
             }
 
             if (bufferLevel === null) {
                 return new MediaPlayer.rules.SwitchRequest();
             }
 
-            self.debug.info("[InsufficientBufferRule][" + data.type + "] Checking buffer level ... (current = " + current +
+            this.debug.info("[InsufficientBufferRule][" + data.type + "] Checking buffer level ... (current = " + current +
                 ", buffer level = " + (Math.round(bufferLevel.level * 100) / 100) +
-                ", buffering = " + self.isStartBuffering[data.type] + ")");
+                ", buffering = " + this.isStartBuffering[data.type] + ")");
 
 
-            mpd = self.manifestExt.getMpd(self.manifestModel.getValue());
+            mpd = this.manifestExt.getMpd(this.manifestModel.getValue());
             if (mpd) {
-                minBufferTime = self.config.getParamFor(data.type, "BufferController.minBufferTime", "number", mpd.manifest.minBufferTime);
-                switchLowerBufferRatio = self.config.getParamFor(data.type, "ABR.switchLowerBufferRatio", "number", 0.25);
-                switchLowerBufferTime = self.config.getParamFor(data.type, "ABR.switchLowerBufferTime", "number", switchLowerBufferRatio * minBufferTime);
-                switchDownBufferRatio = self.config.getParamFor(data.type, "ABR.switchDownBufferRatio", "number", 0.5);
-                switchDownBufferTime = self.config.getParamFor(data.type, "ABR.switchDownBufferTime", "number", switchDownBufferRatio * minBufferTime);
-                switchUpBufferRatio = self.config.getParamFor(data.type, "ABR.switchUpBufferRatio", "number", 0.75);
-                switchUpBufferTime = self.config.getParamFor(data.type, "ABR.switchUpBufferTime", "number", switchUpBufferRatio * minBufferTime);
+                minBufferTime = this.config.getParamFor(data.type, "BufferController.minBufferTime", "number", mpd.manifest.minBufferTime);
+                switchLowerBufferRatio = this.config.getParamFor(data.type, "ABR.switchLowerBufferRatio", "number", 0.25);
+                switchLowerBufferTime = this.config.getParamFor(data.type, "ABR.switchLowerBufferTime", "number", switchLowerBufferRatio * minBufferTime);
+                switchDownBufferRatio = this.config.getParamFor(data.type, "ABR.switchDownBufferRatio", "number", 0.5);
+                switchDownBufferTime = this.config.getParamFor(data.type, "ABR.switchDownBufferTime", "number", switchDownBufferRatio * minBufferTime);
+                switchUpBufferRatio = this.config.getParamFor(data.type, "ABR.switchUpBufferRatio", "number", 0.75);
+                switchUpBufferTime = this.config.getParamFor(data.type, "ABR.switchUpBufferTime", "number", switchUpBufferRatio * minBufferTime);
 
-                if ((bufferLevel.level < switchDownBufferTime) && (self.isStartBuffering[data.type])) {
+                if ((bufferLevel.level < switchDownBufferTime) && (this.isStartBuffering[data.type])) {
                     return new MediaPlayer.rules.SwitchRequest();
                 } else {
                     if (bufferLevel.level >= switchDownBufferTime) {
-                        self.isStartBuffering[data.type] = false;
+                        this.isStartBuffering[data.type] = false;
                     }
 
-                    var max = self.manifestExt.getRepresentationCount(data);
+                    var max = this.manifestExt.getRepresentationCount(data);
 
                     max -= 1; // 0 based
 
@@ -88,12 +87,12 @@ MediaPlayer.rules.InsufficientBufferRule = function() {
                         p = MediaPlayer.rules.SwitchRequest.prototype.DEFAULT;
                     }
 
-                    self.debug.info("[InsufficientBufferRule][" + data.type + "] SwitchRequest: q=" + q + ", p=" + p);
+                    this.debug.info("[InsufficientBufferRule][" + data.type + "] SwitchRequest: q=" + q + ", p=" + p);
                     return new MediaPlayer.rules.SwitchRequest(q, p);
 
                 }
             } else {
-                self.debug.log("[InsufficientBufferRule][" + data.type + "] Manifest not present yet");
+                this.debug.log("[InsufficientBufferRule][" + data.type + "] Manifest not present yet");
                 return new MediaPlayer.rules.SwitchRequest();
             }
         }
