@@ -90,7 +90,6 @@ MediaPlayer.rules.DownloadRatioRule = function() {
 
                 // Take average bandwidth over 3 requests
                 count = 1;
-                i = requests.length - 2;
                 while (i >= 0 && count < 3) {
                     if (requests[i].tfinish && requests[i].trequest && requests[i].tresponse && requests[i].bytesLength > 0) {
                         self.debug.log("[DownloadRatioRule][" + data.type + "] length: " + requests[i].bytesLength + ", time: " + ((requests[i].tfinish.getTime() - requests[i].trequest.getTime()) / 1000));
