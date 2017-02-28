@@ -301,12 +301,12 @@ mpegts.h264.isIDR = function(data) { // data as Uint8Array
         naluType;
 
     while (i < data.length) {
-        if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x00) && (data[i + 3] === 0x01)) {
-            naluType = data[i + 4] & 0x1F;
+        if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x01)) {
+            naluType = data[i + 3] & 0x1F;
             if (naluType === mpegts.h264.NALUTYPE_IDR) {
                 return true;
             }
-            i += 4;
+            i += 3;
         } else {
             i++;
         }
