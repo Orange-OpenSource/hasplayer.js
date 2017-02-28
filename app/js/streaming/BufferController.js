@@ -1261,7 +1261,7 @@ MediaPlayer.dependencies.BufferController = function() {
             };
 
             for (i = 0; i < rules.length; i++) {
-                rules[i].execute(evt.data.request, callback);
+                rules[i].execute(evt.data.request, callback.bind(this));
             }
         },
 
