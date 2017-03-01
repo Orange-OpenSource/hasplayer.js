@@ -32,9 +32,9 @@ The build task can be configured in order to select supported protocol(s) and to
 For example:
 
 1. No hls support, no EME support:
-    * npm run build -- -hls=false -protection=false
+    * npm run build -- --no-hls --no-protection
 2. No hls support, no MSS support:
-    * npm run build -- -hls=false -mss=false
+    * npm run build -- --no-hls --no-mss
 
 ## Demo
 
