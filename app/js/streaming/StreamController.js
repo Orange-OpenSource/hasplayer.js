@@ -607,8 +607,6 @@ MediaPlayer.dependencies.StreamController = function() {
             self.manifestUpdater.stop();
             self.parser.reset();
 
-            console.log("[RESET]");
-
             teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE] = function() {
                 // Complete ProtectionController teardown process
                 ownProtectionController = false;
@@ -632,7 +630,6 @@ MediaPlayer.dependencies.StreamController = function() {
                 // Reset the streams
                 for (i = 0; i < streams.length; i += 1) {
                     stream = streams[i];
-                    console.log("[RESET] reset stream");
                     funcs.push(stream.reset());
                     if (stream !== activeStream) {
                         removeVideoElement(stream.getVideoModel().getElement());
@@ -651,7 +648,6 @@ MediaPlayer.dependencies.StreamController = function() {
                         if (!protectionController) {
                             teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE]();
                         } else if (ownProtectionController) {
-                            console.log("[RESET] reset protectionController");
                             protectionController.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE, teardownComplete, undefined, true);
                             protectionController.teardown();
                         } else {
