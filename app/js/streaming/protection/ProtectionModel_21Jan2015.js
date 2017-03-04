@@ -369,31 +369,39 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
         },
 
         setMediaElement: function(mediaElement) {
-            if (videoElement === mediaElement)
-                return;
+            var self = this,
+                deferred = Q.defer();
 
-            // If media key sessions persistence is active, then we ignore reseting video element.
-            if (mediaElement === null && this.config.getParam("Protection.licensePersistence", "boolean", false)) {
-                return;
+            if (videoElement === mediaElement) {
+                deferred.resolve();
+                return deferred.promise;
             }
 
-            // Replacing the previous element
             if (videoElement) {
                 videoElement.removeEventListener("encrypted", eventHandler);
                 videoElement.removeEventListener("waitingforkey", eventHandler);
-                videoElement.setMediaKeys(null);
-                mediaKeys = null;
+                videoElement.setMediaKeys(null).then(
+                    function () {
+                        self.debug.log("[DRM][PM_21Jan2015] Successfully detached MediaKeys from video element");
+                        deferred.resolve();
+                    },
+                    function (e) {
+                        self.debug.error("[DRM][PM_21Jan2015] Failed to detach MediaKeys from video element: " + e);
+                        deferred.resolve();
+                    }
+                );
             }
 
             videoElement = mediaElement;
 
-            // Only if we are not detaching from the existing element
             if (videoElement) {
-                videoElement.addEventListener("encrypted", eventHandler);
                 if (mediaKeys) {
+                    videoElement.addEventListener("encrypted", eventHandler);
                     videoElement.setMediaKeys(mediaKeys);
                 }
             }
+
+            return deferred.promise;
         },
 
         setServerCertificate: function(serverCertificate) {
