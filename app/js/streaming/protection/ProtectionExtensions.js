@@ -176,8 +176,6 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
     getSupportedKeySystemsFromContentProtection: function(cps) {
         var cp, ks, ksIdx, cpIdx, supportedKS = [];
 
-        this.debug.log("[DRM] Get supported key systems from content protection");
-
         if (cps) {
             for(ksIdx = 0; ksIdx < this.keySystems.length; ++ksIdx) {
                 ks = this.keySystems[ksIdx];
@@ -186,7 +184,7 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
                     if (cp.schemeIdUri.toLowerCase() === ks.schemeIdURI) {
 
                         //this.debug.log("[DRM] Supported key systems: " + ks.systemString + " (" + ks.schemeIdURI + ")");
-                        
+
                         // Look for DRM-specific ContentProtection
                         var initData = ks.getInitData(cp);
                         if (!!initData) {
