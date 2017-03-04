@@ -112,12 +112,11 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                             break;
                         case "waitingforkey":
                             self.debug.log("[DRM][PM_21Jan2015] 'waitingforkey' event");
-                            if (this.session !== null && this.session.licenseStored && this.session.usable) {
+                            if (this.session !== null && this.session.usable) {
                                 // Widevine CDM doesn't raised error if keys don't match
                                 // The unique way to check if the received license is valid is to track this event and raise an error
-                                this.session.licenseStored = false;
-                                this.session = null;
-                                videoElement.removeEventListener("waitingforkey", eventHandler);
+                                // this.session = null;
+                                this.session.usable = false;
                                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR,
                                     new MediaPlayer.vo.protection.KeyError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED, "Media is encrypted and no valid key is available"));
                             }
@@ -151,11 +150,9 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                     }
                 };
 
-
             var token = { // Implements MediaPlayer.vo.protection.SessionToken
                 session: session,
                 initData: initData,
-                licenseStored: false,
                 usable: false,
 
                 // This is our main event handler for all desired MediaKeySession events
@@ -204,6 +201,8 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                                         break;
                                     case "usable":
                                         setSessionUsable(event.target, true);
+                                        // Check 'waitinfforkey' event in case the received license does not apply to current content
+                                        videoElement.addEventListener("waitingforkey", eventHandler);
                                         break;
 
                                     //case "status-pending":
@@ -450,12 +449,8 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 message = message.toJWK();
             }
             session.update(message)
-            .then(function(){
-                // track license has been stored in order to not retry request
-                sessionToken.licenseStored = true;
-                // used to monitor wrong key added to the CDM
+            .then(function() {
                 eventHandler.session = sessionToken;
-                videoElement.addEventListener("waitingforkey", eventHandler);
             })
             .catch(function (ex) {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR,
@@ -521,9 +516,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             });
         },
 
-        checkIfEncrypted: function() {
-            videoElement.addEventListener("waitingforkey", eventHandler);
-        }
+        checkIfEncrypted: function() { /* Not supported */ }
     };
 };
 
