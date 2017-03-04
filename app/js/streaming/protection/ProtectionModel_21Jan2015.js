@@ -135,7 +135,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             // Remove from our session list
             for (var i = 0; i < sessions.length; i++) {
                 if (sessions[i] === token) {
-                    sessions.splice(i,1);
+                    sessions.splice(i, 1);
                     break;
                 }
             }
@@ -144,7 +144,6 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
         // Function to create our session token objects which manage the EME
         // MediaKeySession and session-specific event handler
         createSessionToken = function(session, initData, sessionType) {
-
             var self = this,
                 setSessionUsable = function (session, usable) {
                     for (var i = 0; i < sessions.length; i++) {
@@ -346,6 +345,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
             self.debug.log("[DRM][PM_21Jan2015] Select key system, create new MediaKeys");
 
+            // In case of license persistence we do not reset MediaKeys instance
             if (mediaKeys !== null) {
                 self.debug.log("[DRM][PM_21Jan2015] MediaKeys already created");
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED);
@@ -425,6 +425,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             }
 
             this.debug.log("[DRM][PM_21Jan2015] Create key session, type = " + sessionType);
+            this.debug.log("[DRM][PM_21Jan2015] initData = " + String.fromCharCode.apply(null, new Uint8Array(initData)));
 
             var session = mediaKeys.createSession(sessionType);
             var sessionToken = createSessionToken.call(this, session, initData, sessionType);
@@ -449,7 +450,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             // Send our request to the key session
             var self = this;
 
-            self.debug.log("[DRM][PM_21Jan2015] Update key session " + session.sessionId);
+            self.debug.log("[DRM][PM_21Jan2015] Update key session. SessionID = " + session.sessionId);
 
             if (this.protectionExt.isClearKey(this.keySystem)) {
                 message = message.toJWK();
@@ -469,7 +470,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 throw new Error("Can not load sessions until you have selected a key system");
             }
 
-            this.debug.log("[DRM][PM_21Jan2015] Load key session, id = " + sessionID);
+            this.debug.log("[DRM][PM_21Jan2015] Load key session. SessionID = " + sessionID);
 
             var session = mediaKeys.createSession();
 
@@ -497,21 +498,21 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
             var session = sessionToken.session;
 
-            this.debug.log("[DRM][PM_21Jan2015] Remove key session");
+            this.debug.log("[DRM][PM_21Jan2015] Remove key session. SessionID = " + sessionToken.getSessionID());
 
             var self = this;
             session.remove().then(function () {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_REMOVED,
-                        sessionToken.getSessionID());
+                    sessionToken.getSessionID());
             }, function (error) {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_REMOVED,
-                        null, "Error removing session (" + sessionToken.getSessionID() + "). " + error.name);
+                    null, "Error removing session (" + sessionToken.getSessionID() + "). " + error.name);
             });
         },
 
         closeKeySession: function(sessionToken) {
 
-            this.debug.log("[DRM][PM_21Jan2015] Close key session");
+            this.debug.log("[DRM][PM_21Jan2015] Close key session. SessionID = " + sessionToken.getSessionID());
 
             // Send our request to the key session
             var self = this;
