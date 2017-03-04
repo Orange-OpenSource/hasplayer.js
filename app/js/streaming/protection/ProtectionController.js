@@ -135,8 +135,10 @@ MediaPlayer.dependencies.ProtectionController = function() {
                         // system and codec information
                         ksAccess = {};
                         ksAccess[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE] = function(event) {
+                            self.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE, ksAccess);
                             if (event.error) {
                                 //if (!fromManifest) {
+                                self.debug.log("[DRM] KeySystem Access Denied! -- " + event.error);
                                 self.eventBus.dispatchEvent({
                                     type: MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED,
                                     error: "[DRM] KeySystem Access Denied! -- " + event.error
@@ -178,6 +180,10 @@ MediaPlayer.dependencies.ProtectionController = function() {
                 ksSelected = {};
 
                 ksSelected[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE] = function(event) {
+                    if (!self.protectionModel) {
+                        return;
+                    }
+                    self.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE, ksSelected);
                     if (event.error) {
                         self.debug.log("[DRM] KeySystem Access Denied!");
                         self.keySystem = undefined;
@@ -197,6 +203,10 @@ MediaPlayer.dependencies.ProtectionController = function() {
                     }
                 };
                 ksSelected[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED] = function(event) {
+                    if (!self.protectionModel) {
+                        return;
+                    }
+                    self.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED, ksSelected);
                     if (!event.error) {
                         self.debug.log("[DRM] KeySystem selected => create key session");
                         self.keySystem = self.protectionModel.keySystem;
