@@ -114,8 +114,6 @@ MediaPlayer.dependencies.ProtectionController = function() {
                 ksSelected,
                 keySystemAccess;
 
-            self.debug.log("[DRM] Select key system");
-
             if (this.keySystem) {
                 // We have a key system
                 for (ksIdx = 0; ksIdx < supportedKS.length; ksIdx++) {
@@ -470,7 +468,7 @@ MediaPlayer.dependencies.ProtectionController = function() {
 
         onKeySessionClosed = function(event) {
             if (!event.error) {
-                this.debug.log("[DRM] Session closed.  SessionID = " + event.data);
+                this.debug.log("[DRM] Session closed. SessionID = " + event.data);
             } else {
                 this.debug.warn("[DRM] Failed to close session");
             }
@@ -478,7 +476,7 @@ MediaPlayer.dependencies.ProtectionController = function() {
 
         onKeySessionRemoved = function(event) {
             if (!event.error) {
-                this.debug.log("[DRM] Session removed.  SessionID = " + event.data);
+                this.debug.log("[DRM] Session removed. SessionID = " + event.data);
             } else {
                 this.debug.warn("[DRM] Failed to remove session");
             }
@@ -655,20 +653,18 @@ MediaPlayer.dependencies.ProtectionController = function() {
          */
         createKeySession: function(initData, cdmData) {
 
-            this.debug.log("[DRM] Create key session");
-
             var initDataForKS = MediaPlayer.dependencies.protection.CommonEncryption.getPSSHForKeySystem(this.keySystem, initData),
                 i = 0,
                 currentInitData;
             if (initDataForKS) {
+
+                this.debug.log('[DRM] create key session for initData:', String.fromCharCode.apply(null, new Uint8Array(initDataForKS)));
+
                 // Check for duplicate initData
                 currentInitData = this.protectionModel.getAllInitData();
                 for (i = 0; i < currentInitData.length; i++) {
                     if (this.protectionExt.initDataEquals(initDataForKS, currentInitData[i])) {
                         this.debug.log("[DRM] Ignoring initData because we have already seen it!");
-                        // If Key session already exists for this content, we check if the session and stored license key
-                        // correclty decrypt the content
-                        //this.protectionModel.checkIfEncrypted();
                         return;
                     }
                 }
