@@ -357,6 +357,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 mediaKeys = mkeys;
                 if (videoElement) {
                     videoElement.setMediaKeys(mediaKeys);
+                    videoElement.addEventListener("encrypted", eventHandler);
                 }
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED);
 
