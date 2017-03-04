@@ -109,6 +109,11 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                     switch (event.type) {
                         case "encrypted":
                             self.debug.log("[DRM][PM_21Jan2015] 'encrypted' event");
+                            if (event.initData) {
+                                var initData = ArrayBuffer.isView(event.initData) ? event.initData.buffer : event.initData;
+                                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY,
+                                        new MediaPlayer.vo.protection.NeedKey(initData, "cenc"));
+                            }
                             break;
                         case "waitingforkey":
                             self.debug.log("[DRM][PM_21Jan2015] 'waitingforkey' event");
