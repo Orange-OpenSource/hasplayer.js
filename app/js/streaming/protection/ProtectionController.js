@@ -604,6 +604,8 @@ MediaPlayer.dependencies.ProtectionController = function() {
          * @instance
          */
         teardown: function() {
+            var self = this;
+
             // abort request if xhrLicense is different from null
             if (xhrLicense) {
                 xhrLicense.aborted = true;
@@ -618,11 +620,13 @@ MediaPlayer.dependencies.ProtectionController = function() {
             this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_REMOVED, this);
             this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE, this);
             this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, this);
+
             this.keySystem = undefined;
 
-            this.protectionModel.teardown();
-            this.setMediaElement(null);
-            this.protectionModel = undefined;
+            this.setMediaElement(null).then(function() {
+                self.protectionModel.teardown();
+                self.protectionModel = undefined;
+            });
         },
 
         /**
@@ -744,12 +748,11 @@ MediaPlayer.dependencies.ProtectionController = function() {
          */
         setMediaElement: function(element) {
             if (element) {
-                this.protectionModel.setMediaElement(element);
                 this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY, this);
             } else if (element === null) {
-                this.protectionModel.setMediaElement(element);
                 this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY, this);
             }
+            return this.protectionModel.setMediaElement(element);
         },
 
         /**
