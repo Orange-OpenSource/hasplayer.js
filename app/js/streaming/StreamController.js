@@ -591,6 +591,8 @@ MediaPlayer.dependencies.StreamController = function() {
         reset: function(reason) {
             var teardownComplete = {},
                 funcs = [],
+                stream,
+                i,
                 self = this;
 
             this.debug.info("[StreamController] Reset");
@@ -605,58 +607,59 @@ MediaPlayer.dependencies.StreamController = function() {
             self.manifestUpdater.stop();
             self.parser.reset();
 
+            console.log("[RESET]");
+
+            teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE] = function() {
+                // Complete ProtectionController teardown process
+                ownProtectionController = false;
+                protectionController = null;
+                protectionData = null;
+
+                self.manifestModel.setValue(null);
+
+                self.metricsModel.addState('video', 'stopped', self.videoModel.getCurrentTime(), reason);
+                self.metricsModel.clearAllCurrentMetrics();
+                self.notify(MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE);
+            };
+
             // Wait for current loading process (manifest download and updating) to be achieved
             Q.when(deferredLoading ? deferredLoading.promise : true).then(function () {
 
-                // Pause the active stream, but reset only once protection controller and media key sessions have been resetted
                 self.pause();
 
-                self.metricsModel.clearAllCurrentMetrics();
                 isPeriodSwitchingInProgress = false;
 
-                teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE] = function() {
-                    var i = 0,
-                        ln,
-                        stream;
+                // Reset the streams
+                for (i = 0; i < streams.length; i += 1) {
+                    stream = streams[i];
+                    console.log("[RESET] reset stream");
+                    funcs.push(stream.reset());
+                    if (stream !== activeStream) {
+                        removeVideoElement(stream.getVideoModel().getElement());
+                    }
+                }
 
-                    // Complete teardown process
-                    ownProtectionController = false;
-                    protectionController = null;
-                    protectionData = null;
+                // Reset the video model (stalled states)
+                self.videoModel.reset();
 
-                    // Reset the streams
-                    for (i = 0, ln = streams.length; i < ln; i += 1) {
-                        stream = streams[i];
-                        funcs.push(stream.reset());
-                        if (stream !== activeStream) {
-                            removeVideoElement(stream.getVideoModel().getElement());
+                Q.all(funcs).then(
+                    function() {
+                        streams = [];
+                        activeStream = null;
+
+                        // Teardown the protection system
+                        if (!protectionController) {
+                            teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE]();
+                        } else if (ownProtectionController) {
+                            console.log("[RESET] reset protectionController");
+                            protectionController.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE, teardownComplete, undefined, true);
+                            protectionController.teardown();
+                        } else {
+                            protectionController.setMediaElement(null);
+                            teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE]();
                         }
                     }
-
-                    // Reset the video model (and controllers stalled states)
-                    self.videoModel.reset();
-
-                    Q.all(funcs).then(
-                        function() {
-                            streams = [];
-                            activeStream = null;
-                            self.metricsModel.addState('video', 'stopped', self.videoModel.getCurrentTime(), reason);
-                            self.notify(MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE);
-                        });
-
-                    self.manifestModel.setValue(null);
-                };
-
-                // Teardown the protection system, if necessary
-                if (!protectionController) {
-                    teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE]();
-                } else if (ownProtectionController) {
-                    protectionController.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE, teardownComplete, undefined, true);
-                    protectionController.teardown();
-                } else {
-                    protectionController.setMediaElement(null);
-                    teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE]();
-                }
+                );
             });
         },
 
