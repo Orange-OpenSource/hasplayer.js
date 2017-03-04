@@ -327,12 +327,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
         getAllInitData: function() {
             var retVal = [];
             for (var i = 0; i < sessions.length; i++) {
-                if (sessions[i].usable) {
-                    retVal.push(sessions[i].initData);
-                } else {
-                    sessions.splice(i, 1);
-                    i--;
-                }
+                retVal.push(sessions[i].initData);
             }
             return retVal;
         },
