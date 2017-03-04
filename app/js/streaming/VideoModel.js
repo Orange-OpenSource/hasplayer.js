@@ -132,7 +132,12 @@ MediaPlayer.models.VideoModel = function () {
         },
 
         setSource: function (source) {
-            element.src = source;
+            if (source) {
+                element.src = source;
+            } else {
+                element.removeAttribute('src');
+                element.load();
+            }
         },
 
         isStalled: function () {
