@@ -281,63 +281,47 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
         teardown: function() {
             var session,
-                i;
+                nbSessions = sessions.length,
+                i,
+                self = this;
 
             this.debug.log("[DRM][PM_21Jan2015] Teardown");
 
-            if (this.config.getParam("Protection.licensePersistence", "boolean", false)) {
-                // Remove only session without license
-                for (i = 0; i < sessions.length; i++) {
-                    session = sessions[i];
-                    if (!session.licenseStored) {
-                       sessions.splice(i, 1);
-                       i--;
-                    }
-                }
-            } else {
-                // By default remove all licenses
-                sessions = [];
-            }
-
-            videoElement.removeEventListener("waitingforkey", eventHandler);
-
-            // Do not close and remove sessions to keep licences persistence
-            this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
-            return;
-
-            /*if (numSessions !== 0) {
-                // Called when we are done closing a session.  Success or fail
+            if (!this.config.getParam("Protection.licensePersistence", "boolean", false)) {
+                // If license persistence is not enabled, then close sessions and release/delete MediaKeys instance
+                // Called when we are done closing a session.
                 var done = function(session) {
                     removeSession(session);
-                    if (sessions.length === 0) {
-                        if (videoElement) {
-                            videoElement.removeEventListener("encrypted", eventHandler);
-                            videoElement.setMediaKeys(null).then(function () {
-                                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
-                            });
-                        } else {
-                            self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
-                        }
+                    if (i >= (nbSessions - 1)) {
+                        mediaKeys = null;
+                        self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
                     }
                 };
-                for (var i = 0; i < numSessions; i++) {
+
+                if (nbSessions === 0) {
+                    mediaKeys = null;
+                    this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
+                    return;
+                }
+
+                for (i = 0; i < nbSessions; i++) {
                     session = sessions[i];
                     (function (s) {
+                        self.debug.log("[DRM][PM_21Jan2015] Close session " + session.getSessionID());
                         // Override closed promise resolver
                         session.session.closed.then(function () {
                             done(s);
                         });
-                        // Close the session and handle errors, otherwise promise
-                        // resolver above will be called
+                        // Close the session and handle errors, otherwise promise resolver above will be called
                         closeKeySessionInternal(session).catch(function () {
                             done(s);
                         });
-
                     })(session);
                 }
             } else {
+                // If license persistence is enabled, then keep sessions en MediaKeys instance
                 this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
-            }*/
+            }
         },
 
         getAllInitData: function() {
