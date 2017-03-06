@@ -208,6 +208,7 @@ MediaPlayer.dependencies.ProtectionController = function() {
                     if (!event.error) {
                         self.debug.log("[DRM] KeySystem selected => create key session");
                         self.keySystem = self.protectionModel.keySystem;
+                        self.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_KEY_SYSTEM_SELECTED, keySystemAccess);
                         self.eventBus.dispatchEvent({
                             type: MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED,
                             data: keySystemAccess
@@ -939,7 +940,8 @@ MediaPlayer.dependencies.ProtectionController.events = {
 };
 
 MediaPlayer.dependencies.ProtectionController.eventList = {
-    ENAME_PROTECTION_ERROR: "protectionError"
+    ENAME_PROTECTION_ERROR: "protectionError",
+    ENAME_KEY_SYSTEM_SELECTED: "keySystemSelected"
 };
 
 MediaPlayer.dependencies.ProtectionController.prototype = {
