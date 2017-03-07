@@ -212,6 +212,7 @@ MediaPlayer = function () {
 
     var _onError = function (e) {
         error = e.data;
+        this.reset(2);
     };
 
     var _onWarning = function (e) {
