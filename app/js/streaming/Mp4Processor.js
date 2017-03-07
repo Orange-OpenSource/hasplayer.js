@@ -496,7 +496,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
                 default:
                     throw {
                         name: MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED,
-                        message: "Codec is not supported",
+                        message: "Video codec is not supported (MP4)",
                         data: {
                             codec: codec
                         }
@@ -624,7 +624,7 @@ MediaPlayer.dependencies.Mp4Processor = function() {
                 default:
                     throw {
                         name: MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED,
-                        message: "Codec is not supported",
+                        message: "Audio codec is not supported (MP4)",
                         data: {
                             codec: codec
                         }

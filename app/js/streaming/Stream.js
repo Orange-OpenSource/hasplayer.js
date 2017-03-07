@@ -243,7 +243,7 @@ MediaPlayer.dependencies.Stream = function() {
             // Check if codec is supported (applies only for video and audio)
             if (data.type === 'video' || data.type === 'audio') {
                 if (!this.capabilities.supportsCodec(this.videoModel.getElement(), codec)) {
-                    this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, data.type + ' codec is not supported', {
+                    this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, 'Codec is not supported (HTMLMediaElement)', {
                         codec: codec
                     });
                     return null;
