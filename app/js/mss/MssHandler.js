@@ -75,7 +75,9 @@ Mss.dependencies.MssHandler = function() {
                         name: MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED,
                         message: 'Codec is not supported (HTMLMediaElement)',
                         data: {
-                            codec: codec
+                            codec: codec,
+                            bandwidth: realRepresentation.bandwidth,
+                            codecPrivateData: realRepresentation.codecPrivateData
                         }
                     };
                 }
