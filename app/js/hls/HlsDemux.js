@@ -52,6 +52,11 @@ Hls.dependencies.HlsDemux = function() {
             return null;
         },
 
+        checkTsPacket = function(data) {
+            var tsPacket = new mpegts.ts.TsPacket();
+            return tsPacket.checkSyncWord(data.subarray(0, mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE));
+        },
+
         getPAT = function(data) {
             var tsPacket = getTsPacket.call(this, data, 0, mpegts.ts.TsPacket.prototype.PAT_PID);
 
@@ -433,6 +438,14 @@ Hls.dependencies.HlsDemux = function() {
                 pid,
                 track,
                 streamTypeDesc;
+
+            // First, check that packet is really a TS packet
+            if( !checkTsPacket.call(this,data) ) {
+                throw {
+                    name: MediaPlayer.dependencies.ErrorHandler.prototype.HLS_INVALID_PACKET_ERROR,
+                    message: "Failed to demux, packet is invalid, missing SYNC byte"
+                };
+            }
 
             // Get PSI (PAT, PMT)
             pat = getPAT.call(this, data);
