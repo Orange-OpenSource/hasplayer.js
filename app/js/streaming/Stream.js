@@ -99,7 +99,7 @@ MediaPlayer.dependencies.Stream = function() {
         startStreamTime = -1,
         visibilitychangeListener,
 
-        // Protection errors
+        // ProtectionController events listener
         onProtectionError = function(event) {
             this.errHandler.sendError(event.data.code, event.data.message, event.data.data);
         },
@@ -243,7 +243,7 @@ MediaPlayer.dependencies.Stream = function() {
             // Check if codec is supported (applies only for video and audio)
             if (data.type === 'video' || data.type === 'audio') {
                 if (!this.capabilities.supportsCodec(this.videoModel.getElement(), codec)) {
-                    this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, data.type + ' codec is not supported', {
+                    this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, 'Codec is not supported (HTMLMediaElement)', {
                         codec: codec
                     });
                     return null;
@@ -279,6 +279,53 @@ MediaPlayer.dependencies.Stream = function() {
             }
 
             return fragmentInfoController;
+        },
+
+        initializeProtectionController = function () {
+            var deferred = null,
+                data,
+                audioCodec = null,
+                videoCodec = null,
+                ksSelected,
+                self = this;
+
+            data = this.manifestExt.getVideoData(manifest, periodInfo.index);
+            if (data) {
+                videoCodec = this.manifestExt.getCodec(data);
+                contentProtection = this.manifestExt.getContentProtectionData(data);
+            }
+            data = this.manifestExt.getSpecificAudioData(manifest, periodInfo.index, defaultAudioLang);
+            if (data) {
+                audioCodec = this.manifestExt.getCodec(data);
+            }
+
+            if (!contentProtection) {
+                return Q.when(true);
+            }
+
+            if (!this.capabilities.supportsEncryptedMedia()) {
+                // No protectionController (MediaKeys not supported/enabled) but content is protected => error
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS, "EME is not supported/enabled", null);
+                return Q.when(false);
+            }
+
+            if (!protectionController) {
+                return Q.when(true);
+            }
+
+            deferred = Q.defer();
+
+            ksSelected = {};
+            ksSelected[MediaPlayer.dependencies.ProtectionController.eventList.ENAME_KEY_SYSTEM_SELECTED] = function(event) {
+                self.debug.log("[Stream] ProtectionController initialized");
+                protectionController.unsubscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_KEY_SYSTEM_SELECTED, ksSelected);
+                deferred.resolve(true);
+            };
+            protectionController.subscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_KEY_SYSTEM_SELECTED, ksSelected);
+            this.debug.log("[Stream] Initialize ProtectionController");
+            protectionController.init(contentProtection, audioCodec, videoCodec);
+
+            return deferred.promise;
         },
 
         initializeMediaSource = function() {
@@ -362,14 +409,6 @@ MediaPlayer.dependencies.Stream = function() {
             // Initialize EventController
             if (eventController) {
                 eventController.addInlineEvents(this.manifestExt.getEventsForPeriod(manifest, periodInfo));
-            }
-
-            // Initialize ProtectionController
-            if (protectionController) {
-                protectionController.init(contentProtection, audioCodec, videoCodec);
-            } else if (contentProtection && !this.capabilities.supportsEncryptedMedia()) {
-                // No protectionController (MediaKeys not supported/enabled) but content is protected => error
-                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS, "EME is not supported/enabled", null);
             }
 
             initializeMediaSourceFinished = true;
@@ -768,17 +807,19 @@ MediaPlayer.dependencies.Stream = function() {
                 return;
             }
 
-            self.debug.log("[Stream] Setup MediaSource");
-            setUpMediaSource.call(self, mediaSource).then(
-                function(mediaSourceResult) {
-                    mediaSource = mediaSourceResult;
-                    self.debug.log("[Stream] Initialize MediaSource");
-                    initializeMediaSource.call(self);
-                    self.debug.log("[Stream] Initialize playback");
-                    initializePlayback.call(self);
-                    self.debug.log("[Stream] Playback initialized");
-                }
-            );
+            initializeProtectionController.call(self).then(function() {
+                self.debug.log("[Stream] Setup MediaSource");
+                setUpMediaSource.call(self, mediaSource).then(
+                    function(mediaSourceResult) {
+                        mediaSource = mediaSourceResult;
+                        self.debug.log("[Stream] Initialize MediaSource");
+                        initializeMediaSource.call(self);
+                        self.debug.log("[Stream] Initialize playback");
+                        initializePlayback.call(self);
+                        self.debug.log("[Stream] Playback initialized");
+                    }
+                );
+            });
         },
 
         setVideoModelCurrentTime = function(time) {

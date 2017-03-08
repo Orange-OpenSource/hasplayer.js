@@ -276,6 +276,7 @@ mpegts.h264.bytestreamToMp4 = function(data) { // data as Uint8Array
                 data[startCodeIndex + 1] = (naluSize & 0x00FF0000) >> 16;
                 data[startCodeIndex + 2] = (naluSize & 0x0000FF00) >> 8;
                 data[startCodeIndex + 3] = (naluSize & 0x000000FF);
+                // console.log("[H264] NALU: type = " + (data[i + 4] & 0x1F) + ", size = " + naluSize);
             }
 
             startCodeIndex = i;
@@ -291,6 +292,7 @@ mpegts.h264.bytestreamToMp4 = function(data) { // data as Uint8Array
     data[startCodeIndex + 1] = (naluSize & 0x00FF0000) >> 16;
     data[startCodeIndex + 2] = (naluSize & 0x0000FF00) >> 8;
     data[startCodeIndex + 3] = (naluSize & 0x000000FF);
+    // console.log("[H264] NALU: type = " + (data[i + 4] & 0x1F) + ", size = " + naluSize);
 
 };
 
@@ -299,12 +301,12 @@ mpegts.h264.isIDR = function(data) { // data as Uint8Array
         naluType;
 
     while (i < data.length) {
-        if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x00) && (data[i + 3] === 0x01)) {
-            naluType = data[i + 4] & 0x1F;
+        if ((data[i] === 0x00) && (data[i + 1] === 0x00) && (data[i + 2] === 0x01)) {
+            naluType = data[i + 3] & 0x1F;
             if (naluType === mpegts.h264.NALUTYPE_IDR) {
                 return true;
             }
-            i += 4;
+            i += 3;
         } else {
             i++;
         }

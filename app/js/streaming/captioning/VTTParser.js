@@ -42,7 +42,7 @@ MediaPlayer.utils.VTTParser = function () {
             match = REGEXP_TIMESTAMPMAP.exec(data);
 
             if (!match) {
-                return;
+                return -1;
             }
             attrs = match[1];
 
@@ -103,8 +103,8 @@ MediaPlayer.utils.VTTParser = function () {
                 i;
 
             var offset = getTimestampOffset.call(this, parseTimestampMap(data), request);
-
-            var lines = data.split(REGEXP_LINEBREAK);
+            
+            var lines = data.split(REGEXP_LINEBREAK);            
 
             for (i = 0; i < lines.length; i++) {
                 line = lines[i].trim();
@@ -126,7 +126,6 @@ MediaPlayer.utils.VTTParser = function () {
                         //style: cueInfo[3].trim(),
                         data: ''
                     };
-                    console.log('[text] Buffered range', cue);
                 } else if (cue !== null) {
                     cue.data += ((cue.data.length === 0) ? '' : '\n') + lines[i];
                 }

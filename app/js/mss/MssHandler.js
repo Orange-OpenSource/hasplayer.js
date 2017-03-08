@@ -73,9 +73,11 @@ Mss.dependencies.MssHandler = function() {
                 if (!this.capabilities.supportsCodec(this.videoModel.getElement(), codec)) {
                     throw {
                         name: MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED,
-                        message: "Codec is not supported",
+                        message: 'Codec is not supported (HTMLMediaElement)',
                         data: {
-                            codec: codec
+                            codec: codec,
+                            bandwidth: realRepresentation.bandwidth,
+                            codecPrivateData: realRepresentation.codecPrivateData
                         }
                     };
                 }
@@ -97,7 +99,7 @@ Mss.dependencies.MssHandler = function() {
             track.samplingRate = getAudioSamplingRate(realAdaptation, realRepresentation);
 
             representation.initData = rslt.mp4Processor.generateInitSegment([track]);
-            
+
             return representation.initData;
 
         };

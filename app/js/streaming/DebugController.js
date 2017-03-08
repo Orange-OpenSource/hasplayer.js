@@ -17,21 +17,21 @@
  */
 MediaPlayer.utils.DebugController = function() {
     'use strict';
-    
+
     // debug data configuration
     var debugData = {
         isInDebug:false,
         level:0,
         loggerType:'console'
     };
-    
+
     var _handleKeyPressedEvent = function(e) {
         // if we press ctrl + alt + maj + z we activate debug mode
         if ((e.altKey === true) && (e.ctrlKey === true) && (e.shiftKey === true) &&
             ((e.keyCode === 68) || (e.keyCode === 90))) {
             if (debugData.isInDebug) {
                 debugData.isInDebug = false;
-                console.log("debug mode desactivated");
+                console.log("hasplayer.js debug OFF");
                 if (e.keyCode === 90) {
                     _downloadDebug(this.debug.getLogger().getLogs());
                 }
@@ -39,14 +39,14 @@ MediaPlayer.utils.DebugController = function() {
                 this.debug.setLogger(debugData.loggerType);
             } else {
                 debugData.isInDebug = true;
-                console.log("debug mode activated");
+                console.log("hasplayer.js debug ON");
                 debugData.level = this.debug.getLevel();
                 this.debug.setLevel((e.keyCode === 68) ? 4 : 3);
                 this.debug.setLogger((e.keyCode === 68) ? 'console' : 'memory');
             }
         }
     };
-    
+
     var _downloadDebug = function(array) {
         if (array && array.length > 0) {
             var filename = 'hasplayer_logs.txt',
@@ -68,7 +68,7 @@ MediaPlayer.utils.DebugController = function() {
             }
         }
     };
-    
+
 
     return {
         debug: undefined,

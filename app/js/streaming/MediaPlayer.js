@@ -212,6 +212,7 @@ MediaPlayer = function () {
 
     var _onError = function (e) {
         error = e.data;
+        this.reset(2);
     };
 
     var _onWarning = function (e) {
@@ -297,9 +298,23 @@ MediaPlayer = function () {
         }
     };
 
+    var _toMediaPlayerTrack = function (track) {
+        if (!track) {
+            return null;
+        }
+        var _track = {};
+        if (track.id) {
+            _track.id = track.id;
+        }
+        if (track.lang) {
+            _track.lang = track.lang;
+        }
+        if (track.subType) {
+            _track.subType = track.subType;
+        }
+        return _track;
+    };
 
-
-    // TODO : remove this when migration of method getTracks will be done on all the process
     var _getTracksFromType = function (_type) {
         if (!streamController) {
             return null;
@@ -341,8 +356,16 @@ MediaPlayer = function () {
         return null;
     };
 
+    var _isEqual = function (prop1, prop2) {
+        if (!prop1 && !prop2) {
+            // let's consider in this case that null and undefined are equal
+            return true;
+        }
+        return prop1 === prop2;
+    };
+
     var _isSameTrack = function (track1, track2) {
-        return (track1.id === track2.id) && (track1.lang === track2.lang) && (track1.subType === track2.subType);
+        return (_isEqual(track1.id, track2.id) && _isEqual(track1.lang, track2.lang) && _isEqual(track1.subType, track2.subType));
     };
 
     // parse the arguments of load function to make an object
@@ -492,6 +515,8 @@ MediaPlayer = function () {
          * <li>'download_bitrate' (see [download_bitrate]{@link MediaPlayer#event:download_bitrate} event specification)
          * <li>'bufferLevel_updated' (see [bufferLevel_updated]{@link MediaPlayer#event:bufferLevel_updated} event specification)
          * <li>'state_changed' (see [state_changed]{@link MediaPlayer#event:state_changed} event specification)
+         * <li>'cueEnter' (see [cueEnter]{@link MediaPlayer#event:cueEnter} event specification)
+         * <li>'cueExit' (see [cueExit]{@link MediaPlayer#event:cueExit} event specification)
          * @method addEventListener
          * @access public
          * @memberof MediaPlayer#
@@ -1194,11 +1219,7 @@ MediaPlayer = function () {
 
             var tracks = [];
             for (var i = 0; i < _tracks.length; i += 1) {
-                tracks.push({
-                    id: _tracks[i].id,
-                    lang: _tracks[i].lang,
-                    subType: _tracks[i].subType
-                });
+                tracks.push(_toMediaPlayerTrack(_tracks[i]));
             }
 
             return tracks;
@@ -1262,17 +1283,7 @@ MediaPlayer = function () {
                 throw new Error('MediaPlayer Invalid Argument - "type" should be defined and shoud be kind of MediaPlayer.TRACKS_TYPE');
             }
 
-            var _track = _getSelectedTrackFromType(type);
-
-            if (!_track) {
-                return null;
-            }
-
-            return {
-                id: _track.id,
-                lang: _track.lang,
-                subType: _track.subType
-            };
+            return _toMediaPlayerTrack(_getSelectedTrackFromType(type));
         },
 //#endregion
 
@@ -1542,6 +1553,7 @@ MediaPlayer.PUBLIC_EVENTS = {
      * @param {object} event.data.data - error additionnal data
      */
     'error': 'hasplayer',
+
     /**
     * The warning event is fired when a warning occurs.
     *
@@ -1554,6 +1566,32 @@ MediaPlayer.PUBLIC_EVENTS = {
     * @param {object} event.data.data - warning additionnal data
     */
     'warning': 'hasplayer',
+
+    /**
+     * The manifestUrlUpdate event is fired when the URL of the manifest may have to be refreshed,
+     * since the player failed to download the manifest file (URL expiration for example).
+     * The application shall therefore provide an updated manifest URL by using the method [refreshManifest]{@link MediaPlayer#refreshManifest}
+     *
+     * @event MediaPlayer#manifestUrlUpdate
+     * @param {object} event - the event
+     * @param {object} event.type - the event type ('manifestUrlUpdate')
+     * @param {object} event.data - the event data
+     * @param {object} event.data.url - the current manifest url
+     */
+    'manifestUrlUpdate': 'hasplayer',
+
+    /**
+     * The metricAdded event is fired when a new metric has been added,
+     * TBD
+     */
+    'metricAdded' : 'hasplayer',
+
+    /**
+     * The metricChanged event is fired when a metric has been updated,
+     * TBD
+     */
+    'metricChanged' : 'hasplayer',
+
     /**
      * The cueEnter event is fired when a subtitle cue needs to be displayed.
      *
@@ -1585,31 +1623,6 @@ MediaPlayer.PUBLIC_EVENTS = {
     'cueExit': 'hasplayer',
 
     /**
-     * The manifestUrlUpdate event is fired when the URL of the manifest may have to be refreshed,
-     * since the player failed to download the manifest file (URL expiration for example).
-     * The application shall therefore provide an updated manifest URL by using the method [refreshManifest]{@link MediaPlayer#refreshManifest}
-     *
-     * @event MediaPlayer#manifestUrlUpdate
-     * @param {object} event - the event
-     * @param {object} event.type - the event type ('manifestUrlUpdate')
-     * @param {object} event.data - the event data
-     * @param {object} event.data.url - the current manifest url
-     */
-    'manifestUrlUpdate': 'hasplayer',
-
-    /**
-     * The metricAdded event is fired when a new metric has been added,
-     * TBD
-     */
-    'metricAdded' : 'hasplayer',
-
-    /**
-     * The metricChanged event is fired when a metric has been updated,
-     * TBD
-     */
-    'metricChanged' : 'hasplayer',
-
-    /**
      * The 'play_bitrate' event is fired when the current played bitrate has changed.
      *
      * @event MediaPlayer#play_bitrate
@@ -1638,7 +1651,6 @@ MediaPlayer.PUBLIC_EVENTS = {
      * @param {number} event.detail.height - in case of video stream, the video height of the representation
      */
     'download_bitrate': 'video',
-
 
     /**
      * The bufferLevel_updated event is fired when the buffer level changed.

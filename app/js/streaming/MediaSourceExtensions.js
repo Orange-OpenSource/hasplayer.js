@@ -42,9 +42,7 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
 
     detachMediaSource: function (videoModel) {
         "use strict";
-        // it seems that any value passed to the setSource is cast to a string when setting element.src,
-        // so we cannot use null or undefined to reset the element. Use empty string instead.
-        videoModel.setSource("");
+        videoModel.setSource(null);
         return true;
     },
 
@@ -61,7 +59,7 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
                 break;
             }
         }
-        
+
         if (!updating) {
             source.duration = value;
         }

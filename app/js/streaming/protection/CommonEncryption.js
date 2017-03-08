@@ -132,95 +132,87 @@ MediaPlayer.dependencies.protection.CommonEncryption = {
         if (data === null)
             return [];
 
-        var buffer = data,
-            done = false,
-            pssh = {},
-            // TODO: Need to check every data read for end of buffer
-            byteCursor = 0,
-            size,
-            nextBox,
-            version,
-            systemID,
-            psshDataSize,
-            boxStart,
-            i,
-            val;
+        var dv = new DataView(data);
+        var done = false;
+        var pssh = {};
 
-        if (!data.buffer) {
-            buffer = new Uint8Array(data);
-        }
-
+        // TODO: Need to check every data read for end of buffer
+        var byteCursor = 0;
         while (!done) {
 
-            boxStart = byteCursor;
+            var size,
+                nextBox,
+                version,
+                systemID,
+                psshDataSize;
+            var boxStart = byteCursor;
 
-            if (byteCursor >= buffer.byteLength)
+            if (byteCursor >= dv.buffer.byteLength)
                 break;
 
             /* Box size */
-            size = this.readBytes(buffer, byteCursor, 4);
+            size = dv.getUint32(byteCursor);
             nextBox = byteCursor + size;
             byteCursor += 4;
 
             /* Verify PSSH */
-            if (this.readBytes(buffer, byteCursor, 4) !== 0x70737368) {
+            if (dv.getUint32(byteCursor) !== 0x70737368) {
                 byteCursor = nextBox;
                 continue;
             }
             byteCursor += 4;
 
             /* Version must be 0 or 1 */
-            version = this.readBytes(buffer, byteCursor, 1);
+            version = dv.getUint8(byteCursor);
             if (version !== 0 && version !== 1) {
                 byteCursor = nextBox;
                 continue;
             }
-            byteCursor += 1;
+            byteCursor++;
 
             byteCursor += 3; /* skip flags */
 
             // 16-byte UUID/SystemID
-            systemID = "";
-
+            systemID = '';
+            var i, val;
             for (i = 0; i < 4; i++) {
-                val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
-                systemID += (val.length === 1) ? "0" + val : val;
+                val = dv.getUint8(byteCursor + i).toString(16);
+                systemID += (val.length === 1) ? '0' + val : val;
             }
             byteCursor += 4;
-            systemID += "-";
+            systemID += '-';
             for (i = 0; i < 2; i++) {
-                val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
-                systemID += (val.length === 1) ? "0" + val : val;
+                val = dv.getUint8(byteCursor + i).toString(16);
+                systemID += (val.length === 1) ? '0' + val : val;
             }
             byteCursor += 2;
-            systemID += "-";
+            systemID += '-';
             for (i = 0; i < 2; i++) {
-                val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
-                systemID += (val.length === 1) ? "0" + val : val;
+                val = dv.getUint8(byteCursor + i).toString(16);
+                systemID += (val.length === 1) ? '0' + val : val;
             }
             byteCursor += 2;
-            systemID += "-";
+            systemID += '-';
             for (i = 0; i < 2; i++) {
-                val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
-                systemID += (val.length === 1) ? "0" + val : val;
+                val = dv.getUint8(byteCursor + i).toString(16);
+                systemID += (val.length === 1) ? '0' + val : val;
             }
             byteCursor += 2;
-            systemID += "-";
+            systemID += '-';
             for (i = 0; i < 6; i++) {
-                val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
-                systemID += (val.length === 1) ? "0" + val : val;
+                val = dv.getUint8(byteCursor + i).toString(16);
+                systemID += (val.length === 1) ? '0' + val : val;
             }
             byteCursor += 6;
 
             systemID = systemID.toLowerCase();
 
             /* PSSH Data Size */
-            psshDataSize = this.readBytes(buffer, byteCursor, 4);
+            psshDataSize = dv.getUint32(byteCursor);
             byteCursor += 4;
 
             /* PSSH Data */
-            //pssh[systemID] = buffer.slice(boxStart, nextBox);
-            pssh[systemID] = buffer.subarray(boxStart, nextBox).buffer;
+            pssh[systemID] = dv.buffer.slice(boxStart, nextBox);
             byteCursor = nextBox;
         }
 

@@ -113,7 +113,8 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         },
 
         onBytesLoaded = function(request, response) {
-            var deltaDate,
+            var self = this,
+                deltaDate,
                 deltaTimeStamp;
 
             segmentDuration = request.duration;
@@ -129,7 +130,7 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
                     deltaDate = (new Date().getTime() - startFragmentInfoDate) / 1000;
                     deltaTimeStamp = (_fragmentInfoTime + segmentDuration) - startTimeStampValue;
                     deltaTime = (deltaTimeStamp - deltaDate) > 0 ? (deltaTimeStamp - deltaDate) : 0;
-                    delayLoadNextFragmentInfo.call(this, deltaTime);
+                    delayLoadNextFragmentInfo.call(self, deltaTime);
                 });
             } catch (e) {
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while processing fragment info segment", e.message);
