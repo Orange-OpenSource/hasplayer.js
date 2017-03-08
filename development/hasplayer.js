@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-2-15_14:48:27 / git revision : ba0fae0 */
+/* Last build : 2017-3-8_8:52:8 / git revision : af0bc51 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.9.0-dev',
-        GIT_TAG = 'ba0fae0',
-        BUILD_DATE = '2017-2-15_14:48:27',
+        GIT_TAG = 'af0bc51',
+        BUILD_DATE = '2017-3-8_8:52:8',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -35193,6 +35193,7 @@ mpegts.h264.bytestreamToMp4 = function(data) { // data as Uint8Array
                 data[startCodeIndex + 1] = (naluSize & 0x00FF0000) >> 16;
                 data[startCodeIndex + 2] = (naluSize & 0x0000FF00) >> 8;
                 data[startCodeIndex + 3] = (naluSize & 0x000000FF);
+                // console.log("[H264] NALU: type = " + (data[i + 4] & 0x1F) + ", size = " + naluSize);
             }
 
             startCodeIndex = i;
@@ -35208,6 +35209,7 @@ mpegts.h264.bytestreamToMp4 = function(data) { // data as Uint8Array
     data[startCodeIndex + 1] = (naluSize & 0x00FF0000) >> 16;
     data[startCodeIndex + 2] = (naluSize & 0x0000FF00) >> 8;
     data[startCodeIndex + 3] = (naluSize & 0x000000FF);
+    // console.log("[H264] NALU: type = " + (data[i + 4] & 0x1F) + ", size = " + naluSize);
 
 };
 
