@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-3-8_8:52:8 / git revision : af0bc51 */
+/* Last build : 2017-3-8_13:28:27 / git revision : 4278d1b */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.9.0-dev',
-        GIT_TAG = 'af0bc51',
-        BUILD_DATE = '2017-3-8_8:52:8',
+        GIT_TAG = '4278d1b',
+        BUILD_DATE = '2017-3-8_13:28:27',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -4756,7 +4756,9 @@ MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT = "DOWNLOAD
 MediaPlayer.dependencies.ErrorHandler.prototype.CC_ERR_PARSE = "CC_ERR_PARSE";
 
 // HLS errors
+MediaPlayer.dependencies.ErrorHandler.prototype.HLS_INVALID_PACKET_ERROR = "HLS_INVALID_PACKET_ERROR";
 MediaPlayer.dependencies.ErrorHandler.prototype.HLS_DEMUX_ERROR = "HLS_DEMUX_ERROR";
+MediaPlayer.dependencies.ErrorHandler.prototype.HLS_INVALID_KEY_ERROR = "HLS_INVALID_KEY_ERROR";
 
 // MediaKeyError from EME v0.1b (https://dvcs.w3.org/hg/html-media/raw-file/eme-v0.1b/encrypted-media/encrypted-media.html)
 MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR = "MEDIA_KEYERR";
@@ -4801,6 +4803,7 @@ MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_QUOTA_EXCEEDED = 22;
 MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_TIMEOUT = 23;
 MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_INVALID_NODE_TYPE = 24;
 MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_DATA_CLONE = 25;
+
 MediaPlayer.utils.EventBus = function() {
     "use strict";
 
@@ -24654,6 +24657,11 @@ Hls.dependencies.HlsDemux = function() {
             return null;
         },
 
+        checkTsPacket = function(data) {
+            var tsPacket = new mpegts.ts.TsPacket();
+            return tsPacket.checkSyncWord(data.subarray(0, mpegts.ts.TsPacket.prototype.TS_PACKET_SIZE));
+        },
+
         getPAT = function(data) {
             var tsPacket = getTsPacket.call(this, data, 0, mpegts.ts.TsPacket.prototype.PAT_PID);
 
@@ -25036,6 +25044,14 @@ Hls.dependencies.HlsDemux = function() {
                 track,
                 streamTypeDesc;
 
+            // First, check that packet is really a TS packet
+            if( !checkTsPacket.call(this,data) ) {
+                throw {
+                    name: MediaPlayer.dependencies.ErrorHandler.prototype.HLS_INVALID_PACKET_ERROR,
+                    message: "Failed to demux, packet is invalid, missing SYNC byte"
+                };
+            }
+
             // Get PSI (PAT, PMT)
             pat = getPAT.call(this, data);
             if (pat === null) {
@@ -25199,6 +25215,7 @@ Hls.dependencies.HlsDemux = function() {
 Hls.dependencies.HlsDemux.prototype = {
     constructor: Hls.dependencies.HlsDemux
 };
+
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
@@ -25214,12 +25231,12 @@ Hls.dependencies.HlsDemux.prototype = {
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-Hls.dependencies.HlsFragmentController = function() {
+Hls.dependencies.HlsFragmentController = function () {
     "use strict";
 
     var decryptionInfos = {},
 
-        generateMediaSegment = function(data, request) {
+        generateMediaSegment = function (data, request) {
             var i = 0,
                 // Demultiplex HLS chunk to get samples
                 tracks = rslt.hlsDemux.demux(new Uint8Array(data), request);
@@ -25243,7 +25260,7 @@ Hls.dependencies.HlsFragmentController = function() {
             return rslt.mp4Processor.generateInitMediaSegment(tracks);
         },
 
-        createInitializationVector = function(segmentNumber) {
+        createInitializationVector = function (segmentNumber) {
             var uint8View = new Uint8Array(16),
                 i = 0;
 
@@ -25254,7 +25271,7 @@ Hls.dependencies.HlsFragmentController = function() {
             return uint8View;
         },
 
-        decrypt = function(data, decryptionInfo) {
+        decrypt = function (data, decryptionInfo) {
 
             var t = new Date();
 
@@ -25280,7 +25297,7 @@ Hls.dependencies.HlsFragmentController = function() {
             return decrypter.decrypt(data);
         },
 
-        loadDecryptionKey = function(decryptionInfo) {
+        loadDecryptionKey = function (decryptionInfo) {
             var deferred = Q.defer();
 
             this.debug.log("[HlsFragmentController]", "Load decryption key: " + decryptionInfo.uri);
@@ -25292,7 +25309,7 @@ Hls.dependencies.HlsFragmentController = function() {
                     decryptionInfo.key = new Uint8Array(request.response);
                     deferred.resolve();
                 },
-                function(request) {
+                function (request) {
                     if (!request || request.aborted) {
                         deferred.reject();
                     } else {
@@ -25311,7 +25328,7 @@ Hls.dependencies.HlsFragmentController = function() {
             return deferred.promise;
         },
 
-        decryptSegment = function(bytes, request) {
+        decryptSegment = function (bytes, request) {
             var deferred = Q.defer(),
                 decryptionInfo,
                 self = this;
@@ -25331,7 +25348,15 @@ Hls.dependencies.HlsFragmentController = function() {
             } else {
                 decryptionInfo = request.decryptionInfo;
                 loadDecryptionKey.call(this, decryptionInfo).then(
-                    function() {
+                    function () {
+
+                        // check key
+                        if (decryptionInfo.key && decryptionInfo.key.byteLength !== 16) {
+                            return deferred.reject({
+                                name: MediaPlayer.dependencies.ErrorHandler.prototype.HLS_INVALID_KEY_ERROR,
+                                message: "Invalid HLS key - Key length (" + decryptionInfo.key.byteLength + ") does not respect specification"
+                            });
+                        }
                         decryptionInfos[decryptionInfo.uri] = decryptionInfo;
                         deferred.resolve(decrypt.call(self, bytes, decryptionInfo));
                     },
@@ -25350,7 +25375,7 @@ Hls.dependencies.HlsFragmentController = function() {
     rslt.hlsDemux = undefined;
     rslt.mp4Processor = undefined;
 
-    rslt.process = function(bytes, request/*, representation*/) {
+    rslt.process = function (bytes, request /*, representation*/ ) {
         var deferred = Q.defer(),
             result = null;
 
@@ -25371,7 +25396,7 @@ Hls.dependencies.HlsFragmentController = function() {
         }
 
         // Decrypt the segment if encrypted
-        decryptSegment.call(rslt, bytes, request).then(function(data) {
+        decryptSegment.call(rslt, bytes, request).then(function (data) {
             //console.saveBinArray(data, request.url.substring(request.url.lastIndexOf('/') + 1));
             try {
                 // First check stream has not been reset while decrypting the chunk
@@ -25400,6 +25425,7 @@ Hls.dependencies.HlsFragmentController = function() {
 Hls.dependencies.HlsFragmentController.prototype = {
     constructor: Hls.dependencies.HlsFragmentController
 };
+
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
@@ -36074,6 +36100,13 @@ mpegts.ts.TsPacket.prototype.parse = function(data) {
     }
 };
 
+mpegts.ts.TsPacket.prototype.checkSyncWord = function(data) {
+    var byteId = 0;
+    var sync = data[byteId];
+
+    return (sync === this.SYNC_WORD);
+};
+
 mpegts.ts.TsPacket.prototype.getPid = function() {
     return this.m_nPID;
 };
@@ -36107,6 +36140,7 @@ mpegts.ts.TsPacket.prototype.STREAM_ID_EMM_STREAM = 0xF1;
 mpegts.ts.TsPacket.prototype.STREAM_ID_DSMCC_STREAM = 0xF2;
 mpegts.ts.TsPacket.prototype.STREAM_ID_H2221_TYPE_E_STREAM = 0xF8;
 mpegts.ts.TsPacket.prototype.STREAM_ID_PROGRAM_STREAM_DIRECTORY = 0xFF;
+
 /*   Copyright (C) 2011,2012,2013,2014 John Kula */
 
 /*
