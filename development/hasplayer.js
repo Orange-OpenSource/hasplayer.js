@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-3-8_13:54:30 / git revision : 0c29596 */
+/* Last build : 2017-3-8_13:54:27 / git revision : 744db0e */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -66,8 +66,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.9.0-dev',
-        GIT_TAG = '0c29596',
-        BUILD_DATE = '2017-3-8_13:54:30',
+        GIT_TAG = '744db0e',
+        BUILD_DATE = '2017-3-8_13:54:27',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -6545,7 +6545,9 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
 
     detachMediaSource: function (videoModel) {
         "use strict";
-        videoModel.setSource(null);
+        // it seems that any value passed to the setSource is cast to a string when setting element.src,
+        // so we cannot use null or undefined to reset the element. Use empty string instead.
+        videoModel.setSource("");
         return true;
     },
 
@@ -6562,7 +6564,7 @@ MediaPlayer.dependencies.MediaSourceExtensions.prototype = {
                 break;
             }
         }
-
+        
         if (!updating) {
             source.duration = value;
         }
@@ -8953,7 +8955,7 @@ MediaPlayer.dependencies.Stream = function() {
         startStreamTime = -1,
         visibilitychangeListener,
 
-        // ProtectionController events listener
+        // Protection errors
         onProtectionError = function(event) {
             this.errHandler.sendError(event.data.code, event.data.message, event.data.data);
         },
@@ -9135,53 +9137,6 @@ MediaPlayer.dependencies.Stream = function() {
             return fragmentInfoController;
         },
 
-        initializeProtectionController = function () {
-            var deferred = null,
-                data,
-                audioCodec = null,
-                videoCodec = null,
-                ksSelected,
-                self = this;
-
-            data = this.manifestExt.getVideoData(manifest, periodInfo.index);
-            if (data) {
-                videoCodec = this.manifestExt.getCodec(data);
-                contentProtection = this.manifestExt.getContentProtectionData(data);
-            }
-            data = this.manifestExt.getSpecificAudioData(manifest, periodInfo.index, defaultAudioLang);
-            if (data) {
-                audioCodec = this.manifestExt.getCodec(data);
-            }
-
-            if (!contentProtection) {
-                return Q.when(true);
-            }
-
-            if (!this.capabilities.supportsEncryptedMedia()) {
-                // No protectionController (MediaKeys not supported/enabled) but content is protected => error
-                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS, "EME is not supported/enabled", null);
-                return Q.when(false);
-            }
-
-            if (!protectionController) {
-                return Q.when(true);
-            }
-
-            deferred = Q.defer();
-
-            ksSelected = {};
-            ksSelected[MediaPlayer.dependencies.ProtectionController.eventList.ENAME_KEY_SYSTEM_SELECTED] = function(event) {
-                self.debug.log("[Stream] ProtectionController initialized");
-                protectionController.unsubscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_KEY_SYSTEM_SELECTED, ksSelected);
-                deferred.resolve(true);
-            };
-            protectionController.subscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_KEY_SYSTEM_SELECTED, ksSelected);
-            this.debug.log("[Stream] Initialize ProtectionController");
-            protectionController.init(contentProtection, audioCodec, videoCodec);
-
-            return deferred.promise;
-        },
-
         initializeMediaSource = function() {
             var data,
                 videoCodec,
@@ -9263,6 +9218,14 @@ MediaPlayer.dependencies.Stream = function() {
             // Initialize EventController
             if (eventController) {
                 eventController.addInlineEvents(this.manifestExt.getEventsForPeriod(manifest, periodInfo));
+            }
+
+            // Initialize ProtectionController
+            if (protectionController) {
+                protectionController.init(contentProtection, audioCodec, videoCodec);
+            } else if (contentProtection && !this.capabilities.supportsEncryptedMedia()) {
+                // No protectionController (MediaKeys not supported/enabled) but content is protected => error
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIAKEYS, "EME is not supported/enabled", null);
             }
 
             initializeMediaSourceFinished = true;
@@ -9661,19 +9624,17 @@ MediaPlayer.dependencies.Stream = function() {
                 return;
             }
 
-            initializeProtectionController.call(self).then(function() {
-                self.debug.log("[Stream] Setup MediaSource");
-                setUpMediaSource.call(self, mediaSource).then(
-                    function(mediaSourceResult) {
-                        mediaSource = mediaSourceResult;
-                        self.debug.log("[Stream] Initialize MediaSource");
-                        initializeMediaSource.call(self);
-                        self.debug.log("[Stream] Initialize playback");
-                        initializePlayback.call(self);
-                        self.debug.log("[Stream] Playback initialized");
-                    }
-                );
-            });
+            self.debug.log("[Stream] Setup MediaSource");
+            setUpMediaSource.call(self, mediaSource).then(
+                function(mediaSourceResult) {
+                    mediaSource = mediaSourceResult;
+                    self.debug.log("[Stream] Initialize MediaSource");
+                    initializeMediaSource.call(self);
+                    self.debug.log("[Stream] Initialize playback");
+                    initializePlayback.call(self);
+                    self.debug.log("[Stream] Playback initialized");
+                }
+            );
         },
 
         setVideoModelCurrentTime = function(time) {
@@ -10848,8 +10809,6 @@ MediaPlayer.dependencies.StreamController = function() {
         reset: function(reason) {
             var teardownComplete = {},
                 funcs = [],
-                stream,
-                i,
                 self = this;
 
             this.debug.info("[StreamController] Reset");
@@ -10864,55 +10823,58 @@ MediaPlayer.dependencies.StreamController = function() {
             self.manifestUpdater.stop();
             self.parser.reset();
 
-            teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE] = function() {
-                // Complete ProtectionController teardown process
-                ownProtectionController = false;
-                protectionController = null;
-                protectionData = null;
-
-                self.manifestModel.setValue(null);
-
-                self.metricsModel.addState('video', 'stopped', self.videoModel.getCurrentTime(), reason);
-                self.metricsModel.clearAllCurrentMetrics();
-                self.notify(MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE);
-            };
-
             // Wait for current loading process (manifest download and updating) to be achieved
             Q.when(deferredLoading ? deferredLoading.promise : true).then(function () {
 
+                // Pause the active stream, but reset only once protection controller and media key sessions have been resetted
                 self.pause();
 
+                self.metricsModel.clearAllCurrentMetrics();
                 isPeriodSwitchingInProgress = false;
 
-                // Reset the streams
-                for (i = 0; i < streams.length; i += 1) {
-                    stream = streams[i];
-                    funcs.push(stream.reset());
-                    if (stream !== activeStream) {
-                        removeVideoElement(stream.getVideoModel().getElement());
-                    }
-                }
+                teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE] = function() {
+                    var i = 0,
+                        ln,
+                        stream;
 
-                // Reset the video model (stalled states)
-                self.videoModel.reset();
+                    // Complete teardown process
+                    ownProtectionController = false;
+                    protectionController = null;
+                    protectionData = null;
 
-                Q.all(funcs).then(
-                    function() {
-                        streams = [];
-                        activeStream = null;
-
-                        // Teardown the protection system
-                        if (!protectionController) {
-                            teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE]();
-                        } else if (ownProtectionController) {
-                            protectionController.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE, teardownComplete, undefined, true);
-                            protectionController.teardown();
-                        } else {
-                            protectionController.setMediaElement(null);
-                            teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE]();
+                    // Reset the streams
+                    for (i = 0, ln = streams.length; i < ln; i += 1) {
+                        stream = streams[i];
+                        funcs.push(stream.reset());
+                        if (stream !== activeStream) {
+                            removeVideoElement(stream.getVideoModel().getElement());
                         }
                     }
-                );
+
+                    // Reset the video model (and controllers stalled states)
+                    self.videoModel.reset();
+
+                    Q.all(funcs).then(
+                        function() {
+                            streams = [];
+                            activeStream = null;
+                            self.metricsModel.addState('video', 'stopped', self.videoModel.getCurrentTime(), reason);
+                            self.notify(MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE);
+                        });
+
+                    self.manifestModel.setValue(null);
+                };
+
+                // Teardown the protection system, if necessary
+                if (!protectionController) {
+                    teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE]();
+                } else if (ownProtectionController) {
+                    protectionController.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE, teardownComplete, undefined, true);
+                    protectionController.teardown();
+                } else {
+                    protectionController.setMediaElement(null);
+                    teardownComplete[MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE]();
+                }
             });
         },
 
@@ -11256,12 +11218,7 @@ MediaPlayer.models.VideoModel = function () {
         },
 
         setSource: function (source) {
-            if (source) {
-                element.src = source;
-            } else {
-                element.removeAttribute('src');
-                element.load();
-            }
+            element.src = source;
         },
 
         isStalled: function () {
@@ -19500,87 +19457,95 @@ MediaPlayer.dependencies.protection.CommonEncryption = {
         if (data === null)
             return [];
 
-        var dv = new DataView(data);
-        var done = false;
-        var pssh = {};
+        var buffer = data,
+            done = false,
+            pssh = {},
+            // TODO: Need to check every data read for end of buffer
+            byteCursor = 0,
+            size,
+            nextBox,
+            version,
+            systemID,
+            psshDataSize,
+            boxStart,
+            i,
+            val;
 
-        // TODO: Need to check every data read for end of buffer
-        var byteCursor = 0;
+        if (!data.buffer) {
+            buffer = new Uint8Array(data);
+        }
+
         while (!done) {
 
-            var size,
-                nextBox,
-                version,
-                systemID,
-                psshDataSize;
-            var boxStart = byteCursor;
+            boxStart = byteCursor;
 
-            if (byteCursor >= dv.buffer.byteLength)
+            if (byteCursor >= buffer.byteLength)
                 break;
 
             /* Box size */
-            size = dv.getUint32(byteCursor);
+            size = this.readBytes(buffer, byteCursor, 4);
             nextBox = byteCursor + size;
             byteCursor += 4;
 
             /* Verify PSSH */
-            if (dv.getUint32(byteCursor) !== 0x70737368) {
+            if (this.readBytes(buffer, byteCursor, 4) !== 0x70737368) {
                 byteCursor = nextBox;
                 continue;
             }
             byteCursor += 4;
 
             /* Version must be 0 or 1 */
-            version = dv.getUint8(byteCursor);
+            version = this.readBytes(buffer, byteCursor, 1);
             if (version !== 0 && version !== 1) {
                 byteCursor = nextBox;
                 continue;
             }
-            byteCursor++;
+            byteCursor += 1;
 
             byteCursor += 3; /* skip flags */
 
             // 16-byte UUID/SystemID
-            systemID = '';
-            var i, val;
+            systemID = "";
+
             for (i = 0; i < 4; i++) {
-                val = dv.getUint8(byteCursor + i).toString(16);
-                systemID += (val.length === 1) ? '0' + val : val;
+                val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
+                systemID += (val.length === 1) ? "0" + val : val;
             }
             byteCursor += 4;
-            systemID += '-';
+            systemID += "-";
             for (i = 0; i < 2; i++) {
-                val = dv.getUint8(byteCursor + i).toString(16);
-                systemID += (val.length === 1) ? '0' + val : val;
+                val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
+                systemID += (val.length === 1) ? "0" + val : val;
             }
             byteCursor += 2;
-            systemID += '-';
+            systemID += "-";
             for (i = 0; i < 2; i++) {
-                val = dv.getUint8(byteCursor + i).toString(16);
-                systemID += (val.length === 1) ? '0' + val : val;
+                val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
+                systemID += (val.length === 1) ? "0" + val : val;
             }
             byteCursor += 2;
-            systemID += '-';
+            systemID += "-";
             for (i = 0; i < 2; i++) {
-                val = dv.getUint8(byteCursor + i).toString(16);
-                systemID += (val.length === 1) ? '0' + val : val;
+                val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
+                systemID += (val.length === 1) ? "0" + val : val;
             }
             byteCursor += 2;
-            systemID += '-';
+            systemID += "-";
             for (i = 0; i < 6; i++) {
-                val = dv.getUint8(byteCursor + i).toString(16);
-                systemID += (val.length === 1) ? '0' + val : val;
+                val = this.readBytes(buffer, (byteCursor + i), 1).toString(16);
+                systemID += (val.length === 1) ? "0" + val : val;
             }
             byteCursor += 6;
 
             systemID = systemID.toLowerCase();
 
             /* PSSH Data Size */
-            psshDataSize = dv.getUint32(byteCursor);
+            psshDataSize = this.readBytes(buffer, byteCursor, 4);
             byteCursor += 4;
 
             /* PSSH Data */
-            pssh[systemID] = dv.buffer.slice(boxStart, nextBox);
+            //pssh[systemID] = buffer.slice(boxStart, nextBox);
+            pssh[systemID] = buffer.subarray(boxStart, nextBox).buffer;
             byteCursor = nextBox;
         }
 
@@ -19726,6 +19691,8 @@ MediaPlayer.dependencies.ProtectionController = function() {
                 ksSelected,
                 keySystemAccess;
 
+            self.debug.log("[DRM] Select key system");
+
             if (this.keySystem) {
                 // We have a key system
                 for (ksIdx = 0; ksIdx < supportedKS.length; ksIdx++) {
@@ -19745,10 +19712,8 @@ MediaPlayer.dependencies.ProtectionController = function() {
                         // system and codec information
                         ksAccess = {};
                         ksAccess[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE] = function(event) {
-                            self.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE, ksAccess);
                             if (event.error) {
                                 //if (!fromManifest) {
-                                self.debug.log("[DRM] KeySystem Access Denied! -- " + event.error);
                                 self.eventBus.dispatchEvent({
                                     type: MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED,
                                     error: "[DRM] KeySystem Access Denied! -- " + event.error
@@ -19790,10 +19755,6 @@ MediaPlayer.dependencies.ProtectionController = function() {
                 ksSelected = {};
 
                 ksSelected[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE] = function(event) {
-                    if (!self.protectionModel) {
-                        return;
-                    }
-                    self.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE, ksSelected);
                     if (event.error) {
                         self.debug.log("[DRM] KeySystem Access Denied!");
                         self.keySystem = undefined;
@@ -19813,14 +19774,9 @@ MediaPlayer.dependencies.ProtectionController = function() {
                     }
                 };
                 ksSelected[MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED] = function(event) {
-                    if (!self.protectionModel) {
-                        return;
-                    }
-                    self.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED, ksSelected);
                     if (!event.error) {
                         self.debug.log("[DRM] KeySystem selected => create key session");
                         self.keySystem = self.protectionModel.keySystem;
-                        self.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_KEY_SYSTEM_SELECTED, keySystemAccess);
                         self.eventBus.dispatchEvent({
                             type: MediaPlayer.dependencies.ProtectionController.events.KEY_SYSTEM_SELECTED,
                             data: keySystemAccess
@@ -20081,7 +20037,7 @@ MediaPlayer.dependencies.ProtectionController = function() {
 
         onKeySessionClosed = function(event) {
             if (!event.error) {
-                this.debug.log("[DRM] Session closed. SessionID = " + event.data);
+                this.debug.log("[DRM] Session closed.  SessionID = " + event.data);
             } else {
                 this.debug.warn("[DRM] Failed to close session");
             }
@@ -20089,7 +20045,7 @@ MediaPlayer.dependencies.ProtectionController = function() {
 
         onKeySessionRemoved = function(event) {
             if (!event.error) {
-                this.debug.log("[DRM] Session removed. SessionID = " + event.data);
+                this.debug.log("[DRM] Session removed.  SessionID = " + event.data);
             } else {
                 this.debug.warn("[DRM] Failed to remove session");
             }
@@ -20225,8 +20181,6 @@ MediaPlayer.dependencies.ProtectionController = function() {
          * @instance
          */
         teardown: function() {
-            var self = this;
-
             // abort request if xhrLicense is different from null
             if (xhrLicense) {
                 xhrLicense.aborted = true;
@@ -20241,13 +20195,11 @@ MediaPlayer.dependencies.ProtectionController = function() {
             this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_REMOVED, this);
             this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_MESSAGE, this);
             this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_STATUSES_CHANGED, this);
-
             this.keySystem = undefined;
 
-            this.setMediaElement(null).then(function() {
-                self.protectionModel.teardown();
-                self.protectionModel = undefined;
-            });
+            this.protectionModel.teardown();
+            this.setMediaElement(null);
+            this.protectionModel = undefined;
         },
 
         /**
@@ -20266,18 +20218,20 @@ MediaPlayer.dependencies.ProtectionController = function() {
          */
         createKeySession: function(initData, cdmData) {
 
+            this.debug.log("[DRM] Create key session");
+
             var initDataForKS = MediaPlayer.dependencies.protection.CommonEncryption.getPSSHForKeySystem(this.keySystem, initData),
                 i = 0,
                 currentInitData;
             if (initDataForKS) {
-
-                this.debug.log('[DRM] create key session for initData:', String.fromCharCode.apply(null, new Uint8Array(initDataForKS)));
-
                 // Check for duplicate initData
                 currentInitData = this.protectionModel.getAllInitData();
                 for (i = 0; i < currentInitData.length; i++) {
                     if (this.protectionExt.initDataEquals(initDataForKS, currentInitData[i])) {
                         this.debug.log("[DRM] Ignoring initData because we have already seen it!");
+                        // If Key session already exists for this content, we check if the session and stored license key
+                        // correclty decrypt the content
+                        //this.protectionModel.checkIfEncrypted();
                         return;
                     }
                 }
@@ -20367,11 +20321,12 @@ MediaPlayer.dependencies.ProtectionController = function() {
          */
         setMediaElement: function(element) {
             if (element) {
+                this.protectionModel.setMediaElement(element);
                 this.protectionModel.subscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY, this);
             } else if (element === null) {
+                this.protectionModel.setMediaElement(element);
                 this.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY, this);
             }
-            return this.protectionModel.setMediaElement(element);
         },
 
         /**
@@ -20552,8 +20507,7 @@ MediaPlayer.dependencies.ProtectionController.events = {
 };
 
 MediaPlayer.dependencies.ProtectionController.eventList = {
-    ENAME_PROTECTION_ERROR: "protectionError",
-    ENAME_KEY_SYSTEM_SELECTED: "keySystemSelected"
+    ENAME_PROTECTION_ERROR: "protectionError"
 };
 
 MediaPlayer.dependencies.ProtectionController.prototype = {
@@ -20738,6 +20692,8 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
     getSupportedKeySystemsFromContentProtection: function(cps) {
         var cp, ks, ksIdx, cpIdx, supportedKS = [];
 
+        this.debug.log("[DRM] Get supported key systems from content protection");
+
         if (cps) {
             for(ksIdx = 0; ksIdx < this.keySystems.length; ++ksIdx) {
                 ks = this.keySystems[ksIdx];
@@ -20746,7 +20702,7 @@ MediaPlayer.dependencies.ProtectionExtensions.prototype = {
                     if (cp.schemeIdUri.toLowerCase() === ks.schemeIdURI) {
 
                         //this.debug.log("[DRM] Supported key systems: " + ks.systemString + " (" + ks.schemeIdURI + ")");
-
+                        
                         // Look for DRM-specific ContentProtection
                         var initData = ks.getInitData(cp);
                         if (!!initData) {
@@ -21269,8 +21225,6 @@ MediaPlayer.models.ProtectionModel_01b = function () {
                 videoElement.addEventListener(api.keyadded, eventHandler);
                 this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_VIDEO_ELEMENT_SELECTED);
             }
-
-            return Q.When();
         },
 
         createKeySession: function(initData /*, keySystemType */) {
@@ -21733,8 +21687,6 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
                     setMediaKeys.call(this);
                 }
             }
-
-            return Q.when();
         },
 
         createKeySession: function(initData, sessionType, cdmData) {
@@ -22001,19 +21953,15 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                     switch (event.type) {
                         case "encrypted":
                             self.debug.log("[DRM][PM_21Jan2015] 'encrypted' event");
-                            if (event.initData) {
-                                var initData = ArrayBuffer.isView(event.initData) ? event.initData.buffer : event.initData;
-                                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY,
-                                        new MediaPlayer.vo.protection.NeedKey(initData, "cenc"));
-                            }
                             break;
                         case "waitingforkey":
                             self.debug.log("[DRM][PM_21Jan2015] 'waitingforkey' event");
-                            if (this.session !== null && this.session.usable) {
+                            if (this.session !== null && this.session.licenseStored && this.session.usable) {
                                 // Widevine CDM doesn't raised error if keys don't match
                                 // The unique way to check if the received license is valid is to track this event and raise an error
-                                // this.session = null;
-                                this.session.usable = false;
+                                this.session.licenseStored = false;
+                                this.session = null;
+                                videoElement.removeEventListener("waitingforkey", eventHandler);
                                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR,
                                     new MediaPlayer.vo.protection.KeyError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED, "Media is encrypted and no valid key is available"));
                             }
@@ -22027,7 +21975,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             // Remove from our session list
             for (var i = 0; i < sessions.length; i++) {
                 if (sessions[i] === token) {
-                    sessions.splice(i, 1);
+                    sessions.splice(i,1);
                     break;
                 }
             }
@@ -22036,6 +21984,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
         // Function to create our session token objects which manage the EME
         // MediaKeySession and session-specific event handler
         createSessionToken = function(session, initData, sessionType) {
+
             var self = this,
                 setSessionUsable = function (session, usable) {
                     for (var i = 0; i < sessions.length; i++) {
@@ -22046,9 +21995,11 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                     }
                 };
 
+
             var token = { // Implements MediaPlayer.vo.protection.SessionToken
                 session: session,
                 initData: initData,
+                licenseStored: false,
                 usable: false,
 
                 // This is our main event handler for all desired MediaKeySession events
@@ -22097,8 +22048,6 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                                         break;
                                     case "usable":
                                         setSessionUsable(event.target, true);
-                                        // Check 'waitinfforkey' event in case the received license does not apply to current content
-                                        videoElement.addEventListener("waitingforkey", eventHandler);
                                         break;
 
                                     //case "status-pending":
@@ -22176,53 +22125,74 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
         teardown: function() {
             var session,
-                nbSessions = sessions.length,
-                i,
-                self = this;
+                i;
 
             this.debug.log("[DRM][PM_21Jan2015] Teardown");
 
-            if (!this.config.getParam("Protection.licensePersistence", "boolean", false)) {
-                // If license persistence is not enabled, then close sessions and release/delete MediaKeys instance
-                // Called when we are done closing a session.
+            if (this.config.getParam("Protection.licensePersistence", "boolean", false)) {
+                // Remove only session without license
+                for (i = 0; i < sessions.length; i++) {
+                    session = sessions[i];
+                    if (!session.licenseStored) {
+                       sessions.splice(i, 1);
+                       i--;
+                    }
+                }
+            } else {
+                // By default remove all licenses
+                sessions = [];
+            }
+
+            videoElement.removeEventListener("waitingforkey", eventHandler);
+
+            // Do not close and remove sessions to keep licences persistence
+            this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
+            return;
+
+            /*if (numSessions !== 0) {
+                // Called when we are done closing a session.  Success or fail
                 var done = function(session) {
                     removeSession(session);
-                    if (i >= (nbSessions - 1)) {
-                        mediaKeys = null;
-                        self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
+                    if (sessions.length === 0) {
+                        if (videoElement) {
+                            videoElement.removeEventListener("encrypted", eventHandler);
+                            videoElement.setMediaKeys(null).then(function () {
+                                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
+                            });
+                        } else {
+                            self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
+                        }
                     }
                 };
-
-                if (nbSessions === 0) {
-                    mediaKeys = null;
-                    this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
-                    return;
-                }
-
-                for (i = 0; i < nbSessions; i++) {
+                for (var i = 0; i < numSessions; i++) {
                     session = sessions[i];
                     (function (s) {
-                        self.debug.log("[DRM][PM_21Jan2015] Close session " + session.getSessionID());
                         // Override closed promise resolver
                         session.session.closed.then(function () {
                             done(s);
                         });
-                        // Close the session and handle errors, otherwise promise resolver above will be called
+                        // Close the session and handle errors, otherwise promise
+                        // resolver above will be called
                         closeKeySessionInternal(session).catch(function () {
                             done(s);
                         });
+
                     })(session);
                 }
             } else {
-                // If license persistence is enabled, then keep sessions en MediaKeys instance
                 this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
-            }
+            }*/
         },
 
         getAllInitData: function() {
             var retVal = [];
             for (var i = 0; i < sessions.length; i++) {
-                retVal.push(sessions[i].initData);
+                if (sessions[i].usable) {
+                    retVal.push(sessions[i].initData);
+                } else {
+                    sessions.splice(i, 1);
+                    i--;
+                }
             }
             return retVal;
         },
@@ -22237,7 +22207,6 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
             self.debug.log("[DRM][PM_21Jan2015] Select key system, create new MediaKeys");
 
-            // In case of license persistence we do not reset MediaKeys instance
             if (mediaKeys !== null) {
                 self.debug.log("[DRM][PM_21Jan2015] MediaKeys already created");
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED);
@@ -22249,7 +22218,6 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 mediaKeys = mkeys;
                 if (videoElement) {
                     videoElement.setMediaKeys(mediaKeys);
-                    videoElement.addEventListener("encrypted", eventHandler);
                 }
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED);
 
@@ -22261,39 +22229,31 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
         },
 
         setMediaElement: function(mediaElement) {
-            var self = this,
-                deferred = Q.defer();
+            if (videoElement === mediaElement)
+                return;
 
-            if (videoElement === mediaElement) {
-                deferred.resolve();
-                return deferred.promise;
+            // If media key sessions persistence is active, then we ignore reseting video element.
+            if (mediaElement === null && this.config.getParam("Protection.licensePersistence", "boolean", false)) {
+                return;
             }
 
+            // Replacing the previous element
             if (videoElement) {
                 videoElement.removeEventListener("encrypted", eventHandler);
                 videoElement.removeEventListener("waitingforkey", eventHandler);
-                videoElement.setMediaKeys(null).then(
-                    function () {
-                        self.debug.log("[DRM][PM_21Jan2015] Successfully detached MediaKeys from video element");
-                        deferred.resolve();
-                    },
-                    function (e) {
-                        self.debug.error("[DRM][PM_21Jan2015] Failed to detach MediaKeys from video element: " + e);
-                        deferred.resolve();
-                    }
-                );
+                videoElement.setMediaKeys(null);
+                mediaKeys = null;
             }
 
             videoElement = mediaElement;
 
+            // Only if we are not detaching from the existing element
             if (videoElement) {
+                videoElement.addEventListener("encrypted", eventHandler);
                 if (mediaKeys) {
-                    videoElement.addEventListener("encrypted", eventHandler);
                     videoElement.setMediaKeys(mediaKeys);
                 }
             }
-
-            return deferred.promise;
         },
 
         setServerCertificate: function(serverCertificate) {
@@ -22317,7 +22277,6 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             }
 
             this.debug.log("[DRM][PM_21Jan2015] Create key session, type = " + sessionType);
-            this.debug.log("[DRM][PM_21Jan2015] initData = " + String.fromCharCode.apply(null, new Uint8Array(initData)));
 
             var session = mediaKeys.createSession(sessionType);
             var sessionToken = createSessionToken.call(this, session, initData, sessionType);
@@ -22342,14 +22301,18 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             // Send our request to the key session
             var self = this;
 
-            self.debug.log("[DRM][PM_21Jan2015] Update key session. SessionID = " + session.sessionId);
+            self.debug.log("[DRM][PM_21Jan2015] Update key session " + session.sessionId);
 
             if (this.protectionExt.isClearKey(this.keySystem)) {
                 message = message.toJWK();
             }
             session.update(message)
-            .then(function() {
+            .then(function(){
+                // track license has been stored in order to not retry request
+                sessionToken.licenseStored = true;
+                // used to monitor wrong key added to the CDM
                 eventHandler.session = sessionToken;
+                videoElement.addEventListener("waitingforkey", eventHandler);
             })
             .catch(function (ex) {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_ERROR,
@@ -22362,7 +22325,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 throw new Error("Can not load sessions until you have selected a key system");
             }
 
-            this.debug.log("[DRM][PM_21Jan2015] Load key session. SessionID = " + sessionID);
+            this.debug.log("[DRM][PM_21Jan2015] Load key session, id = " + sessionID);
 
             var session = mediaKeys.createSession();
 
@@ -22390,21 +22353,21 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
             var session = sessionToken.session;
 
-            this.debug.log("[DRM][PM_21Jan2015] Remove key session. SessionID = " + sessionToken.getSessionID());
+            this.debug.log("[DRM][PM_21Jan2015] Remove key session");
 
             var self = this;
             session.remove().then(function () {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_REMOVED,
-                    sessionToken.getSessionID());
+                        sessionToken.getSessionID());
             }, function (error) {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SESSION_REMOVED,
-                    null, "Error removing session (" + sessionToken.getSessionID() + "). " + error.name);
+                        null, "Error removing session (" + sessionToken.getSessionID() + "). " + error.name);
             });
         },
 
         closeKeySession: function(sessionToken) {
 
-            this.debug.log("[DRM][PM_21Jan2015] Close key session. SessionID = " + sessionToken.getSessionID());
+            this.debug.log("[DRM][PM_21Jan2015] Close key session");
 
             // Send our request to the key session
             var self = this;
@@ -22415,7 +22378,9 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             });
         },
 
-        checkIfEncrypted: function() { /* Not supported */ }
+        checkIfEncrypted: function() {
+            videoElement.addEventListener("waitingforkey", eventHandler);
+        }
     };
 };
 
