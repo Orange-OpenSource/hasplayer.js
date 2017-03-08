@@ -329,6 +329,8 @@ MediaPlayer.models.ProtectionModel_3Feb2014 = function () {
                     setMediaKeys.call(this);
                 }
             }
+
+            return Q.when();
         },
 
         createKeySession: function(initData, sessionType, cdmData) {
