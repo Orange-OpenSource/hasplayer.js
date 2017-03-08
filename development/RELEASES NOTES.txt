@@ -1,3 +1,24 @@
+### Release Notes v1.9.0 (2017/03/08)
+* Consolidate EME/Protection layer management:
+* - Start playback only once ProtectionController is initialized (avoids conflicts on Chrome when setting MediaKeys on <video>)
+* - Reset Streams and the <video> source before resetting ProtectionController and MediaKeys (avoid playback issue on Firefox)
+* - Correct application-level's license persistence management
+* - Listen for 'waitingforkey' event only once the license is usable
+* - Add new error code MEDIA_KEYERR_EXPIRED for expired licences (instead of MEDIA_ERR_ENCRYPTED)
+* Enrich MEDIA_ERR_CODEC_UNSUPPORTED error's data
+* Stop/reset current playback when an error is raised
+* [MSS] Consider empty FourCC field only for audio streams
+* [HLS] Add error code HLS_INVALID_PACKET_ERROR in case of invalid MPEG2-TS chunks (for example if unsuccessfully decrypted)
+* [HLS] Add error code HLS_INVALID_KEY_ERROR in case of invalid AES keys
+* Bugs fixing:
+* - [HLS] Fix H.264 IDR access units detection
+* - [HLS] Fix segment lists processing when switching among alternative tracks
+* - [HLS] Fix reset process when AES key file is being downloaded
+* - [HLS] Fix DVR window refresh when playback is paused
+* - [MSS] Fix MP4 media fragments processing in case of trick play (when sample_duration is set as default in tfhd)
+* - Fix VTT parser if X-TIMESTAMP-MAP filed is missing
+* - Fix ABR DownloadRatioRule's bandwidth calculation in case of aborted requests
+
 ### Release Notes v1.8.0 (2017/01/23)
 * Implements license persistence at application layer (protection model 21Jan2015) according to player configuration (by default no license persistence)
 * [MSS] Add support for MSS static streams starting at t > 0 (live delinearization use case)
