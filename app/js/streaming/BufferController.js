@@ -90,7 +90,7 @@ MediaPlayer.dependencies.BufferController = function() {
         isFirefox = (fingerprint_browser().name === "Firefox"),
 
         sendRequest = function() {
-            // Check if running state
+
             if (!isRunning.call(this)) {
                 return;
             }
@@ -271,13 +271,14 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         onInitializationLoaded = function(request, response) {
-            var initData = response.data,
-                quality = request.quality,
-                self = this;
 
             if (!isRunning.call(this)) {
                 return;
             }
+
+            var initData = response.data,
+                quality = request.quality,
+                self = this;
 
             this.debug.log("[BufferController][" + type + "] Initialization loaded ", quality);
 
@@ -321,16 +322,17 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         onMediaLoaded = function(request, response) {
+
+            if (!isRunning.call(this)) {
+                return;
+            }
+
             var eventStreamAdaption = this.manifestExt.getEventStreamForAdaptationSet(this.getData()),
                 eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(this.getData(), _currentRepresentation),
                 events,
                 self = this;
 
             segmentDuration = request.duration;
-
-            if (!isRunning.call(this)) {
-                return;
-            }
 
             // Reset segment download error status
             segmentDownloadErrorCount = 0;
@@ -836,12 +838,12 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         loadInitialization = function(quality) {
-            var self = this;
 
-            // Check if running state
             if (!isRunning.call(this)) {
                 return Q.when(null);
             }
+
+            var self = this;
 
             // Check if initialization segment for current quality has already been loaded and stored
             if (initializationData[quality]) {
@@ -863,14 +865,15 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         loadNextFragment = function() {
+
+            if (!isRunning.call(this)) {
+                return;
+            }
+
             var time = getWorkingTime.call(this),
                 range,
                 segmentTime;
 
-            // Check if running state
-            if (!isRunning.call(this)) {
-                return;
-            }
 
             // If we override buffer (in case of language for example), then consider current video time for the next segment time
             if (overrideBuffer) {
@@ -897,6 +900,11 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         onFragmentRequest = function(request) {
+
+            if (!isRunning.call(this)) {
+                return;
+            }
+
             var manifest = this.manifestModel.getValue();
 
             // Check if current request signals end of stream
@@ -1004,13 +1012,13 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         checkIfSufficientBuffer = function() {
-            var timeToEnd,
-                delay;
 
-            // Check if running state
             if (!isRunning.call(this)) {
                 return;
             }
+
+            var timeToEnd,
+                delay;
 
             this.debug.log("[BufferController][" + type + "] Check buffer...");
 
