@@ -351,7 +351,7 @@ MediaPlayer.models.ProtectionModel_01b = function () {
                 this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_VIDEO_ELEMENT_SELECTED);
             }
 
-            return Q.When();
+            return Q.when();
         },
 
         createKeySession: function(initData /*, keySystemType */) {
