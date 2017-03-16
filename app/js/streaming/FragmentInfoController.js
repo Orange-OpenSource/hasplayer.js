@@ -24,11 +24,10 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         bufferTimeout,
         _fragmentInfoTime,
         _bufferController,
-        // ORANGE: segment downlaod failed recovery
+        // ORANGE: segment download failed recovery
         SEGMENT_DOWNLOAD_ERROR_MAX = 3,
         segmentDownloadFailed = false,
         segmentDownloadErrorCount = 0,
-        reloadTimeout = null,
         startFragmentInfoDate = null,
         startTimeStampValue = null,
         deltaTime = 0,
@@ -100,10 +99,6 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
 
             startFragmentInfoDate = null;
             startTimeStampValue = null;
-
-            // Stop reload timeout
-            clearTimeout(reloadTimeout);
-            reloadTimeout = null;
 
             this.fragmentController.abortRequestsForModel(fragmentModel);
         },
