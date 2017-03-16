@@ -75,7 +75,6 @@ MediaPlayer.dependencies.BufferController = function() {
         SEGMENT_DOWNLOAD_ERROR_MAX = 3,
         segmentDownloadErrorCount = 0,
         segmentRequestOnError = null,
-        reloadTimeout = null,
 
         // HLS chunk sequence number
         currentSequenceNumber = -1,
@@ -237,10 +236,6 @@ MediaPlayer.dependencies.BufferController = function() {
 
             seeking = false;
             seekTarget = -1;
-
-            // Stop reload timeout
-            clearTimeout(reloadTimeout);
-            reloadTimeout = null;
 
             // Stop buffering process and cancel loaded request
             clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.USER_REQUEST_STOP_REASON);
