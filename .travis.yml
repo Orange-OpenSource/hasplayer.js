@@ -8,7 +8,7 @@ addons:
     browserstack:
         username: "bertrandberthelo1"
         access_key:
-            secure: "ZPgCkVlmzP1pSgC9UF5WhZioV//c8QG6LlMqhWa96LjPlybNX12QY/mfzY9QvEC4qYCkeHKg/OKPm2pNF/7QuW76Zf6hJ80W3pLH+lGCuNQ+uywk5QvV95nYLWp+fIes5DKqdnGPhF4Ft/Ggkq4NlGAwpRID2P7Sxz1V4ARF/qY="
+            secure: "kB8iXiydT+xheyHox2zwq/1k75uUmF+F2b9k76Nhbb001Mh5608kzhH9xXFM+BUyM1pm3LImF+vYcSfKMYlDn/KBB7s9p8TJfwC/obbmtWJucSjtRiVo9aOOa7Ox2M+ACb0rsLpvzFRiHtYo0HZNFVkIfvqZN389Imm6UCOXsyo="
 before_install:
     - openssl aes-256-cbc -K $encrypted_98a7d362e1e4_key -iv $encrypted_98a7d362e1e4_iv -in travis_deploy.enc -out travis_deploy -d
     - npm install -g gulp
