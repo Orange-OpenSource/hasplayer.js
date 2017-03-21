@@ -159,6 +159,7 @@ MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_MIN = "min";
 MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_INFINITY = "infinity";
 MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_STARTUP = 1;
 MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME = 16;
+MediaPlayer.dependencies.BufferExtensions.DEFAULT_BUFFER_TO_KEEP = 30;
 MediaPlayer.dependencies.BufferExtensions.DEFAULT_LIVE_DELAY = 16;
 MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_TOP_QUALITY = 30;
 MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_TOP_QUALITY_LONG_FORM = 300;
