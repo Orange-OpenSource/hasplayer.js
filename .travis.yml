@@ -1,19 +1,22 @@
 language: node_js
-env:
-    global:
-        - ENCRYPTION_LABEL: 98a7d362e1e4
 node_js:
     - stable
 matrix:
     include:
         - env:
+            global:
+                - ENCRYPTION_LABEL: 98a7d362e1e4
             BUILD=true
             TEST=false
         - env:
+            global:
+                - ENCRYPTION_LABEL: 98a7d362e1e4
             BUILD=false
             TEST=true
             BROWSER=chrome
         - env:
+            global:
+                - ENCRYPTION_LABEL: 98a7d362e1e4
             BUILD=false
             TEST=true
             BROWSER=ie
