@@ -2,11 +2,21 @@ language: node_js
 env:
     global:
         - ENCRYPTION_LABEL: 98a7d362e1e4
-    matrix:
-        - BROWSER=chrome
-        - BROWSER=ie
 node_js:
     - stable
+matrix:
+    include:
+        - env:
+            BUILD=true
+            TEST=false
+        - env:
+            BUILD=false
+            TEST=true
+            BROWSER=chrome
+        - env:
+            BUILD=false
+            TEST=true
+            BROWSER=ie
 addons:
     browserstack:
         username: "bertrandberthelo1"
@@ -21,7 +31,6 @@ before_install:
 install:
     - npm install
 script:
-    - npm run build
-    - npm run deploy
-after_success:
-    - npm test
+    - if [[ "$BUILD" == "true" ]]; then npm run build ; fi
+    - if [[ "$BUILD" == "true" ]]; then npm run deploy ; fi
+    - if [[ "$TEST" == "true" ]]; then npm test ; fi
