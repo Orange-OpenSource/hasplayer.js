@@ -27,7 +27,7 @@ MediaPlayer = function () {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
-        VERSION = '',
+        VERSION = 'DEV',
         GIT_TAG = '@@REVISION',
         BUILD_DATE = '@@TIMESTAMP',
         context = new MediaPlayer.di.Context(), // default context
@@ -89,6 +89,10 @@ MediaPlayer = function () {
         playing = true;
 
         this.metricsModel.addSession(null, source.url, videoModel.getElement().loop, null, "MediaPlayer.js_" + this.getVersion());
+
+        this.debug.log("[MediaPlayer] Version: " + this.getVersionFull() + " - " + this.getBuildDate());
+        this.debug.log("[MediaPlayer] user-agent: " + navigator.userAgent);
+        this.debug.log("[MediaPlayer] Load stream:\n", JSON.stringify(source, null, '  '));
 
         // streamController Initialization
         if (!streamController) {
