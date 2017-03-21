@@ -15,49 +15,49 @@ define([
     'test/functional/tests/player_functions',
     'test/functional/tests/video_functions',
     'test/functional/tests/tests_functions'
-    ], function(registerSuite, assert, require, config, player, video, tests) {
+], function(registerSuite, assert, require, config, player, video, tests) {
 
-        // Suite name
-        var NAME = 'TEST_PLAY';
+    // Suite name
+    var NAME = 'TEST_PLAY';
 
-        // Test configuration (see config/testConfig.js)
-        var testConfig = config.tests.play.play,
-            streams = testConfig.streams;
+    // Test configuration (see config/testConfig.js)
+    var testConfig = config.tests.play,
+        streams = tests.getTestStreams(config.tests.play);
 
-        // Test constants
-        var PROGRESS_DELAY = 3;
-        var ASYNC_TIMEOUT = PROGRESS_DELAY + config.asyncTimeout;
+    // Test constants
+    var PROGRESS_DELAY = 5;
+    var ASYNC_TIMEOUT = PROGRESS_DELAY + config.asyncTimeout;
 
-        // Test variables
-        var command = null;
+    // Test variables
+    var command = null;
 
-        var test = function(stream) {
+    var test = function(stream) {
 
-            registerSuite({
-                name: NAME,
+        registerSuite({
+            name: NAME,
 
-                setup: function() {
-                    tests.log(NAME, 'Setup');
-                    command = this.remote.get(require.toUrl(config.testPage));
-                    command = tests.setup(command);
-                    return command;
-                },
+            setup: function() {
+                tests.log(NAME, 'Setup');
+                command = this.remote.get(require.toUrl(config.testPage));
+                command = tests.setup(command);
+                return command;
+            },
 
-                loadStream: function() {
-                    tests.logLoadStream(NAME, stream);
-                    return command.execute(player.loadStream, [stream]);
-                },
+            loadStream: function() {
+                tests.logLoadStream(NAME, stream);
+                return command.execute(player.loadStream, [stream]);
+            },
 
-                playing: function() {
-                    return tests.executeAsync(command, video.isPlaying, [PROGRESS_DELAY], ASYNC_TIMEOUT)
+            playing: function() {
+                return tests.executeAsync(command, video.isPlaying, [PROGRESS_DELAY], ASYNC_TIMEOUT)
                     .then(function(playing) {
                         assert.isTrue(playing);
                     });
-                }
-            });
-        };
+            }
+        });
+    };
 
-        for (var i = 0; i < streams.length; i++) {
-            test(streams[i]);
-        }
+    for (var i = 0; i < streams.length; i++) {
+        test(streams[i]);
+    }
 });

@@ -1,136 +1,187 @@
-
 define([], function () {
+
     return {
 
-        loadStream: function(stream) {
-            window.mediaPlayer = player;
-            mediaPlayer.load(stream);
+        loadStream: function (stream) {
+            player.load(stream);
         },
 
-        getDuration: function() {
-            return mediaPlayer.getDuration();
+        setParams: function (params) {
+            player.setParams(params);
         },
 
-        play: function() {
-            mediaPlayer.play();
+        getDuration: function () {
+            return player.getDuration();
         },
 
-        pause: function() {
-            mediaPlayer.pause();
+        play: function () {
+            player.play();
         },
 
-        stop: function() {
-            mediaPlayer.stop();
+        pause: function () {
+            player.pause();
         },
 
-        seek: function(pos, done) {
-            var onSeeked = function() {
-                    mediaPlayer.removeEventListener('seeked', onSeeked);
-                    done(true);
-                };
-
-            mediaPlayer.addEventListener('seeked', onSeeked);
-            mediaPlayer.seek(pos);
+        stop: function () {
+            player.stop();
         },
 
-        setMute: function(isMute) {
-            mediaPlayer.setMute(isMute);
+        seek: function (pos, done) {
+            var onSeeked = function () {
+                player.removeEventListener('seeked', onSeeked);
+                done(true);
+            };
+
+            player.addEventListener('seeked', onSeeked);
+            player.seek(pos);
         },
 
-        getMute: function() {
-            return mediaPlayer.getMute();
+        setMute: function (isMute) {
+            player.setMute(isMute);
         },
 
-        setTrickModeSpeed: function(speed) {
-            mediaPlayer.setTrickModeSpeed(speed);
+        getMute: function () {
+            return player.getMute();
         },
 
-        getTrickModeSpeed: function(speed) {
-            return mediaPlayer.getTrickModeSpeed();
+        setTrickModeSpeed: function (speed) {
+            player.setTrickModeSpeed(speed);
         },
 
-        getVideoBitrates: function() {
-            return mediaPlayer.getVideoBitrates();
+        getTrickModeSpeed: function () {
+            return player.getTrickModeSpeed();
         },
 
-        getAudioLanguages: function() {
-            return mediaPlayer.getTracks(MediaPlayer.TRACKS_TYPE.AUDIO);
+        getVideoBitrates: function () {
+            return player.getVideoBitrates();
         },
 
-        getSelectedAudioLanguage: function() {
-            return mediaPlayer.getSelectedTrack(MediaPlayer.TRACKS_TYPE.AUDIO);
+        getTracks: function (type) {
+            return player.getTracks(type);
         },
 
-        setSelectedAudioLanguage: function(audioTrack) {
-            return mediaPlayer.selectTrack(MediaPlayer.TRACKS_TYPE.AUDIO,audioTrack);
+        getSelectedTrack: function (type) {
+            return player.getSelectedTrack(type);
         },
 
-        setDefaultAudioLanguage: function(lang) {
-            return mediaPlayer.setDefaultAudioLang(lang);
+        selectTrack: function (type, track) {
+            player.selectTrack(type, track);
         },
 
-        getSubtitleLanguages: function() {
-            return mediaPlayer.getTracks(MediaPlayer.TRACKS_TYPE.TEXT);
+        getDefaultLang: function (type) {
+            if (type === 'audio') {
+                return player.getDefaultAudioLang();
+            }
+            if (type === 'text') {
+                return player.getDefaultSubtitleLang();
+            }
         },
 
-        getSelectedSubtitleLanguage: function() {
-            return mediaPlayer.getSelectedTrack(MediaPlayer.TRACKS_TYPE.TEXT);
+        setDefaultLang: function (type, lang) {
+            if (type === 'audio') {
+                return player.setDefaultAudioLang(lang);
+            }
+            if (type === 'text') {
+                return player.setDefaultSubtitleLang(lang);
+            }
         },
 
-        setSelectedSubtitleLanguage: function(subtitleTrack) {
-            return mediaPlayer.selectTrack(MediaPlayer.TRACKS_TYPE.TEXT,subtitleTrack);
+        enableSubtitles: function (state) {
+            player.enableSubtitles(state);
         },
 
-        setSubtitlesVisibility: function(state) {
-            return mediaPlayer.enableSubtitles(state);
+        isSubtitlesEnabled: function () {
+            return player.isSubtitlesEnabled();
         },
 
-        setDefaultSubtitleLanguage: function(lang) {
-            return mediaPlayer.setDefaultSubtitleLang(lang);
+        setSubtitlesVisibility: function (state) {
+            player.enableSubtitles(state);
         },
 
-        isLive: function() {
-            return mediaPlayer.isLive();
+        getSubtitlesVisibility: function () {
+            return player.isSubtitlesEnabled();
         },
 
-        getDVRWindowRange: function() {
-            return mediaPlayer.getDVRWindowRange();
+        enableSubtitleExternDisplay: function (state) {
+            player.enableSubtitleExternDisplay(state);
+        },
+
+        isLive: function () {
+            return player.isLive();
+        },
+
+        getDVRWindowRange: function () {
+            return player.getDVRWindowRange();
         },
 
         waitForEvent: function (event, done) {
-            var onEventHandler = function() {
-                    mediaPlayer.removeEventListener(event, onEventHandler);
-                    done(true);
+            var onPlayerEventListener = function (param) {
+                player.removeEventListener(event, onPlayerEventListener);
+                if (param instanceof Event) {
+                    done(true); // if param is a Javascript event object event, do not serialize it (maximum call stack excedeed error otherwise)
+                } else {
+                    done(param ? param : true);
+                }
+            };
+
+            player.addEventListener(event, onPlayerEventListener);
+
+        },
+
+        getError: function (done) {
+            var error = player.getError(),
+                onError = function (err) {
+                    player.removeEventListener('error', onError);
+                    done(err.data);
                 };
 
-            mediaPlayer.addEventListener(event, onEventHandler);
+            if (error) {
+                done(error);
+            } else {
+                player.addEventListener('error', onError);
+            }
         },
 
         getErrorCode: function (done) {
-            var error = mediaPlayer.getError(),
-                onError = function(err) {
-                    mediaPlayer.removeEventListener('error', onError);
+            var error = player.getError(),
+                onError = function (err) {
+                    player.removeEventListener('error', onError);
                     done(err.data.code);
                 };
 
             if (error) {
                 done(error.code);
             } else {
-                mediaPlayer.addEventListener('error', onError);
+                player.addEventListener('error', onError);
             }
         },
 
-        getWarningCode: function(done){
-            var warning = mediaPlayer.getWarning(),
-                onWarning = function(warn){
-                    mediaPlayer.removeEventListener('warning', onWarning);
+        getWarning: function (done) {
+            var warning = player.getWarning(),
+                onWarning = function (warn) {
+                    player.removeEventListener('warning', onWarning);
+                    done(warn.data);
+                };
+
+            if (warning) {
+                done(warning);
+            } else {
+                player.addEventListener('warning', onWarning);
+            }
+        },
+
+        getWarningCode: function (done) {
+            var warning = player.getWarning(),
+                onWarning = function (warn) {
+                    player.removeEventListener('warning', onWarning);
                     done(warn.data.code);
-                }
-                if(warning){
-                    done(warning.data.code);
-                }else{
-                    mediaPlayer.addEventListener('warning', onWarning);
-                }
+                };
+
+            if (warning) {
+                done(warning.code);
+            } else {
+                player.addEventListener('warning', onWarning);
+            }
         }
     };
 });

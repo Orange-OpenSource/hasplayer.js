@@ -1,0 +1,54 @@
+{
+    "MSS_VOD_1": {
+        "name": "Prince Of Persia",
+        "protocol": "MSS",
+        "type": "VOD",
+        "description": "multi-audio",
+        "url": "http://2is7server2.rd.francetelecom.com/hasplayer/VOD_1/VOD_1.ism/manifest",
+        "videoBitrates": [225984, 416000, 680000, 1200000, 1600000, 2099968],
+        "audioTracks": [{"lang":"fre", "id":"audio_1"}, {"lang":"eng", "id":"audio_2"}],
+        "textTracks": [{"subType":"CAPT","id":"subtitle","lang":"fre"},{"subType":"DESC","id":"subtitle_hoh","lang":"eng"}],
+        "duration": 13334.8266666,
+        "video_fragment_pattern":"(video)",
+        "audio_fragment_pattern":"(audio)"
+    },
+
+    "MSS_VOD_2": {
+        "name": "SuperSpeedway",
+        "protocol": "MSS",
+        "type": "VOD",
+        "url": "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest",
+        "videoBitrates": [230000,331000,477000,688000,991000,1427000,2056000,2962000],
+        "duration": 120.787
+    },
+
+    "MSS_VOD_3": {
+        "name": "Tears Of Steel",
+        "protocol": "MSS",
+        "type": "VOD",
+        "url":"http://amssamples.streaming.mediaservices.windows.net/bc57e088-27ec-44e0-ac20-a85ccbcd50da/TearsOfSteel.ism/manifest",
+        "duration": 734.167
+    },
+
+    "MSS_LIVE_1": {
+        "name": "Prince Of Persia",
+        "protocol": "MSS",
+        "type": "Live",
+        "description": "multi-audio, DVR",
+        "url": "http://2is7server2.rd.francetelecom.com/hasplayer/LIVE_1.isml/manifest",
+        "videoBitrates": [256000, 800000, 1800000],
+        "audioTracks": [{"lang":"eng", "id":"audio101_eng", "subType":"AACL"}, {"lang":"fre", "id":"audio102_fre", "subType":"AACL"}],
+        "textTracks": [{"subType":"CAPT","id":"textstream301_eng","lang":"eng"},{"subType":"CAPT","id":"textstream302_fre","lang":"fre"}],
+        "dvr": true
+    },
+
+    "MSS_LIVE_2": {
+        "name": "Big Bug Bunny",
+        "protocol": "MSS",
+        "type": "Live",
+        "url": "http://2is7server1.rd.francetelecom.com/C4/C4-51_BBB.isml/Manifest",
+        "videoBitrates": [226000,416000,680000,1200000],
+        "video_fragment_pattern":"(video)",
+        "audio_fragment_pattern":"(audio)"
+    }
+}

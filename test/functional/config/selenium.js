@@ -19,9 +19,8 @@ define({
     remote: {
 
         capabilities: {
-            name: 'single_test',
-            build: 'intern-browserstack',
             "browserstack.local": false,
+            "browserstack.debug": true,
             fixSessionCapabilities: false
         },
         tunnel: 'BrowserStackTunnel',
