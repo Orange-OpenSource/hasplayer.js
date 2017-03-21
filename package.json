@@ -5,7 +5,7 @@
     "build": "cd build && gulp",
     "doc": "cd build && gulp doc",
     "deploy": "node ./build/deploy.js",
-      "test": "echo $BROWSERSTACK_ACCESS_KEY && node node_modules/intern/runner.js config=test/functional/testsCommon.js browsers=all selenium=remote application=development",
+    "test": "node node_modules/intern/runner.js config=test/functional/testsCommon.js browsers=all selenium=remote application=development",
     "watch": "cd build && gulp watch"
   },
   "repository": {
