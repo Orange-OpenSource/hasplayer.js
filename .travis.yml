@@ -2,6 +2,9 @@ language: node_js
 env:
     global:
         - ENCRYPTION_LABEL: 98a7d362e1e4
+    matrix:
+        - BROWSER=chrome
+        - BROWSER=ie
 node_js:
     - stable
 addons:
@@ -18,7 +21,7 @@ before_install:
 install:
     - npm install
 script:
-#    - npm run build
-#    - npm run deploy
-#after_success:
+    - npm run build
+    - npm run deploy
+after_success:
     - npm test
