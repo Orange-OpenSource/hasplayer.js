@@ -6,6 +6,8 @@ env:
         - BUILD=true TEST=false
         - BUILD=false TEST=true BROWSER=chrome
         - BUILD=false TEST=true BROWSER=ie
+        - BUILD=false TEST=true BROWSER=edge
+        - BUILD=false TEST=true BROWSER=firefox
 node_js:
     - stable
 addons:
