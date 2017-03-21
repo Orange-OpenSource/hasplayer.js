@@ -19,6 +19,8 @@ define({
     remote: {
 
         capabilities: {
+            name: 'Tests HasPlayer',
+            build: process.env.BROWSERSTACK_LOCAL_IDENTIFIER || 'BROWSERSTACK_LOCAL_IDENTIFIER',
             "browserstack.local": false,
             "browserstack.debug": true,
             fixSessionCapabilities: false
