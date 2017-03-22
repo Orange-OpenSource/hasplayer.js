@@ -8,6 +8,13 @@ env:
         - BUILD=false TEST=true BROWSER=ie
         - BUILD=false TEST=true BROWSER=edge
         - BUILD=false TEST=true BROWSER=firefox
+
+matrix:
+    allow_failures:
+        - env: BUILD=false TEST=true BROWSER=chrome
+        - env: BUILD=false TEST=true BROWSER=ie
+        - env: BUILD=false TEST=true BROWSER=edge
+        - env: BUILD=false TEST=true BROWSER=firefox
 node_js:
     - stable
 addons:
@@ -25,5 +32,5 @@ install:
     - npm install
 script:
     - if [[ "$BUILD" == "true" ]]; then npm run build ; fi
-    - if [[ "$BUILD" == "true" ]]; then npm run deploy ; fi
+    - if [[ "$BUILD" == "true" ]]; then npm run deploy ; exit(1); fi
     - if [[ "$TEST" == "true" ]]; then npm test ; fi
