@@ -3,11 +3,10 @@ env:
     global:
         - ENCRYPTION_LABEL: 98a7d362e1e4
     matrix:
-        - BUILD=true TEST=false
-        - BUILD=false TEST=true BROWSER=chrome
-        - BUILD=false TEST=true BROWSER=ie
-        - BUILD=false TEST=true BROWSER=edge
-        - BUILD=false TEST=true BROWSER=firefox
+        - BROWSER=chrome
+        - BROWSER=ie
+        - BROWSER=edge
+        - BROWSER=firefox
 node_js:
     - stable
 addons:
@@ -23,7 +22,8 @@ before_install:
     - ssh-add travis_deploy
 install:
     - npm install
-    - if [[ "$BUILD" == "true" ]]; then npm run build ; fi
-    - if [[ "$BUILD" == "true" ]]; then npm run deploy ; exit(1); fi
 script:
-    - if [[ "$TEST" == "true" ]]; then npm test ; fi
+    - npm run build
+    - npm run deploy
+after_success:
+    - npm test
