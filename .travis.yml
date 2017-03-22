@@ -22,8 +22,7 @@ before_install:
     - ssh-add travis_deploy
 install:
     - npm install
-script:
     - npm run build
     - npm run deploy
-after_success:
+script:
     - npm test
