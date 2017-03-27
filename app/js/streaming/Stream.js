@@ -316,7 +316,7 @@ MediaPlayer.dependencies.Stream = function() {
             deferred = Q.defer();
 
             ksSelected = {};
-            ksSelected[MediaPlayer.dependencies.ProtectionController.eventList.ENAME_KEY_SYSTEM_SELECTED] = function(event) {
+            ksSelected[MediaPlayer.dependencies.ProtectionController.eventList.ENAME_KEY_SYSTEM_SELECTED] = function(/*event*/) {
                 self.debug.log("[Stream] ProtectionController initialized");
                 protectionController.unsubscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_KEY_SYSTEM_SELECTED, ksSelected);
                 deferred.resolve(true);
