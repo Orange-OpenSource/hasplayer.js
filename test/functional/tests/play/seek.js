@@ -33,14 +33,19 @@ define([
         });
 
     // Test constants
+<<<<<<< HEAD
     var PROGRESS_DELAY = 5; // Delay for checking progressing (in s)
     var SEEK_SLEEP = 200; // Delay before each seek operation (in ms)
+=======
+    var PROGRESS_DELAY = 10; // Delay for checking progressing (in s)
+>>>>>>> 8e2edfba6... [Functional Tests] : modify seek test to check Firfox do not raise anymore QuotaExceededError
     var ASYNC_TIMEOUT = PROGRESS_DELAY + config.asyncTimeout;
 
 
     // Test variables
     var command = null,
         streamDuration = 0,
+        seekPos,
         i, j;
 
     var generateSeekPos = function() {
@@ -68,52 +73,79 @@ define([
             play: function() {
                 tests.logLoadStream(NAME, stream);
                 return command.execute(player.loadStream, [stream])
-                    .then(function() {
-                        tests.log(NAME, 'Check if playing after ' + PROGRESS_DELAY + 's.');
-                        return tests.executeAsync(command, video.isPlaying, [PROGRESS_DELAY], ASYNC_TIMEOUT);
-                    })
-                    .then(function(playing) {
-                        assert.isTrue(playing);
-                        return command.execute(player.getDuration);
-                    })
-                    .then(function(duration) {
-                        streamDuration = duration;
-                        tests.log(NAME, 'Duration: ' + duration);
-                    });
+                .then(function() {
+                    tests.log(NAME, 'Check if playing after ' + PROGRESS_DELAY + 's.');
+                    return tests.executeAsync(command, video.isPlaying, [PROGRESS_DELAY], ASYNC_TIMEOUT);
+                })
+                .then(function(playing) {
+                    assert.isTrue(playing);
+                    return command.execute(player.getDuration);
+                })
+                .then(function(duration) {
+                    streamDuration = duration;
+                    tests.log(NAME, 'Duration: ' + duration);
+                });
             }
         });
     };
 
-    var test = function(progressDelay) {
-
+    var testSeek = function(seekMode, checkPlaying) {
         registerSuite({
             name: NAME,
 
             seek: function() {
-                var seekPos;
-
-                return command.sleep(SEEK_SLEEP)
-                    .then(function() {
+                switch (seekMode) {
+                    case 'RANDOM':
                         seekPos = generateSeekPos();
-                        tests.log(NAME, 'Seek: ' + seekPos);
-                        return tests.executeAsync(command, player.seek, [seekPos], config.asyncTimeout);
+                        break;
+                    case 'MID-POINT':
+                        seekPos = streamDuration / 2;
+                        break;
+                    case 'BEGIN':
+                        seekPos = 10;
+                        break;
+                    default:
+                        seekPos = generateSeekPos();
+                        break;
+                }
+                tests.log(NAME, 'Seek: ' + seekPos);
+                return  tests.executeAsync(command, player.seek, [seekPos], config.asyncTimeout)
+                .then(function() {
+                    if (checkPlaying) {
+                        command.execute(video.getCurrentTime)
+                        .then(function(time) {
+                            tests.log(NAME, 'Check current time ' + time);
+                            assert.isTrue(time >= seekPos);
+                        });
+                    }
+                });
+            },
+
+            playing: function() {
+                if (checkPlaying) {
+                    return tests.executeAsync(command, video.isPlaying, [0], ASYNC_TIMEOUT)
+                    .then(function(playing) {
+                        assert.isTrue(playing);
+                        return  command.execute(video.getCurrentTime);
                     })
-                    .then(function() {
-                        if (progressDelay >= 0) {
-                            command.execute(video.getCurrentTime)
-                                .then(function(time) {
-                                    tests.log(NAME, 'Check current time ' + time);
-                                    assert.isTrue(time >= seekPos);
-                                    if (progressDelay > 0) {
-                                        tests.log(NAME, 'Check if playing after ' + progressDelay + 's.');
-                                        return tests.executeAsync(command, video.isPlaying, [progressDelay], (progressDelay + config.asyncTimeout))
-                                            .then(function(playing) {
-                                                assert.isTrue(playing);
-                                            });
-                                    }
-                                });
-                        }
+                    .then(function(time) {
+                        tests.log(NAME, 'Check current time ' + time);
+                        assert.isTrue(time >= seekPos);
                     });
+                }
+            }
+        });
+    };
+
+    var testPlaying = function(progressDelay) {
+        registerSuite({
+            name: NAME,
+
+            playing: function() {
+                return tests.executeAsync(command, video.isPlaying, [progressDelay], (progressDelay * 2 /*+ config.asyncTimeout*/))
+                .then(function(playing) {
+                    assert.isTrue(playing);
+                });
             }
         });
     };
@@ -124,21 +156,24 @@ define([
         // setup: load test page and stream
         testSetup(streams[i]);
 
-        // Performs seeks and wait for playing and progressing
+        // Performs seeks and wait for playing
         for (j = 0; j < testConfig.seekCount; j++) {
-            test(PROGRESS_DELAY);
-        }
-
-        // Performs seeks and wait for playing before each seek
-        for (j = 0; j < testConfig.seekCount; j++) {
-            test(j < (testConfig.seekCount - 1) ? 0 : PROGRESS_DELAY);
+            testSeek("RANDOM", true);
+            testPlaying(PROGRESS_DELAY);
         }
 
         // Performs (fast) seeks, do not wait for playing before each seek
         for (j = 0; j < testConfig.seekCount; j++) {
-            test(j < (testConfig.seekCount - 1) ? -1 : PROGRESS_DELAY);
+            testSeek("RANDOM", j < (testConfig.seekCount - 1) ? false : true);
         }
+        testPlaying(PROGRESS_DELAY);
 
+        // Seeks, let playing for 1 minute, and then seek back
+        // => then check if still playing, and that no QuatoExceededError is raised as it was done on Firefox
+        testSeek('MID-POINT', true);
+        testPlaying(50);
+        testSeek('BEGIN', true);
+        testPlaying(PROGRESS_DELAY);
     }
 
 });

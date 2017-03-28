@@ -18,7 +18,7 @@ define(function (require) {
                 },
 
                 seek: {
-                    seekCount: 5
+                    seekCount: 10
                 },
 
                 seekDVR: {
