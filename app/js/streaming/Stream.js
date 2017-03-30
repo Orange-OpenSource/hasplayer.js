@@ -349,7 +349,7 @@ MediaPlayer.dependencies.Stream = function() {
                 contentProtection = this.manifestExt.getContentProtectionData(data);
 
                 if (videoCodec === null) {
-                    this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO, 'Video codec information not available');
+                    this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, 'Video codec information not available', {codec: ''});
                 } else {
                     videoController = createBufferController.call(this, data, videoCodec);
                     if (this.manifestExt.getIsDynamic(manifest)) {
