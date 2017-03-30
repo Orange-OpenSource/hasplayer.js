@@ -367,9 +367,7 @@ MediaPlayer.dependencies.Stream = function() {
             // Initialize audio BufferController
             data = this.manifestExt.getSpecificAudioData(manifest, periodInfo.index, defaultAudioLang);
 
-            if (data === null) {
-                this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "No audio data in manifest");
-            } else {
+            if (data !== null) {
                 filterCodecs.call(this, data);
                 audioTrackIndex = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
                 audioCodec = this.manifestExt.getCodec(data);
