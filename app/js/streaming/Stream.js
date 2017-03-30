@@ -934,16 +934,16 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         filterCodecs = function(data) {
-            var codecs,
+            var codec,
                 i;
             // Filter codecs that are not supported
             // But keep at least codec from lowest representation
             i = 1;
             while (i < data.Representation_asArray.length) {
-                codecs = data.Representation_asArray[i].codecs;
-                if (codecs !== null && codecs !== "") {
-                    if (!this.capabilities.supportsCodec(this.videoModel.getElement(), codecs)) {
-                        this.debug.warn('[Stream] codec not supported: ' + codecs);
+                codec = this.manifestExt.getCodecForRepresentation(data.Representation_asArray[i]);
+                if (codec) {
+                    if (!this.capabilities.supportsCodec(this.videoModel.getElement(), codec)) {
+                        this.debug.warn('[Stream] codec not supported: ' + codec);
                         data.Representation_asArray.splice(i, 1);
                         i--;
                     }

@@ -35,7 +35,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         if (adaptation.type === undefined) {
             adaptation.type = null;
         }
-        
+
         col = adaptation.ContentComponent_asArray;
 
         if (col) {
@@ -251,7 +251,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             datas = [],
             i;
 
-        //return datas;
+        // return datas;
 
         if (!manifest || periodIndex < 0) {
             return datas;
@@ -262,7 +262,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         if (adaptations.length === 0) {
             return datas;
         }
-        
+
         for (i = 0; i < adaptations.length; i += 1) {
             if (this.getIsAudio(adaptations[i])) {
                 datas.push(adaptations[i]);
@@ -328,13 +328,19 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
         while ((codec === null) && (i < adaptation.Representation_asArray.length)) {
             representation = adaptation.Representation_asArray[i];
-            if (representation.codecs !== null && representation.codecs !== "") {
-                codec = (representation.mimeType + ';codecs="' + representation.codecs + '"');
-            }
+            codec = this.getCodecForRepresentation(representation);
             i++;
         }
 
         return codec;
+    },
+
+    getCodecForRepresentation: function(representation) {
+        "use strict";
+        if (representation.codecs === null || representation.codecs === "") {
+            return null;
+        }
+        return (representation.mimeType + ';codecs="' + representation.codecs + '"');
     },
 
     getMimeType: function(data) {
