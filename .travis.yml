@@ -2,6 +2,7 @@ language: node_js
 branches:
     only:
         - master
+        - development
         - /^(?i:v).*$/
 env:
     global:
