@@ -375,7 +375,7 @@ MediaPlayer.dependencies.Stream = function() {
                 audioCodec = this.manifestExt.getCodec(data);
 
                 if (audioCodec === null) {
-                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "Audio codec information not available");
+                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, 'Audio codec information not available', {codec: ''});
                 } else {
                     audioController = createBufferController.call(this, data, audioCodec);
 
