@@ -6,7 +6,7 @@ hasplayer.js is an extension of the [dash.js](https://github.com/Dash-Industry-F
 
 If your intent is to use the player code without contributing back to this project, then use the MASTER branch which holds the approved and stable public releases.
 
-If your goal is to improve or extend the code and contribute back to this project, then you should make your changes in, and submit a pull request against, the DEVELOPMENT branch. 
+If your goal is to improve or extend the code and contribute back to this project, then you should make your changes in, and submit a pull request against, the DEVELOPMENT branch.
 
 Learn more about versions and roadmap on the [wiki](https://github.com/Orange-OpenSource/hasplayer.js/wiki).
 
@@ -103,7 +103,7 @@ When it is all done, it should look similar to this:
 
 ## Documentation
 
-Full [API Documentation](http://orange-opensource.github.io/hasplayer.js/dev/doc/index.html) is available describing MediaPlayer public methods and events.
+Full [API Documentation](http://orange-opensource.github.io/hasplayer.js/development/doc/index.html) is available describing MediaPlayer public methods and events.
 
 This API documentation can be generated using following gulp command:
 
