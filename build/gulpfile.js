@@ -39,7 +39,7 @@ var config = {
     distDir: '../dist',
     doc: {
         dir: '../dist/doc/',
-        template: '../node_modules/gulp-jsdoc/node_modules/ink-docstrap/template',
+        template: 'node_modules/gulp-jsdoc/node_modules/ink-docstrap/template',
         readMe: '../doc/JSDoc/README.md',
         errorTable: '../doc/JSDoc/HasPlayerErrors.html',
         fileSource: '../app/js/streaming/MediaPlayer.js'
