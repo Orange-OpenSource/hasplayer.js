@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-4-6_8:6:14 / git revision : 911dde3 */
+/* Last build : 2017-4-6_8:26:37 / git revision : f78d77e */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.10.0-dev',
-        GIT_TAG = '911dde3',
-        BUILD_DATE = '2017-4-6_8:6:14',
+        GIT_TAG = 'f78d77e',
+        BUILD_DATE = '2017-4-6_8:26:37',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -24652,6 +24652,9 @@ Hls.dependencies.HlsDemux = function() {
         return tmp;
     };
 
+    // List of considered H.264 NALU types
+    var H264_NALU_TYPES = [1, 5, 6];
+
     var trackIdCounter = 1,
         pidToTrack = [],
         tracks = [],
@@ -24856,7 +24859,7 @@ Hls.dependencies.HlsDemux = function() {
 
             // In case of H.264 stream, convert bytestream to MP4 format (NALU size field instead of start codes)
             if (track.streamType.search('H.264') !== -1) {
-                mpegts.h264.bytestreamToMp4(track.data);
+                convertH264Frames.call(this, track);
             }
 
             // In case of AAC-ADTS stream, demultiplex ADTS frames into AAC frames
@@ -24878,6 +24881,60 @@ Hls.dependencies.HlsDemux = function() {
                 }
             }
 
+        },
+
+        convertH264Frames = function(track) {
+            var sample,
+                nalu,
+                totalLength,
+                data,
+                offset,
+                i, n;
+
+            // Parse all NALUs and determine total data length according to filtered NALUs
+            totalLength = 0;
+            offset = 0;
+            for (i = 0; i < track.samples.length; i++) {
+                sample = track.samples[i];
+                sample.nalus = mpegts.h264.parseNALUs(track.data.subarray(offset, offset + sample.size));
+                for (n = 0; n < sample.nalus.length; n++) {
+                    nalu = sample.nalus[n];
+                    // this.debug.log("[HlsDemux][" + track.type + "] H264 NALU, type = " + nalu.type + ", size = " + nalu.size + " - write: " + (H264_NALU_TYPES.indexOf(nalu.type) !== -1));
+                    if (H264_NALU_TYPES.indexOf(nalu.type) !== -1) {
+                        // Set NALU offset relative to whole data array
+                        nalu.offset += offset;
+                        totalLength += 4 + sample.nalus[n].size; // 4 = NALUSize field length
+                    } else {
+                        // Remove NALU
+                        sample.nalus.splice(n, 1);
+                        n--;
+                    }
+                }
+                offset += sample.size;
+            }
+
+            // Allocate new data
+            data = new Uint8Array(totalLength);
+
+            // Copy all NALUs from each sample (AU) into output data
+            offset = 0;
+            for (i = 0; i < track.samples.length; i++) {
+                sample = track.samples[i];
+                sample.size = 0;
+                for (n = 0; n < sample.nalus.length; n++) {
+                    nalu = sample.nalus[n];
+                    data[offset++] = (nalu.size & 0xFF000000) >> 24;
+                    data[offset++] = (nalu.size & 0x00FF0000) >> 16;
+                    data[offset++] = (nalu.size & 0x0000FF00) >> 8;
+                    data[offset++] = (nalu.size & 0x000000FF);
+                    data.set(track.data.subarray(nalu.offset, nalu.offset + nalu.size), offset);
+                    offset += nalu.size;
+                    sample.size += 4 + nalu.size;
+                }
+            }
+
+            // Replace track data with converted H.264 frames
+            track.data = data;
         },
 
         demuxADTS = function(track) {
@@ -35228,6 +35285,49 @@ mpegts.h264.parseSPS = function(data) {
 
     return sps;
 };
+
+mpegts.h264.parseNALUs = function(data) { // data as Uint8Array
+
+    var i = 0,
+        length = data.length,
+        numZeroBytes = 0,
+        nalus = [],
+        nalu;
+
+    // console.log("[H264] PARSE NALUs ------------------------------------------");
+    while (i < length) {
+        if (data[i] === 0) {
+            numZeroBytes++;
+        }
+        if ((data[i] === 1) && (numZeroBytes >= 2)) {
+            i++;
+            // Update previous NALU size
+            if (nalus.length > 0) {
+                nalus[nalus.length - 1].size = i - (numZeroBytes + 1) - nalus[nalus.length - 1].offset;
+            }
+
+            nalu = {};
+            nalu.type = data[i] & 0x1F;
+            nalu.offset = i;
+            nalus.push(nalu);
+
+            // console.log("[H264] NALU: SC = " + (numZeroBytes + 1) + ", type = " + nalu.type);
+            numZeroBytes = 0;
+        }
+        if (data[i]) {
+            numZeroBytes = 0;
+        }
+        i++;
+    }
+
+    // Update last NALU size
+    if (nalus.length > 0) {
+        nalus[nalus.length - 1].size = i - nalus[nalus.length - 1].offset;
+    }
+
+    return nalus;
+};
+
 
 mpegts.h264.bytestreamToMp4 = function(data) { // data as Uint8Array
 
