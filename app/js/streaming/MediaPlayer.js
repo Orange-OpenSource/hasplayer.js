@@ -16,6 +16,11 @@
  *
  */
 /*jshint -W020 */
+
+/**
+ * @class
+ * @classdesc MediaPlayer is the object used by the webapp to instanciante and control hasplayer.
+ */
 MediaPlayer = function () {
 
 //#region Private attributes/properties
@@ -1509,10 +1514,6 @@ MediaPlayer = function () {
     };
 };
 
-/**
- * @class
- * @classdesc MediaPlayer is the object used by the webapp to instanciante and control hasplayer.
- */
 MediaPlayer.prototype = {
     constructor: MediaPlayer
 };
