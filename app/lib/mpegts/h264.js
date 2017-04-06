@@ -260,6 +260,49 @@ mpegts.h264.parseSPS = function(data) {
     return sps;
 };
 
+mpegts.h264.parseNALUs = function(data) { // data as Uint8Array
+
+    var i = 0,
+        length = data.length,
+        numZeroBytes = 0,
+        nalus = [],
+        nalu;
+
+    // console.log("[H264] PARSE NALUs ------------------------------------------");
+    while (i < length) {
+        if (data[i] === 0) {
+            numZeroBytes++;
+        }
+        if ((data[i] === 1) && (numZeroBytes >= 2)) {
+            i++;
+            // Update previous NALU size
+            if (nalus.length > 0) {
+                nalus[nalus.length - 1].size = i - (numZeroBytes + 1) - nalus[nalus.length - 1].offset;
+            }
+
+            nalu = {};
+            nalu.type = data[i] & 0x1F;
+            nalu.offset = i;
+            nalus.push(nalu);
+
+            // console.log("[H264] NALU: SC = " + (numZeroBytes + 1) + ", type = " + nalu.type);
+            numZeroBytes = 0;
+        }
+        if (data[i]) {
+            numZeroBytes = 0;
+        }
+        i++;
+    }
+
+    // Update last NALU size
+    if (nalus.length > 0) {
+        nalus[nalus.length - 1].size = i - nalus[nalus.length - 1].offset;
+    }
+
+    return nalus;
+};
+
+
 mpegts.h264.bytestreamToMp4 = function(data) { // data as Uint8Array
 
     var i = 0,

@@ -23,6 +23,9 @@ Hls.dependencies.HlsDemux = function() {
         return tmp;
     };
 
+    // List of considered H.264 NALU types
+    var H264_NALU_TYPES = [1, 5, 6];
+
     var trackIdCounter = 1,
         pidToTrack = [],
         tracks = [],
@@ -227,7 +230,7 @@ Hls.dependencies.HlsDemux = function() {
 
             // In case of H.264 stream, convert bytestream to MP4 format (NALU size field instead of start codes)
             if (track.streamType.search('H.264') !== -1) {
-                mpegts.h264.bytestreamToMp4(track.data);
+                convertH264Frames.call(this, track);
             }
 
             // In case of AAC-ADTS stream, demultiplex ADTS frames into AAC frames
@@ -249,6 +252,60 @@ Hls.dependencies.HlsDemux = function() {
                 }
             }
 
+        },
+
+        convertH264Frames = function(track) {
+            var sample,
+                nalu,
+                totalLength,
+                data,
+                offset,
+                i, n;
+
+            // Parse all NALUs and determine total data length according to filtered NALUs
+            totalLength = 0;
+            offset = 0;
+            for (i = 0; i < track.samples.length; i++) {
+                sample = track.samples[i];
+                sample.nalus = mpegts.h264.parseNALUs(track.data.subarray(offset, offset + sample.size));
+                for (n = 0; n < sample.nalus.length; n++) {
+                    nalu = sample.nalus[n];
+                    // this.debug.log("[HlsDemux][" + track.type + "] H264 NALU, type = " + nalu.type + ", size = " + nalu.size + " - write: " + (H264_NALU_TYPES.indexOf(nalu.type) !== -1));
+                    if (H264_NALU_TYPES.indexOf(nalu.type) !== -1) {
+                        // Set NALU offset relative to whole data array
+                        nalu.offset += offset;
+                        totalLength += 4 + sample.nalus[n].size; // 4 = NALUSize field length
+                    } else {
+                        // Remove NALU
+                        sample.nalus.splice(n, 1);
+                        n--;
+                    }
+                }
+                offset += sample.size;
+            }
+
+            // Allocate new data
+            data = new Uint8Array(totalLength);
+
+            // Copy all NALUs from each sample (AU) into output data
+            offset = 0;
+            for (i = 0; i < track.samples.length; i++) {
+                sample = track.samples[i];
+                sample.size = 0;
+                for (n = 0; n < sample.nalus.length; n++) {
+                    nalu = sample.nalus[n];
+                    data[offset++] = (nalu.size & 0xFF000000) >> 24;
+                    data[offset++] = (nalu.size & 0x00FF0000) >> 16;
+                    data[offset++] = (nalu.size & 0x0000FF00) >> 8;
+                    data[offset++] = (nalu.size & 0x000000FF);
+                    data.set(track.data.subarray(nalu.offset, nalu.offset + nalu.size), offset);
+                    offset += nalu.size;
+                    sample.size += 4 + nalu.size;
+                }
+            }
+
+            // Replace track data with converted H.264 frames
+            track.data = data;
         },
 
         demuxADTS = function(track) {
