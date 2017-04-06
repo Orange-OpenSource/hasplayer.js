@@ -22,7 +22,10 @@ Learn more about versions and roadmap on the [wiki](https://github.com/Orange-Op
 
 1. [install nodejs](http://nodejs.org/)
 2. [install gulp](https://github.com/gulpjs/gulp/blob/master/docs/getting-started.md)
-    * npm install -g gulp
+
+```
+npm install -g gulp
+```
 
 ### Build / Run
 
@@ -32,9 +35,13 @@ The build task can be configured in order to select supported protocol(s) and to
 For example:
 
 1. No hls support, no EME support:
-    * npm run build -- --no-hls --no-protection
+```
+npm run build -- --no-hls --no-protection
+```
 2. No hls support, no MSS support:
-    * npm run build -- --no-hls --no-mss
+```
+npm run build -- --no-hls --no-mss
+```
 
 ## Demo
 
@@ -51,12 +58,12 @@ See LICENSE file for copyright details.
 ## Getting Started
 
 Create a video element somewhere in your html. For our purposes, make sure to set the controls property to true.
-```
+```html
 <video id="videoPlayer" controls="true"></video>
 ```
 
 Add hasplayer.js to the end of the body.
-```
+```html
 <body>
   ...
   <script src="yourPathToHasplayer/hasplayer.js"></script>
@@ -64,7 +71,7 @@ Add hasplayer.js to the end of the body.
 ```
 
 Now comes the good stuff. We need to create an MediaPlayer. Then we need to initialize it, attach it to our "videoPlayer" and then tell it where to get the video from. We will do this in an anonymous self executing function, that way it will run as soon as the page loads. So, here is how we do it:
-``` js
+```js
 (function(){
     var stream = {
         url: "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest"
@@ -76,7 +83,7 @@ Now comes the good stuff. We need to create an MediaPlayer. Then we need to init
 ```
 
 When it is all done, it should look similar to this:
-```
+```html
 <!doctype html>
 <html>
     <head>
@@ -100,15 +107,80 @@ When it is all done, it should look similar to this:
     </body>
 </html>
 ```
+## DRM Video Stream
+In the case of protected content, here is an example illustrating setting of the protection data:
+```html
+<!doctype html>
+<html>
+    <head>
+        <title>Hasplayer.js Rocks</title>
+    </head>
+    <body>
+        <div>
+            <video id="videoPlayer" controls="true"></video>
+        </div>
+        <script src="yourPathToHasplayer/hasplayer.js"></script>
+        <script>
+            (function(){
+                var stream = {
+                    url: "<manifest_url>",
+                    protData: {
+                        com.microsoft.playready: {
+                            laURL: "<licenser_url>",
+                            cdmData: "<specific_CDM_data>"
+                        }
+                    }
+                };
+                var mediaPlayer = new MediaPlayer();
+                mediaPlayer.init(document.querySelector("#videoPlayer"));
+                mediaPlayer.load(stream);
+            })();
+        </script>
+    </body>
+</html>
+```
+
+## Events
+
+MediaPlayer offers events to be notified of differents events on video streaming. Those events are, for a part, sent by the HTMLMediaElement (&lt;video&gt;), and for an other part, sent by the MediaPlayer.
+
+```js
+function registerMediaPlayerEvents() {
+    // MediaPlayer events
+    mediaPlayer.addEventListener("error", onError);
+    mediaPlayer.addEventListener("warning", onWarning);
+    mediaPlayer.addEventListener("cueEnter", onCueEnter);
+    mediaPlayer.addEventListener("cueExit", onCueExit);
+    mediaPlayer.addEventListener("play_bitrate", onPlayBitrateChanged);
+    mediaPlayer.addEventListener("download_bitrate", onDownloadBitrateChanged);
+    mediaPlayer.addEventListener("manifestUrlUpdate", onManifestUrlUpdate);
+    mediaPlayer.addEventListener("metricAdded", onMetricAdded);
+    mediaPlayer.addEventListener("metricChanged", onMetricChanged);
+    mediaPlayer.addEventListener("bufferLevel_updated", onBufferLevelUpdated);
+    mediaPlayer.addEventListener("state_changed", onStateChanged);
+    // <video> element events
+    mediaPlayer.addEventListener("loadeddata", onload);
+    mediaPlayer.addEventListener("play", onPlay);
+    mediaPlayer.addEventListener("pause", onPause);
+    mediaPlayer.addEventListener("timeupdate", onTimeUpdate);
+    mediaPlayer.addEventListener("volumechange", onVolumeChange);
+};
+```
+For instance, callback function looks like this :
+```js
+function onPlayBitrateChanged(e) {
+    handlePlayBitrate(e.detail.bitrate, e.detail.time);
+};
+```
 
 ## Documentation
 
 Full [API Documentation](http://orange-opensource.github.io/hasplayer.js/development/doc/index.html) is available describing MediaPlayer public methods and events.
 
 This API documentation can be generated using following gulp command:
-
+```
 npm run doc
-
+```
 
 ### Tested With
 
