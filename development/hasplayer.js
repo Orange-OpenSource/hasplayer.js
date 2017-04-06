@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-4-6_12:27:57 / git revision : 7c617cd */
+/* Last build : 2017-4-6_12:32:42 / git revision : 1826639 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.10.0-dev',
-        GIT_TAG = '7c617cd',
-        BUILD_DATE = '2017-4-6_12:27:57',
+        GIT_TAG = '1826639',
+        BUILD_DATE = '2017-4-6_12:32:42',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -132,6 +132,10 @@ MediaPlayer = function () {
         playing = true;
 
         this.metricsModel.addSession(null, source.url, videoModel.getElement().loop, null, "MediaPlayer.js_" + this.getVersion());
+
+        this.debug.log("[MediaPlayer] Version: " + this.getVersionFull() + " - " + this.getBuildDate());
+        this.debug.log("[MediaPlayer] user-agent: " + navigator.userAgent);
+        this.debug.log("[MediaPlayer] Load stream:\n", JSON.stringify(source, null, '  '));
 
         // streamController Initialization
         if (!streamController) {
@@ -9174,7 +9178,7 @@ MediaPlayer.dependencies.Stream = function() {
             deferred = Q.defer();
 
             ksSelected = {};
-            ksSelected[MediaPlayer.dependencies.ProtectionController.eventList.ENAME_KEY_SYSTEM_SELECTED] = function(event) {
+            ksSelected[MediaPlayer.dependencies.ProtectionController.eventList.ENAME_KEY_SYSTEM_SELECTED] = function(/*event*/) {
                 self.debug.log("[Stream] ProtectionController initialized");
                 protectionController.unsubscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_KEY_SYSTEM_SELECTED, ksSelected);
                 deferred.resolve(true);
@@ -9792,16 +9796,16 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         filterCodecs = function(data) {
-            var codecs,
+            var codec,
                 i;
             // Filter codecs that are not supported
             // But keep at least codec from lowest representation
             i = 1;
             while (i < data.Representation_asArray.length) {
-                codecs = data.Representation_asArray[i].codecs;
-                if (codecs !== null && codecs !== "") {
-                    if (!this.capabilities.supportsCodec(this.videoModel.getElement(), codecs)) {
-                        this.debug.warn('[Stream] codec not supported: ' + codecs);
+                codec = this.manifestExt.getCodecForRepresentation(data.Representation_asArray[i]);
+                if (codec) {
+                    if (!this.capabilities.supportsCodec(this.videoModel.getElement(), codec)) {
+                        this.debug.warn('[Stream] codec not supported: ' + codec);
                         data.Representation_asArray.splice(i, 1);
                         i--;
                     }
@@ -16661,7 +16665,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         if (adaptation.type === undefined) {
             adaptation.type = null;
         }
-        
+
         col = adaptation.ContentComponent_asArray;
 
         if (col) {
@@ -16877,7 +16881,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
             datas = [],
             i;
 
-        //return datas;
+        // return datas;
 
         if (!manifest || periodIndex < 0) {
             return datas;
@@ -16888,7 +16892,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         if (adaptations.length === 0) {
             return datas;
         }
-        
+
         for (i = 0; i < adaptations.length; i += 1) {
             if (this.getIsAudio(adaptations[i])) {
                 datas.push(adaptations[i]);
@@ -16954,13 +16958,19 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
         while ((codec === null) && (i < adaptation.Representation_asArray.length)) {
             representation = adaptation.Representation_asArray[i];
-            if (representation.codecs !== null && representation.codecs !== "") {
-                codec = (representation.mimeType + ';codecs="' + representation.codecs + '"');
-            }
+            codec = this.getCodecForRepresentation(representation);
             i++;
         }
 
         return codec;
+    },
+
+    getCodecForRepresentation: function(representation) {
+        "use strict";
+        if (representation.codecs === null || representation.codecs === "") {
+            return null;
+        }
+        return (representation.mimeType + ';codecs="' + representation.codecs + '"');
     },
 
     getMimeType: function(data) {
