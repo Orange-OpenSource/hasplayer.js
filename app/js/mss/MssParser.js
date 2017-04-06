@@ -131,7 +131,8 @@ Mss.dependencies.MssParser = function() {
         mapRepresentation = function(qualityLevel, streamIndex) {
 
             var representation = {},
-                fourCCValue = null;
+                fourCCValue = null,
+                type = this.domParser.getAttributeValue(streamIndex, "Type");
 
             representation.id = qualityLevel.Id;
             representation.bandwidth = parseInt(this.domParser.getAttributeValue(qualityLevel, "Bitrate"), 10);
@@ -149,10 +150,10 @@ Mss.dependencies.MssParser = function() {
             // If still not defined (optionnal for audio stream, see https://msdn.microsoft.com/en-us/library/ff728116%28v=vs.95%29.aspx),
             // then we consider the stream is an audio AAC stream
             if (fourCCValue === null || fourCCValue === "") {
-                if (this.domParser.getAttributeValue(streamIndex, "Type") === 'audio') {
+                if (type === 'audio') {
                     fourCCValue = "AAC";
                 } else {
-                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Codec/FourCC not provided", {codec: ''});
+                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, type + " codec/FourCC not provided", {codec: ''});
                     return null;
                 }
             }
