@@ -1,79 +1,129 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>JSDoc: Class: MediaPlayer</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>hasplayer.js 1.10.0-dev Class: MediaPlayer</title>
 
-    <script src="scripts/prettify/prettify.js"> </script>
-    <script src="scripts/prettify/lang-css.js"> </script>
-    <!--[if lt IE 9]>
-      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
+
+	<link type="text/css" rel="stylesheet" href="styles/site.united.css">
+
 </head>
 
 <body>
 
-<div id="main">
+<div class="navbar navbar-default navbar-fixed-top ">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" href="index.html">hasplayer.js 1.10.0-dev</a>
+		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#topNavigation">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+        </button>
+	</div>
+	<div class="navbar-collapse collapse" id="topNavigation">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="MediaPlayer.html">MediaPlayer</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="events.list.html" class="dropdown-toggle" data-toggle="dropdown">Events<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="MediaPlayer.html#event:bufferLevel_updated">MediaPlayer#event:bufferLevel_updated</a></li><li><a href="MediaPlayer.html#event:cueEnter">MediaPlayer#event:cueEnter</a></li><li><a href="MediaPlayer.html#event:cueExit">MediaPlayer#event:cueExit</a></li><li><a href="MediaPlayer.html#event:download_bitrate">MediaPlayer#event:download_bitrate</a></li><li><a href="MediaPlayer.html#event:error">MediaPlayer#event:error</a></li><li><a href="MediaPlayer.html#event:manifestUrlUpdate">MediaPlayer#event:manifestUrlUpdate</a></li><li><a href="MediaPlayer.html#event:play_bitrate">MediaPlayer#event:play_bitrate</a></li><li><a href="MediaPlayer.html#event:state_changed">MediaPlayer#event:state_changed</a></li><li><a href="MediaPlayer.html#event:warning">MediaPlayer#event:warning</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="global.html" class="dropdown-toggle" data-toggle="dropdown">Global<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="global.html">hasMediaKeysExtension</a></li><li><a href="global.html">hasMediaSourceExtension</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+        
+            <div class="col-sm-3 col-md-3">
+                <form class="navbar-form" role="search">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Search" name="q" id="search-input">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" id="search-submit"><i class="glyphicon glyphicon-search"></i></button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        
+	</div>
 
-    <h1 class="page-title">Class: MediaPlayer</h1>
-
-    
-
+</div>
+</div>
 
 
+<div class="container" id="toc-content">
+<div class="row">
+
+	
+	<div class="col-md-8">
+	
+		<div id="main">
+			
+
+	<h1 class="page-title">Class: MediaPlayer</h1>
 <section>
 
 <header>
-    <h2>
-    MediaPlayer
-    </h2>
+    
+        <h2>
+        MediaPlayer
+        </h2>
+        
+            <div class="class-description">MediaPlayer is the object used by the webapp to instanciante and control hasplayer.</div>
+        
     
 </header>
+
 
 <article>
     <div class="container-overview">
     
-
-    
         
+<hr>
 <dt>
-    <h4 class="name" id="MediaPlayer"><span class="type-signature"></span>new MediaPlayer<span class="signature">()</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="MediaPlayer"><span class="type-signature"></span>new MediaPlayer()</h4>
+    
     
 </dt>
 <dd>
 
     
-    <div class="description">
-        The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
-The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
-
-Copyright (c) 2014, Orange
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
-•  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
-•  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-•  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
-
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-    </div>
-    
 
     
 
     
 
+    
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -83,24 +133,25 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line19">line 19</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -137,8 +188,9 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
 
         <dl>
             
-<dt>
-    <h4 class="name" id="dependencies"><span class="type-signature">&lt;static> </span>dependencies<span class="type-signature"></span></h4>
+<hr>
+<dt class="name" id=".dependencies">
+    <h4 id=".dependencies"><span class="type-signature">&lt;static> </span>dependencies<span class="type-signature"></span></h4>
 
     
 </dt>
@@ -155,7 +207,11 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -165,36 +221,36 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1524">line 1524</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
-
-    
 
     
 </dd>
 
         
             
-<dt>
-    <h4 class="name" id="PUBLIC_EVENTS"><span class="type-signature">&lt;static> </span>PUBLIC_EVENTS<span class="type-signature"></span></h4>
+<hr>
+<dt class="name" id=".PUBLIC_EVENTS">
+    <h4 id=".PUBLIC_EVENTS"><span class="type-signature">&lt;static> </span>PUBLIC_EVENTS<span class="type-signature"></span></h4>
 
     
 </dt>
@@ -211,7 +267,11 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -221,36 +281,36 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1542">line 1542</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
-
-    
 
     
 </dd>
 
         
             
-<dt>
-    <h4 class="name" id="TRACKS_TYPE"><span class="type-signature">&lt;static> </span>TRACKS_TYPE<span class="type-signature"></span></h4>
+<hr>
+<dt class="name" id=".TRACKS_TYPE">
+    <h4 id=".TRACKS_TYPE"><span class="type-signature">&lt;static> </span>TRACKS_TYPE<span class="type-signature"></span></h4>
 
     
 </dt>
@@ -267,11 +327,11 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
 <dl class="details">
     
 
-        <h5 class="subsection-title">Properties:</h5>
+    <h5 class="subsection-title">Properties:</h5>
 
-        <dl>
+    <dl>
 
-<table class="props">
+<table class="props table table-striped">
     <thead>
     <tr>
         
@@ -341,53 +401,57 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
 
     
     </tbody>
-</table></dl>
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1685">line 1685</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li><a href="MediaPlayer.html#getTracks">getTracks</a></li>
-        
-            <li><a href="MediaPlayer.html#getSelectedTrack">getSelectedTrack</a></li>
-        
-            <li><a href="MediaPlayer.html#selectTrack">selectTrack</a></li>
-        </ul>
-    </dd>
-    
-
-    
+</table>
 </dl>
 
+    
+
+	
+
+	
+
+	
 
     
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+	<dt class="tag-see method-doc-label method-doc-details-label">See:</dt>
+	<dd class="tag-see">
+		<ul>
+			<li><a href="MediaPlayer.html#getTracks">getTracks</a></li>
+			
+			<li><a href="MediaPlayer.html#getSelectedTrack">getSelectedTrack</a></li>
+			
+			<li><a href="MediaPlayer.html#selectTrack">selectTrack</a></li>
+			</ul>
+	</dd>
+	
+
+	
+</dl>
+
 
     
 </dd>
@@ -400,9 +464,10 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” 
 
         <dl>
             
+<hr>
 <dt>
-    <h4 class="name" id="addEventListener"><span class="type-signature"></span>addEventListener<span class="signature">(type, listener, useCapture)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="addEventListener"><span class="type-signature"></span>addEventListener(type, listener, useCapture)</h4>
+    
     
 </dt>
 <dd>
@@ -428,10 +493,11 @@ The possible event types are:
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -462,6 +528,7 @@ The possible event types are:
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -483,6 +550,7 @@ The possible event types are:
             
                 
 <span class="param-type">callback</span>
+
 
 
             
@@ -508,6 +576,7 @@ The possible event types are:
 <span class="param-type">boolean</span>
 
 
+
             
             </td>
 
@@ -521,13 +590,18 @@ The possible event types are:
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -537,24 +611,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line508">line 508</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -575,9 +650,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="addPlugin"><span class="type-signature"></span>addPlugin<span class="signature">(plugin)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="addPlugin"><span class="type-signature"></span>addPlugin(plugin)</h4>
+    
     
 </dt>
 <dd>
@@ -593,10 +669,11 @@ The possible event types are:
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -627,6 +704,7 @@ The possible event types are:
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -640,13 +718,18 @@ The possible event types are:
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -656,24 +739,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1433">line 1433</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -694,9 +778,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="attachTTMLRenderingDiv"><span class="type-signature"></span>attachTTMLRenderingDiv<span class="signature">(div)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="attachTTMLRenderingDiv"><span class="type-signature"></span>attachTTMLRenderingDiv(div)</h4>
+    
     
 </dt>
 <dd>
@@ -712,10 +797,11 @@ The possible event types are:
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -746,6 +832,7 @@ The possible event types are:
 <span class="param-type">HTMLDivElement</span>
 
 
+
             
             </td>
 
@@ -759,13 +846,18 @@ The possible event types are:
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -775,24 +867,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1346">line 1346</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -813,9 +906,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="enableSubtitleExternDisplay"><span class="type-signature"></span>enableSubtitleExternDisplay<span class="signature">(mode)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="enableSubtitleExternDisplay"><span class="type-signature"></span>enableSubtitleExternDisplay(mode)</h4>
+    
     
 </dt>
 <dd>
@@ -831,10 +925,11 @@ The possible event types are:
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -865,6 +960,7 @@ The possible event types are:
 <span class="param-type">boolean</span>
 
 
+
             
             </td>
 
@@ -878,13 +974,18 @@ The possible event types are:
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -894,24 +995,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1321">line 1321</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -932,9 +1034,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="enableSubtitles"><span class="type-signature"></span>enableSubtitles<span class="signature">(value)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="enableSubtitles"><span class="type-signature"></span>enableSubtitles(value)</h4>
+    
     
 </dt>
 <dd>
@@ -950,10 +1053,11 @@ The possible event types are:
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -984,6 +1088,7 @@ The possible event types are:
 <span class="param-type">boolean</span>
 
 
+
             
             </td>
 
@@ -997,13 +1102,18 @@ The possible event types are:
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -1013,24 +1123,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1291">line 1291</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -1051,9 +1162,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getAutoPlay"><span class="type-signature"></span>getAutoPlay<span class="signature">()</span><span class="type-signature"> &rarr; {boolean}</span></h4>
-
+    <h4 class="name" id="getAutoPlay"><span class="type-signature"></span>getAutoPlay()</h4>
+    
     
 </dt>
 <dd>
@@ -1069,12 +1181,17 @@ The possible event types are:
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -1084,24 +1201,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line629">line 629</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -1134,8 +1252,10 @@ The possible event types are:
 <span class="param-type">boolean</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -1144,9 +1264,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getAutoSwitchQuality"><span class="type-signature"></span>getAutoSwitchQuality<span class="signature">()</span><span class="type-signature"> &rarr; {boolean}</span></h4>
-
+    <h4 class="name" id="getAutoSwitchQuality"><span class="type-signature"></span>getAutoSwitchQuality()</h4>
+    
     
 </dt>
 <dd>
@@ -1162,12 +1283,17 @@ The possible event types are:
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -1177,24 +1303,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line690">line 690</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -1227,8 +1354,10 @@ The possible event types are:
 <span class="param-type">boolean</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -1237,9 +1366,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getBuildDate"><span class="type-signature"></span>getBuildDate<span class="signature">()</span><span class="type-signature"> &rarr; {string}</span></h4>
-
+    <h4 class="name" id="getBuildDate"><span class="type-signature"></span>getBuildDate()</h4>
+    
     
 </dt>
 <dd>
@@ -1255,12 +1385,17 @@ The possible event types are:
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -1270,24 +1405,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line462">line 462</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -1320,8 +1456,10 @@ The possible event types are:
 <span class="param-type">string</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -1330,9 +1468,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getDebug"><span class="type-signature"></span>getDebug<span class="signature">()</span><span class="type-signature"> &rarr; {object}</span></h4>
-
+    <h4 class="name" id="getDebug"><span class="type-signature"></span>getDebug()</h4>
+    
     
 </dt>
 <dd>
@@ -1348,12 +1487,17 @@ The possible event types are:
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -1363,24 +1507,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line572">line 572</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -1413,8 +1558,10 @@ The possible event types are:
 <span class="param-type">object</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -1423,9 +1570,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getDefaultAudioLang"><span class="type-signature"></span>getDefaultAudioLang<span class="signature">()</span><span class="type-signature"> &rarr; {string}</span></h4>
-
+    <h4 class="name" id="getDefaultAudioLang"><span class="type-signature"></span>getDefaultAudioLang()</h4>
+    
     
 </dt>
 <dd>
@@ -1441,12 +1589,17 @@ The possible event types are:
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -1456,24 +1609,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line747">line 747</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -1506,8 +1660,10 @@ The possible event types are:
 <span class="param-type">string</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -1516,9 +1672,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getDefaultSubtitleLang"><span class="type-signature"></span>getDefaultSubtitleLang<span class="signature">()</span><span class="type-signature"> &rarr; {string}</span></h4>
-
+    <h4 class="name" id="getDefaultSubtitleLang"><span class="type-signature"></span>getDefaultSubtitleLang()</h4>
+    
     
 </dt>
 <dd>
@@ -1534,12 +1691,17 @@ The possible event types are:
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -1549,24 +1711,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line773">line 773</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -1599,8 +1762,10 @@ The possible event types are:
 <span class="param-type">string</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -1609,9 +1774,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getDuration"><span class="type-signature"></span>getDuration<span class="signature">()</span><span class="type-signature"> &rarr; {number}</span></h4>
-
+    <h4 class="name" id="getDuration"><span class="type-signature"></span>getDuration()</h4>
+    
     
 </dt>
 <dd>
@@ -1627,12 +1793,17 @@ The possible event types are:
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -1642,24 +1813,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1010">line 1010</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -1692,8 +1864,10 @@ The possible event types are:
 <span class="param-type">number</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -1702,9 +1876,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getDVRSeekOffset"><span class="type-signature"></span>getDVRSeekOffset<span class="signature">(value)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="getDVRSeekOffset"><span class="type-signature"></span>getDVRSeekOffset(value)</h4>
+    
     
 </dt>
 <dd>
@@ -1720,10 +1895,11 @@ The possible event types are:
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -1762,13 +1938,18 @@ The possible event types are:
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -1778,24 +1959,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1088">line 1088</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -1819,6 +2001,7 @@ The possible event types are:
 
 
 
+
         
 
     
@@ -1826,9 +2009,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getDVRWindowRange"><span class="type-signature"></span>getDVRWindowRange<span class="signature">()</span><span class="type-signature"> &rarr; {object}</span></h4>
-
+    <h4 class="name" id="getDVRWindowRange"><span class="type-signature"></span>getDVRWindowRange()</h4>
+    
     
 </dt>
 <dd>
@@ -1844,12 +2028,17 @@ The possible event types are:
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -1859,24 +2048,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1050">line 1050</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -1909,8 +2099,10 @@ The possible event types are:
 <span class="param-type">object</span>
 
 
+
     </dd>
 </dl>
+
 </li>
         
             <li>
@@ -1929,8 +2121,10 @@ The possible event types are:
 <span class="param-type">number</span>
 
 
+
     </dd>
 </dl>
+
 </li>
         
             <li>
@@ -1949,8 +2143,10 @@ The possible event types are:
 <span class="param-type">number</span>
 
 
+
     </dd>
 </dl>
+
 </li>
         
             <li>
@@ -1969,8 +2165,10 @@ The possible event types are:
 <span class="param-type">number</span>
 
 
+
     </dd>
 </dl>
+
 </li>
         
             <li>
@@ -1989,8 +2187,10 @@ The possible event types are:
 <span class="param-type">number</span>
 
 
+
     </dd>
 </dl>
+
 </li>
         </ul>
 
@@ -1999,9 +2199,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getDVRWindowSize"><span class="type-signature"></span>getDVRWindowSize<span class="signature">()</span><span class="type-signature"> &rarr; {number}</span></h4>
-
+    <h4 class="name" id="getDVRWindowSize"><span class="type-signature"></span>getDVRWindowSize()</h4>
+    
     
 </dt>
 <dd>
@@ -2017,12 +2218,17 @@ The possible event types are:
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -2032,24 +2238,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1070">line 1070</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -2082,8 +2289,10 @@ The possible event types are:
 <span class="param-type">number</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -2092,9 +2301,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getError"><span class="type-signature"></span>getError<span class="signature">()</span><span class="type-signature"> &rarr; {object}</span></h4>
-
+    <h4 class="name" id="getError"><span class="type-signature"></span>getError()</h4>
+    
     
 </dt>
 <dd>
@@ -2110,12 +2320,17 @@ The possible event types are:
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -2125,24 +2340,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1173">line 1173</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -2175,8 +2391,10 @@ The possible event types are:
 <span class="param-type">object</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -2185,9 +2403,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getMetricsExt"><span class="type-signature"></span>getMetricsExt<span class="signature">()</span><span class="type-signature"> &rarr; {object}</span></h4>
-
+    <h4 class="name" id="getMetricsExt"><span class="type-signature"></span>getMetricsExt()</h4>
+    
     
 </dt>
 <dd>
@@ -2203,12 +2422,17 @@ The possible event types are:
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -2218,24 +2442,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line582">line 582</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -2268,8 +2493,10 @@ The possible event types are:
 <span class="param-type">object</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -2278,9 +2505,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getMetricsFor"><span class="type-signature"></span>getMetricsFor<span class="signature">(type)</span><span class="type-signature"> &rarr; {Array}</span></h4>
-
+    <h4 class="name" id="getMetricsFor"><span class="type-signature"></span>getMetricsFor(type)</h4>
+    
     
 </dt>
 <dd>
@@ -2296,10 +2524,11 @@ The possible event types are:
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -2330,6 +2559,7 @@ The possible event types are:
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -2343,13 +2573,18 @@ The possible event types are:
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -2359,24 +2594,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1130">line 1130</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -2409,8 +2645,10 @@ The possible event types are:
 <span class="param-type">Array</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -2419,9 +2657,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getMute"><span class="type-signature"></span>getMute<span class="signature">()</span><span class="type-signature"> &rarr; {boolean}</span></h4>
-
+    <h4 class="name" id="getMute"><span class="type-signature"></span>getMute()</h4>
+    
     
 </dt>
 <dd>
@@ -2437,12 +2676,17 @@ The possible event types are:
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -2452,24 +2696,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1360">line 1360</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -2502,8 +2747,10 @@ The possible event types are:
 <span class="param-type">boolean</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -2512,9 +2759,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getPosition"><span class="type-signature"></span>getPosition<span class="signature">()</span><span class="type-signature"> &rarr; {number}</span></h4>
-
+    <h4 class="name" id="getPosition"><span class="type-signature"></span>getPosition()</h4>
+    
     
 </dt>
 <dd>
@@ -2530,12 +2778,17 @@ The possible event types are:
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -2545,24 +2798,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1034">line 1034</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -2595,8 +2849,10 @@ The possible event types are:
 <span class="param-type">number</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -2605,9 +2861,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getQualityFor"><span class="type-signature"></span>getQualityFor<span class="signature">(type)</span><span class="type-signature"> &rarr; {number}</span></h4>
-
+    <h4 class="name" id="getQualityFor"><span class="type-signature"></span>getQualityFor(type)</h4>
+    
     
 </dt>
 <dd>
@@ -2623,10 +2880,11 @@ The possible event types are:
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -2657,6 +2915,7 @@ The possible event types are:
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -2670,13 +2929,18 @@ The possible event types are:
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -2686,24 +2950,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line664">line 664</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -2736,8 +3001,10 @@ The possible event types are:
 <span class="param-type">number</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -2746,9 +3013,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getScheduleWhilePaused"><span class="type-signature"></span>getScheduleWhilePaused<span class="signature">()</span><span class="type-signature"> &rarr; {boolean}</span></h4>
-
+    <h4 class="name" id="getScheduleWhilePaused"><span class="type-signature"></span>getScheduleWhilePaused()</h4>
+    
     
 </dt>
 <dd>
@@ -2764,12 +3032,17 @@ The possible event types are:
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -2779,24 +3052,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line715">line 715</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -2829,8 +3103,10 @@ The possible event types are:
 <span class="param-type">boolean</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -2839,9 +3115,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getSelectedTrack"><span class="type-signature"></span>getSelectedTrack<span class="signature">(type)</span><span class="type-signature"> &rarr; {Track}</span></h4>
-
+    <h4 class="name" id="getSelectedTrack"><span class="type-signature"></span>getSelectedTrack(type)</h4>
+    
     
 </dt>
 <dd>
@@ -2857,10 +3134,11 @@ The possible event types are:
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -2891,6 +3169,7 @@ The possible event types are:
 <span class="param-type">String</span>
 
 
+
             
             </td>
 
@@ -2904,13 +3183,18 @@ The possible event types are:
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -2920,24 +3204,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1271">line 1271</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -2970,8 +3255,10 @@ The possible event types are:
 <span class="param-type">Track</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -2980,9 +3267,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getTerminalId"><span class="type-signature"></span>getTerminalId<span class="signature">()</span><span class="type-signature"> &rarr; {string}</span></h4>
-
+    <h4 class="name" id="getTerminalId"><span class="type-signature"></span>getTerminalId()</h4>
+    
     
 </dt>
 <dd>
@@ -2998,12 +3286,17 @@ The possible event types are:
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -3013,24 +3306,25 @@ The possible event types are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1417">line 1417</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -3063,8 +3357,10 @@ The possible event types are:
 <span class="param-type">string</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -3073,9 +3369,10 @@ The possible event types are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getTracks"><span class="type-signature"></span>getTracks<span class="signature">(type)</span><span class="type-signature"> &rarr; {Array.&lt;Track>}</span></h4>
-
+    <h4 class="name" id="getTracks"><span class="type-signature"></span>getTracks(type)</h4>
+    
     
 </dt>
 <dd>
@@ -3092,10 +3389,11 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -3126,6 +3424,7 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 <span class="param-type">String</span>
 
 
+
             
             </td>
 
@@ -3139,13 +3438,18 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -3155,24 +3459,25 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1197">line 1197</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -3205,8 +3510,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 <span class="param-type">Array.&lt;Track></span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -3215,9 +3522,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getTTMLRenderingDiv"><span class="type-signature"></span>getTTMLRenderingDiv<span class="signature">()</span><span class="type-signature"> &rarr; {HTMLDivElement}</span></h4>
-
+    <h4 class="name" id="getTTMLRenderingDiv"><span class="type-signature"></span>getTTMLRenderingDiv()</h4>
+    
     
 </dt>
 <dd>
@@ -3233,12 +3541,17 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -3248,24 +3561,25 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1335">line 1335</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -3298,8 +3612,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 <span class="param-type">HTMLDivElement</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -3308,9 +3624,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getVersion"><span class="type-signature"></span>getVersion<span class="signature">()</span><span class="type-signature"> &rarr; {string}</span></h4>
-
+    <h4 class="name" id="getVersion"><span class="type-signature"></span>getVersion()</h4>
+    
     
 </dt>
 <dd>
@@ -3326,12 +3643,17 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -3341,24 +3663,25 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line419">line 419</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -3391,8 +3714,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 <span class="param-type">string</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -3401,9 +3726,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getVersionDashJS"><span class="type-signature"></span>getVersionDashJS<span class="signature">()</span><span class="type-signature"> &rarr; {string}</span></h4>
-
+    <h4 class="name" id="getVersionDashJS"><span class="type-signature"></span>getVersionDashJS()</h4>
+    
     
 </dt>
 <dd>
@@ -3419,12 +3745,17 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -3434,24 +3765,25 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line445">line 445</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -3484,8 +3816,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 <span class="param-type">string</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -3494,9 +3828,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getVersionFull"><span class="type-signature"></span>getVersionFull<span class="signature">()</span><span class="type-signature"> &rarr; {string}</span></h4>
-
+    <h4 class="name" id="getVersionFull"><span class="type-signature"></span>getVersionFull()</h4>
+    
     
 </dt>
 <dd>
@@ -3512,12 +3847,17 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -3527,24 +3867,25 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line430">line 430</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -3577,8 +3918,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 <span class="param-type">string</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -3587,9 +3930,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getVideoBitrates"><span class="type-signature"></span>getVideoBitrates<span class="signature">()</span><span class="type-signature"> &rarr; {Array.&lt;Number>}</span></h4>
-
+    <h4 class="name" id="getVideoBitrates"><span class="type-signature"></span>getVideoBitrates()</h4>
+    
     
 </dt>
 <dd>
@@ -3605,12 +3949,17 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -3620,24 +3969,25 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1111">line 1111</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -3670,8 +4020,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 <span class="param-type">Array.&lt;Number></span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -3680,9 +4032,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getVideoModel"><span class="type-signature"></span>getVideoModel<span class="signature">()</span><span class="type-signature"> &rarr; {object}</span></h4>
-
+    <h4 class="name" id="getVideoModel"><span class="type-signature"></span>getVideoModel()</h4>
+    
     
 </dt>
 <dd>
@@ -3698,12 +4051,17 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -3713,24 +4071,25 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line562">line 562</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -3763,8 +4122,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 <span class="param-type">object</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -3773,9 +4134,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getVolume"><span class="type-signature"></span>getVolume<span class="signature">()</span><span class="type-signature"> &rarr; {number}</span></h4>
-
+    <h4 class="name" id="getVolume"><span class="type-signature"></span>getVolume()</h4>
+    
     
 </dt>
 <dd>
@@ -3791,12 +4153,17 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -3806,24 +4173,25 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1387">line 1387</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -3856,8 +4224,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 <span class="param-type">number</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -3866,9 +4236,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="getWarning"><span class="type-signature"></span>getWarning<span class="signature">()</span><span class="type-signature"> &rarr; {object}</span></h4>
-
+    <h4 class="name" id="getWarning"><span class="type-signature"></span>getWarning()</h4>
+    
     
 </dt>
 <dd>
@@ -3884,12 +4255,17 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -3899,24 +4275,25 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1184">line 1184</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -3949,8 +4326,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 <span class="param-type">object</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -3959,9 +4338,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="init"><span class="type-signature"></span>init<span class="signature">(video)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="init"><span class="type-signature"></span>init(video)</h4>
+    
     
 </dt>
 <dd>
@@ -3977,10 +4357,11 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -4011,6 +4392,7 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 <span class="param-type">Object</span>
 
 
+
             
             </td>
 
@@ -4024,13 +4406,18 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -4040,24 +4427,25 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line472">line 472</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -4078,9 +4466,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="isLive"><span class="type-signature"></span>isLive<span class="signature">()</span><span class="type-signature"> &rarr; {boolean}</span></h4>
-
+    <h4 class="name" id="isLive"><span class="type-signature"></span>isLive()</h4>
+    
     
 </dt>
 <dd>
@@ -4096,12 +4485,17 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -4111,24 +4505,25 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1022">line 1022</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -4161,8 +4556,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 <span class="param-type">boolean</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -4171,9 +4568,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="isSubtitlesEnabled"><span class="type-signature"></span>isSubtitlesEnabled<span class="signature">()</span><span class="type-signature"> &rarr; {boolean}</span></h4>
-
+    <h4 class="name" id="isSubtitlesEnabled"><span class="type-signature"></span>isSubtitlesEnabled()</h4>
+    
     
 </dt>
 <dd>
@@ -4189,12 +4587,17 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -4204,24 +4607,25 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1309">line 1309</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -4254,8 +4658,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 <span class="param-type">boolean</span>
 
 
+
     </dd>
 </dl>
+
 
         
 
@@ -4264,9 +4670,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="load"><span class="type-signature"></span>load<span class="signature">(stream)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="load"><span class="type-signature"></span>load(stream)</h4>
+    
     
 </dt>
 <dd>
@@ -4282,10 +4689,11 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -4314,6 +4722,7 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
             
                 
 <span class="param-type">object</span>
+
 
 
             
@@ -4345,13 +4754,18 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -4361,24 +4775,25 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line786">line 786</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -4399,9 +4814,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="pause"><span class="type-signature"></span>pause<span class="signature">()</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="pause"><span class="type-signature"></span>pause()</h4>
+    
     
 </dt>
 <dd>
@@ -4417,12 +4833,17 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -4432,24 +4853,25 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line935">line 935</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -4470,9 +4892,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="play"><span class="type-signature"></span>play<span class="signature">()</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="play"><span class="type-signature"></span>play()</h4>
+    
     
 </dt>
 <dd>
@@ -4488,12 +4911,17 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -4503,24 +4931,25 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line884">line 884</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -4541,9 +4970,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="removeEventListener"><span class="type-signature"></span>removeEventListener<span class="signature">(type, listener)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="removeEventListener"><span class="type-signature"></span>removeEventListener(type, listener)</h4>
+    
     
 </dt>
 <dd>
@@ -4559,10 +4989,11 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -4593,6 +5024,7 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -4616,6 +5048,7 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 <span class="param-type">callback</span>
 
 
+
             
             </td>
 
@@ -4629,13 +5062,18 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -4645,31 +5083,32 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line536">line 536</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li><a href="MediaPlayer.html#addEventListener">addEventListener</a></li>
-        </ul>
-    </dd>
-    
 
-    
+
+	
+
+	
+
+	
+	<dt class="tag-see method-doc-label method-doc-details-label">See:</dt>
+	<dd class="tag-see">
+		<ul>
+			<li><a href="MediaPlayer.html#addEventListener">addEventListener</a></li>
+			</ul>
+	</dd>
+	
+
+	
 </dl>
 
 
@@ -4690,9 +5129,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="removePlugin"><span class="type-signature"></span>removePlugin<span class="signature">(plugin)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="removePlugin"><span class="type-signature"></span>removePlugin(plugin)</h4>
+    
     
 </dt>
 <dd>
@@ -4708,10 +5148,11 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -4745,6 +5186,7 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -4758,13 +5200,18 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -4774,24 +5221,25 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1476">line 1476</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -4812,9 +5260,10 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="reset"><span class="type-signature"></span>reset<span class="signature">(reason)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="reset"><span class="type-signature"></span>reset(reason)</h4>
+    
     
 </dt>
 <dd>
@@ -4830,10 +5279,11 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -4864,6 +5314,7 @@ The tracks list can be retrieved once the video 'loadeddata' event has been fire
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -4881,13 +5332,18 @@ Possible values are:
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -4897,24 +5353,25 @@ Possible values are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line966">line 966</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -4935,9 +5392,10 @@ Possible values are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="seek"><span class="type-signature"></span>seek<span class="signature">(time)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="seek"><span class="type-signature"></span>seek(time)</h4>
+    
     
 </dt>
 <dd>
@@ -4953,10 +5411,11 @@ Possible values are:
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -4987,6 +5446,7 @@ Possible values are:
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -5000,13 +5460,18 @@ Possible values are:
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -5016,24 +5481,25 @@ Possible values are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line895">line 895</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -5054,9 +5520,10 @@ Possible values are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="selectTrack"><span class="type-signature"></span>selectTrack<span class="signature">(type, track)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="selectTrack"><span class="type-signature"></span>selectTrack(type, track)</h4>
+    
     
 </dt>
 <dd>
@@ -5072,10 +5539,11 @@ Possible values are:
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -5106,6 +5574,7 @@ Possible values are:
 <span class="param-type">String</span>
 
 
+
             
             </td>
 
@@ -5129,6 +5598,7 @@ Possible values are:
 <span class="param-type">Track</span>
 
 
+
             
             </td>
 
@@ -5142,13 +5612,18 @@ Possible values are:
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -5158,31 +5633,32 @@ Possible values are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1228">line 1228</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li><a href="MediaPlayer.html#getTracks">getTracks</a></li>
-        </ul>
-    </dd>
-    
 
-    
+
+	
+
+	
+
+	
+	<dt class="tag-see method-doc-label method-doc-details-label">See:</dt>
+	<dd class="tag-see">
+		<ul>
+			<li><a href="MediaPlayer.html#getTracks">getTracks</a></li>
+			</ul>
+	</dd>
+	
+
+	
 </dl>
 
 
@@ -5203,9 +5679,10 @@ Possible values are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="setAutoPlay"><span class="type-signature"></span>setAutoPlay<span class="signature">(value)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="setAutoPlay"><span class="type-signature"></span>setAutoPlay(value)</h4>
+    
     
 </dt>
 <dd>
@@ -5221,10 +5698,11 @@ Possible values are:
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -5253,6 +5731,7 @@ Possible values are:
             
                 
 <span class="param-type">boolean</span>
+
 
 
             
@@ -5268,13 +5747,18 @@ Possible values are:
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -5284,24 +5768,25 @@ Possible values are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line639">line 639</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -5322,9 +5807,10 @@ Possible values are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="setAutoSwitchQuality"><span class="type-signature"></span>setAutoSwitchQuality<span class="signature">(value)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="setAutoSwitchQuality"><span class="type-signature"></span>setAutoSwitchQuality(value)</h4>
+    
     
 </dt>
 <dd>
@@ -5340,10 +5826,11 @@ Possible values are:
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -5374,6 +5861,7 @@ Possible values are:
 <span class="param-type">boolean</span>
 
 
+
             
             </td>
 
@@ -5387,13 +5875,18 @@ Possible values are:
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -5403,24 +5896,25 @@ Possible values are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line701">line 701</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -5441,9 +5935,10 @@ Possible values are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="setConfig"><span class="type-signature"></span>setConfig<span class="signature">(params)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="setConfig"><span class="type-signature"></span>setConfig(params)</h4>
+    
     
 </dt>
 <dd>
@@ -5459,10 +5954,11 @@ Possible values are:
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -5493,6 +5989,7 @@ Possible values are:
 <span class="param-type"><a href="MediaPlayer.html#PlayerParams">MediaPlayer#PlayerParams</a></span>
 
 
+
             
             </td>
 
@@ -5506,13 +6003,18 @@ Possible values are:
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -5522,24 +6024,25 @@ Possible values are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line594">line 594</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -5560,9 +6063,10 @@ Possible values are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="setDebug"><span class="type-signature"></span>setDebug<span class="signature">(value)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="setDebug"><span class="type-signature"></span>setDebug(value)</h4>
+    
     
 </dt>
 <dd>
@@ -5578,10 +6082,11 @@ Possible values are:
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -5612,6 +6117,7 @@ Possible values are:
 <span class="param-type">boolean</span>
 
 
+
             
             </td>
 
@@ -5625,13 +6131,18 @@ Possible values are:
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -5641,24 +6152,25 @@ Possible values are:
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line604">line 604</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -5679,9 +6191,10 @@ Possible values are:
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="setDefaultAudioLang"><span class="type-signature"></span>setDefaultAudioLang<span class="signature">(lang)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="setDefaultAudioLang"><span class="type-signature"></span>setDefaultAudioLang(lang)</h4>
+    
     
 </dt>
 <dd>
@@ -5698,10 +6211,11 @@ the corresponding audio track is selected. Otherwise, the first declared audio t
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -5732,6 +6246,7 @@ the corresponding audio track is selected. Otherwise, the first declared audio t
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -5745,13 +6260,18 @@ the corresponding audio track is selected. Otherwise, the first declared audio t
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -5761,24 +6281,25 @@ the corresponding audio track is selected. Otherwise, the first declared audio t
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line732">line 732</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -5799,9 +6320,10 @@ the corresponding audio track is selected. Otherwise, the first declared audio t
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="setDefaultSubtitleLang"><span class="type-signature"></span>setDefaultSubtitleLang<span class="signature">(lang)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="setDefaultSubtitleLang"><span class="type-signature"></span>setDefaultSubtitleLang(lang)</h4>
+    
     
 </dt>
 <dd>
@@ -5818,10 +6340,11 @@ the corresponding subtitle track is selected. Otherwise, the first declared subt
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -5852,6 +6375,7 @@ the corresponding subtitle track is selected. Otherwise, the first declared subt
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -5865,13 +6389,18 @@ the corresponding subtitle track is selected. Otherwise, the first declared subt
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -5881,24 +6410,25 @@ the corresponding subtitle track is selected. Otherwise, the first declared subt
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line758">line 758</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -5919,9 +6449,10 @@ the corresponding subtitle track is selected. Otherwise, the first declared subt
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="setInitialQualityFor"><span class="type-signature"></span>setInitialQualityFor<span class="signature">(type, value)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="setInitialQualityFor"><span class="type-signature"></span>setInitialQualityFor(type, value)</h4>
+    
     
 </dt>
 <dd>
@@ -5939,10 +6470,11 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -5971,6 +6503,7 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
             
                 
 <span class="param-type">string</span>
+
 
 
             
@@ -5996,6 +6529,7 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -6009,13 +6543,18 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -6025,31 +6564,32 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line653">line 653</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-see">See:</dt>
-    <dd class="tag-see">
-        <ul>
-            <li><a href="MediaPlayer.html#setConfig">setConfig</a> to set quality boundaries</li>
-        </ul>
-    </dd>
-    
 
-    
+
+	
+
+	
+
+	
+	<dt class="tag-see method-doc-label method-doc-details-label">See:</dt>
+	<dd class="tag-see">
+		<ul>
+			<li><a href="MediaPlayer.html#setConfig">setConfig</a> to set quality boundaries</li>
+			</ul>
+	</dd>
+	
+
+	
 </dl>
 
 
@@ -6070,9 +6610,10 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="setMute"><span class="type-signature"></span>setMute<span class="signature">(value)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="setMute"><span class="type-signature"></span>setMute(value)</h4>
+    
     
 </dt>
 <dd>
@@ -6088,10 +6629,11 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -6122,6 +6664,7 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 <span class="param-type">boolean</span>
 
 
+
             
             </td>
 
@@ -6135,13 +6678,18 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -6151,24 +6699,25 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1372">line 1372</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -6189,9 +6738,10 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="setQualityFor"><span class="type-signature"></span>setQualityFor<span class="signature">(type, value)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="setQualityFor"><span class="type-signature"></span>setQualityFor(type, value)</h4>
+    
     
 </dt>
 <dd>
@@ -6207,10 +6757,11 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -6241,6 +6792,7 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -6264,6 +6816,7 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -6277,13 +6830,18 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -6293,24 +6851,25 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line676">line 676</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -6331,9 +6890,10 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="setScheduleWhilePaused"><span class="type-signature"></span>setScheduleWhilePaused<span class="signature">(value)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="setScheduleWhilePaused"><span class="type-signature"></span>setScheduleWhilePaused(value)</h4>
+    
     
 </dt>
 <dd>
@@ -6349,10 +6909,11 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -6383,6 +6944,7 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 <span class="param-type">boolean</span>
 
 
+
             
             </td>
 
@@ -6396,13 +6958,18 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -6412,24 +6979,25 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line725">line 725</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -6450,9 +7018,138 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="setTrickModeSpeed"><span class="type-signature"></span>setTrickModeSpeed<span class="signature">()</span><span class="type-signature"> &rarr; {number}</span></h4>
+    <h4 class="name" id="setTrickModeSpeed"><span class="type-signature"></span>setTrickModeSpeed(speed)</h4>
+    
+    
+</dt>
+<dd>
 
+    
+    <div class="description">
+        Sets the trick mode speed.
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>speed</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">number</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">the new trick mode speed (0 corresponds to normal playback, i.e. playbackRate = 1)</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="setTrickModeSpeed"><span class="type-signature"></span>setTrickModeSpeed()</h4>
+    
     
 </dt>
 <dd>
@@ -6468,12 +7165,17 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -6483,24 +7185,25 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1138">line 1138</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -6533,9 +7236,11 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 <span class="param-type">number</span>
 
 
+
     </dd>
 </dl>
 
+
         
 
     
@@ -6543,128 +7248,10 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="setTrickModeSpeed"><span class="type-signature"></span>setTrickModeSpeed<span class="signature">(speed)</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="setVolume"><span class="type-signature"></span>setVolume(level)</h4>
     
-</dt>
-<dd>
-
-    
-    <div class="description">
-        Sets the trick mode speed.
-    </div>
-    
-
-    
-
-    
-
-    
-        <h5>Parameters:</h5>
-        
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>speed</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">the new trick mode speed (0 corresponds to normal playback, i.e. playbackRate = 1)</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-    
-
-    
-<dl class="details">
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1153">line 1153</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-</dd>
-
-        
-            
-<dt>
-    <h4 class="name" id="setVolume"><span class="type-signature"></span>setVolume<span class="signature">(level)</span><span class="type-signature"></span></h4>
-
     
 </dt>
 <dd>
@@ -6680,10 +7267,11 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -6714,6 +7302,7 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -6727,13 +7316,18 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -6743,24 +7337,25 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1399">line 1399</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -6781,9 +7376,10 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 
         
             
+<hr>
 <dt>
-    <h4 class="name" id="stop"><span class="type-signature"></span>stop<span class="signature">()</span><span class="type-signature"></span></h4>
-
+    <h4 class="name" id="stop"><span class="type-signature"></span>stop()</h4>
+    
     
 </dt>
 <dd>
@@ -6799,12 +7395,17 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
     
 
     
+    
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -6814,24 +7415,25 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line946">line 946</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -6858,8 +7460,9 @@ Otherwise, the initial quality is set according to previous bandwidth condition.
 
         <dl>
                 
-<dt>
-    <h4 class="name" id="PlayerParams">PlayerParams</h4>
+<hr>
+<dt class="name" id="PlayerParams">
+    <h4 id="PlayerParams">PlayerParams</h4>
 
     
 </dt>
@@ -6880,6 +7483,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">Object</span>
 
 
+
             </li>
         </ul>
     
@@ -6888,11 +7492,11 @@ parameters values in the params.audio and params.video objects.
 <dl class="details">
     
 
-        <h5 class="subsection-title">Properties:</h5>
+    <h5 class="subsection-title">Properties:</h5>
 
-        <dl>
+    <dl>
 
-<table class="props">
+<table class="props table table-striped">
     <thead>
     <tr>
         
@@ -6923,6 +7527,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -6944,6 +7549,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">number</span>
+
 
 
             
@@ -6969,6 +7575,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -6990,6 +7597,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">number</span>
+
 
 
             
@@ -7015,6 +7623,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -7036,6 +7645,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">number</span>
+
 
 
             
@@ -7061,6 +7671,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -7082,6 +7693,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">boolean</span>
+
 
 
             
@@ -7107,6 +7719,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -7128,6 +7741,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">boolean</span>
+
 
 
             
@@ -7153,6 +7767,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -7174,6 +7789,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">number</span>
+
 
 
             
@@ -7199,6 +7815,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -7220,6 +7837,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">number</span>
+
 
 
             
@@ -7245,6 +7863,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -7266,6 +7885,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">number</span>
+
 
 
             
@@ -7291,6 +7911,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -7312,6 +7933,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">number</span>
+
 
 
             
@@ -7337,6 +7959,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -7358,6 +7981,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">number</span>
+
 
 
             
@@ -7383,6 +8007,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">boolean</span>
 
 
+
             
             </td>
 
@@ -7404,6 +8029,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">Object</span>
+
 
 
             
@@ -7429,6 +8055,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">Object</span>
 
 
+
             
             </td>
 
@@ -7441,42 +8068,46 @@ parameters values in the params.audio and params.video objects.
 
     
     </tbody>
-</table></dl>
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1692">line 1692</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
+</table>
 </dl>
 
+    
+
+	
+
+	
+
+	
 
     
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
 
     
 </dd>
@@ -7489,9 +8120,10 @@ parameters values in the params.audio and params.video objects.
 
         <dl>
             
+<hr>
 <dt>
     <h4 class="name" id="event:bufferLevel_updated">bufferLevel_updated</h4>
-
+    
     
 </dt>
 <dd>
@@ -7507,10 +8139,11 @@ parameters values in the params.audio and params.video objects.
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -7541,6 +8174,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">CustomEvent</span>
 
 
+
             
             </td>
 
@@ -7549,10 +8183,10 @@ parameters values in the params.audio and params.video objects.
             
 
             <td class="description last">the event
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -7583,6 +8217,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -7591,10 +8226,10 @@ parameters values in the params.audio and params.video objects.
             
 
             <td class="description last">the event data
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -7623,6 +8258,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">string</span>
+
 
 
             
@@ -7648,6 +8284,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -7661,25 +8298,32 @@ parameters values in the params.audio and params.video objects.
     
     </tbody>
 </table>
+
             </td>
         </tr>
 
     
     </tbody>
 </table>
+
             </td>
         </tr>
 
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -7689,24 +8333,25 @@ parameters values in the params.audio and params.video objects.
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1655">line 1655</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -7727,9 +8372,10 @@ parameters values in the params.audio and params.video objects.
 
         
             
+<hr>
 <dt>
     <h4 class="name" id="event:cueEnter">cueEnter</h4>
-
+    
     
 </dt>
 <dd>
@@ -7745,10 +8391,11 @@ parameters values in the params.audio and params.video objects.
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -7779,6 +8426,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -7787,10 +8435,10 @@ parameters values in the params.audio and params.video objects.
             
 
             <td class="description last">the event
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -7819,6 +8467,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">object</span>
+
 
 
             
@@ -7844,6 +8493,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -7852,10 +8502,10 @@ parameters values in the params.audio and params.video objects.
             
 
             <td class="description last">the event data
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -7886,6 +8536,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -7907,6 +8558,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">string</span>
+
 
 
             
@@ -7932,6 +8584,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -7953,6 +8606,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">string</span>
+
 
 
             
@@ -7978,6 +8632,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -7991,25 +8646,32 @@ parameters values in the params.audio and params.video objects.
     
     </tbody>
 </table>
+
             </td>
         </tr>
 
     
     </tbody>
 </table>
+
             </td>
         </tr>
 
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -8019,24 +8681,25 @@ parameters values in the params.audio and params.video objects.
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1595">line 1595</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -8057,9 +8720,10 @@ parameters values in the params.audio and params.video objects.
 
         
             
+<hr>
 <dt>
     <h4 class="name" id="event:cueExit">cueExit</h4>
-
+    
     
 </dt>
 <dd>
@@ -8075,10 +8739,11 @@ parameters values in the params.audio and params.video objects.
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -8109,6 +8774,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -8117,10 +8783,10 @@ parameters values in the params.audio and params.video objects.
             
 
             <td class="description last">the event
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -8151,6 +8817,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -8174,6 +8841,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -8182,10 +8850,10 @@ parameters values in the params.audio and params.video objects.
             
 
             <td class="description last">the event data
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -8216,6 +8884,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -8237,6 +8906,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">string</span>
+
 
 
             
@@ -8262,6 +8932,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -8283,6 +8954,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">string</span>
+
 
 
             
@@ -8308,6 +8980,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -8321,25 +8994,32 @@ parameters values in the params.audio and params.video objects.
     
     </tbody>
 </table>
+
             </td>
         </tr>
 
     
     </tbody>
 </table>
+
             </td>
         </tr>
 
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -8349,24 +9029,25 @@ parameters values in the params.audio and params.video objects.
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1610">line 1610</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -8387,9 +9068,10 @@ parameters values in the params.audio and params.video objects.
 
         
             
+<hr>
 <dt>
     <h4 class="name" id="event:download_bitrate">download_bitrate</h4>
-
+    
     
 </dt>
 <dd>
@@ -8405,10 +9087,11 @@ parameters values in the params.audio and params.video objects.
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -8439,6 +9122,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">CustomEvent</span>
 
 
+
             
             </td>
 
@@ -8447,10 +9131,10 @@ parameters values in the params.audio and params.video objects.
             
 
             <td class="description last">the event
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -8481,6 +9165,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -8489,10 +9174,10 @@ parameters values in the params.audio and params.video objects.
             
 
             <td class="description last">the event data
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -8523,6 +9208,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -8544,6 +9230,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">number</span>
+
 
 
             
@@ -8569,6 +9256,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -8590,6 +9278,7 @@ parameters values in the params.audio and params.video objects.
             
                 
 <span class="param-type">number</span>
+
 
 
             
@@ -8615,6 +9304,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -8638,6 +9328,7 @@ parameters values in the params.audio and params.video objects.
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -8651,25 +9342,32 @@ parameters values in the params.audio and params.video objects.
     
     </tbody>
 </table>
+
             </td>
         </tr>
 
     
     </tbody>
 </table>
+
             </td>
         </tr>
 
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -8679,24 +9377,25 @@ parameters values in the params.audio and params.video objects.
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1640">line 1640</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -8717,9 +9416,10 @@ parameters values in the params.audio and params.video objects.
 
         
             
+<hr>
 <dt>
     <h4 class="name" id="event:error">error</h4>
-
+    
     
 </dt>
 <dd>
@@ -8736,10 +9436,11 @@ When the error event is fired, the application shall stop the player.
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -8770,6 +9471,7 @@ When the error event is fired, the application shall stop the player.
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -8778,10 +9480,10 @@ When the error event is fired, the application shall stop the player.
             
 
             <td class="description last">the event
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -8812,6 +9514,7 @@ When the error event is fired, the application shall stop the player.
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -8835,6 +9538,7 @@ When the error event is fired, the application shall stop the player.
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -8843,10 +9547,10 @@ When the error event is fired, the application shall stop the player.
             
 
             <td class="description last">the event data
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -8877,6 +9581,7 @@ When the error event is fired, the application shall stop the player.
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -8898,6 +9603,7 @@ When the error event is fired, the application shall stop the player.
             
                 
 <span class="param-type">string</span>
+
 
 
             
@@ -8923,6 +9629,7 @@ When the error event is fired, the application shall stop the player.
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -8936,25 +9643,32 @@ When the error event is fired, the application shall stop the player.
     
     </tbody>
 </table>
+
             </td>
         </tr>
 
     
     </tbody>
 </table>
+
             </td>
         </tr>
 
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -8964,24 +9678,25 @@ When the error event is fired, the application shall stop the player.
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1543">line 1543</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -9002,9 +9717,10 @@ When the error event is fired, the application shall stop the player.
 
         
             
+<hr>
 <dt>
     <h4 class="name" id="event:manifestUrlUpdate">manifestUrlUpdate</h4>
-
+    
     
 </dt>
 <dd>
@@ -9022,10 +9738,11 @@ The application shall therefore provide an updated manifest URL by using the met
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -9056,6 +9773,7 @@ The application shall therefore provide an updated manifest URL by using the met
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -9064,10 +9782,10 @@ The application shall therefore provide an updated manifest URL by using the met
             
 
             <td class="description last">the event
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -9098,6 +9816,7 @@ The application shall therefore provide an updated manifest URL by using the met
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -9121,6 +9840,7 @@ The application shall therefore provide an updated manifest URL by using the met
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -9129,10 +9849,10 @@ The application shall therefore provide an updated manifest URL by using the met
             
 
             <td class="description last">the event data
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -9163,6 +9883,7 @@ The application shall therefore provide an updated manifest URL by using the met
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -9176,25 +9897,32 @@ The application shall therefore provide an updated manifest URL by using the met
     
     </tbody>
 </table>
+
             </td>
         </tr>
 
     
     </tbody>
 </table>
+
             </td>
         </tr>
 
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -9204,24 +9932,25 @@ The application shall therefore provide an updated manifest URL by using the met
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1570">line 1570</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -9242,9 +9971,10 @@ The application shall therefore provide an updated manifest URL by using the met
 
         
             
+<hr>
 <dt>
     <h4 class="name" id="event:play_bitrate">play_bitrate</h4>
-
+    
     
 </dt>
 <dd>
@@ -9260,10 +9990,11 @@ The application shall therefore provide an updated manifest URL by using the met
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -9294,6 +10025,7 @@ The application shall therefore provide an updated manifest URL by using the met
 <span class="param-type">CustomEvent</span>
 
 
+
             
             </td>
 
@@ -9302,10 +10034,10 @@ The application shall therefore provide an updated manifest URL by using the met
             
 
             <td class="description last">the event
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -9336,6 +10068,7 @@ The application shall therefore provide an updated manifest URL by using the met
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -9344,10 +10077,10 @@ The application shall therefore provide an updated manifest URL by using the met
             
 
             <td class="description last">the event data
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -9376,6 +10109,7 @@ The application shall therefore provide an updated manifest URL by using the met
             
                 
 <span class="param-type">string</span>
+
 
 
             
@@ -9401,6 +10135,7 @@ The application shall therefore provide an updated manifest URL by using the met
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -9422,6 +10157,7 @@ The application shall therefore provide an updated manifest URL by using the met
             
                 
 <span class="param-type">string</span>
+
 
 
             
@@ -9447,6 +10183,7 @@ The application shall therefore provide an updated manifest URL by using the met
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -9468,6 +10205,7 @@ The application shall therefore provide an updated manifest URL by using the met
             
                 
 <span class="param-type">number</span>
+
 
 
             
@@ -9493,6 +10231,7 @@ The application shall therefore provide an updated manifest URL by using the met
 <span class="param-type">number</span>
 
 
+
             
             </td>
 
@@ -9506,25 +10245,32 @@ The application shall therefore provide an updated manifest URL by using the met
     
     </tbody>
 </table>
+
             </td>
         </tr>
 
     
     </tbody>
 </table>
+
             </td>
         </tr>
 
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -9534,24 +10280,25 @@ The application shall therefore provide an updated manifest URL by using the met
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1625">line 1625</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -9572,9 +10319,10 @@ The application shall therefore provide an updated manifest URL by using the met
 
         
             
+<hr>
 <dt>
     <h4 class="name" id="event:state_changed">state_changed</h4>
-
+    
     
 </dt>
 <dd>
@@ -9590,10 +10338,11 @@ The application shall therefore provide an updated manifest URL by using the met
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -9624,6 +10373,7 @@ The application shall therefore provide an updated manifest URL by using the met
 <span class="param-type">CustomEvent</span>
 
 
+
             
             </td>
 
@@ -9632,10 +10382,10 @@ The application shall therefore provide an updated manifest URL by using the met
             
 
             <td class="description last">the event
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -9666,6 +10416,7 @@ The application shall therefore provide an updated manifest URL by using the met
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -9674,10 +10425,10 @@ The application shall therefore provide an updated manifest URL by using the met
             
 
             <td class="description last">the event data
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -9708,6 +10459,7 @@ The application shall therefore provide an updated manifest URL by using the met
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -9731,6 +10483,7 @@ The application shall therefore provide an updated manifest URL by using the met
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -9744,25 +10497,32 @@ The application shall therefore provide an updated manifest URL by using the met
     
     </tbody>
 </table>
+
             </td>
         </tr>
 
     
     </tbody>
 </table>
+
             </td>
         </tr>
 
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -9772,24 +10532,25 @@ The application shall therefore provide an updated manifest URL by using the met
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1666">line 1666</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -9810,9 +10571,10 @@ The application shall therefore provide an updated manifest URL by using the met
 
         
             
+<hr>
 <dt>
     <h4 class="name" id="event:warning">warning</h4>
-
+    
     
 </dt>
 <dd>
@@ -9828,10 +10590,11 @@ The application shall therefore provide an updated manifest URL by using the met
     
 
     
+    
         <h5>Parameters:</h5>
         
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -9862,6 +10625,7 @@ The application shall therefore provide an updated manifest URL by using the met
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -9870,10 +10634,10 @@ The application shall therefore provide an updated manifest URL by using the met
             
 
             <td class="description last">the event
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -9904,6 +10668,7 @@ The application shall therefore provide an updated manifest URL by using the met
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -9927,6 +10692,7 @@ The application shall therefore provide an updated manifest URL by using the met
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -9935,10 +10701,10 @@ The application shall therefore provide an updated manifest URL by using the met
             
 
             <td class="description last">the event data
-                <h6>Properties</h6>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
                 
 
-<table class="params">
+<table class="params table table-striped">
     <thead>
     <tr>
         
@@ -9969,6 +10735,7 @@ The application shall therefore provide an updated manifest URL by using the met
 <span class="param-type">string</span>
 
 
+
             
             </td>
 
@@ -9990,6 +10757,7 @@ The application shall therefore provide an updated manifest URL by using the met
             
                 
 <span class="param-type">string</span>
+
 
 
             
@@ -10015,6 +10783,7 @@ The application shall therefore provide an updated manifest URL by using the met
 <span class="param-type">object</span>
 
 
+
             
             </td>
 
@@ -10028,25 +10797,32 @@ The application shall therefore provide an updated manifest URL by using the met
     
     </tbody>
 </table>
+
             </td>
         </tr>
 
     
     </tbody>
 </table>
+
             </td>
         </tr>
 
     
     </tbody>
 </table>
+
     
 
     
 <dl class="details">
     
 
-    
+	
+
+	
+
+	
 
     
 
@@ -10056,24 +10832,25 @@ The application shall therefore provide an updated manifest URL by using the met
 
     
 
-    
+	
 
-    
+	
 
-    
+	
 
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="MediaPlayer.js.html">MediaPlayer.js</a>, <a href="MediaPlayer.js.html#line1557">line 1557</a>
-    </li></ul></dd>
-    
+	
 
-    
+	
 
-    
 
-    
+
+	
+
+	
+
+	
+
+	
 </dl>
 
 
@@ -10101,19 +10878,132 @@ The application shall therefore provide an updated manifest URL by using the met
 
 
 
+		</div>
+	</div>
+
+	<div class="clearfix"></div>
+
+	
+		<div class="col-md-3">
+			<div id="toc" class="col-md-3 hidden-xs hidden-sm hidden-md"></div>
+		</div>
+	
+
+</div>
 </div>
 
-<nav>
-    <h2><a href="index.html">Index</a></h2><h3>Classes</h3><ul><li><a href="MediaPlayer.html">MediaPlayer</a></li></ul><h3>Events</h3><ul><li><a href="MediaPlayer.html#event:bufferLevel_updated">bufferLevel_updated</a></li><li><a href="MediaPlayer.html#event:cueEnter">cueEnter</a></li><li><a href="MediaPlayer.html#event:cueExit">cueExit</a></li><li><a href="MediaPlayer.html#event:download_bitrate">download_bitrate</a></li><li><a href="MediaPlayer.html#event:error">error</a></li><li><a href="MediaPlayer.html#event:manifestUrlUpdate">manifestUrlUpdate</a></li><li><a href="MediaPlayer.html#event:play_bitrate">play_bitrate</a></li><li><a href="MediaPlayer.html#event:state_changed">state_changed</a></li><li><a href="MediaPlayer.html#event:warning">warning</a></li></ul>
-</nav>
 
-<br clear="both">
+    <div class="modal fade" id="searchResults">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Search results</h4>
+          </div>
+          <div class="modal-body"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div>
+
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.3.0-alpha5</a> on Thu Mar 30 2017 15:15:57 GMT+0000 (UTC)
+
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.3</a>
+	
+		on 2017-04-06T08:10:36+00:00
+	
+	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
+</span>
 </footer>
 
-<script> prettyPrint(); </script>
-<script src="scripts/linenumber.js"> </script>
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/toc.js"></script>
+
+    <script type="text/javascript" src="scripts/fulltext-search-ui.js"></script>
+
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( ".tutorial-section pre, .readme-section pre, pre.prettyprint.source" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			var langClassMatch = example.parent()[0].className.match(/lang\-(\S+)/);
+			lang = langClassMatch ? langClassMatch[1] : "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( "sunlight-highlight-" + lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	Sunlight.highlightAll( {
+		lineNumbers : true,
+		showMenu : true,
+		enableDoclinks : true
+	} );
+
+	$.catchAnchorLinks( {
+        navbarOffset: 10
+	} );
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			return $( heading ).attr( "id" ) || ( prefix + i );
+		},
+		selectors   : "#toc-content h1,#toc-content h2,#toc-content h3,#toc-content h4",
+		showAndHide : false,
+		smoothScrolling: true
+	} );
+
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+
+    $( "table" ).each( function () {
+      var $this = $( this );
+      $this.addClass('table');
+    } );
+
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            SearcherDisplay.init();
+        });
+    </script>
+
+
 </body>
 </html>
