@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-4-6_8:38:39 / git revision : 9d78101 */
+/* Last build : 2017-4-6_8:57:54 / git revision : a2e4ab2 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.10.0-dev',
-        GIT_TAG = '9d78101',
-        BUILD_DATE = '2017-4-6_8:38:39',
+        GIT_TAG = 'a2e4ab2',
+        BUILD_DATE = '2017-4-6_8:57:54',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -2196,6 +2196,7 @@ MediaPlayer.dependencies.BufferController = function() {
         SEGMENT_DOWNLOAD_ERROR_MAX = 3,
         segmentDownloadErrorCount = 0,
         segmentRequestOnError = null,
+        reloadTimeout = null,
 
         // HLS chunk sequence number
         currentSequenceNumber = -1,
@@ -2210,7 +2211,7 @@ MediaPlayer.dependencies.BufferController = function() {
         isFirefox = (fingerprint_browser().name === "Firefox"),
 
         sendRequest = function() {
-
+            // Check if running state
             if (!isRunning.call(this)) {
                 return;
             }
@@ -2299,10 +2300,6 @@ MediaPlayer.dependencies.BufferController = function() {
             htmlVideoTime = -1;
             segmentRequestOnError = null;
 
-            // Clear executed requests from fragment controller. In case the browser has cleared the buffer itslef silently,
-            // then FragmentController will not state that the cleared segments have been already loaded.
-            this.fragmentController.clearExecutedRequests(fragmentModel);
-
             startPlayback.call(this);
         },
 
@@ -2322,6 +2319,10 @@ MediaPlayer.dependencies.BufferController = function() {
             if (started === true) {
                 doStop.call(this);
             }
+
+            // Clear executed requests from fragment controller. In case the browser has cleared the buffer itslef silently,
+            // then FragmentController will not state that the cleared segments have been already loaded.
+            this.fragmentController.clearExecutedRequests(fragmentModel);
 
             // Restart
             playListMetrics = this.metricsModel.addPlayList(type, currentTime, seekTarget, MediaPlayer.vo.metrics.PlayList.SEEK_START_REASON);
@@ -2358,6 +2359,10 @@ MediaPlayer.dependencies.BufferController = function() {
             seeking = false;
             seekTarget = -1;
 
+            // Stop reload timeout
+            clearTimeout(reloadTimeout);
+            reloadTimeout = null;
+
             // Stop buffering process and cancel loaded request
             clearPlayListTraceMetrics(new Date(), MediaPlayer.vo.metrics.PlayList.Trace.USER_REQUEST_STOP_REASON);
 
@@ -2387,14 +2392,13 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         onInitializationLoaded = function(request, response) {
+            var initData = response.data,
+                quality = request.quality,
+                self = this;
 
             if (!isRunning.call(this)) {
                 return;
             }
-
-            var initData = response.data,
-                quality = request.quality,
-                self = this;
 
             this.debug.log("[BufferController][" + type + "] Initialization loaded ", quality);
 
@@ -2438,17 +2442,16 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         onMediaLoaded = function(request, response) {
-
-            if (!isRunning.call(this)) {
-                return;
-            }
-
             var eventStreamAdaption = this.manifestExt.getEventStreamForAdaptationSet(this.getData()),
                 eventStreamRepresentation = this.manifestExt.getEventStreamForRepresentation(this.getData(), _currentRepresentation),
                 events,
                 self = this;
 
             segmentDuration = request.duration;
+
+            if (!isRunning.call(this)) {
+                return;
+            }
 
             // Reset segment download error status
             segmentDownloadErrorCount = 0;
@@ -2954,12 +2957,12 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         loadInitialization = function(quality) {
+            var self = this;
 
+            // Check if running state
             if (!isRunning.call(this)) {
                 return Q.when(null);
             }
-
-            var self = this;
 
             // Check if initialization segment for current quality has already been loaded and stored
             if (initializationData[quality]) {
@@ -2981,15 +2984,14 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         loadNextFragment = function() {
-
-            if (!isRunning.call(this)) {
-                return;
-            }
-
             var time = getWorkingTime.call(this),
                 range,
                 segmentTime;
 
+            // Check if running state
+            if (!isRunning.call(this)) {
+                return;
+            }
 
             // If we override buffer (in case of language for example), then consider current video time for the next segment time
             if (overrideBuffer) {
@@ -3016,11 +3018,6 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         onFragmentRequest = function(request) {
-
-            if (!isRunning.call(this)) {
-                return;
-            }
-
             var manifest = this.manifestModel.getValue();
 
             // Check if current request signals end of stream
@@ -3128,13 +3125,13 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         checkIfSufficientBuffer = function() {
+            var timeToEnd,
+                delay;
 
+            // Check if running state
             if (!isRunning.call(this)) {
                 return;
             }
-
-            var timeToEnd,
-                delay;
 
             this.debug.log("[BufferController][" + type + "] Check buffer...");
 
@@ -5552,15 +5549,15 @@ MediaPlayer.dependencies.FragmentLoader.eventList = {
 };
 /*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
- *
+ * 
  * Copyright (c) 2013, Digital Primates
  * All rights reserved.
- *
+ * 
  * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
  * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
  * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
  * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
@@ -5667,11 +5664,12 @@ MediaPlayer.dependencies.FragmentModel = function () {
 
         isFragmentLoadedOrPending: function(request) {
             var isLoaded = false,
+                ln = executedRequests.length,
                 i = 0,
                 req;
 
             // First, check if the fragment has already been loaded
-            for (i = 0; i < executedRequests.length; i++) {
+            for (i = 0; i < ln; i++) {
                 req = executedRequests[i];
                 if (request.startTime === req.startTime || ((req.action === "complete") && request.action === req.action)) {
                     //self.debug.log(request.streamType + " Fragment already loaded for time: " + request.startTime);
@@ -5680,16 +5678,15 @@ MediaPlayer.dependencies.FragmentModel = function () {
                         isLoaded = true;
                         break;
                     } else {
-                        // Remove overlapping segment of a different quality
-                        executedRequests.splice(i, 1);
-                        i--;
+                        // remove overlapping segement of a different quality
+                        removeExecutedRequest(request);
                     }
                 }
             }
 
             // if it has not been loaded check if it is going to be loaded
             if (!isLoaded) {
-                for (i = 0; i < pendingRequests.length; i++) {
+                for (i = 0, ln = pendingRequests.length; i < ln; i += 1) {
                     req = pendingRequests[i];
                     if ((request.url === req.url) && (request.startTime === req.startTime)) {
                         isLoaded = true;
@@ -5698,7 +5695,7 @@ MediaPlayer.dependencies.FragmentModel = function () {
             }
 
             if (!isLoaded) {
-                for (i = 0; i < loadingRequests.length; i++) {
+                for (i = 0, ln = loadingRequests.length; i < ln; i += 1) {
                     req = loadingRequests[i];
                     if ((request.url === req.url) && (request.startTime === req.startTime)) {
                         isLoaded = true;
@@ -5876,10 +5873,11 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
         bufferTimeout,
         _fragmentInfoTime,
         _bufferController,
-        // ORANGE: segment download failed recovery
+        // ORANGE: segment downlaod failed recovery
         SEGMENT_DOWNLOAD_ERROR_MAX = 3,
         segmentDownloadFailed = false,
         segmentDownloadErrorCount = 0,
+        reloadTimeout = null,
         startFragmentInfoDate = null,
         startTimeStampValue = null,
         deltaTime = 0,
@@ -5951,6 +5949,10 @@ MediaPlayer.dependencies.FragmentInfoController = function() {
 
             startFragmentInfoDate = null;
             startTimeStampValue = null;
+
+            // Stop reload timeout
+            clearTimeout(reloadTimeout);
+            reloadTimeout = null;
 
             this.fragmentController.abortRequestsForModel(fragmentModel);
         },
@@ -9853,8 +9855,6 @@ MediaPlayer.dependencies.Stream = function() {
                 reloadTimeout = setTimeout(function() {
                     reloadTimeout = null;
                     //pause.call(self);
-                    isReloading = true;
-                    self.debug.info("[Stream] Reload session (update manifest)");
                     self.system.notify("manifestUpdate", true);
                     stopFragmentInfoControllers.call(self);
                 }, delay * 1000);
@@ -10410,11 +10410,6 @@ MediaPlayer.dependencies.StreamController = function() {
          * TODO move to ???Extensions class
          */
         onTimeupdate = function() {
-
-            if (!activeStream) {
-                return;
-            }
-
             var self = this,
                 time = new Date(),
                 streamEndTime = activeStream.getStartTime() + activeStream.getDuration(),
@@ -14786,217 +14781,6 @@ Dash = (function () {
  * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-Dash.vo.AdaptationSet = function () {
-    "use strict";
-    this.period = null;
-    this.index = -1;
-};
-
-Dash.vo.AdaptationSet.prototype = {
-    constructor: Dash.vo.AdaptationSet
-};
-/*
- * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2013, Fraunhofer Fokus
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-Dash.vo.Event = function () {
-    "use strict";
-    this.duration = NaN;
-    this.presentationTime = NaN;
-    this.id = NaN;
-    this.messageData = "";
-    this.eventStream = null;
-    this.presentationTimeDelta = NaN; // Specific EMSG Box paramater
-
-};
-
-Dash.vo.Event.prototype = {
-    constructor: Dash.vo.Event
-};
-
-/*
- * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
- *
- * Copyright (c) 2013, Fraunhofer Fokus
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-Dash.vo.EventStream = function () {
-    "use strict";
-    this.adaptionSet = null;
-    this.representation = null;
-    this.period = null;
-    this.timescale = 1;
-    this.value = "";
-    this.schemeIdUri = "";
-};
-
-Dash.vo.EventStream.prototype = {
-    constructor: Dash.vo.EventStream
-};
-
-/*
- * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
- * 
- * Copyright (c) 2013, Digital Primates
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-Dash.vo.Mpd = function () {
-    "use strict";
-    this.manifest = null;
-    this.suggestedPresentationDelay = 0;
-    this.availabilityStartTime = null;
-    this.availabilityEndTime = Number.POSITIVE_INFINITY;
-    this.timeShiftBufferDepth = Number.POSITIVE_INFINITY;
-    this.maxSegmentDuration = Number.POSITIVE_INFINITY;
-    this.checkTime = NaN;
-    this.clientServerTimeShift = 0;
-    this.isClientServerTimeSyncCompleted = false;
-};
-
-Dash.vo.Mpd.prototype = {
-    constructor: Dash.vo.Mpd
-};
-/*
- * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
- * 
- * Copyright (c) 2013, Digital Primates
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-Dash.vo.Period = function () {
-    "use strict";
-    this.id = null;
-    this.index = -1;
-    this.duration = NaN;
-    this.start = NaN;
-    this.mpd = null;
-    this.liveEdge = NaN;
-};
-
-Dash.vo.Period.prototype = {
-    constructor: Dash.vo.Period
-};
-/*
- * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
- * 
- * Copyright (c) 2013, Digital Primates
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-Dash.vo.Representation = function () {
-    "use strict";
-    this.id = null;
-    this.index = -1;
-    this.adaptation = null;
-    this.segmentInfoType = null;
-    this.initialization = null;
-    this.segmentDuration = NaN;
-    this.timescale = 1;
-    this.startNumber = 1;
-    this.indexRange = null;
-    this.range = null;
-    this.presentationTimeOffset = 0;
-    // Set the source buffer timeOffset to this
-    this.MSETimeOffset = NaN;
-    this.segmentAvailabilityRange = null;
-    this.availableSegmentsNumber = 0;
-};
-
-Dash.vo.Representation.prototype = {
-    constructor: Dash.vo.Representation
-};
-/*
- * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
- * 
- * Copyright (c) 2013, Digital Primates
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-Dash.vo.Segment = function () {
-    "use strict";
-    this.indexRange = null;
-    this.index = null;
-    this.mediaRange = null;
-    this.media = null;
-    this.duration = NaN;
-    // this is the time that should be inserted into the media url
-    this.replacementTime = null;
-    // this is the number that should be inserted into the media url
-    this.replacementNumber = NaN;
-    // This is supposed to match the time encoded in the media Segment
-    this.mediaStartTime = NaN;
-    // When the source buffer timeOffset is set to MSETimeOffset this is the 
-    // time that will match the seekTarget and video.currentTime
-    this.presentationStartTime = NaN;
-    // Do not schedule this segment until 
-    this.availabilityStartTime = NaN;
-    // Ignore and  discard this segment after
-    this.availabilityEndTime = NaN;
-    // The index of the segment inside the availability window
-    this.availabilityIdx = NaN;
-    // For dynamic mpd's, this is the wall clock time that the video   
-    // element currentTime should be presentationStartTime
-    this.wallStartTime = NaN;
-    this.representation = null;
-};
-
-Dash.vo.Segment.prototype = {
-    constructor: Dash.vo.Segment
-};
-/*
- * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
- * 
- * Copyright (c) 2013, Digital Primates
- * All rights reserved.
- * 
- * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
- * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
- * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
- * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
 Dash.dependencies.BaseURLExtensions = function () {
     "use strict";
 
@@ -18704,6 +18488,217 @@ Dash.dependencies.TimelineConverter = function() {
 
 Dash.dependencies.TimelineConverter.prototype = {
     constructor: Dash.dependencies.TimelineConverter
+};
+/*
+ * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
+ * 
+ * Copyright (c) 2013, Digital Primates
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+Dash.vo.AdaptationSet = function () {
+    "use strict";
+    this.period = null;
+    this.index = -1;
+};
+
+Dash.vo.AdaptationSet.prototype = {
+    constructor: Dash.vo.AdaptationSet
+};
+/*
+ * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2013, Fraunhofer Fokus
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+Dash.vo.Event = function () {
+    "use strict";
+    this.duration = NaN;
+    this.presentationTime = NaN;
+    this.id = NaN;
+    this.messageData = "";
+    this.eventStream = null;
+    this.presentationTimeDelta = NaN; // Specific EMSG Box paramater
+
+};
+
+Dash.vo.Event.prototype = {
+    constructor: Dash.vo.Event
+};
+
+/*
+ * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2013, Fraunhofer Fokus
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+Dash.vo.EventStream = function () {
+    "use strict";
+    this.adaptionSet = null;
+    this.representation = null;
+    this.period = null;
+    this.timescale = 1;
+    this.value = "";
+    this.schemeIdUri = "";
+};
+
+Dash.vo.EventStream.prototype = {
+    constructor: Dash.vo.EventStream
+};
+
+/*
+ * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
+ * 
+ * Copyright (c) 2013, Digital Primates
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+Dash.vo.Mpd = function () {
+    "use strict";
+    this.manifest = null;
+    this.suggestedPresentationDelay = 0;
+    this.availabilityStartTime = null;
+    this.availabilityEndTime = Number.POSITIVE_INFINITY;
+    this.timeShiftBufferDepth = Number.POSITIVE_INFINITY;
+    this.maxSegmentDuration = Number.POSITIVE_INFINITY;
+    this.checkTime = NaN;
+    this.clientServerTimeShift = 0;
+    this.isClientServerTimeSyncCompleted = false;
+};
+
+Dash.vo.Mpd.prototype = {
+    constructor: Dash.vo.Mpd
+};
+/*
+ * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
+ * 
+ * Copyright (c) 2013, Digital Primates
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+Dash.vo.Period = function () {
+    "use strict";
+    this.id = null;
+    this.index = -1;
+    this.duration = NaN;
+    this.start = NaN;
+    this.mpd = null;
+    this.liveEdge = NaN;
+};
+
+Dash.vo.Period.prototype = {
+    constructor: Dash.vo.Period
+};
+/*
+ * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
+ * 
+ * Copyright (c) 2013, Digital Primates
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+Dash.vo.Representation = function () {
+    "use strict";
+    this.id = null;
+    this.index = -1;
+    this.adaptation = null;
+    this.segmentInfoType = null;
+    this.initialization = null;
+    this.segmentDuration = NaN;
+    this.timescale = 1;
+    this.startNumber = 1;
+    this.indexRange = null;
+    this.range = null;
+    this.presentationTimeOffset = 0;
+    // Set the source buffer timeOffset to this
+    this.MSETimeOffset = NaN;
+    this.segmentAvailabilityRange = null;
+    this.availableSegmentsNumber = 0;
+};
+
+Dash.vo.Representation.prototype = {
+    constructor: Dash.vo.Representation
+};
+/*
+ * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
+ * 
+ * Copyright (c) 2013, Digital Primates
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Digital Primates nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+Dash.vo.Segment = function () {
+    "use strict";
+    this.indexRange = null;
+    this.index = null;
+    this.mediaRange = null;
+    this.media = null;
+    this.duration = NaN;
+    // this is the time that should be inserted into the media url
+    this.replacementTime = null;
+    // this is the number that should be inserted into the media url
+    this.replacementNumber = NaN;
+    // This is supposed to match the time encoded in the media Segment
+    this.mediaStartTime = NaN;
+    // When the source buffer timeOffset is set to MSETimeOffset this is the 
+    // time that will match the seekTarget and video.currentTime
+    this.presentationStartTime = NaN;
+    // Do not schedule this segment until 
+    this.availabilityStartTime = NaN;
+    // Ignore and  discard this segment after
+    this.availabilityEndTime = NaN;
+    // The index of the segment inside the availability window
+    this.availabilityIdx = NaN;
+    // For dynamic mpd's, this is the wall clock time that the video   
+    // element currentTime should be presentationStartTime
+    this.wallStartTime = NaN;
+    this.representation = null;
+};
+
+Dash.vo.Segment.prototype = {
+    constructor: Dash.vo.Segment
 };
 /**
  * The copyright in this software is being made available under the BSD License,
@@ -25336,10 +25331,6 @@ Hls.dependencies.HlsFragmentController = function () {
                         mpegts: tracks[i].samples[0].mpegTimestamp
                     };
                 }
-
-                if (tracks[i].type === "video") {
-                    request.startTime = tracks[i].samples[0].dts / tracks[i].timescale;
-                }
             }
 
             // Generate init (moov) and media segment (moof)
@@ -25913,9 +25904,11 @@ Hls.dependencies.HlsParser = function() {
                         var segments = adaptation.Representation_asArray[j].SegmentList.SegmentURL_asArray;
                         if (segments[0].sequenceNumber < maxSequenceNumber) {
                             removeSegments(segments, maxSequenceNumber);
-                            segments[0].time = 0;
-                            for (k = 1; k < segments.length; k++) {
-                                segments[k].time = segments[k - 1].time + segments[k - 1].duration;
+                            if (segments.length > 0) {
+                                segments[0].time = 0;
+                                for (k = 1; k < segments.length; k++) {
+                                    segments[k].time = segments[k - 1].time + segments[k - 1].duration;
+                                }
                             }
                         }
                     }
