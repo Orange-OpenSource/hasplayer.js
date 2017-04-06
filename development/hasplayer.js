@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-4-6_11:44:2 / git revision : e3987cb */
+/* Last build : 2017-4-6_12:14:51 / git revision : dd2b071 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.10.0-dev',
-        GIT_TAG = 'e3987cb',
-        BUILD_DATE = '2017-4-6_11:44:2',
+        GIT_TAG = 'dd2b071',
+        BUILD_DATE = '2017-4-6_12:14:51',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -1741,6 +1741,7 @@ MediaPlayer.TRACKS_TYPE = {
  * @type Object
  * @property {number}   BufferController.minBufferTimeForPlaying - Minimum buffer level before playing, in seconds (default value = 0)
  * @property {number}   BufferController.minBufferTime - Minimum buffer size (in seconds), if set to '-1' the maximum value between the manifest's minBufferTime and 16 sec. is considered (default value = -1)
+ * @property {number}   BufferController.bufferToKeep - The buffer size (in seconds) to keep anterior to current playing time (default value = 30)
  * @property {number}   BufferController.liveDelay - The delay (in seconds) between the live edge and playing time, if set to '-1' the live delay is set according to minBufferTime (default value = -1)
  * @property {number}   ABR.minBandwidth - Minimum bandwidth to be playbacked (default value = -1)
  * @property {number}   ABR.maxBandwidth - Maximum bandwidth to be playbacked (default value = -1)
@@ -2169,6 +2170,7 @@ MediaPlayer.dependencies.BufferController = function() {
         buffer = null,
         minBufferTime,
         minBufferTimeAtStartup,
+        bufferToKeep,
         liveDelay,
         bufferTimeout,
         bufferStateTimeout,
@@ -2573,12 +2575,11 @@ MediaPlayer.dependencies.BufferController = function() {
 
                             isQuotaExceeded = false;
 
-                            // Patch for Safari: do not remove past buffer in live use case
-                            // since it generates MEDIA_ERROR_DECODE while appending new segment
-                            if (isDynamic && bufferLevel > 1 && !isSafari) {
-                                // In case of live streams, remove outdated buffer parts and requests
+                            // Patch for Safari: do not remove past buffer since it generates MEDIA_ERROR_DECODE while appending new segment
+                            if (bufferLevel > 1 && !isSafari) {
+                                // Remove outdated buffer parts and requests
                                 // (checking bufferLevel ensure buffer is not empty or back to current time)
-                                removeBuffer.call(self, -1, getWorkingTime.call(self) - 30).then(
+                                removeBuffer.call(self, -1, getWorkingTime.call(self) - bufferToKeep).then(
                                     function() {
                                         debugBufferRange.call(self);
                                         deferred.resolve();
@@ -3430,6 +3431,7 @@ MediaPlayer.dependencies.BufferController = function() {
             this.setEventController(eventController);
             minBufferTime = this.config.getParamFor(type, "BufferController.minBufferTime", "number", -1);
             minBufferTimeAtStartup = this.config.getParamFor(type, "BufferController.minBufferTimeForPlaying", "number", 0);
+            bufferToKeep = this.config.getParamFor(type, "BufferController.bufferToKeep", "number", MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME);
             liveDelay = this.config.getParamFor(type, "BufferController.liveDelay", "number", -1);
 
             this.updateData(newData, newPeriodInfo);
@@ -3991,6 +3993,7 @@ MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_MIN = "min";
 MediaPlayer.dependencies.BufferExtensions.BUFFER_SIZE_INFINITY = "infinity";
 MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_STARTUP = 1;
 MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME = 16;
+MediaPlayer.dependencies.BufferExtensions.DEFAULT_BUFFER_TO_KEEP = 30;
 MediaPlayer.dependencies.BufferExtensions.DEFAULT_LIVE_DELAY = 16;
 MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_TOP_QUALITY = 30;
 MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_TOP_QUALITY_LONG_FORM = 300;
@@ -4083,6 +4086,7 @@ MediaPlayer.utils.Config = function () {
             // BufferController parameters
             "BufferController.minBufferTimeForPlaying": -1,
             "BufferController.minBufferTime": -1,
+            "BufferController.bufferToKeep": -1,
             "BufferController.liveDelay": -1,
             // ABR parameters
             "ABR.minBandwidth": -1,
