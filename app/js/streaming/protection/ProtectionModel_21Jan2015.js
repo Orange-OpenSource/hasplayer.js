@@ -65,6 +65,13 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
         requestKeySystemAccessInternal = function(ksConfigurations, idx) {
             var self = this;
+
+            if (navigator.requestMediaKeySystemAccess === undefined ||
+                typeof navigator.requestMediaKeySystemAccess !== 'function') {
+                this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE, null, "Insecure origins are not allowed");
+                return;
+            }
+
             (function(i) {
                 var keySystem = ksConfigurations[i].ks;
                 var configs = ksConfigurations[i].configs;
@@ -380,22 +387,26 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             if (videoElement) {
                 videoElement.removeEventListener("encrypted", eventHandler);
                 videoElement.removeEventListener("waitingforkey", eventHandler);
-                videoElement.setMediaKeys(null).then(
-                    function () {
-                        self.debug.log("[DRM][PM_21Jan2015] Successfully detached MediaKeys from video element");
-                        deferred.resolve();
-                    },
-                    function (e) {
-                        self.debug.error("[DRM][PM_21Jan2015] Failed to detach MediaKeys from video element: " + e);
-                        deferred.resolve();
-                    }
-                );
+                if (videoElement.setMediaKeys) {
+                    videoElement.setMediaKeys(null).then(
+                        function () {
+                            self.debug.log("[DRM][PM_21Jan2015] Successfully detached MediaKeys from video element");
+                            deferred.resolve();
+                        },
+                        function (e) {
+                            self.debug.error("[DRM][PM_21Jan2015] Failed to detach MediaKeys from video element: " + e);
+                            deferred.resolve();
+                        }
+                    );
+                } else {
+                    deferred.resolve();
+                }
             }
 
             videoElement = mediaElement;
 
             if (videoElement) {
-                if (mediaKeys) {
+                if (mediaKeys && videoElement.setMediaKeys) {
                     videoElement.addEventListener("encrypted", eventHandler);
                     videoElement.setMediaKeys(mediaKeys);
                 }
@@ -536,17 +547,19 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
  */
 MediaPlayer.models.ProtectionModel_21Jan2015.detect = function(videoElement) {
     if (videoElement.onencrypted === undefined ||
-            videoElement.mediaKeys === undefined) {
-        return false;
-    }
-    if (navigator.requestMediaKeySystemAccess === undefined ||
-            typeof navigator.requestMediaKeySystemAccess !== 'function') {
+        videoElement.mediaKeys === undefined) {
         return false;
     }
 
-    if(window.MSMediaKeys){
+    if (window.MSMediaKeys) {
         return false;
     }
+
+    // Do not check requestMediaKeySystemAccess function since it can be disable on insecure origins
+    // if (navigator.requestMediaKeySystemAccess === undefined ||
+    //     typeof navigator.requestMediaKeySystemAccess !== 'function') {
+    //     return false;
+    // }
 
     return true;
 };
