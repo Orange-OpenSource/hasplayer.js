@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-4-6_9:15:25 / git revision : 4d7bc10 */
+/* Last build : 2017-4-6_9:12:2 / git revision : 881231c */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.10.0-dev',
-        GIT_TAG = '4d7bc10',
-        BUILD_DATE = '2017-4-6_9:15:25',
+        GIT_TAG = '881231c',
+        BUILD_DATE = '2017-4-6_9:12:2',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -9197,13 +9197,12 @@ MediaPlayer.dependencies.Stream = function() {
             if (data === null) {
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO, 'No Video data in manifest');
             } else {
-                filterCodecs.call(this, data);
                 videoTrackIndex = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
                 videoCodec = this.manifestExt.getCodec(data);
                 contentProtection = this.manifestExt.getContentProtectionData(data);
 
                 if (videoCodec === null) {
-                    this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, 'Video codec information not available', {codec: ''});
+                    this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO, 'Video codec information not available');
                 } else {
                     videoController = createBufferController.call(this, data, videoCodec);
                     if (this.manifestExt.getIsDynamic(manifest)) {
@@ -9221,13 +9220,14 @@ MediaPlayer.dependencies.Stream = function() {
             // Initialize audio BufferController
             data = this.manifestExt.getSpecificAudioData(manifest, periodInfo.index, defaultAudioLang);
 
-            if (data !== null) {
-                filterCodecs.call(this, data);
+            if (data === null) {
+                this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "No audio data in manifest");
+            } else {
                 audioTrackIndex = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
                 audioCodec = this.manifestExt.getCodec(data);
 
                 if (audioCodec === null) {
-                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, 'Audio codec information not available', {codec: ''});
+                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "Audio codec information not available");
                 } else {
                     audioController = createBufferController.call(this, data, audioCodec);
 
@@ -9787,25 +9787,6 @@ MediaPlayer.dependencies.Stream = function() {
             return index;
         },
 
-        filterCodecs = function(data) {
-            var codecs,
-                i;
-            // Filter codecs that are not supported
-            // But keep at least codec from lowest representation
-            i = 1;
-            while (i < data.Representation_asArray.length) {
-                codecs = data.Representation_asArray[i].codecs;
-                if (codecs !== null && codecs !== "") {
-                    if (!this.capabilities.supportsCodec(this.videoModel.getElement(), codecs)) {
-                        this.debug.warn('[Stream] codec not supported: ' + codecs);
-                        data.Representation_asArray.splice(i, 1);
-                        i--;
-                    }
-                }
-                i++;
-            }
-        },
-
         updateData = function(updatedPeriodInfo) {
             var videoData,
                 data;
@@ -9822,13 +9803,11 @@ MediaPlayer.dependencies.Stream = function() {
                 } else {
                     data = this.manifestExt.getDataForIndex(videoTrackIndex, manifest, periodInfo.index);
                 }
-                filterCodecs.call(this, data);
                 videoController.updateData(data, periodInfo);
             }
 
             if (audioController) {
                 data = this.manifestExt.getDataForIndex(audioTrackIndex, manifest, periodInfo.index);
-                filterCodecs.call(this, data);
                 audioController.updateData(data, periodInfo);
             }
 
@@ -26398,8 +26377,7 @@ Mss.dependencies.MssParser = function() {
         mapRepresentation = function(qualityLevel, streamIndex) {
 
             var representation = {},
-                fourCCValue = null,
-                type = this.domParser.getAttributeValue(streamIndex, "Type");
+                fourCCValue = null;
 
             representation.id = qualityLevel.Id;
             representation.bandwidth = parseInt(this.domParser.getAttributeValue(qualityLevel, "Bitrate"), 10);
@@ -26417,10 +26395,10 @@ Mss.dependencies.MssParser = function() {
             // If still not defined (optionnal for audio stream, see https://msdn.microsoft.com/en-us/library/ff728116%28v=vs.95%29.aspx),
             // then we consider the stream is an audio AAC stream
             if (fourCCValue === null || fourCCValue === "") {
-                if (type === 'audio') {
+                if (this.domParser.getAttributeValue(streamIndex, "Type") === 'audio') {
                     fourCCValue = "AAC";
                 } else {
-                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, type + " codec/FourCC not provided", {codec: ''});
+                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, "Codec/FourCC not provided", {codec: ''});
                     return null;
                 }
             }
