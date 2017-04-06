@@ -151,6 +151,11 @@ MediaPlayer.dependencies.StreamController = function() {
          * TODO move to ???Extensions class
          */
         onTimeupdate = function() {
+
+            if (!activeStream) {
+                return;
+            }
+
             var self = this,
                 time = new Date(),
                 streamEndTime = activeStream.getStartTime() + activeStream.getDuration(),

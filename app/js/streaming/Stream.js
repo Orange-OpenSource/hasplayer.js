@@ -999,6 +999,8 @@ MediaPlayer.dependencies.Stream = function() {
                 reloadTimeout = setTimeout(function() {
                     reloadTimeout = null;
                     //pause.call(self);
+                    isReloading = true;
+                    self.debug.info("[Stream] Reload session (update manifest)");
                     self.system.notify("manifestUpdate", true);
                     stopFragmentInfoControllers.call(self);
                 }, delay * 1000);
