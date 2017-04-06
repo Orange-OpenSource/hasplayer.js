@@ -48,6 +48,7 @@ MediaPlayer.dependencies.BufferController = function() {
         buffer = null,
         minBufferTime,
         minBufferTimeAtStartup,
+        bufferToKeep,
         liveDelay,
         bufferTimeout,
         bufferStateTimeout,
@@ -452,12 +453,11 @@ MediaPlayer.dependencies.BufferController = function() {
 
                             isQuotaExceeded = false;
 
-                            // Patch for Safari: do not remove past buffer in live use case
-                            // since it generates MEDIA_ERROR_DECODE while appending new segment
-                            if (isDynamic && bufferLevel > 1 && !isSafari) {
-                                // In case of live streams, remove outdated buffer parts and requests
+                            // Patch for Safari: do not remove past buffer since it generates MEDIA_ERROR_DECODE while appending new segment
+                            if (bufferLevel > 1 && !isSafari) {
+                                // Remove outdated buffer parts and requests
                                 // (checking bufferLevel ensure buffer is not empty or back to current time)
-                                removeBuffer.call(self, -1, getWorkingTime.call(self) - 30).then(
+                                removeBuffer.call(self, -1, getWorkingTime.call(self) - bufferToKeep).then(
                                     function() {
                                         debugBufferRange.call(self);
                                         deferred.resolve();
@@ -1309,6 +1309,7 @@ MediaPlayer.dependencies.BufferController = function() {
             this.setEventController(eventController);
             minBufferTime = this.config.getParamFor(type, "BufferController.minBufferTime", "number", -1);
             minBufferTimeAtStartup = this.config.getParamFor(type, "BufferController.minBufferTimeForPlaying", "number", 0);
+            bufferToKeep = this.config.getParamFor(type, "BufferController.bufferToKeep", "number", MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME);
             liveDelay = this.config.getParamFor(type, "BufferController.liveDelay", "number", -1);
 
             this.updateData(newData, newPeriodInfo);
