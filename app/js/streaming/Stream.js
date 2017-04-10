@@ -334,6 +334,10 @@ MediaPlayer.dependencies.Stream = function() {
                 audioCodec,
                 textMimeType;
 
+            if (!manifest) {
+                return;
+            }
+
             initializeMediaSourceFinished = false;
             eventController = this.system.getObject("eventController");
 
@@ -367,7 +371,9 @@ MediaPlayer.dependencies.Stream = function() {
             // Initialize audio BufferController
             data = this.manifestExt.getSpecificAudioData(manifest, periodInfo.index, defaultAudioLang);
 
-            if (data !== null) {
+            if (data === null) {
+                this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "No audio data in manifest");
+            } else {
                 filterCodecs.call(this, data);
                 audioTrackIndex = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
                 audioCodec = this.manifestExt.getCodec(data);
