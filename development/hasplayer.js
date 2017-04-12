@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-4-6_12:32:42 / git revision : 1826639 */
+/* Last build : 2017-4-12_14:57:32 / git revision : 641d690 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.10.0-dev',
-        GIT_TAG = '1826639',
-        BUILD_DATE = '2017-4-6_12:32:42',
+        GIT_TAG = '641d690',
+        BUILD_DATE = '2017-4-12_14:57:32',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -9196,6 +9196,10 @@ MediaPlayer.dependencies.Stream = function() {
                 audioCodec,
                 textMimeType;
 
+            if (!manifest) {
+                return;
+            }
+
             initializeMediaSourceFinished = false;
             eventController = this.system.getObject("eventController");
 
@@ -9229,7 +9233,9 @@ MediaPlayer.dependencies.Stream = function() {
             // Initialize audio BufferController
             data = this.manifestExt.getSpecificAudioData(manifest, periodInfo.index, defaultAudioLang);
 
-            if (data !== null) {
+            if (data === null) {
+                this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "No audio data in manifest");
+            } else {
                 filterCodecs.call(this, data);
                 audioTrackIndex = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
                 audioCodec = this.manifestExt.getCodec(data);
@@ -19836,7 +19842,7 @@ MediaPlayer.dependencies.ProtectionController = function() {
                     }
                     self.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE, ksSelected);
                     if (event.error) {
-                        self.debug.log("[DRM] KeySystem Access Denied!");
+                        self.debug.log("[DRM] KeySystem Access Denied! -- " + event.error);
                         self.keySystem = undefined;
                         self.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED, ksSelected);
                         if (!fromManifest) {
@@ -21998,6 +22004,13 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
         requestKeySystemAccessInternal = function(ksConfigurations, idx) {
             var self = this;
+
+            if (navigator.requestMediaKeySystemAccess === undefined ||
+                typeof navigator.requestMediaKeySystemAccess !== 'function') {
+                this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE, null, "Insecure origins are not allowed");
+                return;
+            }
+
             (function(i) {
                 var keySystem = ksConfigurations[i].ks;
                 var configs = ksConfigurations[i].configs;
@@ -22227,6 +22240,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 // If license persistence is not enabled, then close sessions and release/delete MediaKeys instance
                 // Called when we are done closing a session.
                 var done = function(session) {
+                    self.debug.log("[DRM][PM_21Jan2015] Ssession closed");
                     removeSession(session);
                     if (i >= (nbSessions - 1)) {
                         mediaKeys = null;
@@ -22289,11 +22303,22 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 self.keySystem = keySystemAccess.keySystem;
                 mediaKeys = mkeys;
                 if (videoElement) {
-                    videoElement.setMediaKeys(mediaKeys);
-                    videoElement.addEventListener("encrypted", eventHandler);
+                    videoElement.setMediaKeys(mediaKeys).then(
+                        function () {
+                            var serverCertificate = self.keySystem.getServerCertificate();
+                            if (serverCertificate) {
+                                // The server certificate must be set before creating any MediaKeySession
+                                self.setServerCertificate(serverCertificate).then(function() {
+                                    self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED);
+                                    videoElement.addEventListener("encrypted", eventHandler);
+                                });
+                            } else {
+                                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED);
+                                videoElement.addEventListener("encrypted", eventHandler);
+                            }
+                        }
+                    );
                 }
-                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED);
-
             }).catch(function() {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED,
                         null, "Error selecting keys system (" + keySystemAccess.keySystem.systemString + ")! Could not create MediaKeys -- TODO");
@@ -22313,22 +22338,26 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             if (videoElement) {
                 videoElement.removeEventListener("encrypted", eventHandler);
                 videoElement.removeEventListener("waitingforkey", eventHandler);
-                videoElement.setMediaKeys(null).then(
-                    function () {
-                        self.debug.log("[DRM][PM_21Jan2015] Successfully detached MediaKeys from video element");
-                        deferred.resolve();
-                    },
-                    function (e) {
-                        self.debug.error("[DRM][PM_21Jan2015] Failed to detach MediaKeys from video element: " + e);
-                        deferred.resolve();
-                    }
-                );
+                if (videoElement.setMediaKeys) {
+                    videoElement.setMediaKeys(null).then(
+                        function () {
+                            self.debug.log("[DRM][PM_21Jan2015] Successfully detached MediaKeys from video element");
+                            deferred.resolve();
+                        },
+                        function (e) {
+                            self.debug.error("[DRM][PM_21Jan2015] Failed to detach MediaKeys from video element: " + e);
+                            deferred.resolve();
+                        }
+                    );
+                } else {
+                    deferred.resolve();
+                }
             }
 
             videoElement = mediaElement;
 
             if (videoElement) {
-                if (mediaKeys) {
+                if (mediaKeys && videoElement.setMediaKeys) {
                     videoElement.addEventListener("encrypted", eventHandler);
                     videoElement.setMediaKeys(mediaKeys);
                 }
@@ -22342,13 +22371,21 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 throw new Error("Can not set server certificate until you have selected a key system");
             }
 
-            var self = this;
+            this.debug.log("[DRM][PM_21Jan2015] Set server certificate");
+
+            var self = this,
+                deferred = Q.defer();
+
             mediaKeys.setServerCertificate(serverCertificate).then(function() {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_SERVER_CERTIFICATE_UPDATED);
+                deferred.resolve();
             }).catch(function(error) {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_SERVER_CERTIFICATE_UPDATED,
                         null, "Error updating server certificate -- " + error.name);
+                deferred.reject();
             });
+
+            return deferred.promise;
         },
 
         createKeySession: function(initData, sessionType) {
@@ -22469,17 +22506,19 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
  */
 MediaPlayer.models.ProtectionModel_21Jan2015.detect = function(videoElement) {
     if (videoElement.onencrypted === undefined ||
-            videoElement.mediaKeys === undefined) {
-        return false;
-    }
-    if (navigator.requestMediaKeySystemAccess === undefined ||
-            typeof navigator.requestMediaKeySystemAccess !== 'function') {
+        videoElement.mediaKeys === undefined) {
         return false;
     }
 
-    if(window.MSMediaKeys){
+    if (window.MSMediaKeys) {
         return false;
     }
+
+    // Do not check requestMediaKeySystemAccess function since it can be disable on insecure origins
+    // if (navigator.requestMediaKeySystemAccess === undefined ||
+    //     typeof navigator.requestMediaKeySystemAccess !== 'function') {
+    //     return false;
+    // }
 
     return true;
 };
@@ -22629,6 +22668,21 @@ MediaPlayer.dependencies.protection.KeySystem = function() {};
  */
 
 /**
+ * Returns specific CDM (custom) data.
+ *
+ * @function
+ * @name MediaPlayer.dependencies.protection.KeySystem#getCDMData
+ * @returns {ArrayBuffer} the CDM (custom) data
+ */
+
+ /**
+ * Returns the server certificate.
+ *
+ * @function
+ * @name MediaPlayer.dependencies.protection.KeySystem#getServerCertificate
+ * @returns {ArrayBuffer} the server certificate
+ */
+/**
  * The copyright in this software is being made available under the BSD License,
  * included below. This software may be subject to other third party and contributor
  * rights, including patent rights, and no such rights are granted under this license.
@@ -22734,7 +22788,9 @@ MediaPlayer.dependencies.protection.KeySystem_ClearKey = function() {
 
         getLicenseServerURLFromInitData: function(/*initData*/) { return null; },
 
-        getCDMData: function () {return null;}
+        getCDMData: function () {return null;},
+
+        getServerCertificate: function () { return null; },
     };
 };
 
@@ -23062,6 +23118,8 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
 
         getCDMData: doGetCDMData,
 
+        getServerCertificate: function () { return null; },
+
         /**
          * It seems that some PlayReady implementations return their XML-based CDM
          * messages using UTF16, while others return them as UTF8.  Use this function
@@ -23127,13 +23185,18 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
         keySystemUUID = "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed",
         protData = null,
 
-        doGetInitData = function(cpData){
-            if(protData && protData.pssh){
+        doGetInitData = function(cpData) {
+            if (protData && protData.pssh) {
                 return BASE64.decodeArray(protData.pssh).buffer;
             }
-
             return MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection(cpData);
+        },
 
+        doGetServerCertificate = function() {
+            if (protData && protData.serverCertificate && protData.serverCertificate.length > 0) {
+                return BASE64.decodeArray(protData.serverCertificate).buffer;
+            }
+            return null;
         };
 
     return {
@@ -23141,12 +23204,12 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
         schemeIdURI: "urn:uuid:" + keySystemUUID,
         systemString: keySystemStr,
         uuid: keySystemUUID,
-        sessionType:"temporary",
+        sessionType: "temporary",
 
-        init:function(protectionData){
-            if(protectionData){
+        init: function(protectionData) {
+            if (protectionData) {
                 protData = protectionData;
-                if(protData.sessionType){
+                if (protData.sessionType) {
                     this.sessionType = protData.sessionType;
                 }
             }
@@ -23162,7 +23225,9 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
 
         getLicenseServerURLFromInitData: function(/*initData*/) { return null; },
 
-        getCDMData: function () {return null;}
+        getCDMData: function() { return null; },
+
+        getServerCertificate: doGetServerCertificate
 
     };
 };
@@ -23170,7 +23235,6 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
 MediaPlayer.dependencies.protection.KeySystem_Widevine.prototype = {
     constructor: MediaPlayer.dependencies.protection.KeySystem_Widevine
 };
-
 /**
  * The copyright in this software is being made available under the BSD License,
  * included below. This software may be subject to other third party and contributor
