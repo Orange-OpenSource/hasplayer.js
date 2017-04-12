@@ -285,6 +285,8 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
 
         getCDMData: doGetCDMData,
 
+        getServerCertificate: function () { return null; },
+
         /**
          * It seems that some PlayReady implementations return their XML-based CDM
          * messages using UTF16, while others return them as UTF8.  Use this function
