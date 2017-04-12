@@ -363,11 +363,22 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 self.keySystem = keySystemAccess.keySystem;
                 mediaKeys = mkeys;
                 if (videoElement) {
-                    videoElement.setMediaKeys(mediaKeys);
-                    videoElement.addEventListener("encrypted", eventHandler);
+                    videoElement.setMediaKeys(mediaKeys).then(
+                        function () {
+                            var serverCertificate = self.keySystem.getServerCertificate();
+                            if (serverCertificate) {
+                                // The server certificate must be set before creating any MediaKeySession
+                                self.setServerCertificate(serverCertificate).then(function() {
+                                    self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED);
+                                    videoElement.addEventListener("encrypted", eventHandler);
+                                });
+                            } else {
+                                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED);
+                                videoElement.addEventListener("encrypted", eventHandler);
+                            }
+                        }
+                    );
                 }
-                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED);
-
             }).catch(function() {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED,
                         null, "Error selecting keys system (" + keySystemAccess.keySystem.systemString + ")! Could not create MediaKeys -- TODO");
@@ -420,13 +431,19 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 throw new Error("Can not set server certificate until you have selected a key system");
             }
 
-            var self = this;
+            var self = this,
+                deferred = Q.defer();
+
             mediaKeys.setServerCertificate(serverCertificate).then(function() {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_SERVER_CERTIFICATE_UPDATED);
+                deferred.resolve();
             }).catch(function(error) {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_SERVER_CERTIFICATE_UPDATED,
                         null, "Error updating server certificate -- " + error.name);
+                deferred.reject();
             });
+
+            return deferred.promise;
         },
 
         createKeySession: function(initData, sessionType) {
