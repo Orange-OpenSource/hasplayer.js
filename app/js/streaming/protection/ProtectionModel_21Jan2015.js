@@ -301,6 +301,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 // If license persistence is not enabled, then close sessions and release/delete MediaKeys instance
                 // Called when we are done closing a session.
                 var done = function(session) {
+                    self.debug.log("[DRM][PM_21Jan2015] Ssession closed");
                     removeSession(session);
                     if (i >= (nbSessions - 1)) {
                         mediaKeys = null;
@@ -430,6 +431,8 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             if (!this.keySystem || !mediaKeys) {
                 throw new Error("Can not set server certificate until you have selected a key system");
             }
+
+            this.debug.log("[DRM][PM_21Jan2015] Set server certificate");
 
             var self = this,
                 deferred = Q.defer();
