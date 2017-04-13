@@ -3,7 +3,7 @@ branches:
     only:
         - master
         - development
-        - /^(?i:v).*$/
+        - /^(release\/v).*$/
 env:
     global:
         - ENCRYPTION_LABEL: 98a7d362e1e4
