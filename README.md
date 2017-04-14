@@ -125,9 +125,10 @@ In the case of protected content, here is an example illustrating setting of the
                 var stream = {
                     url: "<manifest_url>",
                     protData: {
-                        com.microsoft.playready: {
+                        "<key_system>": {
                             laURL: "<licenser_url>",
-                            cdmData: "<specific_CDM_data>"
+                            cdmData: "<CDM_data>",
+                            serverCertificate: "<license_server_certificate (as Base64 string)>"
                         }
                     }
                 };
