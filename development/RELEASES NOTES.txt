@@ -1,3 +1,14 @@
+### Release Notes v1.10.0 (2017/04/13)
+* Adapt EME's protection model 21Jan2015 to chrome 58 updates (secure origins and server certificate)
+* - Check requestMediaKeySystemAccess API availability when requesting key system access
+* - Add possibility to provide server certificate when loading a stream
+* Filter unsupported video and audio qualities (codecs) to avoid switching to a unsupported quality while playing
+* Remove outdated buffer according to 'BufferController.bufferToKeep' configuration parameter value (this avoids QuotaExceededError on Firefox)
+* Bugs fixing:
+* - [HLS] Fix H.264 bytestream to MP4 conversion (i.e. support 3 or 4 bytes start codes)
+* - [HLS] Fix segment alignment when switching alternative track
+* - Consolidate automatic live session reloading after multiple segment download failures
+
 ### Release Notes v1.9.0 (2017/03/08)
 * Consolidate EME/Protection layer management:
 * - Start playback only once ProtectionController is initialized (avoids conflicts on Chrome when setting MediaKeys on <video>)
