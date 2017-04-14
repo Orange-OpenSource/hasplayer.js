@@ -1,6 +1,6 @@
 {
   "name": "hasplayer.js",
-  "version": "1.10.0-dev",
+  "version": "1.10.0",
   "scripts": {
     "build": "cd build && gulp",
     "doc": "cd build && gulp doc",

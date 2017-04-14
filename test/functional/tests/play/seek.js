@@ -33,14 +33,8 @@ define([
         });
 
     // Test constants
-<<<<<<< HEAD
-    var PROGRESS_DELAY = 5; // Delay for checking progressing (in s)
-    var SEEK_SLEEP = 200; // Delay before each seek operation (in ms)
-=======
     var PROGRESS_DELAY = 10; // Delay for checking progressing (in s)
->>>>>>> 8e2edfba6... [Functional Tests] : modify seek test to check Firfox do not raise anymore QuotaExceededError
     var ASYNC_TIMEOUT = PROGRESS_DELAY + config.asyncTimeout;
-
 
     // Test variables
     var command = null,
