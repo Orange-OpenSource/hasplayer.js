@@ -183,7 +183,7 @@ MediaPlayer.dependencies.ProtectionController = function() {
                     }
                     self.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE, ksSelected);
                     if (event.error) {
-                        self.debug.log("[DRM] KeySystem Access Denied!");
+                        self.debug.log("[DRM] KeySystem Access Denied! -- " + event.error);
                         self.keySystem = undefined;
                         self.protectionModel.unsubscribe(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED, ksSelected);
                         if (!fromManifest) {

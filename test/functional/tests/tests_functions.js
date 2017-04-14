@@ -1,39 +1,58 @@
-
-define([],
-    function () {
-        var defaultTimeout  = 5000;
+define([
+    'test/functional/config/testsConfig'
+    ], function (testsConfig) {
+    var defaultTimeout = 5000;
 
     return {
 
-        setup: function(command) {
+        setup: function (command) {
             command.setExecuteAsyncTimeout(defaultTimeout);
             return command;
         },
 
-        log: function(tag, message) {
+        getTestStreams: function (config, filter) {
+            var streams = (config && config.streams && config.streams.length > 0) ? config.streams : testsConfig.tests.default.streams;
+            if (filter === undefined) {
+                filter = function () {
+                    return true;
+                };
+            }
+
+            var drmFilter = function(stream) {
+                if (stream.tvmUrl) {
+                    // we play these streams only if drm is active
+                    return testsConfig.drm;
+                }
+                return true;
+            };
+
+            return streams.filter(filter).filter(drmFilter);
+        },
+
+        log: function (tag, message) {
             console.log('[' + tag + '] ', message);
         },
 
-        logLoadStream: function(tag, stream) {
+        logLoadStream: function (tag, stream) {
             this.log(tag, 'Load stream "' + stream.name + '" [' + stream.protocol + '/' + stream.type + ']');
         },
 
-        executeAsync: function(command, scripts, args, timeout) {
-        
-            var p = new Promise(function(resolve, reject) {
+        executeAsync: function (command, scripts, args, timeout) {
+
+            var p = new Promise(function (resolve, reject) {
                 var originalTimeout = defaultTimeout;
                 if (timeout) {
                     originalTimeout = command.getExecuteAsyncTimeout();
                     command.setExecuteAsyncTimeout(timeout * 1000);
                 }
                 command.executeAsync(scripts, args).then(
-                    function(result) {
+                    function (result) {
                         if (timeout) {
                             command.setExecuteAsyncTimeout(originalTimeout);
                         }
                         resolve(result);
                     },
-                    function(result) {
+                    function (result) {
                         if (timeout) {
                             command.setExecuteAsyncTimeout(originalTimeout);
                         }
@@ -46,4 +65,3 @@ define([],
 
     };
 });
-

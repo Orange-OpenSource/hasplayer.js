@@ -58,7 +58,9 @@ MediaPlayer.dependencies.protection.KeySystem_ClearKey = function() {
 
         getLicenseServerURLFromInitData: function(/*initData*/) { return null; },
 
-        getCDMData: function () {return null;}
+        getCDMData: function () {return null;},
+
+        getServerCertificate: function () { return null; },
     };
 };
 

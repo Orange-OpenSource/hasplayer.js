@@ -1,0 +1,8 @@
+samples
+docs
+build
+test
+.travis.yml
+reports
+
+.idea

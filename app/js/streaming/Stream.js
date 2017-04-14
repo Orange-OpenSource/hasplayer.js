@@ -316,7 +316,7 @@ MediaPlayer.dependencies.Stream = function() {
             deferred = Q.defer();
 
             ksSelected = {};
-            ksSelected[MediaPlayer.dependencies.ProtectionController.eventList.ENAME_KEY_SYSTEM_SELECTED] = function(event) {
+            ksSelected[MediaPlayer.dependencies.ProtectionController.eventList.ENAME_KEY_SYSTEM_SELECTED] = function(/*event*/) {
                 self.debug.log("[Stream] ProtectionController initialized");
                 protectionController.unsubscribe(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_KEY_SYSTEM_SELECTED, ksSelected);
                 deferred.resolve(true);
@@ -334,6 +334,10 @@ MediaPlayer.dependencies.Stream = function() {
                 audioCodec,
                 textMimeType;
 
+            if (!manifest) {
+                return;
+            }
+
             initializeMediaSourceFinished = false;
             eventController = this.system.getObject("eventController");
 
@@ -343,12 +347,13 @@ MediaPlayer.dependencies.Stream = function() {
             if (data === null) {
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO, 'No Video data in manifest');
             } else {
+                filterCodecs.call(this, data);
                 videoTrackIndex = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
                 videoCodec = this.manifestExt.getCodec(data);
                 contentProtection = this.manifestExt.getContentProtectionData(data);
 
                 if (videoCodec === null) {
-                    this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_VIDEO, 'Video codec information not available');
+                    this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, 'Video codec information not available', {codec: ''});
                 } else {
                     videoController = createBufferController.call(this, data, videoCodec);
                     if (this.manifestExt.getIsDynamic(manifest)) {
@@ -369,11 +374,12 @@ MediaPlayer.dependencies.Stream = function() {
             if (data === null) {
                 this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "No audio data in manifest");
             } else {
+                filterCodecs.call(this, data);
                 audioTrackIndex = this.manifestExt.getDataIndex(data, manifest, periodInfo.index);
                 audioCodec = this.manifestExt.getCodec(data);
 
                 if (audioCodec === null) {
-                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_AUDIO, "Audio codec information not available");
+                    this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, 'Audio codec information not available', {codec: ''});
                 } else {
                     audioController = createBufferController.call(this, data, audioCodec);
 
@@ -933,6 +939,25 @@ MediaPlayer.dependencies.Stream = function() {
             return index;
         },
 
+        filterCodecs = function(data) {
+            var codec,
+                i;
+            // Filter codecs that are not supported
+            // But keep at least codec from lowest representation
+            i = 1;
+            while (i < data.Representation_asArray.length) {
+                codec = this.manifestExt.getCodecForRepresentation(data.Representation_asArray[i]);
+                if (codec) {
+                    if (!this.capabilities.supportsCodec(this.videoModel.getElement(), codec)) {
+                        this.debug.warn('[Stream] codec not supported: ' + codec);
+                        data.Representation_asArray.splice(i, 1);
+                        i--;
+                    }
+                }
+                i++;
+            }
+        },
+
         updateData = function(updatedPeriodInfo) {
             var videoData,
                 data;
@@ -949,11 +974,13 @@ MediaPlayer.dependencies.Stream = function() {
                 } else {
                     data = this.manifestExt.getDataForIndex(videoTrackIndex, manifest, periodInfo.index);
                 }
+                filterCodecs.call(this, data);
                 videoController.updateData(data, periodInfo);
             }
 
             if (audioController) {
                 data = this.manifestExt.getDataForIndex(audioTrackIndex, manifest, periodInfo.index);
+                filterCodecs.call(this, data);
                 audioController.updateData(data, periodInfo);
             }
 
@@ -999,6 +1026,8 @@ MediaPlayer.dependencies.Stream = function() {
                 reloadTimeout = setTimeout(function() {
                     reloadTimeout = null;
                     //pause.call(self);
+                    isReloading = true;
+                    self.debug.info("[Stream] Reload session (update manifest)");
                     self.system.notify("manifestUpdate", true);
                     stopFragmentInfoControllers.call(self);
                 }, delay * 1000);

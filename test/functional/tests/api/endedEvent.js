@@ -1,11 +1,11 @@
 /**
-TEST_GETVIDEOBITRATES:
+TEST_ENDEDVENT:
 
 - for each stream:
     - load test page
     - load stream (OrangeHasPlayer.load())
     - wait for stream to be loaded
-    - get and check video bitrates values
+    - seek near the end of the stream and check if ended event is sent
 **/
 define([
     'intern!object',
@@ -18,11 +18,11 @@ define([
 ], function(registerSuite, assert, require, config, player, video, tests) {
 
     // Suite name
-    var NAME = 'TEST_GETVIDEOBITRATES';
+    var NAME = 'TEST_ENDEDVENT';
 
     // Test configuration (see config/testConfig.js)
-    var streams = tests.getTestStreams(config.tests.getVideoBitrates, function(stream) {
-            if (stream.videoBitrates) {
+    var streams = tests.getTestStreams(config.tests.endedEvent, function(stream) {
+            if (stream.type === "VOD") {
                 return true;
             }
             return false;
@@ -53,7 +53,8 @@ define([
         registerSuite({
             name: NAME,
 
-            getVideoBitrates: function() {
+            getEndEvent: function() {
+
                 tests.logLoadStream(NAME, stream);
                 return command.execute(player.loadStream, [stream])
                     .then(function() {
@@ -61,17 +62,32 @@ define([
                     })
                     .then(function(playing) {
                         assert.isTrue(playing);
-                        return command.execute(player.getVideoBitrates);
+                        return command.execute(player.getDuration);
                     })
-                    .then(function(videoBitrates) {
-                        tests.log(NAME, 'Video bitrates: ' + JSON.stringify(videoBitrates));
-                        // Compare bitrates arrays by simply comparing stringified representation
-                        assert.strictEqual(JSON.stringify(stream.videoBitrates), JSON.stringify(videoBitrates));
+                    .then(function(duration) {
+
+                        tests.log(NAME, "duration " + duration);
+                        return tests.executeAsync(command, player.seek, [duration - 5], config.asyncTimeout);
+                    })
+                    // .then(function() {
+                    //     if (trickModeEnabled) {
+                    //         tests.log(NAME, "detect ended event in trick mode");
+                    //         return command.execute(player.setTrickModeSpeed, [2]);
+                    //     } else {
+                    //         tests.log(NAME, "detect ended event in normal mode");
+                    //         return command.execute(player.getMute);
+                    //     }
+                    // })
+                    .then(function() {
+                        tests.log(NAME, "Wait for ended event");
+                        return tests.executeAsync(command, player.waitForEvent, ['ended'], config.asyncTimeout);
+                    })
+                    .then(function(ended) {
+                        assert.isTrue(ended);
                     });
             }
         });
     };
-
 
     // Setup (load test page)
     testSetup();

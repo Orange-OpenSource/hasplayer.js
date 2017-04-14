@@ -16,13 +16,18 @@
  *
  */
 /*jshint -W020 */
+
+/**
+ * @class
+ * @classdesc MediaPlayer is the object used by the webapp to instanciante and control hasplayer.
+ */
 MediaPlayer = function () {
 
 //#region Private attributes/properties
     ///////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
-        VERSION = '',
+        VERSION = 'DEV',
         GIT_TAG = '@@REVISION',
         BUILD_DATE = '@@TIMESTAMP',
         context = new MediaPlayer.di.Context(), // default context
@@ -84,6 +89,10 @@ MediaPlayer = function () {
         playing = true;
 
         this.metricsModel.addSession(null, source.url, videoModel.getElement().loop, null, "MediaPlayer.js_" + this.getVersion());
+
+        this.debug.log("[MediaPlayer] Version: " + this.getVersionFull() + " - " + this.getBuildDate());
+        this.debug.log("[MediaPlayer] user-agent: " + navigator.userAgent);
+        this.debug.log("[MediaPlayer] Load stream:\n", JSON.stringify(source, null, '  '));
 
         // streamController Initialization
         if (!streamController) {
@@ -1509,10 +1518,6 @@ MediaPlayer = function () {
     };
 };
 
-/**
- * @class
- * @classdesc MediaPlayer is the object used by the webapp to instanciante and control hasplayer.
- */
 MediaPlayer.prototype = {
     constructor: MediaPlayer
 };
@@ -1697,6 +1702,7 @@ MediaPlayer.TRACKS_TYPE = {
  * @type Object
  * @property {number}   BufferController.minBufferTimeForPlaying - Minimum buffer level before playing, in seconds (default value = 0)
  * @property {number}   BufferController.minBufferTime - Minimum buffer size (in seconds), if set to '-1' the maximum value between the manifest's minBufferTime and 16 sec. is considered (default value = -1)
+ * @property {number}   BufferController.bufferToKeep - The buffer size (in seconds) to keep anterior to current playing time (default value = 30)
  * @property {number}   BufferController.liveDelay - The delay (in seconds) between the live edge and playing time, if set to '-1' the live delay is set according to minBufferTime (default value = -1)
  * @property {number}   ABR.minBandwidth - Minimum bandwidth to be playbacked (default value = -1)
  * @property {number}   ABR.maxBandwidth - Maximum bandwidth to be playbacked (default value = -1)

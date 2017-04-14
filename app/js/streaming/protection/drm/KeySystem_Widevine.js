@@ -42,13 +42,18 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
         keySystemUUID = "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed",
         protData = null,
 
-        doGetInitData = function(cpData){
-            if(protData && protData.pssh){
+        doGetInitData = function(cpData) {
+            if (protData && protData.pssh) {
                 return BASE64.decodeArray(protData.pssh).buffer;
             }
-
             return MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection(cpData);
+        },
 
+        doGetServerCertificate = function() {
+            if (protData && protData.serverCertificate && protData.serverCertificate.length > 0) {
+                return BASE64.decodeArray(protData.serverCertificate).buffer;
+            }
+            return null;
         };
 
     return {
@@ -56,12 +61,12 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
         schemeIdURI: "urn:uuid:" + keySystemUUID,
         systemString: keySystemStr,
         uuid: keySystemUUID,
-        sessionType:"temporary",
+        sessionType: "temporary",
 
-        init:function(protectionData){
-            if(protectionData){
+        init: function(protectionData) {
+            if (protectionData) {
                 protData = protectionData;
-                if(protData.sessionType){
+                if (protData.sessionType) {
                     this.sessionType = protData.sessionType;
                 }
             }
@@ -77,7 +82,9 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
 
         getLicenseServerURLFromInitData: function(/*initData*/) { return null; },
 
-        getCDMData: function () {return null;}
+        getCDMData: function() { return null; },
+
+        getServerCertificate: doGetServerCertificate
 
     };
 };

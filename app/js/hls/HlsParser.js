@@ -340,9 +340,11 @@ Hls.dependencies.HlsParser = function() {
                         var segments = adaptation.Representation_asArray[j].SegmentList.SegmentURL_asArray;
                         if (segments[0].sequenceNumber < maxSequenceNumber) {
                             removeSegments(segments, maxSequenceNumber);
-                            segments[0].time = 0;
-                            for (k = 1; k < segments.length; k++) {
-                                segments[k].time = segments[k - 1].time + segments[k - 1].duration;
+                            if (segments.length > 0) {
+                                segments[0].time = 0;
+                                for (k = 1; k < segments.length; k++) {
+                                    segments[k].time = segments[k - 1].time + segments[k - 1].duration;
+                                }
                             }
                         }
                     }

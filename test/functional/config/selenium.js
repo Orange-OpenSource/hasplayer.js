@@ -17,16 +17,20 @@ define({
     },
 
     remote: {
-        tunnel: 'NullTunnel',
-        tunnelOptions: {
-            hostname: "hub-cloud.browserstack.com",
-            protocol: "https",
-            port: 443
-        },
+
         capabilities: {
+            name: 'Tests HasPlayer',
+            build: process.env.BROWSERSTACK_LOCAL_IDENTIFIER || 'BROWSERSTACK_LOCAL_IDENTIFIER',
+            "browserstack.local": false,
+            "browserstack.debug": true,
+            fixSessionCapabilities: false
+        },
+        tunnel: 'BrowserStackTunnel',
+        tunnelOptions: {
+            verbose: true,
             username: process.env.BROWSERSTACK_USER || 'BROWSERSTACK_USER',
             accessKey: process.env.BROWSERSTACK_ACCESS_KEY || 'BROWSERSTACK_ACCESS_KEY'
         },
-        reporters: [{id: 'JUnit', filename: 'test/functional/test-reports/' + (new Date().getFullYear())+'-'+(new Date().getMonth()+1)+'-'+(new Date().getDate())+'_'+(new Date().getHours())+'-'+(new Date().getMinutes())+'-'+(new Date().getSeconds()) + '_report.xml'}]
+        reporters: ['Runner', {id: 'JUnit', filename: 'test/functional/test-reports/' + (new Date().getFullYear())+'-'+(new Date().getMonth()+1)+'-'+(new Date().getDate())+'_'+(new Date().getHours())+'-'+(new Date().getMinutes())+'-'+(new Date().getSeconds()) + '_report.xml'}]
     }
 });

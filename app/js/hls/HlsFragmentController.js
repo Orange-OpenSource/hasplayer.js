@@ -32,10 +32,6 @@ Hls.dependencies.HlsFragmentController = function () {
                         mpegts: tracks[i].samples[0].mpegTimestamp
                     };
                 }
-
-                if (tracks[i].type === "video") {
-                    request.startTime = tracks[i].samples[0].dts / tracks[i].timescale;
-                }
             }
 
             // Generate init (moov) and media segment (moof)

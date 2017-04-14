@@ -65,6 +65,13 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 
         requestKeySystemAccessInternal = function(ksConfigurations, idx) {
             var self = this;
+
+            if (navigator.requestMediaKeySystemAccess === undefined ||
+                typeof navigator.requestMediaKeySystemAccess !== 'function') {
+                this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_ACCESS_COMPLETE, null, "Insecure origins are not allowed");
+                return;
+            }
+
             (function(i) {
                 var keySystem = ksConfigurations[i].ks;
                 var configs = ksConfigurations[i].configs;
@@ -294,6 +301,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 // If license persistence is not enabled, then close sessions and release/delete MediaKeys instance
                 // Called when we are done closing a session.
                 var done = function(session) {
+                    self.debug.log("[DRM][PM_21Jan2015] Ssession closed");
                     removeSession(session);
                     if (i >= (nbSessions - 1)) {
                         mediaKeys = null;
@@ -356,11 +364,22 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 self.keySystem = keySystemAccess.keySystem;
                 mediaKeys = mkeys;
                 if (videoElement) {
-                    videoElement.setMediaKeys(mediaKeys);
-                    videoElement.addEventListener("encrypted", eventHandler);
+                    videoElement.setMediaKeys(mediaKeys).then(
+                        function () {
+                            var serverCertificate = self.keySystem.getServerCertificate();
+                            if (serverCertificate) {
+                                // The server certificate must be set before creating any MediaKeySession
+                                self.setServerCertificate(serverCertificate).then(function() {
+                                    self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED);
+                                    videoElement.addEventListener("encrypted", eventHandler);
+                                });
+                            } else {
+                                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED);
+                                videoElement.addEventListener("encrypted", eventHandler);
+                            }
+                        }
+                    );
                 }
-                self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED);
-
             }).catch(function() {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_KEY_SYSTEM_SELECTED,
                         null, "Error selecting keys system (" + keySystemAccess.keySystem.systemString + ")! Could not create MediaKeys -- TODO");
@@ -380,22 +399,26 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             if (videoElement) {
                 videoElement.removeEventListener("encrypted", eventHandler);
                 videoElement.removeEventListener("waitingforkey", eventHandler);
-                videoElement.setMediaKeys(null).then(
-                    function () {
-                        self.debug.log("[DRM][PM_21Jan2015] Successfully detached MediaKeys from video element");
-                        deferred.resolve();
-                    },
-                    function (e) {
-                        self.debug.error("[DRM][PM_21Jan2015] Failed to detach MediaKeys from video element: " + e);
-                        deferred.resolve();
-                    }
-                );
+                if (videoElement.setMediaKeys) {
+                    videoElement.setMediaKeys(null).then(
+                        function () {
+                            self.debug.log("[DRM][PM_21Jan2015] Successfully detached MediaKeys from video element");
+                            deferred.resolve();
+                        },
+                        function (e) {
+                            self.debug.error("[DRM][PM_21Jan2015] Failed to detach MediaKeys from video element: " + e);
+                            deferred.resolve();
+                        }
+                    );
+                } else {
+                    deferred.resolve();
+                }
             }
 
             videoElement = mediaElement;
 
             if (videoElement) {
-                if (mediaKeys) {
+                if (mediaKeys && videoElement.setMediaKeys) {
                     videoElement.addEventListener("encrypted", eventHandler);
                     videoElement.setMediaKeys(mediaKeys);
                 }
@@ -409,13 +432,21 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 throw new Error("Can not set server certificate until you have selected a key system");
             }
 
-            var self = this;
+            this.debug.log("[DRM][PM_21Jan2015] Set server certificate");
+
+            var self = this,
+                deferred = Q.defer();
+
             mediaKeys.setServerCertificate(serverCertificate).then(function() {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_SERVER_CERTIFICATE_UPDATED);
+                deferred.resolve();
             }).catch(function(error) {
                 self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_SERVER_CERTIFICATE_UPDATED,
                         null, "Error updating server certificate -- " + error.name);
+                deferred.reject();
             });
+
+            return deferred.promise;
         },
 
         createKeySession: function(initData, sessionType) {
@@ -536,17 +567,19 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
  */
 MediaPlayer.models.ProtectionModel_21Jan2015.detect = function(videoElement) {
     if (videoElement.onencrypted === undefined ||
-            videoElement.mediaKeys === undefined) {
-        return false;
-    }
-    if (navigator.requestMediaKeySystemAccess === undefined ||
-            typeof navigator.requestMediaKeySystemAccess !== 'function') {
+        videoElement.mediaKeys === undefined) {
         return false;
     }
 
-    if(window.MSMediaKeys){
+    if (window.MSMediaKeys) {
         return false;
     }
+
+    // Do not check requestMediaKeySystemAccess function since it can be disable on insecure origins
+    // if (navigator.requestMediaKeySystemAccess === undefined ||
+    //     typeof navigator.requestMediaKeySystemAccess !== 'function') {
+    //     return false;
+    // }
 
     return true;
 };
