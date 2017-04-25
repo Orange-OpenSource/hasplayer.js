@@ -1570,17 +1570,21 @@ MediaPlayer.dependencies.BufferController = function() {
                         if (segmentRequestOnError) {
                             // If buffering is due to segment download failure (see onBytesError()), then signal it to Stream (see Stream.onBufferFailed())
                             signalSegmentLoadingFailed.call(this);
-                        } else if (!isDynamic) {
+                        } else {
                             // Check if there is a hole in the buffer (segment download failed or input stream discontinuity), then skip it
+                            // For live streams we consider discontinuities lower than a segment duration
                             ranges = this.sourceBufferExt.getAllRanges(buffer);
                             var i;
                             for (i = 0; i < ranges.length; i++) {
                                 if (currentTime < ranges.start(i)) {
-                                    break;
+                                    if (!isDynamic || ((ranges.start(i) - currentTime) < segmentDuration)) {
+                                        break;
+                                    }
                                 }
                             }
                             if (i < ranges.length) {
                                 // Seek to next available range
+                                this.debug.info("[BufferController][" + type + "] BUFFERING => skip buffer discontinuity, seek to " + ranges.start(i));
                                 this.videoModel.setCurrentTime(ranges.start(i));
                             }
                         }
