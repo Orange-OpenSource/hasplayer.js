@@ -578,10 +578,6 @@ MediaPlayer.models.ProtectionModel_21Jan2015.detect = function(videoElement) {
         return false;
     }
 
-    if (window.MSMediaKeys) {
-        return false;
-    }
-
     // Do not check requestMediaKeySystemAccess function since it can be disable on insecure origins
     // if (navigator.requestMediaKeySystemAccess === undefined ||
     //     typeof navigator.requestMediaKeySystemAccess !== 'function') {
