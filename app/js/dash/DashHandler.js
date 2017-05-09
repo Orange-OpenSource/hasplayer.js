@@ -284,7 +284,7 @@ Dash.dependencies.DashHandler = function() {
                     template.media,
                     s.mediaRange,
                     availabilityIdx,
-                    s.tManifest);
+                    s.tManifest_asString);
             };
 
             fTimescale = representation.timescale;
@@ -555,7 +555,7 @@ Dash.dependencies.DashHandler = function() {
             return deferred.promise;
         },
 
-        getTimeBasedSegment = function(representation, time, duration, fTimescale, url, range, index, tManifest) {
+        getTimeBasedSegment = function(representation, time, duration, fTimescale, url, range, index, tManifest_asString) {
             var self = this,
                 scaledTime = time / fTimescale,
                 scaledDuration = Math.min(duration / fTimescale, representation.adaptation.period.mpd.maxSegmentDuration),
@@ -583,7 +583,7 @@ Dash.dependencies.DashHandler = function() {
             // at this wall clock time, the video element currentTime should be seg.presentationStartTime
             seg.wallStartTime = self.timelineConverter.calcWallTimeForSegment(seg, isDynamic);
 
-            seg.replacementTime = tManifest ? tManifest : time;
+            seg.replacementTime = tManifest_asString ? tManifest_asString : time;
 
             seg.replacementNumber = getNumberForSegment(seg, index);
 
