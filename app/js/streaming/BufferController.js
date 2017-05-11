@@ -867,7 +867,8 @@ MediaPlayer.dependencies.BufferController = function() {
 
             var time = getWorkingTime.call(this),
                 range,
-                segmentTime;
+                segmentTime,
+                self = this;
 
 
             // If we override buffer (in case of language for example), then consider current video time for the next segment time
@@ -889,7 +890,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 this.debug.log("[BufferController][" + type + "] loadNextFragment for time: " + segmentTime);
                 this.indexHandler.getSegmentRequestForTime(_currentRepresentation, segmentTime).then(onFragmentRequest.bind(this), function() {
                     currentDownloadQuality = -1;
-                    signalStreamComplete.call(this);
+                    signalStreamComplete.call(self);
                 });
             }
         },
