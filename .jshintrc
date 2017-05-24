@@ -42,5 +42,6 @@
         "define",
         "fingerprint_browser",
         "fingerprint_os",
+        "goog",
         "DEBUG"]
 }
