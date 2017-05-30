@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-5-30_10:0:44 / git revision : a35261c */
+/* Last build : 2017-5-30_12:13:0 / git revision : e54afc0 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.11.0-dev',
-        GIT_TAG = 'a35261c',
-        BUILD_DATE = '2017-5-30_10:0:44',
+        GIT_TAG = 'e54afc0',
+        BUILD_DATE = '2017-5-30_12:13:0',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -22240,7 +22240,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 // If license persistence is not enabled, then close sessions and release/delete MediaKeys instance
                 // Called when we are done closing a session.
                 var done = function(session) {
-                    self.debug.log("[DRM][PM_21Jan2015] Ssession closed");
+                    self.debug.log("[DRM][PM_21Jan2015] Session closed");
                     removeSession(session);
                     if (i >= (nbSessions - 1)) {
                         mediaKeys = null;
@@ -22269,7 +22269,14 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                     })(session);
                 }
             } else {
-                // If license persistence is enabled, then keep sessions en MediaKeys instance
+                // If license persistence is enabled, then keep usable sessions data and MediaKeys instance
+                for (i = 0; i < sessions.length; i++) {
+                    session = sessions[i];
+                    if (!session.usable) {
+                       sessions.splice(i, 1);
+                       i--;
+                    }
+                }
                 this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
             }
         },
@@ -22507,10 +22514,6 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 MediaPlayer.models.ProtectionModel_21Jan2015.detect = function(videoElement) {
     if (videoElement.onencrypted === undefined ||
         videoElement.mediaKeys === undefined) {
-        return false;
-    }
-
-    if (window.MSMediaKeys) {
         return false;
     }
 
