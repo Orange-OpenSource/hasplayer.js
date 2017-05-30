@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-5-30_12:13:0 / git revision : e54afc0 */
+/* Last build : 2017-5-30_12:18:47 / git revision : 29444b0 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.11.0-dev',
-        GIT_TAG = 'e54afc0',
-        BUILD_DATE = '2017-5-30_12:13:0',
+        GIT_TAG = '29444b0',
+        BUILD_DATE = '2017-5-30_12:18:47',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -2993,7 +2993,8 @@ MediaPlayer.dependencies.BufferController = function() {
 
             var time = getWorkingTime.call(this),
                 range,
-                segmentTime;
+                segmentTime,
+                self = this;
 
 
             // If we override buffer (in case of language for example), then consider current video time for the next segment time
@@ -3015,7 +3016,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 this.debug.log("[BufferController][" + type + "] loadNextFragment for time: " + segmentTime);
                 this.indexHandler.getSegmentRequestForTime(_currentRepresentation, segmentTime).then(onFragmentRequest.bind(this), function() {
                     currentDownloadQuality = -1;
-                    signalStreamComplete.call(this);
+                    signalStreamComplete.call(self);
                 });
             }
         },
@@ -3695,17 +3696,21 @@ MediaPlayer.dependencies.BufferController = function() {
                         if (segmentRequestOnError) {
                             // If buffering is due to segment download failure (see onBytesError()), then signal it to Stream (see Stream.onBufferFailed())
                             signalSegmentLoadingFailed.call(this);
-                        } else if (!isDynamic) {
+                        } else {
                             // Check if there is a hole in the buffer (segment download failed or input stream discontinuity), then skip it
+                            // For live streams we consider discontinuities lower than a segment duration
                             ranges = this.sourceBufferExt.getAllRanges(buffer);
                             var i;
                             for (i = 0; i < ranges.length; i++) {
                                 if (currentTime < ranges.start(i)) {
-                                    break;
+                                    if (!isDynamic || ((ranges.start(i) - currentTime) < segmentDuration)) {
+                                        break;
+                                    }
                                 }
                             }
                             if (i < ranges.length) {
                                 // Seek to next available range
+                                this.debug.info("[BufferController][" + type + "] BUFFERING => skip buffer discontinuity, seek to " + ranges.start(i));
                                 this.videoModel.setCurrentTime(ranges.start(i));
                             }
                         }
@@ -16208,16 +16213,13 @@ Dash.dependencies.DashHandler = function() {
                 if (!isNaN(representation.segmentDuration)) {
                     self.debug.log("[DashHandler][" + type + "] getIndexForSegments, (segment duration) idx =  ", idx);
                     idx = Math.floor((time - representation.adaptation.period.start) / representation.segmentDuration);
+                } else if (segments && segments.length > 0 && time < segments[0].presentationStartTime) {
+                    self.debug.log("[DashHandler][" + type + "] getIndexForSegments, (before start) idx =  ", idx);
+                    idx = 0;
                 } else {
                     self.debug.log("[DashHandler][" + type + "] Couldn't figure out segment for time: " + time);
                 }
             }
-
-            // TODO : This is horrible.
-            // Temp fix for SegmentTimeline refreshes.
-            //if (idx === -1) {
-            //    idx = 0;
-            //}
 
             /*
             if (segments && segments.length > 0) {
@@ -22240,7 +22242,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 // If license persistence is not enabled, then close sessions and release/delete MediaKeys instance
                 // Called when we are done closing a session.
                 var done = function(session) {
-                    self.debug.log("[DRM][PM_21Jan2015] Session closed");
+                    self.debug.log("[DRM][PM_21Jan2015] Ssession closed");
                     removeSession(session);
                     if (i >= (nbSessions - 1)) {
                         mediaKeys = null;
@@ -22269,14 +22271,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                     })(session);
                 }
             } else {
-                // If license persistence is enabled, then keep usable sessions data and MediaKeys instance
-                for (i = 0; i < sessions.length; i++) {
-                    session = sessions[i];
-                    if (!session.usable) {
-                       sessions.splice(i, 1);
-                       i--;
-                    }
-                }
+                // If license persistence is enabled, then keep sessions en MediaKeys instance
                 this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
             }
         },
@@ -22514,6 +22509,10 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 MediaPlayer.models.ProtectionModel_21Jan2015.detect = function(videoElement) {
     if (videoElement.onencrypted === undefined ||
         videoElement.mediaKeys === undefined) {
+        return false;
+    }
+
+    if (window.MSMediaKeys) {
         return false;
     }
 
