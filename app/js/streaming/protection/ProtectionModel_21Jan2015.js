@@ -301,7 +301,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                 // If license persistence is not enabled, then close sessions and release/delete MediaKeys instance
                 // Called when we are done closing a session.
                 var done = function(session) {
-                    self.debug.log("[DRM][PM_21Jan2015] Ssession closed");
+                    self.debug.log("[DRM][PM_21Jan2015] Session closed");
                     removeSession(session);
                     if (i >= (nbSessions - 1)) {
                         mediaKeys = null;
@@ -330,7 +330,14 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                     })(session);
                 }
             } else {
-                // If license persistence is enabled, then keep sessions en MediaKeys instance
+                // If license persistence is enabled, then keep usable sessions data and MediaKeys instance
+                for (i = 0; i < sessions.length; i++) {
+                    session = sessions[i];
+                    if (!session.usable) {
+                       sessions.splice(i, 1);
+                       i--;
+                    }
+                }
                 this.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
             }
         },
@@ -568,10 +575,6 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
 MediaPlayer.models.ProtectionModel_21Jan2015.detect = function(videoElement) {
     if (videoElement.onencrypted === undefined ||
         videoElement.mediaKeys === undefined) {
-        return false;
-    }
-
-    if (window.MSMediaKeys) {
         return false;
     }
 
