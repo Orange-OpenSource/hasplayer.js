@@ -68,11 +68,11 @@ mp4lib.fields.LongNumberField = function() {};
 mp4lib.fields.LongNumberField.prototype.read = function(buf, pos) {
     var high = mp4lib.fields.readBytes(buf, pos, 4),
         low = mp4lib.fields.readBytes(buf, pos + 4, 4);
-    return goog.math.Long.fromBits(low, high).toNumber();
+    return goog.math.Long.fromBits(low, high);
 };
 
 mp4lib.fields.LongNumberField.prototype.write = function(buf, pos, val) {
-    var longNumber = goog.math.Long.fromNumber(val),
+    var longNumber = (typeof val.getLowBits === 'function') ? val : goog.math.Long.fromNumber(val),
         low = longNumber.getLowBits(),
         high = longNumber.getHighBits();
     mp4lib.fields.writeBytes(buf, pos, 4, high);
