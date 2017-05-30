@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-5-30_12:43:42 / git revision : 2b1024e */
+/* Last build : 2017-5-30_13:5:34 / git revision : 4a04648 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.11.0-dev',
-        GIT_TAG = '2b1024e',
-        BUILD_DATE = '2017-5-30_12:43:42',
+        GIT_TAG = '4a04648',
+        BUILD_DATE = '2017-5-30_13:5:34',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -147,7 +147,6 @@ MediaPlayer = function () {
         streamController.setDefaultAudioLang(defaultAudioLang);
         streamController.setDefaultSubtitleLang(defaultSubtitleLang);
         streamController.enableSubtitles(subtitlesEnabled);
-        // TODO restart here !!!
         streamController.load(source);
         system.mapValue("scheduleWhilePaused", scheduleWhilePaused);
         system.mapOutlet("scheduleWhilePaused", "stream");
@@ -436,8 +435,6 @@ MediaPlayer = function () {
         }
 
     };
-    // END TODO
-
 
     var _getDVRInfoMetric = function () {
         var metrics = this.metricsModel.getReadOnlyMetricsFor('video'),
@@ -553,6 +550,7 @@ MediaPlayer = function () {
 
             // create DebugController
             debugController = system.getObject('debugController');
+            debugController.init(VERSION);
         },
 //#endregion
 
@@ -4624,26 +4622,30 @@ MediaPlayer.utils.DebugController = function() {
 
     // debug data configuration
     var debugData = {
-        isInDebug:false,
-        level:0,
-        loggerType:'console'
+        isInDebug: false,
+        level: 0,
+        loggerType: 'console'
     };
+
+    var version = '';
 
     var _handleKeyPressedEvent = function(e) {
         // if we press ctrl + alt + maj + z we activate debug mode
         if ((e.altKey === true) && (e.ctrlKey === true) && (e.shiftKey === true) &&
             ((e.keyCode === 68) || (e.keyCode === 90))) {
             if (debugData.isInDebug) {
+                console.log('hasplayer.js debug OFF (v' + version + ')');
                 debugData.isInDebug = false;
-                console.log("hasplayer.js debug OFF");
                 if (e.keyCode === 90) {
                     _downloadDebug(this.debug.getLogger().getLogs());
+                    this.debug.setLevel(debugData.level);
+                    this.debug.setLogger(debugData.loggerType);
+                } else {
+                    this.debug.setLevel(0);
                 }
-                this.debug.setLevel(debugData.level);
-                this.debug.setLogger(debugData.loggerType);
             } else {
+                console.log('hasplayer.js debug ON (v' + version + ')');
                 debugData.isInDebug = true;
-                console.log("hasplayer.js debug ON");
                 debugData.level = this.debug.getLevel();
                 this.debug.setLevel((e.keyCode === 68) ? 4 : 3);
                 this.debug.setLogger((e.keyCode === 68) ? 'console' : 'memory');
@@ -4673,13 +4675,17 @@ MediaPlayer.utils.DebugController = function() {
         }
     };
 
-
     return {
         debug: undefined,
 
         setup: function() {
             window.addEventListener('keydown', _handleKeyPressedEvent.bind(this));
+        },
+
+        init: function(ver) {
+            version = ver;
         }
+
     };
 };
 
