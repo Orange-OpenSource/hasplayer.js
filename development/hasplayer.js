@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-5-30_13:5:34 / git revision : 4a04648 */
+/* Last build : 2017-5-30_13:25:28 / git revision : 562c0a5 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.11.0-dev',
-        GIT_TAG = '4a04648',
-        BUILD_DATE = '2017-5-30_13:5:34',
+        GIT_TAG = '562c0a5',
+        BUILD_DATE = '2017-5-30_13:25:28',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -26675,14 +26675,32 @@ Mss.dependencies.MssParser = function() {
             var segmentTimeline = {},
                 chunks = this.domParser.getChildNodes(streamIndex, "c"),
                 segments = [],
+                segment,
                 i,
-                t, d;
+                tManifest, t, d,
+                shift = false;
 
             for (i = 0; i < chunks.length; i++) {
-                // Get time and duration attributes
-                t = parseFloat(this.domParser.getAttributeValue(chunks[i], "t"));
+                segment = {};
+
+                // Get time 't' attribute value (as string in order to handle large values, i.e. > 2^53)
+                tManifest = this.domParser.getAttributeValue(chunks[i], "t");
+
+                // Check if time is not greater than 2^53, then shift time values to get around rounding issue
+                // (But keep original timestamp value as a string in 'tManifest' field for constructing the fragment request urls, see DashHandler)
+                if (tManifest && goog.math.Long.fromString(tManifest).greaterThan(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER))) {
+                    shift = true;
+                    t = goog.math.Long.fromString(tManifest);
+                    t = t.subtract(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER)).toNumber();
+                    segment.tManifest = tManifest;
+                } else {
+                    t = parseFloat(tManifest);
+                }
+
+                // Get duration 'd' attribute value
                 d = parseFloat(this.domParser.getAttributeValue(chunks[i], "d"));
 
+                // If 't' not defined for first segment then t=0
                 if ((i === 0) && !t) {
                     t = 0;
                 }
@@ -26692,18 +26710,24 @@ Mss.dependencies.MssParser = function() {
                     if (!segments[segments.length - 1].d) {
                         segments[segments.length - 1].d = t - segments[segments.length - 1].t;
                     }
-                    // Set segment absolute timestamp if not set
+                    // Set segment absolute timestamp if not set in manifest
                     if (!t) {
                         t = segments[segments.length - 1].t + segments[segments.length - 1].d;
+                        if (shift) {
+                            // Determine corresponding original timestamp value in case of shifted values
+                            tManifest = goog.math.Long.fromNumber(t).add(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER)).toString();
+                        }
                     }
                 }
 
-                // Create new segment
-                segments.push({
-                    d: d,
-                    t: t
-                });
+                segment.t = t;
+                segment.d = d;
+                if (shift) {
+                    segment.tManifest = tManifest;
+                }
 
+                // Create new segment
+                segments.push(segment);
             }
 
             segmentTimeline.S = segments;
@@ -26937,14 +26961,14 @@ Mss.dependencies.MssParser = function() {
 
             // In case of VOD streams, check if start time is greater than 0
             // Then determine timestamp offset according to higher audio/video start time
+            // (use case = live stream delinearization)
             if (mpd.type === "static") {
+                timestampOffset = Number.MAX_SAFE_INTEGER;
                 for (i = 0; i < adaptations.length; i++) {
                     if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
                         segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
                         startTime = segments[0].t;
-                        if (startTime > 0) {
-                            timestampOffset = timestampOffset ? Math.min(timestampOffset, startTime) : startTime;
-                        }
+                        timestampOffset = Math.min(timestampOffset, startTime);
                         // Correct content duration according to minimum adaptation's segments duration
                         // in order to force <video> element sending 'ended' event
                         mpd.mediaPresentationDuration = Math.min(mpd.mediaPresentationDuration, ((segments[segments.length-1].t + segments[segments.length-1].d) / TIME_SCALE_100_NANOSECOND_UNIT).toFixed(3));
@@ -26956,7 +26980,9 @@ Mss.dependencies.MssParser = function() {
                     for (i = 0; i < adaptations.length; i++) {
                         segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
                         for (j = 0; j < segments.length; j++) {
-                            segments[j].tManifest = segments[j].t;
+                            if (!segments[j].tManifest) {
+                                segments[j].tManifest = segments[j].t;
+                            }
                             segments[j].t -= timestampOffset;
                         }
                         if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
@@ -27209,8 +27235,6 @@ Mss.dependencies.MssFragmentController = function() {
                 // Get adaptation's segment timeline (always a SegmentTimeline in Smooth Streaming use case)
                 segments = adaptation.SegmentTemplate.SegmentTimeline.S,
                 entries = tfrf.entry,
-                fragment_absolute_time = 0,
-                fragment_duration = 0,
                 segment = null,
                 t = 0,
                 i = 0,
@@ -27225,20 +27249,27 @@ Mss.dependencies.MssFragmentController = function() {
             }
 
             // Go through tfrf entries
+            // !! For tfrf fragment_absolute_time and fragment_duration are returned as goog.math.Long values (see mp4lib)
             while (i < entries.length) {
-                fragment_absolute_time = entries[i].fragment_absolute_time;
-                fragment_duration = entries[i].fragment_duration;
+                // Check if time is not greater than 2^53, then shift time values to get around rounding issue (as in MssParser)
+                if (entries[i].fragment_absolute_time.greaterThan(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER))) {
+                    entries[i].fragment_absolute_timeManifest = entries[i].fragment_absolute_time.toString();
+                    entries[i].fragment_absolute_time = entries[i].fragment_absolute_time.subtract(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER));
+                }
 
-                // Get timestamp of the last segment
-                segment = segments[segments.length - 1];
-                t = segment.t;
+                // Convert goog.math.Long to Number values
+                entries[i].fragment_absolute_time = entries[i].fragment_absolute_time.toNumber();
+                entries[i].fragment_duration = entries[i].fragment_duration.toNumber();
 
-                if (fragment_absolute_time > t) {
-                    this.debug.log("[MssFragmentController] Add new segment - t = " + (fragment_absolute_time / 10000000.0));
-                    segments.push({
-                        t: fragment_absolute_time,
-                        d: fragment_duration
-                    });
+                if (entries[i].fragment_absolute_time > segments[segments.length - 1].t) {
+                    this.debug.log("[MssFragmentController] Add new segment - t = " + (entries[i].fragment_absolute_time / 10000000.0));
+                    segment = {};
+                    segment.t = entries[i].fragment_absolute_time;
+                    segment.d = entries[i].fragment_duration;
+                    if (entries[i].fragment_absolute_timeManifest) {
+                       segment.tManifest = entries[i].fragment_absolute_timeManifest;
+                    }
+                    segments.push(segment);
                     segmentsUpdated = true;
                 }
 
@@ -27259,14 +27290,14 @@ Mss.dependencies.MssFragmentController = function() {
                         if ((t + segments[segmentId + i].d) !== entries[i].fragment_absolute_time) {
                             segments[segmentId + i].t = entries[i].fragment_absolute_time;
                             segments[segmentId + i].d = entries[i].fragment_duration;
-                            this.debug.log("[MssFragmentController] Correct tfrf time  = " + entries[i].fragment_absolute_time + "and duration = " + entries[i].fragment_duration + "! ********");
+                            this.debug.log("[MssFragmentController] Correct tfrf time  = " + entries[i].fragment_absolute_time + " and duration = " + entries[i].fragment_duration);
                             segmentsUpdated = true;
                         }
                     }
                 }
             }
 
-            //
+            // Update segment timeline according to DVR window
             if (manifest.timeShiftBufferDepth && manifest.timeShiftBufferDepth > 0) {
                 if (segmentsUpdated) {
                     // Get timestamp of the last segment
@@ -27285,8 +27316,7 @@ Mss.dependencies.MssFragmentController = function() {
                     }
                 }
 
-                // Update DVR window range
-                // => set range end to end time of current segment
+                // Update DVR window range => set range's end to end time of current segment
                 range = {
                     start: segments[0].t / adaptation.SegmentTemplate.timescale,
                     end: (tfdt.baseMediaDecodeTime / adaptation.SegmentTemplate.timescale) + request.duration
@@ -28413,6 +28443,8 @@ if (undefined === atob) {
 goog = {};
 goog.math = {};
 
+
+
 /**
  * @fileoverview Defines a Long class for representing a 64-bit two's-complement
  * integer value, which faithfully simulates the behavior of a Java "long". This
@@ -29201,6 +29233,7 @@ goog.math.Long.prototype.shiftRightUnsigned = function(numBits) {
     }
   }
 };
+
 /*
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -31550,11 +31583,11 @@ mp4lib.fields.LongNumberField = function() {};
 mp4lib.fields.LongNumberField.prototype.read = function(buf, pos) {
     var high = mp4lib.fields.readBytes(buf, pos, 4),
         low = mp4lib.fields.readBytes(buf, pos + 4, 4);
-    return goog.math.Long.fromBits(low, high).toNumber();
+    return goog.math.Long.fromBits(low, high);
 };
 
 mp4lib.fields.LongNumberField.prototype.write = function(buf, pos, val) {
-    var longNumber = goog.math.Long.fromNumber(val),
+    var longNumber = (typeof val.getLowBits === 'function') ? val : goog.math.Long.fromNumber(val),
         low = longNumber.getLowBits(),
         high = longNumber.getHighBits();
     mp4lib.fields.writeBytes(buf, pos, 4, high);
