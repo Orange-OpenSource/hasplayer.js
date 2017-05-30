@@ -20,26 +20,30 @@ MediaPlayer.utils.DebugController = function() {
 
     // debug data configuration
     var debugData = {
-        isInDebug:false,
-        level:0,
-        loggerType:'console'
+        isInDebug: false,
+        level: 0,
+        loggerType: 'console'
     };
+
+    var version = '';
 
     var _handleKeyPressedEvent = function(e) {
         // if we press ctrl + alt + maj + z we activate debug mode
         if ((e.altKey === true) && (e.ctrlKey === true) && (e.shiftKey === true) &&
             ((e.keyCode === 68) || (e.keyCode === 90))) {
             if (debugData.isInDebug) {
+                console.log('hasplayer.js debug OFF (v' + version + ')');
                 debugData.isInDebug = false;
-                console.log("hasplayer.js debug OFF");
                 if (e.keyCode === 90) {
                     _downloadDebug(this.debug.getLogger().getLogs());
+                    this.debug.setLevel(debugData.level);
+                    this.debug.setLogger(debugData.loggerType);
+                } else {
+                    this.debug.setLevel(0);
                 }
-                this.debug.setLevel(debugData.level);
-                this.debug.setLogger(debugData.loggerType);
             } else {
+                console.log('hasplayer.js debug ON (v' + version + ')');
                 debugData.isInDebug = true;
-                console.log("hasplayer.js debug ON");
                 debugData.level = this.debug.getLevel();
                 this.debug.setLevel((e.keyCode === 68) ? 4 : 3);
                 this.debug.setLogger((e.keyCode === 68) ? 'console' : 'memory');
@@ -69,13 +73,17 @@ MediaPlayer.utils.DebugController = function() {
         }
     };
 
-
     return {
         debug: undefined,
 
         setup: function() {
             window.addEventListener('keydown', _handleKeyPressedEvent.bind(this));
+        },
+
+        init: function(ver) {
+            version = ver;
         }
+
     };
 };
 

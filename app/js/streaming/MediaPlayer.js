@@ -104,7 +104,6 @@ MediaPlayer = function () {
         streamController.setDefaultAudioLang(defaultAudioLang);
         streamController.setDefaultSubtitleLang(defaultSubtitleLang);
         streamController.enableSubtitles(subtitlesEnabled);
-        // TODO restart here !!!
         streamController.load(source);
         system.mapValue("scheduleWhilePaused", scheduleWhilePaused);
         system.mapOutlet("scheduleWhilePaused", "stream");
@@ -393,8 +392,6 @@ MediaPlayer = function () {
         }
 
     };
-    // END TODO
-
 
     var _getDVRInfoMetric = function () {
         var metrics = this.metricsModel.getReadOnlyMetricsFor('video'),
@@ -510,6 +507,7 @@ MediaPlayer = function () {
 
             // create DebugController
             debugController = system.getObject('debugController');
+            debugController.init(VERSION);
         },
 //#endregion
 
