@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-4-14_9:11:6 / git revision : 6ea8b88 */
+/* Last build : 2017-5-30_9:47:7 / git revision : 8a375cb */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.11.0-dev',
-        GIT_TAG = '6ea8b88',
-        BUILD_DATE = '2017-4-14_9:11:6',
+        GIT_TAG = '8a375cb',
+        BUILD_DATE = '2017-5-30_9:47:7',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -23185,11 +23185,50 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
         keySystemUUID = "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed",
         protData = null,
 
-        doGetInitData = function(cpData) {
-            if (protData && protData.pssh) {
-                return BASE64.decodeArray(protData.pssh).buffer;
+        replaceKID = function (pssh, KID) {
+            var pssh_array,
+                replace = true,
+                kidLen = 16,
+                pos,
+                i, j;
+
+            pssh_array = new Uint8Array(pssh);
+
+            for (i = 0; i <= pssh_array.length - (kidLen + 2); i++) {
+                if (pssh_array[i] === 0x12 && pssh_array[i+1] === 0x10) {
+                    pos = i + 2;
+                    for (j = pos; j < (pos + kidLen); j++) {
+                        if (pssh_array[j] !== 0xFF) {
+                            replace = false;
+                            break;
+                        }
+                    }
+                    break;
+                }
             }
-            return MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection(cpData);
+
+            if (replace) {
+                pssh_array.set(KID, pos);
+            }
+
+            return pssh_array.buffer;
+        },
+
+        doGetInitData = function(cpData) {
+            var pssh = null;
+            // Get pssh from protectionData or from manifest
+            if (protData && protData.pssh) {
+                pssh = BASE64.decodeArray(protData.pssh).buffer;
+            } else {
+                pssh = MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection(cpData);
+            }
+
+            // Check if KID within pssh is empty, in that case set KID value according to 'cenc:default_KID' value
+            if (pssh) {
+                pssh = replaceKID(pssh, cpData['cenc:default_KID']);
+            }
+
+            return pssh;
         },
 
         doGetServerCertificate = function() {
