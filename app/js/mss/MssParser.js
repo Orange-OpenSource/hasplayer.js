@@ -280,14 +280,32 @@ Mss.dependencies.MssParser = function() {
             var segmentTimeline = {},
                 chunks = this.domParser.getChildNodes(streamIndex, "c"),
                 segments = [],
+                segment,
                 i,
-                t, d;
+                tManifest, t, d,
+                shift = false;
 
             for (i = 0; i < chunks.length; i++) {
-                // Get time and duration attributes
-                t = parseFloat(this.domParser.getAttributeValue(chunks[i], "t"));
+                segment = {};
+
+                // Get time 't' attribute value (as string in order to handle large values, i.e. > 2^53)
+                tManifest = this.domParser.getAttributeValue(chunks[i], "t");
+
+                // Check if time is not greater than 2^53, then shift time values to get around rounding issue
+                // (But keep original timestamp value as a string in 'tManifest' field for constructing the fragment request urls, see DashHandler)
+                if (tManifest && goog.math.Long.fromString(tManifest).greaterThan(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER))) {
+                    shift = true;
+                    t = goog.math.Long.fromString(tManifest);
+                    t = t.subtract(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER)).toNumber();
+                    segment.tManifest = tManifest;
+                } else {
+                    t = parseFloat(tManifest);
+                }
+
+                // Get duration 'd' attribute value
                 d = parseFloat(this.domParser.getAttributeValue(chunks[i], "d"));
 
+                // If 't' not defined for first segment then t=0
                 if ((i === 0) && !t) {
                     t = 0;
                 }
@@ -297,18 +315,24 @@ Mss.dependencies.MssParser = function() {
                     if (!segments[segments.length - 1].d) {
                         segments[segments.length - 1].d = t - segments[segments.length - 1].t;
                     }
-                    // Set segment absolute timestamp if not set
+                    // Set segment absolute timestamp if not set in manifest
                     if (!t) {
                         t = segments[segments.length - 1].t + segments[segments.length - 1].d;
+                        if (shift) {
+                            // Determine corresponding original timestamp value in case of shifted values
+                            tManifest = goog.math.Long.fromNumber(t).add(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER)).toString();
+                        }
                     }
                 }
 
-                // Create new segment
-                segments.push({
-                    d: d,
-                    t: t
-                });
+                segment.t = t;
+                segment.d = d;
+                if (shift) {
+                    segment.tManifest = tManifest;
+                }
 
+                // Create new segment
+                segments.push(segment);
             }
 
             segmentTimeline.S = segments;
@@ -569,7 +593,9 @@ Mss.dependencies.MssParser = function() {
                     for (i = 0; i < adaptations.length; i++) {
                         segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
                         for (j = 0; j < segments.length; j++) {
-                            segments[j].tManifest = segments[j].t;
+                            if (!segments[j].tManifest) {
+                                segments[j].tManifest = segments[j].t;
+                            }
                             segments[j].t -= timestampOffset;
                         }
                         if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
