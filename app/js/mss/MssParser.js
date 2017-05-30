@@ -574,14 +574,14 @@ Mss.dependencies.MssParser = function() {
 
             // In case of VOD streams, check if start time is greater than 0
             // Then determine timestamp offset according to higher audio/video start time
+            // (use case = live stream delinearization)
             if (mpd.type === "static") {
+                timestampOffset = Number.MAX_SAFE_INTEGER;
                 for (i = 0; i < adaptations.length; i++) {
                     if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
                         segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
                         startTime = segments[0].t;
-                        if (startTime > 0) {
-                            timestampOffset = timestampOffset ? Math.min(timestampOffset, startTime) : startTime;
-                        }
+                        timestampOffset = Math.min(timestampOffset, startTime);
                         // Correct content duration according to minimum adaptation's segments duration
                         // in order to force <video> element sending 'ended' event
                         mpd.mediaPresentationDuration = Math.min(mpd.mediaPresentationDuration, ((segments[segments.length-1].t + segments[segments.length-1].d) / TIME_SCALE_100_NANOSECOND_UNIT).toFixed(3));
