@@ -281,18 +281,19 @@ Mss.dependencies.MssParser = function() {
                 chunks = this.domParser.getChildNodes(streamIndex, "c"),
                 segments = [],
                 i,
-                t, d;
+                t, d, tManifest_asString;
 
             for (i = 0; i < chunks.length; i++) {
                 // Get time and duration attributes
-                t = parseFloat(this.domParser.getAttributeValue(chunks[i], "t"));
+                tManifest_asString = this.domParser.getAttributeValue(chunks[i], "t");
+                t = parseFloat(tManifest_asString);
                 d = parseFloat(this.domParser.getAttributeValue(chunks[i], "d"));
 
                 if ((i === 0) && !t) {
                     t = 0;
                 }
 
-                if (i > 0) {
+               if (i > 0) {
                     // Update previous segment duration if not defined
                     if (!segments[segments.length - 1].d) {
                         segments[segments.length - 1].d = t - segments[segments.length - 1].t;
@@ -300,12 +301,23 @@ Mss.dependencies.MssParser = function() {
                     // Set segment absolute timestamp if not set
                     if (!t) {
                         t = segments[segments.length - 1].t + segments[segments.length - 1].d;
+                        tManifest_asString = (parseFloat(segments[segments.length - 1].tManifest_asString) + segments[segments.length - 1].d)+"";
+                        // To handle very large offsets in Manifest (>Number.MAX_SAFE_INTEGER)
+                        if(tManifest_asString.length > 15 ) {//max number is 16 digits (9007199254740991) so this is possible to be over (Number.isSafeInteger is not supported on IE)
+                            var t_asLong = goog.math.Long.fromString(segments[segments.length - 1].tManifest_asString);
+                            var d_asLong = goog.math.Long.fromNumber(segments[segments.length - 1].d);
+                            t_asLong = t_asLong.add(d_asLong);
+                            tManifest_asString = t_asLong.toString();
+                            this.debug.log("Large offest detected as string: "+tManifest_asString+" as number: "+t);
+                            t = t_asLong.toNumber();
+                        }
                     }
                 }
 
                 // Create new segment
                 segments.push({
                     d: d,
+                    tManifest_asString: tManifest_asString,
                     t: t
                 });
 
@@ -566,10 +578,11 @@ Mss.dependencies.MssParser = function() {
 
                 // Patch segment templates timestamps and determine period start time (since audio/video should not be aligned to 0)
                 if (timestampOffset > 0) {
+                    this.debug.log("timestampOffset: "+timestampOffset);
                     for (i = 0; i < adaptations.length; i++) {
                         segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
                         for (j = 0; j < segments.length; j++) {
-                            segments[j].tManifest = segments[j].t;
+                            segments[j].tManifest = segments[j].tManifest_asString;
                             segments[j].t -= timestampOffset;
                         }
                         if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
