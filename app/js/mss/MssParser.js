@@ -572,11 +572,13 @@ Mss.dependencies.MssParser = function() {
             // Then determine timestamp offset according to higher audio/video start time
             // (use case = live stream delinearization)
             if (mpd.type === "static") {
-                timestampOffset = Number.MAX_SAFE_INTEGER;
                 for (i = 0; i < adaptations.length; i++) {
                     if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
                         segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
                         startTime = segments[0].t;
+                        if (!timestampOffset) {
+                            timestampOffset = startTime;
+                        }
                         timestampOffset = Math.min(timestampOffset, startTime);
                         // Correct content duration according to minimum adaptation's segments duration
                         // in order to force <video> element sending 'ended' event
