@@ -556,7 +556,7 @@ Mss.dependencies.MssParser = function() {
                         segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
                         startTime = segments[0].t;
                         if (startTime > 0) {
-                            timestampOffset = timestampOffset ? Math.min(timestampOffset, startTime) : startTime;
+                            timestampOffset = timestampOffset ? Math.max(timestampOffset, startTime) : startTime;
                         }
                         // Correct content duration according to minimum adaptation's segments duration
                         // in order to force <video> element sending 'ended' event
