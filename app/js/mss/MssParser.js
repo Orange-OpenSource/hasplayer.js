@@ -287,6 +287,7 @@ Mss.dependencies.MssParser = function() {
                 chunks = this.domParser.getChildNodes(streamIndex, "c"),
                 segments = [],
                 segment,
+                prevSegment,
                 i,
                 tManifest;
 
@@ -314,16 +315,23 @@ Mss.dependencies.MssParser = function() {
                 }
 
                 if (i > 0) {
+                    prevSegment = segments[segments.length - 1];
                     // Update previous segment duration if not defined
-                    if (!segments[segments.length - 1].d) {
-                        segments[segments.length - 1].d = segment.t - segments[segments.length - 1].t;
+                    if (!prevSegment.d) {
+                       if (prevSegment.tManifest) {
+                           prevSegment.d = goog.math.Long.fromString(tManifest).subtract(goog.math.Long.fromString(prevSegment.tManifest)).toNumber();
+                       } else {
+                           prevSegment.d = segment.t - prevSegment.t;
+                       }
                     }
                     // Set segment absolute timestamp if not set in manifest
                     if (!segment.t) {
-                        segment.t = segments[segments.length - 1].t + segments[segments.length - 1].d;
-                        if (segments[segments.length - 1].tManifest) {
-                            segment.tManifest = goog.math.Long.fromNumber(segments[segments.length - 1].t).add(goog.math.Long.fromNumber(segments[segments.length - 1].d)).toString();
-                        }
+                        if (prevSegment.tManifest) {
+                           segment.tManifest = goog.math.Long.fromString(prevSegment.tManifest).add(goog.math.Long.fromNumber(prevSegment.d)).toString();
+                           segment.t = parseFloat(segment.tManifest);
+                       } else {
+                           segment.t = prevSegment.t + prevSegment.d;
+                       }
                     }
                 }
 
