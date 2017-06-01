@@ -288,8 +288,7 @@ Mss.dependencies.MssParser = function() {
                 segments = [],
                 segment,
                 i,
-                tManifest, t, d,
-                shift = false;
+                tManifest;
 
             for (i = 0; i < chunks.length; i++) {
                 segment = {};
@@ -297,44 +296,35 @@ Mss.dependencies.MssParser = function() {
                 // Get time 't' attribute value (as string in order to handle large values, i.e. > 2^53)
                 tManifest = this.domParser.getAttributeValue(chunks[i], "t");
 
-                // Check if time is not greater than 2^53, then shift time values to get around rounding issue
-                // (But keep original timestamp value as a string in 'tManifest' field for constructing the fragment request urls, see DashHandler)
+                // Check if time is not greater than 2^53
+                // => segment.tManifest = original timestamp value as a string (for constructing the fragment request url, see DashHandler)
+                // => segment.t = number value of timestamp (maybe rounded value, but only for 0.1 microsecond)
                 if (tManifest && goog.math.Long.fromString(tManifest).greaterThan(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER))) {
-                    shift = true;
-                    t = goog.math.Long.fromString(tManifest);
-                    t = t.subtract(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER)).toNumber();
                     segment.tManifest = tManifest;
-                } else {
-                    t = parseFloat(tManifest);
                 }
 
+                segment.t = parseFloat(tManifest);
+
                 // Get duration 'd' attribute value
-                d = parseFloat(this.domParser.getAttributeValue(chunks[i], "d"));
+                segment.d = parseFloat(this.domParser.getAttributeValue(chunks[i], "d"));
 
                 // If 't' not defined for first segment then t=0
-                if ((i === 0) && !t) {
-                    t = 0;
+                if ((i === 0) && !segment.t) {
+                    segment.t = 0;
                 }
 
                 if (i > 0) {
                     // Update previous segment duration if not defined
                     if (!segments[segments.length - 1].d) {
-                        segments[segments.length - 1].d = t - segments[segments.length - 1].t;
+                        segments[segments.length - 1].d = segment.t - segments[segments.length - 1].t;
                     }
                     // Set segment absolute timestamp if not set in manifest
-                    if (!t) {
-                        t = segments[segments.length - 1].t + segments[segments.length - 1].d;
-                        if (shift) {
-                            // Determine corresponding original timestamp value in case of shifted values
-                            tManifest = goog.math.Long.fromNumber(t).add(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER)).toString();
+                    if (!segment.t) {
+                        segment.t = segments[segments.length - 1].t + segments[segments.length - 1].d;
+                        if (segments[segments.length - 1].tManifest) {
+                            segment.tManifest = goog.math.Long.fromNumber(segments[segments.length - 1].t).add(goog.math.Long.fromNumber(segments[segments.length - 1].d)).toString();
                         }
                     }
-                }
-
-                segment.t = t;
-                segment.d = d;
-                if (shift) {
-                    segment.tManifest = tManifest;
                 }
 
                 // Create new segment

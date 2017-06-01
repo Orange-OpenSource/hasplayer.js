@@ -38,10 +38,11 @@ Mss.dependencies.MssFragmentController = function() {
             // Go through tfrf entries
             // !! For tfrf fragment_absolute_time and fragment_duration are returned as goog.math.Long values (see mp4lib)
             while (i < entries.length) {
-                // Check if time is not greater than 2^53, then shift time values to get around rounding issue (as in MssParser)
+                // Check if time is not greater than Number.MAX_SAFE_INTEGER (2^53-1), see MssParser
+                // => fragment_absolute_timeManifest = original timestamp value as a string (for constructing the fragment request url, see DashHandler)
+                // => fragment_absolute_time = number value of timestamp (maybe rounded value, but only for 0.1 microsecond)
                 if (entries[i].fragment_absolute_time.greaterThan(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER))) {
                     entries[i].fragment_absolute_timeManifest = entries[i].fragment_absolute_time.toString();
-                    entries[i].fragment_absolute_time = entries[i].fragment_absolute_time.subtract(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER));
                 }
 
                 // Convert goog.math.Long to Number values
