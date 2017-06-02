@@ -64,26 +64,27 @@ Mss.dependencies.MssFragmentController = function() {
                 i += 1;
             }
 
-            for (j = segments.length - 1; j >= 0; j -= 1) {
-                if (segments[j].t === tfdt.baseMediaDecodeTime) {
-                    segmentId = j;
-                    break;
-                }
-            }
-
-            if (segmentId >= 0) {
-                for (i = 0; i < entries.length; i += 1) {
-                    if (segmentId + i < segments.length) {
-                        t = segments[segmentId + i].t;
-                        if ((t + segments[segmentId + i].d) !== entries[i].fragment_absolute_time) {
-                            segments[segmentId + i].t = entries[i].fragment_absolute_time;
-                            segments[segmentId + i].d = entries[i].fragment_duration;
-                            this.debug.log("[MssFragmentController] Correct tfrf time  = " + entries[i].fragment_absolute_time + " and duration = " + entries[i].fragment_duration);
-                            segmentsUpdated = true;
-                        }
-                    }
-                }
-            }
+            // Update segment timeline in case the timestamps from tfrf differ from timestamps in Manifest.
+            // In that case we consider tfrf timing
+            // for (j = segments.length - 1; j >= 0; j -= 1) {
+            //     if (segments[j].t === tfdt.baseMediaDecodeTime) {
+            //         segmentId = j;
+            //         break;
+            //     }
+            // }
+            // if (segmentId >= 0) {
+            //     for (i = 0; i < entries.length; i += 1) {
+            //         if (segmentId + i < segments.length) {
+            //             t = segments[segmentId + i].t;
+            //             if ((t + segments[segmentId + i].d) !== entries[i].fragment_absolute_time) {
+            //                 segments[segmentId + i].t = entries[i].fragment_absolute_time;
+            //                 segments[segmentId + i].d = entries[i].fragment_duration;
+            //                 this.debug.log("[MssFragmentController] Correct tfrf time  = " + entries[i].fragment_absolute_time + " and duration = " + entries[i].fragment_duration);
+            //                 segmentsUpdated = true;
+            //             }
+            //         }
+            //     }
+            // }
 
             // Update segment timeline according to DVR window
             if (manifest.timeShiftBufferDepth && manifest.timeShiftBufferDepth > 0) {
