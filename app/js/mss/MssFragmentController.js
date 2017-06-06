@@ -25,8 +25,8 @@ Mss.dependencies.MssFragmentController = function() {
                 segment = null,
                 t = 0,
                 i = 0,
-                j = 0,
-                segmentId = -1,
+                // j = 0,
+                // segmentId = -1,
                 availabilityStartTime = null,
                 range;
 
