@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-5-30_13:25:28 / git revision : 562c0a5 */
+/* Last build : 2017-6-6_14:1:43 / git revision : 8a27960 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.11.0-dev',
-        GIT_TAG = '562c0a5',
-        BUILD_DATE = '2017-5-30_13:25:28',
+        GIT_TAG = '8a27960',
+        BUILD_DATE = '2017-6-6_14:1:43',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -3920,8 +3920,9 @@ MediaPlayer.dependencies.BufferExtensions = function () {
         },
 
         decideBufferLength: function (minBufferTime, duration/*, waitingForBuffer*/) {
-            if (isNaN(duration) || MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME < duration && minBufferTime < duration) {
-                minBufferTarget = Math.max(MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME, minBufferTime);
+
+            if (duration === Infinity) {
+                minBufferTarget = (minBufferTime > 0) ? minBufferTime : MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
             } else if (minBufferTime >= duration) {
                 minBufferTarget = Math.min(duration, MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME);
             } else {
@@ -22525,6 +22526,10 @@ MediaPlayer.models.ProtectionModel_21Jan2015.detect = function(videoElement) {
         return false;
     }
 
+    if (window.MSMediaKeys) {
+        return false;
+    }
+
     // Do not check requestMediaKeySystemAccess function since it can be disable on insecure origins
     // if (navigator.requestMediaKeySystemAccess === undefined ||
     //     typeof navigator.requestMediaKeySystemAccess !== 'function') {
@@ -26408,6 +26413,12 @@ Mss = (function () {
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+// Define Number.MAX_SAFE_INTEGER value in case it is not defined (such as in IE11)
+if (!Number.MAX_SAFE_INTEGER) {
+    Number.MAX_SAFE_INTEGER = 9007199254740991;
+}
+
 Mss.dependencies.MssParser = function() {
     "use strict";
 
@@ -26676,9 +26687,10 @@ Mss.dependencies.MssParser = function() {
                 chunks = this.domParser.getChildNodes(streamIndex, "c"),
                 segments = [],
                 segment,
+                prevSegment,
                 i,
-                tManifest, t, d,
-                shift = false;
+                tManifest,
+                duration = 0;
 
             for (i = 0; i < chunks.length; i++) {
                 segment = {};
@@ -26686,45 +26698,45 @@ Mss.dependencies.MssParser = function() {
                 // Get time 't' attribute value (as string in order to handle large values, i.e. > 2^53)
                 tManifest = this.domParser.getAttributeValue(chunks[i], "t");
 
-                // Check if time is not greater than 2^53, then shift time values to get around rounding issue
-                // (But keep original timestamp value as a string in 'tManifest' field for constructing the fragment request urls, see DashHandler)
+                // Check if time is not greater than 2^53
+                // => segment.tManifest = original timestamp value as a string (for constructing the fragment request url, see DashHandler)
+                // => segment.t = number value of timestamp (maybe rounded value, but only for 0.1 microsecond)
                 if (tManifest && goog.math.Long.fromString(tManifest).greaterThan(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER))) {
-                    shift = true;
-                    t = goog.math.Long.fromString(tManifest);
-                    t = t.subtract(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER)).toNumber();
                     segment.tManifest = tManifest;
-                } else {
-                    t = parseFloat(tManifest);
                 }
 
+                segment.t = parseFloat(tManifest);
+
                 // Get duration 'd' attribute value
-                d = parseFloat(this.domParser.getAttributeValue(chunks[i], "d"));
+                segment.d = parseFloat(this.domParser.getAttributeValue(chunks[i], "d"));
 
                 // If 't' not defined for first segment then t=0
-                if ((i === 0) && !t) {
-                    t = 0;
+                if ((i === 0) && !segment.t) {
+                    segment.t = 0;
                 }
 
                 if (i > 0) {
+                    prevSegment = segments[segments.length - 1];
                     // Update previous segment duration if not defined
-                    if (!segments[segments.length - 1].d) {
-                        segments[segments.length - 1].d = t - segments[segments.length - 1].t;
+                    if (!prevSegment.d) {
+                       if (prevSegment.tManifest) {
+                           prevSegment.d = goog.math.Long.fromString(tManifest).subtract(goog.math.Long.fromString(prevSegment.tManifest)).toNumber();
+                       } else {
+                           prevSegment.d = segment.t - prevSegment.t;
+                       }
                     }
                     // Set segment absolute timestamp if not set in manifest
-                    if (!t) {
-                        t = segments[segments.length - 1].t + segments[segments.length - 1].d;
-                        if (shift) {
-                            // Determine corresponding original timestamp value in case of shifted values
-                            tManifest = goog.math.Long.fromNumber(t).add(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER)).toString();
-                        }
+                    if (!segment.t) {
+                        if (prevSegment.tManifest) {
+                           segment.tManifest = goog.math.Long.fromString(prevSegment.tManifest).add(goog.math.Long.fromNumber(prevSegment.d)).toString();
+                           segment.t = parseFloat(segment.tManifest);
+                       } else {
+                           segment.t = prevSegment.t + prevSegment.d;
+                       }
                     }
                 }
 
-                segment.t = t;
-                segment.d = d;
-                if (shift) {
-                    segment.tManifest = tManifest;
-                }
+                duration += segment.d;
 
                 // Create new segment
                 segments.push(segment);
@@ -26732,6 +26744,7 @@ Mss.dependencies.MssParser = function() {
 
             segmentTimeline.S = segments;
             segmentTimeline.S_asArray = segments;
+            segmentTimeline.duration = duration / TIME_SCALE_100_NANOSECOND_UNIT;
 
             return segmentTimeline;
         },
@@ -26862,7 +26875,7 @@ Mss.dependencies.MssParser = function() {
 
             var range = {
                 start: segments[0].t / segmentTemplate.timescale,
-                end: (segments[segments.length - 1].t + segments[segments.length - 1].d)  / segmentTemplate.timescale
+                end: (segments[segments.length - 1].t + segments[segments.length - 1].d) / segmentTemplate.timescale
             };
 
             this.metricsModel.addDVRInfo(adaptationSet.contentType, new Date(), range);
@@ -26949,10 +26962,21 @@ Mss.dependencies.MssParser = function() {
                     adaptations[i].ContentProtection_asArray = mpd.ContentProtection_asArray;
                 }
 
-                // Add DVRInfo for live streams
                 if (mpd.type === "dynamic") {
+                    // Match timeShiftBufferDepth to video segment timeline duration
+                    if (mpd.timeShiftBufferDepth > 0 &&
+                        adaptations[i].contentType === 'video' &&
+                        mpd.timeShiftBufferDepth > adaptations[i].SegmentTemplate.SegmentTimeline.duration) {
+                        mpd.timeShiftBufferDepth = adaptations[i].SegmentTemplate.SegmentTimeline.duration;
+                    }
+
+                    // Add DVRInfo for live streams
                     addDVRInfo.call(this, adaptations[i]);
                 }
+            }
+
+            if (mpd.timeShiftBufferDepth < mpd.minBufferTime) {
+                mpd.minBufferTime = mpd.timeShiftBufferDepth;
             }
 
             // Delete Content Protection under root mpd node
@@ -26963,11 +26987,13 @@ Mss.dependencies.MssParser = function() {
             // Then determine timestamp offset according to higher audio/video start time
             // (use case = live stream delinearization)
             if (mpd.type === "static") {
-                timestampOffset = Number.MAX_SAFE_INTEGER;
                 for (i = 0; i < adaptations.length; i++) {
                     if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
                         segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
                         startTime = segments[0].t;
+                        if (!timestampOffset) {
+                            timestampOffset = startTime;
+                        }
                         timestampOffset = Math.min(timestampOffset, startTime);
                         // Correct content duration according to minimum adaptation's segments duration
                         // in order to force <video> element sending 'ended' event
@@ -27040,7 +27066,6 @@ Mss.dependencies.MssParser = function() {
 Mss.dependencies.MssParser.prototype = {
     constructor: Mss.dependencies.MssParser
 };
-
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
@@ -27238,8 +27263,8 @@ Mss.dependencies.MssFragmentController = function() {
                 segment = null,
                 t = 0,
                 i = 0,
-                j = 0,
-                segmentId = -1,
+                // j = 0,
+                // segmentId = -1,
                 availabilityStartTime = null,
                 range;
 
@@ -27251,10 +27276,11 @@ Mss.dependencies.MssFragmentController = function() {
             // Go through tfrf entries
             // !! For tfrf fragment_absolute_time and fragment_duration are returned as goog.math.Long values (see mp4lib)
             while (i < entries.length) {
-                // Check if time is not greater than 2^53, then shift time values to get around rounding issue (as in MssParser)
+                // Check if time is not greater than Number.MAX_SAFE_INTEGER (2^53-1), see MssParser
+                // => fragment_absolute_timeManifest = original timestamp value as a string (for constructing the fragment request url, see DashHandler)
+                // => fragment_absolute_time = number value of timestamp (maybe rounded value, but only for 0.1 microsecond)
                 if (entries[i].fragment_absolute_time.greaterThan(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER))) {
                     entries[i].fragment_absolute_timeManifest = entries[i].fragment_absolute_time.toString();
-                    entries[i].fragment_absolute_time = entries[i].fragment_absolute_time.subtract(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER));
                 }
 
                 // Convert goog.math.Long to Number values
@@ -27276,26 +27302,27 @@ Mss.dependencies.MssFragmentController = function() {
                 i += 1;
             }
 
-            for (j = segments.length - 1; j >= 0; j -= 1) {
-                if (segments[j].t === tfdt.baseMediaDecodeTime) {
-                    segmentId = j;
-                    break;
-                }
-            }
-
-            if (segmentId >= 0) {
-                for (i = 0; i < entries.length; i += 1) {
-                    if (segmentId + i < segments.length) {
-                        t = segments[segmentId + i].t;
-                        if ((t + segments[segmentId + i].d) !== entries[i].fragment_absolute_time) {
-                            segments[segmentId + i].t = entries[i].fragment_absolute_time;
-                            segments[segmentId + i].d = entries[i].fragment_duration;
-                            this.debug.log("[MssFragmentController] Correct tfrf time  = " + entries[i].fragment_absolute_time + " and duration = " + entries[i].fragment_duration);
-                            segmentsUpdated = true;
-                        }
-                    }
-                }
-            }
+            // Update segment timeline in case the timestamps from tfrf differ from timestamps in Manifest.
+            // In that case we consider tfrf timing
+            // for (j = segments.length - 1; j >= 0; j -= 1) {
+            //     if (segments[j].t === tfdt.baseMediaDecodeTime) {
+            //         segmentId = j;
+            //         break;
+            //     }
+            // }
+            // if (segmentId >= 0) {
+            //     for (i = 0; i < entries.length; i += 1) {
+            //         if (segmentId + i < segments.length) {
+            //             t = segments[segmentId + i].t;
+            //             if ((t + segments[segmentId + i].d) !== entries[i].fragment_absolute_time) {
+            //                 segments[segmentId + i].t = entries[i].fragment_absolute_time;
+            //                 segments[segmentId + i].d = entries[i].fragment_duration;
+            //                 this.debug.log("[MssFragmentController] Correct tfrf time  = " + entries[i].fragment_absolute_time + " and duration = " + entries[i].fragment_duration);
+            //                 segmentsUpdated = true;
+            //             }
+            //         }
+            //     }
+            // }
 
             // Update segment timeline according to DVR window
             if (manifest.timeShiftBufferDepth && manifest.timeShiftBufferDepth > 0) {
