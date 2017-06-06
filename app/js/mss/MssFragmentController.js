@@ -22,8 +22,6 @@ Mss.dependencies.MssFragmentController = function() {
                 // Get adaptation's segment timeline (always a SegmentTimeline in Smooth Streaming use case)
                 segments = adaptation.SegmentTemplate.SegmentTimeline.S,
                 entries = tfrf.entry,
-                fragment_absolute_time = 0,
-                fragment_duration = 0,
                 segment = null,
                 t = 0,
                 i = 0,
@@ -38,48 +36,57 @@ Mss.dependencies.MssFragmentController = function() {
             }
 
             // Go through tfrf entries
+            // !! For tfrf fragment_absolute_time and fragment_duration are returned as goog.math.Long values (see mp4lib)
             while (i < entries.length) {
-                fragment_absolute_time = entries[i].fragment_absolute_time;
-                fragment_duration = entries[i].fragment_duration;
+                // Check if time is not greater than Number.MAX_SAFE_INTEGER (2^53-1), see MssParser
+                // => fragment_absolute_timeManifest = original timestamp value as a string (for constructing the fragment request url, see DashHandler)
+                // => fragment_absolute_time = number value of timestamp (maybe rounded value, but only for 0.1 microsecond)
+                if (entries[i].fragment_absolute_time.greaterThan(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER))) {
+                    entries[i].fragment_absolute_timeManifest = entries[i].fragment_absolute_time.toString();
+                }
 
-                // Get timestamp of the last segment
-                segment = segments[segments.length - 1];
-                t = segment.t;
+                // Convert goog.math.Long to Number values
+                entries[i].fragment_absolute_time = entries[i].fragment_absolute_time.toNumber();
+                entries[i].fragment_duration = entries[i].fragment_duration.toNumber();
 
-                if (fragment_absolute_time > t) {
-                    this.debug.log("[MssFragmentController] Add new segment - t = " + (fragment_absolute_time / 10000000.0));
-                    segments.push({
-                        t: fragment_absolute_time,
-                        d: fragment_duration
-                    });
+                if (entries[i].fragment_absolute_time > segments[segments.length - 1].t) {
+                    this.debug.log("[MssFragmentController] Add new segment - t = " + (entries[i].fragment_absolute_time / 10000000.0));
+                    segment = {};
+                    segment.t = entries[i].fragment_absolute_time;
+                    segment.d = entries[i].fragment_duration;
+                    if (entries[i].fragment_absolute_timeManifest) {
+                       segment.tManifest = entries[i].fragment_absolute_timeManifest;
+                    }
+                    segments.push(segment);
                     segmentsUpdated = true;
                 }
 
                 i += 1;
             }
 
-            for (j = segments.length - 1; j >= 0; j -= 1) {
-                if (segments[j].t === tfdt.baseMediaDecodeTime) {
-                    segmentId = j;
-                    break;
-                }
-            }
+            // Update segment timeline in case the timestamps from tfrf differ from timestamps in Manifest.
+            // In that case we consider tfrf timing
+            // for (j = segments.length - 1; j >= 0; j -= 1) {
+            //     if (segments[j].t === tfdt.baseMediaDecodeTime) {
+            //         segmentId = j;
+            //         break;
+            //     }
+            // }
+            // if (segmentId >= 0) {
+            //     for (i = 0; i < entries.length; i += 1) {
+            //         if (segmentId + i < segments.length) {
+            //             t = segments[segmentId + i].t;
+            //             if ((t + segments[segmentId + i].d) !== entries[i].fragment_absolute_time) {
+            //                 segments[segmentId + i].t = entries[i].fragment_absolute_time;
+            //                 segments[segmentId + i].d = entries[i].fragment_duration;
+            //                 this.debug.log("[MssFragmentController] Correct tfrf time  = " + entries[i].fragment_absolute_time + " and duration = " + entries[i].fragment_duration);
+            //                 segmentsUpdated = true;
+            //             }
+            //         }
+            //     }
+            // }
 
-            if (segmentId >= 0) {
-                for (i = 0; i < entries.length; i += 1) {
-                    if (segmentId + i < segments.length) {
-                        t = segments[segmentId + i].t;
-                        if ((t + segments[segmentId + i].d) !== entries[i].fragment_absolute_time) {
-                            segments[segmentId + i].t = entries[i].fragment_absolute_time;
-                            segments[segmentId + i].d = entries[i].fragment_duration;
-                            this.debug.log("[MssFragmentController] Correct tfrf time  = " + entries[i].fragment_absolute_time + "and duration = " + entries[i].fragment_duration + "! ********");
-                            segmentsUpdated = true;
-                        }
-                    }
-                }
-            }
-
-            //
+            // Update segment timeline according to DVR window
             if (manifest.timeShiftBufferDepth && manifest.timeShiftBufferDepth > 0) {
                 if (segmentsUpdated) {
                     // Get timestamp of the last segment
@@ -98,8 +105,7 @@ Mss.dependencies.MssFragmentController = function() {
                     }
                 }
 
-                // Update DVR window range
-                // => set range end to end time of current segment
+                // Update DVR window range => set range's end to end time of current segment
                 range = {
                     start: segments[0].t / adaptation.SegmentTemplate.timescale,
                     end: (tfdt.baseMediaDecodeTime / adaptation.SegmentTemplate.timescale) + request.duration

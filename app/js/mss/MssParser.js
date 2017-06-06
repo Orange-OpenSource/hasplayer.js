@@ -13,6 +13,12 @@
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+// Define Number.MAX_SAFE_INTEGER value in case it is not defined (such as in IE11)
+if (!Number.MAX_SAFE_INTEGER) {
+    Number.MAX_SAFE_INTEGER = 9007199254740991;
+}
+
 Mss.dependencies.MssParser = function() {
     "use strict";
 
@@ -280,35 +286,57 @@ Mss.dependencies.MssParser = function() {
             var segmentTimeline = {},
                 chunks = this.domParser.getChildNodes(streamIndex, "c"),
                 segments = [],
+                segment,
+                prevSegment,
                 i,
-                t, d;
+                tManifest;
 
             for (i = 0; i < chunks.length; i++) {
-                // Get time and duration attributes
-                t = parseFloat(this.domParser.getAttributeValue(chunks[i], "t"));
-                d = parseFloat(this.domParser.getAttributeValue(chunks[i], "d"));
+                segment = {};
 
-                if ((i === 0) && !t) {
-                    t = 0;
+                // Get time 't' attribute value (as string in order to handle large values, i.e. > 2^53)
+                tManifest = this.domParser.getAttributeValue(chunks[i], "t");
+
+                // Check if time is not greater than 2^53
+                // => segment.tManifest = original timestamp value as a string (for constructing the fragment request url, see DashHandler)
+                // => segment.t = number value of timestamp (maybe rounded value, but only for 0.1 microsecond)
+                if (tManifest && goog.math.Long.fromString(tManifest).greaterThan(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER))) {
+                    segment.tManifest = tManifest;
+                }
+
+                segment.t = parseFloat(tManifest);
+
+                // Get duration 'd' attribute value
+                segment.d = parseFloat(this.domParser.getAttributeValue(chunks[i], "d"));
+
+                // If 't' not defined for first segment then t=0
+                if ((i === 0) && !segment.t) {
+                    segment.t = 0;
                 }
 
                 if (i > 0) {
+                    prevSegment = segments[segments.length - 1];
                     // Update previous segment duration if not defined
-                    if (!segments[segments.length - 1].d) {
-                        segments[segments.length - 1].d = t - segments[segments.length - 1].t;
+                    if (!prevSegment.d) {
+                       if (prevSegment.tManifest) {
+                           prevSegment.d = goog.math.Long.fromString(tManifest).subtract(goog.math.Long.fromString(prevSegment.tManifest)).toNumber();
+                       } else {
+                           prevSegment.d = segment.t - prevSegment.t;
+                       }
                     }
-                    // Set segment absolute timestamp if not set
-                    if (!t) {
-                        t = segments[segments.length - 1].t + segments[segments.length - 1].d;
+                    // Set segment absolute timestamp if not set in manifest
+                    if (!segment.t) {
+                        if (prevSegment.tManifest) {
+                           segment.tManifest = goog.math.Long.fromString(prevSegment.tManifest).add(goog.math.Long.fromNumber(prevSegment.d)).toString();
+                           segment.t = parseFloat(segment.tManifest);
+                       } else {
+                           segment.t = prevSegment.t + prevSegment.d;
+                       }
                     }
                 }
 
                 // Create new segment
-                segments.push({
-                    d: d,
-                    t: t
-                });
-
+                segments.push(segment);
             }
 
             segmentTimeline.S = segments;
@@ -550,14 +578,16 @@ Mss.dependencies.MssParser = function() {
 
             // In case of VOD streams, check if start time is greater than 0
             // Then determine timestamp offset according to higher audio/video start time
+            // (use case = live stream delinearization)
             if (mpd.type === "static") {
                 for (i = 0; i < adaptations.length; i++) {
                     if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
                         segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
                         startTime = segments[0].t;
-                        if (startTime > 0) {
-                            timestampOffset = timestampOffset ? Math.min(timestampOffset, startTime) : startTime;
+                        if (!timestampOffset) {
+                            timestampOffset = startTime;
                         }
+                        timestampOffset = Math.min(timestampOffset, startTime);
                         // Correct content duration according to minimum adaptation's segments duration
                         // in order to force <video> element sending 'ended' event
                         mpd.mediaPresentationDuration = Math.min(mpd.mediaPresentationDuration, ((segments[segments.length-1].t + segments[segments.length-1].d) / TIME_SCALE_100_NANOSECOND_UNIT).toFixed(3));
@@ -569,7 +599,9 @@ Mss.dependencies.MssParser = function() {
                     for (i = 0; i < adaptations.length; i++) {
                         segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
                         for (j = 0; j < segments.length; j++) {
-                            segments[j].tManifest = segments[j].t;
+                            if (!segments[j].tManifest) {
+                                segments[j].tManifest = segments[j].t;
+                            }
                             segments[j].t -= timestampOffset;
                         }
                         if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
