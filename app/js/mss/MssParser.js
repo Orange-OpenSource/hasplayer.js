@@ -289,7 +289,8 @@ Mss.dependencies.MssParser = function() {
                 segment,
                 prevSegment,
                 i,
-                tManifest;
+                tManifest,
+                duration = 0;
 
             for (i = 0; i < chunks.length; i++) {
                 segment = {};
@@ -335,12 +336,15 @@ Mss.dependencies.MssParser = function() {
                     }
                 }
 
+                duration += segment.d;
+
                 // Create new segment
                 segments.push(segment);
             }
 
             segmentTimeline.S = segments;
             segmentTimeline.S_asArray = segments;
+            segmentTimeline.duration = duration / TIME_SCALE_100_NANOSECOND_UNIT;
 
             return segmentTimeline;
         },
@@ -473,7 +477,7 @@ Mss.dependencies.MssParser = function() {
 
             var range = {
                 start: segments[0].t / segmentTemplate.timescale,
-                end: (segments[segments.length - 1].t + segments[segments.length - 1].d)  / segmentTemplate.timescale
+                end: (segments[segments.length - 1].t + segments[segments.length - 1].d) / segmentTemplate.timescale
             };
 
             this.metricsModel.addDVRInfo(adaptationSet.contentType, new Date(), range);
@@ -566,10 +570,21 @@ Mss.dependencies.MssParser = function() {
                     adaptations[i].ContentProtection_asArray = mpd.ContentProtection_asArray;
                 }
 
-                // Add DVRInfo for live streams
                 if (mpd.type === "dynamic") {
+                    // Match timeShiftBufferDepth to video segment timeline duration
+                    if (mpd.timeShiftBufferDepth > 0 &&
+                        adaptations[i].contentType === 'video' &&
+                        mpd.timeShiftBufferDepth > adaptations[i].SegmentTemplate.SegmentTimeline.duration) {
+                        mpd.timeShiftBufferDepth = adaptations[i].SegmentTemplate.SegmentTimeline.duration;
+                    }
+
+                    // Add DVRInfo for live streams
                     addDVRInfo.call(this, adaptations[i]);
                 }
+            }
+
+            if (mpd.timeShiftBufferDepth < mpd.minBufferTime) {
+                mpd.minBufferTime = mpd.timeShiftBufferDepth;
             }
 
             // Delete Content Protection under root mpd node
