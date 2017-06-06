@@ -79,8 +79,9 @@ MediaPlayer.dependencies.BufferExtensions = function () {
         },
 
         decideBufferLength: function (minBufferTime, duration/*, waitingForBuffer*/) {
-            if (isNaN(duration) || MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME < duration && minBufferTime < duration) {
-                minBufferTarget = Math.max(MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME, minBufferTime);
+
+            if (duration === Infinity) {
+                minBufferTarget = (minBufferTime > 0) ? minBufferTime : MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
             } else if (minBufferTime >= duration) {
                 minBufferTarget = Math.min(duration, MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME);
             } else {
