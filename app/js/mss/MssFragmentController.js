@@ -145,7 +145,15 @@ Mss.dependencies.MssFragmentController = function() {
             }
             // Process tfrf box
             tfrf = traf.getBoxesByType("tfrf");
-            if (tfrf.length !== 0) {
+            if (tfrf === null || tfrf.length === 0) {
+                throw {
+                    name: MediaPlayer.dependencies.ErrorHandler.prototype.MSS_NO_TFRF,
+                    message: 'Missing tfrf in live FragmentInfo segment',
+                    data: {
+                        url: request.url
+                    }
+                };
+            } else {
                 for (i = 0; i < tfrf.length; i += 1) {
                     processTfrf.call(this, request, tfrf[i], tfdt, adaptation);
                 }
@@ -313,11 +321,21 @@ Mss.dependencies.MssFragmentController = function() {
             }
 
             // Process tfrf box
-            tfrf = traf.getBoxesByType("tfrf");
-            if (tfrf.length !== 0) {
-                for (i = 0; i < tfrf.length; i += 1) {
-                    processTfrf.call(this, request, tfrf[i], tfdt, adaptation);
-                    traf.removeBoxByType("tfrf");
+            if (manifest.type === 'dynamic')  {
+                tfrf = traf.getBoxesByType("tfrf");
+                if (tfrf === null || tfrf.length === 0) {
+                    throw {
+                        name: MediaPlayer.dependencies.ErrorHandler.prototype.MSS_NO_TFRF,
+                        message: 'Missing tfrf in live media segment',
+                        data: {
+                            url: request.url
+                        }
+                    };
+                } else {
+                    for (i = 0; i < tfrf.length; i += 1) {
+                        processTfrf.call(this, request, tfrf[i], tfdt, adaptation);
+                        traf.removeBoxByType("tfrf");
+                    }
                 }
             }
 
