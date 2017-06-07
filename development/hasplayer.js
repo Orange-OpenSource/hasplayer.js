@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-6-7_13:38:41 / git revision : 0d60e62 */
+/* Last build : 2017-6-7_15:7:45 / git revision : 3f81bde */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.11.0-dev',
-        GIT_TAG = '0d60e62',
-        BUILD_DATE = '2017-6-7_13:38:41',
+        GIT_TAG = '3f81bde',
+        BUILD_DATE = '2017-6-7_15:7:45',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -4767,6 +4767,9 @@ MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX = "DOWNLOAD_ER
 MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_INIT = "DOWNLOAD_ERR_INIT";
 MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT = "DOWNLOAD_ERR_CONTENT";
 MediaPlayer.dependencies.ErrorHandler.prototype.CC_ERR_PARSE = "CC_ERR_PARSE";
+
+// MSS errors
+MediaPlayer.dependencies.ErrorHandler.prototype.MSS_NO_TFRF = "MSS_NO_TFRF";
 
 // HLS errors
 MediaPlayer.dependencies.ErrorHandler.prototype.HLS_INVALID_PACKET_ERROR = "HLS_INVALID_PACKET_ERROR";
@@ -20097,18 +20100,6 @@ MediaPlayer.dependencies.ProtectionController = function() {
                 abInitData = abInitData.buffer;
             }
 
-            // If key system has already been selected and initData already seen, then do nothing
-            if (this.keySystem) {
-                var initDataForKS = MediaPlayer.dependencies.protection.CommonEncryption.getPSSHForKeySystem(this.keySystem, abInitData);
-                var currentInitData = this.protectionModel.getAllInitData();
-                for (var i = 0; i < currentInitData.length; i++) {
-                    if (this.protectionExt.initDataEquals(initDataForKS, currentInitData[i])) {
-                        this.debug.log("[DRM] Ignoring initData because we have already seen it!");
-                        return;
-                    }
-                }
-            }
-
             supportedKS = this.protectionExt.getSupportedKeySystems(abInitData);
             if (supportedKS.length === 0) {
                 self.debug.log("[DRM] Received needkey event with initData, but we don't support any of the key systems!");
@@ -27395,7 +27386,15 @@ Mss.dependencies.MssFragmentController = function() {
             }
             // Process tfrf box
             tfrf = traf.getBoxesByType("tfrf");
-            if (tfrf.length !== 0) {
+            if (tfrf === null || tfrf.length === 0) {
+                throw {
+                    name: MediaPlayer.dependencies.ErrorHandler.prototype.MSS_NO_TFRF,
+                    message: 'Missing tfrf in live FragmentInfo segment',
+                    data: {
+                        url: request.url
+                    }
+                };
+            } else {
                 for (i = 0; i < tfrf.length; i += 1) {
                     processTfrf.call(this, request, tfrf[i], tfdt, adaptation);
                 }
@@ -27563,11 +27562,21 @@ Mss.dependencies.MssFragmentController = function() {
             }
 
             // Process tfrf box
-            tfrf = traf.getBoxesByType("tfrf");
-            if (tfrf.length !== 0) {
-                for (i = 0; i < tfrf.length; i += 1) {
-                    processTfrf.call(this, request, tfrf[i], tfdt, adaptation);
-                    traf.removeBoxByType("tfrf");
+            if (manifest.type === 'dynamic')  {
+                tfrf = traf.getBoxesByType("tfrf");
+                if (tfrf === null || tfrf.length === 0) {
+                    throw {
+                        name: MediaPlayer.dependencies.ErrorHandler.prototype.MSS_NO_TFRF,
+                        message: 'Missing tfrf in live media segment',
+                        data: {
+                            url: request.url
+                        }
+                    };
+                } else {
+                    for (i = 0; i < tfrf.length; i += 1) {
+                        processTfrf.call(this, request, tfrf[i], tfdt, adaptation);
+                        traf.removeBoxByType("tfrf");
+                    }
                 }
             }
 
