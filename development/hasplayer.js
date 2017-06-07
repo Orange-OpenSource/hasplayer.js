@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-6-6_14:1:43 / git revision : 8a27960 */
+/* Last build : 2017-6-7_8:1:16 / git revision : b93261f */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.11.0-dev',
-        GIT_TAG = '8a27960',
-        BUILD_DATE = '2017-6-6_14:1:43',
+        GIT_TAG = 'b93261f',
+        BUILD_DATE = '2017-6-7_8:1:16',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -4767,6 +4767,9 @@ MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX = "DOWNLOAD_ER
 MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_INIT = "DOWNLOAD_ERR_INIT";
 MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT = "DOWNLOAD_ERR_CONTENT";
 MediaPlayer.dependencies.ErrorHandler.prototype.CC_ERR_PARSE = "CC_ERR_PARSE";
+
+// MSS errors
+MediaPlayer.dependencies.ErrorHandler.prototype.MSS_NO_TFRF = "MSS_NO_TFRF";
 
 // HLS errors
 MediaPlayer.dependencies.ErrorHandler.prototype.HLS_INVALID_PACKET_ERROR = "HLS_INVALID_PACKET_ERROR";
@@ -27383,7 +27386,15 @@ Mss.dependencies.MssFragmentController = function() {
             }
             // Process tfrf box
             tfrf = traf.getBoxesByType("tfrf");
-            if (tfrf.length !== 0) {
+            if (tfrf === null || tfrf.length === 0) {
+                throw {
+                    name: MediaPlayer.dependencies.ErrorHandler.prototype.MSS_NO_TFRF,
+                    message: 'Missing tfrf in live FragmentInfo segment',
+                    data: {
+                        url: request.url
+                    }
+                };
+            } else {
                 for (i = 0; i < tfrf.length; i += 1) {
                     processTfrf.call(this, request, tfrf[i], tfdt, adaptation);
                 }
@@ -27551,11 +27562,21 @@ Mss.dependencies.MssFragmentController = function() {
             }
 
             // Process tfrf box
-            tfrf = traf.getBoxesByType("tfrf");
-            if (tfrf.length !== 0) {
-                for (i = 0; i < tfrf.length; i += 1) {
-                    processTfrf.call(this, request, tfrf[i], tfdt, adaptation);
-                    traf.removeBoxByType("tfrf");
+            if (manifest.type === 'dynamic')  {
+                tfrf = traf.getBoxesByType("tfrf");
+                if (tfrf === null || tfrf.length === 0) {
+                    throw {
+                        name: MediaPlayer.dependencies.ErrorHandler.prototype.MSS_NO_TFRF,
+                        message: 'Missing tfrf in live media segment',
+                        data: {
+                            url: request.url
+                        }
+                    };
+                } else {
+                    for (i = 0; i < tfrf.length; i += 1) {
+                        processTfrf.call(this, request, tfrf[i], tfdt, adaptation);
+                        traf.removeBoxByType("tfrf");
+                    }
                 }
             }
 
