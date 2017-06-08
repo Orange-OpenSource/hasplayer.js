@@ -88,6 +88,19 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
             return pssh;
         },
 
+        doGetKeySystemConfigurations = function(videoCodec, audioCodec, sessionType) {
+            var ksConfigurations = MediaPlayer.dependencies.protection.CommonEncryption.getKeySystemConfigurations(videoCodec, audioCodec, sessionType);
+            if (protData) {
+                if (protData.audioRobustness) {
+                    ksConfigurations[0].audioCapabilities[0].robustness = protData.audioRobustness;
+                }
+                if (protData.videoRobustness) {
+                    ksConfigurations[0].videoCapabilities[0].robustness = protData.videoRobustness;
+                }
+            }
+            return ksConfigurations;
+        },
+
         doGetServerCertificate = function() {
             if (protData && protData.serverCertificate && protData.serverCertificate.length > 0) {
                 return BASE64.decodeArray(protData.serverCertificate).buffer;
@@ -113,7 +126,7 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
 
         getInitData: doGetInitData,
 
-        getKeySystemConfigurations: MediaPlayer.dependencies.protection.CommonEncryption.getKeySystemConfigurations,
+        getKeySystemConfigurations: doGetKeySystemConfigurations,
 
         getRequestHeadersFromMessage: function(/*message*/) { return null; },
 

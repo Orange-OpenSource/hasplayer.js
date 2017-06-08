@@ -128,6 +128,11 @@ In the case of protected content, here is an example illustrating setting of the
                         com.microsoft.playready: {
                             laURL: "<licenser_url>",
                             cdmData: "<specific_CDM_data>"
+                            withCredentials: "<license_request_withCredentials_value>",
+                            cdmData: "<CDM_specific_data>", // Only supported by PlayReady key system (using MS-prefixed EME API)
+                            serverCertificate: "<license_server_certificate (as Base64 string)>" // Only supported by Widevine key system
+                            audioRobustness: "<audio_robustness_level>" // Only supported by Widevine key system
+                            videoRobustness: "<video_robustness_level>" // Only supported by Widevine key system
                         }
                     }
                 };
