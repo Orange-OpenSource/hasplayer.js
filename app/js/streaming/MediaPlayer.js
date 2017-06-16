@@ -166,7 +166,7 @@ MediaPlayer = function () {
                     if (audioBitrates) {
                         _dispatchBitrateEvent('download_bitrate', {
                             streamType: e.data.stream,
-                            switchedQuality: audioBitrates[e.data.value.to],
+                            switchedQuality: audioBitrates[e.data.value.lto],
                             representationId: e.data.value.to,
                             width: this.metricsExt.getVideoWidthForRepresentation(e.data.value.to),
                             height: this.metricsExt.getVideoHeightForRepresentation(e.data.value.to)
