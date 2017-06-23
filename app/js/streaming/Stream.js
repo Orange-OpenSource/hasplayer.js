@@ -566,6 +566,9 @@ MediaPlayer.dependencies.Stream = function() {
                 return;
             }
 
+            // ORANGE : add metric
+            this.metricsModel.addState("video", "seeking", this.getVideoModel().getCurrentTime());
+
             // Check if seek time is less than range start, never seek before range start.
             time = (time < this.getStartTime()) ? this.getStartTime() : time;
 
