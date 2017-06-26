@@ -35,9 +35,6 @@ MediaPlayer.dependencies.StreamController = function() {
         progressListener,
         pauseListener,
         playListener,
-        // ORANGE: audio language management
-        audioTracks,
-        subtitleTracks,
         protectionData,
         defaultAudioLang = 'und',
         defaultSubtitleLang = 'und',
@@ -359,23 +356,6 @@ MediaPlayer.dependencies.StreamController = function() {
             return true;
         },
 
-        // ORANGE: create function to handle audiotracks
-        updateAudioTracks = function() {
-            if (activeStream) {
-                audioTracks = this.manifestExt.getAudioDatas(this.manifestModel.getValue(), activeStream.getPeriodIndex());
-                // fire event to notify that audiotracks have changed
-                this.system.notify("audioTracksUpdated");
-            }
-        },
-
-        updateSubtitleTracks = function() {
-            if (activeStream) {
-                subtitleTracks = this.manifestExt.getTextDatas(this.manifestModel.getValue(), activeStream.getPeriodIndex());
-                // fire event to notify that subtitletracks have changed
-                this.system.notify("subtitleTracksUpdated");
-            }
-        },
-
         manifestUpdate = function(reload) {
             if (reload === true) {
                 reloadStream = true;
@@ -399,10 +379,6 @@ MediaPlayer.dependencies.StreamController = function() {
             var result = composeStreams.call(this);
 
             if (result) {
-                // ORANGE: Update Audio Tracks List
-                updateAudioTracks.call(this);
-                // ORANGE: Update Subtitle Tracks List
-                updateSubtitleTracks.call(this);
                 this.system.notify("streamsComposed");
             } else {
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_STREAM, "No stream/period is provided in the manifest");
@@ -465,7 +441,10 @@ MediaPlayer.dependencies.StreamController = function() {
         },
 
         getAudioTracks: function() {
-            return audioTracks;
+            if (activeStream) {
+                return activeStream.getAudioTracks();
+            }
+            return null;
         },
 
         getSelectedAudioTrack: function() {
@@ -484,7 +463,10 @@ MediaPlayer.dependencies.StreamController = function() {
         },
 
         getSubtitleTracks: function() {
-            return subtitleTracks;
+            if (activeStream) {
+                return activeStream.getSubtitleTracks();
+            }
+            return null;
         },
 
         setSubtitleTrack: function(subtitleTrack) {
