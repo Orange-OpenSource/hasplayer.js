@@ -255,10 +255,9 @@ MediaPlayer.dependencies.StreamController = function() {
         },
 
         composeStreams = function() {
-            var self = this,
-                manifest = self.manifestModel.getValue(),
-                metrics = self.metricsModel.getMetricsFor("stream"),
-                manifestUpdateInfo = self.metricsExt.getCurrentManifestUpdate(metrics),
+            var manifest = this.manifestModel.getValue(),
+                metrics = this.metricsModel.getMetricsFor("stream"),
+                manifestUpdateInfo = this.metricsExt.getCurrentManifestUpdate(metrics),
                 periodInfo,
                 periods,
                 pLen,
@@ -275,10 +274,10 @@ MediaPlayer.dependencies.StreamController = function() {
 
             this.debug.info("[StreamController] composeStreams");
 
-            if (self.capabilities.supportsEncryptedMedia()) {
+            if (this.capabilities.supportsEncryptedMedia()) {
                 if (!protectionController) {
-                    protectionController = self.system.getObject("protectionController");
-                    /*self.eventBus.dispatchEvent({
+                    protectionController = this.system.getObject("protectionController");
+                    /*this.eventBus.dispatchEvent({
                         type: MediaPlayer.events.PROTECTION_CREATED,
                         data: {
                             controller: protectionController,
@@ -287,20 +286,20 @@ MediaPlayer.dependencies.StreamController = function() {
                     });*/
                     ownProtectionController = true;
                 }
-                protectionController.setMediaElement(self.videoModel.getElement());
+                protectionController.setMediaElement(this.videoModel.getElement());
                 if (protectionData) {
                     protectionController.setProtectionData(protectionData);
                 }
             }
 
-            mpd = self.manifestExt.getMpd(manifest);
+            mpd = this.manifestExt.getMpd(manifest);
             if (activeStream) {
                 periodInfo = activeStream.getPeriodInfo();
                 mpd.isClientServerTimeSyncCompleted = periodInfo.mpd.isClientServerTimeSyncCompleted;
                 mpd.clientServerTimeShift = periodInfo.mpd.clientServerTimeShift;
             }
 
-            periods = self.manifestExt.getRegularPeriods(manifest, mpd);
+            periods = this.manifestExt.getRegularPeriods(manifest, mpd);
             if (periods.length === 0) {
                 return false;
             }
@@ -319,8 +318,8 @@ MediaPlayer.dependencies.StreamController = function() {
                 // introduced in the updated manifest, so we need to create a new Stream and perform all the initialization operations
                 if (!stream) {
                     this.debug.info("[StreamController] Create stream");
-                    stream = self.system.getObject("stream");
-                    stream.setVideoModel(pIdx === 0 ? self.videoModel : createVideoModel.call(self));
+                    stream = this.system.getObject("stream");
+                    stream.setVideoModel(pIdx === 0 ? this.videoModel : createVideoModel.call(this));
                     stream.initProtection(protectionController);
                     stream.setAutoPlay(autoPlay);
                     stream.setDefaultAudioLang(defaultAudioLang);
@@ -331,19 +330,19 @@ MediaPlayer.dependencies.StreamController = function() {
                     streams.push(stream);
                 }
 
-                self.metricsModel.addManifestUpdatePeriodInfo(manifestUpdateInfo, period.id, period.index, period.start, period.duration);
+                this.metricsModel.addManifestUpdatePeriodInfo(manifestUpdateInfo, period.id, period.index, period.start, period.duration);
                 stream = null;
             }
 
             // If the active stream has not been set up yet, let it be the first Stream in the list
             if (!activeStream) {
                 activeStream = streams[0];
-                attachVideoEvents.call(self, activeStream.getVideoModel());
+                attachVideoEvents.call(this, activeStream.getVideoModel());
             }
 
-            self.metricsModel.updateManifestUpdateInfo(manifestUpdateInfo, {
-                currentTime: self.videoModel.getCurrentTime(),
-                buffered: self.videoModel.getElement().buffered,
+            this.metricsModel.updateManifestUpdateInfo(manifestUpdateInfo, {
+                currentTime: this.videoModel.getCurrentTime(),
+                buffered: this.videoModel.getElement().buffered,
                 presentationStartTime: periods[0].start,
                 clientTimeOffset: mpd.clientServerTimeShift
             });
