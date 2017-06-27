@@ -29,14 +29,8 @@ MediaPlayer.models.VideoModel = function () {
 
         stallStream = function (type, stalled) {
             stalledStreams[type] = stalled;
-
-            if (!isStalled()) {
-                this.debug.info("<video> setPlaybackRate(1)");
-                element.playbackRate = 1;
-            } else {
-                this.debug.info("<video> setPlaybackRate(0)");
-                element.playbackRate = 0;
-            }
+            this.debug.info("<video> # stalled = " + stalled + ", type = " + type);
+            this.setPlaybackRate(isStalled() ? 0 : 1);
         };
 
     return {
@@ -51,12 +45,12 @@ MediaPlayer.models.VideoModel = function () {
         },
 
         play: function () {
-            this.debug.info("<video> play()");
+            this.debug.info("<video> # play()");
             element.play();
         },
 
         pause: function () {
-            this.debug.info("<video> pause()");
+            this.debug.info("<video> # pause()");
             element.pause();
         },
 
@@ -77,7 +71,7 @@ MediaPlayer.models.VideoModel = function () {
         },
 
         setPlaybackRate: function (value) {
-            this.debug.info("<video> setPlaybackRate(" + value + ")");
+            this.debug.info("<video> # playbackRate = " + value);
             element.playbackRate = value;
         },
 
@@ -102,7 +96,7 @@ MediaPlayer.models.VideoModel = function () {
         },
 
         setCurrentTime: function (currentTime) {
-            this.debug.info("<video> setCurrentTime (" + currentTime + ")");
+            this.debug.info("<video> # currentTime = " + currentTime);
             element.currentTime = currentTime;
         },
 
@@ -133,8 +127,10 @@ MediaPlayer.models.VideoModel = function () {
 
         setSource: function (source) {
             if (source) {
+                this.debug.info("<video> # set source");
                 element.src = source;
             } else {
+                this.debug.info("<video> # reset source");
                 element.removeAttribute('src');
                 element.load();
             }
