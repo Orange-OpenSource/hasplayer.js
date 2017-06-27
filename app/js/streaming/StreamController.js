@@ -42,6 +42,8 @@ MediaPlayer.dependencies.StreamController = function() {
         reloadStream = false,
         deferredLoading = null,
 
+        isSafari = (fingerprint_browser().name === "Safari"),
+
         /*
          * Replaces the currently displayed <video> with a new data and corresponding <video> element.
          *
@@ -387,6 +389,26 @@ MediaPlayer.dependencies.StreamController = function() {
                 deferredLoading.resolve();
                 deferredLoading = null;
             }
+        },
+
+        loadNativeHlsStream = function (source) {
+            // If HLS+FP on Safari then we do use specific Stream instance
+            if (isSafari && source.protocol === 'HLS') {
+                var stream = this.system.getObject("hlsStream");
+                stream.setVideoModel(this.videoModel);
+                stream.setProtectionData(protectionData);
+                stream.setAutoPlay(autoPlay);
+                stream.setDefaultAudioLang(defaultAudioLang);
+                stream.setDefaultSubtitleLang(defaultSubtitleLang);
+                stream.enableSubtitles(subtitlesEnabled);
+                streams.push(stream);
+                activeStream = stream;
+                attachVideoEvents.call(this, activeStream.getVideoModel());
+                stream.load(source.url);
+                return true;
+            }
+
+            return false;
         };
 
     return {
@@ -506,6 +528,10 @@ MediaPlayer.dependencies.StreamController = function() {
 
             if (source.protData) {
                 protectionData = source.protData;
+            }
+
+            if (loadNativeHlsStream.call(this, source)) {
+                return;
             }
 
             reloadStream = false;
