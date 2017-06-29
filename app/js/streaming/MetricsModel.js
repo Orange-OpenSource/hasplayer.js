@@ -430,13 +430,15 @@
             vo.duration = duration;
             vo.playbackspeed = playbackspeed;
             vo.stopreason = stopreason;
+            
+            if (playList && Array.isArray(playList.trace)) {
+                playList.trace.push(vo);
+                this.metricUpdated(playList.stream, "PlayListTrace", playList);
 
-            playList.trace.push(vo);
-            this.metricUpdated(playList.stream, "PlayListTrace", playList);
-
-            // Keep only last 10 metrics to avoid memory leak
-            if (playList.trace.length > 10) {
-                playList.trace.shift();
+                // Keep only last 10 metrics to avoid memory leak
+                if (playList.trace.length > 10) {
+                    playList.trace.shift();
+                }
             }
 
             return vo;
