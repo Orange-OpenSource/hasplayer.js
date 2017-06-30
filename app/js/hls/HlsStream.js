@@ -15,6 +15,17 @@
 Hls.dependencies.HlsStream = function() {
     "use strict";
 
+    var REQUEST_PARAMS = {
+        stream: {
+            responseType: 'arraybuffer',
+            contentType: 'application/octet-stream'
+        },
+        text: {
+            responseType: 'text',
+            contentType: 'application/x-www-form-urlencoded'
+        },
+    };
+
     var subtitlesEnabled = false,
         autoPlay = true,
         initialized = false,
@@ -182,6 +193,13 @@ Hls.dependencies.HlsStream = function() {
             this.debug.info("[Stream] <video> ratechange event: " + this.videoModel.getPlaybackRate());
         },
 
+        getKsProtectionData = function(ks) {
+            if (!protectionData) {
+                return null;
+            }
+            return protectionData[ks];
+        },
+
         stringToArray = function (string) {
             var buffer = new ArrayBuffer(string.length * 2); // 2 bytes for each char
             var array = new Uint16Array(buffer);
@@ -203,10 +221,11 @@ Hls.dependencies.HlsStream = function() {
         },
 
         getCertificate = function () {
-            if (protectionData && protectionData.serverCertificate) {
-                return BASE64.decodeArray(protectionData.serverCertificate).buffer;
+            var protData = getKsProtectionData('com.apple.fps.1_0');
+            if (!protData || !protData.serverCertificate) {
+                return [];
             }
-            return [];
+            return BASE64.decodeArray(protData.serverCertificate);
         },
 
         concatInitDataIdAndCertificate = function (initData, id, cert) {
@@ -238,44 +257,22 @@ Hls.dependencies.HlsStream = function() {
             return new Uint8Array(buffer, 0, buffer.byteLength);
         },
 
-        onNeedKey = function(e) {
-            this.debug.info("[Stream] <video> needkey event", e);
+        processLicenseMessage = function (session, type, message) {
 
-            var contentId = extractContentId(e.initData);
-            var initData = concatInitDataIdAndCertificate(e.initData, contentId, getCertificate());
-
-            var mediaKeys = new WebKitMediaKeys('com.apple.fps.1_0');
-            this.videoModel.getElement().webkitSetMediaKeys(mediaKeys);
-            var session = this.videoModel.getElement().webkitKeys.createSession('video/mp4', initData);
-            //mediaKeys.createSession('video/mp4', e.initData);
-
-            if (!session)
-                throw "Could not create key session";
-        },
-
-        onKeyMessage = function(e) {
-
-            this.debug.info("[Stream] <video> keymessage event", e);
-
-            var self = this,
-                needFailureReport = true,
-                session = event.target,
-                message = event.message,
-                laURL;
-
-            // var sessionId = event.sessionId;
-
-            if (protectionData && protectionData['com.apple.fps.1_0'] && protectionData['com.apple.fps.1_0'].laURL) {
-                laURL = protectionData['com.apple.fps.1_0'].laURL;
-            } else {
-                this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
-                    new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_URL_LICENSER_UNKNOWN, "No license server URL specified"));
-                return;
+            if (type === 'text') {
+                message = String.fromCharCode.apply(null, message);
+                message = 'spc=' + BASE64.encodeASCII(message) + '&assetId=' + encodeURIComponent(session.contentId);
             }
 
-            licenseRequest = new XMLHttpRequest();
+            return message;
+        },
 
-            licenseRequest.responseType = 'arraybuffer';
+        sendLicenseRequest = function (session, type, url, body) {
+            var self = this,
+                needFailureReport = true,
+
+            licenseRequest = new XMLHttpRequest();
+            licenseRequest.responseType = REQUEST_PARAMS[type].responseType;
             licenseRequest.session = session;
 
             licenseRequest.onload = function() {
@@ -287,14 +284,8 @@ Hls.dependencies.HlsStream = function() {
                 if (this.status === 200 && this.readyState === 4) {
                     self.debug.log("[DRM] Received license response");
                     needFailureReport = false;
-
-                    // Response can be of the form: '\n<ckc>base64encoded</ckc>\n', so trim the excess
-                    var keyText = licenseRequest.responseText.trim();
-                    if (keyText.substr(0, 5) === '<ckc>' && keyText.substr(-6) === '</ckc>')
-                        keyText = keyText.slice(5,-6);
-                    // var key = base64DecodeUint8Array(keyText);
-                    var key = BASE64.decodeArray(keyText).buffer;
-                    session.update(key);
+                    processLicenseResponse(this, type);
+                    // this.session.update(new Uint8Array(licenseRequest.response));
                 }
             };
 
@@ -307,25 +298,30 @@ Hls.dependencies.HlsStream = function() {
 
                 // Raise error only if request has not been aborted by reset
                 if (!this.aborted) {
-                    self.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR,
-                        new MediaPlayer.vo.Error(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_LICENSER_ERROR, "License request failed", {
-                            url: laURL,
-                            status: this.status,
-                            error: this.response
-                        }));
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_LICENSER_ERROR,"License request failed", {url: url, status: this.status, error: this.response});
                 }
                 licenseRequest = null;
             };
 
-            var params = 'spc=' + btoa(String.fromCharCode.apply(null, message)) + '&assetId=' + encodeURIComponent(session.contentId);
-            licenseRequest.open('POST', laURL, true);
-            // request.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-            licenseRequest.setRequestHeader("Content-type", "application/octet-stream");
-            licenseRequest.send(params);
+            licenseRequest.open('POST', url, true);
+            licenseRequest.setRequestHeader('Content-Type', REQUEST_PARAMS[type].contentType);
+            licenseRequest.send(body);
         },
 
-        onKeyAdded = function(e) {
-            this.debug.info("[Stream] <video> keyadded event", e);
+        processLicenseResponse = function (request, type) {
+            var key;
+
+            if (type === 'text') {
+                // Response can be of the form: '\n<ckc>base64encoded</ckc>\n', so trim the excess:
+                key = request.responseText.trim();
+                if (key.substr(0, 5) === '<ckc>' && key.substr(-6) === '</ckc>')
+                    key = key.slice(5,-6);
+                key = BASE64.decodeArray(key);
+            } else {
+                key = new Uint8Array(request.response);
+            }
+
+            request.session.update(key);
         },
 
         getKeyError = function(event) {
@@ -373,9 +369,62 @@ Hls.dependencies.HlsStream = function() {
             return new MediaPlayer.vo.protection.KeyError(code, msg);
         },
 
+        onNeedKey = function(e) {
+            this.debug.info("[Stream] <video> needkey event", e);
+
+            var video = this.videoModel.getElement(),
+                contentId = extractContentId(e.initData),
+                certificate = getCertificate();
+
+            var initData = concatInitDataIdAndCertificate(e.initData, contentId, certificate);
+
+            var mediaKeys = new WebKitMediaKeys('com.apple.fps.1_0');
+            video.webkitSetMediaKeys(mediaKeys);
+            var session = video.webkitKeys.createSession('video/mp4', initData);
+
+            if (!session)
+                throw "Could not create key session";
+
+            if (session.error) {
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_NO_SESSION,
+                    "Failed to create key session", {code: session.error.code, systemCode: session.error.systemCode});
+            }
+
+            session.contentId = contentId;
+
+            session.addEventListener("webkitkeymessage", keyMessageListener, false);
+            session.addEventListener("webkitkeyadded", keyAddedListener, false);
+            session.addEventListener("webkitkeyerror", keyErrorListener, false);
+        },
+
+        onKeyMessage = function(e) {
+
+            this.debug.info("[Stream] keymessage event", e);
+
+            var session = e.target,
+                message = e.message,
+                type;
+
+            var protData = getKsProtectionData('com.apple.fps.1_0');
+            if (!protData || !protData.laURL) {
+                this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_URL_LICENSER_UNKNOWN, "No license server URL specified");
+                return;
+            }
+
+            type = (protData && protData.requestType && protData.requestType === 'text') ? 'text' : 'stream';
+
+            message = processLicenseMessage(session, type, message);
+            sendLicenseRequest.call(this, session, type, protData.laURL, message);
+        },
+
+        onKeyAdded = function(e) {
+            this.debug.info("[Stream] keyadded event", e);
+        },
+
         onKeyError = function(e) {
-            this.debug.info("[Stream] <video> keyerror event", e);
-            this.notify(MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR, getKeyError(e));
+            this.debug.info("[Stream] keyerror event", e);
+            var error = getKeyError(e);
+            this.errHandler.sendError(error.code, error.msg);
         };
 
     return {
@@ -437,9 +486,6 @@ Hls.dependencies.HlsStream = function() {
             this.videoModel.listen("loadstart", loadstartListener);
 
             this.videoModel.listen("webkitneedkey", needKeyListener);
-            this.videoModel.listen("webkitkeymessage", keyMessageListener);
-            this.videoModel.listen("webkitkeyadded", keyAddedListener);
-            this.videoModel.listen("webkitkeyerror", keyErrorListener);
         },
 
         reset: function() {
@@ -470,9 +516,6 @@ Hls.dependencies.HlsStream = function() {
             this.videoModel.unlisten("loadstart", loadstartListener);
 
             this.videoModel.unlisten("webkitneedkey", needKeyListener);
-            this.videoModel.unlisten("webkitkeymessage", keyMessageListener);
-            this.videoModel.unlisten("webkitkeyadded", keyAddedListener);
-            this.videoModel.unlisten("webkitkeyerror", keyErrorListener);
 
             this.debug.info("[Stream] Reset source");
             this.videoModel.setSource(null);
