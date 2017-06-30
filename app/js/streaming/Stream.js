@@ -572,6 +572,8 @@ MediaPlayer.dependencies.Stream = function() {
             // Check if seek time is less than range start, never seek before range start.
             time = (time < this.getStartTime()) ? this.getStartTime() : time;
 
+            this.metricsModel.addPlayList('video', new Date().getTime(), time, MediaPlayer.vo.metrics.PlayList.SEEK_START_REASON);
+
             startBuffering.call(this, time);
         },
 

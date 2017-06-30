@@ -203,8 +203,6 @@ MediaPlayer.dependencies.BufferController = function() {
                 doStop.call(this);
             }
 
-            // Restart
-            playListMetrics = this.metricsModel.addPlayList(type, currentTime, seekTarget, MediaPlayer.vo.metrics.PlayList.SEEK_START_REASON);
             seeking = true;
             seekTarget = time;
 
