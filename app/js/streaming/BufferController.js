@@ -187,8 +187,7 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         doSeek = function(time) {
-            var currentTime = new Date(),
-                self = this;
+            var self = this;
 
             // Avoid identical successive seeks
             if ((seeking === true) && (seekTarget === time)) {
