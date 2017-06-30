@@ -499,7 +499,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                         representation.initialization = r.BaseURL;
                         representation.range = initialization.range;
                     }
-                } else if (r.hasOwnProperty("mimeType") && this.getIsTextTrack(r.mimeType)) {
+                } else if (r.hasOwnProperty("mimeType") && this.getIsTextTrack(r.mimeType) && !representation.initialization) {
                     representation.initialization = r.BaseURL;
                     representation.range = 0;
                 }
