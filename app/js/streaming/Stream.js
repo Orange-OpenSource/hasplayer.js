@@ -1388,7 +1388,6 @@ MediaPlayer.dependencies.Stream = function() {
             } else if (!enableTrickMode) {
                 tmSpeed = 1;
                 clearTimeout(tmSeekTimeout);
-                this.videoModel.pause();
                 stopBuffering.call(self);
             }
 
