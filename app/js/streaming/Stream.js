@@ -570,13 +570,13 @@ MediaPlayer.dependencies.Stream = function() {
                 return;
             }
 
-            // ORANGE : add metric
-            this.metricsModel.addState("video", "seeking", this.getVideoModel().getCurrentTime());
-
             // Check if seek time is less than range start, never seek before range start.
             time = (time < this.getStartTime()) ? this.getStartTime() : time;
 
-            this.metricsModel.addPlayList('video', new Date().getTime(), time, MediaPlayer.vo.metrics.PlayList.SEEK_START_REASON);
+            if (tmSpeed === 1) {
+                this.metricsModel.addState("video", "seeking", this.getVideoModel().getCurrentTime());
+                this.metricsModel.addPlayList('video', new Date().getTime(), time, MediaPlayer.vo.metrics.PlayList.SEEK_START_REASON);
+            }
 
             startBuffering.call(this, time);
         },
