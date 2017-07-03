@@ -1377,6 +1377,8 @@ MediaPlayer.dependencies.Stream = function() {
             self.debug.info("[Stream] Trick mode: speed = " + speed);
 
             if (enableTrickMode && tmState === "Stopped") {
+                //unlisten pause event to have correct metrics
+                this.videoModel.unlisten("pause", pauseListener);
                 self.debug.info("[Stream] Set mute: true");
                 muteState = self.videoModel.getMute();
                 if (!muteState) {
@@ -1401,6 +1403,8 @@ MediaPlayer.dependencies.Stream = function() {
                 currentVideoTime = self.videoModel.getCurrentTime();
 
                 if (!enableTrickMode) {
+                    //listen pause event to have correct metrics
+                    self.videoModel.listen("pause", pauseListener);
                     self.debug.info("[Stream] Trick mode: Stopped, current time = " + currentVideoTime);
                     tmState = "Stopped";
                     self.videoModel.listen("timeupdate", restoreMute);
