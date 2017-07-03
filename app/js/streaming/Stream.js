@@ -510,7 +510,11 @@ MediaPlayer.dependencies.Stream = function() {
             this.debug.info("[Stream] <video> pause event");
             startClockTime = -1;
             startStreamTime = -1;
-            this.metricsModel.addPlayList("video", new Date().getTime(), this.videoModel.getCurrentTime(), "pause");
+            if (tmSpeed === 1) {
+                // ORANGE : add metric
+                this.metricsModel.addState("video", "paused", this.videoModel.getCurrentTime());
+                this.metricsModel.addPlayList("video", new Date().getTime(), this.videoModel.getCurrentTime(), "pause");
+            }
             suspend.call(this);
             if (manifest.name === 'MSS' && this.manifestExt.getIsDynamic(manifest)) {
                 startFragmentInfoControllers.call(this);

@@ -197,8 +197,6 @@ MediaPlayer.dependencies.StreamController = function() {
 
         onPause = function() {
             this.manifestUpdater.stop();
-            // ORANGE : add metric
-            this.metricsModel.addState("video", "paused", activeStream.getVideoModel().getCurrentTime());
         },
 
         onPlay = function() {
