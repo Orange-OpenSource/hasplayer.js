@@ -400,7 +400,7 @@
             return vo;
         },
 
-        addPlayList: function (streamType, start, mstart, starttype) {
+        addPlayList: function (streamType, start, mstart, starttype, speed) {
             var vo = new MediaPlayer.vo.metrics.PlayList(),
                 metrics = this.getMetricsFor(streamType).PlayList;
 
@@ -408,6 +408,7 @@
             vo.start = start;
             vo.mstart = mstart;
             vo.starttype = starttype;
+            vo.speed = speed;
 
             metrics.push(vo);
             this.metricAdded(streamType, "PlayList", vo);

@@ -1386,6 +1386,8 @@ MediaPlayer.dependencies.Stream = function() {
                 }
                 self.videoModel.pause();
             } else if (!enableTrickMode) {
+                //stop trick mode, add a trick mode metric
+                self.metricsModel.addPlayList('video', new Date().getTime(), tmVideoStartTime, 'trickMode', tmSpeed);
                 tmSpeed = 1;
                 clearTimeout(tmSeekTimeout);
                 stopBuffering.call(self);
@@ -1411,6 +1413,8 @@ MediaPlayer.dependencies.Stream = function() {
                     seek.call(self, currentVideoTime, true);
                 } else {
                     if (tmState === "Running") {
+                        //trick mode speed has changed, add a trick mode metric for the previous speed
+                        self.metricsModel.addPlayList('video', new Date().getTime(), tmVideoStartTime, 'trickMode', tmPreviousSpeed);
                         tmState = "Changed";
                     } else if (tmState === "Stopped") {
                         tmEndDetected = false;
