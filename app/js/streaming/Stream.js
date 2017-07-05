@@ -487,6 +487,9 @@ MediaPlayer.dependencies.Stream = function() {
         onPlay = function() {
             this.debug.info("[Stream] <video> play event");
 
+            //listen pause event to have correct metrics, it should be unlistened by the onBufferingCompleted callback.
+            this.videoModel.listen("pause", pauseListener);
+
             if (tmSpeed !== 1) {
                 this.setTrickModeSpeed(1);
             } else {
@@ -862,6 +865,8 @@ MediaPlayer.dependencies.Stream = function() {
 
             // buffering has been complted, now we can signal end of stream
             if (mediaSource) {
+                //unlisten pause event to have correct metrics, and not catch the pause event sent before the onded event
+                this.videoModel.unlisten("pause", pauseListener);
                 this.debug.info("[Stream] Signal end of stream");
                 this.mediaSourceExt.signalEndOfStream(mediaSource);
             }
