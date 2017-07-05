@@ -184,13 +184,28 @@
         },
 
         addState: function (streamType, currentState, position, reason) {
-            var vo = new MediaPlayer.vo.metrics.State();
+
+            var state = this.getMetricsFor(streamType).State;
+            if (state.length > 0 && state[state.length - 1].current === currentState) {
+                return;
+            }
+
+            var vo = new MediaPlayer.vo.metrics.State(),
+                metrics = this.getMetricsFor(streamType).State;
 
             vo.current = currentState;
             vo.position = position;
             vo.reason = reason;
 
+            metrics.push(vo);
             this.metricAdded(streamType, "State", vo);
+
+            console.log("[STATE] type: " + streamType + ", state:" + currentState + ", position: " + position);
+
+            // Keep only last 10 metrics to avoid memory leak
+            if (metrics.length > 10) {
+                metrics.shift();
+            }
 
             return vo;
         },
@@ -431,7 +446,7 @@
             vo.duration = duration;
             vo.playbackspeed = playbackspeed;
             vo.stopreason = stopreason;
-            
+
             if (playList && Array.isArray(playList.trace)) {
                 playList.trace.push(vo);
                 this.metricUpdated(playList.stream, "PlayListTrace", playList);
