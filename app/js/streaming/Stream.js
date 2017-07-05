@@ -702,14 +702,6 @@ MediaPlayer.dependencies.Stream = function() {
                 streamDuration = Number(periodInfo.duration.toFixed(3));
 
             this.debug.info("[Stream] <video> durationchange event: " + duration);
-
-            // The duration may change if the effective MSE buffer duration is greater than the initial duration set from manifest
-            // => then we update the MediaSource duration to ensure 'ended' event being sent by the video element
-            // (round durationfrom manifest to milliseconds to avoid rounding issue within MSE buffer)
-            if (!isNaN(duration) && duration !== Infinity && duration > streamDuration) {
-                this.debug.log("[Stream] Setting duration: " + streamDuration);
-                this.mediaSourceExt.setDuration(mediaSource, streamDuration);
-            }
         },
 
         onRatechange = function() {
