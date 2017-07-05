@@ -50,6 +50,7 @@ MediaPlayer.dependencies.Stream = function() {
         errorListener,
         seekingListener,
         seekedListener,
+        waitingListener,
         timeupdateListener,
         durationchangeListener,
         progressListener,
@@ -472,6 +473,8 @@ MediaPlayer.dependencies.Stream = function() {
         onPlaying = function() {
             this.debug.info("[Stream] <video> playing event");
 
+            this.metricsModel.addState("video", "playing", this.getVideoModel().getCurrentTime());
+
             // Store start time (clock and stream time) for resynchronization purpose
             startClockTime = new Date().getTime() / 1000;
             startStreamTime = this.getVideoModel().getCurrentTime();
@@ -682,6 +685,13 @@ MediaPlayer.dependencies.Stream = function() {
         onTimeupdate = function() {
             this.debug.info("[Stream] <video> timeupdate event: " + this.videoModel.getCurrentTime());
             updateBuffer.call(this);
+        },
+
+        onWaiting = function() {
+            this.debug.info("[Stream] <video> waiting event");
+            if (!this.getVideoModel().isSeeking()) {
+                this.metricsModel.addState("video", "buffering", this.getVideoModel().getCurrentTime());
+            }
         },
 
         onDurationchange = function() {
@@ -1104,6 +1114,7 @@ MediaPlayer.dependencies.Stream = function() {
             errorListener = onError.bind(this);
             seekingListener = onSeeking.bind(this);
             seekedListener = onSeeked.bind(this);
+            waitingListener = onWaiting.bind(this);
             progressListener = onProgress.bind(this);
             ratechangeListener = onRatechange.bind(this);
             timeupdateListener = onTimeupdate.bind(this);
@@ -1131,6 +1142,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.listen("error", errorListener);
             this.videoModel.listen("seeking", seekingListener);
             this.videoModel.listen("seeked", seekedListener);
+            this.videoModel.listen("waiting", waitingListener);
             this.videoModel.listen("timeupdate", timeupdateListener);
             this.videoModel.listen("durationchange", durationchangeListener);
             this.videoModel.listen("progress", progressListener);
@@ -1241,6 +1253,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.unlisten("error", errorListener);
             this.videoModel.unlisten("seeking", seekingListener);
             this.videoModel.unlisten("seeked", seekedListener);
+            this.videoModel.unlisten("waiting", waitingListener);
             this.videoModel.unlisten("timeupdate", timeupdateListener);
             this.videoModel.unlisten("durationchange", durationchangeListener);
             this.videoModel.unlisten("progress", progressListener);
