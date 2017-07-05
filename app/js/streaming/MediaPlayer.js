@@ -77,6 +77,10 @@ MediaPlayer = function () {
     };
 
     var _play = function () {
+        var plugin,
+            pluginsInitDefer = [],
+            pluginsLoadDefer = [];
+
         _isPlayerInitialized();
         _isVideoModelInitialized();
         _isSourceInitialized();
@@ -86,28 +90,47 @@ MediaPlayer = function () {
             return;
         }
 
-        playing = true;
-
-        this.metricsModel.addSession(null, source.url, videoModel.getElement().loop, null, "MediaPlayer.js_" + this.getVersion());
-
-        this.debug.log("[MediaPlayer] Version: " + this.getVersionFull() + " - " + this.getBuildDate());
-        this.debug.log("[MediaPlayer] user-agent: " + navigator.userAgent);
-        this.debug.log("[MediaPlayer] Load stream:\n", JSON.stringify(source, null, '  '));
-
-        // streamController Initialization
-        if (!streamController) {
-            streamController = system.getObject('streamController');
-            streamController.setVideoModel(videoModel);
-            streamController.setAutoPlay(autoPlay);
+        // Wait for plugins completely intialized before starting a new session
+        for(var name in  plugins) {
+            pluginsInitDefer.push(plugins[name].deferInit.promise);
         }
+        Q.all(pluginsInitDefer).then((function () {
+            // Notify plugins a new stream is loaded
+            for (var name in plugins) {
+                plugin = plugins[name];
+                plugin.deferLoad = Q.defer();
+                pluginsLoadDefer.push(plugin.deferLoad.promise);
+                plugin.load(source, function () {
+                    this.deferLoad.resolve();
+                }.bind(plugin));
+            }
 
-        streamController.setDefaultAudioLang(defaultAudioLang);
-        streamController.setDefaultSubtitleLang(defaultSubtitleLang);
-        streamController.enableSubtitles(subtitlesEnabled);
-        streamController.load(source);
-        system.mapValue("scheduleWhilePaused", scheduleWhilePaused);
-        system.mapOutlet("scheduleWhilePaused", "stream");
+            Q.all(pluginsLoadDefer).then((function () {
+                // Once all plugins are ready, we load the stream
+                playing = true;
 
+                this.metricsModel.addSession(null, source.url, videoModel.getElement().loop, null, "MediaPlayer.js_" + this.getVersion());
+
+                this.debug.log("[MediaPlayer] Version: " + this.getVersionFull() + " - " + this.getBuildDate());
+                this.debug.log("[MediaPlayer] user-agent: " + navigator.userAgent);
+                this.debug.log("[MediaPlayer] Load stream:\n", JSON.stringify(source, null, '  '));
+
+                // streamController Initialization
+                if (!streamController) {
+                    streamController = system.getObject('streamController');
+                    streamController.setVideoModel(videoModel);
+                    streamController.setAutoPlay(autoPlay);
+                }
+
+                streamController.setDefaultAudioLang(defaultAudioLang);
+                streamController.setDefaultSubtitleLang(defaultSubtitleLang);
+                streamController.enableSubtitles(subtitlesEnabled);
+                streamController.load(source);
+                system.mapValue("scheduleWhilePaused", scheduleWhilePaused);
+                system.mapOutlet("scheduleWhilePaused", "stream");
+
+            }).bind(this));
+        }).bind(this));
     };
 
     // player state and intitialization
@@ -283,6 +306,11 @@ MediaPlayer = function () {
 
                 var teardownComplete = {};
                 teardownComplete[MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE] = (function () {
+
+                    // Notify plugins that player is reset
+                    for (var plugin in plugins) {
+                        plugins[plugin].reset();
+                    }
 
                     // Finish rest of shutdown process
                     streamController = null;
@@ -814,10 +842,7 @@ MediaPlayer = function () {
             </pre>
         */
         load: function (stream) {
-            var plugin,
-                pluginsInitDefer = [],
-                pluginsLoadDefer = [],
-                config = {
+            var config = {
                     video: {
                         "ABR.keepBandwidthCondition": true
                     },
@@ -864,28 +889,8 @@ MediaPlayer = function () {
             error = null;
             warning = null;
 
-            // Wait for plugins completely intialized before starting a new session
-            for(var name in  plugins) {
-                pluginsInitDefer.push(plugins[name].deferInit.promise);
-            }
-            Q.all(pluginsInitDefer).then((function () {
-                // Notify plugins a new stream is loaded
-                for (var name in plugins) {
-                    plugin = plugins[name];
-                    plugin.deferLoad = Q.defer();
-                    pluginsLoadDefer.push(plugin.deferLoad.promise);
-                    plugin.load(stream, function () {
-                        this.deferLoad.resolve();
-                    }.bind(plugin));
-                }
-
-                Q.all(pluginsLoadDefer).then((function () {
-                    // Once all plugins are ready, we load the stream
-                    source = stream;
-                    _resetAndPlay.call(this, 0);
-
-                }).bind(this));
-            }).bind(this));
+            source = stream;
+            _resetAndPlay.call(this, 0);
         },
 
         /**
@@ -991,11 +996,6 @@ MediaPlayer = function () {
             source = null;
 
             _resetAndPlay.call(this, reason);
-
-            // Notify plugins that player is reset
-            for (var plugin in plugins) {
-                plugins[plugin].reset();
-            }
         },
 
         /**
