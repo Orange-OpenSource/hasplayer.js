@@ -175,7 +175,11 @@ MediaPlayer.dependencies.BufferController = function() {
             waitingForBuffer = true;
 
             // Reset htmlVideoState in order to update it after a pause or seek command in UpdateBufferState function
-            htmlVideoState = INIT;
+            if (htmlVideoState === INIT) {
+                // At first playback start, set state to BUFFERING
+                this.metricsModel.addState(type, "buffering", this.videoModel.getCurrentTime());
+            }
+            htmlVideoState = BUFFERING;
             htmlVideoTime = -1;
             segmentRequestOnError = null;
 
