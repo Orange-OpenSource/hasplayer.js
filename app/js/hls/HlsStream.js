@@ -36,7 +36,7 @@ Hls.dependencies.HlsStream = function() {
 
         // Events listeners
         endedListener,
-        loadedListener,
+        loadedmetadataListener,
         loadeddataListener,
         playListener,
         pauseListener,
@@ -44,6 +44,7 @@ Hls.dependencies.HlsStream = function() {
         seekingListener,
         seekedListener,
         timeupdateListener,
+        waitingListener,
         durationchangeListener,
         progressListener,
         ratechangeListener,
@@ -88,8 +89,10 @@ Hls.dependencies.HlsStream = function() {
             this.videoModel.setCurrentTime(time);
         },
 
-        onLoaded = function() {
+        onLoadedMetadata = function() {
             this.debug.info("[Stream] <video> loadedmetadata event");
+            this.metricsModel.addMetaData();
+            this.metricsModel.addState("video", "buffering", this.getVideoModel().getCurrentTime());
         },
 
         onLoadedData = function() {
@@ -107,6 +110,7 @@ Hls.dependencies.HlsStream = function() {
 
         onPlaying = function() {
             this.debug.info("[Stream] <video> playing event");
+            this.metricsModel.addState("video", "playing", this.getVideoModel().getCurrentTime());
         },
 
         onLoadStart = function() {
@@ -127,6 +131,7 @@ Hls.dependencies.HlsStream = function() {
 
         onPause = function() {
             this.debug.info("[Stream] <video> pause event");
+            this.metricsModel.addState("video", "paused", this.videoModel.getCurrentTime());
             this.metricsModel.addPlayList("video", new Date().getTime(), this.videoModel.getCurrentTime(), "pause");
         },
 
@@ -171,6 +176,7 @@ Hls.dependencies.HlsStream = function() {
         onSeeking = function() {
             this.debug.info("[Stream] <video> seeking event: " + this.videoModel.getCurrentTime());
             this.metricsModel.addState("video", "seeking", this.videoModel.getCurrentTime());
+            this.metricsModel.addPlayList('video', new Date().getTime(), this.getVideoModel().getCurrentTime(), MediaPlayer.vo.metrics.PlayList.SEEK_START_REASON);
         },
 
         onSeeked = function() {
@@ -183,6 +189,13 @@ Hls.dependencies.HlsStream = function() {
 
         onTimeupdate = function() {
             this.debug.info("[Stream] <video> timeupdate event: " + this.videoModel.getCurrentTime());
+        },
+
+        onWaiting = function() {
+            this.debug.info("[Stream] <video> waiting event");
+            if (!this.getVideoModel().isSeeking()) {
+                this.metricsModel.addState("video", "buffering", this.getVideoModel().getCurrentTime());
+            }
         },
 
         onDurationchange = function() {
@@ -448,8 +461,9 @@ Hls.dependencies.HlsStream = function() {
             progressListener = onProgress.bind(this);
             ratechangeListener = onRatechange.bind(this);
             timeupdateListener = onTimeupdate.bind(this);
+            waitingListener = onWaiting.bind(this);
             durationchangeListener = onDurationchange.bind(this);
-            loadedListener = onLoaded.bind(this);
+            loadedmetadataListener = onLoadedMetadata.bind(this);
             loadeddataListener = onLoadedData.bind(this);
             canplayListener = onCanPlay.bind(this);
             playingListener = onPlaying.bind(this);
@@ -475,10 +489,11 @@ Hls.dependencies.HlsStream = function() {
             this.videoModel.listen("seeking", seekingListener);
             this.videoModel.listen("seeked", seekedListener);
             this.videoModel.listen("timeupdate", timeupdateListener);
+            this.videoModel.listen("waiting", waitingListener);
             this.videoModel.listen("durationchange", durationchangeListener);
             this.videoModel.listen("progress", progressListener);
             this.videoModel.listen("ratechange", ratechangeListener);
-            this.videoModel.listen("loadedmetadata", loadedListener);
+            this.videoModel.listen("loadedmetadata", loadedmetadataListener);
             this.videoModel.listen("loadeddata", loadeddataListener);
             this.videoModel.listen("ended", endedListener);
             this.videoModel.listen("canplay", canplayListener);
@@ -505,10 +520,11 @@ Hls.dependencies.HlsStream = function() {
             this.videoModel.unlisten("seeking", seekingListener);
             this.videoModel.unlisten("seeked", seekedListener);
             this.videoModel.unlisten("timeupdate", timeupdateListener);
+            this.videoModel.unlisten("waiting", waitingListener);
             this.videoModel.unlisten("durationchange", durationchangeListener);
             this.videoModel.unlisten("progress", progressListener);
             this.videoModel.unlisten("ratechange", ratechangeListener);
-            this.videoModel.unlisten("loadedmetadata", loadedListener);
+            this.videoModel.unlisten("loadedmetadata", loadedmetadataListener);
             this.videoModel.unlisten("loadeddata", loadeddataListener);
             this.videoModel.unlisten("ended", endedListener);
             this.videoModel.unlisten("canplay", canplayListener);
