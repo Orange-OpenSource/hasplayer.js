@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-7-6_12:41:2 / git revision : 61ad6e9 */
+/* Last build : 2017-7-6_12:44:6 / git revision : 449990a */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.11.0-dev',
-        GIT_TAG = '61ad6e9',
-        BUILD_DATE = '2017-7-6_12:41:2',
+        GIT_TAG = '449990a',
+        BUILD_DATE = '2017-7-6_12:44:6',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -120,6 +120,10 @@ MediaPlayer = function () {
     };
 
     var _play = function () {
+        var plugin,
+            pluginsInitDefer = [],
+            pluginsLoadDefer = [];
+
         _isPlayerInitialized();
         _isVideoModelInitialized();
         _isSourceInitialized();
@@ -129,28 +133,47 @@ MediaPlayer = function () {
             return;
         }
 
-        playing = true;
-
-        this.metricsModel.addSession(null, source.url, videoModel.getElement().loop, null, "MediaPlayer.js_" + this.getVersion());
-
-        this.debug.log("[MediaPlayer] Version: " + this.getVersionFull() + " - " + this.getBuildDate());
-        this.debug.log("[MediaPlayer] user-agent: " + navigator.userAgent);
-        this.debug.log("[MediaPlayer] Load stream:\n", JSON.stringify(source, null, '  '));
-
-        // streamController Initialization
-        if (!streamController) {
-            streamController = system.getObject('streamController');
-            streamController.setVideoModel(videoModel);
-            streamController.setAutoPlay(autoPlay);
+        // Wait for plugins completely intialized before starting a new session
+        for(var name in  plugins) {
+            pluginsInitDefer.push(plugins[name].deferInit.promise);
         }
+        Q.all(pluginsInitDefer).then((function () {
+            // Notify plugins a new stream is loaded
+            for (var name in plugins) {
+                plugin = plugins[name];
+                plugin.deferLoad = Q.defer();
+                pluginsLoadDefer.push(plugin.deferLoad.promise);
+                plugin.load(source, function () {
+                    this.deferLoad.resolve();
+                }.bind(plugin));
+            }
 
-        streamController.setDefaultAudioLang(defaultAudioLang);
-        streamController.setDefaultSubtitleLang(defaultSubtitleLang);
-        streamController.enableSubtitles(subtitlesEnabled);
-        streamController.load(source);
-        system.mapValue("scheduleWhilePaused", scheduleWhilePaused);
-        system.mapOutlet("scheduleWhilePaused", "stream");
+            Q.all(pluginsLoadDefer).then((function () {
+                // Once all plugins are ready, we load the stream
+                playing = true;
 
+                this.metricsModel.addSession(null, source.url, videoModel.getElement().loop, null, "MediaPlayer.js_" + this.getVersion());
+
+                this.debug.log("[MediaPlayer] Version: " + this.getVersionFull() + " - " + this.getBuildDate());
+                this.debug.log("[MediaPlayer] user-agent: " + navigator.userAgent);
+                this.debug.log("[MediaPlayer] Load stream:\n", JSON.stringify(source, null, '  '));
+
+                // streamController Initialization
+                if (!streamController) {
+                    streamController = system.getObject('streamController');
+                    streamController.setVideoModel(videoModel);
+                    streamController.setAutoPlay(autoPlay);
+                }
+
+                streamController.setDefaultAudioLang(defaultAudioLang);
+                streamController.setDefaultSubtitleLang(defaultSubtitleLang);
+                streamController.enableSubtitles(subtitlesEnabled);
+                streamController.load(source);
+                system.mapValue("scheduleWhilePaused", scheduleWhilePaused);
+                system.mapOutlet("scheduleWhilePaused", "stream");
+
+            }).bind(this));
+        }).bind(this));
     };
 
     // player state and intitialization
@@ -209,7 +232,7 @@ MediaPlayer = function () {
                     if (audioBitrates) {
                         _dispatchBitrateEvent('download_bitrate', {
                             streamType: e.data.stream,
-                            switchedQuality: audioBitrates[e.data.value.to],
+                            switchedQuality: audioBitrates[e.data.value.lto],
                             representationId: e.data.value.to,
                             width: this.metricsExt.getVideoWidthForRepresentation(e.data.value.to),
                             height: this.metricsExt.getVideoHeightForRepresentation(e.data.value.to)
@@ -326,6 +349,11 @@ MediaPlayer = function () {
 
                 var teardownComplete = {};
                 teardownComplete[MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE] = (function () {
+
+                    // Notify plugins that player is reset
+                    for (var plugin in plugins) {
+                        plugins[plugin].reset();
+                    }
 
                     // Finish rest of shutdown process
                     streamController = null;
@@ -857,10 +885,7 @@ MediaPlayer = function () {
             </pre>
         */
         load: function (stream) {
-            var plugin,
-                pluginsInitDefer = [],
-                pluginsLoadDefer = [],
-                config = {
+            var config = {
                     video: {
                         "ABR.keepBandwidthCondition": true
                     },
@@ -907,28 +932,8 @@ MediaPlayer = function () {
             error = null;
             warning = null;
 
-            // Wait for plugins completely intialized before starting a new session
-            for(var name in  plugins) {
-                pluginsInitDefer.push(plugins[name].deferInit.promise);
-            }
-            Q.all(pluginsInitDefer).then((function () {
-                // Notify plugins a new stream is loaded
-                for (var name in plugins) {
-                    plugin = plugins[name];
-                    plugin.deferLoad = Q.defer();
-                    pluginsLoadDefer.push(plugin.deferLoad.promise);
-                    plugin.load(stream, function () {
-                        this.deferLoad.resolve();
-                    }.bind(plugin));
-                }
-
-                Q.all(pluginsLoadDefer).then((function () {
-                    // Once all plugins are ready, we load the stream
-                    source = stream;
-                    _resetAndPlay.call(this, 0);
-
-                }).bind(this));
-            }).bind(this));
+            source = stream;
+            _resetAndPlay.call(this, 0);
         },
 
         /**
@@ -1034,11 +1039,6 @@ MediaPlayer = function () {
             source = null;
 
             _resetAndPlay.call(this, reason);
-
-            // Notify plugins that player is reset
-            for (var plugin in plugins) {
-                plugins[plugin].reset();
-            }
         },
 
         /**
@@ -9596,14 +9596,6 @@ MediaPlayer.dependencies.Stream = function() {
                 streamDuration = Number(periodInfo.duration.toFixed(3));
 
             this.debug.info("[Stream] <video> durationchange event: " + duration);
-
-            // The duration may change if the effective MSE buffer duration is greater than the initial duration set from manifest
-            // => then we update the MediaSource duration to ensure 'ended' event being sent by the video element
-            // (round durationfrom manifest to milliseconds to avoid rounding issue within MSE buffer)
-            if (!isNaN(duration) && duration !== Infinity && duration > streamDuration) {
-                this.debug.log("[Stream] Setting duration: " + streamDuration);
-                this.mediaSourceExt.setDuration(mediaSource, streamDuration);
-            }
         },
 
         onRatechange = function() {
@@ -17204,7 +17196,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
                         representation.initialization = r.BaseURL;
                         representation.range = initialization.range;
                     }
-                } else if (r.hasOwnProperty("mimeType") && this.getIsTextTrack(r.mimeType)) {
+                } else if (r.hasOwnProperty("mimeType") && this.getIsTextTrack(r.mimeType) && !representation.initialization) {
                     representation.initialization = r.BaseURL;
                     representation.range = 0;
                 }
