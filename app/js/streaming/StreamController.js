@@ -189,9 +189,6 @@ MediaPlayer.dependencies.StreamController = function() {
             var seekingTime = activeStream.getVideoModel().getCurrentTime(),
                 seekingStream = getStreamForTime(seekingTime);
 
-            // ORANGE : add metric
-            this.metricsModel.addState("video", "seeking", activeStream.getVideoModel().getCurrentTime());
-
             if (seekingStream && seekingStream !== activeStream) {
                 switchStream.call(this, activeStream, seekingStream, seekingTime);
             }
@@ -199,8 +196,6 @@ MediaPlayer.dependencies.StreamController = function() {
 
         onPause = function() {
             this.manifestUpdater.stop();
-            // ORANGE : add metric
-            this.metricsModel.addState("video", "paused", activeStream.getVideoModel().getCurrentTime());
         },
 
         onPlay = function() {

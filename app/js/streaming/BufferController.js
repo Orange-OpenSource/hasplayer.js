@@ -175,7 +175,11 @@ MediaPlayer.dependencies.BufferController = function() {
             waitingForBuffer = true;
 
             // Reset htmlVideoState in order to update it after a pause or seek command in UpdateBufferState function
-            htmlVideoState = INIT;
+            if (htmlVideoState === INIT) {
+                // At first playback start, set state to BUFFERING
+                this.metricsModel.addState(type, "buffering", this.videoModel.getCurrentTime());
+            }
+            htmlVideoState = BUFFERING;
             htmlVideoTime = -1;
             segmentRequestOnError = null;
 
@@ -187,8 +191,7 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         doSeek = function(time) {
-            var currentTime = new Date(),
-                self = this;
+            var self = this;
 
             // Avoid identical successive seeks
             if ((seeking === true) && (seekTarget === time)) {
@@ -203,8 +206,6 @@ MediaPlayer.dependencies.BufferController = function() {
                 doStop.call(this);
             }
 
-            // Restart
-            playListMetrics = this.metricsModel.addPlayList(type, currentTime, seekTarget, MediaPlayer.vo.metrics.PlayList.SEEK_START_REASON);
             seeking = true;
             seekTarget = time;
 

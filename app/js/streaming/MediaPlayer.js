@@ -1167,11 +1167,7 @@ MediaPlayer = function () {
         setTrickModeSpeed: function (speed) {
             _isPlayerInitialized();
             if (streamController) {
-                if (streamController.getTrickModeSpeed() !== speed && speed === 1) {
-                    videoModel.play();
-                } else {
-                    streamController.setTrickModeSpeed(speed);
-                }
+                streamController.setTrickModeSpeed(speed);
             }
         },
 //#endregion
