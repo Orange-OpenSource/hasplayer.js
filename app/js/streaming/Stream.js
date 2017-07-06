@@ -1142,6 +1142,10 @@ MediaPlayer.dependencies.Stream = function() {
             }
         },
 
+        getAudioTracks: function() {
+            return this.manifestExt.getAudioDatas(manifest, periodInfo.index);
+        },
+
         setAudioTrack: function(audioTrack) {
             if (fragmentInfoAudioController) {
                 fragmentInfoAudioController.stop();
@@ -1154,6 +1158,10 @@ MediaPlayer.dependencies.Stream = function() {
                 return this.manifestExt.getDataForIndex(audioTrackIndex, manifest, periodInfo.index);
             }
             return undefined;
+        },
+
+        getSubtitleTracks: function() {
+            return this.manifestExt.getTextDatas(manifest, periodInfo.index);
         },
 
         setSubtitleTrack: function(subtitleTrack) {

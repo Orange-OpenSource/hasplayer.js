@@ -120,6 +120,8 @@ MediaPlayer.di.Context = function () {
             this.system.mapClass('hlsParser', Hls.dependencies.HlsParser);
             this.system.mapSingleton('hlsDemux', Hls.dependencies.HlsDemux);
             // @endif
+            // But we do always provide HlsStream to support HLS(+FP) streams in Safari
+            this.system.mapClass('hlsStream', Hls.dependencies.HlsStream);
 
             // Create the context manager to plug some specific parts of the code
             this.system.mapSingleton('contextManager', MediaPlayer.modules.ContextManager);
