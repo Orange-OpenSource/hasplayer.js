@@ -413,7 +413,8 @@ function playback(config) {
                 resolve();
             } else {
                 // wait for video playing to pass the test
-                _video.play();
+                // _video.play();
+                resolve();
             }
         }).catch(onFailure);
     });
