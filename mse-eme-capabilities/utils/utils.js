@@ -103,6 +103,8 @@ navigator.sayswho = (function () {
 
 /*------------------------------------------------------------------------------------------*/
 
+var MEDIA_ERROR_CODES = ['MEDIA_ERR_ABORTED', 'MEDIA_ERR_NETWORK', 'MEDIA_ERR_DECODE', 'MEDIA_ERR_SRC_NOT_SUPPORTED', 'MEDIA_ERR_ENCRYPTED'];
+
 function MediaSourceUtil(segmentInfo) {
     this.segmentInfo = segmentInfo;
 }
@@ -160,6 +162,14 @@ MediaSourceUtil.prototype.appendInitData = function (mediaSource, data) {
         try {
             var onUpdatedEnd = function () {
                 sourceBuffer.removeEventListener('updateend', onUpdatedEnd);
+                if (!sourceBuffer.updating) {
+                    if (mediaSource.readyState !== 'open') {
+                        reject(new Error("Media source error"));
+                    } else {
+                        mediaSource.endOfStream();
+                        resolve();
+                    }
+                }
                 resolve();
             };
             sourceBuffer.addEventListener('updateend', onUpdatedEnd);
@@ -170,7 +180,7 @@ MediaSourceUtil.prototype.appendInitData = function (mediaSource, data) {
     });
 };
 
-MediaSourceUtil.prototype.appendData = function (mediaSource, data) {
+MediaSourceUtil.prototype.appendData = function (mediaTag, mediaSource, data) {
 
     var that = this;
     return new Promise(function (resolve, reject) {
@@ -179,16 +189,34 @@ MediaSourceUtil.prototype.appendData = function (mediaSource, data) {
 
         try {
             var onUpdatedEnd = function () {
+                console.log('SourceBuffer updateend');
                 sourceBuffer.removeEventListener('updateend', onUpdatedEnd);
                 if (!sourceBuffer.updating) {
-                    if (mediaSource.readyState !== 'open') {
-                        reject(new Error("Media source error"));
-                    } else {
+                    if (mediaSource.readyState === 'open') {
                         mediaSource.endOfStream();
+                        console.log('resolve');
                         resolve();
                     }
                 }
             };
+            var onError = function() {
+                console.log('video error');
+                mediaTag.removeEventListener('error', onError);
+                reject(new Error(MEDIA_ERROR_CODES[mediaTag.error.code] + ': ' + mediaTag.error.message));
+            };
+            var onLoadedmetadata = function() {
+                console.log('video loadedmetadata');
+                mediaTag.removeEventListener('loadedmetadata', onLoadedmetadata);
+                resolve();
+            };
+            var onLoadeddata = function() {
+                console.log('video loadeddata');
+                mediaTag.removeEventListener('loadeddata', onLoadedmetadata);
+                resolve();
+            };
+            mediaTag.addEventListener('error', onError);
+            mediaTag.addEventListener('loadedmetadata', onLoadedmetadata);
+            mediaTag.addEventListener('loadeddata', onLoadeddata);
             sourceBuffer.addEventListener('updateend', onUpdatedEnd);
             sourceBuffer.appendBuffer(data);
         } catch (err) {
@@ -196,7 +224,6 @@ MediaSourceUtil.prototype.appendData = function (mediaSource, data) {
         }
     });
 };
-
 
 MediaSourceUtil.prototype.loadBinaryData = function () {
     return loadData_(this.segmentInfo.url, true);

@@ -124,35 +124,22 @@ function mse_test_append_data(segment_info, initSegmentOnly) {
         var mediaTag = mediaSourceUtil.appendVideoElement();
 
         mediaSourceUtil.openMediaSource(mediaTag).then(function (mediaInfo) {
-            mediaSourceUtil.loadBinaryData().then(function (response) {
+            mediaSourceUtil.loadBinaryData().then(function (mediaData) {
                 if (initSegmentOnly) {
-                    mediaSourceUtil.appendInitData(mediaInfo.mediaSource, response).then(function () {
-                        mediaSourceUtil.closeMediaSource(mediaInfo.mediaTag);
-                        resolve({
-                            append: true
-                        });
-                    }, function (err) {
-                        mediaSourceUtil.closeMediaSource(mediaInfo.mediaTag);
-                        resolve({
-                            append: false,
-                            err: err.message
-                        });
-                    });
-                } else {
-                    mediaSourceUtil.appendData(mediaInfo.mediaSource, response).then(function () {
-                        mediaSourceUtil.closeMediaSource(mediaInfo.mediaTag);
-                        resolve({
-                            append: true
-                        });
-                    }, function (err) {
-                        mediaSourceUtil.closeMediaSource(mediaInfo.mediaTag);
-                        resolve({
-                            append: false,
-                            err: err.message
-                        });
-                    });
+                    mediaData = mediaData.subarray(segment_info.init.offset, segment_info.init.offset + segment_info.init.size);
                 }
-
+                mediaSourceUtil.appendData(mediaInfo.mediaTag, mediaInfo.mediaSource, mediaData).then(function () {
+                    mediaSourceUtil.closeMediaSource(mediaInfo.mediaTag);
+                    resolve({
+                        append: true
+                    });
+                }, function (err) {
+                    mediaSourceUtil.closeMediaSource(mediaInfo.mediaTag);
+                    resolve({
+                        append: false,
+                        err: err.message
+                    });
+                });
             }, function (err) {
                 mediaSourceUtil.closeMediaSource(mediaInfo.mediaTag);
                 resolve({

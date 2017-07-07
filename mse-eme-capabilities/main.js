@@ -1,7 +1,7 @@
 /* exported startTests */
 /* global Output */
 /* global mse_test_supports_media_source, mse_test_type_support, mse_test_append_data, mse_get_supported_codecs */
-/* global eme_tests_support_eme, eme_get_supported_cdm, eme_tests_support_key_system, eme_test_append_data */
+/* global eme_tests_support_eme, eme_tests_eme_enabled, eme_get_supported_cdm, eme_tests_support_key_system, eme_test_append_data */
 
 function startTests() {
 
@@ -114,7 +114,7 @@ function startTests() {
             'audio/mp4;codecs="mp4a.67"', // MPEG2 AAC-LC
             'video/mp4;codecs="mp4a.40.2"',
             'video/mp4;codecs="avc1.4d001e,mp4a.40.2"',
-            'video/mp4;codecs="mp4a.40.2 , avc1.4d001e "',
+            'video/mp4;codecs="mp4a.40.2, avc1.4d001e "',
             'video/mp4;codecs="avc1.4d001e,mp4a.40.5"'
         ]);
     }).then(function (result) {
@@ -143,29 +143,37 @@ function startTests() {
     }).then(function (supports) {
         output_document.add_result('EME - Supports EME', supports);
 
-        return eme_get_supported_cdm();
-    }).then(function (results) {
-        output_document.add_supported_CDM(results);
+        return eme_tests_eme_enabled();
+    }).then(function (supports) {
+        output_document.add_result('EME - EME enabled (secure origin)', supports);
 
-        // test supports key system
-        return eme_tests_support_key_system(['org.w3.clearkey', 'com.widevine.alpha', 'com.microsoft.playready'], ['keyids', 'webm', 'cenc']);
-    }).then(function (result) {
-        result.forEach(function (result) {
-            output_document.add_result('EME - CDM \"' + result.keySystem + ' (' + result.type + ')\" is supported', result.supported, result.err);
-        });
+        if (supports) {
+            eme_get_supported_cdm() .then(function (results) {
+                output_document.add_supported_CDM(results);
 
-        // test append encrypted init data
-        return eme_test_append_data(['org.w3.clearkey', 'com.widevine.alpha', 'com.microsoft.playready'], drmconfig, EME_SEGMENT_INFO, true);
-    }).then(function (result) {
-        result.forEach(function (result) {
-            output_document.add_result('EME - Append init data to buffer using CDM \"' + result.keySystem + '\"', result.appended, result.err);
-        });
-        // test append encrypted data
-        return eme_test_append_data(['org.w3.clearkey', 'com.widevine.alpha', 'com.microsoft.playready'], drmconfig, EME_SEGMENT_INFO);
-    }).then(function (result) {
-        result.forEach(function (result) {
-            output_document.add_result('EME - Append data to buffer using CDM \"' + result.keySystem + '\"', result.appended, result.err);
-        });
-        onTestsDone();
+                // test supports key system
+                return eme_tests_support_key_system(['org.w3.clearkey', 'com.widevine.alpha', 'com.microsoft.playready'], ['keyids', 'webm', 'cenc']);
+            }).then(function (result) {
+                result.forEach(function (result) {
+                    output_document.add_result('EME - CDM \"' + result.keySystem + ' (' + result.type + ')\" is supported', result.supported, result.err);
+                });
+
+                // test append encrypted init data
+                return eme_test_append_data(['org.w3.clearkey', 'com.widevine.alpha', 'com.microsoft.playready'], drmconfig, EME_SEGMENT_INFO, true);
+            }).then(function (result) {
+                result.forEach(function (result) {
+                    output_document.add_result('EME - Append init data to buffer using CDM \"' + result.keySystem + '\"', result.appended, result.err);
+                });
+                // test append encrypted data
+                return eme_test_append_data(['org.w3.clearkey', 'com.widevine.alpha', 'com.microsoft.playready'], drmconfig, EME_SEGMENT_INFO);
+            }).then(function (result) {
+                result.forEach(function (result) {
+                    output_document.add_result('EME - Append data to buffer using CDM \"' + result.keySystem + '\"', result.appended, result.err);
+                });
+                onTestsDone();
+            });
+        } else {
+            onTestsDone();
+        }
     });
 }

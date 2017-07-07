@@ -1,4 +1,4 @@
-/* exported eme_tests_support_key_system, eme_get_supported_cdm, eme_tests_single_support_key_system, eme_tests_support_eme, eme_test_append_data, eme_test_single_append_data*/
+/* exported eme_tests_support_key_system, eme_get_supported_cdm, eme_tests_single_support_key_system, eme_tests_support_eme, eme_tests_eme_enabled, eme_test_append_data, eme_test_single_append_data*/
 /*global toUtf8, base64urlEncode, MediaSourceUtil, CkMessageHandler, DrmMessageHandler*/
 'use strict';
 
@@ -19,6 +19,17 @@ function eme_tests_support_eme() {
             hasMsMediaKeys = ("MSMediaKeys" in window),
             hasMediaKeys = ("MediaKeys" in window);
         resolve(hasWebKitMediaKeys || hasMsMediaKeys || hasMediaKeys);
+    });
+}
+
+/**
+ * Test if eme is enabled, i.e. if not diabled due to insecure origins
+ * @return a promise resolved with true or false
+ */
+function eme_tests_eme_enabled() {
+
+    return new Promise(function (resolve) {
+        resolve(navigator.requestMediaKeySystemAccess !== undefined &&  typeof navigator.requestMediaKeySystemAccess === 'function');
     });
 }
 
@@ -226,7 +237,7 @@ function getSimpleConfigurationForInitDataType(keySystem, initDataType) {
             initDataTypes: [initDataType],
             videoCapabilities: [{
                 contentType: 'video/mp4;codecs=\"avc1.4d401e\"',
-                robustness: 'SW_SECURE_CRYPTO'
+                robustness: 'SW_SECURE_DECODE'
             }],
             sessionTypes: ['temporary']
         }];
@@ -247,20 +258,15 @@ function testmediasource(config) {
         var mediaSourceUtil = new MediaSourceUtil(config.segment);
 
         mediaSourceUtil.openMediaSource(config.video).then(function (mediaInfo) {
-            mediaSourceUtil.loadBinaryData().then(function (response) {
+            mediaSourceUtil.loadBinaryData().then(function (mediaData) {
                 if (config.initSegmentOnly) {
-                    mediaSourceUtil.appendInitData(mediaInfo.mediaSource, response).then(function () {
-                        resolve();
-                    }, function (err) {
-                        reject(err.message);
-                    });
-                } else {
-                    mediaSourceUtil.appendData(mediaInfo.mediaSource, response).then(function () {
-                        resolve();
-                    }, function (err) {
-                        reject(err.message);
-                    });
+                    mediaData = mediaData.subarray(config.segment.init.offset, config.segment.init.offset + config.segment.init.size);
                 }
+                mediaSourceUtil.appendData(mediaInfo.mediaTag, mediaInfo.mediaSource, mediaData).then(function () {
+                    resolve();
+                }, function (err) {
+                    reject(err.message);
+                });
             }, function (err) {
                 reject(err.message);
             });
@@ -347,7 +353,7 @@ function playback(config) {
             initDataTypes: [config.initDataType],
             videoCapabilities: [{
                 contentType: config.segmentType,
-                robustness: 'SW_SECURE_CRYPTO'
+                robustness: 'SW_SECURE_DECODE'
             }],
             sessionTypes: ['temporary']
         };
@@ -388,6 +394,10 @@ function playback(config) {
             resolve();
         }
 
+        function onError(e) {
+            onFailure(e.srcElement.error.code + ": " + e.srcElement.error.message);
+        }
+
         navigator.requestMediaKeySystemAccess(config.keysystem, [configuration]).then(function (access) {
             return access.createMediaKeys();
         }).then(function (mediaKeys) {
@@ -395,6 +405,7 @@ function playback(config) {
             return _video.setMediaKeys(_mediaKeys);
         }).then(function () {
             _video.addEventListener('encrypted', onEncrypted, true);
+            _video.addEventListener('error', onError, true);
             _video.addEventListener('playing', onPlaying, true);
             return testmediasource(config);
         }).then(function () {
