@@ -394,6 +394,14 @@ function playback(config) {
             resolve();
         }
 
+        function onProgress() {
+            resolve();
+        }
+
+        function onError(/*error*/) {
+            resolve(MediaSourceUtil.getVideoError(_video));
+        }
+
         navigator.requestMediaKeySystemAccess(config.keysystem, [configuration]).then(function (access) {
             return access.createMediaKeys();
         }).then(function (mediaKeys) {
@@ -401,7 +409,9 @@ function playback(config) {
             return _video.setMediaKeys(_mediaKeys);
         }).then(function () {
             _video.addEventListener('encrypted', onEncrypted, true);
+            _video.addEventListener('progress', onProgress, true);
             _video.addEventListener('playing', onPlaying, true);
+            _video.addEventListener('error', onError, true);
             return testmediasource(config);
         }).then(function () {
             if (config.initSegmentOnly) {
