@@ -152,20 +152,20 @@ function startTests() {
                 output_document.add_supported_CDM(results);
 
                 // test supports key system
-                return eme_tests_support_key_system(['org.w3.clearkey', 'com.widevine.alpha', 'com.microsoft.playready'], ['keyids', 'webm', 'cenc']);
+                return eme_tests_support_key_system([/*'org.w3.clearkey', */'com.widevine.alpha'/*, 'com.microsoft.playready'*/], [/*'keyids', 'webm', */'cenc']);
             }).then(function (result) {
                 result.forEach(function (result) {
                     output_document.add_result('EME - CDM \"' + result.keySystem + ' (' + result.type + ')\" is supported', result.supported, result.err);
                 });
 
                 // test append encrypted init data
-                return eme_test_append_data(['org.w3.clearkey', 'com.widevine.alpha', 'com.microsoft.playready'], drmconfig, EME_SEGMENT_INFO, true);
+                return eme_test_append_data([/*'org.w3.clearkey', */'com.widevine.alpha'/*, 'com.microsoft.playready'*/], drmconfig, EME_SEGMENT_INFO, true);
             }).then(function (result) {
                 result.forEach(function (result) {
                     output_document.add_result('EME - Append init data to buffer using CDM \"' + result.keySystem + '\"', result.appended, result.err);
                 });
                 // test append encrypted data
-                return eme_test_append_data(['org.w3.clearkey', 'com.widevine.alpha', 'com.microsoft.playready'], drmconfig, EME_SEGMENT_INFO);
+                return eme_test_append_data([/*'org.w3.clearkey',*/ 'com.widevine.alpha'/*, 'com.microsoft.playready'*/], drmconfig, EME_SEGMENT_INFO);
             }).then(function (result) {
                 result.forEach(function (result) {
                     output_document.add_result('EME - Append data to buffer using CDM \"' + result.keySystem + '\"', result.appended, result.err);
