@@ -394,10 +394,6 @@ function playback(config) {
             resolve();
         }
 
-        function onCanPlay() {
-            console.log('canplay');
-        }
-
         function onError(/*error*/) {
             var error = MEDIA_ERROR_CODES[_video.error.code];
             if (_video.error.message) {
@@ -407,8 +403,8 @@ function playback(config) {
         }
 
         function onTimeout() {
-            // Timeout: we assume that no error happened, but 'aplygin' event
-            //
+            // Timeout: we assume that no error happened, but 'playing' event
+            // may not be raised on Android devices because of human gesture requirement
             resolve();
         }
 
@@ -419,7 +415,6 @@ function playback(config) {
             return _video.setMediaKeys(_mediaKeys);
         }).then(function () {
             _video.addEventListener('encrypted', onEncrypted, true);
-            _video.addEventListener('canplay', onCanPlay, true);
             _video.addEventListener('playing', onPlaying, true);
             _video.addEventListener('error', onError, true);
             return testmediasource(config);
