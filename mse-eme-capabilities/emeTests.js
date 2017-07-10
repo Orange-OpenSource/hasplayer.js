@@ -394,12 +394,12 @@ function playback(config) {
             resolve();
         }
 
-        function onProgress() {
-            resolve();
-        }
-
         function onError(/*error*/) {
-            resolve(MediaSourceUtil.getVideoError(_video));
+            var error = MEDIA_ERROR_CODES[_video.error.code];
+            if (_video.error.message) {
+                error += ': ' + _video.error.message;
+            }
+            reject(error);
         }
 
         navigator.requestMediaKeySystemAccess(config.keysystem, [configuration]).then(function (access) {
@@ -409,7 +409,6 @@ function playback(config) {
             return _video.setMediaKeys(_mediaKeys);
         }).then(function () {
             _video.addEventListener('encrypted', onEncrypted, true);
-            _video.addEventListener('progress', onProgress, true);
             _video.addEventListener('playing', onPlaying, true);
             _video.addEventListener('error', onError, true);
             return testmediasource(config);
@@ -418,7 +417,7 @@ function playback(config) {
                 resolve();
             } else {
                 // wait for video playing to pass the test
-                // _video.play();
+                _video.play();
             }
         }).catch(onFailure);
     });

@@ -109,13 +109,6 @@ function MediaSourceUtil(segmentInfo) {
     this.segmentInfo = segmentInfo;
 }
 
-MediaSourceUtil.prototype.getVideoError = function (mediaTag) {
-    var error = MEDIA_ERROR_CODES[mediaTag.error.code];
-    if (mediaTag.error.message) {
-        error += ': ' + mediaTag.error.message;
-    }
-};
-
 MediaSourceUtil.prototype.appendVideoElement = function () {
 
     var mediaTag = document.createElement("video");
@@ -194,7 +187,11 @@ MediaSourceUtil.prototype.appendData = function (mediaTag, mediaSource, data) {
             var onError = function() {
                 console.log('video error');
                 mediaTag.removeEventListener('error', onError);
-                done(MediaSourceUtil.getVideoError(mediaTag));
+                var error = MEDIA_ERROR_CODES[mediaTag.error.code];
+                if (mediaTag.error.message) {
+                    error += ': ' + mediaTag.error.message;
+                }
+                done(error);
             };
             mediaTag.addEventListener('error', onError);
             // mediaTag.addEventListener('loadedmetadata', onLoadedmetadata);
