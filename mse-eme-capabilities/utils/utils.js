@@ -188,31 +188,44 @@ MediaSourceUtil.prototype.appendData = function (mediaTag, mediaSource, data) {
         var sourceBuffer = mediaSource.addSourceBuffer(that.segmentInfo.type);
 
         try {
+            var done = function (error) {
+                mediaTag.removeEventListener('error', onError);
+                mediaTag.removeEventListener('loadedmetadata', onLoadedmetadata);
+                mediaTag.removeEventListener('loadeddata', onLoadeddata);
+                sourceBuffer.removeEventListener('updateend', onUpdatedEnd);
+                if (error) {
+                    console.log('reject: ' + error);
+                    reject(new Error(error));
+                } else {
+                    console.log('resolve');
+                    resolve();
+                }
+            };
             var onUpdatedEnd = function () {
                 console.log('SourceBuffer updateend');
                 sourceBuffer.removeEventListener('updateend', onUpdatedEnd);
                 if (!sourceBuffer.updating) {
+                    console.log('mediaSource.readyState = ' + mediaSource.readyState);
                     if (mediaSource.readyState === 'open') {
                         mediaSource.endOfStream();
-                        console.log('resolve');
-                        resolve();
+                        done();
                     }
                 }
-            };
-            var onError = function() {
-                console.log('video error');
-                mediaTag.removeEventListener('error', onError);
-                reject(new Error(MEDIA_ERROR_CODES[mediaTag.error.code] + ': ' + mediaTag.error.message));
             };
             var onLoadedmetadata = function() {
                 console.log('video loadedmetadata');
                 mediaTag.removeEventListener('loadedmetadata', onLoadedmetadata);
-                resolve();
+                done();
             };
             var onLoadeddata = function() {
                 console.log('video loadeddata');
                 mediaTag.removeEventListener('loadeddata', onLoadedmetadata);
-                resolve();
+                done();
+            };
+            var onError = function() {
+                console.log('video error');
+                mediaTag.removeEventListener('error', onError);
+                done(MEDIA_ERROR_CODES[mediaTag.error.code] + ': ' + mediaTag.error.message);
             };
             mediaTag.addEventListener('error', onError);
             mediaTag.addEventListener('loadedmetadata', onLoadedmetadata);
