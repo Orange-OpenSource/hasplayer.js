@@ -155,37 +155,20 @@ MediaSourceUtil.prototype.appendData = function (mediaTag, mediaSource, data) {
         try {
             var done = function (error) {
                 mediaTag.removeEventListener('error', onError);
-                // mediaTag.removeEventListener('loadedmetadata', onLoadedmetadata);
-                // mediaTag.removeEventListener('loadeddata', onLoadeddata);
                 sourceBuffer.removeEventListener('updateend', onUpdatedEnd);
                 if (error) {
-                    console.log('reject: ' + error);
                     reject(new Error(error));
                 } else {
-                    console.log('resolve');
                     resolve();
                 }
             };
             var onUpdatedEnd = function () {
-                console.log('SourceBuffer updateend');
-                console.log('mediaSource.readyState = ' + mediaSource.readyState);
                 if (mediaSource.readyState === 'open') {
                     mediaSource.endOfStream();
                     done();
                 }
             };
-            // var onLoadedmetadata = function() {
-            //     console.log('video loadedmetadata');
-            //     mediaTag.removeEventListener('loadedmetadata', onLoadedmetadata);
-            //     done();
-            // };
-            // var onLoadeddata = function() {
-            //     console.log('video loadeddata');
-            //     mediaTag.removeEventListener('loadeddata', onLoadeddata);
-            //     done();
-            // };
             var onError = function() {
-                console.log('video error');
                 mediaTag.removeEventListener('error', onError);
                 var error = MEDIA_ERROR_CODES[mediaTag.error.code];
                 if (mediaTag.error.message) {
@@ -194,8 +177,6 @@ MediaSourceUtil.prototype.appendData = function (mediaTag, mediaSource, data) {
                 done(error);
             };
             mediaTag.addEventListener('error', onError);
-            // mediaTag.addEventListener('loadedmetadata', onLoadedmetadata);
-            // mediaTag.addEventListener('loadeddata', onLoadeddata);
             sourceBuffer.addEventListener('updateend', onUpdatedEnd);
             sourceBuffer.appendBuffer(data);
         } catch (err) {

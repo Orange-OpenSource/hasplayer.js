@@ -236,8 +236,8 @@ function getSimpleConfigurationForInitDataType(keySystem, initDataType) {
         return [{
             initDataTypes: [initDataType],
             videoCapabilities: [{
-                contentType: 'video/mp4;codecs=\"avc1.4d401e\"'/*,
-                robustness: 'SW_SECURE_DECODE'*/
+                contentType: 'video/mp4;codecs=\"avc1.4d401e\"',
+                robustness: 'SW_SECURE_DECODE'
             }],
             sessionTypes: ['temporary']
         }];
@@ -352,8 +352,8 @@ function playback(config) {
         configuration = {
             initDataTypes: [config.initDataType],
             videoCapabilities: [{
-                contentType: config.segmentType/*,
-                robustness: 'SW_SECURE_DECODE'*/
+                contentType: config.segmentType,
+                robustness: 'SW_SECURE_DECODE'
             }],
             sessionTypes: ['temporary']
         };
