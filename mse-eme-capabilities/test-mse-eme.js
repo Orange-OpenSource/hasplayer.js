@@ -42,6 +42,7 @@ function startTests() {
     // var INITDATA_TYPES = ['keyids', 'webm', 'cenc'];
     var INITDATA_TYPES = ['cenc'];
 
+
     // drmconfig format:
     // { <keysystem> : {    "serverURL"             : <the url for the server>,
     //                      "httpRequestHeaders"    : <map of HTTP request headers>,
@@ -80,14 +81,12 @@ function startTests() {
     };
 
 
-    var output_document = new Output();
-
     var started = window.performance.now();
     var ended = started;
 
     function onTestsDone() {
         ended = window.performance.now();
-        output_document.add_test_time(started, ended);
+        console.log('DONE: ' + (ended - started) + 'ms');
     }
     /*------------------------------------------------------------------------------------------*/
 
@@ -96,45 +95,27 @@ function startTests() {
     /*------------------------------------------------------------------------------------------*/
     // test supportes media source
     mse_test_supports_media_source().then(function (supports) {
-        output_document.add_result('MSE - Supports MSE', supports);
+        console.log('MSE - Supports MSE', supports);
 
-        // get supported codecs
-        return mse_get_supported_codecs();
-    }).then(function (results) {
-        output_document.add_supported_codecs(results);
-
-        // test mime type support
+        // test codecs
         return mse_test_type_support([
-            'video/webm;codecs="vp8"',
-            'video/webm;codecs="vorbis"',
-            'video/webm;codecs="vp8,vorbis"',
-            'video/webm;codecs="vorbis, vp8"',
-            'audio/webm;codecs="vorbis"',
-            'AUDIO/WEBM;CODECS="vorbis"',
             'video/mp4;codecs="avc1.4d001e"', // H.264 Main Profile level 3.0
-            'video/mp4;codecs="avc1.42001e"', // H.264 Baseline Profile level 3.0
-            'audio/mp4;codecs="mp4a.40.2"', // MPEG4 AAC-LC
-            'audio/mp4;codecs="mp4a.40.5"', // MPEG4 HE-AAC
-            'audio/mp4;codecs="mp4a.67"', // MPEG2 AAC-LC
-            'video/mp4;codecs="mp4a.40.2"',
-            'video/mp4;codecs="avc1.4d001e,mp4a.40.2"',
-            'video/mp4;codecs="mp4a.40.2, avc1.4d001e "',
-            'video/mp4;codecs="avc1.4d001e,mp4a.40.5"'
+            'audio/mp4;codecs="mp4a.40.2"' // MPEG4 AAC-LC
         ]);
     }).then(function (result) {
         result.forEach(function (result) {
-            output_document.add_result('MSE - Type Mime \"' + result.type + '\" is supported', result.supported);
+            console.log('MSE - Type Mime \"' + result.type + '\" is supported', result.supported);
         });
 
         // test append init data
         return mse_test_append_data(MSE_SEGMENT_INFO, true);
     }).then(function (result) {
-        output_document.add_result('MSE - Append init data to buffer', result.append, result.err);
+        console.log('MSE - Append init data to buffer', result.append, result.err);
 
         // test append data
         return mse_test_append_data(MSE_SEGMENT_INFO);
     }).then(function (result) {
-        output_document.add_result('MSE - Append data to buffer', result.append, result.err);
+        console.log('MSE - Append data to buffer', result.append, result.err);
 
         /*------------------------------------------------------------------------------------------*/
 
@@ -145,34 +126,30 @@ function startTests() {
         // test supports eme
         return eme_tests_support_eme();
     }).then(function (supports) {
-        output_document.add_result('EME - Supports EME', supports);
+        console.log('EME - Supports EME', supports);
 
         return eme_tests_eme_enabled();
     }).then(function (supports) {
-        output_document.add_result('EME - EME enabled (secure origin)', supports);
+        console.log('EME - EME enabled (secure origin)', supports);
 
         if (supports) {
-            eme_get_supported_cdm() .then(function (results) {
-                output_document.add_supported_CDM(results);
-
-                // test supports key system
-                return eme_tests_support_key_system(KEY_SYSTEMS, INITDATA_TYPES);
-            }).then(function (result) {
+            eme_tests_support_key_system(KEY_SYSTEMS, INITDATA_TYPES)
+            .then(function (result) {
                 result.forEach(function (result) {
-                    output_document.add_result('EME - CDM \"' + result.keySystem + ' (' + result.type + ')\" is supported', result.supported, result.err);
+                    console.log('EME - CDM \"' + result.keySystem + ' (' + result.type + ')\" is supported', result.supported, result.err);
                 });
 
                 // test append encrypted init data
                 return eme_test_append_data(KEY_SYSTEMS, drmconfig, EME_SEGMENT_INFO, true);
             }).then(function (result) {
                 result.forEach(function (result) {
-                    output_document.add_result('EME - Append init data to buffer using CDM \"' + result.keySystem + '\"', result.appended, result.err);
+                    console.log('EME - Append init data to buffer using CDM \"' + result.keySystem + '\"', result.appended, result.err);
                 });
                 // test append encrypted data
                 return eme_test_append_data(KEY_SYSTEMS, drmconfig, EME_SEGMENT_INFO);
             }).then(function (result) {
                 result.forEach(function (result) {
-                    output_document.add_result('EME - Append data to buffer using CDM \"' + result.keySystem + '\"', result.appended, result.err);
+                    console.log('EME - Append data to buffer using CDM \"' + result.keySystem + '\"', result.appended, result.err);
                 });
                 onTestsDone();
             });

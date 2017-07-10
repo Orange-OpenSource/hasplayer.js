@@ -424,7 +424,7 @@ function playback(config) {
             } else {
                 // wait for video playing to pass the test
                 setTimeout(onTimeout, 500);
-                // _video.play();
+                _video.play();
             }
         }).catch(onFailure);
     });
