@@ -37,7 +37,8 @@ function startTests() {
         }]
     };
 
-    var KEY_SYSTEMS = ['org.w3.clearkey', 'com.widevine.alpha', 'com.microsoft.playready'];
+    // var KEY_SYSTEMS = ['org.w3.clearkey', 'com.widevine.alpha', 'com.microsoft.playready'];
+    var KEY_SYSTEMS = ['com.widevine.alpha'];
 
 
     // drmconfig format:
