@@ -353,7 +353,7 @@ function playback(config) {
             initDataTypes: [config.initDataType],
             videoCapabilities: [{
                 contentType: config.segmentType,
-                robustness: 'SW_SECURE_CRYPTO'
+                robustness: 'HW_SECURE_CRYPTO'
             }],
             sessionTypes: ['temporary']
         };
