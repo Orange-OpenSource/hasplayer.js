@@ -103,7 +103,7 @@ navigator.sayswho = (function () {
 
 /*------------------------------------------------------------------------------------------*/
 
-var MEDIA_ERROR_CODES = ['MEDIA_ERR_ABORTED', 'MEDIA_ERR_NETWORK', 'MEDIA_ERR_DECODE', 'MEDIA_ERR_SRC_NOT_SUPPORTED', 'MEDIA_ERR_ENCRYPTED'];
+var MEDIA_ERROR_CODES = ['', 'MEDIA_ERR_ABORTED', 'MEDIA_ERR_NETWORK', 'MEDIA_ERR_DECODE', 'MEDIA_ERR_SRC_NOT_SUPPORTED', 'MEDIA_ERR_ENCRYPTED'];
 
 function MediaSourceUtil(segmentInfo) {
     this.segmentInfo = segmentInfo;
@@ -145,41 +145,6 @@ MediaSourceUtil.prototype.closeMediaSource = function (mediaTag) {
     document.body.removeChild(mediaTag);
 };
 
-MediaSourceUtil.prototype.appendInitData = function (mediaSource, data) {
-
-    var that = this;
-    return new Promise(function (resolve, reject) {
-
-        function extractSegmentData(mediaData, info) {
-            var start = info.offset;
-            var end = start + info.size;
-            return mediaData.subarray(start, end);
-        }
-
-        var sourceBuffer = mediaSource.addSourceBuffer(that.segmentInfo.type);
-        var initSegment = extractSegmentData(data, that.segmentInfo.init);
-
-        try {
-            var onUpdatedEnd = function () {
-                sourceBuffer.removeEventListener('updateend', onUpdatedEnd);
-                if (!sourceBuffer.updating) {
-                    if (mediaSource.readyState !== 'open') {
-                        reject(new Error("Media source error"));
-                    } else {
-                        mediaSource.endOfStream();
-                        resolve();
-                    }
-                }
-                resolve();
-            };
-            sourceBuffer.addEventListener('updateend', onUpdatedEnd);
-            sourceBuffer.appendBuffer(initSegment);
-        } catch (err) {
-            reject(err);
-        }
-    });
-};
-
 MediaSourceUtil.prototype.appendData = function (mediaTag, mediaSource, data) {
 
     var that = this;
@@ -190,8 +155,8 @@ MediaSourceUtil.prototype.appendData = function (mediaTag, mediaSource, data) {
         try {
             var done = function (error) {
                 mediaTag.removeEventListener('error', onError);
-                mediaTag.removeEventListener('loadedmetadata', onLoadedmetadata);
-                mediaTag.removeEventListener('loadeddata', onLoadeddata);
+                // mediaTag.removeEventListener('loadedmetadata', onLoadedmetadata);
+                // mediaTag.removeEventListener('loadeddata', onLoadeddata);
                 sourceBuffer.removeEventListener('updateend', onUpdatedEnd);
                 if (error) {
                     console.log('reject: ' + error);
@@ -203,33 +168,34 @@ MediaSourceUtil.prototype.appendData = function (mediaTag, mediaSource, data) {
             };
             var onUpdatedEnd = function () {
                 console.log('SourceBuffer updateend');
-                sourceBuffer.removeEventListener('updateend', onUpdatedEnd);
-                if (!sourceBuffer.updating) {
-                    console.log('mediaSource.readyState = ' + mediaSource.readyState);
-                    if (mediaSource.readyState === 'open') {
-                        mediaSource.endOfStream();
-                        done();
-                    }
+                console.log('mediaSource.readyState = ' + mediaSource.readyState);
+                if (mediaSource.readyState === 'open') {
+                    mediaSource.endOfStream();
+                    done();
                 }
             };
-            var onLoadedmetadata = function() {
-                console.log('video loadedmetadata');
-                mediaTag.removeEventListener('loadedmetadata', onLoadedmetadata);
-                done();
-            };
-            var onLoadeddata = function() {
-                console.log('video loadeddata');
-                mediaTag.removeEventListener('loadeddata', onLoadedmetadata);
-                done();
-            };
+            // var onLoadedmetadata = function() {
+            //     console.log('video loadedmetadata');
+            //     mediaTag.removeEventListener('loadedmetadata', onLoadedmetadata);
+            //     done();
+            // };
+            // var onLoadeddata = function() {
+            //     console.log('video loadeddata');
+            //     mediaTag.removeEventListener('loadeddata', onLoadeddata);
+            //     done();
+            // };
             var onError = function() {
                 console.log('video error');
                 mediaTag.removeEventListener('error', onError);
-                done(MEDIA_ERROR_CODES[mediaTag.error.code] + ': ' + mediaTag.error.message);
+                var error = MEDIA_ERROR_CODES[mediaTag.error.code];
+                if (mediaTag.error.message) {
+                    error += ': ' + mediaTag.error.message;
+                }
+                done(error);
             };
             mediaTag.addEventListener('error', onError);
-            mediaTag.addEventListener('loadedmetadata', onLoadedmetadata);
-            mediaTag.addEventListener('loadeddata', onLoadeddata);
+            // mediaTag.addEventListener('loadedmetadata', onLoadedmetadata);
+            // mediaTag.addEventListener('loadeddata', onLoadeddata);
             sourceBuffer.addEventListener('updateend', onUpdatedEnd);
             sourceBuffer.appendBuffer(data);
         } catch (err) {
