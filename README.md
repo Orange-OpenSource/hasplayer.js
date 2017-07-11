@@ -109,41 +109,45 @@ When it is all done, it should look similar to this:
 ```
 ## DRM Video Stream
 In the case of protected content, here is an example illustrating setting of the protection data:
-```html
-<!doctype html>
-<html>
-    <head>
-        <title>Hasplayer.js Rocks</title>
-    </head>
-    <body>
-        <div>
-            <video id="videoPlayer" controls="true"></video>
-        </div>
-        <script src="yourPathToHasplayer/hasplayer.js"></script>
-        <script>
-            (function(){
-                var stream = {
-                    url: "<manifest_url>",
-                    protData: {
-                        com.microsoft.playready: {
-                            laURL: "<licenser_url>",
-                            cdmData: "<specific_CDM_data>"
-                            withCredentials: "<license_request_withCredentials_value>",
-                            cdmData: "<CDM_specific_data>", // Only supported by PlayReady key system (using MS-prefixed EME API)
-                            serverCertificate: "<license_server_certificate (as Base64 string)>" // Only supported by Widevine key system
-                            audioRobustness: "<audio_robustness_level>" // Only supported by Widevine key system
-                            videoRobustness: "<video_robustness_level>" // Only supported by Widevine key system
-                        }
-                    }
-                };
-                var mediaPlayer = new MediaPlayer();
-                mediaPlayer.init(document.querySelector("#videoPlayer"));
-                mediaPlayer.load(stream);
-            })();
-        </script>
-    </body>
-</html>
+```js
+    var stream = {
+        url: "<manifest_url>",
+        protData: {
+            "<key_system>": {
+                laURL: "<licenser_url>",
+                withCredentials: "<license_request_withCredentials_value (true or false)>",
+                cdmData: "<CDM_specific_data>", // Supported by PlayReady key system (using MS-prefixed EME API) only
+                pssh: "<pssh (as Base64 string)>" // Considered for Widevine key system only
+                serverCertificate: "<license_server_certificate (as Base64 string)>"
+                audioRobustness: "<audio_robustness_level>" // Considered for Widevine key system only
+                videoRobustness: "<video_robustness_level>" // Considered for Widevine key system only
+            }
+        }
+    };
+    mediaPlayer.load(stream);
 ```
+
+### HLS and FairPlay on Safari/OSx
+In order to playback HLS protected contents with FairPlay DRM, a specific mode is available which consists in streaming and playing the content directly with the &lt;video&gt; element, and in managing the exchanges between the FairPlay CDM and the licenser using EME.
+To activate this mode on Safari/OSx you need to explicitely indicate the protocol type, i.e. 'HLS', for the input stream:
+
+```js
+    var stream = {
+        url: "<manifest_url>",
+        protocol= "HLS",
+        protData: {
+            "com.apple.fps.1_0": {
+                laURL: "<licenser_url>",
+                withCredentials: "<license_request_withCredentials_value (true or false)>",
+                serverCertificate: "<license_server_certificate (as Base64 string)>"
+            }
+        }
+    };
+    mediaPlayer.load(stream);
+```
+
+Since native player is used to achieve streaming session, some parts of the MediaPlayer API have no effect (functions relative to streaming and ABR configuration, DVR, trick mode...).
+However, API for audio and subtitles tracks management is functional.
 
 ## Events
 
