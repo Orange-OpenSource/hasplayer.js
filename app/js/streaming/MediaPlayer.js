@@ -827,17 +827,18 @@ MediaPlayer = function () {
             <pre>
             {
                 url : "[manifest url]",
-                startTime : [start time in seconds (optional)]
+                startTime : [start time in seconds (optional)],
+                protocol : "[protocol type]", // 'HLS' to activate native support on Safari/OSx
                 protData : {
                     // one entry for each key system ('com.microsoft.playready' or 'com.widevine.alpha')
                     "[key_system_name]": {
                         laURL: "[licenser url (optional)]",
                         withCredentials: "[license_request_withCredentials_value (true or false, optional)]",
-                        pssh: "[base64 pssh box (as Base64 string, optional)]",
-                        cdmData: "[CDM data (optional)]",
+                        pssh: "[base64 pssh box (as Base64 string, optional)]", // Considered for Widevine key system only
+                        cdmData: "[CDM data (optional)]", // Supported by PlayReady key system (using MS-prefixed EME API) only
                         serverCertificate: "[license_server_certificate (as Base64 string, optional)]",
-                        audioRobustness: "[audio_robustness_level (optional)]" // Only supported by Widevine key system
-                        videoRobustness: "[video_robustness_level (optional)]" // Only supported by Widevine key system
+                        audioRobustness: "[audio_robustness_level (optional)]", // Considered for Widevine key system only
+                        videoRobustness: "[video_robustness_level (optional)]" // Considered for Widevine key system only
                     },
                     ...
                }
