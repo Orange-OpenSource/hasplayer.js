@@ -698,8 +698,7 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         onDurationchange = function() {
-            var duration = this.videoModel.getDuration(),
-                streamDuration = Number(periodInfo.duration.toFixed(3));
+            var duration = this.videoModel.getDuration();
 
             this.debug.info("[Stream] <video> durationchange event: " + duration);
         },
