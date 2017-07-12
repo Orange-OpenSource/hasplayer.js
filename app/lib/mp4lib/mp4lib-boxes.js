@@ -3072,4 +3072,56 @@ mp4lib.boxes.TfrfBox.prototype.read = function(data, pos, end) {
     return this.localPos;
 };
 
+// --------------------------- subs -----------------------------
+mp4lib.boxes.SubSampleInformationBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'subs', size);
+};
+
+mp4lib.boxes.SubSampleInformationBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.SubSampleInformationBox.prototype.constructor = mp4lib.boxes.SubSampleInformationBox;
+
+mp4lib.boxes.SubSampleInformationBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    // To Define if needed
+};
+
+mp4lib.boxes.SubSampleInformationBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+    var i = 0,
+        j = 0,
+        struct = {},
+        subSampleStruct = {};
+
+    this.entry_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.entry = [];
+    for (i = 0; i < this.entry_count; i++) {
+        struct = {};
+        struct.sample_delta = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        struct.subsample_count = this._readData(data, mp4lib.fields.FIELD_UINT16);
+        if (struct.subsample_count > 0) {
+            struct.subSampleEntries = [];
+            for (j=0; j < struct.subsample_count; j++) {
+                subSampleStruct = {};
+                if (this.version === 1) {
+                    subSampleStruct.subsample_size = this._readData(data, mp4lib.fields.FIELD_UINT32);
+                } else {
+                    subSampleStruct.subsample_size = this._readData(data, mp4lib.fields.FIELD_UINT16);
+                }
+                subSampleStruct.subsample_priority = this._readData(data, mp4lib.fields.FIELD_UINT8);
+                subSampleStruct.discardable = this._readData(data, mp4lib.fields.FIELD_UINT8);
+                subSampleStruct.reserved = this._readData(data, mp4lib.fields.FIELD_UINT32);
+                struct.subSampleEntries.push(subSampleStruct);
+            }
+        }
+        this.entry.push(struct);
+    }
+
+    return this.localPos;
+};
+
+mp4lib.boxes.SubSampleInformationBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    // To Define if needed
+};
+
 mp4lib.registerTypeBoxes();
