@@ -1,3 +1,21 @@
+### Release Notes v1.11.0 (2017/07/13)
+* [HLS] Add specific support for HLS and FairPlay for Safari/OSx using native player and EME for CDM/licenser exchanges
+* [MSS] Add support for large timestamps values (greater than 2^53)
+* [MSS] Add automatic KID setting in Widevine PSSH (from protection data) with KID value from MSS ProtectionHeader
+* [MSS] Add specific error in case of missing tfrf box in live segments
+* [MSS] Match timeShiftBufferDepth value to video segment timeline duration
+* [EME] Set robustness levels for Widevine key system if provided in protection data
+* [EME] Ignore 'encrypted' event in case the key system has already been selected and pssh already processed
+* Correct metrics generation (states, seek, pause, ...)
+* Bugs fixing:
+* - [MSS] Fix management of unsynchronized tracks
+* - [MSS] Fix support for live streams with a DVR window length inferior to buffer length
+* - [DASH] Fix support for with TTML subtitles in mp4 fragments
+* - [DASH] Fix support for text track switching in case of full TTML files
+* - [EME] Correct regression on EME version (ProtectionModel) selection for Edge browser
+* - [EME] Correct regression on licenses (EME sessions) persistence management (do not record not 'usable' sessions)
+* - Correct regression on text tracks switching in case of full TTML files
+
 ### Release Notes v1.10.0 (2017/04/13)
 * Adapt EME's protection model 21Jan2015 to chrome 58 updates (secure origins and server certificate)
 * - Check requestMediaKeySystemAccess API availability when requesting key system access
