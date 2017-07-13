@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-7-6_12:44:6 / git revision : 449990a */
+/* Last build : 2017-7-13_9:41:55 / git revision : 521d973 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.11.0-dev',
-        GIT_TAG = '449990a',
-        BUILD_DATE = '2017-7-6_12:44:6',
+        GIT_TAG = '521d973',
+        BUILD_DATE = '2017-7-13_9:41:55',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -870,13 +870,18 @@ MediaPlayer = function () {
             <pre>
             {
                 url : "[manifest url]",
-                startTime : [start time in seconds (optionnal)]
+                startTime : [start time in seconds (optional)],
+                protocol : "[protocol type]", // 'HLS' to activate native support on Safari/OSx
                 protData : {
                     // one entry for each key system ('com.microsoft.playready' or 'com.widevine.alpha')
                     "[key_system_name]": {
-                        laURL: "[licenser url (optionnal)]",
-                        pssh: "[base64 pssh box (optionnal)]"
-                        cdmData: "[CDM data (optionnal)]"
+                        laURL: "[licenser url (optional)]",
+                        withCredentials: "[license_request_withCredentials_value (true or false, optional)]",
+                        pssh: "[base64 pssh box (as Base64 string, optional)]", // Considered for Widevine key system only
+                        cdmData: "[CDM data (optional)]", // Supported by PlayReady key system (using MS-prefixed EME API) only
+                        serverCertificate: "[license_server_certificate (as Base64 string, optional)]",
+                        audioRobustness: "[audio_robustness_level (optional)]", // Considered for Widevine key system only
+                        videoRobustness: "[video_robustness_level (optional)]" // Considered for Widevine key system only
                     },
                     ...
                }
@@ -9592,8 +9597,7 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         onDurationchange = function() {
-            var duration = this.videoModel.getDuration(),
-                streamDuration = Number(periodInfo.duration.toFixed(3));
+            var duration = this.videoModel.getDuration();
 
             this.debug.info("[Stream] <video> durationchange event: " + duration);
         },
