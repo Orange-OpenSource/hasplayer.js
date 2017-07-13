@@ -175,7 +175,11 @@ MediaPlayer.dependencies.BufferController = function() {
             waitingForBuffer = true;
 
             // Reset htmlVideoState in order to update it after a pause or seek command in UpdateBufferState function
-            htmlVideoState = INIT;
+            if (htmlVideoState === INIT) {
+                // At first playback start, set state to BUFFERING
+                this.metricsModel.addState(type, "buffering", this.videoModel.getCurrentTime());
+            }
+            htmlVideoState = BUFFERING;
             htmlVideoTime = -1;
             segmentRequestOnError = null;
 
@@ -187,8 +191,7 @@ MediaPlayer.dependencies.BufferController = function() {
         },
 
         doSeek = function(time) {
-            var currentTime = new Date(),
-                self = this;
+            var self = this;
 
             // Avoid identical successive seeks
             if ((seeking === true) && (seekTarget === time)) {
@@ -203,8 +206,6 @@ MediaPlayer.dependencies.BufferController = function() {
                 doStop.call(this);
             }
 
-            // Restart
-            playListMetrics = this.metricsModel.addPlayList(type, currentTime, seekTarget, MediaPlayer.vo.metrics.PlayList.SEEK_START_REASON);
             seeking = true;
             seekTarget = time;
 
@@ -867,7 +868,8 @@ MediaPlayer.dependencies.BufferController = function() {
 
             var time = getWorkingTime.call(this),
                 range,
-                segmentTime;
+                segmentTime,
+                self = this;
 
 
             // If we override buffer (in case of language for example), then consider current video time for the next segment time
@@ -889,7 +891,7 @@ MediaPlayer.dependencies.BufferController = function() {
                 this.debug.log("[BufferController][" + type + "] loadNextFragment for time: " + segmentTime);
                 this.indexHandler.getSegmentRequestForTime(_currentRepresentation, segmentTime).then(onFragmentRequest.bind(this), function() {
                     currentDownloadQuality = -1;
-                    signalStreamComplete.call(this);
+                    signalStreamComplete.call(self);
                 });
             }
         },
@@ -1569,17 +1571,21 @@ MediaPlayer.dependencies.BufferController = function() {
                         if (segmentRequestOnError) {
                             // If buffering is due to segment download failure (see onBytesError()), then signal it to Stream (see Stream.onBufferFailed())
                             signalSegmentLoadingFailed.call(this);
-                        } else if (!isDynamic) {
+                        } else {
                             // Check if there is a hole in the buffer (segment download failed or input stream discontinuity), then skip it
+                            // For live streams we consider discontinuities lower than a segment duration
                             ranges = this.sourceBufferExt.getAllRanges(buffer);
                             var i;
                             for (i = 0; i < ranges.length; i++) {
                                 if (currentTime < ranges.start(i)) {
-                                    break;
+                                    if (!isDynamic || ((ranges.start(i) - currentTime) < segmentDuration)) {
+                                        break;
+                                    }
                                 }
                             }
                             if (i < ranges.length) {
                                 // Seek to next available range
+                                this.debug.info("[BufferController][" + type + "] BUFFERING => skip buffer discontinuity, seek to " + ranges.start(i));
                                 this.videoModel.setCurrentTime(ranges.start(i));
                             }
                         }

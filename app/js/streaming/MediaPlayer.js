@@ -77,6 +77,10 @@ MediaPlayer = function () {
     };
 
     var _play = function () {
+        var plugin,
+            pluginsInitDefer = [],
+            pluginsLoadDefer = [];
+
         _isPlayerInitialized();
         _isVideoModelInitialized();
         _isSourceInitialized();
@@ -86,29 +90,47 @@ MediaPlayer = function () {
             return;
         }
 
-        playing = true;
-
-        this.metricsModel.addSession(null, source.url, videoModel.getElement().loop, null, "MediaPlayer.js_" + this.getVersion());
-
-        this.debug.log("[MediaPlayer] Version: " + this.getVersionFull() + " - " + this.getBuildDate());
-        this.debug.log("[MediaPlayer] user-agent: " + navigator.userAgent);
-        this.debug.log("[MediaPlayer] Load stream:\n", JSON.stringify(source, null, '  '));
-
-        // streamController Initialization
-        if (!streamController) {
-            streamController = system.getObject('streamController');
-            streamController.setVideoModel(videoModel);
-            streamController.setAutoPlay(autoPlay);
+        // Wait for plugins completely intialized before starting a new session
+        for(var name in  plugins) {
+            pluginsInitDefer.push(plugins[name].deferInit.promise);
         }
+        Q.all(pluginsInitDefer).then((function () {
+            // Notify plugins a new stream is loaded
+            for (var name in plugins) {
+                plugin = plugins[name];
+                plugin.deferLoad = Q.defer();
+                pluginsLoadDefer.push(plugin.deferLoad.promise);
+                plugin.load(source, function () {
+                    this.deferLoad.resolve();
+                }.bind(plugin));
+            }
 
-        streamController.setDefaultAudioLang(defaultAudioLang);
-        streamController.setDefaultSubtitleLang(defaultSubtitleLang);
-        streamController.enableSubtitles(subtitlesEnabled);
-        // TODO restart here !!!
-        streamController.load(source);
-        system.mapValue("scheduleWhilePaused", scheduleWhilePaused);
-        system.mapOutlet("scheduleWhilePaused", "stream");
+            Q.all(pluginsLoadDefer).then((function () {
+                // Once all plugins are ready, we load the stream
+                playing = true;
 
+                this.metricsModel.addSession(null, source.url, videoModel.getElement().loop, null, "MediaPlayer.js_" + this.getVersion());
+
+                this.debug.log("[MediaPlayer] Version: " + this.getVersionFull() + " - " + this.getBuildDate());
+                this.debug.log("[MediaPlayer] user-agent: " + navigator.userAgent);
+                this.debug.log("[MediaPlayer] Load stream:\n", JSON.stringify(source, null, '  '));
+
+                // streamController Initialization
+                if (!streamController) {
+                    streamController = system.getObject('streamController');
+                    streamController.setVideoModel(videoModel);
+                    streamController.setAutoPlay(autoPlay);
+                }
+
+                streamController.setDefaultAudioLang(defaultAudioLang);
+                streamController.setDefaultSubtitleLang(defaultSubtitleLang);
+                streamController.enableSubtitles(subtitlesEnabled);
+                streamController.load(source);
+                system.mapValue("scheduleWhilePaused", scheduleWhilePaused);
+                system.mapOutlet("scheduleWhilePaused", "stream");
+
+            }).bind(this));
+        }).bind(this));
     };
 
     // player state and intitialization
@@ -167,7 +189,7 @@ MediaPlayer = function () {
                     if (audioBitrates) {
                         _dispatchBitrateEvent('download_bitrate', {
                             streamType: e.data.stream,
-                            switchedQuality: audioBitrates[e.data.value.to],
+                            switchedQuality: audioBitrates[e.data.value.lto],
                             representationId: e.data.value.to,
                             width: this.metricsExt.getVideoWidthForRepresentation(e.data.value.to),
                             height: this.metricsExt.getVideoHeightForRepresentation(e.data.value.to)
@@ -285,6 +307,11 @@ MediaPlayer = function () {
                 var teardownComplete = {};
                 teardownComplete[MediaPlayer.dependencies.StreamController.eventList.ENAME_TEARDOWN_COMPLETE] = (function () {
 
+                    // Notify plugins that player is reset
+                    for (var plugin in plugins) {
+                        plugins[plugin].reset();
+                    }
+
                     // Finish rest of shutdown process
                     streamController = null;
                     playing = false;
@@ -393,8 +420,6 @@ MediaPlayer = function () {
         }
 
     };
-    // END TODO
-
 
     var _getDVRInfoMetric = function () {
         var metrics = this.metricsModel.getReadOnlyMetricsFor('video'),
@@ -510,6 +535,7 @@ MediaPlayer = function () {
 
             // create DebugController
             debugController = system.getObject('debugController');
+            debugController.init(VERSION);
         },
 //#endregion
 
@@ -801,13 +827,18 @@ MediaPlayer = function () {
             <pre>
             {
                 url : "[manifest url]",
-                startTime : [start time in seconds (optionnal)]
+                startTime : [start time in seconds (optional)],
+                protocol : "[protocol type]", // 'HLS' to activate native support on Safari/OSx
                 protData : {
                     // one entry for each key system ('com.microsoft.playready' or 'com.widevine.alpha')
                     "[key_system_name]": {
-                        laURL: "[licenser url (optionnal)]",
-                        pssh: "[base64 pssh box (optionnal)]"
-                        cdmData: "[CDM data (optionnal)]"
+                        laURL: "[licenser url (optional)]",
+                        withCredentials: "[license_request_withCredentials_value (true or false, optional)]",
+                        pssh: "[base64 pssh box (as Base64 string, optional)]", // Considered for Widevine key system only
+                        cdmData: "[CDM data (optional)]", // Supported by PlayReady key system (using MS-prefixed EME API) only
+                        serverCertificate: "[license_server_certificate (as Base64 string, optional)]",
+                        audioRobustness: "[audio_robustness_level (optional)]", // Considered for Widevine key system only
+                        videoRobustness: "[video_robustness_level (optional)]" // Considered for Widevine key system only
                     },
                     ...
                }
@@ -816,10 +847,7 @@ MediaPlayer = function () {
             </pre>
         */
         load: function (stream) {
-            var plugin,
-                pluginsInitDefer = [],
-                pluginsLoadDefer = [],
-                config = {
+            var config = {
                     video: {
                         "ABR.keepBandwidthCondition": true
                     },
@@ -866,28 +894,8 @@ MediaPlayer = function () {
             error = null;
             warning = null;
 
-            // Wait for plugins completely intialized before starting a new session
-            for(var name in  plugins) {
-                pluginsInitDefer.push(plugins[name].deferInit.promise);
-            }
-            Q.all(pluginsInitDefer).then((function () {
-                // Notify plugins a new stream is loaded
-                for (var name in plugins) {
-                    plugin = plugins[name];
-                    plugin.deferLoad = Q.defer();
-                    pluginsLoadDefer.push(plugin.deferLoad.promise);
-                    plugin.load(stream, function () {
-                        this.deferLoad.resolve();
-                    }.bind(plugin));
-                }
-
-                Q.all(pluginsLoadDefer).then((function () {
-                    // Once all plugins are ready, we load the stream
-                    source = stream;
-                    _resetAndPlay.call(this, 0);
-
-                }).bind(this));
-            }).bind(this));
+            source = stream;
+            _resetAndPlay.call(this, 0);
         },
 
         /**
@@ -993,11 +1001,6 @@ MediaPlayer = function () {
             source = null;
 
             _resetAndPlay.call(this, reason);
-
-            // Notify plugins that player is reset
-            for (var plugin in plugins) {
-                plugins[plugin].reset();
-            }
         },
 
         /**
@@ -1169,11 +1172,7 @@ MediaPlayer = function () {
         setTrickModeSpeed: function (speed) {
             _isPlayerInitialized();
             if (streamController) {
-                if (streamController.getTrickModeSpeed() !== speed && speed === 1) {
-                    videoModel.play();
-                } else {
-                    streamController.setTrickModeSpeed(speed);
-                }
+                streamController.setTrickModeSpeed(speed);
             }
         },
 //#endregion

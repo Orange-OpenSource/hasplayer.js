@@ -15,6 +15,20 @@
             "browsers": "cdsbi"
         },
         {
+            "type": "Live",
+            "protocol": "HLS",
+            "name": "HLS+FP (Sample)",
+            "url": "https://s3.amazonaws.com/shift72-temp/hls_fps_bento4_sintel/master.m3u8",
+            "browsers": "cdsbi",
+            "protData": {
+                "com.apple.fps.1_0": {
+                    "laURL": "https://staging-solo.shift72.com/services/license/fairplay/cenc/fallback",
+                    "requestType": "text",
+                    "serverCertificate": "MIIE6DCCA9CgAwIBAgIID828Ey6J/VYwDQYJKoZIhvcNAQEFBQAwfzELMAkGA1UEBhMCVVMxEzARBgNVBAoMCkFwcGxlIEluYy4xJjAkBgNVBAsMHUFwcGxlIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MTMwMQYDVQQDDCpBcHBsZSBLZXkgU2VydmljZXMgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkwHhcNMTcwMzIxMDI1ODI4WhcNMTkwMzIyMDI1ODI4WjBqMQswCQYDVQQGEwJVUzEYMBYGA1UECgwPU0hJRlQ3MiBMaW1pdGVkMRMwEQYDVQQLDApKVEE0Q1E5UzZHMSwwKgYDVQQDDCNGYWlyUGxheSBTdHJlYW1pbmc6IFNISUZUNzIgTGltaXRlZDCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAxpV7P7sJQxNDJ96mnsJ9NpyAXgGZWYI44jNkGY4cHMHVNTMEZSnIGcMFkULuHei8bF7aXbEkN9JYeM0RQ8L5UjolasC7ZukiulAp4DOXT13CjLvOLrWgofwRRh+ln1DFFjwgMmt88XQsELxVUXs6QZJ8SAHy6kDIxvdmkgD6glUCAwEAAaOCAf8wggH7MB0GA1UdDgQWBBSiq8XFFM7pvz+gWvj3sqbQ3vPspDAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFGPkR1TLhXFZRiyDrMxEMWRnAyy+MIHiBgNVHSAEgdowgdcwgdQGCSqGSIb3Y2QFATCBxjCBwwYIKwYBBQUHAgIwgbYMgbNSZWxpYW5jZSBvbiB0aGlzIGNlcnRpZmljYXRlIGJ5IGFueSBwYXJ0eSBhc3N1bWVzIGFjY2VwdGFuY2Ugb2YgdGhlIHRoZW4gYXBwbGljYWJsZSBzdGFuZGFyZCB0ZXJtcyBhbmQgY29uZGl0aW9ucyBvZiB1c2UsIGNlcnRpZmljYXRlIHBvbGljeSBhbmQgY2VydGlmaWNhdGlvbiBwcmFjdGljZSBzdGF0ZW1lbnRzLjA1BgNVHR8ELjAsMCqgKKAmhiRodHRwOi8vY3JsLmFwcGxlLmNvbS9rZXlzZXJ2aWNlcy5jcmwwDgYDVR0PAQH/BAQDAgUgMEIGCyqGSIb3Y2QGDQEDAQH/BDABcnh0dHp3a2gzNWxoZmhncGt3MnYwYWlranlocXBnOXhnMm1ubnlmenpyYzZ6MXAwOwYLKoZIhvdjZAYNAQQBAf8EKQF5b3oxMXFibnFzc2d4cWl2aW1ianFjNzVlY3B6eXZ0a2V4ZjhmMm1tMA0GCSqGSIb3DQEBBQUAA4IBAQDCT5EfYh1xGp9hioTZt65/6Q1Xua37lQwgR83kolbbQGss8nIzez2nizT3mfCWOz6BCucuNLNSqeEMu3pn75rrJFHMlz5X8AEyLa828SQ/tlxH5zFYpfTVbGkMIw6awdssTiTmScLIwooHjFgcXu0dtqoBUrCrXWVHfiSlQA+QEo4BzFkKvAfWtXpDGEBYl+kbmoEFwzwCPhO7bWXbxUPkBVe8YpdSN+TZZDoZNo/2nZ/cEnBmo+W6InkPz8gwmNRrCJjhx94AVhxyf5ZjJ057RryNXDlLMIygiPfhciZ0PFi+MBA+P3sEwo2PaZxsqu44qyLl63AdFvItJiI9JgGn"
+                }
+            }
+        },
+        {
             "type": "VOD",
             "protocol": "MSS",
             "name": "VOD - SuperSpeedway",

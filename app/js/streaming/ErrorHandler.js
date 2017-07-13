@@ -73,6 +73,9 @@ MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_INIT = "DOWNLOAD_ER
 MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT = "DOWNLOAD_ERR_CONTENT";
 MediaPlayer.dependencies.ErrorHandler.prototype.CC_ERR_PARSE = "CC_ERR_PARSE";
 
+// MSS errors
+MediaPlayer.dependencies.ErrorHandler.prototype.MSS_NO_TFRF = "MSS_NO_TFRF";
+
 // HLS errors
 MediaPlayer.dependencies.ErrorHandler.prototype.HLS_INVALID_PACKET_ERROR = "HLS_INVALID_PACKET_ERROR";
 MediaPlayer.dependencies.ErrorHandler.prototype.HLS_DEMUX_ERROR = "HLS_DEMUX_ERROR";

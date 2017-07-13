@@ -50,6 +50,7 @@ MediaPlayer.dependencies.Stream = function() {
         errorListener,
         seekingListener,
         seekedListener,
+        waitingListener,
         timeupdateListener,
         durationchangeListener,
         progressListener,
@@ -472,6 +473,8 @@ MediaPlayer.dependencies.Stream = function() {
         onPlaying = function() {
             this.debug.info("[Stream] <video> playing event");
 
+            this.metricsModel.addState("video", "playing", this.getVideoModel().getCurrentTime());
+
             // Store start time (clock and stream time) for resynchronization purpose
             startClockTime = new Date().getTime() / 1000;
             startStreamTime = this.getVideoModel().getCurrentTime();
@@ -483,6 +486,9 @@ MediaPlayer.dependencies.Stream = function() {
 
         onPlay = function() {
             this.debug.info("[Stream] <video> play event");
+
+            //listen pause event to have correct metrics, it should be unlistened by the onBufferingCompleted callback.
+            this.videoModel.listen("pause", pauseListener);
 
             if (tmSpeed !== 1) {
                 this.setTrickModeSpeed(1);
@@ -510,7 +516,11 @@ MediaPlayer.dependencies.Stream = function() {
             this.debug.info("[Stream] <video> pause event");
             startClockTime = -1;
             startStreamTime = -1;
-            this.metricsModel.addPlayList("video", new Date().getTime(), this.videoModel.getCurrentTime(), "pause");
+            if (tmSpeed === 1) {
+                // ORANGE : add metric
+                this.metricsModel.addState("video", "paused", this.videoModel.getCurrentTime());
+                this.metricsModel.addPlayList("video", new Date().getTime(), this.videoModel.getCurrentTime(), "pause");
+            }
             suspend.call(this);
             if (manifest.name === 'MSS' && this.manifestExt.getIsDynamic(manifest)) {
                 startFragmentInfoControllers.call(this);
@@ -568,6 +578,11 @@ MediaPlayer.dependencies.Stream = function() {
 
             // Check if seek time is less than range start, never seek before range start.
             time = (time < this.getStartTime()) ? this.getStartTime() : time;
+
+            if (tmSpeed === 1) {
+                this.metricsModel.addState("video", "seeking", this.getVideoModel().getCurrentTime());
+                this.metricsModel.addPlayList('video', new Date().getTime(), time, MediaPlayer.vo.metrics.PlayList.SEEK_START_REASON);
+            }
 
             startBuffering.call(this, time);
         },
@@ -675,19 +690,17 @@ MediaPlayer.dependencies.Stream = function() {
             updateBuffer.call(this);
         },
 
+        onWaiting = function() {
+            this.debug.info("[Stream] <video> waiting event");
+            if (!this.getVideoModel().isSeeking()) {
+                this.metricsModel.addState("video", "buffering", this.getVideoModel().getCurrentTime());
+            }
+        },
+
         onDurationchange = function() {
-            var duration = this.videoModel.getDuration(),
-                streamDuration = Number(periodInfo.duration.toFixed(3));
+            var duration = this.videoModel.getDuration();
 
             this.debug.info("[Stream] <video> durationchange event: " + duration);
-
-            // The duration may change if the effective MSE buffer duration is greater than the initial duration set from manifest
-            // => then we update the MediaSource duration to ensure 'ended' event being sent by the video element
-            // (round durationfrom manifest to milliseconds to avoid rounding issue within MSE buffer)
-            if (!isNaN(duration) && duration !== Infinity && duration > streamDuration) {
-                this.debug.log("[Stream] Setting duration: " + streamDuration);
-                this.mediaSourceExt.setDuration(mediaSource, streamDuration);
-            }
         },
 
         onRatechange = function() {
@@ -843,6 +856,8 @@ MediaPlayer.dependencies.Stream = function() {
 
             // buffering has been complted, now we can signal end of stream
             if (mediaSource) {
+                //unlisten pause event to have correct metrics, and not catch the pause event sent before the onded event
+                this.videoModel.unlisten("pause", pauseListener);
                 this.debug.info("[Stream] Signal end of stream");
                 this.mediaSourceExt.signalEndOfStream(mediaSource);
             }
@@ -1095,6 +1110,7 @@ MediaPlayer.dependencies.Stream = function() {
             errorListener = onError.bind(this);
             seekingListener = onSeeking.bind(this);
             seekedListener = onSeeked.bind(this);
+            waitingListener = onWaiting.bind(this);
             progressListener = onProgress.bind(this);
             ratechangeListener = onRatechange.bind(this);
             timeupdateListener = onTimeupdate.bind(this);
@@ -1122,6 +1138,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.listen("error", errorListener);
             this.videoModel.listen("seeking", seekingListener);
             this.videoModel.listen("seeked", seekedListener);
+            this.videoModel.listen("waiting", waitingListener);
             this.videoModel.listen("timeupdate", timeupdateListener);
             this.videoModel.listen("durationchange", durationchangeListener);
             this.videoModel.listen("progress", progressListener);
@@ -1142,6 +1159,10 @@ MediaPlayer.dependencies.Stream = function() {
             }
         },
 
+        getAudioTracks: function() {
+            return this.manifestExt.getAudioDatas(manifest, periodInfo.index);
+        },
+
         setAudioTrack: function(audioTrack) {
             if (fragmentInfoAudioController) {
                 fragmentInfoAudioController.stop();
@@ -1154,6 +1175,10 @@ MediaPlayer.dependencies.Stream = function() {
                 return this.manifestExt.getDataForIndex(audioTrackIndex, manifest, periodInfo.index);
             }
             return undefined;
+        },
+
+        getSubtitleTracks: function() {
+            return this.manifestExt.getTextDatas(manifest, periodInfo.index);
         },
 
         setSubtitleTrack: function(subtitleTrack) {
@@ -1232,6 +1257,7 @@ MediaPlayer.dependencies.Stream = function() {
             this.videoModel.unlisten("error", errorListener);
             this.videoModel.unlisten("seeking", seekingListener);
             this.videoModel.unlisten("seeked", seekedListener);
+            this.videoModel.unlisten("waiting", waitingListener);
             this.videoModel.unlisten("timeupdate", timeupdateListener);
             this.videoModel.unlisten("durationchange", durationchangeListener);
             this.videoModel.unlisten("progress", progressListener);
@@ -1368,6 +1394,8 @@ MediaPlayer.dependencies.Stream = function() {
             self.debug.info("[Stream] Trick mode: speed = " + speed);
 
             if (enableTrickMode && tmState === "Stopped") {
+                //unlisten pause event to have correct metrics
+                this.videoModel.unlisten("pause", pauseListener);
                 self.debug.info("[Stream] Set mute: true");
                 muteState = self.videoModel.getMute();
                 if (!muteState) {
@@ -1375,9 +1403,10 @@ MediaPlayer.dependencies.Stream = function() {
                 }
                 self.videoModel.pause();
             } else if (!enableTrickMode) {
+                //stop trick mode, add a trick mode metric
+                self.metricsModel.addPlayList('video', new Date().getTime(), tmVideoStartTime, 'trickMode', tmSpeed);
                 tmSpeed = 1;
                 clearTimeout(tmSeekTimeout);
-                this.videoModel.pause();
                 stopBuffering.call(self);
             }
 
@@ -1392,6 +1421,8 @@ MediaPlayer.dependencies.Stream = function() {
                 currentVideoTime = self.videoModel.getCurrentTime();
 
                 if (!enableTrickMode) {
+                    //listen pause event to have correct metrics
+                    self.videoModel.listen("pause", pauseListener);
                     self.debug.info("[Stream] Trick mode: Stopped, current time = " + currentVideoTime);
                     tmState = "Stopped";
                     self.videoModel.listen("timeupdate", restoreMute);
@@ -1399,6 +1430,8 @@ MediaPlayer.dependencies.Stream = function() {
                     seek.call(self, currentVideoTime, true);
                 } else {
                     if (tmState === "Running") {
+                        //trick mode speed has changed, add a trick mode metric for the previous speed
+                        self.metricsModel.addPlayList('video', new Date().getTime(), tmVideoStartTime, 'trickMode', tmPreviousSpeed);
                         tmState = "Changed";
                     } else if (tmState === "Stopped") {
                         tmEndDetected = false;

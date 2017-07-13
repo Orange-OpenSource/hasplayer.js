@@ -184,13 +184,28 @@
         },
 
         addState: function (streamType, currentState, position, reason) {
-            var vo = new MediaPlayer.vo.metrics.State();
+
+            var state = this.getMetricsFor(streamType).State;
+            if (state.length > 0 && state[state.length - 1].current === currentState) {
+                return;
+            }
+
+            var vo = new MediaPlayer.vo.metrics.State(),
+                metrics = this.getMetricsFor(streamType).State;
 
             vo.current = currentState;
             vo.position = position;
             vo.reason = reason;
 
+            metrics.push(vo);
             this.metricAdded(streamType, "State", vo);
+
+            console.log("[STATE] type: " + streamType + ", state:" + currentState + ", position: " + position);
+
+            // Keep only last 10 metrics to avoid memory leak
+            if (metrics.length > 10) {
+                metrics.shift();
+            }
 
             return vo;
         },
@@ -400,7 +415,7 @@
             return vo;
         },
 
-        addPlayList: function (streamType, start, mstart, starttype) {
+        addPlayList: function (streamType, start, mstart, starttype, speed) {
             var vo = new MediaPlayer.vo.metrics.PlayList(),
                 metrics = this.getMetricsFor(streamType).PlayList;
 
@@ -408,6 +423,7 @@
             vo.start = start;
             vo.mstart = mstart;
             vo.starttype = starttype;
+            vo.speed = speed;
 
             metrics.push(vo);
             this.metricAdded(streamType, "PlayList", vo);
@@ -431,12 +447,14 @@
             vo.playbackspeed = playbackspeed;
             vo.stopreason = stopreason;
 
-            playList.trace.push(vo);
-            this.metricUpdated(playList.stream, "PlayListTrace", playList);
+            if (playList && Array.isArray(playList.trace)) {
+                playList.trace.push(vo);
+                this.metricUpdated(playList.stream, "PlayListTrace", playList);
 
-            // Keep only last 10 metrics to avoid memory leak
-            if (playList.trace.length > 10) {
-                playList.trace.shift();
+                // Keep only last 10 metrics to avoid memory leak
+                if (playList.trace.length > 10) {
+                    playList.trace.shift();
+                }
             }
 
             return vo;

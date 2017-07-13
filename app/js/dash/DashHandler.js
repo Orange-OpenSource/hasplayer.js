@@ -817,16 +817,13 @@ Dash.dependencies.DashHandler = function() {
                 if (!isNaN(representation.segmentDuration)) {
                     self.debug.log("[DashHandler][" + type + "] getIndexForSegments, (segment duration) idx =  ", idx);
                     idx = Math.floor((time - representation.adaptation.period.start) / representation.segmentDuration);
+                } else if (segments && segments.length > 0 && time < segments[0].presentationStartTime) {
+                    self.debug.log("[DashHandler][" + type + "] getIndexForSegments, (before start) idx =  ", idx);
+                    idx = 0;
                 } else {
                     self.debug.log("[DashHandler][" + type + "] Couldn't figure out segment for time: " + time);
                 }
             }
-
-            // TODO : This is horrible.
-            // Temp fix for SegmentTimeline refreshes.
-            //if (idx === -1) {
-            //    idx = 0;
-            //}
 
             /*
             if (segments && segments.length > 0) {

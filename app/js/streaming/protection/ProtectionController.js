@@ -429,6 +429,18 @@ MediaPlayer.dependencies.ProtectionController = function() {
                 abInitData = abInitData.buffer;
             }
 
+            // If key system has already been selected and initData already seen, then do nothing
+            if (this.keySystem) {
+                var initDataForKS = MediaPlayer.dependencies.protection.CommonEncryption.getPSSHForKeySystem(this.keySystem, abInitData);
+                var currentInitData = this.protectionModel.getAllInitData();
+                for (var i = 0; i < currentInitData.length; i++) {
+                    if (this.protectionExt.initDataEquals(initDataForKS, currentInitData[i])) {
+                        this.debug.log("[DRM] Ignoring initData because we have already seen it!");
+                        return;
+                    }
+                }
+            }
+
             supportedKS = this.protectionExt.getSupportedKeySystems(abInitData);
             if (supportedKS.length === 0) {
                 self.debug.log("[DRM] Received needkey event with initData, but we don't support any of the key systems!");
