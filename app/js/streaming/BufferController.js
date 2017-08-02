@@ -482,23 +482,33 @@ MediaPlayer.dependencies.BufferController = function() {
                             self.system.notify("bufferUpdated");
                         },
                         function(result) {
-                            self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_APPEND_SOURCEBUFFER, "Failed to append data into " + type + " source buffer",
-                                new MediaPlayer.vo.Error(result.err.code, result.err.name, result.err.message));
-                            // if the append has failed because the buffer is full we should store the data
-                            // that has not been appended and stop request scheduling. We also need to store
-                            // the promise for this append because the next data can be appended only after
-                            // this promise is resolved.
-                            if (result.err.code === MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_QUOTA_EXCEEDED) {
-                                rejectedBytes = {
-                                    data: data,
-                                    quality: quality/*,
+                            if (type === 'text') {
+                                // if text, do nt raise an error (the stream would stop)
+                                // just log th error
+                                self.debug.error("[BufferController][" + type + "] Failed to append data in source buffer : " + result.err.message);
+                                deferred.resolve();
+                            } else {
+                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_APPEND_SOURCEBUFFER, "Failed to append data into " + type + " source buffer",
+                                                          new MediaPlayer.vo.Error(result.err.code, result.err.name, result.err.message));
+                                // if the append has failed because the buffer is full we should store the data
+                                // that has not been appended and stop request scheduling. We also need to store
+                                // the promise for this append because the next data can be appended only after
+                                // this promise is resolved.
+                                if (result.err.code === MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_QUOTA_EXCEEDED) {
+                                    rejectedBytes = {
+                                        data: data,
+                                        quality: quality/*,
                                     index: index*/
-                                };
-                                deferredRejectedDataAppend = deferred;
-                                isQuotaExceeded = true;
-                                fragmentsToLoad = 0;
-                                // stop scheduling new requests
-                                doStop.call(self);
+                                    };
+                                    deferredRejectedDataAppend = deferred;
+                                    isQuotaExceeded = true;
+                                    fragmentsToLoad = 0;
+                                    // stop scheduling new requests
+                                    doStop.call(self);
+                                } else {
+                                    // promise has to be resolved
+                                    deferred.resolve();
+                                }
                             }
                         }
                     );
