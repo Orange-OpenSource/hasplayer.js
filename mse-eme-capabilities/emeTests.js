@@ -378,9 +378,9 @@ function playback(config) {
             _mediaKeySession.addEventListener('message', onMessage, true);
             if (config.requestLicense) {
                 _mediaKeySession.generateRequest(initDataType, initData).catch(onFailure);
-            } else {
+            } /*else {
                 resolve();
-            }
+            }*/
         }
 
         function onMessage(event) {
