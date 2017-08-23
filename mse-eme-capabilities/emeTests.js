@@ -112,10 +112,9 @@ function eme_tests_support_key_system(keySystems, initDataTypes) {
  * @return a promise resolved using {supported:true/false, keySystem : the key system, type: init data type,err: the error if any}
  */
 function eme_tests_single_support_key_system(keySystem, initDataType) {
-
     return new Promise(function (resolve) {
         navigator.requestMediaKeySystemAccess(
-            keySystem, getSimpleConfigurationForInitDataType(keySystem, initDataType)).then(function () {
+            keySystem, getKeySystemConfiguration(initDataType)).then(function () {
             resolve({
                 supported: true,
                 keySystem: keySystem,
@@ -137,16 +136,17 @@ function eme_tests_single_support_key_system(keySystem, initDataType) {
  * @param {string} keysystems the key systems to be tested
  * @param {object} data eme segment info
  * @param {boolean} initSegmentOnly true to push only init data
+ * @param {boolean} requestLicense true if license has to be requested and then playback is checked, false if only challenge from CDM is checked and then not playback 
  * @return a promise resolved using an array of object {appended:true/false, keySystem : the key system, err: the error if any}
  */
-function eme_test_append_data(keySystems, drmConfig, data, initSegmentOnly) {
+function eme_test_append_data(keySystems, drmConfig, data, initSegmentOnly, requestLicense) {
     return new Promise(function (resolve) {
         var results = [];
         var keySystemPromises = [];
 
         keySystems.forEach(function (keySystem) {
             var eachPromise = new Promise(function (resolve) {
-                eme_test_single_append_data(keySystem, drmConfig, data, initSegmentOnly).then(function (result) {
+                eme_test_single_append_data(keySystem, drmConfig, data, initSegmentOnly, requestLicense).then(function (result) {
                     results.push(result);
                     resolve();
                 });
@@ -167,11 +167,12 @@ function eme_test_append_data(keySystems, drmConfig, data, initSegmentOnly) {
  * @param {string} keysystem the key system to be tested
  * @param {object} data eme segment info
  * @param {boolean} initSegmentOnly true to push only init data
+ * @param {boolean} requestLicense true if license has to be requested and then playback is checked, false if only challenge from CDM is checked and then not playback 
  * @return a promise resolved using {appended:true/false, keySystem : the key system, err: the error if any}
  */
-function eme_test_single_append_data(keysystem, drmConfig, data, initSegmentOnly) {
+function eme_test_single_append_data(keysystem, drmConfig, data, initSegmentOnly, requestLicense) {
     return new Promise(function (resolve) {
-        eme_playback_test(keysystem, drmConfig, data, initSegmentOnly).then(function () {
+        eme_playback_test(keysystem, drmConfig, data, initSegmentOnly, requestLicense).then(function () {
             resolve({
                 appended: true,
                 keySystem: keysystem
@@ -231,25 +232,34 @@ function getInitData(contentitem, initDataType) {
 // Returns a MediaKeySystemConfiguration for |initDataType| that should be
 // accepted, possibly as a subset of the specified capabilities, by all
 // user agents.
-function getSimpleConfigurationForInitDataType(keySystem, initDataType) {
-    if (keySystem === WIDEVINE_CDM) {
-        return [{
+function getKeySystemConfiguration(initDataType, codec) {
+    var contentType = codec ? codec : 'video/mp4;codecs=\"avc1.4d401e\"';
+    var robustnesses = [
+        'SW_SECURE_CRYPTO',
+        'SW_SECURE_DECODE',
+        'HW_SECURE_CRYPTO',
+        'HW_SECURE_DECODE',
+        'HW_SECURE_ALL'
+    ];
+
+    return [
+        {
             initDataTypes: [initDataType],
             videoCapabilities: [{
-                contentType: 'video/mp4;codecs=\"avc1.4d401e\"'/*,
-                robustness: 'SW_SECURE_DECODE'*/
+                contentType: contentType,
+                robustness: 'SW_SECURE_CRYPTO'
             }],
             sessionTypes: ['temporary']
-        }];
-    } else {
-        return [{
+        },
+        {
             initDataTypes: [initDataType],
             videoCapabilities: [{
-                contentType: 'video/mp4;codecs=\"avc1.4d401e\"'
+                contentType: contentType,
+                robustness: 'SW_SECURE_DECODE'
             }],
             sessionTypes: ['temporary']
-        }];
-    }
+        }
+    ];
 }
 
 function testmediasource(config) {
@@ -274,15 +284,15 @@ function testmediasource(config) {
     });
 }
 
-function eme_playback_test(keysystem, drmConfig, data, initSegmentOnly) {
+function eme_playback_test(keysystem, drmConfig, data, initSegmentOnly, requestLicense) {
     if (keysystem === CLEARKEY_CDM) {
-        return playback_clear_key_test(data, initSegmentOnly);
+        return playback_clear_key_test(data, initSegmentOnly, requestLicense);
     } else {
-        return playback_drm_test(keysystem, drmConfig, data, initSegmentOnly);
+        return playback_drm_test(keysystem, drmConfig, data, initSegmentOnly, requestLicense);
     }
 }
 
-function playback_clear_key_test(data, initSegmentOnly) {
+function playback_clear_key_test(data, initSegmentOnly, requestLicense) {
     var contentitem = data,
         handler = new CkMessageHandler(CLEARKEY_CDM, contentitem);
 
@@ -294,13 +304,14 @@ function playback_clear_key_test(data, initSegmentOnly) {
         segmentType: contentitem.type,
         initDataType: 'keyids',
         initData: getInitData(contentitem, 'keyids'),
-        initSegmentOnly: initSegmentOnly
+        initSegmentOnly: initSegmentOnly,
+        requestLicense: requestLicense
     };
 
     return start_eme_playback_test(config);
 }
 
-function playback_drm_test(keysystem, drmConfig, data, initSegmentOnly) {
+function playback_drm_test(keysystem, drmConfig, data, initSegmentOnly, requestLicense) {
 
     var contentitem = data,
         handler = new DrmMessageHandler(keysystem, drmConfig, contentitem);
@@ -312,7 +323,8 @@ function playback_drm_test(keysystem, drmConfig, data, initSegmentOnly) {
         segmentPath: contentitem.url,
         segmentType: contentitem.type,
         initDataType: contentitem.initDataType,
-        initSegmentOnly: initSegmentOnly
+        initSegmentOnly: initSegmentOnly,
+        requestLicense: requestLicense
     };
 
     return start_eme_playback_test(config);
@@ -340,24 +352,7 @@ function start_eme_playback_test(config) {
 
 function playback(config) {
 
-    var configuration = {
-        initDataTypes: [config.initDataType],
-        videoCapabilities: [{
-            contentType: config.segmentType
-        }],
-        sessionTypes: ['temporary']
-    };
-
-    if (config.keysystem === WIDEVINE_CDM) {
-        configuration = {
-            initDataTypes: [config.initDataType],
-            videoCapabilities: [{
-                contentType: config.segmentType/*,
-                robustness: 'SW_SECURE_DECODE'*/
-            }],
-            sessionTypes: ['temporary']
-        };
-    }
+    var ksConfiguration = getKeySystemConfiguration(config.initDataType, config.segmentType);
 
     return new Promise(function (resolve, reject) {
 
@@ -371,7 +366,7 @@ function playback(config) {
 
         function onEncrypted(event) {
 
-            // Only create the session for the firs encrypted event
+            // Only create the session for the first encrypted event
             if (_mediaKeySession !== undefined) {
                 return;
             }
@@ -381,7 +376,11 @@ function playback(config) {
 
             _mediaKeySession = _mediaKeys.createSession('temporary');
             _mediaKeySession.addEventListener('message', onMessage, true);
-            _mediaKeySession.generateRequest(initDataType, initData).catch(onFailure);
+            if (config.requestLicense) {
+                _mediaKeySession.generateRequest(initDataType, initData).catch(onFailure);
+            } else {
+                resolve();
+            }
         }
 
         function onMessage(event) {
@@ -403,12 +402,18 @@ function playback(config) {
         }
 
         function onTimeout() {
-            // Timeout: we assume that no error happened, but 'playing' event
-            // may not be raised on Android devices because of human gesture requirement
-            resolve();
+            console.log("TIMEOUT");
+            if (!_mediaKeySession) {
+                // No MediaKeySession has been created, i.e. no 'encrypted' event has been received
+                reject('content is encrypted but no \'encrypted\' event has been raised');
+            } else {
+                // Timeout: we assume that no error happened, but 'playing' event
+                // may not be raised on Android devices because of human gesture requirement
+                resolve();
+            }
         }
 
-        navigator.requestMediaKeySystemAccess(config.keysystem, [configuration]).then(function (access) {
+        navigator.requestMediaKeySystemAccess(config.keysystem, ksConfiguration).then(function (access) {
             return access.createMediaKeys();
         }).then(function (mediaKeys) {
             _mediaKeys = mediaKeys;
@@ -424,7 +429,9 @@ function playback(config) {
             } else {
                 // wait for video playing to pass the test
                 setTimeout(onTimeout, 500);
-                _video.play();
+                if (config.requestLicense) {
+                    _video.play();
+                }
             }
         }).catch(onFailure);
     });
