@@ -1121,7 +1121,7 @@ MediaPlayer = function () {
         },
 
         /**
-         * Returns the list of available bitrates (as specified in the stream manifest).
+         * Returns the list of available bitrates (in bitrate ascending order).
          * @method getVideoBitrates
          * @access public
          * @memberof MediaPlayer#
@@ -1129,7 +1129,7 @@ MediaPlayer = function () {
          */
         getVideoBitrates: function () {
             _isPlayerInitialized();
-            return videoBitrates;
+            return videoBitrates.slice();
         },
 
         /**
