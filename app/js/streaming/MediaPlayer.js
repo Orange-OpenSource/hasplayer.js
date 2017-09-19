@@ -297,6 +297,17 @@ MediaPlayer = function () {
         this.addEventListener('timeupdate', _onTimeupdate.bind(this));
     };
 
+    // Keyboard handler to display version
+    var _handleKeyPressedEvent = function(e) {
+        // If Ctrl+Alt+Shift+d is pressed then display MediaPlayer version and plugins versions
+        if (e.altKey === true && e.ctrlKey === true && e.shiftKey === true && e.keyCode === 86) {
+            console.log('[MediaPlayer] Version: ' + this.getVersion() + ' - ' + this.getBuildDate());
+            for (var plugin in plugins) {
+                console.log('[' + plugins[plugin].getName() + '] Version: ' + plugins[plugin].getVersion() + ' - ' + plugins[plugin].getBuildDate());
+            }
+            
+        }
+    };
 
     /// Private playback functions ///
     var _resetAndPlay = function (reason) {
@@ -536,6 +547,8 @@ MediaPlayer = function () {
             // create DebugController
             debugController = system.getObject('debugController');
             debugController.init(VERSION);
+
+            window.addEventListener('keydown', _handleKeyPressedEvent.bind(this));            
         },
 //#endregion
 
