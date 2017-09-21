@@ -840,7 +840,7 @@ MediaPlayer = function () {
             <pre>
             {
                 url : "[manifest url]",
-                startTime : [start time in seconds (optional)],
+                startTime : [start time in seconds (optional, only for static streams)],
                 protocol : "[protocol type]", // 'HLS' to activate native support on Safari/OSx
                 protData : {
                     // one entry for each key system ('com.microsoft.playready' or 'com.widevine.alpha')
@@ -1065,11 +1065,7 @@ MediaPlayer = function () {
          */
         getPosition: function () {
             _isPlayerInitialized();
-            if (!this.isLive()) {
-                return videoModel.getCurrentTime();
-            } else {
-                return undefined;
-            }
+            return videoModel.getCurrentTime();
         },
 
         /**
