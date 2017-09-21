@@ -54,6 +54,7 @@ MediaPlayer = function () {
         autoPlay = true,
         source = null, // current source played
         scheduleWhilePaused = false, // should we buffer while in pause
+        isSafari = (fingerprint_browser().name === "Safari"),
         plugins = {};
 //#endregion
 
@@ -85,7 +86,9 @@ MediaPlayer = function () {
         _isVideoModelInitialized();
         _isSourceInitialized();
 
-        if (!MediaPlayer.hasMediaSourceExtension()) {
+        // Check MSE support
+        // (except in case of HLS streams on Safari for which we do not use MSE)
+        if (!(isSafari && source.protocol === 'HLS') && !MediaPlayer.hasMediaSourceExtension()) {
             this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIASOURCE, "MediaSource extension not supported by the browser");
             return;
         }
