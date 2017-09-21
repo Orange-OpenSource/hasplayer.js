@@ -505,6 +505,15 @@ Mss.dependencies.MssParser = function() {
             mpd.type = (isLive !== null && isLive.toLowerCase() === 'true') ? 'dynamic' : 'static';
             mpd.timeShiftBufferDepth = parseFloat(this.domParser.getAttributeValue(smoothNode, 'DVRWindowLength')) / TIME_SCALE_100_NANOSECOND_UNIT;
             var duration = parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration'));
+
+            // If live manifest with Duration and no DVRWindowLength, we consider it as a start-over manifest
+            if (mpd.type === "dynamic" && duration > 0) {
+                mpd.timeShiftBufferDepth = duration / TIME_SCALE_100_NANOSECOND_UNIT;
+                duration = 0;
+                mpd.startOver = true;
+            }
+
+            // Complete manifest/mpd initialization
             mpd.mediaPresentationDuration = (duration === 0) ? Infinity : (duration / TIME_SCALE_100_NANOSECOND_UNIT);
             mpd.BaseURL = baseURL;
             mpd.minBufferTime = MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
