@@ -1,3 +1,40 @@
+/**
+ * This file can be used to generate automatically new releases of the source code.
+ * It can either generate major/minor releases based on development branch or hotfix releases based on master branch.
+ * 
+ * Usage and process to generate a new major/minor release:
+ * 1 - Ensure your working copy is clear and that eveything has been pushed/pulled into/from origin/remote repository
+ * 2 - Start a new git flow by using this script:
+ *      # node release.js --start [--type major|minor] [--version <version>]
+ *      If version is not provided, the version number will be automatically updated according to release type.
+ *      This script will:
+ *          a - start a new release git flow (create a release branch from development branch)
+ *          b - update the package.json file with the new release version number
+ *          c - modify the RELEASES_NOTES.txt file by inserting a new section for the release and appending all commits messages
+ * 3 - Modify the RELEASES_NOTES.txt file to format and finalize the release notes
+ * 4 - Commit and push the RELEASES_NOTES.txt file
+ * 5 - Once the release branch tested/validated and ready to be merged, finish the git flow by executing the script:
+ *      # node release.js --finish
+ *      This script will:
+ *      a - Finish the release git flow (merge release branch into master branch and add a tag)
+ *      b - Modify the package.json file on development branch to setup next version number (in development phase, with suffix '-dev')
+ * 
+ * Usage and process to generate a new hotfix release:
+ * 1 - Ensure your working copy is clear and that eveything has been pushed/pulled into/from origin/remote repository
+ * 2 - Start a new git flow by using this script:
+ *      # node release.js --start [--type patch] [--version <version>]
+ *      If version is not provided, the version number will be automatically updated according to release type.
+ *      This script will:
+ *          a - start a new release git flow (create a hotfix branch from master branch)
+ *          b - update the package.json file with the new release version number
+ *          c - modify the RELEASES_NOTES.txt file by inserting a new section for the release and appending all commits messages
+ * 3 - Modify the RELEASES_NOTES.txt file to format and finalize the release notes
+ * 4 - Commit and push the RELEASES_NOTES.txt file
+ * 5 - Once the release branch tested/validated and ready to be merged, finish the git flow by executing the script:
+ *      # node release.js --finish
+ *      This script will finish the release git flow (merge hotfix branch into master and development branches and add a tag).
+ */
+
 var PACKAGE_JSON_FILE = './package.json',
     RELEASES_NOTES_FILE = './RELEASES NOTES.txt';
 
