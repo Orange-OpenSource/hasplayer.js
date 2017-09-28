@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-9-28_15:7:33 / git revision : 5159744 */
+/* Last build : 2017-9-28_15:13:33 / git revision : a9b4ffd */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.12.0-dev',
-        GIT_TAG = '5159744',
-        BUILD_DATE = '2017-9-28_15:7:33',
+        GIT_TAG = 'a9b4ffd',
+        BUILD_DATE = '2017-9-28_15:13:33',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -887,7 +887,6 @@ MediaPlayer = function () {
             {
                 url : "[manifest url]",
                 startTime : [start time in seconds (optional, only for static streams)],
-                startOver : [true if start-over DVR stream (optional)],
                 protocol : "[protocol type]", // 'HLS' to activate native support on Safari/OSx
                 protData : {
                     // one entry for each key system ('com.microsoft.playready' or 'com.widevine.alpha')
@@ -7148,7 +7147,7 @@ MediaPlayer.dependencies.MetricsExtensions.prototype = {
             metrics.push(vo);
             this.metricAdded(streamType, "State", vo);
 
-            console.log("[STATE] type: " + streamType + ", state:" + currentState + ", position: " + position);
+            // console.log("[STATE] type: " + streamType + ", state:" + currentState + ", position: " + position);
 
             // Keep only last 10 metrics to avoid memory leak
             if (metrics.length > 10) {
@@ -10655,12 +10654,6 @@ MediaPlayer.dependencies.StreamController = function() {
             if (!manifest) {
                 return false;
             }
-
-            // Specific use case of "start-over" or "session DVR" live streams
-            // We set this information in the manifest, to be used by MssFragmentController for DVR window updating
-            if (source.startOver) {
-                manifest.startOver = true;
-            } 
 
             this.debug.info("[StreamController] composeStreams");
 
@@ -27776,15 +27769,6 @@ Mss.dependencies.MssParser = function() {
             mpd.type = (isLive !== null && isLive.toLowerCase() === 'true') ? 'dynamic' : 'static';
             mpd.timeShiftBufferDepth = parseFloat(this.domParser.getAttributeValue(smoothNode, 'DVRWindowLength')) / TIME_SCALE_100_NANOSECOND_UNIT;
             var duration = parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration'));
-
-            // If live manifest with Duration and no DVRWindowLength, we consider it as a start-over manifest
-            if (mpd.type === "dynamic" && duration > 0) {
-                mpd.timeShiftBufferDepth = duration / TIME_SCALE_100_NANOSECOND_UNIT;
-                duration = 0;
-                mpd.startOver = true;
-            }
-
-            // Complete manifest/mpd initialization
             mpd.mediaPresentationDuration = (duration === 0) ? Infinity : (duration / TIME_SCALE_100_NANOSECOND_UNIT);
             mpd.BaseURL = baseURL;
             mpd.minBufferTime = MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
@@ -28208,7 +28192,7 @@ Mss.dependencies.MssFragmentController = function() {
 
             // Update segment timeline according to DVR window
             if (manifest.timeShiftBufferDepth && manifest.timeShiftBufferDepth > 0) {
-                if (segmentsUpdated && manifest.startOver !== true) {
+                if (segmentsUpdated) {
                     // Get timestamp of the last segment
                     segment = segments[segments.length - 1];
                     t = segment.t;
