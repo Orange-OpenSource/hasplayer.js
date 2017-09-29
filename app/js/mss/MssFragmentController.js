@@ -88,7 +88,7 @@ Mss.dependencies.MssFragmentController = function() {
 
             // Update segment timeline according to DVR window
             if (manifest.timeShiftBufferDepth && manifest.timeShiftBufferDepth > 0) {
-                if (segmentsUpdated) {
+                if (segmentsUpdated && manifest.startOver !== true) {
                     // Get timestamp of the last segment
                     segment = segments[segments.length - 1];
                     t = segment.t;

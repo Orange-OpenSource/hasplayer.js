@@ -269,6 +269,12 @@ MediaPlayer.dependencies.StreamController = function() {
                 return false;
             }
 
+            // Specific use case of "start-over" or "session DVR" live streams
+            // We set this information in the manifest, to be used by MssFragmentController for DVR window updating
+            if (source.startOver) {
+                manifest.startOver = true;
+            } 
+
             this.debug.info("[StreamController] composeStreams");
 
             if (this.capabilities.supportsEncryptedMedia()) {

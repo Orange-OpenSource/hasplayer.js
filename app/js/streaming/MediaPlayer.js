@@ -844,6 +844,7 @@ MediaPlayer = function () {
             {
                 url : "[manifest url]",
                 startTime : [start time in seconds (optional, only for static streams)],
+                startOver : [true if start-over DVR stream (optional)],
                 protocol : "[protocol type]", // 'HLS' to activate native support on Safari/OSx
                 protData : {
                     // one entry for each key system ('com.microsoft.playready' or 'com.widevine.alpha')
