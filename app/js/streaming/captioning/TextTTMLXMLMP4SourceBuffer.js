@@ -141,8 +141,10 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                 tfhd,
                 tfdt,
                 trun,
+                subs,
                 fragmentStart,
                 fragmentDuration = 0,
+                ttmlData,
                 encoding = 'utf-8';
 
             //no mp4, all the subtitles are in one xml file
@@ -202,6 +204,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                 tfhd = traf.getBoxByType('tfhd');
                 tfdt = traf.getBoxByType('tfdt');
                 trun = traf.getBoxByType('trun');
+                subs = traf.getBoxByType('subs');
 
                 fragmentStart = tfdt.baseMediaDecodeTime / self.timescale;
                 fragmentDuration = 0;
@@ -212,13 +215,25 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                 }
 
                 self.buffered.addRange(fragmentStart, fragmentStart + fragmentDuration);
+                
+                if (subs) {
+                    for (var i = 0; i < subs.entry_count; i++) {
+                        for (var j = 0; j < subs.entry[i].subsample_count; j++) {
+                            //the first subsample is the one in which TTML text is set
+                            ttmlData = mdat.data.subarray(0, subs.entry[i].subSampleEntries[0].subsample_size);
+                            break;
+                        }
+                    }
+                } else {
+                    ttmlData = mdat.data;
+                }
 
                 //detect utf-16 encoding
-                if (self.isUTF16(mdat.data)) {
+                if (self.isUTF16(ttmlData)) {
                     encoding = 'utf-16';
                 }
                 // parse data and add to cues
-                self.convertUTFToString(mdat.data, encoding)
+                self.convertUTFToString(ttmlData, encoding)
                     .then(function(result) {
                         self.ttmlParser.parse(result).then(function(cues) {
                             var i,

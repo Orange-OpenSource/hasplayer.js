@@ -54,6 +54,7 @@ MediaPlayer = function () {
         autoPlay = true,
         source = null, // current source played
         scheduleWhilePaused = false, // should we buffer while in pause
+        isSafari = (fingerprint_browser().name === "Safari"),
         plugins = {};
 //#endregion
 
@@ -85,7 +86,9 @@ MediaPlayer = function () {
         _isVideoModelInitialized();
         _isSourceInitialized();
 
-        if (!MediaPlayer.hasMediaSourceExtension()) {
+        // Check MSE support
+        // (except in case of HLS streams on Safari for which we do not use MSE)
+        if (!(isSafari && source.protocol === 'HLS') && !MediaPlayer.hasMediaSourceExtension()) {
             this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIASOURCE, "MediaSource extension not supported by the browser");
             return;
         }
@@ -297,6 +300,17 @@ MediaPlayer = function () {
         this.addEventListener('timeupdate', _onTimeupdate.bind(this));
     };
 
+    // Keyboard handler to display version
+    var _handleKeyPressedEvent = function(e) {
+        // If Ctrl+Alt+Shift+d is pressed then display MediaPlayer version and plugins versions
+        if (e.altKey === true && e.ctrlKey === true && e.shiftKey === true && e.keyCode === 86) {
+            console.log('[MediaPlayer] Version: ' + this.getVersion() + ' - ' + this.getBuildDate());
+            for (var plugin in plugins) {
+                console.log('[' + plugins[plugin].getName() + '] Version: ' + plugins[plugin].getVersion() + ' - ' + plugins[plugin].getBuildDate());
+            }
+            
+        }
+    };
 
     /// Private playback functions ///
     var _resetAndPlay = function (reason) {
@@ -536,6 +550,8 @@ MediaPlayer = function () {
             // create DebugController
             debugController = system.getObject('debugController');
             debugController.init(VERSION);
+
+            window.addEventListener('keydown', _handleKeyPressedEvent.bind(this));            
         },
 //#endregion
 
@@ -827,7 +843,8 @@ MediaPlayer = function () {
             <pre>
             {
                 url : "[manifest url]",
-                startTime : [start time in seconds (optional)],
+                startTime : [start time in seconds (optional, only for static streams)],
+                startOver : [true if start-over DVR stream (optional)],
                 protocol : "[protocol type]", // 'HLS' to activate native support on Safari/OSx
                 protData : {
                     // one entry for each key system ('com.microsoft.playready' or 'com.widevine.alpha')
@@ -1052,11 +1069,7 @@ MediaPlayer = function () {
          */
         getPosition: function () {
             _isPlayerInitialized();
-            if (!this.isLive()) {
-                return videoModel.getCurrentTime();
-            } else {
-                return undefined;
-            }
+            return videoModel.getCurrentTime();
         },
 
         /**
@@ -1121,7 +1134,7 @@ MediaPlayer = function () {
         },
 
         /**
-         * Returns the list of available bitrates (as specified in the stream manifest).
+         * Returns the list of available bitrates (in bitrate ascending order).
          * @method getVideoBitrates
          * @access public
          * @memberof MediaPlayer#
@@ -1129,7 +1142,7 @@ MediaPlayer = function () {
          */
         getVideoBitrates: function () {
             _isPlayerInitialized();
-            return videoBitrates;
+            return videoBitrates.slice();
         },
 
         /**

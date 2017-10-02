@@ -124,7 +124,7 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
             adaptation = manifest.Period.AdaptationSet[i];
             if (adaptation.type === type || adaptation.contentType === type) {
                 //return codecs of the first Representation
-                return adaptation.Representation[0].codecs;
+                return adaptation.Representation_asArray[0].codecs;
             }
         }
 

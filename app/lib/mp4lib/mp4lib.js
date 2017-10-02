@@ -95,6 +95,7 @@ var mp4lib = (function() {
         boxTypeArray["stss"] = mp4lib.boxes.SyncSampleBox;
         boxTypeArray["tref"] = mp4lib.boxes.TrackReferenceBox;
         boxTypeArray["frma"] = mp4lib.boxes.OriginalFormatBox;
+        boxTypeArray["subs"] = mp4lib.boxes.SubSampleInformationBox;
         //extended types
         boxTypeArray[JSON.stringify([0x6D, 0x1D, 0x9B, 0x05, 0x42, 0xD5, 0x44, 0xE6, 0x80, 0xE2, 0x14, 0x1D, 0xAF, 0xF7, 0x57, 0xB2])] = mp4lib.boxes.TfxdBox;
         boxTypeArray[JSON.stringify([0xD4, 0x80, 0x7E, 0xF2, 0xCA, 0x39, 0x46, 0x95, 0x8E, 0x54, 0x26, 0xCB, 0x9E, 0x46, 0xA7, 0x9F])] = mp4lib.boxes.TfrfBox;

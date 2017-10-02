@@ -200,7 +200,7 @@
             metrics.push(vo);
             this.metricAdded(streamType, "State", vo);
 
-            console.log("[STATE] type: " + streamType + ", state:" + currentState + ", position: " + position);
+            // console.log("[STATE] type: " + streamType + ", state:" + currentState + ", position: " + position);
 
             // Keep only last 10 metrics to avoid memory leak
             if (metrics.length > 10) {
