@@ -1,10 +1,3 @@
-### Release Notes v1.12.0 (2017/10/02)
-* [MSS] Add support for start-over streams
-* Add keyboard shorcut to display version number (in debug console)
-* [HLS] Do not check MSE support on Safari (use of native player)
-* Bugs fixing:
-* - [MSS] Fix support for image subtitles contained in 'subs' mp4 boxes
-
 ### Release Notes v1.11.0 (2017/07/13)
 * [HLS] Add specific support for HLS and FairPlay for Safari/OSx using native player and EME for CDM/licenser exchanges
 * [MSS] Add support for large timestamps values (greater than 2^53)
