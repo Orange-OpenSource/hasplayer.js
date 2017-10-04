@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-7-13_9:57:10 / git revision : c9a168e */
+/* Last build : 2017-10-2_14:1:42 / git revision : 2f7e9c4 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -70,9 +70,9 @@ MediaPlayer = function () {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
-        VERSION = '1.11.0',
-        GIT_TAG = 'c9a168e',
-        BUILD_DATE = '2017-7-13_9:57:10',
+        VERSION = '1.12.0',
+        GIT_TAG = '2f7e9c4',
+        BUILD_DATE = '2017-10-2_14:1:42',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -97,6 +97,7 @@ MediaPlayer = function () {
         autoPlay = true,
         source = null, // current source played
         scheduleWhilePaused = false, // should we buffer while in pause
+        isSafari = (fingerprint_browser().name === "Safari"),
         plugins = {};
 //#endregion
 
@@ -128,7 +129,9 @@ MediaPlayer = function () {
         _isVideoModelInitialized();
         _isSourceInitialized();
 
-        if (!MediaPlayer.hasMediaSourceExtension()) {
+        // Check MSE support
+        // (except in case of HLS streams on Safari for which we do not use MSE)
+        if (!(isSafari && source.protocol === 'HLS') && !MediaPlayer.hasMediaSourceExtension()) {
             this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.CAPABILITY_ERR_MEDIASOURCE, "MediaSource extension not supported by the browser");
             return;
         }
@@ -340,6 +343,17 @@ MediaPlayer = function () {
         this.addEventListener('timeupdate', _onTimeupdate.bind(this));
     };
 
+    // Keyboard handler to display version
+    var _handleKeyPressedEvent = function(e) {
+        // If Ctrl+Alt+Shift+d is pressed then display MediaPlayer version and plugins versions
+        if (e.altKey === true && e.ctrlKey === true && e.shiftKey === true && e.keyCode === 86) {
+            console.log('[MediaPlayer] Version: ' + this.getVersion() + ' - ' + this.getBuildDate());
+            for (var plugin in plugins) {
+                console.log('[' + plugins[plugin].getName() + '] Version: ' + plugins[plugin].getVersion() + ' - ' + plugins[plugin].getBuildDate());
+            }
+            
+        }
+    };
 
     /// Private playback functions ///
     var _resetAndPlay = function (reason) {
@@ -579,6 +593,8 @@ MediaPlayer = function () {
             // create DebugController
             debugController = system.getObject('debugController');
             debugController.init(VERSION);
+
+            window.addEventListener('keydown', _handleKeyPressedEvent.bind(this));            
         },
 //#endregion
 
@@ -870,7 +886,8 @@ MediaPlayer = function () {
             <pre>
             {
                 url : "[manifest url]",
-                startTime : [start time in seconds (optional)],
+                startTime : [start time in seconds (optional, only for static streams)],
+                startOver : [true if start-over DVR stream (optional)],
                 protocol : "[protocol type]", // 'HLS' to activate native support on Safari/OSx
                 protData : {
                     // one entry for each key system ('com.microsoft.playready' or 'com.widevine.alpha')
@@ -1095,11 +1112,7 @@ MediaPlayer = function () {
          */
         getPosition: function () {
             _isPlayerInitialized();
-            if (!this.isLive()) {
-                return videoModel.getCurrentTime();
-            } else {
-                return undefined;
-            }
+            return videoModel.getCurrentTime();
         },
 
         /**
@@ -1164,7 +1177,7 @@ MediaPlayer = function () {
         },
 
         /**
-         * Returns the list of available bitrates (as specified in the stream manifest).
+         * Returns the list of available bitrates (in bitrate ascending order).
          * @method getVideoBitrates
          * @access public
          * @memberof MediaPlayer#
@@ -1172,7 +1185,7 @@ MediaPlayer = function () {
          */
         getVideoBitrates: function () {
             _isPlayerInitialized();
-            return videoBitrates;
+            return videoBitrates.slice();
         },
 
         /**
@@ -2607,23 +2620,33 @@ MediaPlayer.dependencies.BufferController = function() {
                             self.system.notify("bufferUpdated");
                         },
                         function(result) {
-                            self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_APPEND_SOURCEBUFFER, "Failed to append data into " + type + " source buffer",
-                                new MediaPlayer.vo.Error(result.err.code, result.err.name, result.err.message));
-                            // if the append has failed because the buffer is full we should store the data
-                            // that has not been appended and stop request scheduling. We also need to store
-                            // the promise for this append because the next data can be appended only after
-                            // this promise is resolved.
-                            if (result.err.code === MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_QUOTA_EXCEEDED) {
-                                rejectedBytes = {
-                                    data: data,
-                                    quality: quality/*,
+                            if (type === 'text') {
+                                // if text, do nt raise an error (the stream would stop)
+                                // just log th error
+                                self.debug.error("[BufferController][" + type + "] Failed to append data in source buffer : " + result.err.message);
+                                deferred.resolve();
+                            } else {
+                                self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_APPEND_SOURCEBUFFER, "Failed to append data into " + type + " source buffer",
+                                                          new MediaPlayer.vo.Error(result.err.code, result.err.name, result.err.message));
+                                // if the append has failed because the buffer is full we should store the data
+                                // that has not been appended and stop request scheduling. We also need to store
+                                // the promise for this append because the next data can be appended only after
+                                // this promise is resolved.
+                                if (result.err.code === MediaPlayer.dependencies.ErrorHandler.prototype.DOM_ERR_QUOTA_EXCEEDED) {
+                                    rejectedBytes = {
+                                        data: data,
+                                        quality: quality/*,
                                     index: index*/
-                                };
-                                deferredRejectedDataAppend = deferred;
-                                isQuotaExceeded = true;
-                                fragmentsToLoad = 0;
-                                // stop scheduling new requests
-                                doStop.call(self);
+                                    };
+                                    deferredRejectedDataAppend = deferred;
+                                    isQuotaExceeded = true;
+                                    fragmentsToLoad = 0;
+                                    // stop scheduling new requests
+                                    doStop.call(self);
+                                } else {
+                                    // promise has to be resolved
+                                    deferred.resolve();
+                                }
                             }
                         }
                     );
@@ -3841,6 +3864,7 @@ MediaPlayer.dependencies.BufferController = function() {
 MediaPlayer.dependencies.BufferController.prototype = {
     constructor: MediaPlayer.dependencies.BufferController
 };
+
 /*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
  *
@@ -4770,7 +4794,6 @@ MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST = "DOWNLOA
 MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_SIDX = "DOWNLOAD_ERR_SIDX";
 MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_INIT = "DOWNLOAD_ERR_INIT";
 MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_CONTENT = "DOWNLOAD_ERR_CONTENT";
-MediaPlayer.dependencies.ErrorHandler.prototype.CC_ERR_PARSE = "CC_ERR_PARSE";
 
 // MSS errors
 MediaPlayer.dependencies.ErrorHandler.prototype.MSS_NO_TFRF = "MSS_NO_TFRF";
@@ -6746,7 +6769,7 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
             adaptation = manifest.Period.AdaptationSet[i];
             if (adaptation.type === type || adaptation.contentType === type) {
                 //return codecs of the first Representation
-                return adaptation.Representation[0].codecs;
+                return adaptation.Representation_asArray[0].codecs;
             }
         }
 
@@ -6922,6 +6945,7 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
 MediaPlayer.dependencies.MetricsExtensions.prototype = {
     constructor: MediaPlayer.dependencies.MetricsExtensions
 };
+
 /*
  * The copyright in this software is being made available under the BSD License, included below. This software may be subject to other third party and contributor rights, including patent rights, and no such rights are granted under this license.
  *
@@ -7124,7 +7148,7 @@ MediaPlayer.dependencies.MetricsExtensions.prototype = {
             metrics.push(vo);
             this.metricAdded(streamType, "State", vo);
 
-            console.log("[STATE] type: " + streamType + ", state:" + currentState + ", position: " + position);
+            // console.log("[STATE] type: " + streamType + ", state:" + currentState + ", position: " + position);
 
             // Keep only last 10 metrics to avoid memory leak
             if (metrics.length > 10) {
@@ -10632,6 +10656,12 @@ MediaPlayer.dependencies.StreamController = function() {
                 return false;
             }
 
+            // Specific use case of "start-over" or "session DVR" live streams
+            // We set this information in the manifest, to be used by MssFragmentController for DVR window updating
+            if (source.startOver) {
+                manifest.startOver = true;
+            } 
+
             this.debug.info("[StreamController] composeStreams");
 
             if (this.capabilities.supportsEncryptedMedia()) {
@@ -12966,8 +12996,10 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                 tfhd,
                 tfdt,
                 trun,
+                subs,
                 fragmentStart,
                 fragmentDuration = 0,
+                ttmlData,
                 encoding = 'utf-8';
 
             //no mp4, all the subtitles are in one xml file
@@ -13027,6 +13059,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                 tfhd = traf.getBoxByType('tfhd');
                 tfdt = traf.getBoxByType('tfdt');
                 trun = traf.getBoxByType('trun');
+                subs = traf.getBoxByType('subs');
 
                 fragmentStart = tfdt.baseMediaDecodeTime / self.timescale;
                 fragmentDuration = 0;
@@ -13037,13 +13070,25 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                 }
 
                 self.buffered.addRange(fragmentStart, fragmentStart + fragmentDuration);
+                
+                if (subs) {
+                    for (var i = 0; i < subs.entry_count; i++) {
+                        for (var j = 0; j < subs.entry[i].subsample_count; j++) {
+                            //the first subsample is the one in which TTML text is set
+                            ttmlData = mdat.data.subarray(0, subs.entry[i].subSampleEntries[0].subsample_size);
+                            break;
+                        }
+                    }
+                } else {
+                    ttmlData = mdat.data;
+                }
 
                 //detect utf-16 encoding
-                if (self.isUTF16(mdat.data)) {
+                if (self.isUTF16(ttmlData)) {
                     encoding = 'utf-16';
                 }
                 // parse data and add to cues
-                self.convertUTFToString(mdat.data, encoding)
+                self.convertUTFToString(ttmlData, encoding)
                     .then(function(result) {
                         self.ttmlParser.parse(result).then(function(cues) {
                             var i,
@@ -27731,6 +27776,15 @@ Mss.dependencies.MssParser = function() {
             mpd.type = (isLive !== null && isLive.toLowerCase() === 'true') ? 'dynamic' : 'static';
             mpd.timeShiftBufferDepth = parseFloat(this.domParser.getAttributeValue(smoothNode, 'DVRWindowLength')) / TIME_SCALE_100_NANOSECOND_UNIT;
             var duration = parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration'));
+
+            // If live manifest with Duration and no DVRWindowLength, we consider it as a start-over manifest
+            if (mpd.type === "dynamic" && duration > 0) {
+                mpd.timeShiftBufferDepth = duration / TIME_SCALE_100_NANOSECOND_UNIT;
+                duration = 0;
+                mpd.startOver = true;
+            }
+
+            // Complete manifest/mpd initialization
             mpd.mediaPresentationDuration = (duration === 0) ? Infinity : (duration / TIME_SCALE_100_NANOSECOND_UNIT);
             mpd.BaseURL = baseURL;
             mpd.minBufferTime = MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
@@ -28154,7 +28208,7 @@ Mss.dependencies.MssFragmentController = function() {
 
             // Update segment timeline according to DVR window
             if (manifest.timeShiftBufferDepth && manifest.timeShiftBufferDepth > 0) {
-                if (segmentsUpdated) {
+                if (segmentsUpdated && manifest.startOver !== true) {
                     // Get timestamp of the last segment
                     segment = segments[segments.length - 1];
                     t = segment.t;
@@ -32292,6 +32346,7 @@ var mp4lib = (function() {
         boxTypeArray["stss"] = mp4lib.boxes.SyncSampleBox;
         boxTypeArray["tref"] = mp4lib.boxes.TrackReferenceBox;
         boxTypeArray["frma"] = mp4lib.boxes.OriginalFormatBox;
+        boxTypeArray["subs"] = mp4lib.boxes.SubSampleInformationBox;
         //extended types
         boxTypeArray[JSON.stringify([0x6D, 0x1D, 0x9B, 0x05, 0x42, 0xD5, 0x44, 0xE6, 0x80, 0xE2, 0x14, 0x1D, 0xAF, 0xF7, 0x57, 0xB2])] = mp4lib.boxes.TfxdBox;
         boxTypeArray[JSON.stringify([0xD4, 0x80, 0x7E, 0xF2, 0xCA, 0x39, 0x46, 0x95, 0x8E, 0x54, 0x26, 0xCB, 0x9E, 0x46, 0xA7, 0x9F])] = mp4lib.boxes.TfrfBox;
@@ -35679,6 +35734,58 @@ mp4lib.boxes.TfrfBox.prototype.read = function(data, pos, end) {
         this.entry.push(struct);
     }
     return this.localPos;
+};
+
+// --------------------------- subs -----------------------------
+mp4lib.boxes.SubSampleInformationBox = function(size) {
+    mp4lib.boxes.FullBox.call(this, 'subs', size);
+};
+
+mp4lib.boxes.SubSampleInformationBox.prototype = Object.create(mp4lib.boxes.FullBox.prototype);
+mp4lib.boxes.SubSampleInformationBox.prototype.constructor = mp4lib.boxes.SubSampleInformationBox;
+
+mp4lib.boxes.SubSampleInformationBox.prototype.computeLength = function() {
+    mp4lib.boxes.FullBox.prototype.computeLength.call(this);
+    // To Define if needed
+};
+
+mp4lib.boxes.SubSampleInformationBox.prototype.read = function(data, pos, end) {
+    mp4lib.boxes.FullBox.prototype.read.call(this, data, pos, end);
+    var i = 0,
+        j = 0,
+        struct = {},
+        subSampleStruct = {};
+
+    this.entry_count = this._readData(data, mp4lib.fields.FIELD_UINT32);
+    this.entry = [];
+    for (i = 0; i < this.entry_count; i++) {
+        struct = {};
+        struct.sample_delta = this._readData(data, mp4lib.fields.FIELD_UINT32);
+        struct.subsample_count = this._readData(data, mp4lib.fields.FIELD_UINT16);
+        if (struct.subsample_count > 0) {
+            struct.subSampleEntries = [];
+            for (j=0; j < struct.subsample_count; j++) {
+                subSampleStruct = {};
+                if (this.version === 1) {
+                    subSampleStruct.subsample_size = this._readData(data, mp4lib.fields.FIELD_UINT32);
+                } else {
+                    subSampleStruct.subsample_size = this._readData(data, mp4lib.fields.FIELD_UINT16);
+                }
+                subSampleStruct.subsample_priority = this._readData(data, mp4lib.fields.FIELD_UINT8);
+                subSampleStruct.discardable = this._readData(data, mp4lib.fields.FIELD_UINT8);
+                subSampleStruct.reserved = this._readData(data, mp4lib.fields.FIELD_UINT32);
+                struct.subSampleEntries.push(subSampleStruct);
+            }
+        }
+        this.entry.push(struct);
+    }
+
+    return this.localPos;
+};
+
+mp4lib.boxes.SubSampleInformationBox.prototype.write = function(data, pos) {
+    mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
+    // To Define if needed
 };
 
 mp4lib.registerTypeBoxes();
