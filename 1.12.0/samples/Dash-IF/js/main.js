@@ -131,6 +131,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
 
     var player,
         video,
+        onplayingListener,
         subtitlesDiv,
         context,
         config = null,
@@ -144,7 +145,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         maxGraphPoints = 50,
         metricsAgent = null,
         configMetrics = null,
-        subtitlesCSSStyle = null;
+        subtitlesCSSStyle = null;        
 
     $scope.chromecast = {};
     $scope.chromecast.apiOk = false;
@@ -378,6 +379,14 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         $scope.trickModeSpeed = "x1";
     }
 
+    function onplaying(/*e*/) {
+        var range = player.getDVRWindowRange();
+        if (range) {
+            video.removeEventListener("playing", onplayingListener);          
+            player.seek(player.getDVRWindowRange().start);
+        }
+    }
+    
     //if video size change, player has to update subtitles size
     function onFullScreenChange(){
     }
@@ -644,6 +653,9 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
     if (config) {
         player.setConfig(config);
     }
+
+    onplayingListener = onplaying.bind(this);
+    
     $scope.player = player;
     $scope.videojsIsOn = false;
 
@@ -910,6 +922,7 @@ app.controller('DashController', ['$scope', '$window', 'Sources', 'Notes','Contr
         //player.attachTTMLRenderingDiv(subtitlesDiv);
 
         $scope.playbackRate = "x1";
+        video.addEventListener("playing", onplayingListener);        
         player.load($scope.selectedItem);
     }
 
