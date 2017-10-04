@@ -26,6 +26,7 @@ var gulp = require('gulp'),
         .default('protection', true)
         .default('mss', true)
         .default('hls', true)
+        .default('name', '')
         .argv;
 
 
@@ -185,8 +186,14 @@ gulp.task('doc', function() {
 });
 
 gulp.task('zip', function() {
+    var filename = pkg.name + '-v' + pkg.version;
+    console.log(argv.name);
+    if (argv.name.length > 0) {
+        filename += '_' + argv.name;
+    }
+    filename += '.zip';
     return gulp.src(config.distDir + '/**/*')
-        .pipe(zip(pkg.name + '.zip'))
+        .pipe(zip(filename))
         .pipe(gulp.dest(config.distDir));
 });
 
