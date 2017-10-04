@@ -24,7 +24,6 @@ var gulp = require('gulp'),
     // command line options
     argv = require('yargs')
         .default('protection', true)
-        .default('analytics', false)
         .default('mss', true)
         .default('hls', true)
         .argv;
@@ -73,10 +72,6 @@ if (argv.hls) {
 
 if (argv.mss) {
     sourcesGlob = sourcesGlob.concat(sources.mss);
-}
-
-if (argv.analytics) {
-    sourcesGlob = sourcesGlob.concat(sources.analytics);
 }
 
 gulp.task('clean', function(done) {

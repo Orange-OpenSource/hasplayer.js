@@ -86,8 +86,5 @@
         "../app/js/mss/MssParser.js",
         "../app/js/mss/MssHandler.js",
         "../app/js/mss/MssFragmentController.js"
-    ],
-    "analytics": [
-        "../app/js/utils/analytics.js"
     ]
 }
