@@ -412,7 +412,7 @@
                             <div  ng-show="chromecast.audioData">
                                 <span class="panel-title">Multi - Audio</span>
                                 <div>
-                                    <select id="chormecastAudioTracksSelect" ng-model="chromecast.audioData" ng-options="track".lang" +' - ' + track.id for track in chromecast.audioTracks" required="true" ng-change="chromecast.selectAudioTrack(chromecast.audioData)"></select>
+                                    <select id="chromecastAudioTracksSelect" ng-model="chromecast.audioData" ng-options="track.lang + (track.id ? ' - ' + track.id : '') for track in chromecast.audioTracks" required="true" ng-change="chromecast.selectAudioTrack(chromecast.audioData)"></select>
                                 </div>
                             </div>
                         </div>
