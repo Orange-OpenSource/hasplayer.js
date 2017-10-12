@@ -1511,14 +1511,6 @@ MediaPlayer.dependencies.BufferController = function() {
             return isBufferingCompleted;
         },
 
-        clearMetrics: function() {
-            if (type === null || type === "") {
-                return;
-            }
-
-            this.metricsModel.clearCurrentMetricsForType(type);
-        },
-
         updateManifest: function() {
             this.system.notify("manifestUpdate");
         },
@@ -1649,7 +1641,6 @@ MediaPlayer.dependencies.BufferController = function() {
                         fragmentModel = null;
                     }
 
-                    self.clearMetrics();
                     initializationData = [];
                     initialPlayback = true;
                     isQuotaExceeded = false;
