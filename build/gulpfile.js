@@ -1,22 +1,18 @@
 var gulp = require('gulp'),
     // node packages
-    del = require('del'),
-    path = require('path'),
-    fs = require('fs'),
+    fs = require('fs-extra'),
     runSequence = require('run-sequence'),
     // gulp packages
-    banner = require('gulp-banner'),
+    header = require('gulp-header'),
     concat = require('gulp-concat'),
     footer = require('gulp-footer'),
     git = require('gulp-git'),
-    htmlReplace = require('gulp-html-replace'),
+    gulpif = require('gulp-if'),
     jsdoc = require('gulp-jsdoc3'),
     jshint = require('gulp-jshint'),
-    preprocess = require('gulp-preprocess'),
-    rename = require('gulp-rename'),
-    replace = require('gulp-replace'),
+    replace = require('gulp-regexp-sourcemaps'),
+    sourcemaps = require('gulp-sourcemaps'),
     uglify = require('gulp-uglify'),
-    umd = require('gulp-umd'),
     zip = require('gulp-zip'),
     // custom import
     pkg = require('../package.json'),
@@ -29,23 +25,28 @@ var gulp = require('gulp'),
         .default('name', '')
         .argv;
 
-
+// Header for build file that includes copyrightand package information (version and build date)
 var comment = '<%= pkg.copyright %>\n\n/* Last build : <%= pkg.gitDate %>_<%= pkg.gitTime %> / git revision : <%= pkg.gitRevision %> */\n\n';
 
+// UMD template
+var umd = fs.readFileSync("./umd.js", "utf8");
+var umdHeader = umd.substring(0, umd.indexOf('//@@HASPLAYER'));
+var umdFooter = umd.substring(umd.indexOf('//@@HASPLAYER') + '//@@HASPLAYER'.length);
+
+// Jshint ignore directives for minifiled build file
 var jshint_ignore_start = '/* jshint ignore:start */\n';
 var jshint_ignore_end = '\n/* jshint ignore:end */';
 
 var config = {
     distDir: '../dist',
     doc: {
-        dir: '../dist/doc/',
         source: '../app/js/streaming/MediaPlayer.js',
         readme: '../README.md',
         errorsTable: './jsdoc/errors.html'
     },
     jsdoc: {
         'opts': {
-            'destination': '../dist/doc/'
+            'destination': '../doc/jsdoc'
         },
         'templates': {
             'theme': 'united',
@@ -60,31 +61,38 @@ var config = {
     }
 };
 
+var initTasks = ['clean', 'package-info', 'jshint'];
+var minify = false;
+
+// console.log('Include MSS package: ' + argv.mss);
+// console.log('Include HLS package: ' + argv.hls);
+// console.log('Include Protection package: ' + argv.protection);
+
 // Create the final globs for sources according to command line options
 var sourcesGlob = sources.default;
 
-if (argv.protection) {
+if (eval(argv.protection)) {
     sourcesGlob = sourcesGlob.concat(sources.protection);
 }
 
-if (argv.hls) {
+if (eval(argv.hls)) {
     sourcesGlob = sourcesGlob.concat(sources.hls);
 }
 
-if (argv.mss) {
+if (eval(argv.mss)) {
     sourcesGlob = sourcesGlob.concat(sources.mss);
 }
 
+
+// 'clean' task: clean output folder
 gulp.task('clean', function(done) {
     return (function() {
-        del([config.distDir + '**/*'], {
-            force: true,
-            dot: true
-        });
+        fs.emptyDirSync(config.distDir);
         done();
     })();
 });
 
+// 'package-info' task: get additional package information such as Git info and COPYRIGHT
 gulp.task('package-info', function() {
     // Get last abbreviated commit hash
     git.exec({args: 'log -1 --format=%h', quiet: true}, function (err, stdout) {
@@ -96,88 +104,45 @@ gulp.task('package-info', function() {
         pkg.gitDate = (date.getFullYear()) + '-' + (date.getMonth() + 1) + '-' + (date.getDate());
         pkg.gitTime = (date.getHours()) + ':' + (date.getMinutes()) + ':' + (date.getSeconds());
     });
+    // Get COPYRIGHT
     fs.readFile('../COPYRIGHT', null, function(err, _data) {
         pkg.copyright = _data;
     });
 });
 
-gulp.task('lint', function() {
+// 'jshint' task: jshint code checking
+gulp.task('jshint', function() {
     return gulp.src(sourcesGlob)
         .pipe(jshint())
         .pipe(jshint.reporter('jshint-stylish'));
 });
 
-gulp.task('build', ['clean', 'package-info', 'lint'], function() {
+// 'build' task: generate build version of the source code
+gulp.task('build', function() {
 
-    // Integrate libs after doing lint
+    // Integrate libs after jshint code checking
     sourcesGlob = sourcesGlob.concat(sources.libs);
 
-    // Initialize preprocess context
-    var context = {};
-    for (var option in  argv) {
-        if (typeof argv[option] === 'boolean') {
-            context[option.toUpperCase()] = argv[option];
-        }
-    }
+    // Determine build file name
+    var filename = minify ? (pkg.name.replace('.js', '.min.js')) : pkg.name;
 
-    return gulp.src(sourcesGlob)
-        .pipe(concat(pkg.name))
-        .pipe(preprocess({
-            context: context
-        }))
-        .pipe(umd({
-            namespace: function() {
-                return 'MediaPlayer';
-            },
-            template: path.join(__dirname, 'umd.js')
-        }))
+    return gulp.src(sourcesGlob, { base: '../app' })
+        .pipe(sourcemaps.init())
+        .pipe(concat(filename))
         .pipe(replace(/VERSION[\s*]=[\s*]['\\](.*)['\\]/g, 'VERSION = \'' + pkg.version + '\''))
         .pipe(replace(/@@TIMESTAMP/, pkg.gitDate + '_' + pkg.gitTime))
         .pipe(replace(/@@REVISION/, pkg.gitRevision))
-        .pipe(banner(comment, {
-            pkg: pkg
-        }))
-        .pipe(gulp.dest(config.distDir))
-        .pipe(uglify())
-        .pipe(banner(jshint_ignore_start))
-        .pipe(footer(jshint_ignore_end))
-        .pipe(banner(comment, {
-            pkg: pkg
-        }))
-        .pipe(rename(pkg.name.replace('.js', '.min.js')))
+        .pipe(header(umdHeader))
+        .pipe(footer(umdFooter))
+        .pipe(gulpif(minify, uglify()))
+        .pipe(header(comment, {pkg: pkg}))
+        .pipe(gulpif(minify, header(jshint_ignore_start)))
+        .pipe(gulpif(minify, footer(jshint_ignore_end)))
+        .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest(config.distDir));
 });
 
-gulp.task('build-samples', ['build-dashif', 'build-demoplayer', 'copy-index']);
-
-var replaceSourcesByBuild = function() {
-    return replace(/<!-- sources -->([\s\S]*?)<!-- endsources -->/, '<script src="../../' + pkg.name + '"></script>');
-};
-
-gulp.task('build-dashif', function() {
-    return gulp.src(['../samples/Dash-IF/**'])
-        .pipe(replaceSourcesByBuild())
-        .pipe(gulp.dest(config.distDir + '/samples/Dash-IF/'));
-});
-
-gulp.task('build-demoplayer', function() {
-    return gulp.src(['../samples/DemoPlayer/**'])
-        .pipe(replaceSourcesByBuild())
-        .pipe(gulp.dest(config.distDir + '/samples/DemoPlayer/'));
-});
-
-gulp.task('copy-index', ['package-info'], function() {
-    return gulp.src('../index.html')
-        .pipe(replace(/@@VERSION/g, pkg.version))
-        .pipe(replace(/@@DATE/, pkg.gitDate))
-        .pipe(gulp.dest(config.distDir));
-});
-
-gulp.task('releases-notes', function() {
-    return gulp.src('../RELEASES NOTES.txt')
-        .pipe(gulp.dest(config.distDir));
-});
-
+// 'doc' task: generate jsdoc
 gulp.task('doc', function() {
     // Include version in jsdoc system name
     config.jsdoc.templates.systemName = pkg.name + ' ' + pkg.version;
@@ -185,6 +150,7 @@ gulp.task('doc', function() {
         .pipe(jsdoc(config.jsdoc));
 });
 
+// 'zip' task: zip output folder contents into one zip file
 gulp.task('zip', function() {
     var filename = pkg.name + '-v' + pkg.version;
     console.log(argv.name);
@@ -197,20 +163,17 @@ gulp.task('zip', function() {
         .pipe(gulp.dest(config.distDir));
 });
 
-gulp.task('version', function() {
-    fs.writeFileSync(config.distDir + '/version.properties', 'VERSION=' + pkg.version);
+// 'build' task: build source files
+gulp.task('default', initTasks, function() {
+    minify = false;
+    runSequence(initTasks, 'build', function() {
+        // build minified version
+        minify = true;
+        runSequence('build');
+    });
 });
 
-gulp.task('watch', function() {
+// 'watch' task: spy on source files
+gulp.task('watch', initTasks, function() {
     gulp.watch(sourcesGlob, ['build']);
-    gulp.watch(['../samples/DemoPlayer/**'], ['build-demoplayer']);
-    gulp.watch(['../samples/Dash-IF/**'], ['build-dashif']);
-});
-
-gulp.task("default", function(cb) {
-    runSequence('build', ['build-samples', 'doc'],
-        'releases-notes',
-        'zip',
-        'version',
-        cb);
 });
