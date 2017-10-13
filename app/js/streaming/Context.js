@@ -72,6 +72,7 @@ MediaPlayer.di.Context = function () {
             this.system.mapSingleton('manifestUpdater', MediaPlayer.dependencies.ManifestUpdater);
             this.system.mapSingleton('mediaSourceExt', MediaPlayer.dependencies.MediaSourceExtensions);
             this.system.mapSingleton('notifier', MediaPlayer.dependencies.Notifier);
+            this.system.mapSingleton('parser', MediaPlayer.dependencies.Parser);
             this.system.mapSingleton('sourceBufferExt', MediaPlayer.dependencies.SourceBufferExtensions);
             this.system.mapClass('stream', MediaPlayer.dependencies.Stream);
             this.system.mapSingleton('streamController', MediaPlayer.dependencies.StreamController);
@@ -110,16 +111,18 @@ MediaPlayer.di.Context = function () {
             //this.system.mapSingleton('metricsExt', Dash.dependencies.DashMetricsExtensions);
             this.system.mapSingleton('metricsExt', MediaPlayer.dependencies.MetricsExtensions);
             this.system.mapSingleton('timelineConverter', Dash.dependencies.TimelineConverter);
-
-            this.system.mapSingleton('parser', MediaPlayer.dependencies.Parser);
             this.system.mapClass('dashParser', Dash.dependencies.DashParser);
-            // @if MSS=true
-            this.system.mapClass('mssParser', Mss.dependencies.MssParser);
-            // @endif
-            // @if HLS=true
-            this.system.mapClass('hlsParser', Hls.dependencies.HlsParser);
-            this.system.mapSingleton('hlsDemux', Hls.dependencies.HlsDemux);
-            // @endif
+
+            // Mss package if available
+            if (Mss.dependencies.MssParser) {
+                this.system.mapClass('mssParser', Mss.dependencies.MssParser);
+            }
+
+            // Hls package if available
+            if (Hls.dependencies.HlsParser) {
+                this.system.mapClass('hlsParser', Hls.dependencies.HlsParser);
+                this.system.mapSingleton('hlsDemux', Hls.dependencies.HlsDemux);
+            }
             // But we do always provide HlsStream to support HLS(+FP) streams in Safari
             this.system.mapClass('hlsStream', Hls.dependencies.HlsStream);
 
