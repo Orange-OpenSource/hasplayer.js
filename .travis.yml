@@ -21,7 +21,7 @@ addons:
         access_key:
             secure: "kB8iXiydT+xheyHox2zwq/1k75uUmF+F2b9k76Nhbb001Mh5608kzhH9xXFM+BUyM1pm3LImF+vYcSfKMYlDn/KBB7s9p8TJfwC/obbmtWJucSjtRiVo9aOOa7Ox2M+ACb0rsLpvzFRiHtYo0HZNFVkIfvqZN389Imm6UCOXsyo="
 before_install:
-    - openssl aes-256-cbc -K $encrypted_65cc4fd09d02_key -iv $encrypted_65cc4fd09d02_iv -in travis_deploy.enc -out travis_deploy -d
+    - openssl aes-256-cbc -K $encrypted_f186f3e7458a_key -iv $encrypted_f186f3e7458a_iv -in travis_deploy.enc -out travis_deploy -d
     - npm install -g gulp
     - chmod 600 travis_deploy
     - eval `ssh-agent -s`
