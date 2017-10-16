@@ -94,7 +94,7 @@ getBranchName().then(
 // 3 - Clean gh-pages directory
 .then(function () {
     console.info('Clean gh-pages working directory');
-    return del('gh-pages/**/*', {force:true, dot:true});
+    return fs.remove('gh-pages/');
 })
 
 // 4 - Checkout gh-pages from github
