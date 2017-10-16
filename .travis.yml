@@ -33,5 +33,4 @@ script:
     - if [[ "$BUILD" = "true" ]]; then npm run build ; fi
     - if [[ "$BUILD" = "true" ]]; then npm run doc ; fi
     - if [[ "$BUILD" = "true" ]]; then npm run deploy ; fi
-    - if [[ "$BUILD" = "true" ]]; then npm run dist ; fi
     - if [[ "$TEST" = "true" &&  "$TRAVIS_BRANCH" != "master" &&  "$TRAVIS_BRANCH" != "development" ]]; then npm test ; fi
