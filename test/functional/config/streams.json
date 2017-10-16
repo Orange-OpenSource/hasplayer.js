@@ -40,7 +40,7 @@
         "audioTracks": [{"lang":"eng", "id":"audio101_eng", "subType":"AACL"}, {"lang":"fre", "id":"audio102_fre", "subType":"AACL"}],
         "textTracks": [{"subType":"CAPT","id":"textstream301_eng","lang":"eng"},{"subType":"CAPT","id":"textstream302_fre","lang":"fre"}],
         "dvr": true
-    },
+    }/*,
 
     "MSS_LIVE_2": {
         "name": "Big Bug Bunny",
@@ -50,5 +50,5 @@
         "videoBitrates": [226000,416000,680000,1200000],
         "video_fragment_pattern":"(video)",
         "audio_fragment_pattern":"(audio)"
-    }
+    }*/
 }
