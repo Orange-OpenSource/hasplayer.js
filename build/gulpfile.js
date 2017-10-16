@@ -13,7 +13,6 @@ var gulp = require('gulp'),
     replace = require('gulp-regexp-sourcemaps'),
     sourcemaps = require('gulp-sourcemaps'),
     uglify = require('gulp-uglify'),
-    zip = require('gulp-zip'),
     // custom import
     pkg = require('../package.json'),
     sources = require('./sources.json'),
@@ -148,19 +147,6 @@ gulp.task('doc', function() {
     config.jsdoc.templates.systemName = pkg.name + ' ' + pkg.version;
     return gulp.src([config.doc.readme, config.doc.source], {read: true})
         .pipe(jsdoc(config.jsdoc));
-});
-
-// 'zip' task: zip output folder contents into one zip file
-gulp.task('zip', function() {
-    var filename = pkg.name + '-v' + pkg.version;
-    console.log(argv.name);
-    if (argv.name.length > 0) {
-        filename += '_' + argv.name;
-    }
-    filename += '.zip';
-    return gulp.src(config.distDir + '/**/*')
-        .pipe(zip(filename))
-        .pipe(gulp.dest(config.distDir));
 });
 
 // 'build' task: build source files
