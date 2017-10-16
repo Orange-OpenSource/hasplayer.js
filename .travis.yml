@@ -24,7 +24,8 @@ before_install:
 install:
     - npm install
 script:
-    - npm run build ;
-    - npm run doc ;
-    - npm run deploy ;
-    - if [[ "$TRAVIS_EVENT_TYPE" = "cron" ]]; then npm run test ; fi
+    - npm run build
+    - npm run doc
+    - npm run deploy
+    - then npm run test
+#    - if [[ "$TRAVIS_EVENT_TYPE" = "cron" ]]; then npm run test ; fi
