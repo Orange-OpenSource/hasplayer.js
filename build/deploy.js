@@ -91,17 +91,17 @@ getBranchName().then(
     );
 })
 
-// // 3 - Clean gh-pages directory
-// .then(function () {
-//     console.info('Clean gh-pages working directory');
-//     return del('gh-pages/**/*', {force:true, dot:true});
-// })
+// 3 - Clean gh-pages directory
+.then(function () {
+    console.info('Clean gh-pages working directory');
+    return del('gh-pages/**/*', {force:true, dot:true});
+})
 
-// // 4 - Checkout gh-pages from github
-// .then(function () {
-//     console.info('Checkout gh-pages');
-//     return execCommand(gitCommands.clone);
-// })
+// 4 - Checkout gh-pages from github
+.then(function () {
+    console.info('Checkout gh-pages');
+    return execCommand(gitCommands.clone);
+})
 
 // 5 - Copy files into corresponding subfolder of gh-pages
 .then(function() {
