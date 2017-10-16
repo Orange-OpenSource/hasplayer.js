@@ -27,5 +27,5 @@ script:
     - npm run build
     - npm run doc
     - npm run deploy
-    - then npm run test
+    - npm run test
 #    - if [[ "$TRAVIS_EVENT_TYPE" = "cron" ]]; then npm run test ; fi
