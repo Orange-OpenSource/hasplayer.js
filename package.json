@@ -28,7 +28,7 @@
     "gulp-regexp-sourcemaps": "1.0.1",
     "gulp-sourcemaps": "2.6.1",
     "gulp-uglify": "3.0.0",
-    "intern": "4.0.0",
+    "intern": "3.2.3",
     "jshint": "2.9.5",
     "jshint-stylish": "2.2.1",
     "run-sequence": "2.2.0",
