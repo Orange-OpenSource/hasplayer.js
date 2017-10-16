@@ -187,11 +187,11 @@ getBranchName().then(
 })
 
 // 8 - Add, commit and push changes to Github
-// .then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.configUser))
-// .then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.configEmail))
-// .then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.add))
-// .then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.commit))
-// .then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.push))
+.then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.configUser))
+.then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.configEmail))
+.then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.add))
+.then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.commit))
+.then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.push))
 .catch(function(err){
     console.error(err);
     throw new Error(err);
