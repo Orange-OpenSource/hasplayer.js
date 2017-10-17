@@ -153,9 +153,9 @@ gulp.task('doc', function() {
 // 'build' task: build source files
 gulp.task('default', initTasks, function() {
     minify = false;
-    // build source files
-    runSequence(initTasks, 'build', function() {
-        // build minified version of source files
+    // Build source files
+    runSequence('build', function() {
+        // Build minified version of source files
         minify = true;
         runSequence('build');
     });
@@ -163,5 +163,9 @@ gulp.task('default', initTasks, function() {
 
 // 'watch' task: spy on source files
 gulp.task('watch', initTasks, function() {
-    gulp.watch(sourcesGlob, ['build']);
+    // Build source files
+    runSequence('build', function() {
+        // Watch source files
+        gulp.watch(sourcesGlob, ['build']);
+    });
 });
