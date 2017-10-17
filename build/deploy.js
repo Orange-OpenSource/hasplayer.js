@@ -183,6 +183,9 @@ getBranchName().then(
                     '\n<a href=\"' + pkg.dir + '/index.html\">Version ' + pkg.dir + '</a> - (' + pkg.date + ')<br/>\n' +
                     index.substring(pos, index.length - 1);
             fs.writeFileSync(path, index);
+
+            // Update 'latest' symbolic link
+            fs.ensureSymlinkSync(pkg.dir, 'latest');
         }
     }
     return Promise.resolve();
