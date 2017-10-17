@@ -1,3 +1,15 @@
+// This script is used to package and deploy built version of the project into 
+// Github project page (https://orange-opensource.github.io/hasplayer.js/) 
+// Steps for deployment
+// 1 - Get version
+// 2 - Get commit date
+// 3 - Clean gh-pages directory
+// 4 - Checkout gh-pages branch
+// 5 - Copy and update release files into corresponding subfolder of gh-pages
+// 6 - Zip release files
+// 7 - Upate project home page (index.html) in case of a new release
+// 8 - Add, commit and push changes on gh-pages branch to repository
+
 var exec = require('child_process').exec,
     fs = require('fs-extra'),
     archiver = require('archiver'),
@@ -44,16 +56,6 @@ var getBranchName = function() {
     }
 };
 
-// Steps for deployment
-// 1 - Get version
-// 2 - Get date
-// 3 - Clean gh-pages directory
-// 4 - Checkout gh-pages from github
-// 5 - Copy and update files into corresponding subfolder of gh-pages
-// 6 - Zip release contents into a file
-// 7 - Upate home file (index.html) in case of a new release
-// 8 - Add, commit and push changes to Github
-
 // 1 - Get version
 getBranchName().then(
     function (branch) {
@@ -79,7 +81,7 @@ getBranchName().then(
     }
 )
 
-// 2 - Get date
+// 2 - Get commit date
 .then(function () {
     return execCommand(gitCommands.commitDate).then(
         function (cdate) {
@@ -97,13 +99,13 @@ getBranchName().then(
     return fs.remove('gh-pages/');
 })
 
-// 4 - Checkout gh-pages from github
+// 4 - Checkout gh-pages branch
 .then(function () {
     console.info('Checkout gh-pages');
     return execCommand(gitCommands.clone);
 })
 
-// 5 - Copy files into corresponding subfolder of gh-pages
+// 5 - Copy and update release files into corresponding subfolder of gh-pages
 .then(function() {
     var path = 'gh-pages/' + pkg.dir + '/';
 
@@ -136,7 +138,7 @@ getBranchName().then(
     return Promise.resolve();
 })
 
-// 6 - Zip release contents into a file
+// 6 - Zip release files
 .then(function() {
     var path = 'gh-pages/' + pkg.dir + '/';
     var zipFile = 'hasplayer.js-v' + pkg.version + '.zip';
@@ -165,7 +167,7 @@ getBranchName().then(
     archive.finalize();
 })
 
-// 7 - Upate home file (index.html) in case of a new release
+// 7 - Add, commit and push changes on gh-pages branch to repository
 .then(function() {
     // Open index.html file
     var path = 'gh-pages/index.html';

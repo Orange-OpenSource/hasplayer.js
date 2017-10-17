@@ -131,6 +131,7 @@ gulp.task('build', function() {
         .pipe(replace(/VERSION[\s*]=[\s*]['\\](.*)['\\]/g, 'VERSION = \'' + pkg.version + '\''))
         .pipe(replace(/@@TIMESTAMP/, pkg.gitDate + '_' + pkg.gitTime))
         .pipe(replace(/@@REVISION/, pkg.gitRevision))
+        // Apply UMD template using gulp-header/footer plugins in order to have sourcemaps compatibility
         .pipe(header(umdHeader))
         .pipe(footer(umdFooter))
         .pipe(gulpif(minify, uglify()))
@@ -152,8 +153,9 @@ gulp.task('doc', function() {
 // 'build' task: build source files
 gulp.task('default', initTasks, function() {
     minify = false;
+    // build source files
     runSequence(initTasks, 'build', function() {
-        // build minified version
+        // build minified version of source files
         minify = true;
         runSequence('build');
     });

@@ -24,8 +24,11 @@ before_install:
 install:
     - npm install
 script:
+    # Build the source files
     - npm run build
+    # Build/generate the jsdoc
     - npm run doc
+    # Package and deploy version on project's page
     - npm run deploy
-    - npm run test
-#    - if [[ "$TRAVIS_EVENT_TYPE" = "cron" ]]; then npm run test ; fi
+    # If job triggered by cron job, then run tests
+    - if [[ "$TRAVIS_EVENT_TYPE" = "cron" ]]; then npm run test ; fi
