@@ -15,22 +15,36 @@ MediaPlayer.models.VideoModel = function () {
     "use strict";
 
     var element,
-        stalledStreams = {},
+        stalledStreams = [],
         TTMLRenderingDiv = null,
 
-        isStalled = function () {
-            for (var type in stalledStreams) {
-                if (stalledStreams[type] === true) {
-                    return true;
-                }
+        addStalledStream = function (type) {    
+            if (type === null || stalledStreams.indexOf(type) !== -1) {
+                return;
             }
-            return false;
+    
+            this.debug.info("<video> # stall stream " + type);
+            stalledStreams.push(type);
+            // If at least one stream is stalled, then halt playback until nothing is stalled
+            if (stalledStreams.length === 1) {
+                this.setPlaybackRate(0);
+            }
         },
 
-        stallStream = function (type, stalled) {
-            stalledStreams[type] = stalled;
-            this.debug.info("<video> # stalled = " + stalled + ", type = " + type);
-            this.setPlaybackRate(isStalled() ? 0 : 1);
+        removeStalledStream = function (type) {
+            var index = stalledStreams.indexOf(type);
+    
+            if (type === null) {
+                return;
+            }
+            this.debug.info("<video> # unstall stream " + type);
+            if (index !== -1) {
+                stalledStreams.splice(index, 1);
+            }
+            // If no stream is stalled then resume playback.
+            if (this.isStalled() === false && element.playbackRate === 0) {
+                this.setPlaybackRate(1);
+            }
         };
 
     return {
@@ -38,6 +52,7 @@ MediaPlayer.models.VideoModel = function () {
         debug: undefined,
 
         setup: function () {
+            stalledStreams = [];
         },
 
         reset: function () {
@@ -108,7 +123,6 @@ MediaPlayer.models.VideoModel = function () {
             element.removeEventListener(type, callback, false);
         },
 
-        // ORANGE : register listener on video element parent
         listenOnParent: function (type, callback) {
             element.parentElement.addEventListener(type, callback, false);
         },
@@ -137,9 +151,17 @@ MediaPlayer.models.VideoModel = function () {
         },
 
         isStalled: function () {
-            return element.playbackRate === 0;
+            return (stalledStreams.length > 0);
         },
 
+        stallStream: function (type, stalled) {
+            if (stalled) {
+                addStalledStream.call(this, type);
+            } else {
+                removeStalledStream.call(this, type);
+            }
+        },
+        
         getTTMLRenderingDiv: function() {
             return TTMLRenderingDiv;
         },
@@ -153,9 +175,7 @@ MediaPlayer.models.VideoModel = function () {
             TTMLRenderingDiv.style.pointerEvents = 'none';
             TTMLRenderingDiv.style.top = 0;
             TTMLRenderingDiv.style.left = 0;
-        },
-
-        stallStream: stallStream
+        }
     };
 };
 
