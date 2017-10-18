@@ -135,9 +135,6 @@ MediaPlayer.dependencies.BufferController = function() {
 
             this.debug.info("[BufferController][" + type + "] startPlayback");
 
-            // Set media type to stalled state
-            setStalled.call(this, true);
-
             // Start buffering process
             checkIfSufficientBuffer.call(this);
         },
@@ -213,6 +210,9 @@ MediaPlayer.dependencies.BufferController = function() {
             Q.when(deferredFragmentBuffered ? deferredFragmentBuffered.promise : true).then(
                 function() {
                     // self.debug.log("[BufferController]["+type+"] SEEK: do start");
+                    // Set media type to stalled state
+                    setStalled.call(self, true);
+                        
                     doStart.call(self);
                 }
             );
