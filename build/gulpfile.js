@@ -116,8 +116,8 @@ gulp.task('jshint', function() {
         .pipe(jshint.reporter('jshint-stylish'));
 });
 
-// 'build' task: generate build version of the source code
-gulp.task('build', function() {
+// 'build-src' task: generate build version of the source code
+gulp.task('build-src', function() {
 
     // Integrate libs after jshint code checking
     sourcesGlob = sourcesGlob.concat(sources.libs);
@@ -151,21 +151,23 @@ gulp.task('doc', function() {
 });
 
 // 'build' task: build source files
-gulp.task('default', initTasks, function() {
+gulp.task('build', initTasks, function() {
     minify = false;
     // Build source files
-    runSequence('build', function() {
+    runSequence('build-src', function() {
         // Build minified version of source files
         minify = true;
-        runSequence('build');
+        runSequence('build-src');
     });
 });
 
 // 'watch' task: spy on source files
 gulp.task('watch', initTasks, function() {
     // Build source files
-    runSequence('build', function() {
+    runSequence('build-src', function() {
         // Watch source files
-        gulp.watch(sourcesGlob, ['build']);
+        gulp.watch(sourcesGlob, ['build-src']);
     });
 });
+
+gulp.task('default', ['build']);
