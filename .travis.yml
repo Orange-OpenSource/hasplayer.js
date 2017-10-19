@@ -4,15 +4,10 @@ branches:
         - master
         - development
         - /(release).*/
+        - build-deploy-refactor
 env:
     global:
         - ENCRYPTION_LABEL: 98a7d362e1e4
-    matrix:
-        - BUILD=true TEST=false
-        # - BUILD=false TEST=true BROWSER=chrome
-        # - BUILD=false TEST=true BROWSER=ie
-        # - BUILD=false TEST=true BROWSER=edge
-        # - BUILD=false TEST=true BROWSER=firefox
 node_js:
     - stable
 addons:
@@ -29,7 +24,11 @@ before_install:
 install:
     - npm install
 script:
-    - if [[ "$BUILD" = "true" ]]; then npm run build ; fi
-    - if [[ "$BUILD" = "true" ]]; then npm run deploy ; fi
-    - if [[ "$BUILD" = "true" ]]; then npm run dist ; fi
-    - if [[ "$TEST" = "true" &&  "$TRAVIS_BRANCH" != "master" &&  "$TRAVIS_BRANCH" != "development" ]]; then npm test ; fi
+    # Build the source files
+    - npm run build
+    # Build/generate the jsdoc
+    - npm run doc
+    # Package and deploy version on project's page
+    - npm run deploy
+    # If job triggered by cron job, then run tests
+    - if [[ "$TRAVIS_EVENT_TYPE" = "cron" ]]; then npm run test ; fi

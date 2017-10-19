@@ -13,10 +13,10 @@ node_modules
 npm-debug.log
 
 #################
-## Grunt
+## Gulp
 #################
 
-.grunt
+doc/jsdoc
 _SpecRunner.html
 reports
 

@@ -52,11 +52,13 @@
         "../app/js/streaming/XHRLoader.js",
         "../app/js/streaming/captioning/*",
         "../app/js/streaming/rules/*",
+        "../app/js/streaming/protection/ProtectionModel.js",
         "../app/js/streaming/vo/*",
         "../app/js/streaming/vo/metrics/*",
         "../app/js/dash/Dash.js",
         "../app/js/dash/**/*",
-        "../app/js/streaming/protection/ProtectionModel.js",
+        "../app/js/hls/Hls.js",
+        "../app/js/hls/HlsStream.js",
         "../app/js/utils/CopyMethods.js",
         "../app/js/utils/DOMParser.js",
         "../app/js/utils/ObjectIron.js"
@@ -73,13 +75,11 @@
         "../app/js/streaming/protection/vo/*"
     ],
     "hls": [
-        "../app/js/hls/Hls.js",
         "../app/js/hls/AES128Decrypter.js",
         "../app/js/hls/HlsDemux.js",
         "../app/js/hls/HlsFragmentController.js",
         "../app/js/hls/HlsHandler.js",
-        "../app/js/hls/HlsParser.js",
-        "../app/js/hls/HlsStream.js"
+        "../app/js/hls/HlsParser.js"
     ],
     "mss": [
         "../app/js/mss/Mss.js",
