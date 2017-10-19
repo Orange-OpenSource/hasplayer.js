@@ -7,8 +7,7 @@ define(function () {
         'test/functional/tests/play/seek',
         'test/functional/tests/play/seekDVR',
         'test/functional/tests/play/pause',
-        'test/functional/tests/play/stop',
-        'test/functional/tests/play/trickMode'
+        'test/functional/tests/play/stop'
     ];
 
     var API_TESTS = [
