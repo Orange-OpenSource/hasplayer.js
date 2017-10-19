@@ -38,7 +38,7 @@
         "url": "http://2is7server2.rd.francetelecom.com/hasplayer/LIVE_1.isml/manifest",
         "videoBitrates": [256000, 800000, 1800000],
         "audioTracks": [{"lang":"eng", "id":"audio101_eng", "subType":"AACL"}, {"lang":"fre", "id":"audio102_fre", "subType":"AACL"}],
-        "textTracks": [{"subType":"CAPT","id":"textstream301_eng","lang":"eng"},{"subType":"CAPT","id":"textstream302_fre","lang":"fre"}],
+        "textTracks": [{"subType":"CAPT","id":"textstream301_fre","lang":"fre"}],
         "dvr": true
     }
 }
