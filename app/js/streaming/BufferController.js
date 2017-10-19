@@ -135,9 +135,6 @@ MediaPlayer.dependencies.BufferController = function() {
 
             this.debug.info("[BufferController][" + type + "] startPlayback");
 
-            // Set media type to stalled state
-            setStalled.call(this, true);
-
             // Start buffering process
             checkIfSufficientBuffer.call(this);
         },
@@ -213,6 +210,9 @@ MediaPlayer.dependencies.BufferController = function() {
             Q.when(deferredFragmentBuffered ? deferredFragmentBuffered.promise : true).then(
                 function() {
                     // self.debug.log("[BufferController]["+type+"] SEEK: do start");
+                    // Set media type to stalled state
+                    setStalled.call(self, true);
+                        
                     doStart.call(self);
                 }
             );
@@ -1320,7 +1320,7 @@ MediaPlayer.dependencies.BufferController = function() {
             this.setFragmentController(fragmentController);
             this.setEventController(eventController);
             minBufferTime = this.config.getParamFor(type, "BufferController.minBufferTime", "number", -1);
-            minBufferTimeAtStartup = this.config.getParamFor(type, "BufferController.minBufferTimeForPlaying", "number", 0);
+            minBufferTimeAtStartup = this.config.getParamFor(type, "BufferController.minBufferTimeForPlaying", "number", MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_STARTUP);
             bufferToKeep = this.config.getParamFor(type, "BufferController.bufferToKeep", "number", MediaPlayer.dependencies.BufferExtensions.DEFAULT_BUFFER_TO_KEEP);
             liveDelay = this.config.getParamFor(type, "BufferController.liveDelay", "number", -1);
 
