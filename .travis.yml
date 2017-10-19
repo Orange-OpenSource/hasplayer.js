@@ -4,7 +4,6 @@ branches:
         - master
         - development
         - /(release).*/
-        - build-deploy-refactor
 env:
     global:
         - ENCRYPTION_LABEL: 98a7d362e1e4
