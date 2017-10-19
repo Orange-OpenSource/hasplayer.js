@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+     <meta http-equiv="pragma" content="no-cache" />
+    <meta http-equiv="cache-control" content="no-cache" />
+    <title>Baseline hasplayer.js Player</title>
+    <meta name="description" content="" />
+
+    <!-- Minified hasplayer.js -->
+    <script src="dist/hasplayer.min.js"></script>    
+
+    <script>
+        var mediaPlayer = null;
+        var video = null;
+
+        function initVideo() {
+
+            video = document.querySelector(".hasplayer-video-player video");
+
+            mediaPlayer = new MediaPlayer();
+            mediaPlayer.init(video);
+            mediaPlayer.setDebug(true);
+        }
+    </script>
+
+    <style>
+        video {
+            width: 640px;
+            height: 480px;
+        }
+    </style>
+
+    <body onload="initVideo()">
+        <div class="hasplayer-video-player">
+            <video controls="true"></video>
+        </div>
+    </body>
+
+</html>
