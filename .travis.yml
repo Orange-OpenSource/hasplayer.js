@@ -11,10 +11,11 @@ stages:
 env:
   global:
     - ENCRYPTION_LABEL: 98a7d362e1e4
-  - BROWSER=chrome
-  - BROWSER=ie
-  - BROWSER=edge
-  - BROWSER=firefox
+  matrix:
+    - BROWSER=chrome
+    - BROWSER=ie
+    - BROWSER=edge
+    - BROWSER=firefox
 node_js:
   - stable
 addons:
