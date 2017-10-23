@@ -30,4 +30,4 @@ script:
     # Package and deploy version on project's page
     - npm run deploy
     # If job triggered by cron job, then run tests
-    - if [[ "$TRAVIS_EVENT_TYPE" = "cron" ]]; then npm run test ; fi
+    - if [[ "$TRAVIS_EVENT_TYPE" = "cron" ]]; then npm run test -b chrome; fi
