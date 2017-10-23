@@ -86,6 +86,7 @@ define([
                     })
                     .then(function(track) {
                         tests.log(NAME, 'Selected ' + type + ' track: ' + JSON.stringify(track));
+                        _newTrack = _tracks[0];
                         for (var i = 0; i < _tracks.length; i++) {
                             if (!_isSameTrack(_tracks[i], track)) {
                                 _newTrack = _tracks[i];
