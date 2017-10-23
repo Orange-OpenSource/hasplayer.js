@@ -1,34 +1,46 @@
 language: node_js
 branches:
-    only:
-        - master
-        - development
-        - /(release).*/
+  only:
+    - master
+    - development
+    - /(release).*/
+stages:
+  - build
+  - deploy
+  - test
 env:
-    global:
-        - ENCRYPTION_LABEL: 98a7d362e1e4
-        - BROWSER=chrome
+  global:
+    - ENCRYPTION_LABEL: 98a7d362e1e4
+  - BROWSER=chrome
+  - BROWSER=ie
+  - BROWSER=edge
+  - BROWSER=firefox
 node_js:
-    - stable
+  - stable
 addons:
-    browserstack:
-        username: "bertrandberthelo1"
-        access_key:
-            secure: "kB8iXiydT+xheyHox2zwq/1k75uUmF+F2b9k76Nhbb001Mh5608kzhH9xXFM+BUyM1pm3LImF+vYcSfKMYlDn/KBB7s9p8TJfwC/obbmtWJucSjtRiVo9aOOa7Ox2M+ACb0rsLpvzFRiHtYo0HZNFVkIfvqZN389Imm6UCOXsyo="
+  browserstack:
+    username: "bertrandberthelo1"
+    access_key:
+      secure: "kB8iXiydT+xheyHox2zwq/1k75uUmF+F2b9k76Nhbb001Mh5608kzhH9xXFM+BUyM1pm3LImF+vYcSfKMYlDn/KBB7s9p8TJfwC/obbmtWJucSjtRiVo9aOOa7Ox2M+ACb0rsLpvzFRiHtYo0HZNFVkIfvqZN389Imm6UCOXsyo="
 before_install:
-    - openssl aes-256-cbc -K $encrypted_f186f3e7458a_key -iv $encrypted_f186f3e7458a_iv -in travis_deploy.enc -out travis_deploy -d
-    - npm install -g gulp
-    - chmod 600 travis_deploy
-    - eval `ssh-agent -s`
-    - ssh-add travis_deploy
+  - openssl aes-256-cbc -K $encrypted_f186f3e7458a_key -iv $encrypted_f186f3e7458a_iv -in travis_deploy.enc -out travis_deploy -d
+  - npm install -g gulp
+  - chmod 600 travis_deploy
+  - eval `ssh-agent -s`
+  - ssh-add travis_deploy
 install:
-    - npm install
-script:
-    # Build the source files
-    - npm run build
-    # Build/generate the jsdoc
-    - npm run doc
-    # Package and deploy version on project's page
-    - npm run deploy
-    # If job triggered by cron job, then run tests
-    - if [[ "$TRAVIS_EVENT_TYPE" = "cron" ]]; then npm run test; fi
+  - npm install
+jobs:
+  include:
+    - stage: build
+      # Build the source files
+      script: npm run build
+      # Build/generate the jsdoc
+      script: npm run doc
+    - stage: deploy
+      # Package and deploy version on project's pages
+      script: npm run deploy
+    - stage: test
+      # If job triggered by cron job, then run tests
+      if: env(TRAVIS_EVENT_TYPE) = "cron"
+      script: npm run test
