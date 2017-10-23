@@ -33,12 +33,13 @@ install:
 jobs:
   include:
     - stage: build
-      # Build the source files
-      - script: npm run build
-      # Build/generate the jsdoc
-      - script: npm run doc
-      # Package and deploy version on project's pages
-      - script: npm run deploy
+      script:
+        # Build the source files
+        - npm run build
+        # Build/generate the jsdoc
+        - npm run doc
+        # Package and deploy version on project's pages
+        - npm run deploy
     - stage: test
       # If job triggered by cron job, then run tests
       if: env(TRAVIS_EVENT_TYPE) = cron
