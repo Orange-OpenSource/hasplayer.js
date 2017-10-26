@@ -506,11 +506,13 @@ Mss.dependencies.MssParser = function() {
             mpd.timeShiftBufferDepth = parseFloat(this.domParser.getAttributeValue(smoothNode, 'DVRWindowLength')) / TIME_SCALE_100_NANOSECOND_UNIT;
             var duration = parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration'));
 
-            // If live manifest with Duration and no DVRWindowLength, we consider it as a start-over manifest
+            // If live manifest with Duration, we consider it as a start-over manifest
             if (mpd.type === "dynamic" && duration > 0) {
-                mpd.timeShiftBufferDepth = duration / TIME_SCALE_100_NANOSECOND_UNIT;
-                duration = 0;
+                mpd.type = "static";
                 mpd.startOver = true;
+                // We set timeShiftBufferDepth to initial duration, to be used by MssFragmentController to update segment timeline
+                mpd.timeShiftBufferDepth = duration / TIME_SCALE_100_NANOSECOND_UNIT;
+                // Duration will be set according to current segment timeline duration (see below)
             }
 
             // Complete manifest/mpd initialization
@@ -612,9 +614,9 @@ Mss.dependencies.MssParser = function() {
                             timestampOffset = startTime;
                         }
                         timestampOffset = Math.min(timestampOffset, startTime);
-                        // Correct content duration according to minimum adaptation's segments duration
+                        // Correct content duration according to minimum adaptation's segment timeline duration
                         // in order to force <video> element sending 'ended' event
-                        mpd.mediaPresentationDuration = Math.min(mpd.mediaPresentationDuration, ((segments[segments.length-1].t + segments[segments.length-1].d) / TIME_SCALE_100_NANOSECOND_UNIT).toFixed(3));
+                        mpd.mediaPresentationDuration = Math.min(mpd.mediaPresentationDuration, adaptations[i].SegmentTemplate.SegmentTimeline.duration);
                     }
                 }
 
@@ -636,6 +638,9 @@ Mss.dependencies.MssParser = function() {
                 }
             }
 
+            // Floor the duration to get around precision differences between segments timestamps and MSE buffer timestamps
+            // and the avoid 'ended' event not being raised
+            mpd.mediaPresentationDuration = Math.floor(mpd.mediaPresentationDuration * 1000) / 1000;
             period.duration = mpd.mediaPresentationDuration;
 
             return mpd;
