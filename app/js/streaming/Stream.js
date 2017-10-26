@@ -357,7 +357,7 @@ MediaPlayer.dependencies.Stream = function() {
                     this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, 'Video codec information not available', {codec: ''});
                 } else {
                     videoController = createBufferController.call(this, data, videoCodec);
-                    if (this.manifestExt.getIsDynamic(manifest)) {
+                    if (this.manifestExt.getIsDynamic(manifest) || this.manifestExt.getIsStartOver(manifest)) {
                         fragmentInfoVideoController = createFragmentInfoController.call(this, videoController, data);
                     }
                 }
@@ -390,7 +390,7 @@ MediaPlayer.dependencies.Stream = function() {
                         return;
                     }
 
-                    if (this.manifestExt.getIsDynamic(manifest)) {
+                    if (this.manifestExt.getIsDynamic(manifest) || this.manifestExt.getIsStartOver(manifest)) {
                         fragmentInfoAudioController = createFragmentInfoController.call(this, audioController, data);
                     }
                 }
@@ -407,7 +407,7 @@ MediaPlayer.dependencies.Stream = function() {
                     this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_TEXT, "Text codec information not available");
                 } else {
                     textController = createBufferController.call(this, data, textMimeType);
-                    if (this.manifestExt.getIsDynamic(manifest)) {
+                    if (this.manifestExt.getIsDynamic(manifest) || this.manifestExt.getIsStartOver(manifest)) {
                         fragmentInfoTextController = createFragmentInfoController.call(this, textController, data);
                     }
                 }
@@ -429,7 +429,7 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         startFragmentInfoControllers = function() {
-            if (manifest.name !== 'MSS' || !this.manifestExt.getIsDynamic(manifest)) {
+            if (manifest.name !== 'MSS' || (!this.manifestExt.getIsDynamic(manifest) && !this.manifestExt.getIsStartOver(manifest))) {
                 return;
             }
 
@@ -510,6 +510,10 @@ MediaPlayer.dependencies.Stream = function() {
             this.debug.info("[Stream] <video> ended event");
             //add stopped state metric with reason = 1 : end of stream
             this.metricsModel.addState("video", "stopped", this.videoModel.getCurrentTime(), 1);
+
+            if (this.manifestExt.getIsStartOver(manifest)) {
+                stopFragmentInfoControllers.call(this);
+            }
         },
 
         onPause = function() {
@@ -699,7 +703,6 @@ MediaPlayer.dependencies.Stream = function() {
 
         onDurationchange = function() {
             var duration = this.videoModel.getDuration();
-
             this.debug.info("[Stream] <video> durationchange event: " + duration);
         },
 
@@ -923,6 +926,10 @@ MediaPlayer.dependencies.Stream = function() {
                 playStartTime = startTime;
             }
 
+            if (this.manifestExt.getIsStartOver(manifest)) {
+                startFragmentInfoControllers.call(this);
+            }
+            
             play.call(this);
         },
 
@@ -942,7 +949,7 @@ MediaPlayer.dependencies.Stream = function() {
 
             // Check if different track selected
             if (index !== currentIndex) {
-                if (manifest.name === 'MSS' && this.manifestExt.getIsDynamic(manifest)) {
+                if (manifest.name === 'MSS' && (this.manifestExt.getIsDynamic(manifest)  || this.manifestExt.getIsStartOver(manifest))) {
                     // If live MSS, refresh the manifest to get new selected track segments info
                     this.system.notify("manifestUpdate");
                 } else {
@@ -1033,7 +1040,7 @@ MediaPlayer.dependencies.Stream = function() {
 
             this.debug.log("[Stream] Segment loading failed: start time = " + segmentRequest.startTime + ", duration = " + segmentRequest.duration);
 
-            if (this.manifestExt.getIsDynamic(manifest) && reloadTimeout === null) {
+            if ((this.manifestExt.getIsDynamic(manifest) || this.manifestExt.getIsstartOver(manifest)) && reloadTimeout === null) {
                 // For Live streams, then we try to reload the session
                 isReloading = true;
                 var delay = segmentRequest.duration;
