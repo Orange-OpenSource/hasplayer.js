@@ -19,19 +19,18 @@ Mss.dependencies.MssFragmentController = function() {
     var processTfrf = function(request, tfrf, tfdt, adaptation) {
             var manifest = this.manifestModel.getValue(),
                 segmentsUpdated = false,
-                // Get adaptation's segment timeline (always a SegmentTimeline in Smooth Streaming use case)
-                segments = adaptation.SegmentTemplate.SegmentTimeline.S,
+                segments = adaptation.SegmentTemplate.SegmentTimeline.S_asArray,
+                timescale = adaptation.SegmentTemplate.timescale,
                 entries = tfrf.entry,
                 segment = null,
+                startTime,
                 t = 0,
                 i = 0,
-                // j = 0,
-                // segmentId = -1,
                 availabilityStartTime = null,
                 range;
 
             // Process tfrf only for live streams
-            if (manifest.type !== 'dynamic') {
+            if (!this.manifestExt.getIsDynamic(manifest) && !this.manifestExt.getIsStartOver(manifest)) {
                 return;
             }
 
@@ -49,13 +48,25 @@ Mss.dependencies.MssFragmentController = function() {
                 entries[i].fragment_absolute_time = entries[i].fragment_absolute_time.toNumber();
                 entries[i].fragment_duration = entries[i].fragment_duration.toNumber();
 
+                // In case of start-over streams, check if we have reached end of original manifest duration (set in timeShiftBufferDepth)
+                // => then do not update anymore timeline
+                if (this.manifestExt.getIsStartOver(manifest)) {
+                    startTime = segments[0].tManifest ? segments[0].tManifest : segments[0].t;
+                    if (entries[i].fragment_absolute_time > (startTime + (manifest.timeShiftBufferDepth * timescale))) {
+                        break;
+                    }                    
+                }
+                                
                 if (entries[i].fragment_absolute_time > segments[segments.length - 1].t) {
-                    this.debug.log("[MssFragmentController] Add new segment - t = " + (entries[i].fragment_absolute_time / 10000000.0));
+                    this.debug.log("[MssFragmentController] Add new segment - t = " + (entries[i].fragment_absolute_time / timescale));
                     segment = {};
                     segment.t = entries[i].fragment_absolute_time;
                     segment.d = entries[i].fragment_duration;
                     if (entries[i].fragment_absolute_timeManifest) {
                        segment.tManifest = entries[i].fragment_absolute_timeManifest;
+                    } else if (segments[0].tManifest) {
+                        segment.tManifest = segment.t;
+                        segment.t -= segments[0].tManifest - segments[0].t;
                     }
                     segments.push(segment);
                     segmentsUpdated = true;
@@ -66,6 +77,8 @@ Mss.dependencies.MssFragmentController = function() {
 
             // Update segment timeline in case the timestamps from tfrf differ from timestamps in Manifest.
             // In that case we consider tfrf timing
+            // var j = 0,
+            //     segmentId = -1,
             // for (j = segments.length - 1; j >= 0; j -= 1) {
             //     if (segments[j].t === tfdt.baseMediaDecodeTime) {
             //         segmentId = j;
