@@ -32,7 +32,6 @@
         "../app/js/streaming/FragmentController.js",
         "../app/js/streaming/FragmentLoader.js",
         "../app/js/streaming/FragmentModel.js",
-        "../app/js/streaming/FragmentInfoController.js",
         "../app/js/streaming/ManifestLoader.js",
         "../app/js/streaming/ManifestUpdater.js",
         "../app/js/streaming/ManifestModel.js",
@@ -85,6 +84,7 @@
         "../app/js/mss/Mss.js",
         "../app/js/mss/MssParser.js",
         "../app/js/mss/MssHandler.js",
-        "../app/js/mss/MssFragmentController.js"
+        "../app/js/mss/MssFragmentController.js",
+        "../app/js/mss/MssFragmentInfoController.js"
     ]
 }
