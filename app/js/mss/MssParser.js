@@ -341,7 +341,7 @@ Mss.dependencies.MssParser = function() {
                 // Create new segment
                 segments.push(segment);
 
-                // Support for 'r' (repeat) functionnality
+                // Support for 'r' attribute (i.e. "repeat" as in MPEG-DASH)
                 r = parseFloat(this.domParser.getAttributeValue(chunks[i], "r"));
                 if (r) {
                     for (j = 0; j < r; j++) {
