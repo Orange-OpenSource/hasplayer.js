@@ -288,7 +288,7 @@ Mss.dependencies.MssParser = function() {
                 segments = [],
                 segment,
                 prevSegment,
-                i,
+                i, j, r,
                 tManifest,
                 duration = 0;
 
@@ -340,6 +340,21 @@ Mss.dependencies.MssParser = function() {
 
                 // Create new segment
                 segments.push(segment);
+
+                // Support for 'r' (repeat) functionnality
+                r = parseFloat(this.domParser.getAttributeValue(chunks[i], "r"));
+                if (r) {
+                    for (j = 0; j < r; j++) {
+                        prevSegment = segments[segments.length - 1];
+                        segment = {};
+                        segment.t = prevSegment.t + prevSegment.d;
+                        segment.d = prevSegment.d;
+                        if (prevSegment.tManifest) {
+                            segment.tManifest  = goog.math.Long.fromString(prevSegment.tManifest).add(goog.math.Long.fromNumber(prevSegment.d)).toString();
+                        }
+                        segments.push(segment);
+                    }
+                }
             }
 
             segmentTimeline.S = segments;
