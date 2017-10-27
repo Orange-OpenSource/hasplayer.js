@@ -75,6 +75,18 @@ Mss.dependencies.MssFragmentController = function() {
                 i += 1;
             }
 
+            // In case of static start-over streams, update content duration
+            if (this.manifestExt.getIsStartOver(manifest)) {
+                if (adaptation.type === 'video') {
+                    segment = segments[segments.length - 1];
+                    var end = (segment.t + segment.d) / timescale;
+                    if (end > this.videoModel.getDuration()) {
+                        this.system.notify("sourceDurationChanged", end);
+                    }    
+                }
+                return;
+            }
+
             // Update segment timeline in case the timestamps from tfrf differ from timestamps in Manifest.
             // In that case we consider tfrf timing
             // var j = 0,
@@ -101,18 +113,18 @@ Mss.dependencies.MssFragmentController = function() {
 
             // Update segment timeline according to DVR window
             if (manifest.timeShiftBufferDepth && manifest.timeShiftBufferDepth > 0) {
-                if (segmentsUpdated && manifest.startOver !== true) {
+                if (segmentsUpdated) {
                     // Get timestamp of the last segment
                     segment = segments[segments.length - 1];
                     t = segment.t;
 
                     // Determine the segments' availability start time
-                    availabilityStartTime = t - (manifest.timeShiftBufferDepth * 10000000);
+                    availabilityStartTime = t - (manifest.timeShiftBufferDepth * timescale);
 
                     // Remove segments prior to availability start time
                     segment = segments[0];
                     while (segment.t < availabilityStartTime) {
-                        this.debug.log("[MssFragmentController] Remove segment  - t = " + (segment.t / 10000000.0));
+                        this.debug.log("[MssFragmentController] Remove segment  - t = " + (segment.t / timescale));
                         segments.splice(0, 1);
                         segment = segments[0];
                     }
@@ -129,7 +141,7 @@ Mss.dependencies.MssFragmentController = function() {
                 }
             }
 
-            return segmentsUpdated;
+            return;
         },
 
         updateSegmentsList = function(bytes, request, adaptation) {
@@ -426,6 +438,8 @@ Mss.dependencies.MssFragmentController = function() {
     rslt.manifestModel = undefined;
     rslt.manifestExt = undefined;
     rslt.metricsModel = undefined;
+    rslt.videoModel = undefined;
+    rslt.mediaSourceExt = undefined;
 
     rslt.process = function(bytes, request, representation) {
         var deferred = Q.defer(),

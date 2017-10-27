@@ -933,6 +933,14 @@ MediaPlayer.dependencies.Stream = function() {
             play.call(this);
         },
 
+        // 'sourceDurationChanged' event is raised when source duration changed (start-over streams use case)
+        onSourceDurationChanged = function(duration) {
+            this.debug.info("[Stream] Source duration changed: " + duration);
+            this.mediaSourceExt.setDuration(mediaSource, duration);
+            manifest.mediaPresentationDuration = duration;
+            periodInfo.duration = duration;
+        },
+
         selectTrack = function(controller, track, currentIndex) {
             var index = -1;
 
@@ -1106,7 +1114,8 @@ MediaPlayer.dependencies.Stream = function() {
             this.system.mapHandler("startTimeFound", undefined, onStartTimeFound.bind(this));
             this.system.mapHandler("segmentLoadingFailed", undefined, onSegmentLoadingFailed.bind(this));
             this.system.mapHandler("bufferingCompleted", undefined, onBufferingCompleted.bind(this));
-
+            this.system.mapHandler("sourceDurationChanged", undefined, onSourceDurationChanged.bind(this));
+            
             /* @if PROTECTION=true */
             // Protection event handlers
             this[MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR] = onProtectionError.bind(this);
@@ -1126,8 +1135,6 @@ MediaPlayer.dependencies.Stream = function() {
             canplayListener = onCanPlay.bind(this);
             playingListener = onPlaying.bind(this);
             loadstartListener = onLoadStart.bind(this);
-
-            // ORANGE : add Ended Event listener
             endedListener = onEnded.bind(this);
 
             visibilitychangeListener = onVisibilitychange.bind(this);
@@ -1281,7 +1288,8 @@ MediaPlayer.dependencies.Stream = function() {
             this.system.unmapHandler("startTimeFound");
             this.system.unmapHandler("segmentLoadingFailed");
             this.system.unmapHandler("bufferingCompleted");
-
+            this.system.unmapHandler("sourceDurationChanged");
+            
             tearDownMediaSource.call(this).then(
                 function() {
                     if (protectionController) {
@@ -1349,7 +1357,7 @@ MediaPlayer.dependencies.Stream = function() {
 
                 if (textController) {
                     if (enabled) {
-                        if (manifest.name === 'MSS' && this.manifestExt.getIsDynamic(manifest)) {
+                        if (manifest.name === 'MSS' && (this.manifestExt.getIsDynamic(manifest)  || this.manifestExt.getIsStartOver(manifest))) {
                             // In case of MSS live streams, refresh manifest before activating subtitles
                             this.system.mapHandler("streamsComposed", undefined, streamsComposed.bind(this), true);
                             this.system.notify("manifestUpdate");
