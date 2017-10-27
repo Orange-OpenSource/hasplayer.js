@@ -344,7 +344,8 @@ Mss.dependencies.MssParser = function() {
                 // Support for 'r' attribute (i.e. "repeat" as in MPEG-DASH)
                 r = parseFloat(this.domParser.getAttributeValue(chunks[i], "r"));
                 if (r) {
-                    for (j = 0; j < r; j++) {
+
+                    for (j = 0; j < (r - 1); j++) {
                         prevSegment = segments[segments.length - 1];
                         segment = {};
                         segment.t = prevSegment.t + prevSegment.d;
