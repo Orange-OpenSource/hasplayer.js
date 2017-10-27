@@ -42,5 +42,5 @@ jobs:
         - npm run deploy
     - stage: test
       # If job triggered by cron job, then run tests
-      if: env(TRAVIS_EVENT_TYPE) = cron
+      if: type = cron
       script: npm run test
