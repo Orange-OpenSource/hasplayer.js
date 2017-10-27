@@ -28,6 +28,7 @@ MediaPlayer.modules.ContextManager = function (){
                 this.system.mapClass('mp4Processor', MediaPlayer.dependencies.Mp4Processor);
                 this.system.mapClass('indexHandler', Mss.dependencies.MssHandler);
                 this.system.mapClass('fragmentController', Mss.dependencies.MssFragmentController);
+                this.system.mapClass('mssFragmentInfoController', Mss.dependencies.MssFragmentInfoController);
             } else if (ctx === "HLS") {
                 this.system.mapClass('mp4Processor', MediaPlayer.dependencies.Mp4Processor);
                 this.system.mapClass('fragmentController', Hls.dependencies.HlsFragmentController);

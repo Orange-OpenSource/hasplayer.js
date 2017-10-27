@@ -275,7 +275,7 @@ MediaPlayer.dependencies.Stream = function() {
             var fragmentInfoController = null;
 
             if (bufferController && data && data.type) {
-                fragmentInfoController = this.system.getObject("fragmentInfoController");
+                fragmentInfoController = this.system.getObject("mssFragmentInfoController");
                 fragmentInfoController.initialize(data.type, this.fragmentController, bufferController);
             }
 
