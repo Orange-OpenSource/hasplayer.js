@@ -606,22 +606,30 @@ Mss.dependencies.MssParser = function() {
             // Then determine timestamp offset according to higher audio/video start time
             // (use case = live stream delinearization)
             if (mpd.type === "static") {
-                for (i = 0; i < adaptations.length; i++) {
-                    if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
-                        segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
-                        startTime = segments[0].t;
-                        if (!timestampOffset) {
-                            timestampOffset = startTime;
+                // In case of start-over stream and manifest reloading (due to track switch)
+                // we consider previous timestampOffset to keep timelines synchronized
+                var prevManifest = this.manifestModel.getValue();
+                if (prevManifest && prevManifest.timestampOffset) {
+                    timestampOffset = prevManifest.timestampOffset;
+                } else {
+                    for (i = 0; i < adaptations.length; i++) {
+                        if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
+                            segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
+                            startTime = segments[0].t;
+                            if (!timestampOffset) {
+                                timestampOffset = startTime;
+                            }
+                            timestampOffset = Math.min(timestampOffset, startTime);
+                            // Correct content duration according to minimum adaptation's segment timeline duration
+                            // in order to force <video> element sending 'ended' event
+                            mpd.mediaPresentationDuration = Math.min(mpd.mediaPresentationDuration, adaptations[i].SegmentTemplate.SegmentTimeline.duration);
                         }
-                        timestampOffset = Math.min(timestampOffset, startTime);
-                        // Correct content duration according to minimum adaptation's segment timeline duration
-                        // in order to force <video> element sending 'ended' event
-                        mpd.mediaPresentationDuration = Math.min(mpd.mediaPresentationDuration, adaptations[i].SegmentTemplate.SegmentTimeline.duration);
                     }
                 }
 
                 // Patch segment templates timestamps and determine period start time (since audio/video should not be aligned to 0)
                 if (timestampOffset > 0) {
+                    mpd.timestampOffset = timestampOffset;
                     for (i = 0; i < adaptations.length; i++) {
                         segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
                         for (j = 0; j < segments.length; j++) {
@@ -680,6 +688,7 @@ Mss.dependencies.MssParser = function() {
         errHandler: undefined,
         domParser: undefined,
         metricsModel: undefined,
+        manifestModel: undefined,
 
         parse: internalParse
     };
