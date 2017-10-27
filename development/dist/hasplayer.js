@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-10-17_8:53:4 / git revision : 36ccc3c */
+/* Last build : 2017-10-27_13:31:28 / git revision : c0f9a67 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.13.0-dev',
-        GIT_TAG = '36ccc3c',
-        BUILD_DATE = '2017-10-17_8:53:4',
+        GIT_TAG = 'c0f9a67',
+        BUILD_DATE = '2017-10-27_13:31:28',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -2273,9 +2273,6 @@ MediaPlayer.dependencies.BufferController = function() {
 
             this.debug.info("[BufferController][" + type + "] startPlayback");
 
-            // Set media type to stalled state
-            setStalled.call(this, true);
-
             // Start buffering process
             checkIfSufficientBuffer.call(this);
         },
@@ -2351,6 +2348,9 @@ MediaPlayer.dependencies.BufferController = function() {
             Q.when(deferredFragmentBuffered ? deferredFragmentBuffered.promise : true).then(
                 function() {
                     // self.debug.log("[BufferController]["+type+"] SEEK: do start");
+                    // Set media type to stalled state
+                    setStalled.call(self, true);
+                        
                     doStart.call(self);
                 }
             );
@@ -3458,8 +3458,8 @@ MediaPlayer.dependencies.BufferController = function() {
             this.setFragmentController(fragmentController);
             this.setEventController(eventController);
             minBufferTime = this.config.getParamFor(type, "BufferController.minBufferTime", "number", -1);
-            minBufferTimeAtStartup = this.config.getParamFor(type, "BufferController.minBufferTimeForPlaying", "number", 0);
-            bufferToKeep = this.config.getParamFor(type, "BufferController.bufferToKeep", "number", MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME);
+            minBufferTimeAtStartup = this.config.getParamFor(type, "BufferController.minBufferTimeForPlaying", "number", MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_STARTUP);
+            bufferToKeep = this.config.getParamFor(type, "BufferController.bufferToKeep", "number", MediaPlayer.dependencies.BufferExtensions.DEFAULT_BUFFER_TO_KEEP);
             liveDelay = this.config.getParamFor(type, "BufferController.liveDelay", "number", -1);
 
             this.updateData(newData, newPeriodInfo);
@@ -3649,14 +3649,6 @@ MediaPlayer.dependencies.BufferController = function() {
             return isBufferingCompleted;
         },
 
-        clearMetrics: function() {
-            if (type === null || type === "") {
-                return;
-            }
-
-            this.metricsModel.clearCurrentMetricsForType(type);
-        },
-
         updateManifest: function() {
             this.system.notify("manifestUpdate");
         },
@@ -3787,7 +3779,6 @@ MediaPlayer.dependencies.BufferController = function() {
                         fragmentModel = null;
                     }
 
-                    self.clearMetrics();
                     initializationData = [];
                     initialPlayback = true;
                     isQuotaExceeded = false;
@@ -7009,29 +7000,24 @@ MediaPlayer.dependencies.MetricsExtensions.prototype = {
             this.metricChanged(streamType);
         },
 
-        clearCurrentMetricsForType: function (type) {
-            var keepBW = this.config.getParamFor(type, "ABR.keepBandwidthCondition", "boolean", true);
-
-            for (var prop in this.streamMetrics[type]) {
-                // We keep HttpList in order to keep bandwidth conditions when switching the input stream
-                if (this.streamMetrics[type].hasOwnProperty(prop) && ((prop !== "HttpList") || (keepBW === false))) {
-                    this.streamMetrics[type][prop] = [];
-                }
-            }
-
-            this.metricChanged(type);
-        },
-
         clearAllCurrentMetrics: function () {
             var self = this;
 
-            for (var prop in this.streamMetrics) {
-                if (this.streamMetrics.hasOwnProperty(prop) && (prop === "stream")) {
-                    delete this.streamMetrics[prop];
+            for (var type in this.streamMetrics) {
+                if (this.streamMetrics.hasOwnProperty(type) && (type === "stream")) {
+                    delete this.streamMetrics[type];
+                } else {
+                    var keepBW = this.config.getParamFor(type, "ABR.keepBandwidthCondition", "boolean", true);
+
+                    for (var prop in this.streamMetrics[type]) {
+                        // We keep HttpList in order to keep bandwidth conditions when switching the input stream
+                        if (this.streamMetrics[type].hasOwnProperty(prop) && ((prop !== "HttpList") || (keepBW === false))) {
+                            this.streamMetrics[type][prop] = [];
+                        }
+                    }
                 }
             }
 
-            //this.streamMetrics = {};
             this.metricsChanged.call(self);
         },
 
@@ -11295,22 +11281,36 @@ MediaPlayer.models.VideoModel = function () {
     "use strict";
 
     var element,
-        stalledStreams = {},
+        stalledStreams = [],
         TTMLRenderingDiv = null,
 
-        isStalled = function () {
-            for (var type in stalledStreams) {
-                if (stalledStreams[type] === true) {
-                    return true;
-                }
+        addStalledStream = function (type) {    
+            if (type === null || stalledStreams.indexOf(type) !== -1) {
+                return;
             }
-            return false;
+    
+            this.debug.info("<video> # stall stream " + type);
+            stalledStreams.push(type);
+            // If at least one stream is stalled, then halt playback until nothing is stalled
+            if (stalledStreams.length === 1) {
+                this.setPlaybackRate(0);
+            }
         },
 
-        stallStream = function (type, stalled) {
-            stalledStreams[type] = stalled;
-            this.debug.info("<video> # stalled = " + stalled + ", type = " + type);
-            this.setPlaybackRate(isStalled() ? 0 : 1);
+        removeStalledStream = function (type) {
+            var index = stalledStreams.indexOf(type);
+    
+            if (type === null) {
+                return;
+            }
+            this.debug.info("<video> # unstall stream " + type);
+            if (index !== -1) {
+                stalledStreams.splice(index, 1);
+            }
+            // If no stream is stalled then resume playback.
+            if (this.isStalled() === false && element.playbackRate === 0) {
+                this.setPlaybackRate(1);
+            }
         };
 
     return {
@@ -11318,6 +11318,7 @@ MediaPlayer.models.VideoModel = function () {
         debug: undefined,
 
         setup: function () {
+            stalledStreams = [];
         },
 
         reset: function () {
@@ -11388,7 +11389,6 @@ MediaPlayer.models.VideoModel = function () {
             element.removeEventListener(type, callback, false);
         },
 
-        // ORANGE : register listener on video element parent
         listenOnParent: function (type, callback) {
             element.parentElement.addEventListener(type, callback, false);
         },
@@ -11417,9 +11417,17 @@ MediaPlayer.models.VideoModel = function () {
         },
 
         isStalled: function () {
-            return element.playbackRate === 0;
+            return (stalledStreams.length > 0);
         },
 
+        stallStream: function (type, stalled) {
+            if (stalled) {
+                addStalledStream.call(this, type);
+            } else {
+                removeStalledStream.call(this, type);
+            }
+        },
+        
         getTTMLRenderingDiv: function() {
             return TTMLRenderingDiv;
         },
@@ -11433,9 +11441,7 @@ MediaPlayer.models.VideoModel = function () {
             TTMLRenderingDiv.style.pointerEvents = 'none';
             TTMLRenderingDiv.style.top = 0;
             TTMLRenderingDiv.style.left = 0;
-        },
-
-        stallStream: stallStream
+        }
     };
 };
 
@@ -17058,6 +17064,12 @@ Dash.dependencies.DashManifestExtensions = function() {
 Dash.dependencies.DashManifestExtensions.prototype = {
     constructor: Dash.dependencies.DashManifestExtensions,
 
+    isInteger: Number.isInteger || function (value) {
+        return typeof value === 'number' &&
+            isFinite(value) &&
+            Math.floor(value) === value;
+    },
+
     getIsType: function(adaptation, type, mimeTypes) {
         "use strict";
         var i, j,
@@ -17453,7 +17465,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
     getBandwidth: function(representation) {
         "use strict";
-        return representation.bandwidth;
+        return representation && representation.bandwidth ? representation.bandwidth : NaN;
     },
 
     getRefreshDelay: function(manifest) {
@@ -17479,7 +17491,8 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
     getRepresentationFor: function(index, data) {
         "use strict";
-        return data.Representation_asArray[index];
+        return data && data.Representation_asArray && data.Representation_asArray.length > 0 &&
+            this.isInteger(index) && index < data.Representation_asArray.length ? data.Representation_asArray[index] : null;
     },
 
     getRepresentationsForAdaptation: function(manifest, adaptation) {
@@ -27574,7 +27587,7 @@ Mss.dependencies.MssParser = function() {
                 segments = [],
                 segment,
                 prevSegment,
-                i,
+                i, j, r,
                 tManifest,
                 duration = 0;
 
@@ -27626,6 +27639,22 @@ Mss.dependencies.MssParser = function() {
 
                 // Create new segment
                 segments.push(segment);
+
+                // Support for 'r' attribute (i.e. "repeat" as in MPEG-DASH)
+                r = parseFloat(this.domParser.getAttributeValue(chunks[i], "r"));
+                if (r) {
+
+                    for (j = 0; j < (r - 1); j++) {
+                        prevSegment = segments[segments.length - 1];
+                        segment = {};
+                        segment.t = prevSegment.t + prevSegment.d;
+                        segment.d = prevSegment.d;
+                        if (prevSegment.tManifest) {
+                            segment.tManifest  = goog.math.Long.fromString(prevSegment.tManifest).add(goog.math.Long.fromNumber(prevSegment.d)).toString();
+                        }
+                        segments.push(segment);
+                    }
+                }
             }
 
             segmentTimeline.S = segments;
