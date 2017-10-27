@@ -6,7 +6,10 @@ branches:
     - /(release).*/
 stages:
   - build
-  - test
+  - name: test
+    # If job triggered by cron job, then run tests
+    if: type = cron
+    script: npm run test
 env:
   global:
     - ENCRYPTION_LABEL: 98a7d362e1e4
@@ -40,7 +43,3 @@ jobs:
         - npm run doc
         # Package and deploy version on project's pages
         - npm run deploy
-    - stage: test
-      # If job triggered by cron job, then run tests
-      if: type = cron
-      script: npm run test
