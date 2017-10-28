@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-10-27_13:31:28 / git revision : c0f9a67 */
+/* Last build : 2017-10-27_12:4:43 / git revision : 8562e85 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.13.0-dev',
-        GIT_TAG = 'c0f9a67',
-        BUILD_DATE = '2017-10-27_13:31:28',
+        GIT_TAG = '8562e85',
+        BUILD_DATE = '2017-10-27_12:4:43',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -27587,7 +27587,7 @@ Mss.dependencies.MssParser = function() {
                 segments = [],
                 segment,
                 prevSegment,
-                i, j, r,
+                i,
                 tManifest,
                 duration = 0;
 
@@ -27639,22 +27639,6 @@ Mss.dependencies.MssParser = function() {
 
                 // Create new segment
                 segments.push(segment);
-
-                // Support for 'r' attribute (i.e. "repeat" as in MPEG-DASH)
-                r = parseFloat(this.domParser.getAttributeValue(chunks[i], "r"));
-                if (r) {
-
-                    for (j = 0; j < (r - 1); j++) {
-                        prevSegment = segments[segments.length - 1];
-                        segment = {};
-                        segment.t = prevSegment.t + prevSegment.d;
-                        segment.d = prevSegment.d;
-                        if (prevSegment.tManifest) {
-                            segment.tManifest  = goog.math.Long.fromString(prevSegment.tManifest).add(goog.math.Long.fromNumber(prevSegment.d)).toString();
-                        }
-                        segments.push(segment);
-                    }
-                }
             }
 
             segmentTimeline.S = segments;
