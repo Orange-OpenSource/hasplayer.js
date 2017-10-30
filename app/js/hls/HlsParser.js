@@ -246,16 +246,25 @@ Hls.dependencies.HlsParser = function() {
             removeSegments(segments, segmentList.startNumber);
 
             // Correct segments timeline according to previous segment list (in case of variant stream switching)
-            if (adaptation.segments) {
+            if (adaptation.segments && adaptation.segments.length > 0) {
                 // Align segment list according to sequence number
                 removeSegments(segments, adaptation.segments[0].sequenceNumber);
-                removeSegments(adaptation.segments, segments[0].sequenceNumber);
-                if (segments[0].time !== adaptation.segments[0].time) {
-                    segments[0].time = adaptation.segments[0].time;
-                    for (i = 1; i < segments.length; i++) {
-                        segments[i].time = segments[i - 1].time + segments[i - 1].duration;
+                if (segments.length > 0) {
+                    removeSegments(adaptation.segments, segments[0].sequenceNumber);
+                    if (adaptation.segments.length > 0) {
+                        if (segments[0].time !== adaptation.segments[0].time) {
+                            segments[0].time = adaptation.segments[0].time;
+                            for (i = 1; i < segments.length; i++) {
+                                segments[i].time = segments[i - 1].time + segments[i - 1].duration;
+                            }
+                        }
                     }
                 }
+            }
+
+            // segment list from manifest may be empty (or shited from previous playlists)
+            if (segments.length === 0) {
+                return true;
             }
 
             adaptation.segments = segments;
@@ -338,7 +347,7 @@ Hls.dependencies.HlsParser = function() {
                 for (j = 0; j < adaptation.Representation_asArray.length; j++) {
                     if (adaptation.Representation_asArray[j].SegmentList) {
                         var segments = adaptation.Representation_asArray[j].SegmentList.SegmentURL_asArray;
-                        if (segments[0].sequenceNumber < maxSequenceNumber) {
+                        if (segments.length > 0 && segments[0].sequenceNumber < maxSequenceNumber) {
                             removeSegments(segments, maxSequenceNumber);
                             if (segments.length > 0) {
                                 segments[0].time = 0;
@@ -557,7 +566,7 @@ Hls.dependencies.HlsParser = function() {
 
             // Alternative renditions of the same content (alternative audio tracks or subtitles) #EXT-X-MEDIA
             medias = getMedias(manifest);
-            for (i =0; i < medias.length; i++) {
+            for (i = 0; i < medias.length; i++) {
                 media = medias[i];
                 adaptationSet = {
                     name: 'AdaptationSet',
