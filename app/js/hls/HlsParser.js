@@ -262,7 +262,7 @@ Hls.dependencies.HlsParser = function() {
                 }
             }
 
-            // segment list from manifest may be empty (or shited from previous playlists)
+            // segment list from manifest may be empty (or shifted/desynchronized from previous playlists)
             if (segments.length === 0) {
                 return true;
             }
