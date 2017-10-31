@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-10-27_12:4:43 / git revision : 8562e85 */
+/* Last build : 2017-10-30_10:24:5 / git revision : d85ce6f */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.13.0-dev',
-        GIT_TAG = '8562e85',
-        BUILD_DATE = '2017-10-27_12:4:43',
+        GIT_TAG = 'd85ce6f',
+        BUILD_DATE = '2017-10-30_10:24:5',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -2820,7 +2820,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
         signalSegmentBuffered = function() {
             if (deferredFragmentBuffered) {
-                //self.debug.log("[BufferController]["+type+"] End of buffering process");
+                // this.debug.log("[BufferController][" + type + "] ### End of buffering process");
                 deferredFragmentBuffered.resolve();
                 deferredFragmentBuffered = null;
             }
@@ -3330,10 +3330,12 @@ MediaPlayer.dependencies.BufferController = function() {
 
                     // Refresh playlist according to last segment duration
                     var segments = representation.SegmentList.SegmentURL_asArray;
-                    var segment = segments[segments.length-1];
+                    if (segments > 0) {
+                        segmentDuration = segments[segments.length-1] - 1;
+                    }
                     playlistRefreshTimeout = setTimeout(function() {
                         updatePlayListForRepresentation.call(self);
-                    }, ((segment.duration - 1) * 1000));
+                    }, (segmentDuration * 1000));
 
                     deferred.resolve();
                 },
@@ -26868,16 +26870,25 @@ Hls.dependencies.HlsParser = function() {
             removeSegments(segments, segmentList.startNumber);
 
             // Correct segments timeline according to previous segment list (in case of variant stream switching)
-            if (adaptation.segments) {
+            if (adaptation.segments && adaptation.segments.length > 0) {
                 // Align segment list according to sequence number
                 removeSegments(segments, adaptation.segments[0].sequenceNumber);
-                removeSegments(adaptation.segments, segments[0].sequenceNumber);
-                if (segments[0].time !== adaptation.segments[0].time) {
-                    segments[0].time = adaptation.segments[0].time;
-                    for (i = 1; i < segments.length; i++) {
-                        segments[i].time = segments[i - 1].time + segments[i - 1].duration;
+                if (segments.length > 0) {
+                    removeSegments(adaptation.segments, segments[0].sequenceNumber);
+                    if (adaptation.segments.length > 0) {
+                        if (segments[0].time !== adaptation.segments[0].time) {
+                            segments[0].time = adaptation.segments[0].time;
+                            for (i = 1; i < segments.length; i++) {
+                                segments[i].time = segments[i - 1].time + segments[i - 1].duration;
+                            }
+                        }
                     }
                 }
+            }
+
+            // segment list from manifest may be empty (or shifted/desynchronized from previous playlists)
+            if (segments.length === 0) {
+                return true;
             }
 
             adaptation.segments = segments;
@@ -26960,7 +26971,7 @@ Hls.dependencies.HlsParser = function() {
                 for (j = 0; j < adaptation.Representation_asArray.length; j++) {
                     if (adaptation.Representation_asArray[j].SegmentList) {
                         var segments = adaptation.Representation_asArray[j].SegmentList.SegmentURL_asArray;
-                        if (segments[0].sequenceNumber < maxSequenceNumber) {
+                        if (segments.length > 0 && segments[0].sequenceNumber < maxSequenceNumber) {
                             removeSegments(segments, maxSequenceNumber);
                             if (segments.length > 0) {
                                 segments[0].time = 0;
@@ -27179,7 +27190,7 @@ Hls.dependencies.HlsParser = function() {
 
             // Alternative renditions of the same content (alternative audio tracks or subtitles) #EXT-X-MEDIA
             medias = getMedias(manifest);
-            for (i =0; i < medias.length; i++) {
+            for (i = 0; i < medias.length; i++) {
                 media = medias[i];
                 adaptationSet = {
                     name: 'AdaptationSet',
