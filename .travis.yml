@@ -42,3 +42,10 @@ jobs:
         - npm run doc
         # Package and deploy version on project's pages
         - npm run deploy
+deploy:
+  api_key:
+    secure: fLr/s6xT5T2mh2UaPUtt3UlkdmvRkqzOlolJss3c6OICeFegFmx/ieuf8iACnB5u3fZ1pgY9/wIXq9f6uKUpTsDQd/B0uALpe/Nzv/OFGkC1S8qk66Z9VC4/LNkDSEOryAKDDPwMgcZgxyPe5u20NrVUKahMB0B4vhYKwGle5LQ=
+  on:
+    branch: master
+    tags: true
+  skip_cleanup: true
