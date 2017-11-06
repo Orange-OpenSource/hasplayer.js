@@ -359,7 +359,7 @@ Dash.dependencies.DashHandler = function() {
                 }
             }
 
-            if (!isAvailableSegmentNumberCalculated) {
+            if (true/*!isAvailableSegmentNumberCalculated*/) {
                 var availabilityStartTime,
                     availabilityEndTime,
                     f = fragments[0];

@@ -275,7 +275,7 @@ MediaPlayer.dependencies.Stream = function() {
             var fragmentInfoController = null;
 
             if (bufferController && data && data.type) {
-                fragmentInfoController = this.system.getObject("fragmentInfoController");
+                fragmentInfoController = this.system.getObject("mssFragmentInfoController");
                 fragmentInfoController.initialize(data.type, this.fragmentController, bufferController);
             }
 
@@ -357,7 +357,7 @@ MediaPlayer.dependencies.Stream = function() {
                     this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, 'Video codec information not available', {codec: ''});
                 } else {
                     videoController = createBufferController.call(this, data, videoCodec);
-                    if (this.manifestExt.getIsDynamic(manifest)) {
+                    if (this.manifestExt.getIsDynamic(manifest) || this.manifestExt.getIsStartOver(manifest)) {
                         fragmentInfoVideoController = createFragmentInfoController.call(this, videoController, data);
                     }
                 }
@@ -390,7 +390,7 @@ MediaPlayer.dependencies.Stream = function() {
                         return;
                     }
 
-                    if (this.manifestExt.getIsDynamic(manifest)) {
+                    if (this.manifestExt.getIsDynamic(manifest) || this.manifestExt.getIsStartOver(manifest)) {
                         fragmentInfoAudioController = createFragmentInfoController.call(this, audioController, data);
                     }
                 }
@@ -407,7 +407,7 @@ MediaPlayer.dependencies.Stream = function() {
                     this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_TEXT, "Text codec information not available");
                 } else {
                     textController = createBufferController.call(this, data, textMimeType);
-                    if (this.manifestExt.getIsDynamic(manifest)) {
+                    if (this.manifestExt.getIsDynamic(manifest) || this.manifestExt.getIsStartOver(manifest)) {
                         fragmentInfoTextController = createFragmentInfoController.call(this, textController, data);
                     }
                 }
@@ -429,7 +429,7 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         startFragmentInfoControllers = function() {
-            if (manifest.name !== 'MSS' || !this.manifestExt.getIsDynamic(manifest)) {
+            if (manifest.name !== 'MSS' || (!this.manifestExt.getIsDynamic(manifest) && !this.manifestExt.getIsStartOver(manifest))) {
                 return;
             }
 
@@ -510,6 +510,10 @@ MediaPlayer.dependencies.Stream = function() {
             this.debug.info("[Stream] <video> ended event");
             //add stopped state metric with reason = 1 : end of stream
             this.metricsModel.addState("video", "stopped", this.videoModel.getCurrentTime(), 1);
+
+            if (this.manifestExt.getIsStartOver(manifest)) {
+                stopFragmentInfoControllers.call(this);
+            }
         },
 
         onPause = function() {
@@ -699,7 +703,6 @@ MediaPlayer.dependencies.Stream = function() {
 
         onDurationchange = function() {
             var duration = this.videoModel.getDuration();
-
             this.debug.info("[Stream] <video> durationchange event: " + duration);
         },
 
@@ -923,7 +926,19 @@ MediaPlayer.dependencies.Stream = function() {
                 playStartTime = startTime;
             }
 
+            if (this.manifestExt.getIsStartOver(manifest)) {
+                startFragmentInfoControllers.call(this);
+            }
+            
             play.call(this);
+        },
+
+        // 'sourceDurationChanged' event is raised when source duration changed (start-over streams use case)
+        onSourceDurationChanged = function(duration) {
+            this.debug.info("[Stream] Source duration changed: " + duration);
+            this.mediaSourceExt.setDuration(mediaSource, duration);
+            manifest.mediaPresentationDuration = duration;
+            periodInfo.duration = duration;
         },
 
         selectTrack = function(controller, track, currentIndex) {
@@ -942,7 +957,7 @@ MediaPlayer.dependencies.Stream = function() {
 
             // Check if different track selected
             if (index !== currentIndex) {
-                if (manifest.name === 'MSS' && this.manifestExt.getIsDynamic(manifest)) {
+                if (manifest.name === 'MSS' && (this.manifestExt.getIsDynamic(manifest)  || this.manifestExt.getIsStartOver(manifest))) {
                     // If live MSS, refresh the manifest to get new selected track segments info
                     this.system.notify("manifestUpdate");
                 } else {
@@ -1033,7 +1048,7 @@ MediaPlayer.dependencies.Stream = function() {
 
             this.debug.log("[Stream] Segment loading failed: start time = " + segmentRequest.startTime + ", duration = " + segmentRequest.duration);
 
-            if (this.manifestExt.getIsDynamic(manifest) && reloadTimeout === null) {
+            if ((this.manifestExt.getIsDynamic(manifest) || this.manifestExt.getIsstartOver(manifest)) && reloadTimeout === null) {
                 // For Live streams, then we try to reload the session
                 isReloading = true;
                 var delay = segmentRequest.duration;
@@ -1099,7 +1114,8 @@ MediaPlayer.dependencies.Stream = function() {
             this.system.mapHandler("startTimeFound", undefined, onStartTimeFound.bind(this));
             this.system.mapHandler("segmentLoadingFailed", undefined, onSegmentLoadingFailed.bind(this));
             this.system.mapHandler("bufferingCompleted", undefined, onBufferingCompleted.bind(this));
-
+            this.system.mapHandler("sourceDurationChanged", undefined, onSourceDurationChanged.bind(this));
+            
             /* @if PROTECTION=true */
             // Protection event handlers
             this[MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR] = onProtectionError.bind(this);
@@ -1119,8 +1135,6 @@ MediaPlayer.dependencies.Stream = function() {
             canplayListener = onCanPlay.bind(this);
             playingListener = onPlaying.bind(this);
             loadstartListener = onLoadStart.bind(this);
-
-            // ORANGE : add Ended Event listener
             endedListener = onEnded.bind(this);
 
             visibilitychangeListener = onVisibilitychange.bind(this);
@@ -1274,7 +1288,8 @@ MediaPlayer.dependencies.Stream = function() {
             this.system.unmapHandler("startTimeFound");
             this.system.unmapHandler("segmentLoadingFailed");
             this.system.unmapHandler("bufferingCompleted");
-
+            this.system.unmapHandler("sourceDurationChanged");
+            
             tearDownMediaSource.call(this).then(
                 function() {
                     if (protectionController) {
@@ -1342,7 +1357,7 @@ MediaPlayer.dependencies.Stream = function() {
 
                 if (textController) {
                     if (enabled) {
-                        if (manifest.name === 'MSS' && this.manifestExt.getIsDynamic(manifest)) {
+                        if (manifest.name === 'MSS' && (this.manifestExt.getIsDynamic(manifest)  || this.manifestExt.getIsStartOver(manifest))) {
                             // In case of MSS live streams, refresh manifest before activating subtitles
                             this.system.mapHandler("streamsComposed", undefined, streamsComposed.bind(this), true);
                             this.system.notify("manifestUpdate");

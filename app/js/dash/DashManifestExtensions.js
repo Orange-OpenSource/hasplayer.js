@@ -406,6 +406,17 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return isOnDemand;
     },
 
+    getIsStartOver: function(manifest) {
+        "use strict";
+        var isStartOver = false;
+
+        if (manifest && manifest.hasOwnProperty("startOver")) {
+            isStartOver = (manifest.startOver === true);
+        }
+
+        return isStartOver;
+    },
+
     getDuration: function(manifest) {
         var mpdDuration;
 

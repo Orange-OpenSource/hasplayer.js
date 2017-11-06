@@ -19,19 +19,19 @@ Mss.dependencies.MssFragmentController = function() {
     var processTfrf = function(request, tfrf, tfdt, adaptation) {
             var manifest = this.manifestModel.getValue(),
                 segmentsUpdated = false,
-                // Get adaptation's segment timeline (always a SegmentTimeline in Smooth Streaming use case)
-                segments = adaptation.SegmentTemplate.SegmentTimeline.S,
+                segments = adaptation.SegmentTemplate.SegmentTimeline.S_asArray,
+                timescale = adaptation.SegmentTemplate.timescale,
                 entries = tfrf.entry,
                 segment = null,
+                segmentTime,
                 t = 0,
                 i = 0,
-                // j = 0,
-                // segmentId = -1,
                 availabilityStartTime = null,
+                type = adaptation.type,
                 range;
 
             // Process tfrf only for live streams
-            if (manifest.type !== 'dynamic') {
+            if (!this.manifestExt.getIsDynamic(manifest) && !this.manifestExt.getIsStartOver(manifest)) {
                 return;
             }
 
@@ -49,13 +49,33 @@ Mss.dependencies.MssFragmentController = function() {
                 entries[i].fragment_absolute_time = entries[i].fragment_absolute_time.toNumber();
                 entries[i].fragment_duration = entries[i].fragment_duration.toNumber();
 
-                if (entries[i].fragment_absolute_time > segments[segments.length - 1].t) {
-                    this.debug.log("[MssFragmentController] Add new segment - t = " + (entries[i].fragment_absolute_time / 10000000.0));
+                // In case of start-over streams, check if we have reached end of original manifest duration (set in timeShiftBufferDepth)
+                // => then do not update anymore timeline
+                if (this.manifestExt.getIsStartOver(manifest)) {
+                    // Get first segment time
+                    segmentTime = segments[0].tManifest ? parseFloat(segments[0].tManifest) : segments[0].t;
+                    if (entries[i].fragment_absolute_time > (segmentTime + (manifest.timeShiftBufferDepth * timescale))) {
+                        break;
+                    }                    
+                }
+
+                // Get last segment time
+                segmentTime = segments[segments.length - 1].tManifest ? parseFloat(segments[segments.length - 1].tManifest) : segments[segments.length - 1].t;
+                // Check if we have to append new segment to timeline
+                if (entries[i].fragment_absolute_time > segmentTime) {
+                    this.debug.log("[MssFragmentController][" + type + "] Add new segment - t = " + (entries[i].fragment_absolute_time / timescale));
                     segment = {};
                     segment.t = entries[i].fragment_absolute_time;
                     segment.d = entries[i].fragment_duration;
+                    // If timestamps starts at 0 relative to 1st segment (dynamic to static) then update segment time
+                    if (segments[0].tManifest) {
+                        segment.t -= parseFloat(segments[0].tManifest) - segments[0].t;
+                    }
+                    // Set tManifest either in case of timestamps greater then 2^53 or in case of dynamic to static streams
                     if (entries[i].fragment_absolute_timeManifest) {
                        segment.tManifest = entries[i].fragment_absolute_timeManifest;
+                    } else if (segments[0].tManifest) {
+                        segment.tManifest = entries[i].fragment_absolute_time;
                     }
                     segments.push(segment);
                     segmentsUpdated = true;
@@ -64,8 +84,22 @@ Mss.dependencies.MssFragmentController = function() {
                 i += 1;
             }
 
+            // In case of static start-over streams, update content duration
+            if (this.manifestExt.getIsStartOver(manifest)) {
+                if (type === 'video') {
+                    segment = segments[segments.length - 1];
+                    var end = (segment.t + segment.d) / timescale;
+                    if (end > this.videoModel.getDuration()) {
+                        this.system.notify("sourceDurationChanged", end);
+                    }    
+                }
+                return;
+            }
+
             // Update segment timeline in case the timestamps from tfrf differ from timestamps in Manifest.
             // In that case we consider tfrf timing
+            // var j = 0,
+            //     segmentId = -1,
             // for (j = segments.length - 1; j >= 0; j -= 1) {
             //     if (segments[j].t === tfdt.baseMediaDecodeTime) {
             //         segmentId = j;
@@ -88,18 +122,18 @@ Mss.dependencies.MssFragmentController = function() {
 
             // Update segment timeline according to DVR window
             if (manifest.timeShiftBufferDepth && manifest.timeShiftBufferDepth > 0) {
-                if (segmentsUpdated && manifest.startOver !== true) {
+                if (segmentsUpdated) {
                     // Get timestamp of the last segment
                     segment = segments[segments.length - 1];
                     t = segment.t;
 
                     // Determine the segments' availability start time
-                    availabilityStartTime = t - (manifest.timeShiftBufferDepth * 10000000);
+                    availabilityStartTime = t - (manifest.timeShiftBufferDepth * timescale);
 
                     // Remove segments prior to availability start time
                     segment = segments[0];
                     while (segment.t < availabilityStartTime) {
-                        this.debug.log("[MssFragmentController] Remove segment  - t = " + (segment.t / 10000000.0));
+                        this.debug.log("[MssFragmentController][" + type + "] Remove segment  - t = " + (segment.t / timescale));
                         segments.splice(0, 1);
                         segment = segments[0];
                     }
@@ -116,7 +150,7 @@ Mss.dependencies.MssFragmentController = function() {
                 }
             }
 
-            return segmentsUpdated;
+            return;
         },
 
         updateSegmentsList = function(bytes, request, adaptation) {
@@ -413,6 +447,8 @@ Mss.dependencies.MssFragmentController = function() {
     rslt.manifestModel = undefined;
     rslt.manifestExt = undefined;
     rslt.metricsModel = undefined;
+    rslt.videoModel = undefined;
+    rslt.mediaSourceExt = undefined;
 
     rslt.process = function(bytes, request, representation) {
         var deferred = Q.defer(),
