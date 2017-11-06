@@ -682,7 +682,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
         signalSegmentBuffered = function() {
             if (deferredFragmentBuffered) {
-                //self.debug.log("[BufferController]["+type+"] End of buffering process");
+                // this.debug.log("[BufferController][" + type + "] ### End of buffering process");
                 deferredFragmentBuffered.resolve();
                 deferredFragmentBuffered = null;
             }
@@ -1192,10 +1192,12 @@ MediaPlayer.dependencies.BufferController = function() {
 
                     // Refresh playlist according to last segment duration
                     var segments = representation.SegmentList.SegmentURL_asArray;
-                    var segment = segments[segments.length-1];
+                    if (segments > 0) {
+                        segmentDuration = segments[segments.length-1] - 1;
+                    }
                     playlistRefreshTimeout = setTimeout(function() {
                         updatePlayListForRepresentation.call(self);
-                    }, ((segment.duration - 1) * 1000));
+                    }, (segmentDuration * 1000));
 
                     deferred.resolve();
                 },
