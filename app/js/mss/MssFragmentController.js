@@ -23,10 +23,11 @@ Mss.dependencies.MssFragmentController = function() {
                 timescale = adaptation.SegmentTemplate.timescale,
                 entries = tfrf.entry,
                 segment = null,
-                startTime,
+                segmentTime,
                 t = 0,
                 i = 0,
                 availabilityStartTime = null,
+                type = adaptation.type,
                 range;
 
             // Process tfrf only for live streams
@@ -51,22 +52,30 @@ Mss.dependencies.MssFragmentController = function() {
                 // In case of start-over streams, check if we have reached end of original manifest duration (set in timeShiftBufferDepth)
                 // => then do not update anymore timeline
                 if (this.manifestExt.getIsStartOver(manifest)) {
-                    startTime = segments[0].tManifest ? segments[0].tManifest : segments[0].t;
-                    if (entries[i].fragment_absolute_time > (startTime + (manifest.timeShiftBufferDepth * timescale))) {
+                    // Get first segment time
+                    segmentTime = segments[0].tManifest ? parseFloat(segments[0].tManifest) : segments[0].t;
+                    if (entries[i].fragment_absolute_time > (segmentTime + (manifest.timeShiftBufferDepth * timescale))) {
                         break;
                     }                    
                 }
-                                
-                if (entries[i].fragment_absolute_time > segments[segments.length - 1].t) {
-                    this.debug.log("[MssFragmentController] Add new segment - t = " + (entries[i].fragment_absolute_time / timescale));
+
+                // Get last segment time
+                segmentTime = segments[segments.length - 1].tManifest ? parseFloat(segments[segments.length - 1].tManifest) : segments[segments.length - 1].t;
+                // Check if we have to append new segment to timeline
+                if (entries[i].fragment_absolute_time > segmentTime) {
+                    this.debug.log("[MssFragmentController][" + type + "] Add new segment - t = " + (entries[i].fragment_absolute_time / timescale));
                     segment = {};
                     segment.t = entries[i].fragment_absolute_time;
                     segment.d = entries[i].fragment_duration;
+                    // If timestamps starts at 0 relative to 1st segment (dynamic to static) then update segment time
+                    if (segments[0].tManifest) {
+                        segment.t -= parseFloat(segments[0].tManifest) - segments[0].t;
+                    }
+                    // Set tManifest either in case of timestamps greater then 2^53 or in case of dynamic to static streams
                     if (entries[i].fragment_absolute_timeManifest) {
                        segment.tManifest = entries[i].fragment_absolute_timeManifest;
                     } else if (segments[0].tManifest) {
-                        segment.tManifest = segment.t;
-                        segment.t -= segments[0].tManifest - segments[0].t;
+                        segment.tManifest = entries[i].fragment_absolute_time;
                     }
                     segments.push(segment);
                     segmentsUpdated = true;
@@ -77,7 +86,7 @@ Mss.dependencies.MssFragmentController = function() {
 
             // In case of static start-over streams, update content duration
             if (this.manifestExt.getIsStartOver(manifest)) {
-                if (adaptation.type === 'video') {
+                if (type === 'video') {
                     segment = segments[segments.length - 1];
                     var end = (segment.t + segment.d) / timescale;
                     if (end > this.videoModel.getDuration()) {
@@ -124,7 +133,7 @@ Mss.dependencies.MssFragmentController = function() {
                     // Remove segments prior to availability start time
                     segment = segments[0];
                     while (segment.t < availabilityStartTime) {
-                        this.debug.log("[MssFragmentController] Remove segment  - t = " + (segment.t / timescale));
+                        this.debug.log("[MssFragmentController][" + type + "] Remove segment  - t = " + (segment.t / timescale));
                         segments.splice(0, 1);
                         segment = segments[0];
                     }
