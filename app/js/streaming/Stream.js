@@ -272,6 +272,10 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         createFragmentInfoController = function(bufferController, data) {
+            if (manifest.name !== 'MSS' || (!this.manifestExt.getIsDynamic(manifest) && !this.manifestExt.getIsStartOver(manifest))) {
+                return null;
+            }
+
             var fragmentInfoController = null;
 
             if (bufferController && data && data.type) {
@@ -357,9 +361,7 @@ MediaPlayer.dependencies.Stream = function() {
                     this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_CODEC_UNSUPPORTED, 'Video codec information not available', {codec: ''});
                 } else {
                     videoController = createBufferController.call(this, data, videoCodec);
-                    if (this.manifestExt.getIsDynamic(manifest) || this.manifestExt.getIsStartOver(manifest)) {
-                        fragmentInfoVideoController = createFragmentInfoController.call(this, videoController, data);
-                    }
+                    fragmentInfoVideoController = createFragmentInfoController.call(this, videoController, data);
                 }
             }
 
@@ -390,9 +392,7 @@ MediaPlayer.dependencies.Stream = function() {
                         return;
                     }
 
-                    if (this.manifestExt.getIsDynamic(manifest) || this.manifestExt.getIsStartOver(manifest)) {
-                        fragmentInfoAudioController = createFragmentInfoController.call(this, audioController, data);
-                    }
+                    fragmentInfoAudioController = createFragmentInfoController.call(this, audioController, data);
                 }
             }
 
@@ -407,9 +407,7 @@ MediaPlayer.dependencies.Stream = function() {
                     this.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.MANIFEST_ERR_NO_TEXT, "Text codec information not available");
                 } else {
                     textController = createBufferController.call(this, data, textMimeType);
-                    if (this.manifestExt.getIsDynamic(manifest) || this.manifestExt.getIsStartOver(manifest)) {
-                        fragmentInfoTextController = createFragmentInfoController.call(this, textController, data);
-                    }
+                    fragmentInfoTextController = createFragmentInfoController.call(this, textController, data);
                 }
             }
 
