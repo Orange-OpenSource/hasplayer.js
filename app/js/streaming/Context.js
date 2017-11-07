@@ -18,7 +18,6 @@ MediaPlayer.di.Context = function () {
         var videoElement = document.createElement("video"),
             debug = this.system.getObject("debug");
 
-        /* @if PROTECTION=true */
         // Detect EME APIs.  Look for newest API versions first
         if (MediaPlayer.models.ProtectionModel_21Jan2015.detect(videoElement)) {
             this.system.mapSingleton('protectionModel', MediaPlayer.models.ProtectionModel_21Jan2015);
@@ -30,7 +29,6 @@ MediaPlayer.di.Context = function () {
             debug.log("No supported version of EME detected on this user agent!");
             debug.log("Attempts to play encrypted content will fail!");
         }
-        /* @endif */
     };
 
     return {
@@ -81,18 +79,19 @@ MediaPlayer.di.Context = function () {
             this.system.mapSingleton('videoExt', MediaPlayer.dependencies.VideoModelExtensions);
 
             // MediaPlayer.dependencies.protection.*
-            /* @if PROTECTION=true */
-            this.system.mapClass('protectionController', MediaPlayer.dependencies.ProtectionController);
-            this.system.mapSingleton('protectionExt', MediaPlayer.dependencies.ProtectionExtensions);
-            this.system.mapSingleton('ksClearKey', MediaPlayer.dependencies.protection.KeySystem_ClearKey);
-            this.system.mapSingleton('ksPlayReady', MediaPlayer.dependencies.protection.KeySystem_PlayReady);
-            this.system.mapSingleton('ksWidevine', MediaPlayer.dependencies.protection.KeySystem_Widevine);
-            this.system.mapSingleton('serverClearKey', MediaPlayer.dependencies.protection.servers.ClearKey);
-            this.system.mapSingleton('serverDRMToday', MediaPlayer.dependencies.protection.servers.DRMToday);
-            this.system.mapSingleton('serverPlayReady', MediaPlayer.dependencies.protection.servers.PlayReady);
-            this.system.mapSingleton('serverWidevine', MediaPlayer.dependencies.protection.servers.Widevine);
-            /* @endif */
-            mapProtectionModel.call(this); // Determines EME API support and version
+            // Protection package if available
+            if (MediaPlayer.dependencies.ProtectionController) {
+                this.system.mapClass('protectionController', MediaPlayer.dependencies.ProtectionController);
+                this.system.mapSingleton('protectionExt', MediaPlayer.dependencies.ProtectionExtensions);
+                this.system.mapSingleton('ksClearKey', MediaPlayer.dependencies.protection.KeySystem_ClearKey);
+                this.system.mapSingleton('ksPlayReady', MediaPlayer.dependencies.protection.KeySystem_PlayReady);
+                this.system.mapSingleton('ksWidevine', MediaPlayer.dependencies.protection.KeySystem_Widevine);
+                this.system.mapSingleton('serverClearKey', MediaPlayer.dependencies.protection.servers.ClearKey);
+                this.system.mapSingleton('serverDRMToday', MediaPlayer.dependencies.protection.servers.DRMToday);
+                this.system.mapSingleton('serverPlayReady', MediaPlayer.dependencies.protection.servers.PlayReady);
+                this.system.mapSingleton('serverWidevine', MediaPlayer.dependencies.protection.servers.Widevine);
+                mapProtectionModel.call(this); // Determines EME API support and version
+            }
 
             // MediaPlayer.rules.*
             this.system.mapClass('abrRulesCollection', MediaPlayer.rules.BaseRulesCollection);
@@ -122,6 +121,7 @@ MediaPlayer.di.Context = function () {
                 this.system.mapClass('hlsParser', Hls.dependencies.HlsParser);
                 this.system.mapSingleton('hlsDemux', Hls.dependencies.HlsDemux);
             }
+
             // But we do always provide HlsStream to support HLS(+FP) streams in Safari
             this.system.mapClass('hlsStream', Hls.dependencies.HlsStream);
 

@@ -1114,10 +1114,10 @@ MediaPlayer.dependencies.Stream = function() {
             this.system.mapHandler("bufferingCompleted", undefined, onBufferingCompleted.bind(this));
             this.system.mapHandler("sourceDurationChanged", undefined, onSourceDurationChanged.bind(this));
             
-            /* @if PROTECTION=true */
             // Protection event handlers
-            this[MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR] = onProtectionError.bind(this);
-            /* @endif */
+            if (MediaPlayer.dependencies.ProtectionController) {
+                this[MediaPlayer.dependencies.ProtectionController.eventList.ENAME_PROTECTION_ERROR] = onProtectionError.bind(this);
+            }
 
             playListener = onPlay.bind(this);
             pauseListener = onPause.bind(this);

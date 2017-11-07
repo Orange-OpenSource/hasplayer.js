@@ -58,6 +58,7 @@
         "../app/js/dash/**/*",
         "../app/js/hls/Hls.js",
         "../app/js/hls/HlsStream.js",
+        "../app/js/mss/Mss.js",
         "../app/js/utils/CopyMethods.js",
         "../app/js/utils/DOMParser.js",
         "../app/js/utils/ObjectIron.js"
@@ -81,7 +82,6 @@
         "../app/js/hls/HlsParser.js"
     ],
     "mss": [
-        "../app/js/mss/Mss.js",
         "../app/js/mss/MssParser.js",
         "../app/js/mss/MssHandler.js",
         "../app/js/mss/MssFragmentController.js",

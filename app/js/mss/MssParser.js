@@ -349,7 +349,6 @@ Mss.dependencies.MssParser = function() {
             return segmentTimeline;
         },
 
-        /* @if PROTECTION=true */
         getKIDFromProtectionHeader = function(protectionHeader) {
             var prHeader,
                 wrmHeader,
@@ -542,34 +541,35 @@ Mss.dependencies.MssParser = function() {
 
             // ContentProtection node
             if (protection !== undefined) {
-                /* @if PROTECTION=true */
-                protectionHeader = this.domParser.getChildNode(protection, 'ProtectionHeader');
+                if (MediaPlayer.dependencies.ProtectionController) {
+                    protectionHeader = this.domParser.getChildNode(protection, 'ProtectionHeader');
 
-                // Some packagers put newlines into the ProtectionHeader base64 string, which is not good
-                // because this cannot be correctly parsed. Let's just filter out any newlines found in there.
-                protectionHeader.firstChild.data = protectionHeader.firstChild.data.replace(/\n|\r/g, "");
+                    // Some packagers put newlines into the ProtectionHeader base64 string, which is not good
+                    // because this cannot be correctly parsed. Let's just filter out any newlines found in there.
+                    protectionHeader.firstChild.data = protectionHeader.firstChild.data.replace(/\n|\r/g, "");
 
-                // Get KID (in CENC format) from protection header
-                KID = getKIDFromProtectionHeader(protectionHeader);
+                    // Get KID (in CENC format) from protection header
+                    KID = getKIDFromProtectionHeader(protectionHeader);
 
-                // Create ContentProtection for PR
-                contentProtection = createPRContentProtection.call(this, protectionHeader);
-                contentProtection["cenc:default_KID"] = KID;
-                contentProtections.push(contentProtection);
+                    // Create ContentProtection for PR
+                    contentProtection = createPRContentProtection.call(this, protectionHeader);
+                    contentProtection["cenc:default_KID"] = KID;
+                    contentProtections.push(contentProtection);
 
-                // Create ContentProtection for Widevine (as a CENC protection)
-                contentProtection = createWidevineContentProtection.call(this, protectionHeader);
-                contentProtection["cenc:default_KID"] = KID;
-                contentProtections.push(contentProtection);
+                    // Create ContentProtection for Widevine (as a CENC protection)
+                    contentProtection = createWidevineContentProtection.call(this, protectionHeader);
+                    contentProtection["cenc:default_KID"] = KID;
+                    contentProtections.push(contentProtection);
 
-                mpd.ContentProtection = (contentProtections.length > 1) ? contentProtections : contentProtections[0];
-                mpd.ContentProtection_asArray = contentProtections;
-                /* @endif */
-
-                /* @if PROTECTION=false */
-                /* @exec sendError('MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED','"protected content detected but protection module is not included."') */
-                /* @exec reject('"[MssParser] Protected content detected but protection module is not included."') */
-                /* @endif */
+                    mpd.ContentProtection = (contentProtections.length > 1) ? contentProtections : contentProtections[0];
+                    mpd.ContentProtection_asArray = contentProtections;
+                } else {
+                    mpd.error = {
+                        name: MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED,
+                        message: "protected content detected but protection module is not included."
+                    };
+                    return mpd;
+                }
             }
 
             adaptations = period.AdaptationSet_asArray;
@@ -674,6 +674,10 @@ Mss.dependencies.MssParser = function() {
 
             // Convert MSS manifest into DASH manifest
             manifest = processManifest.call(this, start);
+
+            if (manifest.error) {
+                return Q.reject(manifest.error);
+            }
             mss2dash = new Date();
             //this.debug.log("mpd: " + JSON.stringify(manifest, null, '\t'));
 
