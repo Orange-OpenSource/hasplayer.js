@@ -8,7 +8,7 @@
         "videoBitrates": [225984, 416000, 680000, 1200000, 1600000, 2099968],
         "audioTracks": [{"lang":"fre", "id":"audio_1"}, {"lang":"eng", "id":"audio_2"}],
         "textTracks": [{"subType":"CAPT","id":"subtitle","lang":"fre"},{"subType":"DESC","id":"subtitle_hoh","lang":"eng"}],
-        "duration": 13334.8266,
+        "duration": 13334.826,
         "video_fragment_pattern":"(video)",
         "audio_fragment_pattern":"(audio)"
     },
