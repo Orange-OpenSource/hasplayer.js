@@ -353,6 +353,7 @@ Mss.dependencies.MssParser = function() {
                         if (prevSegment.tManifest) {
                             segment.tManifest  = goog.math.Long.fromString(prevSegment.tManifest).add(goog.math.Long.fromNumber(prevSegment.d)).toString();
                         }
+                        duration += segment.d;
                         segments.push(segment);
                     }
                 }
