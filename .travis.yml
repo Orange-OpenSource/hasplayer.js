@@ -1,35 +1,51 @@
 language: node_js
-branches:
-    only:
-        - master
-        - development
-        - /(release).*/
-env:
-    global:
-        - ENCRYPTION_LABEL: 98a7d362e1e4
-    matrix:
-        - BUILD=true TEST=false
-        - BUILD=false TEST=true BROWSER=chrome
-        - BUILD=false TEST=true BROWSER=ie
-        - BUILD=false TEST=true BROWSER=edge
-        - BUILD=false TEST=true BROWSER=firefox
 node_js:
-    - stable
+  - stable
 addons:
-    browserstack:
-        username: "bertrandberthelo1"
-        access_key:
-            secure: "kB8iXiydT+xheyHox2zwq/1k75uUmF+F2b9k76Nhbb001Mh5608kzhH9xXFM+BUyM1pm3LImF+vYcSfKMYlDn/KBB7s9p8TJfwC/obbmtWJucSjtRiVo9aOOa7Ox2M+ACb0rsLpvzFRiHtYo0HZNFVkIfvqZN389Imm6UCOXsyo="
+  browserstack:
+    username: "bertrandberthelo1"
+    access_key:
+      secure: "kB8iXiydT+xheyHox2zwq/1k75uUmF+F2b9k76Nhbb001Mh5608kzhH9xXFM+BUyM1pm3LImF+vYcSfKMYlDn/KBB7s9p8TJfwC/obbmtWJucSjtRiVo9aOOa7Ox2M+ACb0rsLpvzFRiHtYo0HZNFVkIfvqZN389Imm6UCOXsyo="
+branches:
+  only:
+    - master
+    - development
+    - /(release).*/
+stages:
+  - build
+  - name: test
+    # Run test stage only if cron job
+    if: type = cron
+env:
+  global:
+    - ENCRYPTION_LABEL: 98a7d362e1e4
+  matrix:
+    - BROWSER=chrome
+    - BROWSER=ie
+    - BROWSER=edge
+#    - BROWSER=firefox
 before_install:
-    - openssl aes-256-cbc -K $encrypted_98a7d362e1e4_key -iv $encrypted_98a7d362e1e4_iv -in travis_deploy.enc -out travis_deploy -d
-    - npm install -g gulp
-    - chmod 600 travis_deploy
-    - eval `ssh-agent -s`
-    - ssh-add travis_deploy
+  - openssl aes-256-cbc -K $encrypted_f186f3e7458a_key -iv $encrypted_f186f3e7458a_iv -in travis_deploy.enc -out travis_deploy -d
+  - npm install -g gulp
+  - chmod 600 travis_deploy
+  - eval `ssh-agent -s`
+  - ssh-add travis_deploy
 install:
-    - npm install
-script:
-    - if [[ "$BUILD" = "true" ]]; then npm run build ; fi
-    - if [[ "$BUILD" = "true" ]]; then npm run deploy ; fi
-    - if [[ "$BUILD" = "true" ]]; then npm run dist ; fi
-    - if [[ "$TEST" = "true" &&  "$TRAVIS_BRANCH" != "master" &&  "$TRAVIS_BRANCH" != "development" ]]; then npm test ; fi
+  - npm install
+jobs:
+  include:
+    - stage: build
+      script:
+        # Build the source files
+        - npm run build
+        # Build/generate the jsdoc
+        - npm run doc
+        # Package and deploy version on project's pages
+        - npm run deploy
+deploy:
+  api_key:
+    secure: fLr/s6xT5T2mh2UaPUtt3UlkdmvRkqzOlolJss3c6OICeFegFmx/ieuf8iACnB5u3fZ1pgY9/wIXq9f6uKUpTsDQd/B0uALpe/Nzv/OFGkC1S8qk66Z9VC4/LNkDSEOryAKDDPwMgcZgxyPe5u20NrVUKahMB0B4vhYKwGle5LQ=
+  on:
+    branch: master
+    tags: true
+  skip_cleanup: true

@@ -18,7 +18,6 @@ MediaPlayer.di.Context = function () {
         var videoElement = document.createElement("video"),
             debug = this.system.getObject("debug");
 
-        /* @if PROTECTION=true */
         // Detect EME APIs.  Look for newest API versions first
         if (MediaPlayer.models.ProtectionModel_21Jan2015.detect(videoElement)) {
             this.system.mapSingleton('protectionModel', MediaPlayer.models.ProtectionModel_21Jan2015);
@@ -30,7 +29,6 @@ MediaPlayer.di.Context = function () {
             debug.log("No supported version of EME detected on this user agent!");
             debug.log("Attempts to play encrypted content will fail!");
         }
-        /* @endif */
     };
 
     return {
@@ -65,13 +63,13 @@ MediaPlayer.di.Context = function () {
             this.system.mapSingleton('errHandler', MediaPlayer.dependencies.ErrorHandler);
             this.system.mapClass('eventController', MediaPlayer.dependencies.EventController);
             this.system.mapClass('fragmentController', MediaPlayer.dependencies.FragmentController);
-            this.system.mapClass('fragmentInfoController', MediaPlayer.dependencies.FragmentInfoController);
             this.system.mapClass('fragmentLoader', MediaPlayer.dependencies.FragmentLoader);
             this.system.mapClass('fragmentModel', MediaPlayer.dependencies.FragmentModel);
             this.system.mapClass('manifestLoader', MediaPlayer.dependencies.ManifestLoader);
             this.system.mapSingleton('manifestUpdater', MediaPlayer.dependencies.ManifestUpdater);
             this.system.mapSingleton('mediaSourceExt', MediaPlayer.dependencies.MediaSourceExtensions);
             this.system.mapSingleton('notifier', MediaPlayer.dependencies.Notifier);
+            this.system.mapSingleton('parser', MediaPlayer.dependencies.Parser);
             this.system.mapSingleton('sourceBufferExt', MediaPlayer.dependencies.SourceBufferExtensions);
             this.system.mapClass('stream', MediaPlayer.dependencies.Stream);
             this.system.mapSingleton('streamController', MediaPlayer.dependencies.StreamController);
@@ -81,18 +79,19 @@ MediaPlayer.di.Context = function () {
             this.system.mapSingleton('videoExt', MediaPlayer.dependencies.VideoModelExtensions);
 
             // MediaPlayer.dependencies.protection.*
-            /* @if PROTECTION=true */
-            this.system.mapClass('protectionController', MediaPlayer.dependencies.ProtectionController);
-            this.system.mapSingleton('protectionExt', MediaPlayer.dependencies.ProtectionExtensions);
-            this.system.mapSingleton('ksClearKey', MediaPlayer.dependencies.protection.KeySystem_ClearKey);
-            this.system.mapSingleton('ksPlayReady', MediaPlayer.dependencies.protection.KeySystem_PlayReady);
-            this.system.mapSingleton('ksWidevine', MediaPlayer.dependencies.protection.KeySystem_Widevine);
-            this.system.mapSingleton('serverClearKey', MediaPlayer.dependencies.protection.servers.ClearKey);
-            this.system.mapSingleton('serverDRMToday', MediaPlayer.dependencies.protection.servers.DRMToday);
-            this.system.mapSingleton('serverPlayReady', MediaPlayer.dependencies.protection.servers.PlayReady);
-            this.system.mapSingleton('serverWidevine', MediaPlayer.dependencies.protection.servers.Widevine);
-            /* @endif */
-            mapProtectionModel.call(this); // Determines EME API support and version
+            // Protection package if available
+            if (MediaPlayer.dependencies.ProtectionController) {
+                this.system.mapClass('protectionController', MediaPlayer.dependencies.ProtectionController);
+                this.system.mapSingleton('protectionExt', MediaPlayer.dependencies.ProtectionExtensions);
+                this.system.mapSingleton('ksClearKey', MediaPlayer.dependencies.protection.KeySystem_ClearKey);
+                this.system.mapSingleton('ksPlayReady', MediaPlayer.dependencies.protection.KeySystem_PlayReady);
+                this.system.mapSingleton('ksWidevine', MediaPlayer.dependencies.protection.KeySystem_Widevine);
+                this.system.mapSingleton('serverClearKey', MediaPlayer.dependencies.protection.servers.ClearKey);
+                this.system.mapSingleton('serverDRMToday', MediaPlayer.dependencies.protection.servers.DRMToday);
+                this.system.mapSingleton('serverPlayReady', MediaPlayer.dependencies.protection.servers.PlayReady);
+                this.system.mapSingleton('serverWidevine', MediaPlayer.dependencies.protection.servers.Widevine);
+                mapProtectionModel.call(this); // Determines EME API support and version
+            }
 
             // MediaPlayer.rules.*
             this.system.mapClass('abrRulesCollection', MediaPlayer.rules.BaseRulesCollection);
@@ -110,16 +109,19 @@ MediaPlayer.di.Context = function () {
             //this.system.mapSingleton('metricsExt', Dash.dependencies.DashMetricsExtensions);
             this.system.mapSingleton('metricsExt', MediaPlayer.dependencies.MetricsExtensions);
             this.system.mapSingleton('timelineConverter', Dash.dependencies.TimelineConverter);
-
-            this.system.mapSingleton('parser', MediaPlayer.dependencies.Parser);
             this.system.mapClass('dashParser', Dash.dependencies.DashParser);
-            // @if MSS=true
-            this.system.mapClass('mssParser', Mss.dependencies.MssParser);
-            // @endif
-            // @if HLS=true
-            this.system.mapClass('hlsParser', Hls.dependencies.HlsParser);
-            this.system.mapSingleton('hlsDemux', Hls.dependencies.HlsDemux);
-            // @endif
+
+            // Mss package if available
+            if (Mss.dependencies.MssParser) {
+                this.system.mapClass('mssParser', Mss.dependencies.MssParser);
+            }
+
+            // Hls package if available
+            if (Hls.dependencies.HlsParser) {
+                this.system.mapClass('hlsParser', Hls.dependencies.HlsParser);
+                this.system.mapSingleton('hlsDemux', Hls.dependencies.HlsDemux);
+            }
+
             // But we do always provide HlsStream to support HLS(+FP) streams in Safari
             this.system.mapClass('hlsStream', Hls.dependencies.HlsStream);
 

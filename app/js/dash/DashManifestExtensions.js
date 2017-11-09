@@ -21,6 +21,12 @@ Dash.dependencies.DashManifestExtensions = function() {
 Dash.dependencies.DashManifestExtensions.prototype = {
     constructor: Dash.dependencies.DashManifestExtensions,
 
+    isInteger: Number.isInteger || function (value) {
+        return typeof value === 'number' &&
+            isFinite(value) &&
+            Math.floor(value) === value;
+    },
+
     getIsType: function(adaptation, type, mimeTypes) {
         "use strict";
         var i, j,
@@ -400,6 +406,17 @@ Dash.dependencies.DashManifestExtensions.prototype = {
         return isOnDemand;
     },
 
+    getIsStartOver: function(manifest) {
+        "use strict";
+        var isStartOver = false;
+
+        if (manifest && manifest.hasOwnProperty("startOver")) {
+            isStartOver = (manifest.startOver === true);
+        }
+
+        return isStartOver;
+    },
+
     getDuration: function(manifest) {
         var mpdDuration;
 
@@ -416,7 +433,7 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
     getBandwidth: function(representation) {
         "use strict";
-        return representation.bandwidth;
+        return representation && representation.bandwidth ? representation.bandwidth : NaN;
     },
 
     getRefreshDelay: function(manifest) {
@@ -442,7 +459,8 @@ Dash.dependencies.DashManifestExtensions.prototype = {
 
     getRepresentationFor: function(index, data) {
         "use strict";
-        return data.Representation_asArray[index];
+        return data && data.Representation_asArray && data.Representation_asArray.length > 0 &&
+            this.isInteger(index) && index < data.Representation_asArray.length ? data.Representation_asArray[index] : null;
     },
 
     getRepresentationsForAdaptation: function(manifest, adaptation) {

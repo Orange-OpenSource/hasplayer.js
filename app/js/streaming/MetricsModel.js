@@ -50,29 +50,24 @@
             this.metricChanged(streamType);
         },
 
-        clearCurrentMetricsForType: function (type) {
-            var keepBW = this.config.getParamFor(type, "ABR.keepBandwidthCondition", "boolean", true);
-
-            for (var prop in this.streamMetrics[type]) {
-                // We keep HttpList in order to keep bandwidth conditions when switching the input stream
-                if (this.streamMetrics[type].hasOwnProperty(prop) && ((prop !== "HttpList") || (keepBW === false))) {
-                    this.streamMetrics[type][prop] = [];
-                }
-            }
-
-            this.metricChanged(type);
-        },
-
         clearAllCurrentMetrics: function () {
             var self = this;
 
-            for (var prop in this.streamMetrics) {
-                if (this.streamMetrics.hasOwnProperty(prop) && (prop === "stream")) {
-                    delete this.streamMetrics[prop];
+            for (var type in this.streamMetrics) {
+                if (this.streamMetrics.hasOwnProperty(type) && (type === "stream")) {
+                    delete this.streamMetrics[type];
+                } else {
+                    var keepBW = this.config.getParamFor(type, "ABR.keepBandwidthCondition", "boolean", true);
+
+                    for (var prop in this.streamMetrics[type]) {
+                        // We keep HttpList in order to keep bandwidth conditions when switching the input stream
+                        if (this.streamMetrics[type].hasOwnProperty(prop) && ((prop !== "HttpList") || (keepBW === false))) {
+                            this.streamMetrics[type][prop] = [];
+                        }
+                    }
                 }
             }
 
-            //this.streamMetrics = {};
             this.metricsChanged.call(self);
         },
 

@@ -135,9 +135,6 @@ MediaPlayer.dependencies.BufferController = function() {
 
             this.debug.info("[BufferController][" + type + "] startPlayback");
 
-            // Set media type to stalled state
-            setStalled.call(this, true);
-
             // Start buffering process
             checkIfSufficientBuffer.call(this);
         },
@@ -213,6 +210,9 @@ MediaPlayer.dependencies.BufferController = function() {
             Q.when(deferredFragmentBuffered ? deferredFragmentBuffered.promise : true).then(
                 function() {
                     // self.debug.log("[BufferController]["+type+"] SEEK: do start");
+                    // Set media type to stalled state
+                    setStalled.call(self, true);
+                        
                     doStart.call(self);
                 }
             );
@@ -682,7 +682,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
         signalSegmentBuffered = function() {
             if (deferredFragmentBuffered) {
-                //self.debug.log("[BufferController]["+type+"] End of buffering process");
+                // this.debug.log("[BufferController][" + type + "] ### End of buffering process");
                 deferredFragmentBuffered.resolve();
                 deferredFragmentBuffered = null;
             }
@@ -1192,10 +1192,12 @@ MediaPlayer.dependencies.BufferController = function() {
 
                     // Refresh playlist according to last segment duration
                     var segments = representation.SegmentList.SegmentURL_asArray;
-                    var segment = segments[segments.length-1];
+                    if (segments > 0) {
+                        segmentDuration = segments[segments.length-1] - 1;
+                    }
                     playlistRefreshTimeout = setTimeout(function() {
                         updatePlayListForRepresentation.call(self);
-                    }, ((segment.duration - 1) * 1000));
+                    }, (segmentDuration * 1000));
 
                     deferred.resolve();
                 },
@@ -1320,8 +1322,8 @@ MediaPlayer.dependencies.BufferController = function() {
             this.setFragmentController(fragmentController);
             this.setEventController(eventController);
             minBufferTime = this.config.getParamFor(type, "BufferController.minBufferTime", "number", -1);
-            minBufferTimeAtStartup = this.config.getParamFor(type, "BufferController.minBufferTimeForPlaying", "number", 0);
-            bufferToKeep = this.config.getParamFor(type, "BufferController.bufferToKeep", "number", MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME);
+            minBufferTimeAtStartup = this.config.getParamFor(type, "BufferController.minBufferTimeForPlaying", "number", MediaPlayer.dependencies.BufferExtensions.BUFFER_TIME_AT_STARTUP);
+            bufferToKeep = this.config.getParamFor(type, "BufferController.bufferToKeep", "number", MediaPlayer.dependencies.BufferExtensions.DEFAULT_BUFFER_TO_KEEP);
             liveDelay = this.config.getParamFor(type, "BufferController.liveDelay", "number", -1);
 
             this.updateData(newData, newPeriodInfo);
@@ -1511,14 +1513,6 @@ MediaPlayer.dependencies.BufferController = function() {
             return isBufferingCompleted;
         },
 
-        clearMetrics: function() {
-            if (type === null || type === "") {
-                return;
-            }
-
-            this.metricsModel.clearCurrentMetricsForType(type);
-        },
-
         updateManifest: function() {
             this.system.notify("manifestUpdate");
         },
@@ -1649,7 +1643,6 @@ MediaPlayer.dependencies.BufferController = function() {
                         fragmentModel = null;
                     }
 
-                    self.clearMetrics();
                     initializationData = [];
                     initialPlayback = true;
                     isQuotaExceeded = false;

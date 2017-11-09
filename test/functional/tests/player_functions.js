@@ -3,120 +3,120 @@ define([], function () {
     return {
 
         loadStream: function (stream) {
-            player.load(stream);
+            mediaPlayer.load(stream);
         },
 
         setParams: function (params) {
-            player.setParams(params);
+            mediaPlayer.setParams(params);
         },
 
         getDuration: function () {
-            return player.getDuration();
+            return mediaPlayer.getDuration();
         },
 
         play: function () {
-            player.play();
+            mediaPlayer.play();
         },
 
         pause: function () {
-            player.pause();
+            mediaPlayer.pause();
         },
 
         stop: function () {
-            player.stop();
+            mediaPlayer.stop();
         },
 
         seek: function (pos, done) {
             var onSeeked = function () {
-                player.removeEventListener('seeked', onSeeked);
+                mediaPlayer.removeEventListener('seeked', onSeeked);
                 done(true);
             };
 
-            player.addEventListener('seeked', onSeeked);
-            player.seek(pos);
+            mediaPlayer.addEventListener('seeked', onSeeked);
+            mediaPlayer.seek(pos);
         },
 
         setMute: function (isMute) {
-            player.setMute(isMute);
+            mediaPlayer.setMute(isMute);
         },
 
         getMute: function () {
-            return player.getMute();
+            return mediaPlayer.getMute();
         },
 
         setTrickModeSpeed: function (speed) {
-            player.setTrickModeSpeed(speed);
+            mediaPlayer.setTrickModeSpeed(speed);
         },
 
         getTrickModeSpeed: function () {
-            return player.getTrickModeSpeed();
+            return mediaPlayer.getTrickModeSpeed();
         },
 
         getVideoBitrates: function () {
-            return player.getVideoBitrates();
+            return mediaPlayer.getVideoBitrates();
         },
 
         getTracks: function (type) {
-            return player.getTracks(type);
+            return mediaPlayer.getTracks(type);
         },
 
         getSelectedTrack: function (type) {
-            return player.getSelectedTrack(type);
+            return mediaPlayer.getSelectedTrack(type);
         },
 
         selectTrack: function (type, track) {
-            player.selectTrack(type, track);
+            mediaPlayer.selectTrack(type, track);
         },
 
         getDefaultLang: function (type) {
             if (type === 'audio') {
-                return player.getDefaultAudioLang();
+                return mediaPlayer.getDefaultAudioLang();
             }
             if (type === 'text') {
-                return player.getDefaultSubtitleLang();
+                return mediaPlayer.getDefaultSubtitleLang();
             }
         },
 
         setDefaultLang: function (type, lang) {
             if (type === 'audio') {
-                return player.setDefaultAudioLang(lang);
+                return mediaPlayer.setDefaultAudioLang(lang);
             }
             if (type === 'text') {
-                return player.setDefaultSubtitleLang(lang);
+                return mediaPlayer.setDefaultSubtitleLang(lang);
             }
         },
 
         enableSubtitles: function (state) {
-            player.enableSubtitles(state);
+            mediaPlayer.enableSubtitles(state);
         },
 
         isSubtitlesEnabled: function () {
-            return player.isSubtitlesEnabled();
+            return mediaPlayer.isSubtitlesEnabled();
         },
 
         setSubtitlesVisibility: function (state) {
-            player.enableSubtitles(state);
+            mediaPlayer.enableSubtitles(state);
         },
 
         getSubtitlesVisibility: function () {
-            return player.isSubtitlesEnabled();
+            return mediaPlayer.isSubtitlesEnabled();
         },
 
         enableSubtitleExternDisplay: function (state) {
-            player.enableSubtitleExternDisplay(state);
+            mediaPlayer.enableSubtitleExternDisplay(state);
         },
 
         isLive: function () {
-            return player.isLive();
+            return mediaPlayer.isLive();
         },
 
         getDVRWindowRange: function () {
-            return player.getDVRWindowRange();
+            return mediaPlayer.getDVRWindowRange();
         },
 
         waitForEvent: function (event, done) {
-            var onPlayerEventListener = function (param) {
-                player.removeEventListener(event, onPlayerEventListener);
+            var onmediaPlayerEventListener = function (param) {
+                mediaPlayer.removeEventListener(event, onmediaPlayerEventListener);
                 if (param instanceof Event) {
                     done(true); // if param is a Javascript event object event, do not serialize it (maximum call stack excedeed error otherwise)
                 } else {
@@ -124,63 +124,63 @@ define([], function () {
                 }
             };
 
-            player.addEventListener(event, onPlayerEventListener);
+            mediaPlayer.addEventListener(event, onmediaPlayerEventListener);
 
         },
 
         getError: function (done) {
-            var error = player.getError(),
+            var error = mediaPlayer.getError(),
                 onError = function (err) {
-                    player.removeEventListener('error', onError);
+                    mediaPlayer.removeEventListener('error', onError);
                     done(err.data);
                 };
 
             if (error) {
                 done(error);
             } else {
-                player.addEventListener('error', onError);
+                mediaPlayer.addEventListener('error', onError);
             }
         },
 
         getErrorCode: function (done) {
-            var error = player.getError(),
+            var error = mediaPlayer.getError(),
                 onError = function (err) {
-                    player.removeEventListener('error', onError);
+                    mediaPlayer.removeEventListener('error', onError);
                     done(err.data.code);
                 };
 
             if (error) {
                 done(error.code);
             } else {
-                player.addEventListener('error', onError);
+                mediaPlayer.addEventListener('error', onError);
             }
         },
 
         getWarning: function (done) {
-            var warning = player.getWarning(),
+            var warning = mediaPlayer.getWarning(),
                 onWarning = function (warn) {
-                    player.removeEventListener('warning', onWarning);
+                    mediaPlayer.removeEventListener('warning', onWarning);
                     done(warn.data);
                 };
 
             if (warning) {
                 done(warning);
             } else {
-                player.addEventListener('warning', onWarning);
+                mediaPlayer.addEventListener('warning', onWarning);
             }
         },
 
         getWarningCode: function (done) {
-            var warning = player.getWarning(),
+            var warning = mediaPlayer.getWarning(),
                 onWarning = function (warn) {
-                    player.removeEventListener('warning', onWarning);
+                    mediaPlayer.removeEventListener('warning', onWarning);
                     done(warn.data.code);
                 };
 
             if (warning) {
                 done(warning.code);
             } else {
-                player.addEventListener('warning', onWarning);
+                mediaPlayer.addEventListener('warning', onWarning);
             }
         }
     };

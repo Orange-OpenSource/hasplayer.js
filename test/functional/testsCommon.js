@@ -46,7 +46,7 @@ define(function(require) {
         });
     }
 
-    if(intern.args.tests) {
+    if (intern.args.tests) {
         var tests = intern.args.tests.split('&');
 
         conf.functionalSuites = [];
@@ -65,7 +65,7 @@ define(function(require) {
     // Tests configuration from command line
 
     // application=<development|master>
-    testsConfig.testPage = intern.args.application ? [applications.DashIF[intern.args.application]] : [applications.DashIF.development];
+    testsConfig.testPage = intern.args.application ? [applications[intern.args.application]] : [applications.development];
 
     // drm=<true|false>
     testsConfig.drm = intern.args.drm ? (intern.args.drm !== 'false') : true;

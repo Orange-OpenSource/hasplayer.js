@@ -18,15 +18,15 @@ define(function (require) {
                 },
 
                 seek: {
-                    seekCount: 10
+                    seekCount: 2
                 },
 
                 seekDVR: {
-                    seekCount: 5
+                    seekCount: 2
                 },
 
                 pause: {
-                    pauseCount: 5
+                    pauseCount: 2
                 },
 
                 trickMode: {

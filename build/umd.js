@@ -2,7 +2,7 @@
     if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module unless amdModuleId is set
         define([], function() {
-            return (root['<%= namespace %>'] = factory());
+            return (root['MediaPlayer'] = factory());
         });
     } else if (typeof exports === 'object') {
         // Node. Does not work with strict CommonJS, but
@@ -10,7 +10,7 @@
         // like Node.
         module.exports = factory();
     } else {
-        root['<%= namespace %>'] = factory();
+        root['MediaPlayer'] = factory();
     }
 }(this, function() {
 
@@ -23,9 +23,8 @@ var hasplayer = {},
     goog,
     dijon;
 
-<%= contents %>
+//@@HASPLAYER
 
 dijon = this.dijon;
-return <%=namespace %> ;
-
+return MediaPlayer;
 }));
