@@ -128,7 +128,7 @@ getBranchName().then(
     
     // Copy and update index.html
     console.info('Copy and update index.html');
-    var index = fs.readFileSync(path + 'index.html', 'utf-8');
+    var index = fs.readFileSync('index.html', 'utf-8');
     index = index.replace(/@@VERSION/g, pkg.version);
     index = index.replace(/@@DATE/, pkg.date);
     fs.writeFileSync(path + 'index.html', index);
@@ -183,9 +183,10 @@ getBranchName().then(
             fs.writeFileSync(path, index);
 
             // Update 'latest' symbolic link
-            fs.ensureSymlinkSync(pkg.dir, 'latest');
+            fs.ensureSymlinkSync('gh-pages/' + pkg.dir, 'gh-pages/latest');
         }
     }
+    
     return Promise.resolve();
 })
 
