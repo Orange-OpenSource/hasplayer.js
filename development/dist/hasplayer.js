@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-11-8_16:38:12 / git revision : e20eb66 */
+/* Last build : 2017-11-9_13:46:44 / git revision : 3548388 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -70,9 +70,9 @@ MediaPlayer = function () {
     ///////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
-        VERSION = '1.13.0-dev',
-        GIT_TAG = 'e20eb66',
-        BUILD_DATE = '2017-11-8_16:38:12',
+        VERSION = '1.14.0-dev',
+        GIT_TAG = '3548388',
+        BUILD_DATE = '2017-11-9_13:46:44',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -28532,7 +28532,7 @@ Mss.dependencies.MssFragmentInfoController = function() {
             request.action = "download";
             request.startTime = segment.t / timescale;
             request.streamType = _type;
-            request.type = "FragmentInfo Segment";;
+            request.type = "FragmentInfo Segment";
             request.duration = segment.d / timescale;
             request.timescale = timescale;
             request.quality = representation.quality;
