@@ -1,3 +1,12 @@
+### Release Notes v1.13.0 (2017/11/09)
+* [MSS] Enhanced support for live start-over streams, processed as 'static' streams) [#196]
+* [MSS] Add support for chunk 'r' (repeat) attribute [#198]
+* Bugs fixing:
+* - Bug fix on metrics persistence [#192]
+* - Bug fix on audio track switch [#193]
+* - Bug fix for video freeze after pause/resume [#195]
+* - [HLS] Bug fix in playlist parsing (segments list update) [#199]
+
 ### Release Notes v1.12.0 (2017/10/02)
 * [MSS] Add support for start-over streams
 * Add keyboard shorcut to display version number (in debug console)
