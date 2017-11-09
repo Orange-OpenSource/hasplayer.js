@@ -72,9 +72,7 @@ getBranchName().then(
             pkg.dir = 'development';
         } else {
             // For any other branch than 'master' or 'developmment', do not deploy
-            // return Promise.reject('Branch not deployed');
-            // TEMP FOR TESTING BRANCH
-            pkg.dir = 'development';
+            return Promise.reject('Branch not deployed');
         }
 
         return Promise.resolve();
