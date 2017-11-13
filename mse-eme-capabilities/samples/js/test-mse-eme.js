@@ -89,12 +89,12 @@ function startTests() {
         // test append init data
         return mse_test_append_data(MSE_SEGMENT_INFO, true);
     }).then(function (result) {
-        console.log('MSE - Append init data to buffer', result.append, result.err);
+        console.log('MSE - Append init data to buffer', result.appended, result.err);
 
         // test append data
         return mse_test_append_data(MSE_SEGMENT_INFO);
     }).then(function (result) {
-        console.log('MSE - Append data to buffer', result.append, result.err);
+        console.log('MSE - Append data to buffer', result.appended, result.err);
 
         /*------------------------------------------------------------------------------------------*/
 

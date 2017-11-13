@@ -1,0 +1,10 @@
+### Release Notes v0.3.0 (2017/09/26)
+* Embed media files used by method hasplayerCanPlay() into source code
+* Add methods to get version number and build date
+
+### Release Notes v0.2.0 (2017/09/14)
+* Build as ES6 module with namespace 'mse-emecapabilities'  
+* Add method hasplayerCanPlay() to check support for clear and/or encrypted contents with hasplayer.js
+
+### Release Notes v0.1.0 (2017/08/24)
+* First release
