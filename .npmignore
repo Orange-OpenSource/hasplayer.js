@@ -1,8 +1,11 @@
-samples
-docs
+app
 build
+samples
 test
+.gitignore
 .travis.yml
-reports
+release.js
+travis_deploy.enc
 
+reports
 .idea

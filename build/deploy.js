@@ -138,31 +138,32 @@ getBranchName().then(
 
 // 6 - Zip release files
 .then(function() {
-    var path = 'gh-pages/' + pkg.dir + '/';
-    var zipFile = 'hasplayer.js-v' + pkg.version + '.zip';
-    var output = fs.createWriteStream(zipFile);
-    var archive = archiver('zip', {
-        zlib: { level: 9 } // Sets the compression level.
+    return new Promise(function(resolve/*, reject*/) {
+        var path = 'gh-pages/' + pkg.dir + '/';
+        var zipFile = 'hasplayer.js-v' + pkg.version + '.zip';
+        var output = fs.createWriteStream(zipFile);
+        var archive = archiver('zip', {
+            zlib: { level: 9 } // Sets the compression level.
+        });
+
+        // archive.on('warning', function(err) {
+        //     console.log('warning: ' + err);
+        // });
+        
+        // archive.on('error', function(err) {
+        //     console.log('error: ' + err);
+        // });
+
+        output.on('close', function() {
+            fs.moveSync(zipFile, path + zipFile, { overwrite: true })
+            resolve();
+        });
+
+        console.info('Zip folder ' + path + ' into file ' + zipFile);
+        archive.pipe(output);
+        archive.directory(path, false);
+        archive.finalize();
     });
-
-    // archive.on('warning', function(err) {
-    //     console.log('warning: ' + err);
-    // });
-      
-    // archive.on('error', function(err) {
-    //     console.log('error: ' + err);
-    // });
-
-    output.on('close', function() {
-        console.log('done');
-        fs.moveSync(zipFile, path + zipFile, { overwrite: true })
-        return Promise.resolve();
-    });
-
-    console.info('Zip folder ' + path + ' into file ' + zipFile);
-    archive.pipe(output);
-    archive.directory(path, false);
-    archive.finalize();
 })
 
 // 7 - Add, commit and push changes on gh-pages branch to repository
@@ -183,7 +184,7 @@ getBranchName().then(
             fs.writeFileSync(path, index);
 
             // Update 'latest' symbolic link
-            fs.removeSync('gh-pages/latest');
+            console.info('Update \'latest\' symbolic link');
             fs.ensureSymlinkSync('gh-pages/' + pkg.dir, 'gh-pages/latest');
         }
     }

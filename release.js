@@ -43,7 +43,7 @@ var child = require('child_process'),
     semver = require('semver'),
     yargs = require('yargs'),
     argv = yargs
-        .usage("$0 --start [--type major|minor|patch] [--version <version>] \n$0 --finish")
+        .usage("$0 --start [--type major|minor|patch] [--ver <version>] \n$0 --finish")
         .default('type', 'minor')
         .argv;
 
@@ -188,7 +188,7 @@ function startRelease() {
     // - else version number is incremented
     console.info("Current version: " + pkg.version);
     console.info("Release type: " + argv.type);
-    var version = argv.version ? argv.version : semver.inc(pkg.version, argv.type);
+    var version = argv.ver ? argv.ver : semver.inc(pkg.version, argv.type);
     pkg.version = version;
     console.info("=> Release version: " + pkg.version);
 

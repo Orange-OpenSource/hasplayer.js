@@ -135,9 +135,9 @@ gulp.task('build-src', function() {
         .pipe(header(umdHeader))
         .pipe(footer(umdFooter))
         .pipe(gulpif(minify, uglify()))
-        .pipe(header(comment, {pkg: pkg}))
         .pipe(gulpif(minify, header(jshint_ignore_start)))
         .pipe(gulpif(minify, footer(jshint_ignore_end)))
+        .pipe(header(comment, {pkg: pkg}))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest(config.distDir));
 });
