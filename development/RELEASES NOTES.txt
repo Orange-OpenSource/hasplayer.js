@@ -1,3 +1,7 @@
+### Release Notes v1.13.1 (2017/12/01)
+* Bugs fixing:
+* - Fix regression on segment download error management
+
 ### Release Notes v1.13.0 (2017/11/09)
 * [MSS] Enhanced support for live start-over streams, processed as 'static' streams) [#196]
 * [MSS] Add support for chunk 'r' (repeat) attribute [#198]
