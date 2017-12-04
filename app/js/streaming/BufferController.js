@@ -85,6 +85,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
         // Patch for Safari: do not remove past buffer in live use case since it generates MEDIA_ERROR_DECODE while appending new segment (see hasEnoughSpaceToAppend())
         isSafari = (fingerprint_browser().name === "Safari"),
+        isWebKit = (fingerprint_browser().name === "WebKit"),
 
         // Patch for Firefox: set buffer timestampOffset since on Firefox timestamping is based on CTS (see OnMediaLoaded())
         isFirefox = (fingerprint_browser().name === "Firefox"),
@@ -454,8 +455,8 @@ MediaPlayer.dependencies.BufferController = function() {
 
                             isQuotaExceeded = false;
 
-                            // Patch for Safari: do not remove past buffer since it generates MEDIA_ERROR_DECODE while appending new segment
-                            if (bufferLevel > 1 && !isSafari) {
+                            // Patch for Safari & WebKit: do not remove past buffer since it generates MEDIA_ERROR_DECODE while appending new segment
+                            if (bufferLevel > 1 && !isSafari && !isWebKit) {
                                 // Remove outdated buffer parts and requests
                                 // (checking bufferLevel ensure buffer is not empty or back to current time)
                                 removeBuffer.call(self, -1, getWorkingTime.call(self) - bufferToKeep).then(
