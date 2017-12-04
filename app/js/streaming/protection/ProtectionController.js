@@ -46,7 +46,7 @@
 // Define ArrayBuffer.isView method in case it is not defined (like in IE11 for example)
 if (!ArrayBuffer.isView) {
     ArrayBuffer.isView = function(data) {
-        return data instanceof ArrayBuffer;
+        return data && data.buffer instanceof ArrayBuffer;
     };
 }
 
