@@ -68,6 +68,7 @@ MediaPlayer.models.ProtectionModel_01b = function () {
         // versions of the same events
         createEventHandler = function() {
             var self = this;
+            var keyRequestSent = false;
             return {
                 handleEvent: function(event) {
                     var sessionToken = null;
@@ -77,6 +78,13 @@ MediaPlayer.models.ProtectionModel_01b = function () {
                             var initData = ArrayBuffer.isView(event.initData) ? event.initData.buffer : event.initData;
                             self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_NEED_KEY,
                                 new MediaPlayer.vo.protection.NeedKey(initData, "cenc"));
+                            // FIXME: this one is the obvious shortcut - should we delegate this to controller?
+                            if (!keyRequestSent) {
+                                videoElement[api.generateKeyRequest]
+                                        (self.keySystem.systemString, new Uint8Array(initData));
+                                keyRequestSent = true;
+                            }
+
                             break;
 
                         case api.keyerror:
