@@ -644,8 +644,8 @@ MediaPlayer.dependencies.ProtectionController = function() {
 
             this.keySystem = undefined;
 
+            this.protectionModel.teardown();
             this.setMediaElement(null).then(function() {
-                self.protectionModel.teardown();
                 self.protectionModel = undefined;
             });
         },
