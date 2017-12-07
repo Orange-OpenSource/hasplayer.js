@@ -417,7 +417,10 @@ MediaPlayer.models.ProtectionModel_01b = function () {
 
         closeKeySession: function(sessionToken) {
             // Send our request to the CDM
-            videoElement[api.cancelKeyRequest](this.keySystem.systemString, sessionToken.sessionID);
+            try {
+                // We might get INVALID_STATE exception if there are no outstanding requests - just ignore it
+                videoElement[api.cancelKeyRequest](this.keySystem.systemString, sessionToken.sessionID);
+            } catch (e) {}
         },
 
         setServerCertificate: function(/*serverCertificate*/) { /* Not supported */ },
