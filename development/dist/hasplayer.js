@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-12-11_14:0:28 / git revision : 3e805bd */
+/* Last build : 2017-12-1_13:0:43 / git revision : e69335c */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.14.0-dev',
-        GIT_TAG = '3e805bd',
-        BUILD_DATE = '2017-12-11_14:0:28',
+        GIT_TAG = 'e69335c',
+        BUILD_DATE = '2017-12-1_13:0:43',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -27675,7 +27675,7 @@ Mss.dependencies.MssParser = function() {
                         if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
                             segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
                             startTime = segments[0].t;
-                            if (timestampOffset === undefined) {
+                            if (!timestampOffset) {
                                 timestampOffset = startTime;
                             }
                             timestampOffset = Math.min(timestampOffset, startTime);
