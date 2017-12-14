@@ -46,7 +46,7 @@
 // Define ArrayBuffer.isView method in case it is not defined (like in IE11 for example)
 if (!ArrayBuffer.isView) {
     ArrayBuffer.isView = function(data) {
-        return data instanceof ArrayBuffer;
+        return data && data.buffer instanceof ArrayBuffer;
     };
 }
 
@@ -644,8 +644,8 @@ MediaPlayer.dependencies.ProtectionController = function() {
 
             this.keySystem = undefined;
 
+            this.protectionModel.teardown();
             this.setMediaElement(null).then(function() {
-                self.protectionModel.teardown();
                 self.protectionModel = undefined;
             });
         },
