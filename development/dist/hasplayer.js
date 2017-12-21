@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-12-1_13:0:43 / git revision : e69335c */
+/* Last build : 2017-12-21_14:9:37 / git revision : 90cda6e */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.14.0-dev',
-        GIT_TAG = 'e69335c',
-        BUILD_DATE = '2017-12-1_13:0:43',
+        GIT_TAG = '90cda6e',
+        BUILD_DATE = '2017-12-21_14:9:37',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -2225,6 +2225,7 @@ MediaPlayer.dependencies.BufferController = function() {
 
         // Patch for Safari: do not remove past buffer in live use case since it generates MEDIA_ERROR_DECODE while appending new segment (see hasEnoughSpaceToAppend())
         isSafari = (fingerprint_browser().name === "Safari"),
+        isWebKit = (fingerprint_browser().name === "WebKit"),
 
         // Patch for Firefox: set buffer timestampOffset since on Firefox timestamping is based on CTS (see OnMediaLoaded())
         isFirefox = (fingerprint_browser().name === "Firefox"),
@@ -2594,8 +2595,8 @@ MediaPlayer.dependencies.BufferController = function() {
 
                             isQuotaExceeded = false;
 
-                            // Patch for Safari: do not remove past buffer since it generates MEDIA_ERROR_DECODE while appending new segment
-                            if (bufferLevel > 1 && !isSafari) {
+                            // Patch for Safari & WebKit: do not remove past buffer since it generates MEDIA_ERROR_DECODE while appending new segment
+                            if (bufferLevel > 1 && !isSafari && !isWebKit) {
                                 // Remove outdated buffer parts and requests
                                 // (checking bufferLevel ensure buffer is not empty or back to current time)
                                 removeBuffer.call(self, -1, getWorkingTime.call(self) - bufferToKeep).then(
@@ -27675,7 +27676,7 @@ Mss.dependencies.MssParser = function() {
                         if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
                             segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
                             startTime = segments[0].t;
-                            if (!timestampOffset) {
+                            if (timestampOffset === undefined) {
                                 timestampOffset = startTime;
                             }
                             timestampOffset = Math.min(timestampOffset, startTime);
@@ -37597,6 +37598,9 @@ function fingerprint_browser() {
         } else if (/adventurer/.test(userAgent)) { //test for Orange Adventurer;
             version = Number(RegExp.$1); // capture x.x portion and store as a number
             name = "Adventurer";
+        } else if (/webkit[\/\s](\d+\.\d+)/.test(userAgent)) { //test for generic webkit port;
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "WebKit";
         } else {
             version = "unknown";
             name = "unknown";
@@ -37611,6 +37615,7 @@ function fingerprint_browser() {
         version: version
     };
 }
+
 /*   Copyright (C) 2011,2012,2013,2014 John Kula */
 
 /*
