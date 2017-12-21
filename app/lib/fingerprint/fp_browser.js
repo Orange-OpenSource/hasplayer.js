@@ -112,6 +112,9 @@ function fingerprint_browser() {
         } else if (/adventurer/.test(userAgent)) { //test for Orange Adventurer;
             version = Number(RegExp.$1); // capture x.x portion and store as a number
             name = "Adventurer";
+        } else if (/webkit[\/\s](\d+\.\d+)/.test(userAgent)) { //test for generic webkit port;
+            version = Number(RegExp.$1); // capture x.x portion and store as a number
+            name = "WebKit";
         } else {
             version = "unknown";
             name = "unknown";
