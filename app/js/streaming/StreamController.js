@@ -162,7 +162,9 @@ MediaPlayer.dependencies.StreamController = function() {
                 currentTime = videoElement.currentTime,
                 playBackQuality = self.videoExt.getPlaybackQuality(videoElement);
 
-            self.metricsModel.addPlaybackQuality("video", time, playBackQuality, currentTime);
+            // playBackQuality may be null
+            if (playBackQuality)
+                self.metricsModel.addPlaybackQuality("video", time, playBackQuality, currentTime);
             self.metricsModel.addVideoResolution("video", time, videoElement.videoWidth, videoElement.videoHeight, currentTime);
 
             if (!getNextStream()) {
