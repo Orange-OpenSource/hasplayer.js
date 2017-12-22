@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-12-22_8:42:49 / git revision : 7d3747e */
+/* Last build : 2017-12-22_10:1:19 / git revision : 9cfdc21 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.14.0-dev',
-        GIT_TAG = '7d3747e',
-        BUILD_DATE = '2017-12-22_8:42:49',
+        GIT_TAG = '9cfdc21',
+        BUILD_DATE = '2017-12-22_10:1:19',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -20369,10 +20369,10 @@ MediaPlayer.dependencies.protection.CommonEncryption = {
  * each step manually (key system selection, session creation, session maintenance).
  */
 
-// Define ArrayBuffer.isView method in case it is not defined (like in IE11 for example)
+// Define ArrayBuffer.isView method in case it is not defined
 if (!ArrayBuffer.isView) {
     ArrayBuffer.isView = function(data) {
-        return data instanceof ArrayBuffer;
+        return data && data.buffer instanceof ArrayBuffer;
     };
 }
 
