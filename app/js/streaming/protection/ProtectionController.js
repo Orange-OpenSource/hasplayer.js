@@ -43,7 +43,7 @@
  * each step manually (key system selection, session creation, session maintenance).
  */
 
-// Define ArrayBuffer.isView method in case it is not defined (like in IE11 for example)
+// Define ArrayBuffer.isView method in case it is not defined
 if (!ArrayBuffer.isView) {
     ArrayBuffer.isView = function(data) {
         return data && data.buffer instanceof ArrayBuffer;
