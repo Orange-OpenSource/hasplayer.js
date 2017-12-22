@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2017-12-21_14:9:37 / git revision : 90cda6e */
+/* Last build : 2017-12-22_8:34:44 / git revision : 129c362 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.14.0-dev',
-        GIT_TAG = '90cda6e',
-        BUILD_DATE = '2017-12-21_14:9:37',
+        GIT_TAG = '129c362',
+        BUILD_DATE = '2017-12-22_8:34:44',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -22039,7 +22039,7 @@ MediaPlayer.models.ProtectionModel_01b = function () {
             if (!this.protectionExt.isClearKey(this.keySystem)) {
                 // Send our request to the CDM
                 videoElement[api.addKey](this.keySystem.systemString,
-                        new Uint8Array(message), sessionToken.initData, sessionID);
+                        new Uint8Array(message), new Uint8Array(sessionToken.initData), sessionID);
             } else {
                 // For clearkey, message is a MediaPlayer.vo.protection.ClearKeyKeySet
                 for (var i = 0; i < message.keyPairs.length; i++) {
