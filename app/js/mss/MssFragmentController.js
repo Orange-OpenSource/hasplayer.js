@@ -62,7 +62,7 @@ Mss.dependencies.MssFragmentController = function() {
                 // Get last segment time
                 segmentTime = segments[segments.length - 1].tManifest ? parseFloat(segments[segments.length - 1].tManifest) : segments[segments.length - 1].t;
                 // Check if we have to append new segment to timeline
-                if (entries[i].fragment_absolute_time > segmentTime) {
+                if (entries[i].fragment_absolute_time > segmentTime && i === 0) {
                     this.debug.log("[MssFragmentController][" + type + "] Add new segment - t = " + (entries[i].fragment_absolute_time / timescale));
                     segment = {};
                     segment.t = entries[i].fragment_absolute_time;
