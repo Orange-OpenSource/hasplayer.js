@@ -236,7 +236,7 @@ Hls.dependencies.HlsStream = function() {
         getCertificate = function () {
             var protData = getKsProtectionData('com.apple.fps.1_0');
             if (!protData || !protData.serverCertificate) {
-                return [];
+                return new Uint8Array(0);
             }
             return BASE64.decodeArray(protData.serverCertificate);
         },
