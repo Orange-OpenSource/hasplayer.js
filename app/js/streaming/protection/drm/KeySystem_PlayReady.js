@@ -43,17 +43,12 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
         PRCDMData = '<PlayReadyCDMData type="LicenseAcquisition"><LicenseAcquisition version="1.0" Proactive="false"><CustomData encoding="base64encoded">%CUSTOMDATA%</CustomData></LicenseAcquisition></PlayReadyCDMData>',
         protData,
 
-       // expecting data instanceof ArrayBuffer
-       detectEncoding = function(data) {
-           return new DataView(data).getUint8(1) ? "utf8" : "utf16";
-       },
-
         getRequestHeaders = function(message) {
             var msg,
                 xmlDoc,
                 headers = {},
                 data = (message instanceof ArrayBuffer) ? message : message.buffer,
-                dataview = (detectEncoding(data) === "utf16") ? new Uint16Array(data) : new Uint8Array(data),
+                dataview = MediaPlayer.utils.isUTF16(new Uint8Array(data)) ? new Uint16Array(data) : new Uint8Array(data),
                 headerNameList,
                 headerValueList,
                 i = 0;
@@ -89,7 +84,7 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
                 xmlDoc,
                 licenseRequest = null,
                 data = (message instanceof ArrayBuffer) ? message : message.buffer,
-                dataview = (detectEncoding(data) === "utf16") ? new Uint16Array(data) : new Uint8Array(data),
+                dataview = MediaPlayer.utils.isUTF16(new Uint8Array(data)) ? new Uint16Array(data) : new Uint8Array(data),
                 Challenge;
 
             msg = String.fromCharCode.apply(null, dataview);
