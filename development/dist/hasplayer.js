@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2018-1-30_15:7:52 / git revision : 67b634f */
+/* Last build : 2018-1-30_16:4:15 / git revision : 6cb7922 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.14.0-dev',
-        GIT_TAG = '67b634f',
-        BUILD_DATE = '2018-1-30_15:7:52',
+        GIT_TAG = '6cb7922',
+        BUILD_DATE = '2018-1-30_16:4:15',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -9063,15 +9063,15 @@ MediaPlayer.dependencies.Stream = function() {
 
             if (fragmentInfoVideoController && dvrStarted === false) {
                 dvrStarted = true;
-                fragmentInfoVideoController.start(videoController.getSegmentDuration());
+                fragmentInfoVideoController.start();
             }
 
             if (fragmentInfoAudioController) {
-                fragmentInfoAudioController.start(audioController.getSegmentDuration());
+                fragmentInfoAudioController.start();
             }
 
             if (fragmentInfoTextController && subtitlesEnabled) {
-                fragmentInfoTextController.start(textController.getSegmentDuration());
+                fragmentInfoTextController.start();
             }
         },
 
@@ -9526,10 +9526,6 @@ MediaPlayer.dependencies.Stream = function() {
             }
 
             startTime = Math.max(seekTime, videoRange.start);
-
-            if (videoRange.end < startTime) {
-                return;
-            }
 
             if (audioController) {
                 // Check if audio buffer is not empty
@@ -19163,7 +19159,7 @@ Hls.dependencies.HlsStream = function() {
         getCertificate = function () {
             var protData = getKsProtectionData('com.apple.fps.1_0');
             if (!protData || !protData.serverCertificate) {
-                return [];
+                return new Uint8Array(0);
             }
             return BASE64.decodeArray(protData.serverCertificate);
         },
@@ -28002,7 +27998,7 @@ Mss.dependencies.MssFragmentController = function() {
                 // Get last segment time
                 segmentTime = segments[segments.length - 1].tManifest ? parseFloat(segments[segments.length - 1].tManifest) : segments[segments.length - 1].t;
                 // Check if we have to append new segment to timeline
-                if (entries[i].fragment_absolute_time > segmentTime && i === 0) {
+                if (entries[i].fragment_absolute_time > segmentTime) {
                     this.debug.log("[MssFragmentController][" + type + "] Add new segment - t = " + (entries[i].fragment_absolute_time / timescale));
                     segment = {};
                     segment.t = entries[i].fragment_absolute_time;
@@ -28489,16 +28485,16 @@ Mss.dependencies.MssFragmentInfoController = function() {
             return Q.when(null);
         },
 
-        start = function(delay) {
+        start = function() {
             if (!_ready || _started) {
                 return;
             }
 
             this.debug.info("[MssFragmentInfoController][" + _type + "] START");
             _started = true;
-            _startTime = new Date().getTime() + delay * 1000;
+            _startTime = new Date().getTime();
 
-            delayLoadNextFragmentInfo.call(this, delay);
+            loadNextFragmentInfo.call(this);
         },
 
         stop = function() {
@@ -28523,7 +28519,8 @@ Mss.dependencies.MssFragmentInfoController = function() {
 
             var adaptation = _bufferController.getData(),
                 segments = adaptation.SegmentTemplate.SegmentTimeline.S_asArray,
-                segment = segments[segments.length - 1],
+                // tak before last segment to avoid precondition failed (412) errors
+                segment = segments[segments.length - 2],
                 representation = adaptation.Representation_asArray[0],
                 request;
 
