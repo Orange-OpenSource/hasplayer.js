@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2018-1-30_16:4:15 / git revision : 6cb7922 */
+/* Last build : 2018-2-1_9:8:46 / git revision : 73ee9b3 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.14.0-dev',
-        GIT_TAG = '6cb7922',
-        BUILD_DATE = '2018-1-30_16:4:15',
+        GIT_TAG = '73ee9b3',
+        BUILD_DATE = '2018-2-1_9:8:46',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -894,7 +894,6 @@ MediaPlayer = function () {
                     "[key_system_name]": {
                         laURL: "[licenser url (optional)]",
                         withCredentials: "[license_request_withCredentials_value (true or false, optional)]",
-                        pssh: "[base64 pssh box (as Base64 string, optional)]", // Considered for Widevine key system only
                         cdmData: "[CDM data (optional)]", // Supported by PlayReady key system (using MS-prefixed EME API) only
                         serverCertificate: "[license_server_certificate (as Base64 string, optional)]",
                         audioRobustness: "[audio_robustness_level (optional)]", // Considered for Widevine key system only
@@ -23871,50 +23870,8 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
         keySystemUUID = "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed",
         protData = null,
 
-        replaceKID = function (pssh, KID) {
-            var pssh_array,
-                replace = true,
-                kidLen = 16,
-                pos,
-                i, j;
-
-            pssh_array = new Uint8Array(pssh);
-
-            for (i = 0; i <= pssh_array.length - (kidLen + 2); i++) {
-                if (pssh_array[i] === 0x12 && pssh_array[i+1] === 0x10) {
-                    pos = i + 2;
-                    for (j = pos; j < (pos + kidLen); j++) {
-                        if (pssh_array[j] !== 0xFF) {
-                            replace = false;
-                            break;
-                        }
-                    }
-                    break;
-                }
-            }
-
-            if (replace) {
-                pssh_array.set(KID, pos);
-            }
-
-            return pssh_array.buffer;
-        },
-
         doGetInitData = function(cpData) {
-            var pssh = null;
-            // Get pssh from protectionData or from manifest
-            if (protData && protData.pssh) {
-                pssh = BASE64.decodeArray(protData.pssh).buffer;
-            } else {
-                pssh = MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection(cpData);
-            }
-
-            // Check if KID within pssh is empty, in that case set KID value according to 'cenc:default_KID' value
-            if (pssh) {
-                pssh = replaceKID(pssh, cpData['cenc:default_KID']);
-            }
-
-            return pssh;
+            return MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection(cpData);
         },
 
         doGetKeySystemConfigurations = function(videoCodec, audioCodec, sessionType) {
@@ -27517,7 +27474,7 @@ Mss.dependencies.MssParser = function() {
             return contentProtection;
         },
 
-        createWidevineContentProtection = function(/*protectionHeader*/) {
+        createWidevineContentProtection = function(KID) {
 
             var contentProtection = {},
                 keySystem = this.system.getObject("ksWidevine");
@@ -27525,9 +27482,51 @@ Mss.dependencies.MssParser = function() {
             contentProtection.schemeIdUri = keySystem.schemeIdURI;
             contentProtection.value = keySystem.systemString;
 
+            // Create Widevine CENC header (Protocol Buffer) with KID value
+            var wvCencHeader = new Uint8Array(2 + KID.length);
+            wvCencHeader[0] = 0x12;
+            wvCencHeader[1] = 0x10;
+            wvCencHeader.set(KID, 2);
+    
+            // Create a pssh box
+            var length = 12 /* box length, type, version and flags */ + 16 /* SystemID */ + 4 /* data length */ + wvCencHeader.length,
+                pssh = new Uint8Array(length),
+                i = 0;
+    
+            // Set box length value
+            pssh[i++] = (length & 0xFF000000) >> 24;
+            pssh[i++] = (length & 0x00FF0000) >> 16;
+            pssh[i++] = (length & 0x0000FF00) >> 8;
+            pssh[i++] = (length & 0x000000FF);
+    
+            // Set type ('pssh'), version (0) and flags (0)
+            pssh.set([0x70, 0x73, 0x73, 0x68, 0x00, 0x00, 0x00, 0x00], i);
+            i += 8;
+    
+            // Set SystemID ('edef8ba9-79d6-4ace-a3c8-27dcd51d21ed')
+            pssh.set([0xed, 0xef, 0x8b, 0xa9,  0x79, 0xd6, 0x4a, 0xce, 0xa3, 0xc8, 0x27, 0xdc, 0xd5, 0x1d, 0x21, 0xed], i);
+            i += 16;
+    
+            // Set data length value
+            pssh[i++] = (wvCencHeader.length & 0xFF000000) >> 24;
+            pssh[i++] = (wvCencHeader.length & 0x00FF0000) >> 16;
+            pssh[i++] = (wvCencHeader.length & 0x0000FF00) >> 8;
+            pssh[i++] = (wvCencHeader.length & 0x000000FF);
+    
+            // Copy Widevine CENC header
+            pssh.set(wvCencHeader, i);
+    
+            // Convert to BASE64 string
+            pssh = String.fromCharCode.apply(null, pssh);
+            pssh = BASE64.encodeASCII(pssh);         
+            
+            // Add pssh value to ContentProtection
+            contentProtection.pssh = {
+                __text: pssh
+            };
+
             return contentProtection;
         },
-        /* @endif */
 
         addDVRInfo = function(adaptationSet) {
             var segmentTemplate = adaptationSet.SegmentTemplate,
@@ -27620,7 +27619,7 @@ Mss.dependencies.MssParser = function() {
                     contentProtections.push(contentProtection);
 
                     // Create ContentProtection for Widevine (as a CENC protection)
-                    contentProtection = createWidevineContentProtection.call(this, protectionHeader);
+                    contentProtection = createWidevineContentProtection.call(this, KID);
                     contentProtection["cenc:default_KID"] = KID;
                     contentProtections.push(contentProtection);
 
