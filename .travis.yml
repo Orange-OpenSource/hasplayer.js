@@ -37,7 +37,7 @@ jobs:
         - npm run build
         # Build/generate the jsdoc
         - npm run doc
-        - if: [branch = master] OR [branch = development]; then 
+        - if [ "$TRAVIS_BRANCH" == "master" || "$TRAVIS_BRANCH" == "development" ]; then
         # Package and deploy version on project's pages
           openssl aes-256-cbc -K $encrypted_f186f3e7458a_key -iv $encrypted_f186f3e7458a_iv -in travis_deploy.enc -out travis_deploy -d
           chmod 600 travis_deploy
