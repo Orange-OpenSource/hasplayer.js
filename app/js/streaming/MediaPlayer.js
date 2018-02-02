@@ -851,7 +851,6 @@ MediaPlayer = function () {
                     "[key_system_name]": {
                         laURL: "[licenser url (optional)]",
                         withCredentials: "[license_request_withCredentials_value (true or false, optional)]",
-                        pssh: "[base64 pssh box (as Base64 string, optional)]", // Considered for Widevine key system only
                         cdmData: "[CDM data (optional)]", // Supported by PlayReady key system (using MS-prefixed EME API) only
                         serverCertificate: "[license_server_certificate (as Base64 string, optional)]",
                         audioRobustness: "[audio_robustness_level (optional)]", // Considered for Widevine key system only

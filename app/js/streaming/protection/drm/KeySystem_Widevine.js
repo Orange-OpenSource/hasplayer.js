@@ -42,50 +42,8 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
         keySystemUUID = "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed",
         protData = null,
 
-        replaceKID = function (pssh, KID) {
-            var pssh_array,
-                replace = true,
-                kidLen = 16,
-                pos,
-                i, j;
-
-            pssh_array = new Uint8Array(pssh);
-
-            for (i = 0; i <= pssh_array.length - (kidLen + 2); i++) {
-                if (pssh_array[i] === 0x12 && pssh_array[i+1] === 0x10) {
-                    pos = i + 2;
-                    for (j = pos; j < (pos + kidLen); j++) {
-                        if (pssh_array[j] !== 0xFF) {
-                            replace = false;
-                            break;
-                        }
-                    }
-                    break;
-                }
-            }
-
-            if (replace) {
-                pssh_array.set(KID, pos);
-            }
-
-            return pssh_array.buffer;
-        },
-
         doGetInitData = function(cpData) {
-            var pssh = null;
-            // Get pssh from protectionData or from manifest
-            if (protData && protData.pssh) {
-                pssh = BASE64.decodeArray(protData.pssh).buffer;
-            } else {
-                pssh = MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection(cpData);
-            }
-
-            // Check if KID within pssh is empty, in that case set KID value according to 'cenc:default_KID' value
-            if (pssh) {
-                pssh = replaceKID(pssh, cpData['cenc:default_KID']);
-            }
-
-            return pssh;
+            return MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection(cpData);
         },
 
         doGetKeySystemConfigurations = function(videoCodec, audioCodec, sessionType) {
