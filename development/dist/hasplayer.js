@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2018-2-1_9:8:46 / git revision : 73ee9b3 */
+/* Last build : 2018-2-2_16:29:28 / git revision : 51f2450 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.14.0-dev',
-        GIT_TAG = '73ee9b3',
-        BUILD_DATE = '2018-2-1_9:8:46',
+        GIT_TAG = '51f2450',
+        BUILD_DATE = '2018-2-2_16:29:28',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -894,6 +894,7 @@ MediaPlayer = function () {
                     "[key_system_name]": {
                         laURL: "[licenser url (optional)]",
                         withCredentials: "[license_request_withCredentials_value (true or false, optional)]",
+                        pssh: "[base64 pssh box (as Base64 string, optional)]", // Considered for Widevine key system only
                         cdmData: "[CDM data (optional)]", // Supported by PlayReady key system (using MS-prefixed EME API) only
                         serverCertificate: "[license_server_certificate (as Base64 string, optional)]",
                         audioRobustness: "[audio_robustness_level (optional)]", // Considered for Widevine key system only
@@ -12752,7 +12753,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                 this.track = this.textTrackExtensions.addTextTrack(video, [], currentId, currentLang, true);
 
                 //detect utf-16 encoding
-                if (self.isUTF16(bytes)) {
+                if (MediaPlayer.utils.isUTF16(bytes)) {
                     encoding = 'utf-16';
                 }
 
@@ -12829,7 +12830,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                 }
 
                 //detect utf-16 encoding
-                if (self.isUTF16(ttmlData)) {
+                if (MediaPlayer.utils.isUTF16(ttmlData)) {
                     encoding = 'utf-16';
                 }
                 // parse data and add to cues
@@ -12874,64 +12875,6 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
             f.readAsText(blob, encoding);
 
             return deferred.promise;
-        },
-
-        /**
-         * UTF-16 (LE or BE)
-         *
-         * RFC2781: UTF-16, an encoding of ISO 10646
-         *
-         * @link http://www.ietf.org/rfc/rfc2781.txt
-         * @private
-         * @ignore
-         */
-        isUTF16: function(data) {
-            var i = 0;
-            var len = data && data.length;
-            var pos = null;
-            var b1, b2, next, prev;
-
-            if (len < 2) {
-                if (data[0] > 0xFF) {
-                    return false;
-                }
-            } else {
-                b1 = data[0];
-                b2 = data[1];
-                if (b1 === 0xFF && // BOM (little-endian)
-                    b2 === 0xFE) {
-                    return true;
-                }
-                if (b1 === 0xFE && // BOM (big-endian)
-                    b2 === 0xFF) {
-                    return true;
-                }
-
-                for (; i < len; i++) {
-                    if (data[i] === 0x00) {
-                        pos = i;
-                        break;
-                    } else if (data[i] > 0xFF) {
-                        return false;
-                    }
-                }
-
-                if (pos === null) {
-                    return false; // Non ASCII
-                }
-
-                next = data[pos + 1]; // BE
-                if (next !== void 0 && next > 0x00 && next < 0x80) {
-                    return true;
-                }
-
-                prev = data[pos - 1]; // LE
-                if (prev !== void 0 && prev > 0x00 && prev < 0x80) {
-                    return true;
-                }
-            }
-
-            return false;
         },
 
         UpdateLang: function(id, lang){
@@ -19903,6 +19846,80 @@ MediaPlayer.utils.copyMethods = function(clazz) {
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+/**
+* UTF-16 (LE or BE)
+*
+* RFC2781: UTF-16, an encoding of ISO 10646
+*
+* @link http://www.ietf.org/rfc/rfc2781.txt
+* @private
+* @ignore
+*/
+MediaPlayer.utils.isUTF16 = function (data) {
+   var i = 0;
+   var len = data && data.length;
+   var pos = null;
+   var b1, b2, next, prev;
+
+   if (len < 2) {
+       if (data[0] > 0xFF) {
+           return false;
+       }
+   } else {
+       b1 = data[0];
+       b2 = data[1];
+       if (b1 === 0xFF && // BOM (little-endian)
+           b2 === 0xFE) {
+           return true;
+       }
+       if (b1 === 0xFE && // BOM (big-endian)
+           b2 === 0xFF) {
+           return true;
+       }
+
+       for (; i < len; i++) {
+           if (data[i] === 0x00) {
+               pos = i;
+               break;
+           } else if (data[i] > 0xFF) {
+               return false;
+           }
+       }
+
+       if (pos === null) {
+           return false; // Non ASCII
+       }
+
+       next = data[pos + 1]; // BE
+       if (next !== void 0 && next > 0x00 && next < 0x80) {
+           return true;
+       }
+
+       prev = data[pos - 1]; // LE
+       if (prev !== void 0 && prev > 0x00 && prev < 0x80) {
+           return true;
+       }
+   }
+
+   return false;
+};
+
+/*
+ * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
+ * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
+ *
+ * Copyright (c) 2014, Orange
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
+ * •  Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
+ * •  Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
+ * •  Neither the name of the Orange nor the names of its contributors may be used to endorse or promote products derived from this software module without specific prior written permission.
+ *
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 MediaPlayer.utils.ObjectIron = function (map) {
 
     var lookup;
@@ -23558,7 +23575,6 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
 
     var keySystemStr = "com.microsoft.playready",
         keySystemUUID = "9a04f079-9840-4286-ab92-e65be0885f95",
-        messageFormat = "utf16",
         PRCDMData = '<PlayReadyCDMData type="LicenseAcquisition"><LicenseAcquisition version="1.0" Proactive="false"><CustomData encoding="base64encoded">%CUSTOMDATA%</CustomData></LicenseAcquisition></PlayReadyCDMData>',
         protData,
 
@@ -23567,7 +23583,7 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
                 xmlDoc,
                 headers = {},
                 data = (message instanceof ArrayBuffer) ? message : message.buffer,
-                dataview = (messageFormat === "utf16") ? new Uint16Array(data) : new Uint8Array(data),
+                dataview = MediaPlayer.utils.isUTF16(new Uint8Array(data)) ? new Uint16Array(data) : new Uint8Array(data),
                 headerNameList,
                 headerValueList,
                 i = 0;
@@ -23603,10 +23619,11 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
                 xmlDoc,
                 licenseRequest = null,
                 data = (message instanceof ArrayBuffer) ? message : message.buffer,
-                dataview = (messageFormat === "utf16") ? new Uint16Array(data) : new Uint8Array(data),
+                dataview = MediaPlayer.utils.isUTF16(new Uint8Array(data)) ? new Uint16Array(data) : new Uint8Array(data),
                 Challenge;
 
             msg = String.fromCharCode.apply(null, dataview);
+
             xmlDoc = this.domParser.createXmlTree(msg);
 
             if (xmlDoc.getElementsByTagName("Challenge")[0]) {
@@ -23614,7 +23631,8 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
                 if (Challenge) {
                     licenseRequest = BASE64.decode(Challenge);
                 }
-            } else {
+            }
+            if (!licenseRequest) {
                 // Some versions of the PlayReady CDM do not return the Microsoft-specified XML structure
                 // but just return the raw license request. If we can't extract the license request, let's
                 // assume it is the latter and just return the whole message.
@@ -23805,20 +23823,6 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
 
         getServerCertificate: function () { return null; },
 
-        /**
-         * It seems that some PlayReady implementations return their XML-based CDM
-         * messages using UTF16, while others return them as UTF8.  Use this function
-         * to modify the message format to expect when parsing CDM messages.
-         *
-         * @param {string} format the expected message format.  Either "utf8" or "utf16".
-         * @throws {Error} Specified message format is not one of "utf8" or "utf16"
-         */
-        setPlayReadyMessageFormat: function(format) {
-            if (format !== "utf8" && format !== "utf16") {
-                throw new Error("Illegal PlayReady message format! -- " + format);
-            }
-            messageFormat = format;
-        }
     };
 };
 
@@ -23870,8 +23874,50 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
         keySystemUUID = "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed",
         protData = null,
 
+        replaceKID = function (pssh, KID) {
+            var pssh_array,
+                replace = true,
+                kidLen = 16,
+                pos,
+                i, j;
+
+            pssh_array = new Uint8Array(pssh);
+
+            for (i = 0; i <= pssh_array.length - (kidLen + 2); i++) {
+                if (pssh_array[i] === 0x12 && pssh_array[i+1] === 0x10) {
+                    pos = i + 2;
+                    for (j = pos; j < (pos + kidLen); j++) {
+                        if (pssh_array[j] !== 0xFF) {
+                            replace = false;
+                            break;
+                        }
+                    }
+                    break;
+                }
+            }
+
+            if (replace) {
+                pssh_array.set(KID, pos);
+            }
+
+            return pssh_array.buffer;
+        },
+
         doGetInitData = function(cpData) {
-            return MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection(cpData);
+            var pssh = null;
+            // Get pssh from protectionData or from manifest
+            if (protData && protData.pssh) {
+                pssh = BASE64.decodeArray(protData.pssh).buffer;
+            } else {
+                pssh = MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection(cpData);
+            }
+
+            // Check if KID within pssh is empty, in that case set KID value according to 'cenc:default_KID' value
+            if (pssh) {
+                pssh = replaceKID(pssh, cpData['cenc:default_KID']);
+            }
+
+            return pssh;
         },
 
         doGetKeySystemConfigurations = function(videoCodec, audioCodec, sessionType) {
@@ -27474,7 +27520,7 @@ Mss.dependencies.MssParser = function() {
             return contentProtection;
         },
 
-        createWidevineContentProtection = function(KID) {
+        createWidevineContentProtection = function(/*protectionHeader*/) {
 
             var contentProtection = {},
                 keySystem = this.system.getObject("ksWidevine");
@@ -27482,51 +27528,9 @@ Mss.dependencies.MssParser = function() {
             contentProtection.schemeIdUri = keySystem.schemeIdURI;
             contentProtection.value = keySystem.systemString;
 
-            // Create Widevine CENC header (Protocol Buffer) with KID value
-            var wvCencHeader = new Uint8Array(2 + KID.length);
-            wvCencHeader[0] = 0x12;
-            wvCencHeader[1] = 0x10;
-            wvCencHeader.set(KID, 2);
-    
-            // Create a pssh box
-            var length = 12 /* box length, type, version and flags */ + 16 /* SystemID */ + 4 /* data length */ + wvCencHeader.length,
-                pssh = new Uint8Array(length),
-                i = 0;
-    
-            // Set box length value
-            pssh[i++] = (length & 0xFF000000) >> 24;
-            pssh[i++] = (length & 0x00FF0000) >> 16;
-            pssh[i++] = (length & 0x0000FF00) >> 8;
-            pssh[i++] = (length & 0x000000FF);
-    
-            // Set type ('pssh'), version (0) and flags (0)
-            pssh.set([0x70, 0x73, 0x73, 0x68, 0x00, 0x00, 0x00, 0x00], i);
-            i += 8;
-    
-            // Set SystemID ('edef8ba9-79d6-4ace-a3c8-27dcd51d21ed')
-            pssh.set([0xed, 0xef, 0x8b, 0xa9,  0x79, 0xd6, 0x4a, 0xce, 0xa3, 0xc8, 0x27, 0xdc, 0xd5, 0x1d, 0x21, 0xed], i);
-            i += 16;
-    
-            // Set data length value
-            pssh[i++] = (wvCencHeader.length & 0xFF000000) >> 24;
-            pssh[i++] = (wvCencHeader.length & 0x00FF0000) >> 16;
-            pssh[i++] = (wvCencHeader.length & 0x0000FF00) >> 8;
-            pssh[i++] = (wvCencHeader.length & 0x000000FF);
-    
-            // Copy Widevine CENC header
-            pssh.set(wvCencHeader, i);
-    
-            // Convert to BASE64 string
-            pssh = String.fromCharCode.apply(null, pssh);
-            pssh = BASE64.encodeASCII(pssh);         
-            
-            // Add pssh value to ContentProtection
-            contentProtection.pssh = {
-                __text: pssh
-            };
-
             return contentProtection;
         },
+        /* @endif */
 
         addDVRInfo = function(adaptationSet) {
             var segmentTemplate = adaptationSet.SegmentTemplate,
@@ -27619,7 +27623,7 @@ Mss.dependencies.MssParser = function() {
                     contentProtections.push(contentProtection);
 
                     // Create ContentProtection for Widevine (as a CENC protection)
-                    contentProtection = createWidevineContentProtection.call(this, KID);
+                    contentProtection = createWidevineContentProtection.call(this, protectionHeader);
                     contentProtection["cenc:default_KID"] = KID;
                     contentProtections.push(contentProtection);
 
