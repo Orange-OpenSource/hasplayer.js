@@ -13,6 +13,7 @@ branches:
     - /(release).*/
 stages:
   - build
+  - deploy
   - name: test
     # Run test stage only if cron job
     if: type = cron
@@ -25,7 +26,6 @@ env:
     - BROWSER=edge
 #    - BROWSER=firefox
 before_install:
-  - openssl aes-256-cbc -K $encrypted_f186f3e7458a_key -iv $encrypted_f186f3e7458a_iv -in travis_deploy.enc -out travis_deploy -d
   - npm install -g gulp
   - chmod 600 travis_deploy
   - eval `ssh-agent -s`
@@ -40,7 +40,10 @@ jobs:
         - npm run build
         # Build/generate the jsdoc
         - npm run doc
+    - stage: deploy
+      script:
         # Package and deploy version on project's pages
+        - openssl aes-256-cbc -K $encrypted_f186f3e7458a_key -iv $encrypted_f186f3e7458a_iv -in travis_deploy.enc -out travis_deploy -d
         - npm run deploy
 deploy:
   api_key:
