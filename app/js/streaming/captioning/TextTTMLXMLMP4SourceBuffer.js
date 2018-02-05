@@ -98,6 +98,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
         ttmlParser: undefined,
         debug: undefined,
         manifestModel: undefined,
+        errHandler: undefined,
 
         initialize: function(type, bufferController, subtitleData) {
             mimeType = type;
@@ -167,8 +168,8 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                                     type: "updateend"
                                 });
                             }
-                        }, function( /*error*/ ) {
-                            //self.debug.error("[TextTTMLXMLMP4SourceBuffer] error parsing TTML "+error);
+                        }, function(error) {
+                            self.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while parsing TTML data", error);
                         });
                     });
                 return;
@@ -253,8 +254,8 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                                     type: "updateend"
                                 });
                             }
-                        }, function( /*error*/ ) {
-                            //self.debug.error("[TextTTMLXMLMP4SourceBuffer] error parsing TTML "+error);
+                        }, function(error) {
+                            self.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while parsing TTML data", error);
                         });
                     });
             }
