@@ -165,9 +165,7 @@ Mss.dependencies.MssFragmentController = function() {
                     }
                 };
             } else {
-                for (i = 0; i < tfrf.length; i += 1) {
-                    processTfrf.call(this, request, tfrf[i], tfdt, adaptation);
-                }
+                processTfrf.call(this, request, tfrf[0], tfdt, adaptation);
             }
         },
 
@@ -343,10 +341,8 @@ Mss.dependencies.MssFragmentController = function() {
                         }
                     };
                 } else {
-                    for (i = 0; i < tfrf.length; i += 1) {
-                        processTfrf.call(this, request, tfrf[i], tfdt, adaptation);
-                        traf.removeBoxByType("tfrf");
-                    }
+                    processTfrf.call(this, request, tfrf[0], tfdt, adaptation);
+                    traf.removeBoxByType("tfrf");
                 }
             }
 
