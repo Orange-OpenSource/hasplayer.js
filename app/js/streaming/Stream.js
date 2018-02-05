@@ -433,15 +433,15 @@ MediaPlayer.dependencies.Stream = function() {
 
             if (fragmentInfoVideoController && dvrStarted === false) {
                 dvrStarted = true;
-                fragmentInfoVideoController.start();
+                fragmentInfoVideoController.start(videoController.getSegmentDuration());
             }
 
             if (fragmentInfoAudioController) {
-                fragmentInfoAudioController.start();
+                fragmentInfoAudioController.start(audioController.getSegmentDuration());
             }
 
             if (fragmentInfoTextController && subtitlesEnabled) {
-                fragmentInfoTextController.start();
+                fragmentInfoTextController.start(textController.getSegmentDuration());
             }
         },
 
@@ -896,6 +896,10 @@ MediaPlayer.dependencies.Stream = function() {
             }
 
             startTime = Math.max(seekTime, videoRange.start);
+
+            if (videoRange.end < startTime) {
+                return;
+            }
 
             if (audioController) {
                 // Check if audio buffer is not empty

@@ -52,16 +52,16 @@ Mss.dependencies.MssFragmentInfoController = function() {
             return Q.when(null);
         },
 
-        start = function() {
+        start = function(delay) {
             if (!_ready || _started) {
                 return;
             }
 
             this.debug.info("[MssFragmentInfoController][" + _type + "] START");
             _started = true;
-            _startTime = new Date().getTime();
+            _startTime = new Date().getTime() + delay * 1000;
 
-            loadNextFragmentInfo.call(this);
+            delayLoadNextFragmentInfo.call(this, delay);
         },
 
         stop = function() {
@@ -86,8 +86,7 @@ Mss.dependencies.MssFragmentInfoController = function() {
 
             var adaptation = _bufferController.getData(),
                 segments = adaptation.SegmentTemplate.SegmentTimeline.S_asArray,
-                // tak before last segment to avoid precondition failed (412) errors
-                segment = segments[segments.length - 2],
+                segment = segments[segments.length - 1],
                 representation = adaptation.Representation_asArray[0],
                 request;
 
