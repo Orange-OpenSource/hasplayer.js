@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2018-2-2_16:41:12 / git revision : 3fcd55e */
+/* Last build : 2018-2-5_8:57:35 / git revision : 74a6c3a */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.14.0-dev',
-        GIT_TAG = '3fcd55e',
-        BUILD_DATE = '2018-2-2_16:41:12',
+        GIT_TAG = '74a6c3a',
+        BUILD_DATE = '2018-2-5_8:57:35',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -9062,15 +9062,15 @@ MediaPlayer.dependencies.Stream = function() {
 
             if (fragmentInfoVideoController && dvrStarted === false) {
                 dvrStarted = true;
-                fragmentInfoVideoController.start();
+                fragmentInfoVideoController.start(videoController.getSegmentDuration());
             }
 
             if (fragmentInfoAudioController) {
-                fragmentInfoAudioController.start();
+                fragmentInfoAudioController.start(audioController.getSegmentDuration());
             }
 
             if (fragmentInfoTextController && subtitlesEnabled) {
-                fragmentInfoTextController.start();
+                fragmentInfoTextController.start(textController.getSegmentDuration());
             }
         },
 
@@ -9525,6 +9525,10 @@ MediaPlayer.dependencies.Stream = function() {
             }
 
             startTime = Math.max(seekTime, videoRange.start);
+
+            if (videoRange.end < startTime) {
+                return;
+            }
 
             if (audioController) {
                 // Check if audio buffer is not empty
@@ -28000,7 +28004,7 @@ Mss.dependencies.MssFragmentController = function() {
                 // Get last segment time
                 segmentTime = segments[segments.length - 1].tManifest ? parseFloat(segments[segments.length - 1].tManifest) : segments[segments.length - 1].t;
                 // Check if we have to append new segment to timeline
-                if (entries[i].fragment_absolute_time > segmentTime) {
+                if (entries[i].fragment_absolute_time > segmentTime && i === 0) {
                     this.debug.log("[MssFragmentController][" + type + "] Add new segment - t = " + (entries[i].fragment_absolute_time / timescale));
                     segment = {};
                     segment.t = entries[i].fragment_absolute_time;
@@ -28487,16 +28491,16 @@ Mss.dependencies.MssFragmentInfoController = function() {
             return Q.when(null);
         },
 
-        start = function() {
+        start = function(delay) {
             if (!_ready || _started) {
                 return;
             }
 
             this.debug.info("[MssFragmentInfoController][" + _type + "] START");
             _started = true;
-            _startTime = new Date().getTime();
+            _startTime = new Date().getTime() + delay * 1000;
 
-            loadNextFragmentInfo.call(this);
+            delayLoadNextFragmentInfo.call(this, delay);
         },
 
         stop = function() {
@@ -28521,8 +28525,7 @@ Mss.dependencies.MssFragmentInfoController = function() {
 
             var adaptation = _bufferController.getData(),
                 segments = adaptation.SegmentTemplate.SegmentTimeline.S_asArray,
-                // tak before last segment to avoid precondition failed (412) errors
-                segment = segments[segments.length - 2],
+                segment = segments[segments.length - 1],
                 representation = adaptation.Representation_asArray[0],
                 request;
 
