@@ -586,7 +586,7 @@ MediaPlayer.dependencies.Stream = function() {
             // Then seek 2 sec. backward to enable 'ended' event to be raised.
             var backoffSeekToEnd = this.config.getParam("backoffSeekToEnd", "number", 2);
             if (duration !== Infinity && time >= (duration - backoffSeekToEnd)) {
-                this.videoModel.setCurrentTime(time - this.config.getParam("backoffSeekToEnd", "number", 2));
+                setVideoModelCurrentTime.call(this, (duration - backoffSeekToEnd));
                 return;
             }
 
