@@ -136,8 +136,7 @@ Mss.dependencies.MssFragmentController = function() {
                 traf = null,
                 tfdt = null,
                 tfrf = null,
-                pos,
-                i = 0;
+                pos;
 
             // Create new fragment
             fragment = mp4lib.deserialize(bytes);
