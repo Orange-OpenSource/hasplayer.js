@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2018-2-6_14:9:55 / git revision : 78987df */
+/* Last build : 2018-2-6_14:22:37 / git revision : e48f476 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.14.0-dev',
-        GIT_TAG = '78987df',
-        BUILD_DATE = '2018-2-6_14:9:55',
+        GIT_TAG = 'e48f476',
+        BUILD_DATE = '2018-2-6_14:22:37',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -1778,6 +1778,7 @@ MediaPlayer.TRACKS_TYPE = {
  * @property {number}   FragmentLoader.RetryAttempts - Number of retry attempts for downloading segment files when it fails (default value = 2)
  * @property {number}   FragmentLoader.RetryInterval - Interval (in milliseconds) between each retry attempts for downloading segment files (default value = 500)
  * @property {boolean}  Protection.licensePersistence - Provides or not license persistence at application level, in case no persistence is provided by the CDM (default value = false)
+ * @property {number}   backoffSeekToEnd - Backoff value (in seconds) when seeking at end/duration (default value = 2)
  * @property {Object}   video - Video parameters (parameters for video track)
  * @property {Object}   audio - audio parameters (parameters for audio track)
  */
@@ -4142,6 +4143,8 @@ MediaPlayer.utils.Config = function () {
             "FragmentLoader.RetryInterval": -1,
             // Protection parameters
             "Protection.licensePersistence": -1,
+            // Other parameters
+            "backoffSeekToEnd" : 2,
             // Video parameters
             "video": {
             },
@@ -9215,7 +9218,7 @@ MediaPlayer.dependencies.Stream = function() {
             // Then seek 2 sec. backward to enable 'ended' event to be raised.
             // (compare seek value to duration with a 0.1 sec. margin since some browsers like IE11 and Edge decreases the effective seeking value when seeking to end)
             if (duration !== Infinity && time >= (duration - 0.1)) {
-                this.videoModel.setCurrentTime(time - 2);
+                this.videoModel.setCurrentTime(time - this.config.getParam("backoffSeekToEnd", "number", 2));
                 return;
             }
 
@@ -9745,10 +9748,10 @@ MediaPlayer.dependencies.Stream = function() {
         timelineConverter: undefined,
         scheduleWhilePaused: undefined,
         textTrackExtensions: undefined,
-        // ORANGE : add metricsModel
         metricsModel: undefined,
         eventBus: undefined,
         notify: undefined,
+        config: undefined,
 
         setup: function() {
             this.system.mapHandler("startTimeFound", undefined, onStartTimeFound.bind(this));
