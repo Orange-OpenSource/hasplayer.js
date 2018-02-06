@@ -568,7 +568,8 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         onSeeking = function() {
-            var time = this.videoModel.getCurrentTime();
+            var time = this.videoModel.getCurrentTime(),
+                duration = this.videoModel.getDuration();
 
             this.debug.info("[Stream] <video> seeking event: " + time);
 
@@ -580,6 +581,14 @@ MediaPlayer.dependencies.Stream = function() {
 
             // Check if seek time is less than range start, never seek before range start.
             time = (time < this.getStartTime()) ? this.getStartTime() : time;
+
+            // Seeking at end of stream (= duration) does not work consistently across browsers and 'ended' event is then not always raised.
+            // Then seek 2 sec. backward to enable 'ended' event to be raised.
+            // (compare seek value to duration with a 0.1 sec. margin since some browsers like IE11 and Edge decreases the effective seeking value when seeking to end)
+            if (duration !== Infinity && time >= (duration - 0.1)) {
+                this.videoModel.setCurrentTime(time - 2);
+                return;
+            }
 
             if (tmSpeed === 1) {
                 this.metricsModel.addState("video", "seeking", this.getVideoModel().getCurrentTime());
