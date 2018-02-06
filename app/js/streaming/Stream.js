@@ -586,7 +586,7 @@ MediaPlayer.dependencies.Stream = function() {
             // Then seek 2 sec. backward to enable 'ended' event to be raised.
             // (compare seek value to duration with a 0.1 sec. margin since some browsers like IE11 and Edge decreases the effective seeking value when seeking to end)
             if (duration !== Infinity && time >= (duration - 0.1)) {
-                this.videoModel.setCurrentTime(time - 2);
+                this.videoModel.setCurrentTime(time - this.config.getParam("backoffSeekToEnd", "number", 2));
                 return;
             }
 
@@ -1116,10 +1116,10 @@ MediaPlayer.dependencies.Stream = function() {
         timelineConverter: undefined,
         scheduleWhilePaused: undefined,
         textTrackExtensions: undefined,
-        // ORANGE : add metricsModel
         metricsModel: undefined,
         eventBus: undefined,
         notify: undefined,
+        config: undefined,
 
         setup: function() {
             this.system.mapHandler("startTimeFound", undefined, onStartTimeFound.bind(this));

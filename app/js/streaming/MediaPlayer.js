@@ -1735,6 +1735,7 @@ MediaPlayer.TRACKS_TYPE = {
  * @property {number}   FragmentLoader.RetryAttempts - Number of retry attempts for downloading segment files when it fails (default value = 2)
  * @property {number}   FragmentLoader.RetryInterval - Interval (in milliseconds) between each retry attempts for downloading segment files (default value = 500)
  * @property {boolean}  Protection.licensePersistence - Provides or not license persistence at application level, in case no persistence is provided by the CDM (default value = false)
+ * @property {number}   backoffSeekToEnd - Backoff value (in seconds) when seeking at end/duration (default value = 2)
  * @property {Object}   video - Video parameters (parameters for video track)
  * @property {Object}   audio - audio parameters (parameters for audio track)
  */
