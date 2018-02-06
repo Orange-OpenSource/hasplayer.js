@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2018-2-5_15:12:47 / git revision : 0f6ebe2 */
+/* Last build : 2018-2-6_13:52:38 / git revision : 79a6be3 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.14.0-dev',
-        GIT_TAG = '0f6ebe2',
-        BUILD_DATE = '2018-2-5_15:12:47',
+        GIT_TAG = '79a6be3',
+        BUILD_DATE = '2018-2-6_13:52:38',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -9197,7 +9197,8 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         onSeeking = function() {
-            var time = this.videoModel.getCurrentTime();
+            var time = this.videoModel.getCurrentTime(),
+                duration = this.videoModel.getDuration();
 
             this.debug.info("[Stream] <video> seeking event: " + time);
 
@@ -9209,6 +9210,14 @@ MediaPlayer.dependencies.Stream = function() {
 
             // Check if seek time is less than range start, never seek before range start.
             time = (time < this.getStartTime()) ? this.getStartTime() : time;
+
+            // Seeking at end of stream (= duration) does not work consistently across browsers and 'ended' event is then not always raised.
+            // Then seek 2 sec. backward to enable 'ended' event to be raised.
+            // (compare seek value to duration with a 0.1 sec. margin since some browsers like IE11 and Edge decreases the effective seeking value when seeking to end)
+            if (duration !== Infinity && time >= (duration - 0.1)) {
+                this.videoModel.setCurrentTime(time - 2);
+                return;
+            }
 
             if (tmSpeed === 1) {
                 this.metricsModel.addState("video", "seeking", this.getVideoModel().getCurrentTime());
@@ -12702,6 +12711,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
         ttmlParser: undefined,
         debug: undefined,
         manifestModel: undefined,
+        errHandler: undefined,
 
         initialize: function(type, bufferController, subtitleData) {
             mimeType = type;
@@ -12771,8 +12781,8 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                                     type: "updateend"
                                 });
                             }
-                        }, function( /*error*/ ) {
-                            //self.debug.error("[TextTTMLXMLMP4SourceBuffer] error parsing TTML "+error);
+                        }, function(error) {
+                            self.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while parsing TTML data", error);
                         });
                     });
                 return;
@@ -12857,8 +12867,8 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                                     type: "updateend"
                                 });
                             }
-                        }, function( /*error*/ ) {
-                            //self.debug.error("[TextTTMLXMLMP4SourceBuffer] error parsing TTML "+error);
+                        }, function(error) {
+                            self.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while parsing TTML data", error);
                         });
                     });
             }
