@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2018-2-6_14:22:37 / git revision : e48f476 */
+/* Last build : 2018-2-6_14:31:48 / git revision : d524bc2 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.14.0-dev',
-        GIT_TAG = 'e48f476',
-        BUILD_DATE = '2018-2-6_14:22:37',
+        GIT_TAG = 'd524bc2',
+        BUILD_DATE = '2018-2-6_14:31:48',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -9216,8 +9216,8 @@ MediaPlayer.dependencies.Stream = function() {
 
             // Seeking at end of stream (= duration) does not work consistently across browsers and 'ended' event is then not always raised.
             // Then seek 2 sec. backward to enable 'ended' event to be raised.
-            // (compare seek value to duration with a 0.1 sec. margin since some browsers like IE11 and Edge decreases the effective seeking value when seeking to end)
-            if (duration !== Infinity && time >= (duration - 0.1)) {
+            var backoffSeekToEnd = this.config.getParam("backoffSeekToEnd", "number", 2);
+            if (duration !== Infinity && time >= (duration - backoffSeekToEnd)) {
                 this.videoModel.setCurrentTime(time - this.config.getParam("backoffSeekToEnd", "number", 2));
                 return;
             }
