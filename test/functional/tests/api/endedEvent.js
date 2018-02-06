@@ -89,10 +89,43 @@ define([
         });
     };
 
+
+    var testSeekAtEnd = function(stream) {
+            
+        registerSuite({
+            name: NAME,
+                    
+            getEndEvent: function() {
+
+                tests.logLoadStream(NAME, stream);
+                return command.execute(player.loadStream, [stream])
+                    .then(function() {
+                        return tests.executeAsync(command, video.isPlaying, [PROGRESS_DELAY], ASYNC_TIMEOUT);
+                    })
+                    .then(function(playing) {
+                        assert.isTrue(playing);
+                        return command.execute(player.getDuration);
+                    })
+                    .then(function(duration) {
+                        tests.log(NAME, "duration " + duration);
+                        return tests.executeAsync(command, player.seek, [duration], config.asyncTimeout);
+                    })
+                    .then(function() {
+                        tests.log(NAME, "Wait for ended event");
+                        return tests.executeAsync(command, player.waitForEvent, ['ended'], config.asyncTimeout);
+                    })
+                    .then(function(ended) {
+                        assert.isTrue(ended);
+                    });
+            }
+        });
+    };
+
     // Setup (load test page)
     testSetup();
 
     for (var i = 0; i < streams.length; i++) {
         test(streams[i]);
+        testSeekAtEnd(streams[i]);
     }
 });
