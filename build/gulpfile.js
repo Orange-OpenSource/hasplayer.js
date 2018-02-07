@@ -32,9 +32,9 @@ var umd = fs.readFileSync("./umd.js", "utf8");
 var umdHeader = umd.substring(0, umd.indexOf('//@@HASPLAYER'));
 var umdFooter = umd.substring(umd.indexOf('//@@HASPLAYER') + '//@@HASPLAYER'.length);
 
-// Jshint ignore directives for minifiled build file
-var jshint_ignore_start = '/* jshint ignore:start */\n';
-var jshint_ignore_end = '\n/* jshint ignore:end */';
+// JSHint/JSLint/ESLint ignore directives for minifiled build file
+var lint_ignore_start = '/* jshint ignore:start */\n/* ignore jslint start */\n/* eslint-disable */\n';
+var lint_ignore_end = '\n/* jshint ignore:end */\n/* ignore jslint end */\n/* eslint-enable */';
 
 var config = {
     distDir: '../dist',
@@ -135,8 +135,8 @@ gulp.task('build-src', function() {
         .pipe(header(umdHeader))
         .pipe(footer(umdFooter))
         .pipe(gulpif(minify, uglify()))
-        .pipe(gulpif(minify, header(jshint_ignore_start)))
-        .pipe(gulpif(minify, footer(jshint_ignore_end)))
+        .pipe(gulpif(minify, header(lint_ignore_start)))
+        .pipe(gulpif(minify, footer(lint_ignore_end)))
         .pipe(header(comment, {pkg: pkg}))
         .pipe(sourcemaps.write('.'))
         .pipe(gulp.dest(config.distDir));
