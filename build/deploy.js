@@ -185,6 +185,7 @@ getBranchName().then(
 
             // Update 'latest' symbolic link
             console.info('Update \'latest\' symbolic link');
+            fs.removeSync('gh-pages/latest');
             fs.ensureSymlinkSync('gh-pages/' + pkg.dir, 'gh-pages/latest');
         }
     }
