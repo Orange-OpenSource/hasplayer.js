@@ -1,9 +1,20 @@
+### Release Notes v1.14.0 (2018/02/08)
+* [MSS] Add automatic Widevine pssh generation [#216]
+* [MSS] Detect PlayReady messages encoding [#207]
+* Avoid seeking to stream duration [#219]
+* Bugs fixing:
+* - Do not remove past buffers for generic WebKit [#205]
+* - Fix ArrayBuffer.isView method implementation [#206]
+* - Fix initData type passing to CDM for ProtectionModel_01b [#208]
+* - Perform null check on playBackQuality [#211]
+* - [MSS] Fix for live stream with only one entry in tfrf box [#215]
+
 ### Release Notes v1.13.1 (2017/12/01)
 * Bugs fixing:
 * - Fix regression on segment download error management
 
 ### Release Notes v1.13.0 (2017/11/09)
-* [MSS] Enhanced support for live start-over streams, processed as 'static' streams) [#196]
+* [MSS] Enhanced support for live start-over streams, processed as 'static' streams [#196]
 * [MSS] Add support for chunk 'r' (repeat) attribute [#198]
 * Bugs fixing:
 * - Bug fix on metrics persistence [#192]
