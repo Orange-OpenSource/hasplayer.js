@@ -851,7 +851,6 @@ MediaPlayer = function () {
                     "[key_system_name]": {
                         laURL: "[licenser url (optional)]",
                         withCredentials: "[license_request_withCredentials_value (true or false, optional)]",
-                        pssh: "[base64 pssh box (as Base64 string, optional)]", // Considered for Widevine key system only
                         cdmData: "[CDM data (optional)]", // Supported by PlayReady key system (using MS-prefixed EME API) only
                         serverCertificate: "[license_server_certificate (as Base64 string, optional)]",
                         audioRobustness: "[audio_robustness_level (optional)]", // Considered for Widevine key system only
@@ -1736,6 +1735,7 @@ MediaPlayer.TRACKS_TYPE = {
  * @property {number}   FragmentLoader.RetryAttempts - Number of retry attempts for downloading segment files when it fails (default value = 2)
  * @property {number}   FragmentLoader.RetryInterval - Interval (in milliseconds) between each retry attempts for downloading segment files (default value = 500)
  * @property {boolean}  Protection.licensePersistence - Provides or not license persistence at application level, in case no persistence is provided by the CDM (default value = false)
+ * @property {number}   backoffSeekToEnd - Backoff value (in seconds) when seeking at end/duration (default value = 2)
  * @property {Object}   video - Video parameters (parameters for video track)
  * @property {Object}   audio - audio parameters (parameters for audio track)
  */

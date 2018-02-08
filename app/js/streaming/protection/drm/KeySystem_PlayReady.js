@@ -40,7 +40,6 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
 
     var keySystemStr = "com.microsoft.playready",
         keySystemUUID = "9a04f079-9840-4286-ab92-e65be0885f95",
-        messageFormat = "utf16",
         PRCDMData = '<PlayReadyCDMData type="LicenseAcquisition"><LicenseAcquisition version="1.0" Proactive="false"><CustomData encoding="base64encoded">%CUSTOMDATA%</CustomData></LicenseAcquisition></PlayReadyCDMData>',
         protData,
 
@@ -49,7 +48,7 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
                 xmlDoc,
                 headers = {},
                 data = (message instanceof ArrayBuffer) ? message : message.buffer,
-                dataview = (messageFormat === "utf16") ? new Uint16Array(data) : new Uint8Array(data),
+                dataview = MediaPlayer.utils.isUTF16(new Uint8Array(data)) ? new Uint16Array(data) : new Uint8Array(data),
                 headerNameList,
                 headerValueList,
                 i = 0;
@@ -85,10 +84,11 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
                 xmlDoc,
                 licenseRequest = null,
                 data = (message instanceof ArrayBuffer) ? message : message.buffer,
-                dataview = (messageFormat === "utf16") ? new Uint16Array(data) : new Uint8Array(data),
+                dataview = MediaPlayer.utils.isUTF16(new Uint8Array(data)) ? new Uint16Array(data) : new Uint8Array(data),
                 Challenge;
 
             msg = String.fromCharCode.apply(null, dataview);
+
             xmlDoc = this.domParser.createXmlTree(msg);
 
             if (xmlDoc.getElementsByTagName("Challenge")[0]) {
@@ -96,7 +96,8 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
                 if (Challenge) {
                     licenseRequest = BASE64.decode(Challenge);
                 }
-            } else {
+            }
+            if (!licenseRequest) {
                 // Some versions of the PlayReady CDM do not return the Microsoft-specified XML structure
                 // but just return the raw license request. If we can't extract the license request, let's
                 // assume it is the latter and just return the whole message.
@@ -287,20 +288,6 @@ MediaPlayer.dependencies.protection.KeySystem_PlayReady = function() {
 
         getServerCertificate: function () { return null; },
 
-        /**
-         * It seems that some PlayReady implementations return their XML-based CDM
-         * messages using UTF16, while others return them as UTF8.  Use this function
-         * to modify the message format to expect when parsing CDM messages.
-         *
-         * @param {string} format the expected message format.  Either "utf8" or "utf16".
-         * @throws {Error} Specified message format is not one of "utf8" or "utf16"
-         */
-        setPlayReadyMessageFormat: function(format) {
-            if (format !== "utf8" && format !== "utf16") {
-                throw new Error("Illegal PlayReady message format! -- " + format);
-            }
-            messageFormat = format;
-        }
     };
 };
 

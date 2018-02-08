@@ -117,7 +117,6 @@ In the case of protected content, here is an example illustrating setting of the
                 laURL: "<licenser_url>",
                 withCredentials: "<license_request_withCredentials_value (true or false)>",
                 cdmData: "<CDM_specific_data>", // Supported by PlayReady key system (using MS-prefixed EME API) only
-                pssh: "<pssh (as Base64 string)>" // Considered for Widevine key system only
                 serverCertificate: "<license_server_certificate (as Base64 string)>"
                 audioRobustness: "<audio_robustness_level>" // Considered for Widevine key system only
                 videoRobustness: "<video_robustness_level>" // Considered for Widevine key system only

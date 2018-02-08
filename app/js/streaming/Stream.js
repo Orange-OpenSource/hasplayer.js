@@ -433,15 +433,15 @@ MediaPlayer.dependencies.Stream = function() {
 
             if (fragmentInfoVideoController && dvrStarted === false) {
                 dvrStarted = true;
-                fragmentInfoVideoController.start();
+                fragmentInfoVideoController.start(videoController.getSegmentDuration());
             }
 
             if (fragmentInfoAudioController) {
-                fragmentInfoAudioController.start();
+                fragmentInfoAudioController.start(audioController.getSegmentDuration());
             }
 
             if (fragmentInfoTextController && subtitlesEnabled) {
-                fragmentInfoTextController.start();
+                fragmentInfoTextController.start(textController.getSegmentDuration());
             }
         },
 
@@ -568,7 +568,8 @@ MediaPlayer.dependencies.Stream = function() {
         },
 
         onSeeking = function() {
-            var time = this.videoModel.getCurrentTime();
+            var time = this.videoModel.getCurrentTime(),
+                duration = this.videoModel.getDuration();
 
             this.debug.info("[Stream] <video> seeking event: " + time);
 
@@ -580,6 +581,14 @@ MediaPlayer.dependencies.Stream = function() {
 
             // Check if seek time is less than range start, never seek before range start.
             time = (time < this.getStartTime()) ? this.getStartTime() : time;
+
+            // Seeking at end of stream (= duration) does not work consistently across browsers and 'ended' event is then not always raised.
+            // Then seek 2 sec. backward to enable 'ended' event to be raised.
+            var backoffSeekToEnd = this.config.getParam("backoffSeekToEnd", "number", 2);
+            if (duration !== Infinity && time >= (duration - backoffSeekToEnd)) {
+                setVideoModelCurrentTime.call(this, (duration - backoffSeekToEnd));
+                return;
+            }
 
             if (tmSpeed === 1) {
                 this.metricsModel.addState("video", "seeking", this.getVideoModel().getCurrentTime());
@@ -897,6 +906,10 @@ MediaPlayer.dependencies.Stream = function() {
 
             startTime = Math.max(seekTime, videoRange.start);
 
+            if (videoRange.end < startTime) {
+                return;
+            }
+
             if (audioController) {
                 // Check if audio buffer is not empty
                 audioRange = this.sourceBufferExt.getBufferRange(audioController.getBuffer(), seekTime, audioController.getSegmentDuration());
@@ -1103,10 +1116,10 @@ MediaPlayer.dependencies.Stream = function() {
         timelineConverter: undefined,
         scheduleWhilePaused: undefined,
         textTrackExtensions: undefined,
-        // ORANGE : add metricsModel
         metricsModel: undefined,
         eventBus: undefined,
         notify: undefined,
+        config: undefined,
 
         setup: function() {
             this.system.mapHandler("startTimeFound", undefined, onStartTimeFound.bind(this));

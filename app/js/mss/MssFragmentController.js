@@ -18,71 +18,75 @@ Mss.dependencies.MssFragmentController = function() {
 
     var processTfrf = function(request, tfrf, tfdt, adaptation) {
             var manifest = this.manifestModel.getValue(),
-                segmentsUpdated = false,
                 segments = adaptation.SegmentTemplate.SegmentTimeline.S_asArray,
                 timescale = adaptation.SegmentTemplate.timescale,
                 entries = tfrf.entry,
+                entry,
                 segment = null,
                 segmentTime,
                 t = 0,
-                i = 0,
                 availabilityStartTime = null,
                 type = adaptation.type,
                 range;
 
-            // Process tfrf only for live streams
+            // Process tfrf only for live or start-over streams
             if (!this.manifestExt.getIsDynamic(manifest) && !this.manifestExt.getIsStartOver(manifest)) {
                 return;
             }
 
-            // Go through tfrf entries
-            // !! For tfrf fragment_absolute_time and fragment_duration are returned as goog.math.Long values (see mp4lib)
-            while (i < entries.length) {
-                // Check if time is not greater than Number.MAX_SAFE_INTEGER (2^53-1), see MssParser
-                // => fragment_absolute_timeManifest = original timestamp value as a string (for constructing the fragment request url, see DashHandler)
-                // => fragment_absolute_time = number value of timestamp (maybe rounded value, but only for 0.1 microsecond)
-                if (entries[i].fragment_absolute_time.greaterThan(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER))) {
-                    entries[i].fragment_absolute_timeManifest = entries[i].fragment_absolute_time.toString();
-                }
-
-                // Convert goog.math.Long to Number values
-                entries[i].fragment_absolute_time = entries[i].fragment_absolute_time.toNumber();
-                entries[i].fragment_duration = entries[i].fragment_duration.toNumber();
-
-                // In case of start-over streams, check if we have reached end of original manifest duration (set in timeShiftBufferDepth)
-                // => then do not update anymore timeline
-                if (this.manifestExt.getIsStartOver(manifest)) {
-                    // Get first segment time
-                    segmentTime = segments[0].tManifest ? parseFloat(segments[0].tManifest) : segments[0].t;
-                    if (entries[i].fragment_absolute_time > (segmentTime + (manifest.timeShiftBufferDepth * timescale))) {
-                        break;
-                    }                    
-                }
-
-                // Get last segment time
-                segmentTime = segments[segments.length - 1].tManifest ? parseFloat(segments[segments.length - 1].tManifest) : segments[segments.length - 1].t;
-                // Check if we have to append new segment to timeline
-                if (entries[i].fragment_absolute_time > segmentTime) {
-                    this.debug.log("[MssFragmentController][" + type + "] Add new segment - t = " + (entries[i].fragment_absolute_time / timescale));
-                    segment = {};
-                    segment.t = entries[i].fragment_absolute_time;
-                    segment.d = entries[i].fragment_duration;
-                    // If timestamps starts at 0 relative to 1st segment (dynamic to static) then update segment time
-                    if (segments[0].tManifest) {
-                        segment.t -= parseFloat(segments[0].tManifest) - segments[0].t;
-                    }
-                    // Set tManifest either in case of timestamps greater then 2^53 or in case of dynamic to static streams
-                    if (entries[i].fragment_absolute_timeManifest) {
-                       segment.tManifest = entries[i].fragment_absolute_timeManifest;
-                    } else if (segments[0].tManifest) {
-                        segment.tManifest = entries[i].fragment_absolute_time;
-                    }
-                    segments.push(segment);
-                    segmentsUpdated = true;
-                }
-
-                i += 1;
+            if (entries.length === 0) {
+                return;
             }
+
+            // Consider only first tfrf entry (to avoid pre-condition failure on fragment info requests)
+            entry = entries[0];
+
+            // !! For tfrf fragment_absolute_time and fragment_duration are returned as goog.math.Long values (see mp4lib)
+
+            // Check if time is not greater than Number.MAX_SAFE_INTEGER (2^53-1), see MssParser
+            // => fragment_absolute_timeManifest = original timestamp value as a string (for constructing the fragment request url, see DashHandler)
+            // => fragment_absolute_time = number value of timestamp (maybe rounded value, but only for 0.1 microsecond)
+            if (entry.fragment_absolute_time.greaterThan(goog.math.Long.fromNumber(Number.MAX_SAFE_INTEGER))) {
+                entry.fragment_absolute_timeManifest = entry.fragment_absolute_time.toString();
+            }
+
+            // Convert goog.math.Long to Number values
+            entry.fragment_absolute_time = entry.fragment_absolute_time.toNumber();
+            entry.fragment_duration = entry.fragment_duration.toNumber();
+
+            // In case of start-over streams, check if we have reached end of original manifest duration (set in timeShiftBufferDepth)
+            // => then do not update anymore timeline
+            if (this.manifestExt.getIsStartOver(manifest)) {
+                // Get first segment time
+                segmentTime = segments[0].tManifest ? parseFloat(segments[0].tManifest) : segments[0].t;
+                if (entry.fragment_absolute_time > (segmentTime + (manifest.timeShiftBufferDepth * timescale))) {
+                    return;
+                }                    
+            }
+
+            // Get last segment time
+            segmentTime = segments[segments.length - 1].tManifest ? parseFloat(segments[segments.length - 1].tManifest) : segments[segments.length - 1].t;
+
+            // Check if we have to append new segment to timeline
+            if (entry.fragment_absolute_time <= segmentTime) {
+                return;
+            }
+
+            this.debug.log("[MssFragmentController][" + type + "] Add new segment - t = " + (entry.fragment_absolute_time / timescale));
+            segment = {};
+            segment.t = entry.fragment_absolute_time;
+            segment.d = entry.fragment_duration;
+            // If timestamps starts at 0 relative to 1st segment (dynamic to static) then update segment time
+            if (segments[0].tManifest) {
+                segment.t -= parseFloat(segments[0].tManifest) - segments[0].t;
+            }
+            // Set tManifest either in case of timestamps greater then 2^53 or in case of dynamic to static streams
+            if (entry.fragment_absolute_timeManifest) {
+                segment.tManifest = entry.fragment_absolute_timeManifest;
+            } else if (segments[0].tManifest) {
+                segment.tManifest = entry.fragment_absolute_time;
+            }
+            segments.push(segment);
 
             // In case of static start-over streams, update content duration
             if (this.manifestExt.getIsStartOver(manifest)) {
@@ -95,48 +99,21 @@ Mss.dependencies.MssFragmentController = function() {
                 }
                 return;
             }
+            // In case of live streams, update segment timeline according to DVR window
+            else if (manifest.timeShiftBufferDepth && manifest.timeShiftBufferDepth > 0) {
+                // Get timestamp of the last segment
+                segment = segments[segments.length - 1];
+                t = segment.t;
 
-            // Update segment timeline in case the timestamps from tfrf differ from timestamps in Manifest.
-            // In that case we consider tfrf timing
-            // var j = 0,
-            //     segmentId = -1,
-            // for (j = segments.length - 1; j >= 0; j -= 1) {
-            //     if (segments[j].t === tfdt.baseMediaDecodeTime) {
-            //         segmentId = j;
-            //         break;
-            //     }
-            // }
-            // if (segmentId >= 0) {
-            //     for (i = 0; i < entries.length; i += 1) {
-            //         if (segmentId + i < segments.length) {
-            //             t = segments[segmentId + i].t;
-            //             if ((t + segments[segmentId + i].d) !== entries[i].fragment_absolute_time) {
-            //                 segments[segmentId + i].t = entries[i].fragment_absolute_time;
-            //                 segments[segmentId + i].d = entries[i].fragment_duration;
-            //                 this.debug.log("[MssFragmentController] Correct tfrf time  = " + entries[i].fragment_absolute_time + " and duration = " + entries[i].fragment_duration);
-            //                 segmentsUpdated = true;
-            //             }
-            //         }
-            //     }
-            // }
+                // Determine the segments' availability start time
+                availabilityStartTime = t - (manifest.timeShiftBufferDepth * timescale);
 
-            // Update segment timeline according to DVR window
-            if (manifest.timeShiftBufferDepth && manifest.timeShiftBufferDepth > 0) {
-                if (segmentsUpdated) {
-                    // Get timestamp of the last segment
-                    segment = segments[segments.length - 1];
-                    t = segment.t;
-
-                    // Determine the segments' availability start time
-                    availabilityStartTime = t - (manifest.timeShiftBufferDepth * timescale);
-
-                    // Remove segments prior to availability start time
+                // Remove segments prior to availability start time
+                segment = segments[0];
+                while (segment.t < availabilityStartTime) {
+                    this.debug.log("[MssFragmentController][" + type + "] Remove segment  - t = " + (segment.t / timescale));
+                    segments.splice(0, 1);
                     segment = segments[0];
-                    while (segment.t < availabilityStartTime) {
-                        this.debug.log("[MssFragmentController][" + type + "] Remove segment  - t = " + (segment.t / timescale));
-                        segments.splice(0, 1);
-                        segment = segments[0];
-                    }
                 }
 
                 // Update DVR window range => set range's end to end time of current segment
@@ -159,8 +136,7 @@ Mss.dependencies.MssFragmentController = function() {
                 traf = null,
                 tfdt = null,
                 tfrf = null,
-                pos,
-                i = 0;
+                pos;
 
             // Create new fragment
             fragment = mp4lib.deserialize(bytes);
@@ -188,9 +164,7 @@ Mss.dependencies.MssFragmentController = function() {
                     }
                 };
             } else {
-                for (i = 0; i < tfrf.length; i += 1) {
-                    processTfrf.call(this, request, tfrf[i], tfdt, adaptation);
-                }
+                processTfrf.call(this, request, tfrf[0], tfdt, adaptation);
             }
         },
 
@@ -354,8 +328,8 @@ Mss.dependencies.MssFragmentController = function() {
                 traf.boxes.splice(pos + 1, 0, tfdt);
             }
 
-            // Process tfrf box
             if (manifest.type === 'dynamic')  {
+                // Process tfrf box
                 tfrf = traf.getBoxesByType("tfrf");
                 if (tfrf === null || tfrf.length === 0) {
                     throw {
@@ -366,10 +340,8 @@ Mss.dependencies.MssFragmentController = function() {
                         }
                     };
                 } else {
-                    for (i = 0; i < tfrf.length; i += 1) {
-                        processTfrf.call(this, request, tfrf[i], tfdt, adaptation);
-                        traf.removeBoxByType("tfrf");
-                    }
+                    processTfrf.call(this, request, tfrf[0], tfdt, adaptation);
+                    traf.removeBoxByType("tfrf");
                 }
             }
 

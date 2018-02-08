@@ -1,6 +1,6 @@
 {
   "name": "hasplayer.js",
-  "version": "1.13.1",
+  "version": "1.14.0",
   "scripts": {
     "build": "cd build && gulp",
     "doc": "cd build && gulp doc",
@@ -29,7 +29,7 @@
     "gulp-jshint": "2.0.4",
     "gulp-regexp-sourcemaps": "1.0.1",
     "gulp-sourcemaps": "2.6.1",
-    "gulp-uglify": "3.0.0",
+    "gulp-uglify": "2.1.2",
     "intern": "3.2.3",
     "jshint": "2.9.5",
     "jshint-stylish": "2.2.1",

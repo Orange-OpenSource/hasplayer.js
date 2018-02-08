@@ -98,6 +98,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
         ttmlParser: undefined,
         debug: undefined,
         manifestModel: undefined,
+        errHandler: undefined,
 
         initialize: function(type, bufferController, subtitleData) {
             mimeType = type;
@@ -152,7 +153,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                 this.track = this.textTrackExtensions.addTextTrack(video, [], currentId, currentLang, true);
 
                 //detect utf-16 encoding
-                if (self.isUTF16(bytes)) {
+                if (MediaPlayer.utils.isUTF16(bytes)) {
                     encoding = 'utf-16';
                 }
 
@@ -167,8 +168,8 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                                     type: "updateend"
                                 });
                             }
-                        }, function( /*error*/ ) {
-                            //self.debug.error("[TextTTMLXMLMP4SourceBuffer] error parsing TTML "+error);
+                        }, function(error) {
+                            self.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while parsing TTML data", error);
                         });
                     });
                 return;
@@ -229,7 +230,7 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                 }
 
                 //detect utf-16 encoding
-                if (self.isUTF16(ttmlData)) {
+                if (MediaPlayer.utils.isUTF16(ttmlData)) {
                     encoding = 'utf-16';
                 }
                 // parse data and add to cues
@@ -253,8 +254,8 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
                                     type: "updateend"
                                 });
                             }
-                        }, function( /*error*/ ) {
-                            //self.debug.error("[TextTTMLXMLMP4SourceBuffer] error parsing TTML "+error);
+                        }, function(error) {
+                            self.errHandler.sendWarning(MediaPlayer.dependencies.ErrorHandler.prototype.INTERNAL_ERROR, "Internal error while parsing TTML data", error);
                         });
                     });
             }
@@ -274,64 +275,6 @@ MediaPlayer.dependencies.TextTTMLXMLMP4SourceBuffer = function() {
             f.readAsText(blob, encoding);
 
             return deferred.promise;
-        },
-
-        /**
-         * UTF-16 (LE or BE)
-         *
-         * RFC2781: UTF-16, an encoding of ISO 10646
-         *
-         * @link http://www.ietf.org/rfc/rfc2781.txt
-         * @private
-         * @ignore
-         */
-        isUTF16: function(data) {
-            var i = 0;
-            var len = data && data.length;
-            var pos = null;
-            var b1, b2, next, prev;
-
-            if (len < 2) {
-                if (data[0] > 0xFF) {
-                    return false;
-                }
-            } else {
-                b1 = data[0];
-                b2 = data[1];
-                if (b1 === 0xFF && // BOM (little-endian)
-                    b2 === 0xFE) {
-                    return true;
-                }
-                if (b1 === 0xFE && // BOM (big-endian)
-                    b2 === 0xFF) {
-                    return true;
-                }
-
-                for (; i < len; i++) {
-                    if (data[i] === 0x00) {
-                        pos = i;
-                        break;
-                    } else if (data[i] > 0xFF) {
-                        return false;
-                    }
-                }
-
-                if (pos === null) {
-                    return false; // Non ASCII
-                }
-
-                next = data[pos + 1]; // BE
-                if (next !== void 0 && next > 0x00 && next < 0x80) {
-                    return true;
-                }
-
-                prev = data[pos - 1]; // LE
-                if (prev !== void 0 && prev > 0x00 && prev < 0x80) {
-                    return true;
-                }
-            }
-
-            return false;
         },
 
         UpdateLang: function(id, lang){

@@ -61,6 +61,7 @@
         "../app/js/mss/Mss.js",
         "../app/js/utils/CopyMethods.js",
         "../app/js/utils/DOMParser.js",
+        "../app/js/utils/Encoding.js",
         "../app/js/utils/ObjectIron.js"
     ],
     "protection": [
