@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>hasplayer.js 1.14.0 Index</title>
+
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="styles/sunlight.default.css">
+
+	<link type="text/css" rel="stylesheet" href="styles/site.united.css">
+
+</head>
+
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top ">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" href="index.html">hasplayer.js 1.14.0</a>
+		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#topNavigation">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+        </button>
+	</div>
+	<div class="navbar-collapse collapse" id="topNavigation">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="MediaPlayer.html">MediaPlayer</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="events.list.html" class="dropdown-toggle" data-toggle="dropdown">Events<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="MediaPlayer.html#event:bufferLevel_updated">MediaPlayer#event:bufferLevel_updated</a></li><li><a href="MediaPlayer.html#event:cueEnter">MediaPlayer#event:cueEnter</a></li><li><a href="MediaPlayer.html#event:cueExit">MediaPlayer#event:cueExit</a></li><li><a href="MediaPlayer.html#event:download_bitrate">MediaPlayer#event:download_bitrate</a></li><li><a href="MediaPlayer.html#event:error">MediaPlayer#event:error</a></li><li><a href="MediaPlayer.html#event:manifestUrlUpdate">MediaPlayer#event:manifestUrlUpdate</a></li><li><a href="MediaPlayer.html#event:play_bitrate">MediaPlayer#event:play_bitrate</a></li><li><a href="MediaPlayer.html#event:state_changed">MediaPlayer#event:state_changed</a></li><li><a href="MediaPlayer.html#event:warning">MediaPlayer#event:warning</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="global.html" class="dropdown-toggle" data-toggle="dropdown">Global<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="global.html">hasMediaKeysExtension</a></li><li><a href="global.html">hasMediaSourceExtension</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+        
+            <div class="col-sm-3 col-md-3">
+                <form class="navbar-form" role="search">
+                    <div class="input-group">
+                        <input type="text" class="form-control" placeholder="Search" name="q" id="search-input">
+                        <div class="input-group-btn">
+                            <button class="btn btn-default" id="search-submit"><i class="glyphicon glyphicon-search"></i></button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        
+	</div>
+
+</div>
+</div>
+
+
+<div class="container" id="toc-content">
+<div class="row">
+
+	
+	<div class="col-md-8">
+	
+		<div id="main">
+			
+
+	
+	
+
+
+
+
+
+
+
+
+
+
+
+	
+	
+
+
+
+
+
+    <section class="readme-section">
+        <article><h1>hasplayer.js <a href="https://travis-ci.org/Orange-OpenSource/hasplayer.js"><img src="https://travis-ci.org/Orange-OpenSource/hasplayer.js.svg?branch=development&amp;style=flat-square" alt="Build Status"></a></h1><p>hasplayer.js is a javascript implementation of a video player based on the W3C premium extensions, i.e. <a href="https://dvcs.w3.org/hg/html-media/raw-file/tip/media-source/media-source.html">MSE</a> and <a href="https://dvcs.w3.org/hg/html-media/raw-file/tip/encrypted-media/encrypted-media.html">EME</a>.</p>
+<p>hasplayer.js is an extension of the <a href="https://github.com/Dash-Industry-Forum/dash.js">dash.js</a> project with the aim of supporting additional http adaptive streaming protocols such as Microsoft Smooth Streaming protocol and Apple Http Live Streaming.</p>
+<p>If your intent is to use the player code without contributing back to this project, then use the MASTER branch which holds the approved and stable public releases.</p>
+<p>If your goal is to improve or extend the code and contribute back to this project, then you should make your changes in, and submit a pull request against, the DEVELOPMENT branch.</p>
+<p>Learn more about versions and roadmap on the <a href="https://github.com/Orange-OpenSource/hasplayer.js/wiki">wiki</a>.</p>
+<h2>Quick Start</h2><h3>Reference Player</h3><ol>
+<li>Download 'master', 'development' or latest tagged release.</li>
+<li>Extract hasplayer.js and move the entire folder to localhost (or run any http server instance at the root of the hasplayer.js folder).</li>
+<li>Open any sample from the samples folder in your MSE capable web browser.</li>
+</ol>
+<h3>Install Dependencies</h3><ol>
+<li><a href="http://nodejs.org/">install nodejs</a></li>
+<li><a href="https://github.com/gulpjs/gulp/blob/master/docs/getting-started.md">install gulp</a></li>
+</ol>
+<pre class="prettyprint source"><code>npm install -g gulp</code></pre><h3>Build / Run</h3><p>npm run build</p>
+<p>The build task can be configured in order to select supported protocol(s) and to integrate or not EME support.
+For example:</p>
+<ol>
+<li>No hls support, no EME support:<pre class="prettyprint source"><code>npm run build -- --no-hls --no-protection</code></pre></li>
+<li>No hls support, no MSS support:<pre class="prettyprint source"><code>npm run build -- --no-hls --no-mss</code></pre></li>
+</ol>
+<h2>Demo</h2><p>A builded version of the hasplayer.js and samples is available at this address:</p>
+<p>http://orange-opensource.github.io/hasplayer.js</p>
+<h2>License</h2><p>All code in this repository is covered by the <a href="http://opensource.org/licenses/BSD-3-Clause">BSD-3 license</a>.
+See LICENSE file for copyright details.</p>
+<h2>Getting Started</h2><p>Create a video element somewhere in your html. For our purposes, make sure to set the controls property to true.</p>
+<pre class="prettyprint source lang-html"><code>&lt;video id=&quot;videoPlayer&quot; controls=&quot;true&quot;>&lt;/video></code></pre><p>Add hasplayer.js to the end of the body.</p>
+<pre class="prettyprint source lang-html"><code>&lt;body>
+  ...
+  &lt;script src=&quot;yourPathToHasplayer/hasplayer.js&quot;>&lt;/script>
+&lt;/body></code></pre><p>Now comes the good stuff. We need to create an MediaPlayer. Then we need to initialize it, attach it to our &quot;videoPlayer&quot; and then tell it where to get the video from. We will do this in an anonymous self executing function, that way it will run as soon as the page loads. So, here is how we do it:</p>
+<pre class="prettyprint source lang-js"><code>(function(){
+    var stream = {
+        url: &quot;http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest&quot;
+    };
+    var mediaPlayer = new MediaPlayer();
+    MediaPlayer.init(document.querySelector(&quot;#videoPlayer&quot;));
+    MediaPlayer.load(stream);
+})();</code></pre><p>When it is all done, it should look similar to this:</p>
+<pre class="prettyprint source lang-html"><code>&lt;!doctype html>
+&lt;html>
+    &lt;head>
+        &lt;title>hasplayer.js Rocks&lt;/title>
+    &lt;/head>
+    &lt;body>
+        &lt;div>
+            &lt;video id=&quot;videoPlayer&quot; controls=&quot;true&quot;>&lt;/video>
+        &lt;/div>
+        &lt;script src=&quot;yourPathToHasplayer/hasplayer.js&quot;>&lt;/script>
+        &lt;script>
+            (function(){
+                var stream = {
+                    url: &quot;http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest&quot;
+                };
+                var mediaPlayer = new MediaPlayer();
+                mediaPlayer.init(document.querySelector(&quot;#videoPlayer&quot;));
+                mediaPlayer.load(stream);
+            })();
+        &lt;/script>
+    &lt;/body>
+&lt;/html></code></pre><h2>DRM Video Stream</h2><p>In the case of protected content, here is an example illustrating setting of the protection data:</p>
+<pre class="prettyprint source lang-js"><code>    var stream = {
+        url: &quot;&lt;manifest_url>&quot;,
+        protData: {
+            &quot;&lt;key_system>&quot;: {
+                laURL: &quot;&lt;licenser_url>&quot;,
+                withCredentials: &quot;&lt;license_request_withCredentials_value (true or false)>&quot;,
+                cdmData: &quot;&lt;CDM_specific_data>&quot;, // Supported by PlayReady key system (using MS-prefixed EME API) only
+                serverCertificate: &quot;&lt;license_server_certificate (as Base64 string)>&quot;
+                audioRobustness: &quot;&lt;audio_robustness_level>&quot; // Considered for Widevine key system only
+                videoRobustness: &quot;&lt;video_robustness_level>&quot; // Considered for Widevine key system only
+            }
+        }
+    };
+    mediaPlayer.load(stream);</code></pre><h3>HLS and FairPlay on Safari/OSx</h3><p>In order to playback HLS protected contents with FairPlay DRM, a specific mode is available which consists in streaming and playing the content directly with the &lt;video&gt; element, and in managing the exchanges between the FairPlay CDM and the licenser using EME.
+To activate this mode on Safari/OSx you need to explicitely indicate the protocol type, i.e. 'HLS', for the input stream:</p>
+<pre class="prettyprint source lang-js"><code>    var stream = {
+        url: &quot;&lt;manifest_url>&quot;,
+        protocol= &quot;HLS&quot;,
+        protData: {
+            &quot;com.apple.fps.1_0&quot;: {
+                laURL: &quot;&lt;licenser_url>&quot;,
+                withCredentials: &quot;&lt;license_request_withCredentials_value (true or false)>&quot;,
+                serverCertificate: &quot;&lt;license_server_certificate (as Base64 string)>&quot;
+            }
+        }
+    };
+    mediaPlayer.load(stream);</code></pre><p>Since native player is used to achieve streaming session, some parts of the MediaPlayer API have no effect (functions relative to streaming and ABR configuration, DVR, trick mode...).
+However, API for audio and subtitles tracks management is functional.</p>
+<h2>Events</h2><p>MediaPlayer offers events to be notified of differents events on video streaming. Those events are, for a part, sent by the HTMLMediaElement (&lt;video&gt;), and for an other part, sent by the MediaPlayer.</p>
+<pre class="prettyprint source lang-js"><code>function registerMediaPlayerEvents() {
+    // MediaPlayer events
+    mediaPlayer.addEventListener(&quot;error&quot;, onError);
+    mediaPlayer.addEventListener(&quot;warning&quot;, onWarning);
+    mediaPlayer.addEventListener(&quot;cueEnter&quot;, onCueEnter);
+    mediaPlayer.addEventListener(&quot;cueExit&quot;, onCueExit);
+    mediaPlayer.addEventListener(&quot;play_bitrate&quot;, onPlayBitrateChanged);
+    mediaPlayer.addEventListener(&quot;download_bitrate&quot;, onDownloadBitrateChanged);
+    mediaPlayer.addEventListener(&quot;manifestUrlUpdate&quot;, onManifestUrlUpdate);
+    mediaPlayer.addEventListener(&quot;metricAdded&quot;, onMetricAdded);
+    mediaPlayer.addEventListener(&quot;metricChanged&quot;, onMetricChanged);
+    mediaPlayer.addEventListener(&quot;bufferLevel_updated&quot;, onBufferLevelUpdated);
+    mediaPlayer.addEventListener(&quot;state_changed&quot;, onStateChanged);
+    // &lt;video> element events
+    mediaPlayer.addEventListener(&quot;loadeddata&quot;, onload);
+    mediaPlayer.addEventListener(&quot;play&quot;, onPlay);
+    mediaPlayer.addEventListener(&quot;pause&quot;, onPause);
+    mediaPlayer.addEventListener(&quot;timeupdate&quot;, onTimeUpdate);
+    mediaPlayer.addEventListener(&quot;volumechange&quot;, onVolumeChange);
+};</code></pre><p>For instance, callback function looks like this :</p>
+<pre class="prettyprint source lang-js"><code>function onPlayBitrateChanged(e) {
+    handlePlayBitrate(e.detail.bitrate, e.detail.time);
+};</code></pre><h2>Documentation</h2><p>Full <a href="http://orange-opensource.github.io/hasplayer.js/development/doc/index.html">API Documentation</a> is available describing MediaPlayer public methods and events.</p>
+<p>This API documentation can be generated using following gulp command:</p>
+<pre class="prettyprint source"><code>npm run doc</code></pre><h3>Tested With</h3><p><a href="https://www.browserstack.com/"><img src="https://cloud.githubusercontent.com/assets/7864462/12837037/452a17c6-cb73-11e5-9f39-fc96893bc9bf.png" alt="Browser Stack Logo" width="300"></a></p></article>
+    </section>
+
+
+
+
+
+
+
+		</div>
+	</div>
+
+	<div class="clearfix"></div>
+
+	
+		<div class="col-md-3">
+			<div id="toc" class="col-md-3 hidden-xs hidden-sm hidden-md"></div>
+		</div>
+	
+
+</div>
+</div>
+
+
+    <div class="modal fade" id="searchResults">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title">Search results</h4>
+          </div>
+          <div class="modal-body"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+          </div>
+        </div><!-- /.modal-content -->
+      </div><!-- /.modal-dialog -->
+    </div>
+
+
+<footer>
+
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a>
+	
+		on 2018-02-08T10:39:28+00:00
+	
+	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
+</span>
+</footer>
+
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/toc.js"></script>
+
+    <script type="text/javascript" src="scripts/fulltext-search-ui.js"></script>
+
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( ".tutorial-section pre, .readme-section pre, pre.prettyprint.source" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			var langClassMatch = example.parent()[0].className.match(/lang\-(\S+)/);
+			lang = langClassMatch ? langClassMatch[1] : "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( "sunlight-highlight-" + lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	Sunlight.highlightAll( {
+		lineNumbers : true,
+		showMenu : true,
+		enableDoclinks : true
+	} );
+
+	$.catchAnchorLinks( {
+        navbarOffset: 10
+	} );
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			return $( heading ).attr( "id" ) || ( prefix + i );
+		},
+		selectors   : "#toc-content h1,#toc-content h2,#toc-content h3,#toc-content h4",
+		showAndHide : false,
+		smoothScrolling: true
+	} );
+
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+
+    $( "table" ).each( function () {
+      var $this = $( this );
+      $this.addClass('table');
+    } );
+
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            SearcherDisplay.init();
+        });
+    </script>
+
+
+</body>
+</html>
