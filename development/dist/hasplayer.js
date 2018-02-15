@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2018-2-8_13:36:22 / git revision : 97fc29d */
+/* Last build : 2018-2-15_8:53:35 / git revision : 83175b6 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.15.0-dev',
-        GIT_TAG = '97fc29d',
-        BUILD_DATE = '2018-2-8_13:36:22',
+        GIT_TAG = '83175b6',
+        BUILD_DATE = '2018-2-15_8:53:35',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -19219,11 +19219,12 @@ Hls.dependencies.HlsStream = function() {
         },
 
         getKeyError = function(event) {
-            var code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR,
+            var error = event.target.error,
+                code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR,
                 msg = "MediakeyError";
 
-            if (event.errorCode) {
-                switch (event.errorCode.code) {
+            if (error) {
+                switch (error.code) {
                     case 1:
                         code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
                         msg = "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
@@ -19257,7 +19258,7 @@ Hls.dependencies.HlsStream = function() {
                 code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
                 msg = "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
             }
-            if (event.systemCode) {
+            if (error.systemCode) {
                 msg += "  (System Code = " + event.systemCode + ")";
             }
             return new MediaPlayer.vo.protection.KeyError(code, msg);
@@ -19297,10 +19298,19 @@ Hls.dependencies.HlsStream = function() {
 
             var session = e.target,
                 message = e.message,
-                type;
+                url = null,
+                type,
+                protData = getKsProtectionData('com.apple.fps.1_0');
 
-            var protData = getKsProtectionData('com.apple.fps.1_0');
-            if (!protData || !protData.laURL) {
+            if (protData) {
+                if (protData.serverURL && typeof protData.serverURL === "string" && protData.serverURL !== "") {
+                    url = protData.serverURL;
+                } else if (protData.laURL && protData.laURL !== "") { // TODO: Deprecated!
+                    url = protData.laURL;
+                }
+            }
+
+            if (url === null) {
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_URL_LICENSER_UNKNOWN, "No license server URL specified");
                 return;
             }
@@ -19308,7 +19318,7 @@ Hls.dependencies.HlsStream = function() {
             type = (protData && protData.requestType && protData.requestType === 'text') ? 'text' : 'stream';
 
             message = processLicenseMessage(session, type, message);
-            sendLicenseRequest.call(this, session, type, protData.laURL, message);
+            sendLicenseRequest.call(this, session, type, url, message);
         },
 
         onKeyAdded = function(e) {
