@@ -1,3 +1,8 @@
+### Release Notes v1.14.1 (2018/02/15)
+* Bugs fixing:
+* - [HLS] Correct key error ('webkitkeyerror') handler (native HLS+FP on Safari/OSx use case)
+* - [HLS] Correct licenser url getting from protection data (native HLS+FP on Safari/OSx use case)
+
 ### Release Notes v1.14.0 (2018/02/08)
 * [MSS] Add automatic Widevine pssh generation [#216]
 * [MSS] Detect PlayReady messages encoding [#207]
