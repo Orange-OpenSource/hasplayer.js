@@ -338,11 +338,12 @@ Hls.dependencies.HlsStream = function() {
         },
 
         getKeyError = function(event) {
-            var code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR,
+            var error = event.target.error,
+                code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR,
                 msg = "MediakeyError";
 
-            if (event.errorCode) {
-                switch (event.errorCode.code) {
+            if (error) {
+                switch (error.code) {
                     case 1:
                         code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
                         msg = "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
@@ -376,7 +377,7 @@ Hls.dependencies.HlsStream = function() {
                 code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
                 msg = "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
             }
-            if (event.systemCode) {
+            if (error.systemCode) {
                 msg += "  (System Code = " + event.systemCode + ")";
             }
             return new MediaPlayer.vo.protection.KeyError(code, msg);
