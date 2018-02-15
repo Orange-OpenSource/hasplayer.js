@@ -166,7 +166,7 @@ getBranchName().then(
     });
 })
 
-// 7 - Add, commit and push changes on gh-pages branch to repository
+// 7 - Update index.html file content, and update 'latest' symbolic link
 .then(function() {
     // Open index.html file
     var path = 'gh-pages/index.html';
@@ -185,6 +185,7 @@ getBranchName().then(
 
             // Update 'latest' symbolic link
             console.info('Update \'latest\' symbolic link');
+            fs.removeSync('gh-pages/latest');
             fs.ensureSymlinkSync('gh-pages/' + pkg.dir, 'gh-pages/latest');
         }
     }
@@ -192,7 +193,7 @@ getBranchName().then(
     return Promise.resolve();
 })
 
-// 8 - Add, commit and push changes to Github
+// 8 - Add, commit and push changes on gh-pages branch to repository
 .then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.configUser))
 .then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.configEmail))
 .then(execCommand.bind(null, 'cd gh-pages && '+ gitCommands.add))

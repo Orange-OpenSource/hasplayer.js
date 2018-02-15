@@ -338,11 +338,12 @@ Hls.dependencies.HlsStream = function() {
         },
 
         getKeyError = function(event) {
-            var code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR,
+            var error = event.target.error,
+                code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR,
                 msg = "MediakeyError";
 
-            if (event.errorCode) {
-                switch (event.errorCode.code) {
+            if (error) {
+                switch (error.code) {
                     case 1:
                         code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
                         msg = "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
@@ -376,7 +377,7 @@ Hls.dependencies.HlsStream = function() {
                 code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYERR_UNKNOWN;
                 msg = "An unspecified error occurred. This value is used for errors that don't match any of the other codes.";
             }
-            if (event.systemCode) {
+            if (error.systemCode) {
                 msg += "  (System Code = " + event.systemCode + ")";
             }
             return new MediaPlayer.vo.protection.KeyError(code, msg);
@@ -416,10 +417,19 @@ Hls.dependencies.HlsStream = function() {
 
             var session = e.target,
                 message = e.message,
-                type;
+                url = null,
+                type,
+                protData = getKsProtectionData('com.apple.fps.1_0');
 
-            var protData = getKsProtectionData('com.apple.fps.1_0');
-            if (!protData || !protData.laURL) {
+            if (protData) {
+                if (protData.serverURL && typeof protData.serverURL === "string" && protData.serverURL !== "") {
+                    url = protData.serverURL;
+                } else if (protData.laURL && protData.laURL !== "") { // TODO: Deprecated!
+                    url = protData.laURL;
+                }
+            }
+
+            if (url === null) {
                 this.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_URL_LICENSER_UNKNOWN, "No license server URL specified");
                 return;
             }
@@ -427,7 +437,7 @@ Hls.dependencies.HlsStream = function() {
             type = (protData && protData.requestType && protData.requestType === 'text') ? 'text' : 'stream';
 
             message = processLicenseMessage(session, type, message);
-            sendLicenseRequest.call(this, session, type, protData.laURL, message);
+            sendLicenseRequest.call(this, session, type, url, message);
         },
 
         onKeyAdded = function(e) {

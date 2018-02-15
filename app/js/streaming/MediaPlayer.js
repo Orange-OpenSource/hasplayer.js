@@ -938,7 +938,7 @@ MediaPlayer = function () {
 
             _isPlayerInitialized();
 
-            if (typeof time !== 'number') {
+            if (typeof time !== 'number' || isNaN(time)) {
                 throw new Error('MediaPlayer.seek(): Invalid Arguments');
             }
 
