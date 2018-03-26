@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2018-2-15_10:3:48 / git revision : c0286e1 */
+/* Last build : 2018-3-26_8:43:50 / git revision : ca019d6 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.15.0-dev',
-        GIT_TAG = 'c0286e1',
-        BUILD_DATE = '2018-2-15_10:3:48',
+        GIT_TAG = 'ca019d6',
+        BUILD_DATE = '2018-3-26_8:43:50',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -22953,6 +22953,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             var session,
                 nbSessions = sessions.length,
                 i,
+                closeTimeout,
                 self = this;
 
             this.debug.log("[DRM][PM_21Jan2015] Teardown");
@@ -22965,7 +22966,13 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                     removeSession(session);
                     if (i >= (nbSessions - 1)) {
                         mediaKeys = null;
+                        clearTimeout(closeTimeout);
                         self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
+                    }
+                };
+                var close = function () {
+                    for (i = 0; i < nbSessions; i++) {
+                        done(sessions[i]);
                     }
                 };
 
@@ -22989,6 +22996,9 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                         });
                     })(session);
                 }
+                // Patch for MediaKeySession.close() that may never resolve returned promise
+                // (for example after license request failure)
+                closeTimeout = setTimeout(close, 1000);
             } else {
                 // If license persistence is enabled, then keep usable sessions data and MediaKeys instance
                 for (i = 0; i < sessions.length; i++) {
@@ -23907,10 +23917,10 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
         doGetKeySystemConfigurations = function(videoCodec, audioCodec, sessionType) {
             var ksConfigurations = MediaPlayer.dependencies.protection.CommonEncryption.getKeySystemConfigurations(videoCodec, audioCodec, sessionType);
             if (protData) {
-                if (protData.audioRobustness) {
+                if (protData.audioRobustness && ksConfigurations[0].audioCapabilities.length > 0) {
                     ksConfigurations[0].audioCapabilities[0].robustness = protData.audioRobustness;
                 }
-                if (protData.videoRobustness) {
+                if (protData.videoRobustness && ksConfigurations[0].videoCapabilities.length > 0) {
                     ksConfigurations[0].videoCapabilities[0].robustness = protData.videoRobustness;
                 }
             }
