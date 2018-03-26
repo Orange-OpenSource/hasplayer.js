@@ -488,6 +488,9 @@ Hls.dependencies.HlsStream = function() {
         },
 
         load: function(url) {
+            if (initialStartTime >= 0) {
+                url += '#t=' + initialStartTime;
+            }
             this.videoModel.setSource(url);
         },
 
