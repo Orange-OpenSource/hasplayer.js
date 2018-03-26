@@ -293,6 +293,7 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
             var session,
                 nbSessions = sessions.length,
                 i,
+                closeTimeout,
                 self = this;
 
             this.debug.log("[DRM][PM_21Jan2015] Teardown");
@@ -305,7 +306,13 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                     removeSession(session);
                     if (i >= (nbSessions - 1)) {
                         mediaKeys = null;
+                        clearTimeout(closeTimeout);
                         self.notify(MediaPlayer.models.ProtectionModel.eventList.ENAME_TEARDOWN_COMPLETE);
+                    }
+                };
+                var close = function () {
+                    for (i = 0; i < nbSessions; i++) {
+                        done(sessions[i]);
                     }
                 };
 
@@ -329,6 +336,9 @@ MediaPlayer.models.ProtectionModel_21Jan2015 = function () {
                         });
                     })(session);
                 }
+                // Patch for MediaKeySession.close() that may never resolve returned promise
+                // (for example after license request failure)
+                closeTimeout = setTimeout(close, 1000);
             } else {
                 // If license persistence is enabled, then keep usable sessions data and MediaKeys instance
                 for (i = 0; i < sessions.length; i++) {
