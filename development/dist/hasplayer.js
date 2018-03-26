@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2018-3-26_8:43:50 / git revision : ca019d6 */
+/* Last build : 2018-3-26_8:47:52 / git revision : ba04b38 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.15.0-dev',
-        GIT_TAG = 'ca019d6',
-        BUILD_DATE = '2018-3-26_8:43:50',
+        GIT_TAG = 'ba04b38',
+        BUILD_DATE = '2018-3-26_8:47:52',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -10529,6 +10529,7 @@ MediaPlayer.dependencies.StreamController = function() {
                 stream.setDefaultAudioLang(defaultAudioLang);
                 stream.setDefaultSubtitleLang(defaultSubtitleLang);
                 stream.enableSubtitles(subtitlesEnabled);
+                stream.setInitialStartTime(source.startTime);
                 streams.push(stream);
                 activeStream = stream;
                 attachVideoEvents.call(this, activeStream.getVideoModel());
@@ -19369,6 +19370,9 @@ Hls.dependencies.HlsStream = function() {
         },
 
         load: function(url) {
+            if (initialStartTime >= 0) {
+                url += '#t=' + initialStartTime;
+            }
             this.videoModel.setSource(url);
         },
 
