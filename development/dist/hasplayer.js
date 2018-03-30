@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2018-3-27_7:48:58 / git revision : 7e771cf */
+/* Last build : 2018-3-30_14:36:51 / git revision : babf057 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.15.0-dev',
-        GIT_TAG = '7e771cf',
-        BUILD_DATE = '2018-3-27_7:48:58',
+        GIT_TAG = 'babf057',
+        BUILD_DATE = '2018-3-30_14:36:51',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -27069,7 +27069,7 @@ if (!Number.MAX_SAFE_INTEGER) {
 Mss.dependencies.MssParser = function() {
     "use strict";
 
-    var TIME_SCALE_100_NANOSECOND_UNIT = 10000000.0,
+    var DEFAULT_TIME_SCALE = 10000000.0,
         SUPPORTED_CODECS = ["AAC", "AACL", "AVC1", "H264", "TTML", "DFXP"],
         samplingFrequencyIndex = {
             96000: 0x0,
@@ -27094,7 +27094,7 @@ Mss.dependencies.MssParser = function() {
         xmlDoc = null,
         baseURL = null,
 
-        mapPeriod = function() {
+        mapPeriod = function(timescale) {
             var period = {},
                 adaptations = [],
                 adaptation,
@@ -27106,7 +27106,7 @@ Mss.dependencies.MssParser = function() {
             // For each StreamIndex node, create an AdaptationSet element
             for (i = 0; i < smoothNode.childNodes.length; i++) {
                 if (smoothNode.childNodes[i].nodeName === "StreamIndex") {
-                    adaptation = mapAdaptationSet.call(this, smoothNode.childNodes[i]);
+                    adaptation = mapAdaptationSet.call(this, smoothNode.childNodes[i], timescale);
                     if (adaptation !== null) {
                         adaptations.push(adaptation);
                     }
@@ -27121,7 +27121,7 @@ Mss.dependencies.MssParser = function() {
             return period;
         },
 
-        mapAdaptationSet = function(streamIndex) {
+        mapAdaptationSet = function(streamIndex, timescale) {
 
             var adaptationSet = {},
                 representations = [],
@@ -27145,7 +27145,7 @@ Mss.dependencies.MssParser = function() {
             }
 
             // Create a SegmentTemplate with a SegmentTimeline
-            segmentTemplate = mapSegmentTemplate.call(this, streamIndex);
+            segmentTemplate = mapSegmentTemplate.call(this, streamIndex, timescale);
 
             qualityLevels = this.domParser.getChildNodes(streamIndex, "QualityLevel");
             // For each QualityLevel node, create a Representation element
@@ -27312,7 +27312,7 @@ Mss.dependencies.MssParser = function() {
             return "mp4a.40." + objectType;
         },
 
-        mapSegmentTemplate = function(streamIndex) {
+        mapSegmentTemplate = function(streamIndex, timescale) {
 
             var segmentTemplate = {},
                 mediaUrl;
@@ -27321,14 +27321,14 @@ Mss.dependencies.MssParser = function() {
             mediaUrl = mediaUrl.replace('{start time}', '$Time$');
 
             segmentTemplate.media = mediaUrl;
-            segmentTemplate.timescale = TIME_SCALE_100_NANOSECOND_UNIT;
+            segmentTemplate.timescale = timescale;
 
-            segmentTemplate.SegmentTimeline = mapSegmentTimeline.call(this, streamIndex);
+            segmentTemplate.SegmentTimeline = mapSegmentTimeline.call(this, streamIndex, timescale);
 
             return segmentTemplate;
         },
 
-        mapSegmentTimeline = function(streamIndex) {
+        mapSegmentTimeline = function(streamIndex, timescale) {
 
             var segmentTimeline = {},
                 chunks = this.domParser.getChildNodes(streamIndex, "c"),
@@ -27408,7 +27408,7 @@ Mss.dependencies.MssParser = function() {
 
             segmentTimeline.S = segments;
             segmentTimeline.S_asArray = segments;
-            segmentTimeline.duration = duration / TIME_SCALE_100_NANOSECOND_UNIT;
+            segmentTimeline.duration = duration / timescale;
 
             return segmentTimeline;
         },
@@ -27606,9 +27606,11 @@ Mss.dependencies.MssParser = function() {
             // Set mpd node properties
             mpd.name = 'MSS';
             mpd.profiles = "urn:mpeg:dash:profile:isoff-live:2011";
+            var timescale = this.domParser.getAttributeValue(smoothNode, 'TimeScale');
+            mpd.timescale = timescale ? parseFloat(timescale) : DEFAULT_TIME_SCALE;
             var isLive = this.domParser.getAttributeValue(smoothNode, 'IsLive');
             mpd.type = (isLive !== null && isLive.toLowerCase() === 'true') ? 'dynamic' : 'static';
-            mpd.timeShiftBufferDepth = parseFloat(this.domParser.getAttributeValue(smoothNode, 'DVRWindowLength')) / TIME_SCALE_100_NANOSECOND_UNIT;
+            mpd.timeShiftBufferDepth = parseFloat(this.domParser.getAttributeValue(smoothNode, 'DVRWindowLength')) / mpd.timescale;
             var duration = parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration'));
 
             // If live manifest with Duration, we consider it as a start-over manifest
@@ -27616,12 +27618,12 @@ Mss.dependencies.MssParser = function() {
                 mpd.type = "static";
                 mpd.startOver = true;
                 // We set timeShiftBufferDepth to initial duration, to be used by MssFragmentController to update segment timeline
-                mpd.timeShiftBufferDepth = duration / TIME_SCALE_100_NANOSECOND_UNIT;
+                mpd.timeShiftBufferDepth = duration / mpd.timescale;
                 // Duration will be set according to current segment timeline duration (see below)
             }
 
             // Complete manifest/mpd initialization
-            mpd.mediaPresentationDuration = (duration === 0) ? Infinity : (duration / TIME_SCALE_100_NANOSECOND_UNIT);
+            mpd.mediaPresentationDuration = (duration === 0) ? Infinity : (duration / mpd.timescale);
             mpd.BaseURL = baseURL;
             mpd.minBufferTime = MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
 
@@ -27631,7 +27633,7 @@ Mss.dependencies.MssParser = function() {
             }
 
             // Map period node to manifest root node
-            mpd.Period = mapPeriod.call(this);
+            mpd.Period = mapPeriod.call(this, mpd.timescale);
             mpd.Period_asArray = [mpd.Period];
 
             period = mpd.Period;
@@ -27748,7 +27750,7 @@ Mss.dependencies.MssParser = function() {
                             period.start = Math.max(segments[0].t, period.start);
                         }
                     }
-                    period.start /= TIME_SCALE_100_NANOSECOND_UNIT;
+                    period.start /= mpd.timescale;
                 }
             }
 
