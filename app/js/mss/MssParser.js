@@ -268,15 +268,19 @@ Mss.dependencies.MssParser = function() {
         mapSegmentTemplate = function(streamIndex, timescale) {
 
             var segmentTemplate = {},
-                mediaUrl;
+                mediaUrl,
+                streamIndexTimeScale;
 
             mediaUrl = this.domParser.getAttributeValue(streamIndex, "Url").replace('{bitrate}', '$Bandwidth$');
             mediaUrl = mediaUrl.replace('{start time}', '$Time$');
 
-            segmentTemplate.media = mediaUrl;
-            segmentTemplate.timescale = timescale;
+            streamIndexTimeScale = this.domParser.getAttributeValue(streamIndex, "TimeScale");
+            streamIndexTimeScale = streamIndexTimeScale ? parseFloat(streamIndexTimeScale) : timescale;
 
-            segmentTemplate.SegmentTimeline = mapSegmentTimeline.call(this, streamIndex, timescale);
+            segmentTemplate.media = mediaUrl;
+            segmentTemplate.timescale = streamIndexTimeScale;
+
+            segmentTemplate.SegmentTimeline = mapSegmentTimeline.call(this, streamIndex, segmentTemplate.timescale);
 
             return segmentTemplate;
         },
@@ -676,7 +680,7 @@ Mss.dependencies.MssParser = function() {
                     for (i = 0; i < adaptations.length; i++) {
                         if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
                             segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
-                            startTime = segments[0].t;
+                            startTime = segments[0].t / adaptations[i].SegmentTemplate.timescale;
                             if (timestampOffset === undefined) {
                                 timestampOffset = startTime;
                             }
@@ -697,7 +701,7 @@ Mss.dependencies.MssParser = function() {
                             if (!segments[j].tManifest) {
                                 segments[j].tManifest = segments[j].t;
                             }
-                            segments[j].t -= timestampOffset;
+                            segments[j].t -= (timestampOffset * adaptations[i].SegmentTemplate.timescale);
                         }
                         if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
                             period.start = Math.max(segments[0].t, period.start);
