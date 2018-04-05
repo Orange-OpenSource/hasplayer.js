@@ -2,12 +2,12 @@
   "name": "hasplayer.js",
   "version": "1.15.0-dev",
   "scripts": {
+    "dev": "cd build && gulp watch",
     "build": "cd build && gulp",
     "doc": "cd build && gulp doc",
     "deploy": "node ./build/deploy.js",
     "dist": "node ./build/dist.js",
-    "test": "node node_modules/intern/runner.js config=test/functional/testsCommon.js browsers=$BROWSER selenium=remote application=development",
-    "watch": "cd build && gulp watch"
+    "test": "node node_modules/intern/runner.js config=test/functional/testsCommon.js browsers=$BROWSER selenium=remote application=development"
   },
   "homepage": "https://github.com/Orange-OpenSource/hasplayer.js",
   "main": "dist/hasplayer.js",
