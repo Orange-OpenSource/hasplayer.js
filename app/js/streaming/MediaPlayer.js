@@ -1141,6 +1141,9 @@ MediaPlayer = function () {
          */
         getVideoBitrates: function () {
             _isPlayerInitialized();
+            if (!videoBitrates) {
+                return [];
+            }
             return videoBitrates.slice();
         },
 

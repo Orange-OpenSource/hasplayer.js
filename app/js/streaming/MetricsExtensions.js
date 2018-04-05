@@ -104,6 +104,10 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
             i = 0,
             adaptation;
 
+        if (!manifest) {
+            return null;
+        }
+
         for (i = 0; i < manifest.Period.AdaptationSet.length; i++) {
             adaptation = manifest.Period.AdaptationSet[i];
             if (adaptation.type === type) {
@@ -119,6 +123,10 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
             manifest = self.manifestModel.getValue(),
             i = 0,
             adaptation;
+
+        if (!manifest) {
+            return null;
+        }
 
         for (i = 0; i < manifest.Period.AdaptationSet.length; i++) {
             adaptation = manifest.Period.AdaptationSet[i];
@@ -137,19 +145,16 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
             representation,
             periodArray;
 
-        if (manifest) {
-            periodArray = manifest.Period_asArray;
-
-            representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
-
-            if (representation === null) {
-                return null;
-            }
-
-            return representation.width;
-        } else {
+        if (!manifest) {
             return null;
         }
+
+        periodArray = manifest.Period_asArray;
+        representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
+        if (representation === null) {
+            return null;
+        }
+        return representation.width;
     };
 
     rslt.getVideoHeightForRepresentation = function(representationId) {
@@ -158,19 +163,16 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
             representation,
             periodArray;
 
-        if (manifest) {
-            periodArray = manifest.Period_asArray;
-
-            representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
-
-            if (representation === null) {
-                return null;
-            }
-
-            return representation.height;
-        } else {
+        if (!manifest) {
             return null;
         }
+
+        periodArray = manifest.Period_asArray;
+        representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
+        if (representation === null) {
+            return null;
+        }
+        return representation.height;
     };
 
     rslt.getCodecsForRepresentation = function(representationId) {
@@ -179,12 +181,14 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
             representation,
             periodArray = manifest.Period_asArray;
 
-        representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
-
-        if (representation === null) {
+        if (!manifest) {
             return null;
         }
 
+        representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
+        if (representation === null) {
+            return null;
+        }
         return representation.codecs;
     };
 
@@ -213,7 +217,7 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
             representationArrayIndex,
             bitrateArray = [];
 
-        if (((manifest === null) || (manifest === undefined)) && ((data === null) || (data === undefined))) {
+        if (!manifest) {
             return null;
         }
 
@@ -262,7 +266,7 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
             representationArrayIndex,
             bitrateArray = [];
 
-        if ((manifest === null) || (manifest === undefined)) {
+        if (!manifest) {
             return null;
         }
 

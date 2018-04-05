@@ -40,7 +40,7 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
 
     var keySystemStr = "com.widevine.alpha",
         keySystemUUID = "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed",
-        protData = null,
+        protData,
 
         doGetInitData = function(cpData) {
             return MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection(cpData);
@@ -74,11 +74,9 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
         sessionType: "temporary",
 
         init: function(protectionData) {
-            if (protectionData) {
-                protData = protectionData;
-                if (protData.sessionType) {
-                    this.sessionType = protData.sessionType;
-                }
+            protData = protectionData;
+            if (protData && protData.sessionType) {
+                this.sessionType = protData.sessionType;
             }
         },
 
