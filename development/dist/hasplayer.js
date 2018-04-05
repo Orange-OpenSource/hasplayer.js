@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2018-4-5_15:28:36 / git revision : 1f4c808 */
+/* Last build : 2018-4-5_15:42:4 / git revision : 2304d33 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.15.0-dev',
-        GIT_TAG = '1f4c808',
-        BUILD_DATE = '2018-4-5_15:28:36',
+        GIT_TAG = '2304d33',
+        BUILD_DATE = '2018-4-5_15:42:4',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -1184,6 +1184,9 @@ MediaPlayer = function () {
          */
         getVideoBitrates: function () {
             _isPlayerInitialized();
+            if (!videoBitrates) {
+                return [];
+            }
             return videoBitrates.slice();
         },
 
@@ -6463,6 +6466,10 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
             i = 0,
             adaptation;
 
+        if (!manifest) {
+            return null;
+        }
+
         for (i = 0; i < manifest.Period.AdaptationSet.length; i++) {
             adaptation = manifest.Period.AdaptationSet[i];
             if (adaptation.type === type) {
@@ -6478,6 +6485,10 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
             manifest = self.manifestModel.getValue(),
             i = 0,
             adaptation;
+
+        if (!manifest) {
+            return null;
+        }
 
         for (i = 0; i < manifest.Period.AdaptationSet.length; i++) {
             adaptation = manifest.Period.AdaptationSet[i];
@@ -6496,19 +6507,16 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
             representation,
             periodArray;
 
-        if (manifest) {
-            periodArray = manifest.Period_asArray;
-
-            representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
-
-            if (representation === null) {
-                return null;
-            }
-
-            return representation.width;
-        } else {
+        if (!manifest) {
             return null;
         }
+
+        periodArray = manifest.Period_asArray;
+        representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
+        if (representation === null) {
+            return null;
+        }
+        return representation.width;
     };
 
     rslt.getVideoHeightForRepresentation = function(representationId) {
@@ -6517,19 +6525,16 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
             representation,
             periodArray;
 
-        if (manifest) {
-            periodArray = manifest.Period_asArray;
-
-            representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
-
-            if (representation === null) {
-                return null;
-            }
-
-            return representation.height;
-        } else {
+        if (!manifest) {
             return null;
         }
+
+        periodArray = manifest.Period_asArray;
+        representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
+        if (representation === null) {
+            return null;
+        }
+        return representation.height;
     };
 
     rslt.getCodecsForRepresentation = function(representationId) {
@@ -6538,12 +6543,14 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
             representation,
             periodArray = manifest.Period_asArray;
 
-        representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
-
-        if (representation === null) {
+        if (!manifest) {
             return null;
         }
 
+        representation = findRepresentionInPeriodArray.call(self, periodArray, representationId);
+        if (representation === null) {
+            return null;
+        }
         return representation.codecs;
     };
 
@@ -6572,7 +6579,7 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
             representationArrayIndex,
             bitrateArray = [];
 
-        if (((manifest === null) || (manifest === undefined)) && ((data === null) || (data === undefined))) {
+        if (!manifest) {
             return null;
         }
 
@@ -6621,7 +6628,7 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
             representationArrayIndex,
             bitrateArray = [];
 
-        if ((manifest === null) || (manifest === undefined)) {
+        if (!manifest) {
             return null;
         }
 
@@ -23912,7 +23919,7 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
 
     var keySystemStr = "com.widevine.alpha",
         keySystemUUID = "edef8ba9-79d6-4ace-a3c8-27dcd51d21ed",
-        protData = null,
+        protData,
 
         doGetInitData = function(cpData) {
             return MediaPlayer.dependencies.protection.CommonEncryption.parseInitDataFromContentProtection(cpData);
@@ -23946,11 +23953,9 @@ MediaPlayer.dependencies.protection.KeySystem_Widevine = function() {
         sessionType: "temporary",
 
         init: function(protectionData) {
-            if (protectionData) {
-                protData = protectionData;
-                if (protData.sessionType) {
-                    this.sessionType = protData.sessionType;
-                }
+            protData = protectionData;
+            if (protData && protData.sessionType) {
+                this.sessionType = protData.sessionType;
             }
         },
 
