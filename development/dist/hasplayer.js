@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2018-4-4_12:12:21 / git revision : 11148fd */
+/* Last build : 2018-4-5_15:28:36 / git revision : 1f4c808 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.15.0-dev',
-        GIT_TAG = '11148fd',
-        BUILD_DATE = '2018-4-4_12:12:21',
+        GIT_TAG = '1f4c808',
+        BUILD_DATE = '2018-4-5_15:28:36',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -27315,15 +27315,19 @@ Mss.dependencies.MssParser = function() {
         mapSegmentTemplate = function(streamIndex, timescale) {
 
             var segmentTemplate = {},
-                mediaUrl;
+                mediaUrl,
+                streamIndexTimeScale;
 
             mediaUrl = this.domParser.getAttributeValue(streamIndex, "Url").replace('{bitrate}', '$Bandwidth$');
             mediaUrl = mediaUrl.replace('{start time}', '$Time$');
 
-            segmentTemplate.media = mediaUrl;
-            segmentTemplate.timescale = timescale;
+            streamIndexTimeScale = this.domParser.getAttributeValue(streamIndex, "TimeScale");
+            streamIndexTimeScale = streamIndexTimeScale ? parseFloat(streamIndexTimeScale) : timescale;
 
-            segmentTemplate.SegmentTimeline = mapSegmentTimeline.call(this, streamIndex, timescale);
+            segmentTemplate.media = mediaUrl;
+            segmentTemplate.timescale = streamIndexTimeScale;
+
+            segmentTemplate.SegmentTimeline = mapSegmentTimeline.call(this, streamIndex, segmentTemplate.timescale);
 
             return segmentTemplate;
         },
@@ -27723,7 +27727,7 @@ Mss.dependencies.MssParser = function() {
                     for (i = 0; i < adaptations.length; i++) {
                         if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
                             segments = adaptations[i].SegmentTemplate.SegmentTimeline.S_asArray;
-                            startTime = segments[0].t;
+                            startTime = segments[0].t / adaptations[i].SegmentTemplate.timescale;
                             if (timestampOffset === undefined) {
                                 timestampOffset = startTime;
                             }
@@ -27744,7 +27748,7 @@ Mss.dependencies.MssParser = function() {
                             if (!segments[j].tManifest) {
                                 segments[j].tManifest = segments[j].t;
                             }
-                            segments[j].t -= timestampOffset;
+                            segments[j].t -= (timestampOffset * adaptations[i].SegmentTemplate.timescale);
                         }
                         if (adaptations[i].contentType === 'audio' || adaptations[i].contentType === 'video') {
                             period.start = Math.max(segments[0].t, period.start);
