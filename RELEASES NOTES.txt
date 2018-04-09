@@ -1,3 +1,11 @@
+### Release Notes v1.14.2 (2018/04/09)
+* Bugs fixing:
+* - Fix reset process for protected streams (patch for MediaKeySession.close()) [#225]
+* - Fix bug when configuring robustness rules for key system access [#224]
+* - [MSS] Correct support for specific timescales (at <SmoothStreamingMedia> and <StreamIndex> levels) [#229, #230]
+* - [MSS] Correct 'subs' box writing [#231]
+* - [HLS] Correct start time support in case of HLS native playback on Safari [#223]
+
 ### Release Notes v1.14.1 (2018/02/15)
 * Bugs fixing:
 * - [HLS] Correct key error ('webkitkeyerror') handler (native HLS+FP on Safari/OSx use case)
