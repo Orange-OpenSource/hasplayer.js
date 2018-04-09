@@ -3082,7 +3082,26 @@ mp4lib.boxes.SubSampleInformationBox.prototype.constructor = mp4lib.boxes.SubSam
 
 mp4lib.boxes.SubSampleInformationBox.prototype.computeLength = function() {
     mp4lib.boxes.FullBox.prototype.computeLength.call(this);
-    // To Define if needed
+
+    this.size += mp4lib.fields.FIELD_UINT32.getLength(); //entry_count size
+    for (i = 0; i < this.entry_count; i++) {
+        this.size += mp4lib.fields.FIELD_UINT32.getLength(); //sample_delta size
+        this.size += mp4lib.fields.FIELD_UINT16.getLength(); //subsample_count size
+
+        if (this.entry[i].subsample_count > 0) {
+            for (j=0; j < this.entry[i].subsample_count; j++) {                
+                if (this.version === 1) {
+                    this.size += mp4lib.fields.FIELD_UINT32.getLength(); //subsample_size size
+                } else {
+                    this.size += mp4lib.fields.FIELD_UINT16.getLength(); //subsample_size size
+                }
+
+                this.size += mp4lib.fields.FIELD_UINT8.getLength(); //subsample_priority size
+                this.size += mp4lib.fields.FIELD_UINT8.getLength(); //discardable size
+                this.size += mp4lib.fields.FIELD_UINT32.getLength(); //reserved size
+            }
+        }
+    }
 };
 
 mp4lib.boxes.SubSampleInformationBox.prototype.read = function(data, pos, end) {
@@ -3121,7 +3140,30 @@ mp4lib.boxes.SubSampleInformationBox.prototype.read = function(data, pos, end) {
 
 mp4lib.boxes.SubSampleInformationBox.prototype.write = function(data, pos) {
     mp4lib.boxes.FullBox.prototype.write.call(this, data, pos);
-    // To Define if needed
+    var i = 0,
+        j = 0;
+
+    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry_count);
+
+    for (i = 0; i < this.entry_count; i++) {
+        this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].sample_delta);
+        this._writeData(data, mp4lib.fields.FIELD_UINT16, this.entry[i].subsample_count);
+        if (this.entry[i].subsample_count > 0) {
+
+            for (j = 0; j < this.entry[i].subsample_count; j++) {
+                if (this.version === 1) {
+                    this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].subSampleEntries[j].subsample_size);
+                } else {
+                    this._writeData(data, mp4lib.fields.FIELD_UINT16, this.entry[i].subSampleEntries[j].subsample_size);
+                }
+                this._writeData(data, mp4lib.fields.FIELD_UINT8, this.entry[i].subSampleEntries[j].subsample_priority);
+                this._writeData(data, mp4lib.fields.FIELD_UINT8, this.entry[i].subSampleEntries[j].discardable);
+                this._writeData(data, mp4lib.fields.FIELD_UINT32, this.entry[i].subSampleEntries[j].reserved);
+            }
+        }
+    }
+
+    return this.localPos;
 };
 
 mp4lib.registerTypeBoxes();
