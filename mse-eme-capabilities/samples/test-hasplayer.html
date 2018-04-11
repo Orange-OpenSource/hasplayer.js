@@ -34,25 +34,33 @@ navigator.sayswho = (function () {
 })();
 
 function onLoad() {
+    document.getElementById('result_1').innerText = '';
+    document.getElementById('result_2').innerText = '';
+    document.getElementById('result_3').innerText = '';
+    document.getElementById('result_4').innerText = '';
+
     document.getElementById('version').innerText = mseemecapabilities.getVersionFull() + ' (' + mseemecapabilities.getBuildDate() + ')';
     document.getElementById('browser').innerText = navigator.sayswho;
 
-    mseemecapabilities.hasplayerCanPlay(false).then(function (result) {
-        document.getElementById('result_1').innerText = JSON.stringify(result);
-    });
-    mseemecapabilities.hasplayerCanPlay(true).then(function (result) {
+    var setCert = document.getElementById('server_cert').checked;
+
+    // mseemecapabilities.hasplayerCanPlay(false).then(function (result) {
+    //     document.getElementById('result_1').innerText = JSON.stringify(result);
+    // });
+    mseemecapabilities.hasplayerCanPlay(true, null, setCert).then(function (result) {
         document.getElementById('result_2').innerText = JSON.stringify(result);
     });
-    mseemecapabilities.hasplayerCanPlay(false, 'HLS').then(function (result) {
-        document.getElementById('result_3').innerText = JSON.stringify(result);
-    });
-    mseemecapabilities.hasplayerCanPlay(true, 'HLS').then(function (result) {
-        document.getElementById('result_4').innerText = JSON.stringify(result);
-    });
+    // mseemecapabilities.hasplayerCanPlay(false, 'HLS').then(function (result) {
+    //     document.getElementById('result_3').innerText = JSON.stringify(result);
+    // });
+    // mseemecapabilities.hasplayerCanPlay(true, 'HLS').then(function (result) {
+    //     document.getElementById('result_4').innerText = JSON.stringify(result);
+    // });
 }
 </script>
 
 <body onload="onLoad()">
+    <div>
     <h1>WebTV-OFR / HTML5 (MSE/EME) compatibility sample</h1>
     <h2>Version: <span id='version'/></h2>
     <h2>Browser: <span id='browser'/></h2>
@@ -62,6 +70,9 @@ function onLoad() {
         <li>Can play clear HLS/FP:  <span id='result_3'/></li>
         <li>Can play encrypted HLS/FP:  <span id='result_4'/></li>
     </ul>
+    </div>
+    <div><input type="checkbox" id="server_cert" name="ServerCert" value="ServerCert">Set server certificate</div>
+    <div><button type="button" onclick="onLoad()" style="border-radius: 0;">Reload</button></div>
 </body>
 
 </html>

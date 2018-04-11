@@ -1,3 +1,6 @@
+### Release Notes v0.3.1 (2017/11/13)
+* Correct source code polyfilling (without including babel-polyfill package)
+
 ### Release Notes v0.3.0 (2017/09/26)
 * Embed media files used by method hasplayerCanPlay() into source code
 * Add methods to get version number and build date
