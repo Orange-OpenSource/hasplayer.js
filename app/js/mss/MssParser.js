@@ -567,6 +567,8 @@ Mss.dependencies.MssParser = function() {
             mpd.timescale = timescale ? parseFloat(timescale) : DEFAULT_TIME_SCALE;
             var isLive = this.domParser.getAttributeValue(smoothNode, 'IsLive');
             mpd.type = (isLive !== null && isLive.toLowerCase() === 'true') ? 'dynamic' : 'static';
+            var canSeek = this.domParser.getAttributeValue(smoothNode, 'CanSeek');          
+            mpd.canSeek = (canSeek !== null && canSeek.toLowerCase() === 'true');           
             mpd.timeShiftBufferDepth = parseFloat(this.domParser.getAttributeValue(smoothNode, 'DVRWindowLength')) / mpd.timescale;
             var duration = parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration'));
 
