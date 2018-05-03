@@ -568,8 +568,11 @@ Mss.dependencies.MssParser = function() {
             var isLive = this.domParser.getAttributeValue(smoothNode, 'IsLive');
             mpd.type = (isLive !== null && isLive.toLowerCase() === 'true') ? 'dynamic' : 'static';
             var canSeek = this.domParser.getAttributeValue(smoothNode, 'CanSeek');          
-            mpd.canSeek = (canSeek !== null && canSeek.toLowerCase() === 'true');           
-            mpd.timeShiftBufferDepth = parseFloat(this.domParser.getAttributeValue(smoothNode, 'DVRWindowLength')) / mpd.timescale;
+            //mpd.canSeek = (canSeek !== null && canSeek.toLowerCase() === 'true');           
+            var dvrWindowLength = parseFloat(this.domParser.getAttributeValue(smoothNode, 'DVRWindowLength'));
+            if (dvrWindowLength===0 && canSeek !== null && canSeek.toLowerCase() === 'true')
+                dvrWindowLength = Infinity;
+            mpd.timeShiftBufferDepth = dvrWindowLength / mpd.timescale;
             var duration = parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration'));
 
             // If live manifest with Duration, we consider it as a start-over manifest
@@ -587,7 +590,7 @@ Mss.dependencies.MssParser = function() {
             mpd.minBufferTime = MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
 
             // In case of live streams, set availabilityStartTime property according to DVRWindowLength
-            if (mpd.type === "dynamic") {
+            if (mpd.type === "dynamic" && mpd.timeShiftBufferDepth < Infinity ) {
                 mpd.availabilityStartTime = new Date(manifestLoadedTime.getTime() - (mpd.timeShiftBufferDepth * 1000));
             }
 
@@ -649,8 +652,12 @@ Mss.dependencies.MssParser = function() {
                 }
 
                 if (mpd.type === "dynamic") {
+                    // set availabilityStartTime for infinite DVR Window from segment timeline duration
+                    if (mpd.timeShiftBufferDepth===Infinity)
+                        mpd.availabilityStartTime = new Date(manifestLoadedTime.getTime() - (adaptations[1].SegmentTemplate.SegmentTimeline.duration * 1000)); 
                     // Match timeShiftBufferDepth to video segment timeline duration
                     if (mpd.timeShiftBufferDepth > 0 &&
+                        mpd.timeShiftBufferDepth !== Infinity &&
                         adaptations[i].contentType === 'video' &&
                         mpd.timeShiftBufferDepth > adaptations[i].SegmentTemplate.SegmentTimeline.duration) {
                         mpd.timeShiftBufferDepth = adaptations[i].SegmentTemplate.SegmentTimeline.duration;

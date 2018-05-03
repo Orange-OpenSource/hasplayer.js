@@ -100,7 +100,7 @@ Mss.dependencies.MssFragmentController = function() {
                 return;
             }
             // In case of live streams, update segment timeline according to DVR window
-            else if ((manifest.timeShiftBufferDepth && manifest.timeShiftBufferDepth > 0) || manifest.canSeek ) {
+            else if (manifest.timeShiftBufferDepth && manifest.timeShiftBufferDepth > 0) {
                 // Get timestamp of the last segment
                 segment = segments[segments.length - 1];
                 t = segment.t;
@@ -108,14 +108,12 @@ Mss.dependencies.MssFragmentController = function() {
                 // Determine the segments' availability start time
                 availabilityStartTime = t - (manifest.timeShiftBufferDepth * timescale);
 
-                if (manifest.timeShiftBufferDepth > 0) {
-                    // Remove segments prior to availability start time
+                // Remove segments prior to availability start time
+                segment = segments[0];
+                while (segment.t < availabilityStartTime) {
+                    this.debug.log("[MssFragmentController][" + type + "] Remove segment  - t = " + (segment.t / timescale));
+                    segments.splice(0, 1);
                     segment = segments[0];
-                    while (segment.t < availabilityStartTime) {
-                        this.debug.log("[MssFragmentController][" + type + "] Remove segment  - t = " + (segment.t / timescale));
-                        segments.splice(0, 1);
-                        segment = segments[0];
-                    }
                 }
 
                 // Update DVR window range => set range's end to end time of current segment
