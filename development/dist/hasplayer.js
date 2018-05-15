@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2018-4-9_15:11:50 / git revision : fd481d9 */
+/* Last build : 2018-5-15_9:16:23 / git revision : 0d56868 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.15.0-dev',
-        GIT_TAG = 'fd481d9',
-        BUILD_DATE = '2018-4-9_15:11:50',
+        GIT_TAG = '0d56868',
+        BUILD_DATE = '2018-5-15_9:16:23',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -27380,6 +27380,7 @@ Mss.dependencies.MssParser = function() {
                        } else {
                            prevSegment.d = segment.t - prevSegment.t;
                        }
+                       duration += prevSegment.d;
                     }
                     // Set segment absolute timestamp if not set in manifest
                     if (!segment.t) {
@@ -27392,7 +27393,9 @@ Mss.dependencies.MssParser = function() {
                     }
                 }
 
-                duration += segment.d;
+                if (segment.d) {
+                    duration += segment.d;
+                }
 
                 // Create new segment
                 segments.push(segment);
