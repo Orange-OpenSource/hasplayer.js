@@ -328,6 +328,7 @@ Mss.dependencies.MssParser = function() {
                        } else {
                            prevSegment.d = segment.t - prevSegment.t;
                        }
+                       duration += prevSegment.d;
                     }
                     // Set segment absolute timestamp if not set in manifest
                     if (!segment.t) {
@@ -340,7 +341,9 @@ Mss.dependencies.MssParser = function() {
                     }
                 }
 
-                duration += segment.d;
+                if (segment.d) {
+                    duration += segment.d;
+                }
 
                 // Create new segment
                 segments.push(segment);
