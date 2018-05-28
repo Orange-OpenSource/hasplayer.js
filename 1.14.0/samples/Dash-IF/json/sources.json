@@ -88,14 +88,14 @@
             "type": "VOD",
             "protocol": "MSS",
             "name": "VOD - SuperSpeedway",
-            "url": "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest",
+            "url": "https://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest",
             "browsers": "cdsbi"
         },
         {
             "type": "VOD",
             "protocol": "MSS",
             "name": "VOD - SuperSpeedway (PlayReady)",
-            "url": "http://playready.directtaps.net/smoothstreaming/SSWSS720H264PR/SuperSpeedway_720.ism/Manifest",
+            "url": "https://playready.directtaps.net/smoothstreaming/SSWSS720H264PR/SuperSpeedway_720.ism/Manifest",
             "browsers": "cdsbi"
         },
         {
