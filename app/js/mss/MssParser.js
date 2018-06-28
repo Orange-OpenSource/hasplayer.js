@@ -567,11 +567,11 @@ Mss.dependencies.MssParser = function() {
             mpd.timescale = timescale ? parseFloat(timescale) : DEFAULT_TIME_SCALE;
             var isLive = this.domParser.getAttributeValue(smoothNode, 'IsLive');
             mpd.type = (isLive !== null && isLive.toLowerCase() === 'true') ? 'dynamic' : 'static';
-            var canSeek = this.domParser.getAttributeValue(smoothNode, 'CanSeek');          
-            //mpd.canSeek = (canSeek !== null && canSeek.toLowerCase() === 'true');           
+            var canSeek = this.domParser.getAttributeValue(smoothNode, 'CanSeek');
             var dvrWindowLength = parseFloat(this.domParser.getAttributeValue(smoothNode, 'DVRWindowLength'));
-            if (dvrWindowLength===0 && canSeek !== null && canSeek.toLowerCase() === 'true')
+            if (dvrWindowLength === 0 && canSeek !== null && canSeek.toLowerCase() === 'true') {
                 dvrWindowLength = Infinity;
+            }
             mpd.timeShiftBufferDepth = dvrWindowLength / mpd.timescale;
             var duration = parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration'));
 
@@ -653,8 +653,9 @@ Mss.dependencies.MssParser = function() {
 
                 if (mpd.type === "dynamic") {
                     // set availabilityStartTime for infinite DVR Window from segment timeline duration
-                    if (mpd.timeShiftBufferDepth===Infinity)
-                        mpd.availabilityStartTime = new Date(manifestLoadedTime.getTime() - (adaptations[1].SegmentTemplate.SegmentTimeline.duration * 1000)); 
+                    if (mpd.timeShiftBufferDepth === Infinity) {
+                        mpd.availabilityStartTime = new Date(manifestLoadedTime.getTime() - (adaptations[1].SegmentTemplate.SegmentTimeline.duration * 1000));
+                    }
                     // Match timeShiftBufferDepth to video segment timeline duration
                     if (mpd.timeShiftBufferDepth > 0 &&
                         mpd.timeShiftBufferDepth !== Infinity &&
