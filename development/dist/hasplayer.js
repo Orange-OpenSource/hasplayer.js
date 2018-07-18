@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2018-5-15_9:16:23 / git revision : 0d56868 */
+/* Last build : 2018-7-18_14:7:0 / git revision : 5486528 */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.15.0-dev',
-        GIT_TAG = '0d56868',
-        BUILD_DATE = '2018-5-15_9:16:23',
+        GIT_TAG = '5486528',
+        BUILD_DATE = '2018-7-18_14:7:0',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -27622,7 +27622,12 @@ Mss.dependencies.MssParser = function() {
             mpd.timescale = timescale ? parseFloat(timescale) : DEFAULT_TIME_SCALE;
             var isLive = this.domParser.getAttributeValue(smoothNode, 'IsLive');
             mpd.type = (isLive !== null && isLive.toLowerCase() === 'true') ? 'dynamic' : 'static';
-            mpd.timeShiftBufferDepth = parseFloat(this.domParser.getAttributeValue(smoothNode, 'DVRWindowLength')) / mpd.timescale;
+            var canSeek = this.domParser.getAttributeValue(smoothNode, 'CanSeek');
+            var dvrWindowLength = parseFloat(this.domParser.getAttributeValue(smoothNode, 'DVRWindowLength'));
+            if (dvrWindowLength === 0 && canSeek !== null && canSeek.toLowerCase() === 'true') {
+                dvrWindowLength = Infinity;
+            }
+            mpd.timeShiftBufferDepth = dvrWindowLength / mpd.timescale;
             var duration = parseFloat(this.domParser.getAttributeValue(smoothNode, 'Duration'));
 
             // If live manifest with Duration, we consider it as a start-over manifest
@@ -27640,7 +27645,7 @@ Mss.dependencies.MssParser = function() {
             mpd.minBufferTime = MediaPlayer.dependencies.BufferExtensions.DEFAULT_MIN_BUFFER_TIME;
 
             // In case of live streams, set availabilityStartTime property according to DVRWindowLength
-            if (mpd.type === "dynamic") {
+            if (mpd.type === "dynamic" && mpd.timeShiftBufferDepth < Infinity ) {
                 mpd.availabilityStartTime = new Date(manifestLoadedTime.getTime() - (mpd.timeShiftBufferDepth * 1000));
             }
 
@@ -27702,8 +27707,13 @@ Mss.dependencies.MssParser = function() {
                 }
 
                 if (mpd.type === "dynamic") {
+                    // set availabilityStartTime for infinite DVR Window from segment timeline duration
+                    if (mpd.timeShiftBufferDepth === Infinity) {
+                        mpd.availabilityStartTime = new Date(manifestLoadedTime.getTime() - (adaptations[1].SegmentTemplate.SegmentTimeline.duration * 1000));
+                    }
                     // Match timeShiftBufferDepth to video segment timeline duration
                     if (mpd.timeShiftBufferDepth > 0 &&
+                        mpd.timeShiftBufferDepth !== Infinity &&
                         adaptations[i].contentType === 'video' &&
                         mpd.timeShiftBufferDepth > adaptations[i].SegmentTemplate.SegmentTimeline.duration) {
                         mpd.timeShiftBufferDepth = adaptations[i].SegmentTemplate.SegmentTimeline.duration;
@@ -27821,6 +27831,7 @@ Mss.dependencies.MssParser = function() {
 Mss.dependencies.MssParser.prototype = {
     constructor: Mss.dependencies.MssParser
 };
+
 /*
  * The copyright in this software module is being made available under the BSD License, included below. This software module may be subject to other third party and/or contributor rights, including patent rights, and no such rights are granted under this license.
  * The whole software resulting from the execution of this software module together with its external dependent software modules from dash.js project may be subject to Orange and/or other third party rights, including patent rights, and no such rights are granted under this license.
