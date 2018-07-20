@@ -1,3 +1,8 @@
+### Release Notes v1.15.0 (2018/07/20)
+* [MSS] Add support for live streams with infinite DVR window size [#233]
+* Bugs fixing:
+* - [MSS] Fix static manifest parsing if attribute 'd' is not defined for 1st segment [#235]
+
 ### Release Notes v1.14.2 (2018/04/09)
 * Bugs fixing:
 * - Fix reset process for protected streams (patch for MediaKeySession.close()) [#225]
