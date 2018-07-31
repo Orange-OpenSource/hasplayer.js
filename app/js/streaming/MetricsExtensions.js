@@ -217,7 +217,7 @@ MediaPlayer.dependencies.MetricsExtensions = function() {
             representationArrayIndex,
             bitrateArray = [];
 
-        if (!manifest) {
+        if (((manifest === null) || (manifest === undefined)) && ((data === null) || (data === undefined))) {
             return null;
         }
 
