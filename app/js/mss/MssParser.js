@@ -572,7 +572,7 @@ Mss.dependencies.MssParser = function() {
             mpd.type = (isLive !== null && isLive.toLowerCase() === 'true') ? 'dynamic' : 'static';
             // var canSeek = this.domParser.getAttributeValue(smoothNode, 'CanSeek');
             var dvrWindowLength = parseFloat(this.domParser.getAttributeValue(smoothNode, 'DVRWindowLength'));
-            if (dvrWindowLength === 0 || isNaN(dvrWindowLength)) {
+            if (isLive && (dvrWindowLength === 0 || isNaN(dvrWindowLength))) {
                 dvrWindowLength = Infinity;
             }
             mpd.timeShiftBufferDepth = dvrWindowLength / mpd.timescale;
