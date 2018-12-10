@@ -1,0 +1,22 @@
+### Release Notes v0.4.2 (2018/12/06)
+* Release EME session and MediaKeys at end of EME playback test
+
+### Release Notes v0.4.1 (2018/06/27)
+* Correct EME tests for IE11
+
+### Release Notes v0.4.0 (2018/04/17)
+* Add possibility to set server certificate while creating MediaKeySession for EME testing
+
+### Release Notes v0.3.1 (2017/11/13)
+* Correct source code polyfilling (without including babel-polyfill package)
+
+### Release Notes v0.3.0 (2017/09/26)
+* Embed media files used by method hasplayerCanPlay() into source code
+* Add methods to get version number and build date
+
+### Release Notes v0.2.0 (2017/09/14)
+* Build as ES6 module with namespace 'mse-emecapabilities'  
+* Add method hasplayerCanPlay() to check support for clear and/or encrypted contents with hasplayer.js
+
+### Release Notes v0.1.0 (2017/08/24)
+* First release
