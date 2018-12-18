@@ -585,7 +585,7 @@ MediaPlayer.dependencies.Stream = function() {
             // Seeking at end of stream (= duration) does not work consistently across browsers and 'ended' event is then not always raised.
             // Then seek 2 sec. backward to enable 'ended' event to be raised.
             var backoffSeekToEnd = this.config.getParam("backoffSeekToEnd", "number", 2);
-            if (duration !== Infinity && time >= (duration - backoffSeekToEnd)) {
+            if (duration !== Infinity && time > (duration - backoffSeekToEnd)) {
                 setVideoModelCurrentTime.call(this, (duration - backoffSeekToEnd));
                 return;
             }
