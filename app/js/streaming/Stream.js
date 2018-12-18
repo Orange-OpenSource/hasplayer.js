@@ -100,6 +100,8 @@ MediaPlayer.dependencies.Stream = function() {
         startStreamTime = -1,
         visibilitychangeListener,
 
+        seekToEnd = false, // prevent app going in the loop
+
         // ProtectionController events listener
         onProtectionError = function(event) {
             this.errHandler.sendError(event.data.code, event.data.message, event.data.data);
@@ -585,9 +587,12 @@ MediaPlayer.dependencies.Stream = function() {
             // Seeking at end of stream (= duration) does not work consistently across browsers and 'ended' event is then not always raised.
             // Then seek 2 sec. backward to enable 'ended' event to be raised.
             var backoffSeekToEnd = this.config.getParam("backoffSeekToEnd", "number", 2);
-            if (duration !== Infinity && time >= (duration - backoffSeekToEnd)) {
+            if (duration !== Infinity && !seekToEnd && time >= (duration - backoffSeekToEnd)) {
+                seekToEnd = true;
                 setVideoModelCurrentTime.call(this, (duration - backoffSeekToEnd));
                 return;
+            } else {
+                seekToEnd = false;
             }
 
             if (tmSpeed === 1) {
