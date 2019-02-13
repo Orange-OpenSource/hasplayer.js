@@ -14,7 +14,7 @@
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS “AS IS” AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-/* Last build : 2018-12-18_16:15:13 / git revision : d035103 */
+/* Last build : 2019-2-13_10:37:26 / git revision : ee4f98d */
 
 (function(root, factory) {
     if (typeof define === 'function' && define.amd) {
@@ -71,8 +71,8 @@ MediaPlayer = function () {
     ////////////////////////////////////////// PRIVATE ////////////////////////////////////////////
     var VERSION_DASHJS = '1.2.0',
         VERSION = '1.16.0-dev',
-        GIT_TAG = 'd035103',
-        BUILD_DATE = '2018-12-18_16:15:13',
+        GIT_TAG = 'ee4f98d',
+        BUILD_DATE = '2019-2-13_10:37:26',
         context = new MediaPlayer.di.Context(), // default context
         system = new dijon.System(), // dijon system instance
         initialized = false,
@@ -18915,7 +18915,8 @@ Hls.dependencies.HlsStream = function() {
         },
     };
 
-    var subtitlesEnabled = false,
+    var manifestUrl = null,
+        subtitlesEnabled = false,
         autoPlay = true,
         initialized = false,
         errored = false,
@@ -19027,7 +19028,8 @@ Hls.dependencies.HlsStream = function() {
         onError = function(event) {
             var error = event.target.error,
                 code,
-                message = "[Stream] <video> error: ";
+                message = "[Stream] <video> error: ",
+                data = null;
 
             if (error.code === -1) {
                 // not an error!
@@ -19048,8 +19050,14 @@ Hls.dependencies.HlsStream = function() {
                     message += "[HLS] An error has occurred in the decoding of the media resource";
                     break;
                 case 4:
-                    code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_SRC_NOT_SUPPORTED;
-                    message += "[HLS] The media could not be loaded, either because the server or network failed or because the format is not supported";
+                    // code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_SRC_NOT_SUPPORTED;
+                    // message += "[HLS] The media could not be loaded, either because the server or network failed or because the format is not supported";
+                    code = MediaPlayer.dependencies.ErrorHandler.prototype.DOWNLOAD_ERR_MANIFEST;
+                    message = "[HLS] Failed to download manifest";
+                    data = {
+                        url: manifestUrl,
+                        status: 0 // Set 0 as we have no way to get response status code
+                    };
                     break;
                 case 5:
                     code = MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_ERR_ENCRYPTED;
@@ -19059,7 +19067,7 @@ Hls.dependencies.HlsStream = function() {
 
             errored = true;
 
-            this.errHandler.sendError(code, message);
+            this.errHandler.sendError(code, message, data);
         },
 
         onSeeking = function() {
@@ -19200,7 +19208,7 @@ Hls.dependencies.HlsStream = function() {
 
                 // Raise error only if request has not been aborted by reset
                 if (!this.aborted) {
-                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_LICENSER_ERROR,"License request failed", {url: url, status: this.status, error: this.response});
+                    self.errHandler.sendError(MediaPlayer.dependencies.ErrorHandler.prototype.MEDIA_KEYMESSERR_LICENSER_ERROR, "License request failed", {url: url, status: this.status, error: this.response});
                 }
                 licenseRequest = null;
             };
@@ -19377,6 +19385,7 @@ Hls.dependencies.HlsStream = function() {
         },
 
         load: function(url) {
+            manifestUrl = url;
             if (initialStartTime >= 0) {
                 url += '#t=' + initialStartTime;
             }
