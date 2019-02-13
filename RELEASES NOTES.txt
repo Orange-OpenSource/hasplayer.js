@@ -1,3 +1,6 @@
+### Release Notes v1.15.1 (2019/02/13)
+* [HLS] Map MEDIA_ERR_SRC_NOT_SUPPORTED error to DOWNLOAD_ERR_MANIFEST error (native HLS+FP on Safari/OSx use case)
+
 ### Release Notes v1.15.0 (2018/07/20)
 * [MSS] Add support for live streams with infinite DVR window size [#233]
 * Bugs fixing:
