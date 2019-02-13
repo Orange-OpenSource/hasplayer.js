@@ -1,0 +1,144 @@
+{
+    "items": [
+        {
+            "type": "VOD",
+            "protocol": "DASH",
+            "name": "Envivio",
+            "url": "http://dash.edgesuite.net/envivio/dashpr/clear/Manifest.mpd",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "VOD",
+            "protocol": "DASH",
+            "name": "Digital Primates Segment List",
+            "url": "http://www.digitalprimates.net/dash/streams/gpac/mp4-main-multi-mpd-AV-NBS.mpd",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "VOD",
+            "protocol": "DASH",
+            "name": "Digital Primates Segment Template",
+            "url": "http://www.digitalprimates.net/dash/streams/mp4-live-template/mp4-live-mpd-AV-BS.mpd",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "VOD",
+            "protocol": "DASH",
+            "name": "Unified Streaming - Timeline",
+            "url": "http://demo.unified-streaming.com/video/ateam/ateam.ism/ateam.mpd",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "Live",
+            "protocol": "DASH",
+            "name": "Unified Streaming Live",
+             "url": "http://live.unified-streaming.com/loop/loop.isml/loop.mpd?format=mp4&session_id=25020",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "VOD",
+            "protocol": "DASH",
+            "name": "Microsoft #1",
+            "url": "http://wams.edgesuite.net/media/SintelTrailer_MP4_from_WAME/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "VOD",
+            "protocol": "DASH",
+            "name": "Microsoft #2",
+            "url": "http://wams.edgesuite.net/media/SintelTrailer_Smooth_from_WAME/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "VOD",
+            "protocol": "DASH",
+            "name": "Microsoft #3",
+            "url": "http://wams.edgesuite.net/media/SintelTrailer_Smooth_from_WAME_720p_Main_Profile/sintel_trailer-720p.ism/manifest(format=mpd-time-csf)",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "VOD",
+            "protocol": "DASH",
+            "name": "Microsoft #4",
+            "url": "http://wams.edgesuite.net/media/MPTExpressionData01/ElephantsDream_1080p24_IYUV_2ch.ism/manifest(format=mpd-time-csf)",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "VOD",
+            "protocol": "DASH",
+            "name": "Microsoft #5",
+            "url": "http://wams.edgesuite.net/media/MPTExpressionData02/BigBuckBunny_1080p24_IYUV_2ch.ism/manifest(format=mpd-time-csf)",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "VOD",
+            "protocol": "DASH",
+            "name": "Microsoft Cenc #1",
+            "url": "http://wams.edgesuite.net/media/SintelTrailer_Smooth_from_WAME_720p_Main_Profile_CENC/CENC/sintel_trailer-720p.ism/manifest(format=mpd-time-csf)",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "VOD",
+            "protocol": "DASH",
+            "name": "Microsoft Cenc #4",
+            "url": "http://wams.edgesuite.net/media/SintelTrailer_Smooth_from_WAME_CENC/CENC/sintel_trailer-1080p.ism/manifest(format=mpd-time-csf)",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "VOD",
+            "protocol": "MSS",
+            "name": "VOD - SuperSpeedway",
+            "url": "http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "VOD",
+            "protocol": "MSS",
+            "name": "VOD - SuperSpeedway (PlayReady)",
+            "url": "http://playready.directtaps.net/smoothstreaming/SSWSS720H264PR/SuperSpeedway_720.ism/Manifest",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "VOD",
+            "protocol": "MSS",
+            "name": "VOD - Elephants Dream (multi-audio/text)",
+            "url": "http://harmonic.e2e.purpledrm.com.edgesuite.net:80/Content/SS/VOD/yjO9VXw7-ElephantsDreamH264720p/ElephantsDream.ism/Manifest",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "Live",
+            "protocol": "MSS",
+            "name": "LIVE - Big Buck Bunny",
+            "url": "http://2is7server1.rd.francetelecom.com/C4/C4-51_BBB.isml/Manifest",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "VOD",
+            "protocol": "HLS",
+            "name":"Back to the Mac",
+            "url":"http://qthttp.apple.com.edgesuite.net/1010qwoeiuryfg/sl.m3u8",
+            "browsers":"cdsbi"
+        },
+        {
+            "type": "Live",
+            "protocol": "HLS",
+            "name": "Big Buck Bunny (AES128)",
+            "url": "http://apache1.rd.francetelecom.com/BBB/index.m3u8",
+            "browsers": "cdsbi"
+        },
+        {
+            "type": "Live",
+            "protocol": "HLS",
+            "name": "HLS+FP (Sample)",
+            "url": "https://s3.amazonaws.com/shift72-temp/hls_fps_bento4_sintel/master.m3u8",
+            "browsers": "cdsbi",
+            "protData": {
+                "com.apple.fps.1_0": {
+                    "laURL": "https://staging-solo.shift72.com/services/license/fairplay/cenc/fallback",
+                    "requestType": "text",
+                    "serverCertificate": "MIIE6DCCA9CgAwIBAgIID828Ey6J/VYwDQYJKoZIhvcNAQEFBQAwfzELMAkGA1UEBhMCVVMxEzARBgNVBAoMCkFwcGxlIEluYy4xJjAkBgNVBAsMHUFwcGxlIENlcnRpZmljYXRpb24gQXV0aG9yaXR5MTMwMQYDVQQDDCpBcHBsZSBLZXkgU2VydmljZXMgQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkwHhcNMTcwMzIxMDI1ODI4WhcNMTkwMzIyMDI1ODI4WjBqMQswCQYDVQQGEwJVUzEYMBYGA1UECgwPU0hJRlQ3MiBMaW1pdGVkMRMwEQYDVQQLDApKVEE0Q1E5UzZHMSwwKgYDVQQDDCNGYWlyUGxheSBTdHJlYW1pbmc6IFNISUZUNzIgTGltaXRlZDCBnzANBgkqhkiG9w0BAQEFAAOBjQAwgYkCgYEAxpV7P7sJQxNDJ96mnsJ9NpyAXgGZWYI44jNkGY4cHMHVNTMEZSnIGcMFkULuHei8bF7aXbEkN9JYeM0RQ8L5UjolasC7ZukiulAp4DOXT13CjLvOLrWgofwRRh+ln1DFFjwgMmt88XQsELxVUXs6QZJ8SAHy6kDIxvdmkgD6glUCAwEAAaOCAf8wggH7MB0GA1UdDgQWBBSiq8XFFM7pvz+gWvj3sqbQ3vPspDAMBgNVHRMBAf8EAjAAMB8GA1UdIwQYMBaAFGPkR1TLhXFZRiyDrMxEMWRnAyy+MIHiBgNVHSAEgdowgdcwgdQGCSqGSIb3Y2QFATCBxjCBwwYIKwYBBQUHAgIwgbYMgbNSZWxpYW5jZSBvbiB0aGlzIGNlcnRpZmljYXRlIGJ5IGFueSBwYXJ0eSBhc3N1bWVzIGFjY2VwdGFuY2Ugb2YgdGhlIHRoZW4gYXBwbGljYWJsZSBzdGFuZGFyZCB0ZXJtcyBhbmQgY29uZGl0aW9ucyBvZiB1c2UsIGNlcnRpZmljYXRlIHBvbGljeSBhbmQgY2VydGlmaWNhdGlvbiBwcmFjdGljZSBzdGF0ZW1lbnRzLjA1BgNVHR8ELjAsMCqgKKAmhiRodHRwOi8vY3JsLmFwcGxlLmNvbS9rZXlzZXJ2aWNlcy5jcmwwDgYDVR0PAQH/BAQDAgUgMEIGCyqGSIb3Y2QGDQEDAQH/BDABcnh0dHp3a2gzNWxoZmhncGt3MnYwYWlranlocXBnOXhnMm1ubnlmenpyYzZ6MXAwOwYLKoZIhvdjZAYNAQQBAf8EKQF5b3oxMXFibnFzc2d4cWl2aW1ianFjNzVlY3B6eXZ0a2V4ZjhmMm1tMA0GCSqGSIb3DQEBBQUAA4IBAQDCT5EfYh1xGp9hioTZt65/6Q1Xua37lQwgR83kolbbQGss8nIzez2nizT3mfCWOz6BCucuNLNSqeEMu3pn75rrJFHMlz5X8AEyLa828SQ/tlxH5zFYpfTVbGkMIw6awdssTiTmScLIwooHjFgcXu0dtqoBUrCrXWVHfiSlQA+QEo4BzFkKvAfWtXpDGEBYl+kbmoEFwzwCPhO7bWXbxUPkBVe8YpdSN+TZZDoZNo/2nZ/cEnBmo+W6InkPz8gwmNRrCJjhx94AVhxyf5ZjJ057RryNXDlLMIygiPfhciZ0PFi+MBA+P3sEwo2PaZxsqu44qyLl63AdFvItJiI9JgGn"
+                }
+            }
+        }
+    ]
+}
