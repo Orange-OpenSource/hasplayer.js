@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>Monitoring stream example</title>
+
+    <script src="dash.all.debug.js"></script>
+
+    <script class="code">
+        function init() {
+            var video,
+                player,
+                url = "https://dash.akamaized.net/akamai/bbb_30fps/bbb_30fps.mpd";
+
+            video = document.querySelector("video");
+            player = dashjs.MediaPlayer().create();
+
+            video.addEventListener('waiting', function() {
+                document.getElementById('state').innerText = 'waiting';}
+            );
+            video.addEventListener('playing', function() {
+                document.getElementById('state').innerText = 'playing';
+            });
+            // video.addEventListener('timeupdate', function() {
+            //     document.getElementById('videoBufferLevel').innerText = player.getBufferLength('video');
+            //     document.getElementById('audioBufferLevel').innerText = player.getBufferLength('audio');
+            // });
+
+            player.on('metricAdded', function (e) {
+                if (e.metric === 'BufferLevel') {
+                    if (e.mediaType === 'video') {
+                        document.getElementById('videoBufferLevel').innerText = (e.value.level / 1000).toFixed(3);
+                    }
+                    if (e.mediaType === 'audio') {
+                        document.getElementById('audioBufferLevel').innerText = (e.value.level / 1000).toFixed(3);
+                    }
+                }
+            });
+
+            player.initialize(video, url, true);
+            player.getDebug().setLogToBrowserConsole(true);
+            player.getDebug().setLogLevel(5);
+            player.setMaxAllowedBitrateFor('video', 10000);
+        }
+    </script>
+
+    <style>
+        video {
+            width: 640px;
+            height: 360px;
+        }
+        
+        #container {
+            display: inline-block;
+            background-color: white;
+        }
+
+        #container > div {
+            display: inline-block;
+            float: left;
+            margin-right: 10px;
+        }
+        
+    </style>
+</head>
+<body>
+<div id="container">
+    <div class="video-container">
+        <video  data-dashjs-player autoplay controls="true">
+        </video>
+    </div>
+    <div>
+        <strong>Video buffer level:</strong><span id="videoBufferLevel"></span>
+        <br />
+        <strong>Audio buffer level:</strong><span id="audioBufferLevel"></span>
+        <br />
+        <strong>Playback state:</strong><span id="state"></span>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        init();
+    });
+</script>
+</body>
+</html>
+
+
