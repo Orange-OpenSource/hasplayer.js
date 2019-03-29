@@ -44,10 +44,6 @@ function onLoad() {
 
     var setCert = document.getElementById('server_cert').checked;
 
-    // mseemecapabilities.hasplayerCanPlay(true, null, setCert).then(function (result) {
-    //     document.getElementById('result_2').innerText = JSON.stringify(result);
-    // });
-
     mseemecapabilities.hasplayerCanPlay(false).then(function (result) {
         document.getElementById('result_1').innerText = JSON.stringify(result);
 
