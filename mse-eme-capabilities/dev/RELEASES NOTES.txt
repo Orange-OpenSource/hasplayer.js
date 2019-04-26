@@ -1,3 +1,6 @@
+### Release Notes v0.5.2 (2019/04/01)
+* Fix EME capabilities checking for Safari browser (iOS 12.2+ and macOS 10.14.4+)
+
 ### Release Notes v0.5.1 (2018/12/31)
 * Hide video elements used for MSE or EME playback tests
 
