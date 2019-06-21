@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='utf-8'/>
+    <title>OnePlayer.js example</title>
+
+    <script src='../dist/oneplayer-all.js'></script>
+
+    <script>
+
+        var video,
+            player = null,
+            manifest = null,
+            adsUrl = null,
+            metricsUrl = null,
+            debug = false,
+            currentTime;
+
+        function onLoadedmetadata (e) {
+            console.log('video tracks: ', player.getTracksForType('video'));
+            console.log('audio tracks: ', player.getTracksForType('audio'));
+            console.log('text  tracks: ', player.getTracksForType('text'));
+        }
+
+        function onPlayerError (e) {
+            console.log('OnePlayer error: ', e.detail);
+            if (e.detail.code === 21) {
+                setTimeout(function() {
+                    if (player.isLive()) {
+                        load();
+                    } else {
+                        player.seek(e.detail.data.segmentTime + (e.detail.data.segmentDuration * 1.5));
+                    }
+                }, (e.detail.data.segmentDuration * 1.5) * 1000);
+            }
+        }
+
+        function onAdError (e) {
+            console.log('AdError: ', e.detail);
+        }
+
+        function onAdStart (e) {
+            console.log('AdStart: ', e.detail);
+            currentTime = e.detail.currentTime;
+            player.stop(true, false);
+        }
+
+        function onAdEnd (e) {
+            console.log('AdEnd');
+            player.load({
+                url: manifest,
+                type: oneplayer.ServiceType.LIVE,
+                protocol: oneplayer.HasProtocol.MSS,
+                startTime: currentTime
+            }, false);
+        }
+
+        function init() {
+
+            manifest = 'http://2is7server2.rd.francetelecom.com/hasplayer/VOD_1/VOD_1.ism/manifest';
+            // manifest = 'http://2is7server2.rd.francetelecom.com/hasplayer/LIVE_1.isml/manifest';
+            // manifest = 'https://dash.akamaized.net/envivio/EnvivioDash3/manifest.mpd';
+            // manifest = 'https://bitmovin-a.akamaihd.net/content/sintel/hls/playlist.m3u8';
+            // manifest = 'http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest';
+            var paramManifest = getUrlParameter('manifest');
+            if (paramManifest) {
+                manifest = paramManifest;
+            }
+            document.getElementById('manifest').value = manifest;
+
+            adsUrl = 'http://tv-has.orange-labs.fr/adserver/mast-vast/MAST-01_preroll.xml';
+            // adsUrl = 'http://tv-has.orange-labs.fr/adserver/mast-vast/MAST-02_midroll.xml';
+            // adsUrl = 'http://tv-has.orange-labs.fr/adserver/mast-vast/France2/mast.xml';
+            document.getElementById('adsurl').value = adsUrl;
+
+            metricsUrl = 'http://localhost:3004/metrics';
+            document.getElementById('metricsurl').value = metricsUrl;
+
+            console.log('oneplayer.js v' + oneplayer.OnePlayer.getVersion());
+            if (player !== null) {
+                player.reset();
+                player = null;
+            }
+            video = document.querySelector('video');
+            oneplayer.OnePlayer.create(oneplayer.PlayerType.DASHJS, video, document.getElementById('video-caption')).then(function(p) {
+            // oneplayer.OnePlayer.create(oneplayer.PlayerType.HLSFP, video, document.getElementById('video-caption')).then(function(p) {
+                player = p;
+                player.enableLogs(false);
+                player.enableLastMediaSettingsCaching(true);
+                video.addEventListener('loadedmetadata', onLoadedmetadata);
+                video.addEventListener('player_error', onPlayerError);
+                video.addEventListener('ad_error', onAdError);
+                video.addEventListener('ad_start', onAdStart);
+                video.addEventListener('ad_end', onAdEnd);
+            })
+        }
+
+        function addAdInsertionPlugin () {
+            oneplayer.OnePlayer.addPlugin(player, oneplayer.PluginType.ADINSERTION, {
+                'adsRenderingDiv': document.getElementById('adsplayer-container'),
+                'handleMainPlayerPlayback': false
+            });
+        }
+
+        function addMetricsPlugin () {
+            oneplayer.OnePlayer.addPlugin(player, oneplayer.PluginType.METRICS, {
+                serverUrl: metricsUrl,
+                sendingTime: 300000
+            });
+        }
+
+        function reset() {
+            if (player !== null) {
+                player.reset();
+                player = null;
+            }
+        }
+
+        function load() {
+            manifest = document.getElementById('manifest').value;
+            adsUrl = document.getElementById('adsurl').value;
+            metricsUrl = document.getElementById('metricsurl').value;
+            player.load({
+                url: manifest,
+                type: oneplayer.ServiceType.LIVE,
+                protocol: oneplayer.HasProtocol.MSS,
+                adsUrl: adsUrl,
+                metricsUrl: metricsUrl
+            });
+        }
+
+        function stop() {
+            if (player !== null) {
+                player.stop();
+            }
+        }
+
+        function showDebug() {
+            debug = !debug;
+            player.showDebug(debug);
+        }
+
+        function applyPlaybackSpeed () {
+            player.setPlaybackSpeed(parseFloat(document.getElementById('speed').value));
+        }
+
+        function getUrlParameter(name) {
+            name = name.replace(/[\[\]]/g, '\\$&');
+            var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+                results = regex.exec(window.location.href);
+            if (!results) {
+                return null;
+            } 
+            if (!results[2]) {
+                return '';
+            }
+            return decodeURIComponent(results[2].replace(/\+/g, ' '));
+        }        
+    </script>
+
+    <style>
+        video {
+            width: 1280px;
+            height: 720px;
+        }
+    </style>
+    </head>
+    <body>
+        <div>
+            <input type='text' id='manifest' style='width: 50%'/>
+            <button id='load' onclick='load()'>LOAD</button>
+            <button id='stop' onclick='stop()'>STOP</button>
+            <button id='reset' onclick='reset()'>RESET</button>
+            <button id='init' onclick='init()'>INIT</button>
+            <button id='debug' onclick='showDebug()'>DEBUG</button>
+        </div>
+        <div>
+            <input type='checkbox' id='adinsertion' onclick='addAdInsertionPlugin()'/><label for='adinsertion'>Ad-insertion</label>
+            <input type='text' id='adsurl' style='width: 40%'/>
+        </div>
+        <div>
+            <input type='checkbox' id='metrics' onclick='addMetricsPlugin()'/><label for='metrics'>Metrics</label>
+            <input type='text' id='metricsurl' style='width: 40%'/>
+        </div>
+        <div id='player' style='position: relative;'>
+            <video controls autoplay></video>
+            <div id='adsplayer-container'></div>
+            <div id='video-caption'></div>
+        </div>
+        <div id='controls'>
+            <div>Playback Speed: <input type='text' id='speed'/></div>
+        </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                init();
+            });
+            document.getElementById('speed').addEventListener('keyup', function (event) {
+                if (event.key !== 'Enter') return;
+                applyPlaybackSpeed();
+                event.preventDefault();
+            });
+        </script>
+    </body>
+</html>
