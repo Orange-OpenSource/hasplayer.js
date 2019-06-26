@@ -10,6 +10,7 @@ export declare class DashJSPlayer extends DefaultPlayer implements IPlayer {
     private defaultSettings;
     private audioSettings;
     private downloadError;
+    private plugin;
     private ttmlController;
     /**
      * Constructor.
