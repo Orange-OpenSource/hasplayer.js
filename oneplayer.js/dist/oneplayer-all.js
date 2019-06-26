@@ -52413,8 +52413,8 @@ var Types_1 = __webpack_require__(/*! ../Types */ "./src/Types.ts");
 var Errors_1 = __webpack_require__(/*! ../Errors */ "./src/Errors.ts");
 var TTMLController_1 = __webpack_require__(/*! ./TTMLController */ "./src/dashjs/TTMLController.ts");
 var dashjs = __webpack_require__(/*! dashjs */ "./node_modules/dashjs/build/es5/index.js");
-__webpack_require__(/*! youbora-adapter-dashjs */ "./node_modules/youbora-adapter-dashjs/src/adapter.js");
 var youbora = __webpack_require__(/*! youboralib */ "./node_modules/youboralib/src/youboralib.js");
+__webpack_require__(/*! youbora-adapter-dashjs */ "./node_modules/youbora-adapter-dashjs/src/adapter.js");
 var DASHJS_PLAYER_NOT_INITIALIZED_ERROR = 'DashJS player not initialized!';
 var DEFAULT_SETTINGS = {
     'MSS': {
