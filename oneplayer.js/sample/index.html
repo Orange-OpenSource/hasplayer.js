@@ -91,7 +91,7 @@
             video = document.querySelector('video');
             oneplayer.OnePlayer.create((isSafari? oneplayer.PlayerType.HLSFP : oneplayer.PlayerType.DASHJS), video, document.getElementById('video-caption')).then(function(p) {
                 player = p;
-                //player.setLogLevel(4);
+                player.setLogLevel(4);
                 player.enableLastMediaSettingsCaching(true);
                 video.addEventListener('loadedmetadata', onLoadedmetadata);
                 video.addEventListener('player_error', onPlayerError);
