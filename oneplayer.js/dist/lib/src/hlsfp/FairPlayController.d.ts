@@ -12,10 +12,6 @@ export declare class FairPlayController {
     private keyMessageListener;
     private keyAddedListener;
     private keyErrorListener;
-    /**
-     * Constructor.
-     */
-    constructor();
     init(videoElement: HTMLMediaElement, protectionData: ProtectionData): void;
     reset(): void;
     enableLogs(enable: boolean): void;

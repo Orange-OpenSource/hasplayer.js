@@ -1,3 +1,7 @@
+### Release Notes v0.12.1 (2019/06/26)
+* Bugs fixing:
+* - [hls-fp] Fix withCredentials support for license requests 
+
 ### Release Notes v0.12.0 (2019/06/17)
 * Add API method IPlayer.getTracks()
 * [dash.js] Update version (v2.9.3-o.6)

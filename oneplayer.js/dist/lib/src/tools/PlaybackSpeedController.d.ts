@@ -7,10 +7,6 @@ export declare class PlaybackSpeedController {
     private seekTimeout;
     private onSeekedListener;
     private playPromise;
-    /**
-     * Constructor.
-     */
-    constructor();
     init(videoElement: HTMLMediaElement): void;
     reset(): void;
     setSpeed(speed: number): void;

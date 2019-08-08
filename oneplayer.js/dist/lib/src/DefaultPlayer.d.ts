@@ -16,10 +16,6 @@ export declare abstract class DefaultPlayer implements IPlayer {
     protected debugController: DebugController;
     protected plugins: IPlugin[];
     protected logsEnabled: boolean;
-    /**
-     * Constructor.
-     */
-    constructor();
     abstract getVersion(): string;
     abstract getPlayerType(): PlayerType;
     init(videoElement: HTMLElement, ttmlRenderingDiv?: HTMLDivElement): Promise<any>;
@@ -29,7 +25,7 @@ export declare abstract class DefaultPlayer implements IPlayer {
     abstract addEventListener(type: string, listener: any, scope?: object): any;
     abstract removeEventListener(type: string, listener: any, scope?: object): any;
     reset(): void;
-    load(stream: StreamInfo, loadPlugins?: boolean): void;
+    load(stream: StreamInfo, loadPlugins?: boolean): Promise<void>;
     abstract play(): any;
     abstract pause(): any;
     abstract seek(time: number): any;
@@ -57,7 +53,7 @@ export declare abstract class DefaultPlayer implements IPlayer {
     abstract setDefaultTextEnabled(enable: boolean): any;
     addPlugin(type: PluginType, config?: object): void;
     showDebug(show: boolean, debugRenderingDiv?: HTMLDivElement): void;
-    protected loadStream(stream: StreamInfo): void;
+    protected loadStream(stream: StreamInfo): Promise<void>;
     protected abstract limitToLowestBitrate(state: boolean): any;
     protected sendErrorEvent(code: PlayerErrorCode, extMessage?: string, data?: object): void;
     protected storeDefaultLanguage(type: MediaType, lang: string): void;

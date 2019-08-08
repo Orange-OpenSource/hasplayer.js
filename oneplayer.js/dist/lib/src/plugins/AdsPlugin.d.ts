@@ -11,10 +11,6 @@ export declare class AdsPlugin implements IPlugin {
     private adsPlayer;
     private adsRenderingDiv;
     private handleMainPlayerPlayback;
-    /**
-     * Constructor.
-     */
-    constructor();
     getType(): string;
     getVersion(): string;
     init(player: IPlayer, videoElement: HTMLMediaElement, config: object): void;

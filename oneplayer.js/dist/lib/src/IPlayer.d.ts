@@ -61,11 +61,11 @@ export interface IPlayer {
      * @param {StreamInfo} stream - input stream properties
      * @param {boolean} loadPlugins - true to signal to plugin a new stream is being to be loaded, false otherwise (true by default)
      */
-    load(stream: StreamInfo, loadPlugins?: boolean): any;
+    load(stream: StreamInfo, loadPlugins?: boolean): Promise<void>;
     /**
-    * Play/resume playback of the media.
-    */
-    play(): any;
+     * Play/resume playback of the media.
+     */
+    play(): Promise<void>;
     /**
      * Pause playback of the media.
      */

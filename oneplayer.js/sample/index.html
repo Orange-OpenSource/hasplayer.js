@@ -16,6 +16,8 @@
             debug = false,
             currentTime;
 
+        var isSafari = navigator.userAgent.indexOf('Mac OS') !== -1;
+
         function onLoadedmetadata (e) {
             console.log('video tracks: ', player.getTracksForType('video'));
             console.log('audio tracks: ', player.getTracksForType('audio'));
@@ -62,6 +64,11 @@
             // manifest = 'https://dash.akamaized.net/envivio/EnvivioDash3/manifest.mpd';
             // manifest = 'https://bitmovin-a.akamaihd.net/content/sintel/hls/playlist.m3u8';
             // manifest = 'http://playready.directtaps.net/smoothstreaming/SSWSS720H264/SuperSpeedway_720.ism/Manifest';
+
+            if (isSafari) {
+                manifest = 'https://bitmovin-a.akamaihd.net/content/sintel/hls/playlist.m3u8';
+            }
+
             var paramManifest = getUrlParameter('manifest');
             if (paramManifest) {
                 manifest = paramManifest;
@@ -82,10 +89,9 @@
                 player = null;
             }
             video = document.querySelector('video');
-            oneplayer.OnePlayer.create(oneplayer.PlayerType.DASHJS, video, document.getElementById('video-caption')).then(function(p) {
-            // oneplayer.OnePlayer.create(oneplayer.PlayerType.HLSFP, video, document.getElementById('video-caption')).then(function(p) {
+            oneplayer.OnePlayer.create((isSafari? oneplayer.PlayerType.HLSFP : oneplayer.PlayerType.DASHJS), video, document.getElementById('video-caption')).then(function(p) {
                 player = p;
-                player.enableLogs(false);
+                player.setLogLevel(4);
                 player.enableLastMediaSettingsCaching(true);
                 video.addEventListener('loadedmetadata', onLoadedmetadata);
                 video.addEventListener('player_error', onPlayerError);

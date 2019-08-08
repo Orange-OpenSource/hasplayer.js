@@ -12,6 +12,7 @@ export declare class HlsFpPlayer extends DefaultPlayer implements IPlayer {
     private defaultTextEnabled;
     private selectedTextTrackId;
     private loadedmetadataListener;
+    private stateChangedListener;
     private canplayListener;
     private seekedListener;
     private errorListener;
@@ -27,7 +28,7 @@ export declare class HlsFpPlayer extends DefaultPlayer implements IPlayer {
     addEventListener(type: string, listener: any, scope?: object): void;
     removeEventListener(type: string, listener: any, scope?: object): void;
     reset(): void;
-    play(): void;
+    play(): Promise<void>;
     pause(): void;
     seek(time: number): void;
     stop(reset?: boolean, stopPlugins?: boolean): void;
@@ -45,7 +46,7 @@ export declare class HlsFpPlayer extends DefaultPlayer implements IPlayer {
     enableText(enable: boolean): void;
     isTextEnabled(): boolean;
     setDefaultTextEnabled(enable: boolean): void;
-    protected loadStream(stream: StreamInfo): void;
+    protected loadStream(stream: StreamInfo): Promise<void>;
     protected limitToLowestBitrate(state: boolean): void;
     private getVideoTracks;
     private getAudioTracks;
@@ -57,7 +58,8 @@ export declare class HlsFpPlayer extends DefaultPlayer implements IPlayer {
     private audioTrackToMediaInfo;
     private textTrackToMediaInfo;
     private onLoadedmetadata;
-    private onCanPlay;
+    private onStateChanged;
     private onSeeked;
     private onError;
+    private debug;
 }

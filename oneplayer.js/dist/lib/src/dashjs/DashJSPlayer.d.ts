@@ -1,7 +1,7 @@
 import { IPlayer } from '../IPlayer';
 import { DefaultPlayer } from '../DefaultPlayer';
 import { PlayerType, StreamInfo, MediaType, TrackInfo } from '../Types';
-import * as dashjs from 'dashjs';
+import dashjs from 'dashjs';
 /**
  * Dash.js player
  */
@@ -10,7 +10,6 @@ export declare class DashJSPlayer extends DefaultPlayer implements IPlayer {
     private defaultSettings;
     private audioSettings;
     private downloadError;
-    private plugin;
     private ttmlController;
     /**
      * Constructor.
@@ -25,7 +24,7 @@ export declare class DashJSPlayer extends DefaultPlayer implements IPlayer {
     removeEventListener(type: string, listener: any, scope?: object): void;
     reset(): void;
     getMetricsFor(type: MediaType): dashjs.MetricsList;
-    play(): void;
+    play(): Promise<void>;
     pause(): void;
     seek(time: number): void;
     stop(reset?: boolean, stopPlugins?: boolean): void;
@@ -43,7 +42,7 @@ export declare class DashJSPlayer extends DefaultPlayer implements IPlayer {
     enableText(enable: boolean): void;
     isTextEnabled(): boolean;
     setDefaultTextEnabled(enable: boolean): void;
-    protected loadStream(stream: StreamInfo): void;
+    protected loadStream(stream: StreamInfo): Promise<void>;
     protected limitToLowestBitrate(state: boolean): void;
     private checkInitialized;
     private getDefaultSettings;

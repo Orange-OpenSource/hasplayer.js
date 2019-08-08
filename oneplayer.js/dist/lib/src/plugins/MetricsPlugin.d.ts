@@ -6,10 +6,6 @@ import { IPlayer } from '../IPlayer';
  */
 export declare class MetricsPlugin implements IPlugin {
     private metricsAgent;
-    /**
-     * Constructor.
-     */
-    constructor();
     getType(): string;
     getVersion(): string;
     init(player: IPlayer, videoElement: HTMLMediaElement, config: object): void;
