@@ -7,15 +7,12 @@ export declare class FairPlayController {
     private keySystemConfiguration;
     private mediaKeySession;
     private licenseRequest;
-    private logsEnabled;
     private needKeyListener;
     private keyMessageListener;
     private keyAddedListener;
     private keyErrorListener;
     init(videoElement: HTMLMediaElement, protectionData: ProtectionData): void;
     reset(): void;
-    enableLogs(enable: boolean): void;
-    private debug;
     private sendErrorEvent;
     private stringToArray;
     private getChallengeFormatType;

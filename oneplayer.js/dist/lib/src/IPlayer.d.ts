@@ -1,4 +1,4 @@
-import { PlayerType, StreamInfo, MediaType, TrackInfo } from './Types';
+import { PlayerType, StreamInfo, MediaType, TrackInfo, LogLevel } from './Types';
 export interface IPlayer {
     /**
      * Returns version number/information from the wrapped player.
@@ -23,11 +23,6 @@ export interface IPlayer {
      * @param {object} config - the configuration parameters
      */
     setConfig(params: object): any;
-    /**
-     * Enable/disable player log messages.
-     * @param {boolean} enable - true to enable log messages, false to disable log messages
-     */
-    enableLogs(enable: boolean): any;
     /**
      * Enable/disable caching last media settings such as last audio and text selected language and text tracks state.
      * When enabling caching, the settings are stored in local storage (if enabled)
@@ -60,10 +55,14 @@ export interface IPlayer {
      * Load/open a video stream and start playback.
      * @param {StreamInfo} stream - input stream properties
      * @param {boolean} loadPlugins - true to signal to plugin a new stream is being to be loaded, false otherwise (true by default)
+     * @return {Promise} a promise which is resolved when playback has been started, or is rejected if for any reason playback cannot be started
+     * (for example 'NotAllowedError' when the user agent (browser) requires the user to explicitly start media playback by clicking a "play" button)
      */
     load(stream: StreamInfo, loadPlugins?: boolean): Promise<void>;
     /**
      * Play/resume playback of the media.
+     * @return {Promise} a promise which is resolved when playback has been started, or is rejected if for any reason playback cannot be started
+     * (for example 'NotAllowedError' when the user agent (browser) requires the user to explicitly start media playback by clicking a "play" button)
      */
     play(): Promise<void>;
     /**
@@ -110,10 +109,10 @@ export interface IPlayer {
      */
     getTime(): number;
     /**
-     * Returns the list of tracks for a given media type
+     * Returns the list of tracks for all media types (video, audio and text)
      * @returns {object} the list of {@link TrackInfo} for each media type
      */
-    getTracks(type: MediaType): object;
+    getTracks(): object;
     /**
      * Returns the list of tracks for a given media type
      * @param {MediaType} - the media type
@@ -175,6 +174,11 @@ export interface IPlayer {
      * @param {boolean} enable - true if text tracks are enabled by default
      */
     setDefaultTextEnabled(enable: boolean): any;
+    /**
+     * Set level for filtering log messages.
+     * @param {LogLevel} level - the log level
+     */
+    setLogLevel(level: LogLevel): any;
     /**
      * Displays over video element the advanced debug/metrics window
      * @param {boolean} show - true to display the advanced debug/metrics window, false to hide/remove it

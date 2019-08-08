@@ -1,4 +1,4 @@
-import { PlayerType, StreamInfo, MediaType, TrackInfo, PluginType } from './Types';
+import { PlayerType, StreamInfo, MediaType, TrackInfo, PluginType, LogLevel } from './Types';
 import { IPlayer } from './IPlayer';
 import { PlayerErrorCode } from './Errors';
 import { IPlugin } from './plugins/IPlugin';
@@ -15,12 +15,11 @@ export declare abstract class DefaultPlayer implements IPlayer {
     protected playbackSpeedController: PlaybackSpeedController;
     protected debugController: DebugController;
     protected plugins: IPlugin[];
-    protected logsEnabled: boolean;
+    constructor();
     abstract getVersion(): string;
     abstract getPlayerType(): PlayerType;
     init(videoElement: HTMLElement, ttmlRenderingDiv?: HTMLDivElement): Promise<any>;
     abstract setConfig(params: object): any;
-    enableLogs(enable: boolean): void;
     enableLastMediaSettingsCaching(enable: boolean, key?: string): void;
     abstract addEventListener(type: string, listener: any, scope?: object): any;
     abstract removeEventListener(type: string, listener: any, scope?: object): any;
@@ -35,11 +34,7 @@ export declare abstract class DefaultPlayer implements IPlayer {
     abstract getDuration(): number;
     abstract isLive(): any;
     abstract getTime(): number;
-    /**
-     * Returns the list of tracks for a given media type
-     * @returns {object} the list of {@link TrackInfo} for each media type
-     */
-    getTracks(type: MediaType): object;
+    getTracks(): object;
     abstract getTracksForType(type: MediaType): TrackInfo[];
     abstract getSelectedTrackForType(type: MediaType): TrackInfo;
     abstract getQualityForType(type: MediaType): number;
@@ -52,6 +47,7 @@ export declare abstract class DefaultPlayer implements IPlayer {
     abstract isTextEnabled(): boolean;
     abstract setDefaultTextEnabled(enable: boolean): any;
     addPlugin(type: PluginType, config?: object): void;
+    setLogLevel(level: LogLevel): void;
     showDebug(show: boolean, debugRenderingDiv?: HTMLDivElement): void;
     protected loadStream(stream: StreamInfo): Promise<void>;
     protected abstract limitToLowestBitrate(state: boolean): any;

@@ -4,8 +4,8 @@ export declare class DebugController {
     private player;
     private debugPanel;
     private debug;
-    private verbose;
     private onKeyPressedListener;
+    private version;
     /**
      * Constructor.
      */

@@ -13,7 +13,6 @@ export declare class HlsFpPlayer extends DefaultPlayer implements IPlayer {
     private selectedTextTrackId;
     private loadedmetadataListener;
     private stateChangedListener;
-    private canplayListener;
     private seekedListener;
     private errorListener;
     /**
@@ -24,7 +23,6 @@ export declare class HlsFpPlayer extends DefaultPlayer implements IPlayer {
     getPlayerType(): PlayerType;
     init(videoElement: HTMLElement, ttmlRenderingDiv?: HTMLDivElement): Promise<any>;
     setConfig(params: object): void;
-    enableLogs(enable: boolean): void;
     addEventListener(type: string, listener: any, scope?: object): void;
     removeEventListener(type: string, listener: any, scope?: object): void;
     reset(): void;
@@ -61,5 +59,4 @@ export declare class HlsFpPlayer extends DefaultPlayer implements IPlayer {
     private onStateChanged;
     private onSeeked;
     private onError;
-    private debug;
 }

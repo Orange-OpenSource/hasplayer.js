@@ -171,3 +171,10 @@ export declare enum PlayerEvents {
      */
     AD_END = "ad_end"
 }
+export declare enum LogLevel {
+    NONE = 0,
+    ERROR = 1,
+    WARN = 2,
+    INFO = 3,
+    DEBUG = 4
+}

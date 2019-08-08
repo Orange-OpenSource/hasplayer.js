@@ -1,5 +1,5 @@
 import { IPlayer } from '../IPlayer';
-import { StreamInfo } from '../Types';
+import { StreamInfo, LogLevel } from '../Types';
 /**
  * Plugin interface
  */
@@ -22,10 +22,10 @@ export interface IPlugin {
      */
     init(player: IPlayer, videoElement: HTMLMediaElement, config: object): any;
     /**
-     * Enable/disable plugin log messages.
-     * @param {boolean} enable - true to enable log messages, false to disable log messages
+     * Set level for filtering log messages.
+     * @param {LogLevel} level - the log level
      */
-    enableLogs(enable: boolean): any;
+    setLogLevel(level: LogLevel): any;
     /**
      * Destroy/clean the plugin instance.
      */

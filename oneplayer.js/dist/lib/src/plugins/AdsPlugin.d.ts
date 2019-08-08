@@ -1,5 +1,5 @@
 import { IPlugin } from './IPlugin';
-import { StreamInfo } from '../Types';
+import { StreamInfo, LogLevel } from '../Types';
 import { IPlayer } from '../IPlayer';
 import { DefaultPlayer } from '../DefaultPlayer';
 /**
@@ -14,7 +14,7 @@ export declare class AdsPlugin implements IPlugin {
     getType(): string;
     getVersion(): string;
     init(player: IPlayer, videoElement: HTMLMediaElement, config: object): void;
-    enableLogs(enable: boolean): void;
+    setLogLevel(level: LogLevel): void;
     reset(): void;
     load(stream: StreamInfo): Promise<any>;
     stop(): void;

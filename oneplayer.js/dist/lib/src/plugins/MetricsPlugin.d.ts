@@ -1,5 +1,5 @@
 import { IPlugin } from './IPlugin';
-import { StreamInfo } from '../Types';
+import { StreamInfo, LogLevel } from '../Types';
 import { IPlayer } from '../IPlayer';
 /**
  * metricsagent.js plugin
@@ -9,7 +9,7 @@ export declare class MetricsPlugin implements IPlugin {
     getType(): string;
     getVersion(): string;
     init(player: IPlayer, videoElement: HTMLMediaElement, config: object): void;
-    enableLogs(enable: boolean): void;
+    setLogLevel(level: LogLevel): void;
     reset(): void;
     /**
      * Load/open a video stream.

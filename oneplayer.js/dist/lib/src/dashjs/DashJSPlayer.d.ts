@@ -1,6 +1,6 @@
 import { IPlayer } from '../IPlayer';
 import { DefaultPlayer } from '../DefaultPlayer';
-import { PlayerType, StreamInfo, MediaType, TrackInfo } from '../Types';
+import { PlayerType, StreamInfo, MediaType, TrackInfo, LogLevel } from '../Types';
 import dashjs from 'dashjs';
 /**
  * Dash.js player
@@ -10,6 +10,7 @@ export declare class DashJSPlayer extends DefaultPlayer implements IPlayer {
     private defaultSettings;
     private audioSettings;
     private downloadError;
+    private plugin;
     private ttmlController;
     /**
      * Constructor.
@@ -19,7 +20,7 @@ export declare class DashJSPlayer extends DefaultPlayer implements IPlayer {
     getPlayerType(): PlayerType;
     init(videoElement: HTMLElement, ttmlRenderingDiv?: HTMLDivElement): Promise<any>;
     setConfig(params: object): void;
-    enableLogs(enable: boolean): void;
+    setLogLevel(level: LogLevel): void;
     addEventListener(type: string, listener: any, scope?: object): void;
     removeEventListener(type: string, listener: any, scope?: object): void;
     reset(): void;
@@ -55,5 +56,6 @@ export declare class DashJSPlayer extends DefaultPlayer implements IPlayer {
     private onPlaybackSeeking;
     private onPlaybackWaiting;
     private processDownloadError;
+    private playPromise;
     private onError;
 }
