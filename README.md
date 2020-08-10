@@ -1,3 +1,4 @@
+# DEPRECATED (please use [dash.js](https://github.com/Dash-Industry-Forum/dash.js) project)
 # hasplayer.js [![Build Status](https://travis-ci.org/Orange-OpenSource/hasplayer.js.svg?branch=development&style=flat-square)](https://travis-ci.org/Orange-OpenSource/hasplayer.js)
 
 hasplayer.js is a javascript implementation of a video player based on the W3C premium extensions, i.e. [MSE](https://dvcs.w3.org/hg/html-media/raw-file/tip/media-source/media-source.html) and [EME](https://dvcs.w3.org/hg/html-media/raw-file/tip/encrypted-media/encrypted-media.html).
